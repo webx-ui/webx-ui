@@ -10,6 +10,7 @@ use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Hashing\Hasher;
 use Illuminate\Contracts\View\Factory as Views;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -17,6 +18,7 @@ use WebxUi\Admin\Visitors\Events\VisitorSignedIn;
 use WebxUi\Users\Events\VisitorSignInFailed;
 use WebxUi\Users\Models\User;
 use WebxUi\Users\SignIn;
+use WebxUi\Users\SignInDialog;
 use WebxUi\Users\Social\SocialAccounts;
 use WebxUi\Users\Throttle;
 use WebxUi\Users\Urls;
@@ -55,15 +57,14 @@ final readonly class SignInController
 
         return $views->make('webx-users::sign-in', [
             'action' => $this->urls->to('sign-in'),
-            'rules' => FormRules::for(self::RULES, self::attributes()),
+            ...self::form(),
             'back' => $back,
-            'remember' => (bool) $this->config->get('webx-users.remember', true),
-            'forgot' => $this->urls->to('forgot'),
+            'forgot' => $this->urls->to('forgot', $back),
             'register' => SignIn::registrationOpen() ? $this->urls->to('register', $back) : null,
         ]);
     }
 
-    public function store(Request $request, Throttle $throttle, Hasher $hasher, Dispatcher $events, SignIn $signIn, SocialAccounts $social): FormResponse
+    public function store(Request $request, Throttle $throttle, Hasher $hasher, Dispatcher $events, SignIn $signIn, SocialAccounts $social): FormResponse|JsonResponse
     {
         $data = $request->validate(self::RULES, [], self::attributes());
         $email = User::normaliseEmail((string) $data['email']);
@@ -93,7 +94,21 @@ final readonly class SignInController
         // A social network waiting for this account's password is linked now (§9.7).
         $social->linkWaiting($request, $user);
 
-        return FormResponse::redirect($this->urls->local($request->input(Urls::BACK)) ?? $this->urls->home());
+        return SignInDialog::answer($request, $user)
+            ?? FormResponse::redirect($this->urls->local($request->input(Urls::BACK)) ?? $this->urls->home());
+    }
+
+    /**
+     * What the form is drawn with, on its page and in the dialog of a checkout (§12.1).
+     *
+     * @return array{rules: FormRules, remember: bool}
+     */
+    public static function form(): array
+    {
+        return [
+            'rules' => FormRules::for(self::RULES, self::attributes()),
+            'remember' => (bool) config('webx-users.remember', true),
+        ];
     }
 
     /** @return array<string, string> */

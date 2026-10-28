@@ -22,6 +22,9 @@ use WebxUi\Widgets\Forms\FormRules;
  * «If there is an account with this address, we sent a link» — for an address that is there,
  * one that is not, a blocked account and a request over the limit alike. The letter goes
  * through the queue, so the answer takes as long whether one was written or not.
+ *
+ * `back` — the page the visitor came from (a checkout, §12.1) — goes into the link of the letter:
+ * the page of the new password sends the visitor there, on whichever device the letter is opened.
  */
 final readonly class ForgotController
 {
@@ -31,7 +34,7 @@ final readonly class ForgotController
 
     public function show(Request $request, Views $views): View
     {
-        return self::page($views, $this->urls);
+        return self::page($views, $this->urls, back: $this->urls->local($request->query(Urls::BACK)));
     }
 
     public function store(Request $request, Throttle $throttle, ResetLinks $links, Mail $mail): FormResponse
@@ -44,7 +47,7 @@ final readonly class ForgotController
 
             // A blocked account is not let in by a link either (§6.3): no letter, the same answer.
             if ($user instanceof User && ! $user->isBlocked()) {
-                $link = $this->urls->to('reset', parameters: ['token' => $links->issue($user)]);
+                $link = $this->urls->to('reset', $this->urls->local($request->input(Urls::BACK)), ['token' => $links->issue($user)]);
                 $mail->mailer()->to($user->email)->send(new ResetPassword($user, $link, ResetLinks::minutes()));
             }
         }
@@ -53,14 +56,25 @@ final readonly class ForgotController
     }
 
     /** The form, also under «The link is out of date» on the page of a dead link (§7 item 3). */
-    public static function page(Views $views, Urls $urls, bool $expired = false): View
+    public static function page(Views $views, Urls $urls, bool $expired = false, ?string $back = null): View
     {
         return $views->make('webx-users::forgot', [
             'action' => $urls->to('forgot'),
-            'rules' => FormRules::for(self::RULES, self::attributes()),
+            ...self::form(),
             'expired' => $expired,
-            'signIn' => $urls->to('sign-in'),
+            'back' => $back,
+            'signIn' => $urls->to('sign-in', $back),
         ]);
+    }
+
+    /**
+     * What the form is drawn with, on its page and in the dialog of a checkout (§12.1).
+     *
+     * @return array{rules: FormRules}
+     */
+    public static function form(): array
+    {
+        return ['rules' => FormRules::for(self::RULES, self::attributes())];
     }
 
     /** @return array<string, string> */

@@ -34,6 +34,9 @@ use WebxUi\Widgets\Forms\FormRules;
  * network linked to the account until then is unlinked, or whoever registered somebody else's
  * address and linked their own network would keep a way in after the owner of the mailbox took
  * the account back (§7 item 5, §9.7).
+ *
+ * The link carries `back` when the request came from a page — a checkout (§12.1): the visitor
+ * goes back there, signed in; to the home page otherwise.
  */
 final readonly class ResetController
 {
@@ -46,11 +49,14 @@ final readonly class ResetController
     {
         $token = self::token($request);
 
+        $back = $this->urls->local($request->query(Urls::BACK));
+
         if ($this->links->find($token) === null) {
-            return ForgotController::page($views, $this->urls, expired: true);
+            return ForgotController::page($views, $this->urls, expired: true, back: $back);
         }
 
         return $views->make('webx-users::reset', [
+            'back' => $back,
             'action' => $this->urls->to('reset.store', parameters: ['token' => $token]),
             'rules' => FormRules::for(self::browserRules(), self::attributes()),
             'min' => RegisterController::minimum(),
@@ -99,7 +105,7 @@ final readonly class ResetController
 
         $mail->mailer()->to($user->email)->send(new PasswordChanged($user, $this->urls->to('forgot')));
 
-        return FormResponse::redirect($this->urls->home());
+        return FormResponse::redirect($this->urls->local($request->input(Urls::BACK)) ?? $this->urls->home());
     }
 
     /** By name, not by place: the address of a language has its prefix among the parameters. */

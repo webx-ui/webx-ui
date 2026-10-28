@@ -174,3 +174,22 @@
   display: inline-flex;
   flex: none;
 }
+
+/*
+ * The dialog of the sign-in for a checkout (spec §12.1): the card of the sign-in inside a dialog
+ * of the widgets — as narrow as the card, its forms and links the card's own. Only one view is
+ * shown; a theme that styles `section` keeps the others out of sight all the same.
+ */
+.webx-users-sign-in {
+  --webx-dialog-width: min(100% - 2 * var(--site-gutter), 28rem);
+}
+
+.webx-users-sign-in__view[hidden] {
+  display: none;
+}
+
+.webx-users-sign-in .webx-account-auth__links {
+  margin-top: var(--site-space-5);
+  color: var(--site-color-text-muted);
+  text-align: center;
+}

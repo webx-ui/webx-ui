@@ -46,10 +46,11 @@ final class AccessCoverageTest extends TestCase
         'POST account/auth/complete' => '«Almost done» sent: the profile waiting in this session, 5 an hour per IP (Throttle::register)',
         'POST account/social/{provider}/unlink' => 'a network unlinked: the signed-in visitor\'s own (webx.visitor), never the last way to sign in, behind CSRF',
         'GET webx/users/users.js' => 'the script of the cached pages: the same file for everyone',
+        'GET webx/users/sign-in.js' => 'the script of the dialog of the sign-in: the same file for everyone',
     ];
 
     /** The same file for everyone: no session, no language, cached for good. */
-    private const array STATIC = ['GET webx/users/users.js'];
+    private const array STATIC = ['GET webx/users/users.js', 'GET webx/users/sign-in.js'];
 
     #[Test]
     public function every_route_is_a_door_of_the_visitor_and_says_so(): void

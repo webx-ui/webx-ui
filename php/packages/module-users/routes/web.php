@@ -87,5 +87,7 @@ AccountRoutes::group(static function (): void {
     Route::post('social/{provider}/unlink', [SocialController::class, 'unlink'])->where('provider', '[a-z0-9-]+')->name('webx-users.social.unlink');
 });
 
-// The script of the pages cached for everybody (§11.6): no session, no language, cached for good.
+// The scripts of the pages cached for everybody (§11.6) and of the dialog of the sign-in (§12.1):
+// no session, no language, cached for good.
 Route::get('webx/users/users.js', ScriptController::class)->name('webx-users.script');
+Route::get('webx/users/sign-in.js', [ScriptController::class, 'signIn'])->name('webx-users.script.sign-in');

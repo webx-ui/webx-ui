@@ -68,6 +68,39 @@ In Blade: `@visitor … @else … @endvisitor`.
 Visitors sign in on the guard `site`. The site's default guard (`web`) is not a visitor:
 `auth()->user()` stays null — name the guard (`Auth::guard('site')->user()`) or use `Visitors`.
 
+## Signing in on the checkout
+
+A checkout signs the visitor in without leaving its page: a button of this module opens a dialog
+with the sign-in, «Forgot your password?» and the registration, switched in place.
+
+```blade
+@if (class_exists(\WebxUi\Users\SignInDialog::class) && app(\WebxUi\Admin\Visitors\Visitors::class)->current() === null)
+    <x-webx-users::sign-in-button />          {{-- view="register" opens on the registration --}}
+@endif
+```
+
+The dialog is printed once before `</body>` of any page that has an opener — this button,
+`data-webx-sign-in` on a link or a button, or a link to `#webx-sign-in` in a menu or a block.
+`<x-webx-users::sign-in-dialog />` prints it where a template wants it instead. Nothing personal is
+in it, so the page around it may be cached.
+
+Signed in from the dialog, the visitor stays on the page: the dialog closes and `document` gets
+`webx:users:signed-in` (`detail`: `name`, `verified`); the page reloads unless a listener
+cancels the event to redraw its step itself:
+
+```js
+document.addEventListener('webx:users:signed-in', (event) => {
+  event.preventDefault()
+  redrawContacts(event.detail.name)
+})
+```
+
+A social network comes back to the same page, and so does the link of «Forgot your password?»
+once the new password is set. Without JavaScript the button is a link to `/account/sign-in` with
+the way back. The contacts of the signed-in visitor come from `Visitors::current()` — the
+checkout puts them into its fields; what the buyer changes there stays with the order, the profile
+is edited in the account only.
+
 ## Configuration
 
 ```bash

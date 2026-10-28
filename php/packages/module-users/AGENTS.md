@@ -47,7 +47,11 @@ in here — shop modules plug into the seam, the module knows none of them.
   - `POST /account/email`, `GET /account/email/{id}` (`EmailController`, `Emails\EmailChange`) — with
     the current password; a signed link (`email_minutes`) with a fingerprint of the old address.
   - `GET /account/state` (`StateController`) — JSON `signedIn`, `name`, `verified`, `email` masked.
-  - `GET /webx/users/users.js` (`Http\ScriptController`) — `resources/js/users.js` as written, immutable.
+  - `GET /webx/users/{users,sign-in}.js` (`Http\ScriptController`) — `resources/js/*.js` as written, immutable.
+- **Dialog of a checkout** (§12, `SignInDialog`): `<dialog id="webx-sign-in">` before `</body>` once a page that has
+  `data-webx-sign-in` or `#webx-sign-in` (`<x-webx-users::sign-in-button view>` — a link to the sign-in with `back`;
+  `<x-webx-users::sign-in-dialog />`); views sign-in/forgot/register (`forms/*`, `sign-in.js`). Sent in place with
+  `webx_dialog`: `visitor` → `webx:users:signed-in` on `document`, reload unless cancelled. `back` rides the reset link.
 - **Account** (§11, `Account\*`): `/account/profile` (`ProfileController`: names, phone, fields,
   e-mail); `/account/security` (`SecurityController`: password or «Set a password» by a reset link,
   networks, `sign-out-everywhere` — a new `remember_token`, `delete`). `AccountMenu` of `AccountSection`
@@ -62,17 +66,14 @@ in here — shop modules plug into the seam, the module knows none of them.
   (`1` signed in, `u` unconfirmed, none for a guest; not encrypted, not httpOnly). A guest — no query.
 - **Banner** `<x-webx-users::verify-banner>`, node `users.verify-banner` first in `main` of `layout`:
   hidden and alike on a cached page, shown by `users.js`; on a page of the module by the server.
-- **`webx.visitor:verified`** — `UserVisitors` answers an unconfirmed visitor with «Confirm your
-  e-mail» and the letter once more (403, `AnswersUnverified`).
-- **Console** `webx:users:prune [--dry-run]`, daily: links out of date, never an account.
-  `webx:doctor` — `MailCheck` (`log` mail off a local machine warns), `FieldsCheck` (the refusals).
+- **`webx.visitor:verified`** — an unconfirmed visitor gets «Confirm your e-mail» and the letter again (403, `AnswersUnverified`).
+- **Console** `webx:users:prune [--dry-run]`, daily: links out of date. `webx:doctor` — `MailCheck`, `FieldsCheck`.
 - **Limits** (`Throttle`, a 429 naming the field and the seconds): `webx-users.throttle.*`; reset requests alike.
 - **Events**: `VisitorRegistered`, `VisitorSignedIn` (`password`/`registration`/`reset`/a provider), `VisitorSignedOut`; own `VisitorSignInFailed`.
-- **Views** `sign-in`, `register`, `forgot`, `reset`, `notice`, `account.profile`, `account.security`, the
+- **Views** `sign-in`, `register`, `forgot` (their `forms/*`), `reset`, `notice`, `sign-in-dialog`, `account.profile`, `account.security`, the
   frames `<x-webx-users::page>` / `account`, the bare `standalone`; forms of `widgets` (`FormRules`).
   Classes `webx-account-auth*`, `webx-account*`, `webx-users-verify*`; base look `resources/theme/*.css`.
-- **Layouts** (`Rendering\Layouts`): sign-in pages — `webx-users.layout` (`'layout'` after
-  `webx:panel --sync`), handle `users.auth`; the account — `layout.account` where the site has it.
+- **Layouts** (`Rendering\Layouts`): sign-in — `webx-users.layout` (handle `users.auth`); the account — `layout.account`.
 - **Fields of the site** (`Fields\*`, §10): `UserField` in `UserFields` (`register()` in `boot()`, or
   `webx-users.fields`; a taken name, an unknown type, missing options throw); in `users.extra`;
   `FieldValues` checks them alike everywhere; `FieldCatalog` — panel nodes and `users://catalog`;
@@ -137,11 +138,10 @@ the site's doors are open with their limits in `tests/AccessCoverageTest.php`.
 ## Check your work
 
 - `php artisan webx:doctor` — «Visitors: table `users` is the module's.» (a `fail` names the rows) and «letters to visitors …» (a warning: they stay in a log).
-- `/account/sign-in`, `/account/register`: `Cache-Control: no-store, private`, `X-Robots-Tag: noindex`.
 - `vendor/bin/phpunit` in the package: `SignInTest`, `RegisterTest`, `PasswordResetTest`,
   `VerificationTest`, `EmailChangeTest`, `BannerTest`, `PruneTest`, `BoundariesTest`,
   `MigrationTest`, `SkeletonTest`, `AccessCoverageTest`, `FieldsTest`, `FieldDeclarationsTest`, `AccountTest`,
-  `SecurityTest`, `AccountThemeTest`, `SocialTest`, `Panel\*`, `Mcp\*` (parity, dry run, no secret, budgets); `resources/js/users.test.js` (vitest).
+  `SecurityTest`, `AccountThemeTest`, `SocialTest`, `SignInDialogTest`, `Panel\*`, `Mcp\*`; `resources/js/*.test.js` (vitest).
 
 ## Read more
 

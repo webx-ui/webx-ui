@@ -1,0 +1,5 @@
+---
+'@webx-ui/php': minor
+---
+
+`webx-ui/module-users`: the dialog of the sign-in for a checkout. `<x-webx-users::sign-in-button />` — or any link to `#webx-sign-in` — opens a dialog with the sign-in, «Forgot your password?» and the registration, switched without leaving the page; it is printed once before `</body>` of a page that opens it, and without JavaScript the button is a link to the sign-in with the way back. Signed in from the dialog, the visitor stays on the page: `webx:users:signed-in` goes to `document` with the name and whether the address is confirmed, and the page reloads unless a listener cancelled it. A social network and the link of a password reset come back to the page the visitor started from. The forms of the sign-in, the registration and «Forgot your password?» are views of their own (`forms/*`), shared by the pages and the dialog.

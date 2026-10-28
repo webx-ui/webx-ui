@@ -5,14 +5,22 @@ declare(strict_types=1);
 namespace WebxUi\Users;
 
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use Illuminate\Cookie\Middleware\EncryptCookies;
+use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Foundation\Http\Kernel;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
+use Illuminate\Routing\Events\ResponsePrepared;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\ServiceProvider;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Admin\History\HistoryTypes;
 use WebxUi\Admin\ModuleRegistry;
@@ -77,6 +85,7 @@ class UsersServiceProvider extends ServiceProvider
         // Social networks (§9): the registry for the whole process, the keys read once a request.
         $this->app->singleton(SocialProviders::class);
         $this->app->scoped(ProviderKeys::class);
+        $this->app->scoped(SignInDialog::class);
     }
 
     public function boot(): void
@@ -125,6 +134,7 @@ class UsersServiceProvider extends ServiceProvider
         // §11.6); the script of a cached page reads the cookie, so it is not encrypted.
         EncryptCookies::except(TrackVisitor::COOKIE);
         $this->trackVisitors();
+        $this->printSignInDialog();
 
         $this->callAfterResolving(DoctorChecks::class, static function (DoctorChecks $checks): void {
             $checks->register(UsersTableCheck::class);
@@ -233,6 +243,36 @@ class UsersServiceProvider extends ServiceProvider
             'options' => 'webx-users::screen.history-options',
             'credentials' => 'webx-users::screen.history-credentials',
         ], permission: [UsersModule::SETTINGS], module: UsersModule::ID, label: 'webx-users::screen.history-provider');
+    }
+
+    /**
+     * The dialog of the sign-in before `</body>` of a page that opens it (§12.1), on the first of
+     * the two `ResponsePrepared`: the session still has the flash of a form of the dialog sent
+     * without JavaScript, which opens it on its view — as the widgets put in their forms in a
+     * dialog (WIDGETS §6.4). Forgotten when the request is handled: a test's next request, a
+     * long-lived worker's next page print it again.
+     */
+    private function printSignInDialog(): void
+    {
+        $events = $this->app->make(Dispatcher::class);
+
+        $events->listen(ResponsePrepared::class, function (ResponsePrepared $event): void {
+            $response = $event->response;
+
+            if (! $response instanceof Response || $response instanceof StreamedResponse || $response instanceof BinaryFileResponse
+                || $response instanceof JsonResponse || $response instanceof RedirectResponse || ! $response->isSuccessful()) {
+                return;
+            }
+
+            $type = (string) $response->headers->get('Content-Type', '');
+            $content = $response->getContent();
+
+            if (($type === '' || str_contains($type, 'html')) && is_string($content) && str_contains($content, '</body>')) {
+                $response->setContent($this->app->make(SignInDialog::class)->into($content));
+            }
+        });
+
+        $events->listen(RequestHandled::class, fn () => $this->app->make(SignInDialog::class)->flush());
     }
 
     /**

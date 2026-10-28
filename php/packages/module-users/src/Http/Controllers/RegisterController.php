@@ -8,6 +8,7 @@ use Illuminate\Contracts\Auth\Factory as Auth;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\View\Factory as Views;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rules\Password;
@@ -21,6 +22,7 @@ use WebxUi\Users\Fields\Requirement;
 use WebxUi\Users\Fields\Requirements;
 use WebxUi\Users\Models\User;
 use WebxUi\Users\SignIn;
+use WebxUi\Users\SignInDialog;
 use WebxUi\Users\Throttle;
 use WebxUi\Users\Urls;
 use WebxUi\Widgets\Forms\FormResponse;
@@ -61,6 +63,21 @@ final readonly class RegisterController
 
         return $views->make('webx-users::register', [
             'action' => $this->urls->to('register'),
+            ...self::form($fields),
+            'back' => $back,
+            'signIn' => $this->urls->to('sign-in', $back),
+        ]);
+    }
+
+    /**
+     * What the form is drawn with, on its page and in the dialog of a checkout (§12.1): the
+     * built-in fields as the settings ask for them, the site's fields of the registration.
+     *
+     * @return array{rules: FormRules, asked: array<string, Requirement>, fields: list<array<string, mixed>>, min: int}
+     */
+    public static function form(FieldValues $fields): array
+    {
+        return [
             // The browser checks what it can read: a length, not the rule object of the server.
             'rules' => FormRules::for(
                 [...self::rules(), 'password' => ['required', 'string', 'min:'.self::minimum()], ...$fields->formRules(Placement::Registration)],
@@ -68,13 +85,11 @@ final readonly class RegisterController
             ),
             'asked' => self::asked(),
             'fields' => $fields->controls(Placement::Registration),
-            'back' => $back,
             'min' => self::minimum(),
-            'signIn' => $this->urls->to('sign-in', $back),
-        ]);
+        ];
     }
 
-    public function store(Request $request, Throttle $throttle, Dispatcher $events, SignIn $signIn, Locales $locales, FieldValues $fields): FormResponse
+    public function store(Request $request, Throttle $throttle, Dispatcher $events, SignIn $signIn, Locales $locales, FieldValues $fields): FormResponse|JsonResponse
     {
         abort_unless(SignIn::registrationOpen(), 404);
 
@@ -126,7 +141,7 @@ final readonly class RegisterController
         $signIn->in($request, $user);
         $events->dispatch(new VisitorSignedIn($id, 'registration'));
 
-        return FormResponse::redirect($this->urls->local($request->input(Urls::BACK)) ?? $this->urls->home());
+        return SignInDialog::answer($request, $user) ?? FormResponse::redirect($this->urls->local($request->input(Urls::BACK)) ?? $this->urls->home());
     }
 
     /**
