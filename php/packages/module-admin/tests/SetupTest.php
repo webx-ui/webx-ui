@@ -170,7 +170,7 @@ final class SetupTest extends TestCase
         $catalogue = $this->catalogue();
 
         $this->assertTrue($catalogue->knows('admins'));
-        $this->assertFalse($catalogue->knows('users'));
+        $this->assertFalse($catalogue->knows('visitors'));
         $this->assertSame('webx-ui/module-auth', $catalogue->packageFor('admins'));
     }
 
