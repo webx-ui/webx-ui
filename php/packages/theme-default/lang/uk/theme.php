@@ -3,6 +3,9 @@
 declare(strict_types=1);
 
 return [
+    'account' => [
+        'menu' => 'Особистий кабінет',
+    ],
     'shell' => [
         'skip' => 'Перейти до вмісту',
         'footer' => 'Нижнє меню',

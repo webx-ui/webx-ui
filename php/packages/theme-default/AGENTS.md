@@ -17,7 +17,7 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
   (`"preset": "night"` in `theme/theme.json`). Its test is `Testing\ThemeContract` first.
 - **`views/components/layout`** — the document every module page is printed in (`<x-layout>`), the
   dispatcher of the composition `layout` (`compositions/layout/default.json`; also `layout.minimal`,
-  `layout.blank`): `@webxTheme`, `@webxThemeColor`, the page's `head` slot (or `@webxSeo` + `@webxBlocks`), `@stack('head')`,
+  `layout.blank`, and `layout.account` — the grid of a visitor's account, `account.menu` beside `account.body`, for `webx-ui/module-users`): `@webxTheme`, `@webxThemeColor`, the page's `head` slot (or `@webxSeo` + `@webxBlocks`), `@stack('head')`,
   `<x-webx-notice-bar>` above the header, the `header`/`footer` regions, `<main id="content" class="site-main">`, `@stack('scripts')`; the modules add their pieces.
 - **`views/components/header`**, **`views/components/footer`** — the regions' fallbacks and the
   dispatchers of the compositions `header`/`footer` (`compositions/header|footer/default.json`, leaves

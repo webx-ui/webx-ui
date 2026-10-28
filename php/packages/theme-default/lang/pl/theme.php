@@ -3,6 +3,9 @@
 declare(strict_types=1);
 
 return [
+    'account' => [
+        'menu' => 'Moje konto',
+    ],
     'shell' => [
         'skip' => 'Przejdź do treści',
         'footer' => 'Stopka',

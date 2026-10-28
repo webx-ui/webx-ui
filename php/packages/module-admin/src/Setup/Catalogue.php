@@ -270,6 +270,14 @@ final class Catalogue
             'requires' => [],
             'demo' => [],
         ],
+        'users' => [
+            'package' => 'webx-ui/module-users',
+            'npm' => null,
+            'label' => 'Customers — visitors who register and sign in on the site, with an account of their own and no way into the panel',
+            'default' => false,
+            'requires' => [],
+            'demo' => [],
+        ],
         'menu' => [
             'package' => 'webx-ui/module-menu',
             'npm' => '@webx-ui/module-menu',

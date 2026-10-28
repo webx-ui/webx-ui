@@ -1,0 +1,71 @@
+{
+    "name": "webx-ui/module-users",
+    "description": "Visitors of a WebX UI site: their own table and the site guard, sign-in and registration by e-mail, and the Visitors seam of the panel bound to them — no way into the panel, no shop inside.",
+    "license": "MIT",
+    "type": "library",
+    "keywords": [
+        "webx-ui",
+        "laravel",
+        "cms",
+        "users",
+        "accounts"
+    ],
+    "homepage": "https://github.com/webx-ui/webx-ui",
+    "authors": [
+        {
+            "name": "WebX UI",
+            "homepage": "https://github.com/webx-ui"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/webx-ui/webx-ui/issues",
+        "source": "https://github.com/webx-ui/webx-ui/tree/main/php/packages/module-users"
+    },
+    "require": {
+        "php": "^8.4",
+        "illuminate/auth": "^13.0",
+        "illuminate/contracts": "^13.0",
+        "illuminate/database": "^13.0",
+        "illuminate/http": "^13.0",
+        "illuminate/routing": "^13.0",
+        "illuminate/support": "^13.0",
+        "illuminate/validation": "^13.0",
+        "illuminate/view": "^13.0",
+        "webx-ui/compositions": "^0.88.0",
+        "webx-ui/localization": "^0.88.0",
+        "webx-ui/module-admin": "^0.88.0",
+        "webx-ui/widgets": "^0.88.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^11.0",
+        "phpunit/phpunit": "^12.0 || ^13.0",
+        "webx-ui/module-auth": "^0.88.0",
+        "webx-ui/theme-default": "^0.88.0",
+        "webx-ui/themes": "^0.88.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "WebxUi\\Users\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "WebxUi\\Users\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "WebxUi\\Users\\UsersServiceProvider"
+            ]
+        },
+        "webx": {
+            "module": "users"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

@@ -515,8 +515,9 @@ export function form(el) {
 
   const reject = (answer) => {
     const data = answer.json ? answer.data : {}
-    const errors =
-      answer.status === 422 && data.errors && typeof data.errors === 'object' ? data.errors : {}
+    // A 429 says why as well (too many attempts, wait so long): by field, or in a sentence.
+    const explained = answer.status === 422 || answer.status === 429
+    const errors = explained && data.errors && typeof data.errors === 'object' ? data.errors : {}
     const unplaced = []
     const byField = new Map()
 
@@ -529,7 +530,7 @@ export function form(el) {
     for (const [field, messages] of byField) invalid(field, messages)
 
     const box = own(el, '.webx-form__error')
-    if (answer.status === 422) {
+    if (explained) {
       // Laravel's own sentence sums the errors up — said already where they are.
       if (unplaced.length === 0 && byField.size === 0 && data.message)
         unplaced.push(String(data.message))

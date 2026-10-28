@@ -1,0 +1,52 @@
+/*
+ * The sign-in and the registration (spec §11.5): a narrow card in the middle of the page, on
+ * site tokens only — decent under any theme, which restyles it by the same classes. The fields
+ * and the button are the widgets' forms; this only gives them a frame. The width is the card's
+ * own (`min()`), so a phone gets the whole width less the gutter and a wide screen a column.
+ */
+.webx-account-auth {
+  display: flex;
+  justify-content: center;
+  padding: var(--site-space-6) var(--site-gutter);
+}
+
+.webx-account-auth__card {
+  box-sizing: border-box;
+  width: min(100%, 28rem);
+  padding: var(--site-space-6) var(--site-space-5);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-surface);
+  color: var(--site-color-text);
+}
+
+.webx-account-auth__title {
+  margin: 0 0 var(--site-space-5);
+  font-family: var(--site-font-heading);
+  font-size: var(--site-font-size-4);
+  line-height: 1.2;
+}
+
+/* One column of fields, the button the width of the card: a thumb finds it on a phone. */
+.webx-account-auth__form .webx-form__body {
+  display: grid;
+  gap: var(--site-space-4);
+}
+
+.webx-account-auth__form .webx-form__submit {
+  width: 100%;
+}
+
+.webx-account-auth__links {
+  margin-top: var(--site-space-5);
+  color: var(--site-color-text-muted);
+  text-align: center;
+}
+
+.webx-account-auth__links p {
+  margin: 0;
+}
+
+.webx-account-auth__links a {
+  color: var(--site-color-accent);
+}

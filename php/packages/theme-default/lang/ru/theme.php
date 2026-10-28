@@ -3,6 +3,9 @@
 declare(strict_types=1);
 
 return [
+    'account' => [
+        'menu' => 'Личный кабинет',
+    ],
     'shell' => [
         'skip' => 'Перейти к содержимому',
         'footer' => 'Нижнее меню',

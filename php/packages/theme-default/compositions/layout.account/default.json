@@ -1,0 +1,26 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/composition.json",
+  "$comment": "The layout of a visitor's account (COMPOSITIONS §3.7): everything of the layout, with the content moved into a grid beside the menu of the account. The menu is empty here: the module of visitors puts its own in account.menu by a patch, a theme moves or restyles it by the same ids.",
+  "extends": "layout",
+  "add": [
+    {
+      "id": "account",
+      "to": "main",
+      "first": true,
+      "tag": "div",
+      "attrs": { "class": "site-account" },
+      "children": [
+        {
+          "id": "account.menu",
+          "tag": "nav",
+          "attrs": {
+            "class": "site-account__menu",
+            "aria-label": "trans::theme::theme.account.menu"
+          }
+        },
+        { "id": "account.body", "tag": "div", "attrs": { "class": "site-account__body" } }
+      ]
+    }
+  ],
+  "move": [{ "id": "content", "to": "account.body" }]
+}

@@ -46,6 +46,7 @@
             <directory>packages/module-snippets/tests</directory>
             <directory>packages/module-debug/tests</directory>
             <directory>packages/module-team/tests</directory>
+            <directory>packages/module-users/tests</directory>
             <directory>packages/module-vacancies/tests</directory>
             <directory>packages/module-banners/tests</directory>
             <directory>packages/module-tariffs/tests</directory>
@@ -93,6 +94,7 @@
             <directory>packages/module-snippets/src</directory>
             <directory>packages/module-debug/src</directory>
             <directory>packages/module-team/src</directory>
+            <directory>packages/module-users/src</directory>
             <directory>packages/module-vacancies/src</directory>
             <directory>packages/module-banners/src</directory>
             <directory>packages/module-tariffs/src</directory>

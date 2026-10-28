@@ -1,0 +1,1 @@
+{{-- `<x-layout.account>`: the layout with the menu of a visitor's account beside the content (COMPOSITIONS §3.7). --}}@include(composition_view('layout.account', $attributes->get('handle')))

@@ -620,6 +620,26 @@ class ThemeDefaultTest extends TestCase
         $this->assertStringNotContainsString('site-header', $blank);
     }
 
+    /**
+     * `layout.account` (COMPOSITIONS §3.7): the whole layout, the content moved into the grid of a
+     * visitor's account beside its menu — empty here, the module of visitors fills `account.menu`.
+     */
+    #[Test]
+    public function the_account_layout_puts_the_content_beside_its_menu(): void
+    {
+        $this->stubModules();
+
+        $html = Blade::render('<x-layout.account handle="users.account"><p>Profile</p></x-layout.account>');
+
+        $this->assertMatchesRegularExpression(
+            '~<main id="content" class="site-main">\\s*<div class="site-account">\\s*<nav class="site-account__menu" aria-label="Account">\\s*</nav>\\s*<div class="site-account__body">\\s*<p>Profile</p>~',
+            $html,
+        );
+        $this->assertStringContainsString('site-header', $html);
+        $this->assertStringContainsString('site-footer', $html);
+        $this->assertSame([], array_values(array_filter(app(Compositions::class)->findings(), static fn ($finding): bool => ! $finding->note)));
+    }
+
     /** A module's view hands its own @webxSeo and @webxBlocks in the head slot; neither prints twice. */
     #[Test]
     public function a_head_from_the_page_replaces_the_layouts_own(): void
@@ -732,7 +752,7 @@ class ThemeDefaultTest extends TestCase
             $templates['compositions/'.basename(dirname($file)).'/'.basename($file)] = implode("\n", $html);
         }
 
-        $this->assertCount(52, $templates);
+        $this->assertCount(54, $templates);
 
         foreach ($templates as $name => $template) {
             preg_match_all("/__\\(\\s*'([^']*)'/", $template, $calls);

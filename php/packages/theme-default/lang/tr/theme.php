@@ -3,6 +3,9 @@
 declare(strict_types=1);
 
 return [
+    'account' => [
+        'menu' => 'Hesabım',
+    ],
     'shell' => [
         'skip' => 'İçeriğe geç',
         'footer' => 'Alt bilgi',

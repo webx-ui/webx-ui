@@ -72,6 +72,8 @@ parameters:
         - packages/module-debug/tests
         - packages/module-team/src
         - packages/module-team/tests
+        - packages/module-users/src
+        - packages/module-users/tests
         - packages/module-vacancies/src
         - packages/module-vacancies/tests
         - packages/module-banners/src
@@ -110,3 +112,5 @@ parameters:
                 - packages/module-seo/src/Rendering/Seo.php
                 - packages/module-cart/src/Rendering/Panel.php
                 - packages/module-cart/src/View/Components/Widget.php
+                - packages/module-users/src/Http/Controllers/RegisterController.php
+                - packages/module-users/src/Http/Controllers/SignInController.php
