@@ -21,6 +21,7 @@
             <directory>packages/module-auth/tests</directory>
             <directory>packages/module-blocks/tests</directory>
             <directory>packages/module-blog/tests</directory>
+            <directory>packages/module-cart/tests</directory>
             <directory>packages/module-catalog/tests</directory>
             <directory>packages/module-catalog-brands/tests</directory>
             <directory>packages/module-catalog-labels/tests</directory>
@@ -67,6 +68,7 @@
             <directory>packages/module-auth/src</directory>
             <directory>packages/module-blocks/src</directory>
             <directory>packages/module-blog/src</directory>
+            <directory>packages/module-cart/src</directory>
             <directory>packages/module-catalog/src</directory>
             <directory>packages/module-catalog-brands/src</directory>
             <directory>packages/module-catalog-labels/src</directory>

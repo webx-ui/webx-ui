@@ -22,6 +22,8 @@ parameters:
         - packages/module-blocks/tests
         - packages/module-blog/src
         - packages/module-blog/tests
+        - packages/module-cart/src
+        - packages/module-cart/tests
         - packages/module-catalog/src
         - packages/module-catalog/tests
         - packages/module-catalog-brands/src

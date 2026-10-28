@@ -29,7 +29,8 @@ final class Catalogue
      * Id, the Composer package behind it, its npm half, what it is, whether a new site gets it
      * unasked, and the modules it cannot work without.
      *
-     * The npm name is written here although every package also says it under `extra.webx`:
+     * The npm name is written here although every package also says it under `extra.webx`
+     * (null for a module with no section in the panel, so no npm half — the cart):
      * that block is on disk only once the package is installed, and this list is mostly about
      * packages that are not. `requires` is the package's own `require` read as panel ids —
      * Composer installs those anyway, and saying so lets whoever chooses see it before they
@@ -40,7 +41,7 @@ final class Catalogue
      * a module with nothing a visitor of the site sees — the panel, its settings, the task queue: a site
      * built of those alone has no public part ({@see self::hasPublicPart()}).
      *
-     * @var array<string, array{package: string, npm: string, label: string, default: bool, requires: list<string>, demo: list<string>, public?: bool}>
+     * @var array<string, array{package: string, npm: string|null, label: string, default: bool, requires: list<string>, demo: list<string>, public?: bool}>
      */
     private const MODULES = [
         'pages' => [
@@ -261,6 +262,14 @@ final class Catalogue
             'requires' => ['catalog'],
             'demo' => [],
         ],
+        'cart' => [
+            'package' => 'webx-ui/module-cart',
+            'npm' => null,
+            'label' => 'Cart — a guest cart for products and whatever else a module sells, priced live, with totals other modules add to',
+            'default' => false,
+            'requires' => [],
+            'demo' => [],
+        ],
         'menu' => [
             'package' => 'webx-ui/module-menu',
             'npm' => '@webx-ui/module-menu',
@@ -352,7 +361,7 @@ final class Catalogue
     /**
      * Every module as the outside world reads it — `webx:modules --json`.
      *
-     * @return list<array{id: string, package: string, npm: string, label: string, default: bool, requires: list<string>, installed: bool}>
+     * @return list<array{id: string, package: string, npm: string|null, label: string, default: bool, requires: list<string>, installed: bool}>
      */
     public function describe(): array
     {

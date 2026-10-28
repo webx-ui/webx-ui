@@ -207,6 +207,8 @@ Packagist ([`WEBX_UI_PHP_RELEASE.md`](WEBX_UI_PHP_RELEASE.md)). Версия у 
 | `module-catalog-properties` | свойства товаров и фасеты                                             | `@webx-ui/module-catalog-properties` |
 | `module-catalog-landings`   | посадочные страницы каталога                                          | `@webx-ui/module-catalog-landings`   |
 | `module-catalog-manticore`  | Manticore Search как движок каталога                                  | `@webx-ui/module-catalog-manticore`  |
+| **Разделы: коммерция**      |                                                                       |                                      |
+| `module-cart`               | гостевая корзина: контракт `Purchasable`, цепочка итогов, `cart()`    | —                                    |
 | **Разделы: работа**         |                                                                       |                                      |
 | `module-tasks`              | очередь работы между людьми и агентами                                | `@webx-ui/module-tasks`              |
 
@@ -625,6 +627,21 @@ ES-модуль в самом пакете.
 `MANTICORE_HOST`, `MANTICORE_PORT`, обязательный `MANTICORE_TABLE_PREFIX`; первый раз —
 `php artisan webx:catalog:index --rebuild`. Раздел «Система → Поисковый индекс» есть только на
 этом движке (права `search-index.*`).
+
+---
+
+## Разделы: коммерция
+
+### `webx-ui/module-cart` — корзина
+
+Спека — [`WEBX_UI_MODULE_CART.md`](WEBX_UI_MODULE_CART.md), карта семейства —
+[`WEBX_UI_COMMERCE.md`](WEBX_UI_COMMERCE.md). Гостевая корзина: таблицы `carts` и `cart_items`, токен в
+httpOnly-cookie (в базе — хеш). Что лежит в строке и сколько стоит сейчас, корзина спрашивает у
+владельца записи через контракт `Purchasable` (реестр `Purchasables`, регистрация по `class_exists`);
+валюта — контракт `CurrencySource`, суммы целым и строкой `Money::format()` по правилам валюты.
+Итоги — цепочка с пятью пустыми реестрами звеньев для спутников; хелпер `cart()`; чистка
+`webx:cart:prune` по расписанию. Раздела в панели нет, npm-половины нет; по умолчанию выключен в
+`webx:setup`.
 
 ---
 
