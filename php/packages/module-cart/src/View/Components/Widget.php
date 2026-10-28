@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Cart\View\Components;
 
 use Illuminate\Contracts\Config\Repository as Config;
+use Illuminate\Contracts\View\Factory as Views;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
@@ -37,6 +38,7 @@ final class Widget extends Component
         private readonly Assets $assets,
         private readonly Request $request,
         private readonly Router $router,
+        private readonly Views $views,
         Config $config,
         ?string $mode = null,
         public ?string $title = null,
@@ -49,7 +51,7 @@ final class Widget extends Component
     {
         $returned = $this->request->hasSession() && $this->request->session()->has(CartController::FLASH);
 
-        return view('webx-cart::cart', [
+        return $this->views->make('webx-cart::cart', [
             'mode' => $this->resolvedMode,
             'id' => self::ID,
             'heading' => $this->title ?? __('webx-cart::widget.title'),

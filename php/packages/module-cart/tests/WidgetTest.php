@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\View\ViewException;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Test;
+use Throwable;
 use WebxUi\Cart\CartService;
 use WebxUi\Cart\CartServiceProvider;
 use WebxUi\Cart\Http\CartController;
@@ -89,7 +90,9 @@ final class WidgetTest extends TestCase
         try {
             Blade::render('<x-webx-cart mode="sidebar" />');
             $this->fail('A mode nobody knows was printed.');
-        } catch (ViewException $exception) {
+        } catch (Throwable $exception) {
+            // Blade wraps what a component throws in a ViewException.
+            $this->assertInstanceOf(ViewException::class, $exception);
             $this->assertInstanceOf(InvalidArgumentException::class, $exception->getPrevious());
             $this->assertStringContainsString('one of drawer, dialog, dropdown', $exception->getMessage());
         }

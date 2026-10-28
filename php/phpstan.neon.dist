@@ -101,10 +101,12 @@ parameters:
     ignoreErrors:
         # A view a package registers under its own namespace at runtime is a view Larastan
         # cannot find on disk, so the name never becomes a view-string no matter how literal it
-        # is written. Both of these are `<package>::<view>` names of views that exist.
+        # is written. All of these are `<package>::<view>` names of views that exist.
         -
             identifier: argument.type
             message: '#expects view-string, string given#'
             paths:
                 - packages/module-admin/src/Http/Controllers/ShellController.php
                 - packages/module-seo/src/Rendering/Seo.php
+                - packages/module-cart/src/Rendering/Panel.php
+                - packages/module-cart/src/View/Components/Widget.php
