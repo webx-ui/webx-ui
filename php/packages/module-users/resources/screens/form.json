@@ -22,18 +22,44 @@
                   "type": "wx-row",
                   "children": [
                     {
-                      "id": "first-name",
-                      "type": "wx-input",
-                      "name": "first_name",
-                      "label": "trans::webx-users::screen.first-name",
-                      "props": { "maxlength": 100, "autocomplete": "off" }
+                      "id": "first-name-col",
+                      "type": "wx-col",
+                      "props": {
+                        "span": 24,
+                        "sm": 12
+                      },
+                      "children": [
+                        {
+                          "id": "first-name",
+                          "type": "wx-input",
+                          "name": "first_name",
+                          "label": "trans::webx-users::screen.first-name",
+                          "props": {
+                            "maxlength": 100,
+                            "autocomplete": "off"
+                          }
+                        }
+                      ]
                     },
                     {
-                      "id": "last-name",
-                      "type": "wx-input",
-                      "name": "last_name",
-                      "label": "trans::webx-users::screen.last-name",
-                      "props": { "maxlength": 100, "autocomplete": "off" }
+                      "id": "last-name-col",
+                      "type": "wx-col",
+                      "props": {
+                        "span": 24,
+                        "sm": 12
+                      },
+                      "children": [
+                        {
+                          "id": "last-name",
+                          "type": "wx-input",
+                          "name": "last_name",
+                          "label": "trans::webx-users::screen.last-name",
+                          "props": {
+                            "maxlength": 100,
+                            "autocomplete": "off"
+                          }
+                        }
+                      ]
                     }
                   ]
                 },
@@ -42,24 +68,48 @@
                   "type": "wx-row",
                   "children": [
                     {
-                      "id": "email",
-                      "type": "wx-input",
-                      "name": "email",
-                      "label": "trans::webx-users::screen.email",
-                      "help": "trans::webx-users::screen.email-help",
+                      "id": "email-col",
+                      "type": "wx-col",
                       "props": {
-                        "type": "email",
-                        "maxlength": 191,
-                        "required": true,
-                        "autocomplete": "off"
-                      }
+                        "span": 24,
+                        "sm": 12
+                      },
+                      "children": [
+                        {
+                          "id": "email",
+                          "type": "wx-input",
+                          "name": "email",
+                          "label": "trans::webx-users::screen.email",
+                          "help": "trans::webx-users::screen.email-help",
+                          "props": {
+                            "type": "email",
+                            "maxlength": 191,
+                            "required": true,
+                            "autocomplete": "off"
+                          }
+                        }
+                      ]
                     },
                     {
-                      "id": "phone",
-                      "type": "wx-input",
-                      "name": "phone",
-                      "label": "trans::webx-users::screen.phone",
-                      "props": { "type": "tel", "maxlength": 32, "autocomplete": "off" }
+                      "id": "phone-col",
+                      "type": "wx-col",
+                      "props": {
+                        "span": 24,
+                        "sm": 12
+                      },
+                      "children": [
+                        {
+                          "id": "phone",
+                          "type": "wx-input",
+                          "name": "phone",
+                          "label": "trans::webx-users::screen.phone",
+                          "props": {
+                            "type": "tel",
+                            "maxlength": 32,
+                            "autocomplete": "off"
+                          }
+                        }
+                      ]
                     }
                   ]
                 }
@@ -91,7 +141,9 @@
                   "name": "groups",
                   "label": "trans::webx-users::screen.groups-field",
                   "help": "trans::webx-users::screen.groups-help",
-                  "props": { "options": [] }
+                  "props": {
+                    "options": []
+                  }
                 }
               ]
             },
@@ -100,8 +152,14 @@
               "type": "wx-card",
               "label": "trans::webx-users::screen.summary",
               "children": [
-                { "id": "state", "type": "wx-users-state" },
-                { "id": "ways", "type": "wx-users-ways" }
+                {
+                  "id": "state",
+                  "type": "wx-users-state"
+                },
+                {
+                  "id": "ways",
+                  "type": "wx-users-ways"
+                }
               ]
             }
           ]
@@ -118,7 +176,10 @@
                 {
                   "id": "history",
                   "type": "wx-history",
-                  "props": { "type": "users.user", "title": "" }
+                  "props": {
+                    "type": "users.user",
+                    "title": ""
+                  }
                 }
               ]
             }
