@@ -15,4 +15,5 @@ return [
     'key' => 'Każda pozycja paczki potrzebuje własnego klucza.',
     'parent' => 'Pozycję można umieścić tylko pod pozycją tej samej paczki, która sama nie jest pod inną.',
     'gift_price' => 'Prezent kosztuje co najmniej 1.',
+    'not_declinable' => 'Z tej pozycji nie można zrezygnować.',
 ];

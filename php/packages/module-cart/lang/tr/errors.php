@@ -15,4 +15,5 @@ return [
     'key' => 'Bir paketteki her satırın kendi anahtarı olmalı.',
     'parent' => 'Bir satır yalnızca aynı paketteki, kendisi başka bir satırın altında olmayan bir satırın altına girebilir.',
     'gift_price' => 'Bir hediye en az 1 tutar.',
+    'not_declinable' => 'Bu satır reddedilemez.',
 ];

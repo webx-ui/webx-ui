@@ -15,4 +15,5 @@ return [
     'key' => 'Ogni riga di un lotto ha bisogno della sua chiave.',
     'parent' => 'Una riga può stare solo sotto una riga dello stesso lotto che non sta sotto un\'altra.',
     'gift_price' => 'Un regalo costa almeno 1.',
+    'not_declinable' => 'Questa riga non può essere rifiutata.',
 ];

@@ -15,4 +15,5 @@ return [
     'key' => 'Each line of a batch needs its own key.',
     'parent' => 'A line can go only under a line of the same batch that is not under another one.',
     'gift_price' => 'A gift line costs at least 1.',
+    'not_declinable' => 'This line cannot be declined.',
 ];

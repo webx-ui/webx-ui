@@ -15,4 +15,5 @@ return [
     'key' => 'Chaque ligne d\'un lot a besoin de sa propre clé.',
     'parent' => 'Une ligne ne peut aller que sous une ligne du même lot qui n\'est elle-même sous aucune autre.',
     'gift_price' => 'Un cadeau coûte au moins 1.',
+    'not_declinable' => 'Cette ligne ne peut pas être refusée.',
 ];

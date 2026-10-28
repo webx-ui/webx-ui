@@ -15,6 +15,7 @@ use WebxUi\Cart\Contracts\ChecksOptions;
 use WebxUi\Cart\Contracts\CurrencySource;
 use WebxUi\Cart\Models\Cart;
 use WebxUi\Cart\Models\CartItem;
+use WebxUi\Cart\Totals\Calculator;
 
 /**
  * Every write to a cart goes through here.
@@ -37,6 +38,7 @@ final class CartService
         private readonly Repository $config,
         private readonly Translator $translator,
         private readonly ConnectionInterface $db,
+        private readonly Calculator $calculator,
     ) {}
 
     /**
@@ -209,6 +211,36 @@ final class CartService
             $item->delete();
             $cart->touch();
         });
+
+        $this->handle->forget();
+    }
+
+    /**
+     * Decline a line a rule generated (§6.4): its source goes into `declined_rules` and the chain
+     * leaves it out from now on. Giving it back is the rule module's, not the cart's.
+     *
+     * @throws ModelNotFoundException|ValidationException
+     */
+    public function decline(Cart $cart, string $key, string $locale): void
+    {
+        $line = null;
+
+        foreach ($this->calculator->calculate($cart, $locale)->lines as $resolved) {
+            if ($resolved->generated() && (string) $resolved->key === $key) {
+                $line = $resolved;
+            }
+        }
+
+        if ($line === null || $line->source === null) {
+            throw (new ModelNotFoundException)->setModel(CartItem::class, [$key]);
+        }
+
+        if (! $line->declinable) {
+            throw ValidationException::withMessages(['id' => [$this->word('not_declinable', $locale)]]);
+        }
+
+        $cart->declined_rules = array_values(array_unique([...$cart->declinedRules(), $line->source]));
+        $cart->save();
 
         $this->handle->forget();
     }

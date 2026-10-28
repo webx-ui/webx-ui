@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace WebxUi\Cart;
 
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Http\Events\RequestHandled;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Cart\Console\PruneCommand;
@@ -47,6 +50,15 @@ class CartServiceProvider extends ServiceProvider
     {
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-cart');
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-cart');
+        $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+
+        // Writes per IP a minute: a script gone round in circles, not a visitor, hits it.
+        RateLimiter::for('webx-cart', function (Request $request): Limit {
+            $perMinute = $this->app->make('config')->get('webx-cart.throttle');
+
+            return Limit::perMinute(is_numeric($perMinute) ? max(1, (int) $perMinute) : 60)->by((string) $request->ip());
+        });
 
         // What one request remembered of the visitor's cart is not the next one's.
         Event::listen(RequestHandled::class, function (): void {

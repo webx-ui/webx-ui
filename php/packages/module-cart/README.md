@@ -85,6 +85,19 @@ language's: `"2 500,00 €"` for every visitor.
 `count()`, `isEmpty()` and `has($type, $ref)` cost no query without the cookie and one with it.
 `cart()->state()` is the full count.
 
+A buy button — a form with `@csrf`, so it works without JavaScript:
+
+```blade
+<x-webx-cart::add type="shop.product" :ref="$product->id">Buy</x-webx-cart::add>
+```
+
+## The API
+
+`GET /api/cart`, `POST /api/cart/items` (a batch), `PATCH` and `DELETE /api/cart/items/{id}`,
+`DELETE /api/cart`; every answer is the whole state. The `web` group, CSRF and a throttle on
+writes; a line of another cart is 404. The format and the guide: `apps/docs/guide/cart.md` in the
+monorepo.
+
 ## Housekeeping
 
 `php artisan webx:cart:prune` deletes carts untouched for `webx-cart.prune_after_days` (60); it is

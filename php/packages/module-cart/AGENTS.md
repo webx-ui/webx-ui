@@ -3,7 +3,8 @@
 A guest cart. Lines live in the database; the visitor is known by a token in an httpOnly cookie.
 What a line holds and what it costs **now** the cart asks the owner of the record through the
 `Purchasable` contract; it knows no table of any other module. Totals are a chain other modules
-plug into. No page, no panel section: `cart()` for Blade, and (later stages) a JSON API and a widget.
+plug into. No page, no panel section: a JSON API, `cart()` and a buy button for Blade, and (later
+stages) MCP and a widget.
 
 ## What it owns
 
@@ -31,6 +32,14 @@ plug into. No page, no panel section: `cart()` for Blade, and (later stages) a J
   `parent` for a bundle), `update()`, `remove()`, `clear()`. A refusal is a `ValidationException`.
 - **`cart()`** (`WebxUi\Cart\CartHandle`, facade `WebxUi\Cart\Facades\Cart`): `count()`,
   `isEmpty()`, `has($type, $ref)` — no query without a cookie, one with it — and `state()`.
+- **JSON API** (`routes/web.php`, `Http\CartController`, prefix `webx-cart.path`): `GET /api/cart`,
+  `POST /api/cart/items` (a batch), `PATCH|DELETE /api/cart/items/{id}`, `DELETE /api/cart`. Every
+  answer is `CartState::toArray()`; the `web` group (CSRF), `throttle:webx-cart` on writes,
+  `Cache-Control: no-store` and `Vary: Cookie` (`Http\KeepPrivate`). A request that does not ask
+  for JSON is a form: redirect back with the `webx-cart` flash. A line of another cart is 404;
+  a generated line's key (`rule#12:0`) declines it (`CartService::decline()`).
+- **The buy button** `<x-webx-cart::add type="…" :ref="…" />`: a form with `@csrf` around a
+  `button.webx-cart-add` (`is-in-cart` from `cart()->has()`, `data-webx-cart-add`, `-qty`).
 - **Command** `webx:cart:prune [--days=] [--dry-run]`, on the schedule daily.
 - **Doctor**: a line when the site has no currency (the cart then refuses every write).
 
@@ -45,6 +54,8 @@ plug into. No page, no panel section: `cart()` for Blade, and (later stages) a J
 | The cookie's name or lifetime         | `WEBX_CART_COOKIE`, `webx-cart.cookie.days`                                                |
 | Keep carts longer, or never prune     | `webx-cart.prune_after_days` — a number of days, or `null`                                 |
 | Limits                                | `webx-cart.batch_max`, `webx-cart.qty_max`, `webx-cart.lines_max`                          |
+| Another prefix of the API             | `WEBX_CART_PATH`; `webx-cart.throttle` — writes a minute per IP                            |
+| A buy button in a view                | `<x-webx-cart::add type="catalog.product" :ref="$product->id">Buy</x-webx-cart::add>`      |
 | The counter in the header             | `<span data-webx-cart-count>{{ cart()->count() }}</span>`                                  |
 | Other words of errors and warnings    | `php artisan vendor:publish --tag=webx-cart-lang`                                          |
 | The config file                       | `php artisan vendor:publish --tag=webx-cart-config`                                        |
@@ -69,6 +80,8 @@ if (class_exists(\WebxUi\Cart\Purchasables::class)) {
 - Do not use floats for money. `Money::toMinor()` reads a decimal string.
 - Do not ask a provider per line. `resolve()` takes a batch; the calculator asks once a type.
 - Do not give a generated line a price of 0: the constructor refuses it. A gift costs at least 1.
+- Do not write `<x-webx-cart::add>` in a view that must compile without the cart: Blade looks a
+  component tag up at compile time. Use `<x-dynamic-component component="webx-cart::add">`.
 - Do not show or log the cart's token. The database keeps only its hash.
 
 ## Check your work
@@ -77,11 +90,12 @@ if (class_exists(\WebxUi\Cart\Purchasables::class)) {
 - `php artisan webx:cart:prune --dry-run` counts the carts it would delete.
 - In a template, `cart()->state()->toArray()` shows your lines with `available: true` and their
   live price; a deleted record shows `gone: true` with its snapshot name.
+- `curl -s https://<site>/api/cart` answers an empty state and sets no cookie.
 - `vendor/bin/phpunit vendor/webx-ui/module-cart/tests` in the monorepo — the batch, the bundle,
   the chain and the formats.
 
 ## Read more
 
-- [README.md](README.md) in this directory.
+- [README.md](README.md) in this directory; the guide: https://github.com/webx-ui/webx-ui/blob/main/apps/docs/guide/cart.md
 - Specification: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_CART.md
 - The commerce map: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_COMMERCE.md

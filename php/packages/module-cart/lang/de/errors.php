@@ -15,4 +15,5 @@ return [
     'key' => 'Jede Position eines Pakets braucht einen eigenen Schlüssel.',
     'parent' => 'Eine Position kann nur unter einer Position desselben Pakets stehen, die selbst unter keiner anderen steht.',
     'gift_price' => 'Ein Geschenk kostet mindestens 1.',
+    'not_declinable' => 'Diese Position kann nicht abgelehnt werden.',
 ];

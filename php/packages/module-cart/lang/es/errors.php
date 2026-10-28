@@ -15,4 +15,5 @@ return [
     'key' => 'Cada línea de un lote necesita su propia clave.',
     'parent' => 'Una línea solo puede ir bajo una línea del mismo lote que no esté bajo otra.',
     'gift_price' => 'Un regalo cuesta al menos 1.',
+    'not_declinable' => 'No se puede rechazar esta línea.',
 ];

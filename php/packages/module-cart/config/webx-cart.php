@@ -20,6 +20,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | API
+    |--------------------------------------------------------------------------
+    |
+    | The prefix of the JSON API (`GET /api/cart`, `POST /api/cart/items`, …).
+    | A route, so `routing` never hands the address to a page. Writes are
+    | throttled per IP: this many a minute.
+    |
+    */
+
+    'path' => env('WEBX_CART_PATH', 'api/cart'),
+
+    'throttle' => 60,
+
+    /*
+    |--------------------------------------------------------------------------
     | Cookie
     |--------------------------------------------------------------------------
     |
