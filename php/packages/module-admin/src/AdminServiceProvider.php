@@ -66,6 +66,7 @@ use WebxUi\Admin\History\HistoryTypes;
 use WebxUi\Admin\History\Journal;
 use WebxUi\Admin\History\Mcp\HistoryModule;
 use WebxUi\Admin\Http\Middleware\HistorySource;
+use WebxUi\Admin\Http\Middleware\RequireVisitor;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\Links\LinkUrls;
 use WebxUi\Admin\Links\RoutingSiteUrls;
@@ -107,6 +108,8 @@ use WebxUi\Admin\Support\Parts;
 use WebxUi\Admin\Uploads\FreeSpace;
 use WebxUi\Admin\Uploads\UploadPurposes;
 use WebxUi\Admin\Uploads\Uploads;
+use WebxUi\Admin\Visitors\NullVisitors;
+use WebxUi\Admin\Visitors\Visitors;
 use WebxUi\Cache\CacheGroups;
 use WebxUi\Cache\CacheServiceProvider;
 use WebxUi\Localization\Locales;
@@ -133,6 +136,10 @@ class AdminServiceProvider extends ServiceProvider
 
         // The drafted records an open editor keeps watch over, and who has them open.
         $this->app->singleton(EditedRecords::class);
+
+        // Who is signed in on the site: nobody, until a visitors module binds its own. `If`, so
+        // that a module whose provider happens to run first keeps its binding.
+        $this->app->singletonIf(Visitors::class, NullVisitors::class);
         $this->app->singleton(Presence::class);
 
         // Which records have notes. A register rather than the morph map alone, because the
@@ -330,6 +337,7 @@ class AdminServiceProvider extends ServiceProvider
         $this->registerCategoryMacros();
         $this->registerPartDirective();
         $this->registerShortcodeDirectives();
+        $this->registerVisitorDirectives();
         $this->registerBackupSchedule();
         $this->registerHistorySchedule();
         $this->registerUploadsSchedule();
@@ -342,6 +350,7 @@ class AdminServiceProvider extends ServiceProvider
 
         $router = $this->app->make('router');
         $router->aliasMiddleware('webx.history', HistorySource::class);
+        $router->aliasMiddleware('webx.visitor', RequireVisitor::class);
 
         // What every module's own panel API sits behind. One name rather than a list each
         // module copies: the copies were how `webx.history` went missing from them, and saves
@@ -653,6 +662,17 @@ class AdminServiceProvider extends ServiceProvider
         Blade::directive('shortcodes', static fn (string $expression): string => sprintf('<?php echo app(\%s::class)->html(%s); ?>', Shortcodes::class, $expression));
         Blade::directive('shortcodesIn', static fn (string $expression): string => sprintf('<?php echo app(\%s::class)->htmlIn(%s); ?>', Shortcodes::class, $expression));
         Blade::directive('shortcodesPlain', static fn (string $expression): string => sprintf('<?php echo e(app(\%s::class)->plain(%s)); ?>', Shortcodes::class, $expression));
+    }
+
+    /**
+     * `@visitor … @endvisitor` and `@visitorVerified … @endvisitorVerified` (both with `@else`) —
+     * for a part of a page that is not cached whole: a cached page prints nothing personal, and a
+     * visitors module shows its parts by a script instead.
+     */
+    private function registerVisitorDirectives(): void
+    {
+        Blade::if('visitor', fn (): bool => $this->app->make(Visitors::class)->current() !== null);
+        Blade::if('visitorVerified', fn (): bool => $this->app->make(Visitors::class)->current()?->verified === true);
     }
 
     /**
