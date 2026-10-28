@@ -1,6 +1,6 @@
 {
   "name": "@webx-ui/module-users",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Customers in the WebX UI admin panel: the visitors who register and sign in on the site — the list with its filters, the card with the fields of the site, the groups and the ways to sign in, the customer groups, the settings of the registration and the keys of the social networks.",
   "license": "MIT",
   "type": "module",

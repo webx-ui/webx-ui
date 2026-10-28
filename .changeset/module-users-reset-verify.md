@@ -1,5 +1,0 @@
----
-'@webx-ui/php': minor
----
-
-`webx-ui/module-users`: the password reset and the confirmation of the address. «Forgot your password?» at `/account/forgot` answers the same for every address and sends a one-time link that lives an hour (table `users_password_resets`, the token kept as its hash); the new password ends the other sessions, and on an unconfirmed account confirms the address and unlinks its networks. The registration sends the letter of confirmation (a signed link, 72 hours) that confirms without signing in; «Send again» with its limit; `webx.visitor:verified` shows «Confirm your e-mail». The banner `users.verify-banner` comes first in `main` of the layout, printed hidden on cached pages and shown by `users.js` by the cookie `webx_visitor`; `/account/state` gives the masked address. A new sign-in address moves only through a link to it, with the current password, and the old address is told. Letters are queued Mailables in the visitor's language; `webx:users:prune` deletes the links out of date daily; `webx:doctor` warns when the letters of visitors can only reach a log.
