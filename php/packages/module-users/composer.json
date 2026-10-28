@@ -65,7 +65,15 @@
             ]
         },
         "webx": {
-            "module": "users"
+            "module": "users",
+            "npm": {
+                "@webx-ui/module-users": "^0.1.0"
+            },
+            "panel": {
+                "import": "import { users } from '@webx-ui/module-users'",
+                "style": "@webx-ui/module-users/style.css",
+                "register": "...users()"
+            }
         }
     },
     "config": {

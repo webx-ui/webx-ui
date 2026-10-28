@@ -9,6 +9,7 @@ use Illuminate\Contracts\Auth\Factory as Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
 use WebxUi\Localization\Locales;
+use WebxUi\Settings\Settings;
 use WebxUi\Users\Models\User;
 
 /**
@@ -26,9 +27,15 @@ final readonly class SignIn
         private Locales $locales,
     ) {}
 
+    /**
+     * The setting of the panel (`users.registration`, §16.3) where the site keeps settings and
+     * an administrator saved one, the config otherwise.
+     */
     public static function registrationOpen(): bool
     {
-        return config('webx-users.registration', 'open') !== 'closed';
+        $stored = app()->bound(Settings::class) ? app(Settings::class)->raw()['users.registration'] ?? null : null;
+
+        return (is_string($stored) ? $stored : config('webx-users.registration', 'open')) !== 'closed';
     }
 
     public function in(Request $request, User $user, bool $remember = false): void

@@ -42,6 +42,7 @@ final readonly class DeleteAccount
             // The foreign keys cascade on a database that keeps them; these do it everywhere.
             $this->db->table('users_identities')->where('user_id', $id)->delete();
             $this->db->table(ResetLinks::TABLE)->where('user_id', $id)->delete();
+            $this->db->table('users_group_user')->where('user_id', $id)->delete();
             $user->delete();
         });
 

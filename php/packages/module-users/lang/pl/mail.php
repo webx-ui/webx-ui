@@ -17,6 +17,12 @@ return [
         'button' => 'Ustaw nowe hasło',
         'expires' => 'Link działa przez :minutes min i tylko raz.',
     ],
+    'invite' => [
+        'subject' => 'Twoje konto w :site',
+        'text' => 'Utworzono dla Ciebie konto w :site: logujesz się adresem :email. Aby zacząć, ustaw hasło.',
+        'button' => 'Ustaw hasło',
+        'expires' => 'Link działa przez :days dni i tylko raz.',
+    ],
     'password-changed' => [
         'subject' => 'Hasło w :site zostało zmienione',
         'text' => 'Hasło do Twojego konta w :site zostało właśnie zmienione.',

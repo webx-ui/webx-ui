@@ -6,8 +6,7 @@ their own guard `site`, sign-in by e-mail and social networks, and the panel's s
 permissions, no way into `/cms` (administrators are `webx-ui/module-auth`). Nothing of a shop is
 in here — shop modules plug into the seam, the module knows none of them.
 
-Built in steps: the panel section «Customers» and the agent tools come later; what is listed
-here exists now.
+Built in steps: the agent tools (`users_*`) come later; what is listed here exists now.
 
 ## What it owns
 
@@ -83,12 +82,19 @@ here exists now.
   `FieldValues` checks them alike everywhere; `FieldCatalog` — panel nodes and `users://catalog`;
   `Requirements` — `users.fields.<name>` `hidden`/`optional`/`required` (also the names and phone);
   `webx:users:index-field <name>` — generated `extra_<name>` with an index, used by `unique`.
-- **Dictionary** `webx-users` in ten languages: `module` («Customers»), `auth`, `account`, `mail`.
+- **Panel** «Customers» (§16, `Panel\*`, `routes/api.php` under `/api/cms/users`): group `users`, entries
+  `users` / `users-groups` / `users-settings`. `UserList` (search, filters, groups and links in one query a
+  page), `UserForm` — screen `users.form` (`tabs`, `project-fields` ← `FieldCatalog`, `groups`, `summary`
+  with `wx-users-state`/`wx-users-ways`, `history`); no password ever, a new visitor is invited (`invite`
+  link, 7 days, `Mail\Invitation`). Groups — `users_groups`/`users_group_user` (`Models\Group`). Settings — screen `users.settings` (`users.registration`, `users.fields.*`) and a card per provider, a secret
+  only «set». Journal types `users.user`, `users.group`, `users.provider` (password and secret masked).
+- **Dictionary** `webx-users` in ten languages: `module`, `auth`, `account`, `mail`, `screen`, `panel`, `errors`.
 
 ### Permissions
 
-None yet: every route is the visitor's own door, open with its limit in `tests/AccessCoverageTest.php`;
-`users.view` and `users.manage` come with the panel section.
+`users.view` — the list, the card, the groups (personal data); `users.manage` — every write and letter, the
+groups too; `users.settings` — the settings alone. Only «Administrator» by default. `Panel\PanelAccessTest`;
+the site's doors are open with their limits in `tests/AccessCoverageTest.php`.
 
 ## Change it without forking
 
@@ -97,14 +103,10 @@ None yet: every route is the visitor's own door, open with its limit in `tests/A
 | Pages at another address                   | `WEBX_USERS_PREFIX` (`webx-users.prefix`, default `account`)           |
 | Registration by invitation only            | `WEBX_USERS_REGISTRATION=closed`                                       |
 | A stricter password                        | `webx-users.password_rules`: `min`, `mixed`, `numbers`, `symbols`      |
-| Other limits                               | `webx-users.throttle.*` (`sign_in`, `forgot`, `verify_minute`, …)      |
-| Links that live longer or shorter          | `webx-users.reset_minutes`, `.verify_hours`, `.email_minutes`          |
 | Other letters                              | `views/vendor/webx-users/mail/<name>.blade.php` or `components/letter` |
 | No banner, or elsewhere                    | a theme patch on `layout`: `remove` / `move` `users.verify-banner`     |
-| No «Remember me»                           | `webx-users.remember` → `false`                                        |
 | The sign-in in a narrow layout             | `webx-compositions.layouts`: `['users.auth' => 'layout.minimal']`      |
 | Another layout for the pages               | `WEBX_USERS_LAYOUT` / `WEBX_USERS_ACCOUNT_LAYOUT` — a Blade component  |
-| Other words                                | `lang/vendor/webx-users/<lang>/auth.php` (`webx-users-lang`)           |
 | Another look                               | the theme: the classes above; or `views/vendor/webx-users/*.blade.php` |
 | Know who is signed in, from another module | `app(Visitors::class)->current()` (`module-admin`), not `User`         |
 | A page only for a signed-in visitor        | the middleware `webx.visitor` of `module-admin`                        |
@@ -135,13 +137,11 @@ None yet: every route is the visitor's own door, open with its limit in `tests/A
 ## Check your work
 
 - `php artisan webx:doctor` — «Visitors: table `users` is the module's.» (a `fail` names the rows) and «letters to visitors …» (a warning: they stay in a log).
-- `php artisan route:list --path=account` — the pages, and the same behind `{webxLocale}`.
-- `/account/sign-in` and `/account/register` answer `Cache-Control: no-store, private` and
-  `X-Robots-Tag: noindex`; the forms are sent in place (the theme's widgets script).
+- `/account/sign-in`, `/account/register`: `Cache-Control: no-store, private`, `X-Robots-Tag: noindex`.
 - `vendor/bin/phpunit` in the package: `SignInTest`, `RegisterTest`, `PasswordResetTest`,
   `VerificationTest`, `EmailChangeTest`, `BannerTest`, `PruneTest`, `BoundariesTest`,
   `MigrationTest`, `SkeletonTest`, `AccessCoverageTest`, `FieldsTest`, `FieldDeclarationsTest`, `AccountTest`,
-  `SecurityTest`, `AccountThemeTest`, `SocialTest`; `resources/js/users.test.js` (vitest).
+  `SecurityTest`, `AccountThemeTest`, `SocialTest`, `Panel\*`; `resources/js/users.test.js` (vitest).
 
 ## Read more
 

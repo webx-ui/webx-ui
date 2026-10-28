@@ -8,10 +8,12 @@ use Illuminate\Auth\MustVerifyEmail as VerifiesEmail;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
+use WebxUi\Admin\History\RecordsHistory;
 use WebxUi\Admin\Screens\HasExtra;
 use WebxUi\Admin\Screens\ScreenValues;
 use WebxUi\Admin\Visitors\Visitor;
@@ -37,6 +39,8 @@ use WebxUi\Users\Fields\UserFields;
  * @property array<string, mixed>|null $extra
  * @property Carbon|null $blocked_at
  * @property Carbon|null $last_sign_in_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  * @property-read string $name
  */
 class User extends Authenticatable implements MustVerifyEmail
@@ -44,10 +48,14 @@ class User extends Authenticatable implements MustVerifyEmail
     use HasExtra {
         extra as screenExtra;
     }
+    use RecordsHistory;
     use VerifiesEmail;
 
     /** The panel's card of a visitor: a field a site patched onto it directly is kept in `extra` too. */
     public const string SCREEN = 'users.form';
+
+    /** The journal's type (§16): every change of a visitor, from the panel, an agent or the visitor. */
+    public const string TYPE = 'users.user';
 
     protected $table = 'users';
 
@@ -123,7 +131,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     protected function name(): Attribute
     {
-        return Attribute::make(get: fn (): string => $this->toVisitor()->name());
+        return Attribute::make(get: fn (): string => $this->visitor([])->name());
     }
 
     /**
@@ -134,6 +142,37 @@ class User extends Authenticatable implements MustVerifyEmail
     public function identities(): HasMany
     {
         return $this->hasMany(Identity::class);
+    }
+
+    /**
+     * The customer groups the visitor is in (§13.1): a module adds one with `attach()`.
+     *
+     * @return BelongsToMany<Group, $this>
+     */
+    public function groups(): BelongsToMany
+    {
+        return $this->belongsToMany(Group::class, 'users_group_user', 'user_id', 'group_id')->withPivot('created_at');
+    }
+
+    /**
+     * The fields the journal leaves out: a sign-in is not a change of the visitor, and the stamp
+     * of the sessions is a secret that is replaced, not edited.
+     *
+     * @return list<string>
+     */
+    public function historySkipped(): array
+    {
+        return ['last_sign_in_at', 'remember_token'];
+    }
+
+    /**
+     * A new password is written as «changed» and never as a hash.
+     *
+     * @return list<string>
+     */
+    public function historyMasked(): array
+    {
+        return ['password'];
     }
 
     public function isBlocked(): bool
@@ -150,6 +189,13 @@ class User extends Authenticatable implements MustVerifyEmail
     /** What the rest of the site knows of a visitor, through the seam of the panel (spec §4). */
     public function toVisitor(): Visitor
     {
+        // One query a visitor, the first time; a list that loaded the groups for every row asks none.
+        return $this->visitor($this->groups->pluck('code')->map(static fn (mixed $code): string => (string) $code)->values()->all());
+    }
+
+    /** @param  list<string>  $groups */
+    private function visitor(array $groups): Visitor
+    {
         return new Visitor(
             id: (int) $this->getKey(),
             email: $this->email,
@@ -158,6 +204,7 @@ class User extends Authenticatable implements MustVerifyEmail
             lastName: $this->last_name,
             phone: $this->phone,
             locale: $this->locale,
+            groups: $groups,
         );
     }
 

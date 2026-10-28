@@ -4,7 +4,7 @@
 
     Override: <layer>/views/vendor/webx-users/reset.blade.php — keep the names of the fields.
 --}}
-<x-webx-users::page :title="__('webx-users::auth.reset.title')">
+<x-webx-users::page :title="($invited ?? false) ? __('webx-users::auth.reset.invite_title') : __('webx-users::auth.reset.title')">
     <x-webx-form :action="$action" :rules="$rules" id="webx-users-reset" class="webx-account-auth__form">
         <x-webx-field type="password" name="password" :label="__('webx-users::auth.reset.password')" :hint="__('webx-users::auth.register.password_hint', ['min' => $min])" autocomplete="new-password" enterkeyhint="next" />
         <x-webx-field type="password" name="password_confirmation" :label="__('webx-users::auth.reset.confirmation')" autocomplete="new-password" enterkeyhint="go" />

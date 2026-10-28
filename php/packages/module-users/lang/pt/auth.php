@@ -39,6 +39,7 @@ return [
     ],
     'reset' => [
         'title' => 'Nova senha',
+        'invite_title' => 'Defina uma senha',
         'password' => 'Nova senha',
         'confirmation' => 'Repita a senha',
         'submit' => 'Guardar a senha',

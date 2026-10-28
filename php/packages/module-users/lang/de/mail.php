@@ -17,6 +17,12 @@ return [
         'button' => 'Neues Passwort festlegen',
         'expires' => 'Der Link gilt :minutes Minuten und nur einmal.',
     ],
+    'invite' => [
+        'subject' => 'Ihr Konto auf :site',
+        'text' => 'Für Sie wurde ein Konto auf :site angelegt: Sie melden sich mit :email an. Legen Sie ein Passwort fest, um zu beginnen.',
+        'button' => 'Passwort festlegen',
+        'expires' => 'Der Link gilt :days Tage und nur einmal.',
+    ],
     'password-changed' => [
         'subject' => 'Ihr Passwort auf :site wurde geändert',
         'text' => 'Das Passwort Ihres Kontos auf :site wurde soeben geändert.',

@@ -39,6 +39,7 @@ return [
     ],
     'reset' => [
         'title' => 'Yeni şifre',
+        'invite_title' => 'Şifre belirleyin',
         'password' => 'Yeni şifre',
         'confirmation' => 'Şifreyi tekrarlayın',
         'submit' => 'Şifreyi kaydet',

@@ -1,0 +1,130 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "users.form",
+  "model": "users-user",
+  "root": [
+    {
+      "id": "tabs",
+      "type": "wx-tabs",
+      "children": [
+        {
+          "id": "main",
+          "type": "wx-tab",
+          "label": "trans::webx-users::screen.tab-main",
+          "children": [
+            {
+              "id": "profile",
+              "type": "wx-card",
+              "label": "trans::webx-users::screen.profile",
+              "children": [
+                {
+                  "id": "names",
+                  "type": "wx-row",
+                  "children": [
+                    {
+                      "id": "first-name",
+                      "type": "wx-input",
+                      "name": "first_name",
+                      "label": "trans::webx-users::screen.first-name",
+                      "props": { "maxlength": 100, "autocomplete": "off" }
+                    },
+                    {
+                      "id": "last-name",
+                      "type": "wx-input",
+                      "name": "last_name",
+                      "label": "trans::webx-users::screen.last-name",
+                      "props": { "maxlength": 100, "autocomplete": "off" }
+                    }
+                  ]
+                },
+                {
+                  "id": "contacts",
+                  "type": "wx-row",
+                  "children": [
+                    {
+                      "id": "email",
+                      "type": "wx-input",
+                      "name": "email",
+                      "label": "trans::webx-users::screen.email",
+                      "help": "trans::webx-users::screen.email-help",
+                      "props": {
+                        "type": "email",
+                        "maxlength": 191,
+                        "required": true,
+                        "autocomplete": "off"
+                      }
+                    },
+                    {
+                      "id": "phone",
+                      "type": "wx-input",
+                      "name": "phone",
+                      "label": "trans::webx-users::screen.phone",
+                      "props": { "type": "tel", "maxlength": 32, "autocomplete": "off" }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "project-fields",
+              "type": "wx-card",
+              "label": "trans::webx-users::screen.project-fields",
+              "children": [
+                {
+                  "id": "project-fields-empty",
+                  "type": "wx-alert",
+                  "props": {
+                    "type": "info",
+                    "description": "trans::webx-users::screen.project-fields-empty"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "groups-card",
+              "type": "wx-card",
+              "label": "trans::webx-users::screen.groups",
+              "children": [
+                {
+                  "id": "groups",
+                  "type": "wx-checkbox-group",
+                  "name": "groups",
+                  "label": "trans::webx-users::screen.groups-field",
+                  "help": "trans::webx-users::screen.groups-help",
+                  "props": { "options": [] }
+                }
+              ]
+            },
+            {
+              "id": "summary",
+              "type": "wx-card",
+              "label": "trans::webx-users::screen.summary",
+              "children": [
+                { "id": "state", "type": "wx-users-state" },
+                { "id": "ways", "type": "wx-users-ways" }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "history-tab",
+          "type": "wx-tab",
+          "label": "trans::webx-users::screen.tab-history",
+          "children": [
+            {
+              "id": "history-card",
+              "type": "wx-card",
+              "children": [
+                {
+                  "id": "history",
+                  "type": "wx-history",
+                  "props": { "type": "users.user", "title": "" }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

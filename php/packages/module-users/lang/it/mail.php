@@ -17,6 +17,12 @@ return [
         'button' => 'Imposta una nuova password',
         'expires' => 'Il link vale :minutes minuti e una sola volta.',
     ],
+    'invite' => [
+        'subject' => 'Il tuo account su :site',
+        'text' => 'È stato creato per te un account su :site: accedi con :email. Imposta una password per iniziare.',
+        'button' => 'Imposta una password',
+        'expires' => 'Il link vale :days giorni e una sola volta.',
+    ],
     'password-changed' => [
         'subject' => 'La tua password su :site è stata cambiata',
         'text' => 'La password del tuo account su :site è stata appena cambiata.',

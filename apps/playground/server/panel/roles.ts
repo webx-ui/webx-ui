@@ -44,6 +44,9 @@ const VISIBLE_WITH: Record<string, string[]> = {
   'catalog-properties': ['catalog.view', 'catalog.manage'],
   'catalog-landings': ['catalog.view', 'catalog.manage'],
   regions: ['blocks.regions'],
+  users: ['users.view', 'users.manage'],
+  'users-groups': ['users.view', 'users.manage'],
+  'users-settings': ['users.settings'],
 }
 
 let current = 1

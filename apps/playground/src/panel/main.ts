@@ -33,6 +33,7 @@ import { services } from '@webx-ui/module-services'
 import { snippets } from '@webx-ui/module-snippets'
 import { tariffs } from '@webx-ui/module-tariffs'
 import { team } from '@webx-ui/module-team'
+import { users } from '@webx-ui/module-users'
 import { tasks } from '@webx-ui/module-tasks'
 import { vacancies } from '@webx-ui/module-vacancies'
 /* The opt-in typeface; the tokens themselves come in with the core stylesheet. */
@@ -92,6 +93,7 @@ const admin = createAdmin({
     ...faq(),
     ...reviews(),
     team(),
+    ...users(),
     ...recipes(),
     press(),
     banners(),

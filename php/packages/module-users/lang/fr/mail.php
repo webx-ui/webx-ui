@@ -17,6 +17,12 @@ return [
         'button' => 'Définir un nouveau mot de passe',
         'expires' => 'Le lien est valable :minutes minutes et une seule fois.',
     ],
+    'invite' => [
+        'subject' => 'Votre compte sur :site',
+        'text' => 'Un compte a été créé pour vous sur :site : vous vous connectez avec :email. Définissez un mot de passe pour commencer.',
+        'button' => 'Définir un mot de passe',
+        'expires' => 'Le lien est valable :days jours et une seule fois.',
+    ],
     'password-changed' => [
         'subject' => 'Votre mot de passe sur :site a été modifié',
         'text' => 'Le mot de passe de votre compte sur :site vient d’être modifié.',

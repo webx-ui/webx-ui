@@ -54,6 +54,8 @@ final readonly class ResetController
             'action' => $this->urls->to('reset.store', parameters: ['token' => $token]),
             'rules' => FormRules::for(self::browserRules(), self::attributes()),
             'min' => RegisterController::minimum(),
+            // The invitation of the panel (§16.2) lands on the same page under its own words.
+            'invited' => $this->links->purpose($token) === ResetLinks::INVITE,
         ]);
     }
 

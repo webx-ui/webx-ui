@@ -183,9 +183,10 @@ final class AccountTest extends TestCase
         $this->withSession($session)->get('/account/profile')->assertOk();
         Auth::forgetGuards();
 
-        // The visitor (1) — the data of a visitor is theirs and never cached (§18) — and one query
-        // of each module with a badge (the orders: 1). The profile reads nothing else.
-        $this->assertQueriesWithin(2, fn () => $this->withSession($session)->get('/account/profile')->assertOk());
+        // The visitor (1) and their groups (1, `Visitor::$groups` for the rules of a shop, §4) —
+        // the data of a visitor is theirs and never cached (§18) — and one query of each module
+        // with a badge (the orders: 1). The profile reads nothing else.
+        $this->assertQueriesWithin(3, fn () => $this->withSession($session)->get('/account/profile')->assertOk());
         Auth::forgetGuards();
         $this->assertNoRepeatedQueries(fn () => $this->withSession($session)->get('/account/security')->assertOk());
     }

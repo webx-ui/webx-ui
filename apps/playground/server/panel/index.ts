@@ -348,6 +348,22 @@ import {
   writeMember,
 } from './team'
 import {
+  findUser,
+  groupRows,
+  listUsers,
+  removeGroup as removeUserGroup,
+  removeUser,
+  saveProvider as saveUsersProvider,
+  saveUsersSettings,
+  unlinkWay,
+  userDetail,
+  userGroups,
+  usersMeta,
+  usersSettings,
+  writeGroup as writeUserGroup,
+  writeUser,
+} from './users'
+import {
   bannerDetail,
   bannerRow,
   createPlace,
@@ -475,6 +491,13 @@ function manifestOf(locale: string) {
         title: line(locale, 'webx-reviews', 'module.group'),
         icon: 'star',
         order: 600,
+      },
+      /* «Customers» (§16 of the users spec): the people, their groups, the settings. */
+      {
+        id: 'users',
+        title: line(locale, 'webx-users', 'module.title'),
+        icon: 'users',
+        order: 400,
       },
       /* After the banners (§5.2 of the tariffs spec): the heading over tariffs and their groups. */
       {
@@ -708,6 +731,34 @@ function manifestOf(locale: string) {
         icon: 'clock',
         order: 890,
         group: 'system',
+        permissions: [],
+        meta: {},
+      },
+      /* «Customers» (§16 of the users spec): three entries in the group of their own. */
+      {
+        id: 'users',
+        title: line(locale, 'webx-users', 'module.customers'),
+        icon: 'users',
+        order: 400,
+        group: 'users',
+        permissions: ['users.view', 'users.manage', 'users.settings'],
+        meta: {},
+      },
+      {
+        id: 'users-groups',
+        title: line(locale, 'webx-users', 'module.groups'),
+        icon: 'tag',
+        order: 401,
+        group: 'users',
+        permissions: [],
+        meta: {},
+      },
+      {
+        id: 'users-settings',
+        title: line(locale, 'webx-users', 'module.settings'),
+        icon: 'settings',
+        order: 402,
+        group: 'users',
         permissions: [],
         meta: {},
       },
@@ -999,6 +1050,21 @@ on('GET', '/screens/([\\w.-]+)', ({ params, locale }) => {
 
   // The networks are the site's config, patched onto the select inside the repeater (§5.4).
   if (params[0] === 'team.form') withNamedOptions(tree, 'network', networkOptions())
+
+  // The groups to tick and the site's own field, as `UsersServiceProvider` patches them (§16.2).
+  if (params[0] === 'users.form') {
+    withNamedOptions(
+      tree,
+      'groups',
+      [...userGroups]
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map((group) => ({ value: group.code, label: group.name })),
+    )
+    usersSiteField(tree)
+  }
+
+  // A row «hidden / optional / required» per field the visitor fills in (§10.5).
+  if (params[0] === 'users.settings') usersRequirementRows(tree, locale)
 
   // The looks of a button, from the config onto the select inside the repeater (§5.3).
   if (params[0] === 'banners.form') withNamedOptions(tree, 'variant', variantOptions())
@@ -3283,6 +3349,198 @@ function memberRecord(id: string) {
   const record = findMember(Number(id))
 
   if (record === null || record.deleted_at !== null) throw new HttpFailure(404, 'No such person.')
+
+  return record
+}
+
+/* ------------------------------------------------------------------------------ users ----- */
+
+/*
+ * «Customers» (§16 of the users spec): the list in pages, the card, the groups, the settings.
+ * The demo site declares one field of its own, `club-card`, shown on the card.
+ */
+type ScreenNode = {
+  id?: string
+  type?: string
+  name?: string
+  props?: Record<string, unknown>
+  children?: ScreenNode[]
+  [key: string]: unknown
+}
+
+function findNode(nodes: ScreenNode[], id: string): ScreenNode | null {
+  for (const node of nodes) {
+    if (node.id === id) return node
+
+    const inner = findNode(node.children ?? [], id)
+
+    if (inner) return inner
+  }
+
+  return null
+}
+
+function usersSiteField(tree: unknown[]): void {
+  const card = findNode(tree as ScreenNode[], 'project-fields')
+
+  if (!card) return
+
+  card.children = [
+    {
+      id: 'field-club-card',
+      type: 'wx-input',
+      name: 'club-card',
+      label: 'Клубная карта',
+      help: 'Номер на пластиковой карте клуба: один на клиента.',
+    },
+  ]
+}
+
+function usersRequirementRows(tree: unknown[], locale: string): void {
+  const card = findNode(tree as ScreenNode[], 'fields-card')
+
+  if (!card) return
+
+  const options = ['hidden', 'optional', 'required'].map((value) => ({
+    value,
+    label: line(locale, 'webx-users', `screen.requirement-${value}`),
+  }))
+
+  for (const name of ['first-name', 'last-name', 'phone']) {
+    card.children = [
+      ...(card.children ?? []),
+      {
+        id: `require-${name}`,
+        type: 'wx-segmented',
+        name: `users.fields.${name.replace('-', '_')}`,
+        label: line(locale, 'webx-users', `screen.${name}`),
+        default: 'optional',
+        props: { options },
+      },
+    ]
+  }
+}
+
+on('GET', '/users', ({ query }) => listUsers(query))
+on('GET', '/users/meta', () => ({ data: usersMeta() }))
+
+on('POST', '/users', ({ body }) => {
+  const written = writeUser(null, (body.values ?? {}) as Record<string, unknown>)
+
+  if ('errors' in written) throw new HttpFailure(422, 'Invalid', undefined, written.errors)
+
+  return { data: userDetail(written.record) }
+})
+
+on('GET', '/users/(\\d+)', ({ params }) => ({ data: userDetail(userRecord(params[0])) }))
+
+on('PUT', '/users/(\\d+)', ({ params, body }) => {
+  const written = writeUser(userRecord(params[0]), (body.values ?? {}) as Record<string, unknown>)
+
+  if ('errors' in written) throw new HttpFailure(422, 'Invalid', undefined, written.errors)
+
+  return { data: userDetail(written.record) }
+})
+
+on('GET', '/users/(\\d+)/warnings', ({ params }) => {
+  userRecord(params[0])
+
+  return { data: { warnings: [] } }
+})
+
+on('DELETE', '/users/(\\d+)', ({ params }) => {
+  removeUser(userRecord(params[0]))
+
+  return { data: null }
+})
+
+on('POST', '/users/(\\d+)/(block|unblock|verify)', ({ params }) => {
+  const record = userRecord(params[0])
+  const stamp = new Date().toISOString().replace(/\.\d+Z$/, '+00:00')
+
+  if (params[1] === 'block') record.blocked_at ??= stamp
+  if (params[1] === 'unblock') record.blocked_at = null
+  if (params[1] === 'verify') record.verified_at ??= stamp
+
+  return { data: userDetail(record) }
+})
+
+on('POST', '/users/(\\d+)/(reset-link|verification)', ({ params }) => {
+  const record = userRecord(params[0])
+
+  if (params[1] === 'reset-link' && record.blocked_at !== null) {
+    throw new HttpFailure(422, 'Invalid', undefined, {
+      email: ['The customer is blocked: unblock them first.'],
+    })
+  }
+
+  if (params[1] === 'verification' && record.verified_at !== null) {
+    throw new HttpFailure(422, 'Invalid', undefined, {
+      email: ['The address is confirmed already.'],
+    })
+  }
+
+  return { data: { sent: true } }
+})
+
+on('DELETE', '/users/(\\d+)/ways/([\\w-]+)', ({ params }) => {
+  const record = userRecord(params[0])
+  const refused = unlinkWay(record, params[1])
+
+  if (refused) throw new HttpFailure(422, refused, undefined, { provider: [refused] })
+
+  return { data: userDetail(record) }
+})
+
+on('GET', '/users/groups', () => ({ data: groupRows() }))
+
+on('POST', '/users/groups', ({ body }) => {
+  const written = writeUserGroup(null, body)
+
+  if ('errors' in written) throw new HttpFailure(422, 'Invalid', undefined, written.errors)
+
+  return { data: groupRows().find((row) => row.id === written.record.id) }
+})
+
+on('PUT', '/users/groups/(\\d+)', ({ params, body }) => {
+  const written = writeUserGroup(userGroupRecord(params[0]), body)
+
+  if ('errors' in written) throw new HttpFailure(422, 'Invalid', undefined, written.errors)
+
+  return { data: groupRows().find((row) => row.id === written.record.id) }
+})
+
+on('DELETE', '/users/groups/(\\d+)', ({ params }) => {
+  removeUserGroup(userGroupRecord(params[0]))
+
+  return { data: null }
+})
+
+on('GET', '/users/settings', () => ({ data: usersSettings() }))
+on('PUT', '/users/settings', ({ body }) => ({
+  data: saveUsersSettings((body.values ?? {}) as Record<string, unknown>),
+}))
+
+on('PUT', '/users/settings/providers/([\\w-]+)', ({ params, body }) => {
+  const answer = saveUsersProvider(params[0], body)
+
+  if (answer === null) throw new HttpFailure(404, 'Not found.')
+
+  return { data: answer }
+})
+
+function userRecord(id: string) {
+  const record = findUser(Number(id))
+
+  if (record === null) throw new HttpFailure(404, `Customer ${id} does not exist.`)
+
+  return record
+}
+
+function userGroupRecord(id: string) {
+  const record = userGroups.find((group) => group.id === Number(id))
+
+  if (!record) throw new HttpFailure(404, 'No such group.')
 
   return record
 }

@@ -17,6 +17,12 @@ return [
         'button' => 'Definir uma nova senha',
         'expires' => 'O link é válido durante :minutes minutos e apenas uma vez.',
     ],
+    'invite' => [
+        'subject' => 'A sua conta em :site',
+        'text' => 'Foi criada uma conta para si em :site: acede com :email. Defina uma senha para começar.',
+        'button' => 'Definir uma senha',
+        'expires' => 'O link é válido durante :days dias e apenas uma vez.',
+    ],
     'password-changed' => [
         'subject' => 'A sua senha em :site foi alterada',
         'text' => 'A senha da sua conta em :site acabou de ser alterada.',

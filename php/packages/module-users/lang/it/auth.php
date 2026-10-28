@@ -39,6 +39,7 @@ return [
     ],
     'reset' => [
         'title' => 'Nuova password',
+        'invite_title' => 'Imposta una password',
         'password' => 'Nuova password',
         'confirmation' => 'Ripeti la password',
         'submit' => 'Salva la password',

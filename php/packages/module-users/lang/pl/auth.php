@@ -39,6 +39,7 @@ return [
     ],
     'reset' => [
         'title' => 'Nowe hasło',
+        'invite_title' => 'Ustaw hasło',
         'password' => 'Nowe hasło',
         'confirmation' => 'Powtórz hasło',
         'submit' => 'Zapisz hasło',

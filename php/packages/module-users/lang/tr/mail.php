@@ -17,6 +17,12 @@ return [
         'button' => 'Yeni şifre belirle',
         'expires' => 'Bağlantı :minutes dakika ve yalnızca bir kez geçerlidir.',
     ],
+    'invite' => [
+        'subject' => ':site üzerindeki hesabınız',
+        'text' => ':site üzerinde sizin için bir hesap oluşturuldu: :email ile giriş yaparsınız. Başlamak için bir şifre belirleyin.',
+        'button' => 'Şifre belirle',
+        'expires' => 'Bağlantı :days gün ve yalnızca bir kez geçerlidir.',
+    ],
     'password-changed' => [
         'subject' => ':site şifreniz değiştirildi',
         'text' => ':site üzerindeki hesabınızın şifresi az önce değiştirildi.',

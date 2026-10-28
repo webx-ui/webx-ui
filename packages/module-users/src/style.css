@@ -1,0 +1,2 @@
+/* The sections' styles are scoped to their components; this file is the package's stylesheet
+   entry, which `extra.webx.panel.style` names, so a site imports it like every other module's. */

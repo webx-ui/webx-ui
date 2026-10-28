@@ -66,6 +66,21 @@ final readonly class ResetLinks
         return $user instanceof User && ! $user->isBlocked() ? $user : null;
     }
 
+    /** What a live token was issued for — `reset` or `invite` — or null when it is not live. */
+    public function purpose(string $token): ?string
+    {
+        if ($token === '' || strlen($token) > 128) {
+            return null;
+        }
+
+        $purpose = $this->db->table(self::TABLE)
+            ->where('token_hash', self::hash($token))
+            ->where('expires_at', '>', Date::now())
+            ->value('purpose');
+
+        return is_string($purpose) ? $purpose : null;
+    }
+
     /** Gone: used, the password changed some other way, the address moved (spec §3). */
     public function forget(User|int $user): void
     {

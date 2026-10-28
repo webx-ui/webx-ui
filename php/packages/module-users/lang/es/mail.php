@@ -17,6 +17,12 @@ return [
         'button' => 'Crear una nueva contraseña',
         'expires' => 'El enlace funciona durante :minutes minutos y una sola vez.',
     ],
+    'invite' => [
+        'subject' => 'Tu cuenta en :site',
+        'text' => 'Se ha creado una cuenta para ti en :site: inicias sesión con :email. Crea una contraseña para empezar.',
+        'button' => 'Crear una contraseña',
+        'expires' => 'El enlace funciona durante :days días y una sola vez.',
+    ],
     'password-changed' => [
         'subject' => 'Tu contraseña en :site ha cambiado',
         'text' => 'La contraseña de tu cuenta en :site se acaba de cambiar.',

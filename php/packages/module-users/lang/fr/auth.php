@@ -39,6 +39,7 @@ return [
     ],
     'reset' => [
         'title' => 'Nouveau mot de passe',
+        'invite_title' => 'Définir un mot de passe',
         'password' => 'Nouveau mot de passe',
         'confirmation' => 'Répétez le mot de passe',
         'submit' => 'Enregistrer le mot de passe',

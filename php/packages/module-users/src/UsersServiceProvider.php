@@ -14,6 +14,9 @@ use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Doctor\DoctorChecks;
+use WebxUi\Admin\History\HistoryTypes;
+use WebxUi\Admin\ModuleRegistry;
+use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Visitors\Visitors;
 use WebxUi\Compositions\Compositions;
 use WebxUi\Users\Account\AccountMenu;
@@ -26,9 +29,16 @@ use WebxUi\Users\Console\PruneCommand;
 use WebxUi\Users\Doctor\FieldsCheck;
 use WebxUi\Users\Doctor\MailCheck;
 use WebxUi\Users\Doctor\UsersTableCheck;
+use WebxUi\Users\Fields\FieldCatalog;
 use WebxUi\Users\Fields\UserFields;
 use WebxUi\Users\Http\TrackVisitor;
+use WebxUi\Users\Models\Group;
+use WebxUi\Users\Models\ProviderSettings;
 use WebxUi\Users\Models\User;
+use WebxUi\Users\Panel\GroupsModule;
+use WebxUi\Users\Panel\SettingsModule;
+use WebxUi\Users\Panel\SettingsScreen;
+use WebxUi\Users\Panel\UsersModule;
 use WebxUi\Users\Social\FacebookProvider;
 use WebxUi\Users\Social\GoogleProvider;
 use WebxUi\Users\Social\ProviderKeys;
@@ -80,6 +90,11 @@ class UsersServiceProvider extends ServiceProvider
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-users');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-users');
         $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+        $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
+
+        $this->registerPanel();
+        $this->registerScreens();
+        $this->registerHistory();
 
         $this->callAfterResolving(AccountMenu::class, static function (AccountMenu $menu): void {
             $menu->register(new AccountSection(
@@ -138,6 +153,86 @@ class UsersServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../resources/views' => resource_path('views/vendor/webx-users'),
         ], 'webx-users-views');
+    }
+
+    /**
+     * «Customers» (spec §16, decision 20): three entries in a menu group of their own — the
+     * people, the groups, the settings. The group is added to the panel's config at boot, as a
+     * site that published `webx-admin.php` keeps its own copy of the list.
+     */
+    private function registerPanel(): void
+    {
+        $config = $this->app->make('config');
+        /** @var array<string, mixed> $groups */
+        $groups = (array) $config->get('webx-admin.groups', []);
+
+        if (! array_key_exists(UsersModule::GROUP, $groups)) {
+            $config->set('webx-admin.groups', [
+                ...$groups,
+                UsersModule::GROUP => ['title' => 'webx-users::module.title', 'icon' => 'users', 'order' => 400],
+            ]);
+        }
+
+        $modules = $this->app->make(ModuleRegistry::class);
+
+        foreach ([UsersModule::class, GroupsModule::class, SettingsModule::class] as $module) {
+            $modules->register($this->app->make($module));
+        }
+    }
+
+    /**
+     * The card of a visitor and the settings, each completed when its tree is built: the groups
+     * to tick, the site's fields with the place `panel` in `project-fields` (§10.4), a row of
+     * «required» for every field the visitor fills in.
+     */
+    private function registerScreens(): void
+    {
+        $screens = $this->app->make(ScreenRegistry::class);
+
+        $screens->register(User::SCREEN, __DIR__.'/../resources/screens/form.json');
+        $screens->extend(User::SCREEN, function (): array {
+            $patch = [['op' => 'set', 'target' => 'groups', 'props' => ['options' => Group::query()->orderBy('name')->get(['code', 'name'])->map(
+                static fn (Group $group): array => ['value' => $group->code, 'label' => $group->name],
+            )->all()]]];
+            $nodes = $this->app->make(FieldCatalog::class)->nodes();
+
+            if ($nodes !== []) {
+                $patch[] = ['op' => 'remove', 'target' => 'project-fields-empty'];
+            }
+
+            foreach ($nodes as $node) {
+                $patch[] = ['op' => 'add', 'target' => FieldCatalog::CARD, 'node' => $node];
+            }
+
+            return $patch;
+        });
+
+        $screens->register(SettingsScreen::NAME, __DIR__.'/../resources/screens/settings.json');
+        $screens->extend(SettingsScreen::NAME, fn (): array => $this->app->make(SettingsScreen::class)->patch());
+    }
+
+    /** Who changed which visitor, group and provider; a secret and a password as a mask (§16). */
+    private function registerHistory(): void
+    {
+        $types = $this->app->make(HistoryTypes::class);
+        $read = [UsersModule::VIEW, UsersModule::MANAGE];
+
+        $fields = [];
+
+        foreach (['email', 'first_name', 'last_name', 'phone', 'email_verified_at', 'blocked_at', 'password', 'locale', 'extra'] as $field) {
+            $fields[$field] = 'webx-users::screen.history-'.str_replace('_', '-', $field);
+        }
+
+        $types->register(User::TYPE, User::class, fields: $fields, permission: $read, module: UsersModule::ID, label: 'webx-users::screen.history-user');
+        $types->register(Group::TYPE, Group::class, fields: [
+            'code' => 'webx-users::screen.group-code',
+            'name' => 'webx-users::screen.group-name',
+        ], permission: $read, module: UsersModule::ID, label: 'webx-users::screen.history-group');
+        $types->register(ProviderSettings::TYPE, ProviderSettings::class, fields: [
+            'enabled' => 'webx-users::screen.provider-enabled',
+            'options' => 'webx-users::screen.history-options',
+            'credentials' => 'webx-users::screen.history-credentials',
+        ], permission: [UsersModule::SETTINGS], module: UsersModule::ID, label: 'webx-users::screen.history-provider');
     }
 
     /**

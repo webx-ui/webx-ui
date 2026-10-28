@@ -12,7 +12,8 @@ use WebxUi\Users\Http\KeepPrivate;
  * Every route of the module is the visitor's own door, open by design (spec §15): named here with
  * the reason and the limit that stands in front of it. None is behind the panel's guard, every one
  * is in the web group (the session, CSRF) and kept out of every cache. A new route fails here
- * until somebody says why it may be open.
+ * until somebody says why it may be open. The panel's routes are another door, held by
+ * {@see PanelAccessTest}.
  */
 final class AccessCoverageTest extends TestCase
 {
@@ -58,7 +59,9 @@ final class AccessCoverageTest extends TestCase
 
         foreach ($this->app->make('router')->getRoutes()->getRoutes() as $route) {
             /** @var Route $route */
-            if (! str_starts_with(ltrim($route->getActionName(), '\\'), 'WebxUi\\Users\\')) {
+            $action = ltrim($route->getActionName(), '\\');
+
+            if (! str_starts_with($action, 'WebxUi\\Users\\') || str_starts_with($action, 'WebxUi\\Users\\Http\\Controllers\\Panel\\')) {
                 continue;
             }
 

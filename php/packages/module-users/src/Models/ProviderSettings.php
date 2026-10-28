@@ -6,6 +6,7 @@ namespace WebxUi\Users\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
+use WebxUi\Admin\History\RecordsHistory;
 
 /**
  * The keys of one social network as an administrator filled them in (spec §3 `users_providers`).
@@ -22,6 +23,11 @@ use Illuminate\Support\Carbon;
  */
 class ProviderSettings extends Model
 {
+    use RecordsHistory;
+
+    /** The journal's type (§16): the secret as «replaced», never its value. */
+    public const string TYPE = 'users.provider';
+
     public const null CREATED_AT = null;
 
     protected $table = 'users_providers';
@@ -35,6 +41,14 @@ class ProviderSettings extends Model
     protected $fillable = ['key', 'enabled', 'options', 'credentials'];
 
     protected $hidden = ['credentials'];
+
+    /**
+     * @return list<string>
+     */
+    public function historyMasked(): array
+    {
+        return ['credentials'];
+    }
 
     /** @return array<string, string> */
     protected function casts(): array

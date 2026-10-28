@@ -17,6 +17,12 @@ return [
         'button' => 'Set a new password',
         'expires' => 'The link works for :minutes minutes and only once.',
     ],
+    'invite' => [
+        'subject' => 'Your account on :site',
+        'text' => 'An account on :site has been made for you: you sign in with :email. Set a password to start.',
+        'button' => 'Set a password',
+        'expires' => 'The link works for :days days and only once.',
+    ],
     'password-changed' => [
         'subject' => 'Your password on :site was changed',
         'text' => 'The password of your account on :site has just been changed.',

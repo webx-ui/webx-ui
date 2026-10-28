@@ -197,6 +197,29 @@ $this->callAfterResolving(SocialProviders::class, fn (SocialProviders $providers
 without), `trustsVerifiedEmail()`, `driver()` and `toProfile()`. A network Socialite does not know
 implements `WebxUi\Users\Social\Provider` itself.
 
+## The panel: «Customers»
+
+Three entries in a menu group of their own — **Customers**, **Groups**, **Settings** — with the npm
+half `@webx-ui/module-users` (`...users()` in the panel's `admin.ts`, written there by
+`webx:panel --sync`).
+
+- **Permissions:** `users.view` reads the list, the card and the groups — addresses and phones,
+  personal data; `users.manage` writes, sends the letters, blocks, deletes, edits the groups;
+  `users.settings` opens the settings alone. By default only «Administrator» holds them.
+- **The card** is the screen `users.form`: a site patches it like any screen; modules add a tab to
+  `tabs` and a line to `summary`; the site's fields with the place `panel` land in
+  `project-fields` by themselves. A new address set by an administrator is unconfirmed at once and
+  both addresses get a letter.
+- **No password in the panel:** an administrator sends a link. A customer made in the panel has
+  none, and «Send an invitation» mails a link of «Set a password», alive 7 days.
+- **Groups** — a code and a name in one language; `$user->groups()->attach()` from a module;
+  `Visitor::$groups` carries the codes.
+- **Settings** — the registration open or closed (`users.registration`, over
+  `webx-users.registration`) and how much each field is asked (`users.fields.<name>`), kept with
+  the site's settings (`module-settings`); a card per social network, a secret answered «set» only.
+- Every change of a customer, a group and a network is in the journal; a password and a secret as
+  «changed».
+
 ## License
 
 MIT
