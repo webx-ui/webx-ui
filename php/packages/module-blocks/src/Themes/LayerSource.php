@@ -18,7 +18,7 @@ use WebxUi\Themes\Vocabulary;
  *
  * What only a layer can get wrong is settled here and handed on as a refusal, so the import
  * says it as a failed row and writes nothing for it: a file that is not a block document, styles
- * that break THEMES §8, an override that drops or retypes a field of the type below (rule 16).
+ * that break THEMES §8, an override that retypes a field of the type below (rule 16) — a field it\n * leaves out is inherited, it comes in the document already.
  * Everything else is the import's — the panel's rules, the order of calls, publishing.
  *
  * Only used when `webx-ui/themes` is installed: the engine does not know this package, this

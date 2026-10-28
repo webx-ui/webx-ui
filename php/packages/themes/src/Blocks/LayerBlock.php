@@ -7,11 +7,14 @@ namespace WebxUi\Themes\Blocks;
 /**
  * One block type as a layer carries it: a `blocks/<slug>.json` in the format `webx:blocks:export`
  * writes (spec §9.2). `below` is the type of the same slug it overrides, if a lower layer has one.
+ * `inherited` are the keys of the fields of `below` the file does not describe: they are in
+ * `document` already, as `below` has them, and the file itself is left as it is.
  */
 final readonly class LayerBlock
 {
     /**
      * @param  array<string, mixed>  $document
+     * @param  list<string>  $inherited
      */
     public function __construct(
         public string $slug,
@@ -19,6 +22,7 @@ final readonly class LayerBlock
         public string $file,
         public array $document,
         public ?LayerBlock $below = null,
+        public array $inherited = [],
     ) {}
 
     public function styles(): string

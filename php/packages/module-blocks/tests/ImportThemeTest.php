@@ -298,6 +298,38 @@ final class ImportThemeTest extends TestCase
         $this->import()->expectsOutputToContain('field "title" was wx-input, is wx-textarea')->assertFailed();
     }
 
+    /**
+     * The package grows its type by a switch in a minor release; the site's override was written
+     * before. The import takes the field from the package with its default, and an override that
+     * describes the field itself — the way a site fixed it by hand — keeps its own.
+     */
+    #[Test]
+    public function a_field_the_override_leaves_out_is_inherited_and_one_it_describes_is_its_own(): void
+    {
+        $switch = ['id' => 'show_note', 'type' => 'wx-switch', 'label' => 'Note', 'default' => false];
+        $this->layer('default', $this->hero([
+            'schema' => [['id' => 'title', 'type' => 'wx-input', 'label' => 'Title'], $switch],
+            'sample' => ['title' => 'Hello', 'show_note' => false],
+        ]));
+        $this->layer('local', $this->hero(['title' => 'Local hero', 'sample' => ['title' => 'Hi']]));
+
+        $this->import()->expectsOutputToContain('created')->assertSuccessful();
+
+        $version = Block::query()->where('slug', 'hero')->with('draftVersion')->firstOrFail()->draftVersion;
+        $this->assertSame([['id' => 'title', 'type' => 'wx-input', 'label' => 'Title'], $switch], $version?->schema);
+        $this->assertSame(['title' => 'Hi', 'show_note' => false], $version->sample);
+
+        Block::query()->delete();
+        $this->layer('local', $this->hero(['schema' => [
+            ['id' => 'title', 'type' => 'wx-input', 'label' => 'Title'],
+            ['id' => 'show_note', 'type' => 'wx-switch', 'label' => 'Show the note', 'default' => true],
+        ]]));
+
+        $this->import()->expectsOutputToContain('created')->assertSuccessful();
+        $schema = Block::query()->where('slug', 'hero')->with('draftVersion')->firstOrFail()->draftVersion?->schema;
+        $this->assertSame(['Show the note', true], [$schema[1]['label'] ?? null, $schema[1]['default'] ?? null]);
+    }
+
     #[Test]
     public function a_dry_run_says_and_writes_nothing(): void
     {

@@ -1,0 +1,10 @@
+{
+  "slug": "hero",
+  "title": "Hero of one heading",
+  "group": "content",
+  "schema": [{ "id": "title", "type": "wx-input", "label": "Heading" }],
+  "template": "<section class=\"b-hero\" data-wx-block=\"hero\"><h1>{{ $title }}</h1></section>\n",
+  "styles": ".b-hero {\n    color: var(--site-color-text);\n}\n",
+  "script": null,
+  "sample": { "title": "Welcome" }
+}

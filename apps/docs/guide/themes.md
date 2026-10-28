@@ -210,6 +210,26 @@ A view of the theme in a node's place gets what the leaves get (`$nav`, `$calls`
 `webx:theme:check` notes it; going over is `webx:composition:show header --blade` against the
 copy, the differences as a patch, the copy gone.
 
+### Another look of a block
+
+A block the theme brings gets another look by **the same slug** in `theme/blocks/<slug>.json` —
+its template, styles and fields. The fields may only grow: a field of the type below keeps its type
+(`title` was `wx-input` — it stays `wx-input`), or `webx:theme:check` fails and
+`webx:blocks:import --theme` writes nothing for the type.
+
+A field of the type below the file does not describe is **inherited**, not lost: it comes over
+whole — label, `default`, its sample value — after the field it follows below, or at the end. So
+when a package adds a field to its block in a minor release, a site whose theme overrides the block
+goes on working: the panel offers the field with its default, and the check says it in a note —
+
+```
+theme/blocks/contact.json  note: contact inherits field "show_form_description" (wx-switch) from
+webx-ui/theme-default with its default, and this template does not use it — print it in the
+template if the block should show it
+```
+
+A field the file describes is the file's: its label and default win over the package's.
+
 The 35 rules of a theme — where to work, tokens, where each style lives, blocks, views, languages
 and fonts, accessibility, what to check before saying it is done — are in the engine's
 [`RULES.md`](https://github.com/webx-ui/webx-ui/blob/main/php/packages/themes/RULES.md). The check

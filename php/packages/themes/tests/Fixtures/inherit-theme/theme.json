@@ -1,0 +1,6 @@
+{
+  "theme": {
+    "title": "An override written before the package grew a field",
+    "uses": ["webx-ui/theme-fixture"]
+  }
+}
