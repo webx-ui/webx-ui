@@ -43,6 +43,12 @@ stages) MCP and a widget.
 - **Command** `webx:cart:prune [--days=] [--dry-run]`, on the schedule daily.
 - **Doctor**: a line when the site has no currency (the cart then refuses every write).
 
+### Permissions
+
+None yet. Every route is the visitor's own cart — the cookie's token opens only its own, a line of
+another cart is 404 — and is named as open with that reason in `tests/AccessCoverageTest.php`. A
+new route asks for a permission or joins that list with its reason.
+
 ## Change it without forking
 
 | You want                              | Do this                                                                                    |
