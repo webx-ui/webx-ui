@@ -12,7 +12,7 @@ use WebxUi\Notifications\Models\Channel;
 use WebxUi\Notifications\NotificationEvents;
 use WebxUi\Notifications\Providers;
 use WebxUi\Notifications\Refusal;
-use WebxUi\Notifications\Sending\Field;
+use WebxUi\Admin\Support\Field;
 use WebxUi\Notifications\Templates\Template;
 use WebxUi\Notifications\Templates\TemplateError;
 

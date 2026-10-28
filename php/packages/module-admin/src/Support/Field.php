@@ -2,13 +2,15 @@
 
 declare(strict_types=1);
 
-namespace WebxUi\Notifications\Sending;
+namespace WebxUi\Admin\Support;
 
 /**
- * One setting of a provider: a bot's token, an SMTP host, the sender's address.
+ * One setting of a provider a module plugs in: a bot's token, an SMTP host, the client id of a
+ * social network. One class for every module that keeps such settings (`module-notifications`
+ * channels, `module-users` sign-in providers), so the panel draws them alike.
  *
  * `secret` decides where it lives: in `credentials`, encrypted and answered only with "it is set",
- * or in `options`, open to the form and to the journal (§17, question 9).
+ * or in `options`, open to the form and to the journal.
  */
 final readonly class Field
 {

@@ -16,7 +16,7 @@ use WebxUi\Notifications\Models\Channel;
 use WebxUi\Notifications\NotificationEvents;
 use WebxUi\Notifications\Notifications;
 use WebxUi\Notifications\Providers;
-use WebxUi\Notifications\Sending\Field;
+use WebxUi\Admin\Support\Field;
 use WebxUi\Notifications\Telegram\TelegramMarkup;
 
 /**
