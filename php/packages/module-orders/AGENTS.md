@@ -1,12 +1,11 @@
 # webx-ui/module-orders
 
-Orders and the checkout that places them. An order is a snapshot of the
-cart (`webx-ui/module-cart`) at placing: lines, prices, discounts, tenders, benefits, the contacts
-of the buyer and the recipient, and the blocks delivery and payment write. After that it depends
-on no live record. It moves along two axes: **milestones** — fixed facts the system and
-neighbours rely on (placed, paid, received, cancelled…) — and **statuses**, the shop's own stages,
-which the buyer sees grouped into public ones. Dictionary `webx-orders` (`module`, `statuses`,
-`panel`, `screen`, `site`, `notifications`, `checkout`), ten languages.
+Orders and the checkout that places them. An order is a snapshot of the cart (`webx-ui/module-cart`) at placing: lines,
+prices, discounts, tenders, benefits, the contacts of the buyer and the recipient, and the blocks delivery and payment
+write. After that it depends on no live record. It moves along two axes: **milestones** — fixed facts the system and
+neighbours rely on (placed, paid, received, cancelled…) — and **statuses**, the shop's own stages, which the buyer sees
+grouped into public ones. Dictionary `webx-orders` (`module`, `statuses`, `panel`, `screen`, `site`, `notifications`,
+`checkout`), ten languages.
 
 ## What it owns
 
@@ -45,8 +44,7 @@ which the buyer sees grouped into public ones. Dictionary `webx-orders` (`module
 - **Events** `Events\OrderPlacing` (in the transaction: spend, reserve, or throw `OrderRefused`); after the commit, with
   `Data\OrderData`, `source`, `adminId`, `at`: `OrderPlaced`, `OrderPaid`, `OrderReceived`, `OrderCancelled` (`wasPaid`,
   `tendersReturned`), `OrderRefunded` (`RefundData`, `full`), `OrderPaymentFailed`, `OrderStatusChanged`,
-  `OrderPublicStatusChanged` (only when the public one changes), `OrderBlockUpdated`, `OrderDetailsChanged` (`fields`,
-  `before`).
+  `OrderPublicStatusChanged` (only when the public one changes), `OrderBlockUpdated`, `OrderDetailsChanged` (`fields`, `before`).
 - **Notifications** (§10, with `webx-ui/module-notifications`): seven `orders.*` events (`Notifications\OrderEvents`,
   `OrderValues`, `OrderTemplates`); channels — `orders.notify.*` for a milestone, `options.notify_channels` of a public status;
   a move inside a group tells nobody. `migrate` makes the starting set once (`DefaultChannels`): «Order accepted», «Payment
@@ -76,8 +74,7 @@ which the buyer sees grouped into public ones. Dictionary `webx-orders` (`module
   filters, `user`, `counts`), `meta`, the card, `{id}/status|milestones| cancel|details|refunds`, the selection's `status` and
   `cancel`; every write a call of `Orders`, `dry_run` the service's own. The card `orders.show`: public ids `header-actions`,
   `tabs`, `summary`, `customer`; fields `customer.*`, `recipient.*`, `comment`, `manager_note`. Role `orders` («Order manager»).
-  `statuses` and `settings` — under `orders.statuses` (`settings` also `orders.checkout.settings`). The selection:
-  `Panel\StatusBatch`.
+  `statuses` and `settings` — under `orders.statuses` (`settings` also `orders.checkout.settings`). The selection: `Panel\StatusBatch`.
 - **MCP** (§12, `Mcp\OrdersTools`, `Mcp\StatusTools` on `OrdersModule`): `orders_list|get|history|summary`, `orders_set_status`
   (`order` or `numbers` ≤ 200), `orders_mark|cancel|refund|update|note`, `orders_statuses_list|save|delete|restore|reorder`,
   `orders_public_statuses_save|delete|restore|reorder`, `orders_settings_get|set`; resource `orders://catalog`. Source `mcp`;
@@ -95,6 +92,9 @@ which the buyer sees grouped into public ones. Dictionary `webx-orders` (`module
 - **Page** `/checkout` (route `checkout` — the cart's button; also behind `{locale}/`), `Checkout\Http\CheckoutController`:
   `POST steps/{key}` keeps a step in the draft, `GET summary` — the column; `CheckoutSteps`: `contacts` 100, `comment` 900,
   a project's `Step` by position; `CheckoutContext` — the cart counted once. A `GET` never makes a draft.
+- **Slots** (§22) `Checkout\Slots\CheckoutSlots`, registered by their modules: `delivery` 200 (`ShippingSlot`: `totalsLine()`
+  — «Delivery cost», `choice()` → `CheckoutContext::shippingChoice()`), `payment` 300 (`PaymentSlot`: `awaitsPayment()`,
+  `next()` — a gateway after the commit, `payAgainUrl()` — «Pay»). `SlotStep` wraps one: a throw — «could not load», no order.
 - **Confirm** `POST place`: antispam (`webx_hp`, `webx_ts`, origin, `throttle:webx-orders-checkout`) → `place_key` (a
   repeat is the same order) → steps → `Orders::place()`; came to less — placed again with it. `PlacingListener` (only that
   order) notes the agreement, clears the draft but the contacts. `GET thanks/{number}` — for the session that placed it.
@@ -134,8 +134,7 @@ the table says. Finding a visitor to link (`{id}/visitors`) wants `users.view` a
 
 ## Check your work
 
-- `Panel/*Test` — `BoundariesTest`: the panel never writes an order itself; `PerformanceTest`: the list's budget;
-  `AccessCoverageTest`. `CancelByStatusTest`.
+- `Panel/*Test` — `BoundariesTest`: the panel never writes an order itself; `PerformanceTest`: the list's budget; `AccessCoverageTest`. `CancelByStatusTest`.
 - `Mcp/McpTest` (parity with the panel, dry runs write nothing), `Mcp/PerformanceTest`, `Mcp/AccessCoverageTest`,
   `Mcp/LinkVisitorTest`; `webx:mcp-tools --module=orders` lists 21 (22 with users).
 - `Site/OrderPageTest` (the signed page, its budget, nothing without users), `Site/VisitorOrdersTest`.
@@ -143,7 +142,8 @@ the table says. Finding a visitor to link (`{id}/visitors`) wants `users.view` a
   `CartLockTest`, `MilestoneRaceTest` against a real server:
   `WEBX_TEST_MYSQL_URL=mariadb://user:password@host:3306/db vendor/bin/phpunit …`.
 - `migrate` / `migrate:rollback` — the tables come and go. `Notifications/*Test` — with and without it.
-- `Checkout/*Test`: `CheckoutWithoutNeighboursTest` (plain forms), `PlaceIdempotencyTest`, `PayableChangedTest`, `PlacePerformanceTest`.
+- `Checkout/*Test`: `CheckoutWithoutNeighboursTest` (plain forms), `PlaceIdempotencyTest`, `PayableChangedTest`, `PlacePerformanceTest`,
+  `StepOrderTest`, `CheckoutSlotsTest`; a slot of another module extends `SlotContractTestCase` (fakes: `tests/Fixtures`).
 
 ## Read more
 

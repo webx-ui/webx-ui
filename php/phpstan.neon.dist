@@ -117,6 +117,7 @@ parameters:
                 - packages/module-orders/src/Http/Controllers/Site/AccountOrdersController.php
                 - packages/module-orders/src/Http/Controllers/Site/OrderPageController.php
                 - packages/module-orders/src/Checkout/Http/CheckoutController.php
+                - packages/module-orders/src/Checkout/Slots/SlotStep.php
                 - packages/module-orders/src/Checkout/Steps/CommentStep.php
                 - packages/module-orders/src/Checkout/Steps/ContactsStep.php
                 - packages/module-users/src/Http/Controllers/RegisterController.php

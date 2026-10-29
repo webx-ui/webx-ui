@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Throwable;
 use WebxUi\Admin\Visitors\Visitors;
 use WebxUi\Cart\Money;
 use WebxUi\Cart\Totals\Purpose;
@@ -31,7 +32,10 @@ use WebxUi\Orders\Checkout\PlacedOrders;
 use WebxUi\Orders\Checkout\PlaceKeys;
 use WebxUi\Orders\Checkout\PlaceOrderBuilder;
 use WebxUi\Orders\Checkout\PlacingListener;
+use WebxUi\Orders\Checkout\Slots\CheckoutSlots;
+use WebxUi\Orders\Checkout\Slots\SlotStep;
 use WebxUi\Orders\Checkout\Steps\CheckoutSteps;
+use WebxUi\Orders\Data\OrderData;
 use WebxUi\Orders\Models\Order;
 use WebxUi\Orders\Notifications\OrderChannels;
 use WebxUi\Orders\Notifications\OrderEvents;
@@ -62,6 +66,7 @@ final readonly class CheckoutController
     public function __construct(
         private CheckoutContexts $contexts,
         private CheckoutSteps $steps,
+        private CheckoutSlots $slots,
         private CheckoutSummary $summary,
         private CheckoutSettings $settings,
         private CheckoutTerms $terms,
@@ -88,6 +93,7 @@ final readonly class CheckoutController
             'steps' => $this->sections($context),
             'warnings' => $this->summary->warnings($context),
             'summary' => $this->column($context),
+            'summaryUrl' => $this->links->to(CheckoutLinks::SUMMARY, $context->locale),
         ]);
     }
 
@@ -188,11 +194,16 @@ final readonly class CheckoutController
         $draft->place_key = PlaceKeys::hash($key);
         $draft->save();
 
-        // 4. The order as the steps put it together.
+        // 4. The order as the steps put it together; the payment step, if any, says where to go after it.
         $builder = new PlaceOrderBuilder;
+        $payment = null;
 
         foreach ($this->steps->for($context) as $step) {
             $step->contribute($context, $builder);
+
+            if ($step instanceof SlotStep && $step->key() === CheckoutSlots::PAYMENT) {
+                $payment = $step;
+            }
         }
 
         $expected = is_numeric($request->input('expected_payable')) ? (int) $request->input('expected_payable') : null;
@@ -229,13 +240,15 @@ final readonly class CheckoutController
             $listener->expect(null);
         }
 
-        // 6. After the commit: the next column prints a new key, «Thank you» opens for this session.
+        // 6. After the commit: the next column prints a new key, «Thank you» opens for this session —
+        // the buyer comes back there from a gateway too — and the payment step may send to one first.
         RateLimiter::hit($limit, 3600);
         $this->keys->forget();
         $this->placed->remember((string) $order->number, $decrease);
         $this->contexts->forget();
+        $gateway = $payment?->next($order);
 
-        return FormResponse::redirect($this->links->thanks((string) $order->number, $order->locale));
+        return FormResponse::redirect($gateway ?? $this->links->thanks((string) $order->number, $order->locale));
     }
 
     /**
@@ -265,15 +278,31 @@ final readonly class CheckoutController
             'email' => $order->customer_email !== null && $channels->reachesBuyer(OrderEvents::PLACED) ? $order->customer_email : null,
             'decrease' => $decrease !== null ? $this->format($decrease, $order->currency) : null,
             'link' => $orderLinks->page($number, $order->locale),
+            'pay' => $order->awaiting_payment ? $this->payAgain($order) : null,
             'analytics' => ['number' => $number, 'payable' => $order->payable, 'currency' => $order->currency],
         ]);
+    }
+
+    /**
+     * «Pay» for an order that still awaits payment (§26): the payment slot's address, or null —
+     * no slot, or it failed to answer, and the page says the order awaits payment alone.
+     */
+    private function payAgain(Order $order): ?string
+    {
+        try {
+            return $this->slots->payment()?->payAgainUrl(OrderData::of($order));
+        } catch (Throwable $e) {
+            Log::warning("webx-orders: the checkout's slot «payment» failed in payAgainUrl()", ['exception' => $e]);
+
+            return null;
+        }
     }
 
     /**
      * The steps as the page prints them: the first one not filled is open, the filled ones before
      * it are done (§20.1); the theme decides which of the two shows a form.
      *
-     * @return list<array{key: string, number: int, title: string, html: string, summary: string|null, done: bool, open: bool}>
+     * @return list<array{key: string, number: int, title: string, html: string, summary: string|null, done: bool, open: bool, slot: bool}>
      */
     private function sections(CheckoutContext $context): array
     {
@@ -294,6 +323,7 @@ final readonly class CheckoutController
                 'summary' => $summary,
                 'done' => $done,
                 'open' => $open,
+                'slot' => $step instanceof SlotStep,
             ];
         }
 

@@ -7,17 +7,23 @@ namespace WebxUi\Orders\Checkout;
 use WebxUi\Cart\Money;
 use WebxUi\Cart\Totals\Adjustment;
 use WebxUi\Orders\CartNotOrderable;
+use WebxUi\Orders\Checkout\Slots\CheckoutSlots;
+use WebxUi\Orders\Checkout\Slots\ShippingLine;
+use WebxUi\Orders\Checkout\Slots\SlotStep;
+use WebxUi\Orders\Checkout\Steps\CheckoutSteps;
 
 /**
  * The column of the totals (spec §23.1) from the one count of the request: the amounts as
  * `Money::format()` writes them — the checkout formats nothing itself — and only the rows there is
- * something to say in. Delivery's own row comes with its slot (§22).
+ * something to say in. Delivery's own row comes from its slot (§22.2): its amount is in the chain
+ * already, as the adjustment `meta.kind = delivery`, which is why the discount leaves it out.
  */
 final readonly class CheckoutSummary
 {
     public function __construct(
         private Money $money,
         private CheckoutSettings $settings,
+        private CheckoutSteps $steps,
     ) {}
 
     /** @return array<string, mixed> what `webx-orders::checkout.summary` prints */
@@ -41,11 +47,40 @@ final readonly class CheckoutSummary
             'benefits' => array_column($array['benefits'], 'label'),
             'hints' => array_column($array['hints'], 'text'),
             'tenders' => $array['tenders'],
+            'delivery' => $this->delivery($context),
             'payable' => $state->payable,
             'payable_formatted' => $array['payable_formatted'],
             'terms' => $this->settings->terms(),
             'documents' => $this->settings->terms() === CheckoutSettings::TERMS_NONE ? [] : $this->settings->documents($context->locale),
         ];
+    }
+
+    /**
+     * The line «Delivery cost» (§23.1): null — no delivery step for this checkout; `choose` — the
+     * step is there and nothing is chosen yet. Amounts as the cart formats them.
+     *
+     * @return array{kind: string, amount: string|null, was: string|null, estimate: string|null}|null
+     */
+    private function delivery(CheckoutContext $context): ?array
+    {
+        $step = $this->steps->find(CheckoutSlots::DELIVERY, $context);
+
+        if (! $step instanceof SlotStep || $step->shipping($context) === null) {
+            return null;
+        }
+
+        $line = $step->totalsLine($context);
+        $currency = $context->state->currency;
+        $format = fn (?int $minor): ?string => $minor !== null && $currency !== null ? $this->money->format($minor, $currency) : null;
+
+        return $line === null
+            ? ['kind' => 'choose', 'amount' => null, 'was' => null, 'estimate' => null]
+            : [
+                'kind' => $line->kind,
+                'amount' => $line->kind === ShippingLine::FIXED ? $format($line->amount) : null,
+                'was' => $line->kind === ShippingLine::FREE ? $format($line->was) : null,
+                'estimate' => $line->kind === ShippingLine::CARRIER_RATES ? $format($line->estimate) : null,
+            ];
     }
 
     /**

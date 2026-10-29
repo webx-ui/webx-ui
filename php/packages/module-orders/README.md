@@ -146,8 +146,10 @@ refunds, the list and the card in the panel, the screens of the statuses and the
 tools, the buyer's page, and the checkout page with the steps «Contacts» and «Comment» placing an
 order with plain forms: a repeat of the confirmation is the same order, an amount that went down
 is placed at once, the agreement with the terms is a line of the order's history, a honeypot, a
-mark of time and limits guard it, and «Thank you» follows. Delivery and payment in the checkout
-and its look come in the next ones; the spec is
+mark of time and limits guard it, and «Thank you» follows. Delivery and payment come into the
+checkout as slots of their modules (`CheckoutSlots`): the line «Delivery cost», the order awaiting
+an online payment, a gateway after it and «Pay» on «Thank you»; the modules themselves and the look
+of the checkout come in the next ones; the spec is
 [`WEBX_UI_MODULE_ORDERS.md`](https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_ORDERS.md).
 
 ## License

@@ -4,9 +4,12 @@
     formatted string; a row with nothing to say is not printed. `expected_payable` is the amount
     on the screen — what the order is placed with, and checked against (§24.4); `place_key` makes
     a repeat the same order (§24.3); the mark of time and the hidden field are the antispam (§28).
+    «Delivery cost» is the delivery slot's (§22.2): an amount, «Free» with the old price crossed
+    out, «at carrier rates» — then not in the amount to pay — or «choose a method».
 
-    Classes: webx-orders-checkout__summary, __summary-title, __row, __row--discount, __lines,
-    __line, __change, __benefit, __hint, __payable, __place, __terms, __honeypot.
+    Classes: webx-orders-checkout__summary, __summary-title, __row, __row--discount,
+    __row--delivery, __was, __lines, __line, __change, __benefit, __hint, __payable, __carrier,
+    __place, __terms, __honeypot.
 --}}
 <div class="webx-orders-checkout__summary" id="checkout-summary">
     <h2 class="webx-orders-checkout__summary-title">{{ __('webx-orders::checkout.summary.title') }}</h2>
@@ -21,6 +24,26 @@
                 <dd>{{ $discount }}</dd>
             </div>
         @endif
+        @if ($delivery !== null)
+            <div class="webx-orders-checkout__row webx-orders-checkout__row--delivery" data-kind="{{ $delivery['kind'] }}">
+                <dt>{{ __('webx-orders::checkout.summary.delivery') }}</dt>
+                <dd>
+                    @switch ($delivery['kind'])
+                        @case ('fixed')
+                            {{ $delivery['amount'] }}
+                            @break
+                        @case ('free')
+                            {{ __('webx-orders::checkout.summary.delivery-free') }}@if ($delivery['was'] !== null) <s class="webx-orders-checkout__was">{{ $delivery['was'] }}</s>@endif
+                            @break
+                        @case ('carrier_rates')
+                            {{ __('webx-orders::checkout.summary.delivery-carrier') }}@if ($delivery['estimate'] !== null) ≈ {{ $delivery['estimate'] }}@endif
+                            @break
+                        @default
+                            {{ __('webx-orders::checkout.summary.delivery-choose') }}
+                    @endswitch
+                </dd>
+            </div>
+        @endif
         @foreach ($tenders as $tender)
             <div class="webx-orders-checkout__row">
                 <dt>{{ $tender['label'] }}</dt>
@@ -32,6 +55,9 @@
             <dd>{{ $payable_formatted }}</dd>
         </div>
     </dl>
+    @if (($delivery['kind'] ?? null) === 'carrier_rates')
+        <p class="webx-orders-checkout__carrier">{{ __('webx-orders::checkout.summary.delivery-extra') }}</p>
+    @endif
     @if ($discounts !== [])
         <ul class="webx-orders-checkout__discounts">
             @foreach ($discounts as $label)

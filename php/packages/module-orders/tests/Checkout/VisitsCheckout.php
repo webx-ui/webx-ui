@@ -8,6 +8,7 @@ use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Testing\TestResponse;
 use Symfony\Component\HttpFoundation\Response;
 use WebxUi\Cart\AddResult;
+use WebxUi\Orders\Checkout\CheckoutContexts;
 
 /**
  * The checkout as a browser goes through it: the cart's cookie on every request, and the
@@ -23,8 +24,10 @@ trait VisitsCheckout
      */
     protected function visit(AddResult $cart, string $uri, ?array $post = null, bool $json = false, array $headers = []): TestResponse
     {
-        // The headers of one request are not the next one's.
+        // The headers of one request are not the next one's, nor its count of the cart: Testbench keeps
+        // one container a test, and the route's controller holds its scoped services between requests.
         $this->flushHeaders();
+        $this->app->make(CheckoutContexts::class)->forget();
         $request = $this->withCookie('webx_cart', (string) ($cart->token ?? ''))->withHeaders($headers);
 
         if ($json) {

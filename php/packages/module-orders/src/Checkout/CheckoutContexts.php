@@ -10,6 +10,10 @@ use WebxUi\Cart\CartHandle;
 use WebxUi\Cart\Totals\Calculator;
 use WebxUi\Cart\Totals\Purpose;
 use WebxUi\Orders\Checkout\Models\CheckoutDraft;
+use WebxUi\Orders\Checkout\Slots\CheckoutSlots;
+use WebxUi\Orders\Checkout\Slots\ShippingChoice;
+use WebxUi\Orders\Checkout\Slots\SlotStep;
+use WebxUi\Orders\Checkout\Steps\CheckoutSteps;
 
 /**
  * The context of the current request (spec §20.2): the cart of `CartHandle` — the account's for a
@@ -46,7 +50,16 @@ final class CheckoutContexts
             visitor: $this->container->bound(Visitors::class) ? $this->container->make(Visitors::class)->current() : null,
             locale: $locale,
             currency: $state->currency,
+            shipping: $this->shippingChoice(...),
         );
+    }
+
+    /** The delivery step as the registry has it now — a project may have removed or replaced it. */
+    private function shippingChoice(CheckoutContext $context): ?ShippingChoice
+    {
+        $step = $this->container->make(CheckoutSteps::class)->find(CheckoutSlots::DELIVERY, $context);
+
+        return $step instanceof SlotStep ? $step->choice($context) : null;
     }
 
     /** Count again on the next ask: after a step was saved, before the page is drawn. */
