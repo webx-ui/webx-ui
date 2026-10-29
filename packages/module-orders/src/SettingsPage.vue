@@ -12,7 +12,8 @@ import type { OrdersSettings } from './types'
  * «Orders → Settings» (spec §4, §5.2, §11.4): the format of the number with the trial number
  * under it, and the statuses a new order comes into — the screen `orders.settings`, saved with
  * the button below it. Without the settings module the screen says the config decides and there
- * is nothing to save. Behind `orders.statuses` alone.
+ * is nothing to save. The section's tab is behind `orders.statuses`, the tab «Checkout» (§31.2)
+ * behind `orders.checkout.settings` — the screen hides the tab a right does not open.
  */
 defineOptions({ name: 'WxOrdersSettingsPage' })
 
@@ -31,7 +32,11 @@ const errors = ref<Record<string, string[]>>({})
 const loading = ref(true)
 const saving = ref(false)
 
-const canSave = computed(() => admin.can('orders.statuses') && settings.value?.stored === true)
+const canStatuses = computed(() => admin.can('orders.statuses'))
+const canSave = computed(
+  () =>
+    (canStatuses.value || admin.can('orders.checkout.settings')) && settings.value?.stored === true,
+)
 
 provideOrdersSettings({
   sample: computed(() =>
@@ -77,8 +82,8 @@ async function save(): Promise<void> {
   <div class="wx-orders-settings">
     <wx-screen-head
       :title="t('panel.settings-title')"
-      :back="`${props.base}/statuses`"
-      :back-label="t('panel.to-statuses')"
+      :back="canStatuses ? `${props.base}/statuses` : props.base"
+      :back-label="t(canStatuses ? 'panel.to-statuses' : 'module.orders')"
       divider
     />
 

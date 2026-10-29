@@ -15,6 +15,8 @@ use WebxUi\Cache\CacheGroups;
 use WebxUi\Compositions\Compositions;
 use WebxUi\Notifications\NotificationEvents;
 use WebxUi\Orders\Blocks\OrderBlocks;
+use WebxUi\Orders\Checkout\Checkout;
+use WebxUi\Orders\Checkout\Console\PruneDraftsCommand;
 use WebxUi\Orders\Doctor\OrdersNotificationsCheck;
 use WebxUi\Orders\Models\Order;
 use WebxUi\Orders\Models\OrderStatus;
@@ -27,8 +29,9 @@ use WebxUi\Orders\Site\OrderPage;
 use WebxUi\Orders\Site\VisitorOrders;
 
 /**
- * Orders and, in later stages, the checkout (spec §1): the tables of an order and its two sets of
- * statuses, the service every door goes through, the dictionary and the section of the panel.
+ * Orders and the checkout (spec §1): the tables of an order and its two sets of statuses, the
+ * service every door goes through, the dictionary and the section of the panel; the checkout's
+ * draft and its settings, wired in only while `webx-orders.checkout.enabled` is on (§19).
  *
  * Without a neighbour the module still stands (§1.1): the cart, the widgets and the compositions
  * are required; delivery, payment, visitors and notifications are wired in only when they are
@@ -96,8 +99,19 @@ class OrdersServiceProvider extends ServiceProvider
         $screens->register(SettingsScreen::NAME, __DIR__.'/../resources/screens/settings.json');
         $screens->extend(SettingsScreen::NAME, fn (): array => $this->app->make(SettingsScreen::class)->patch());
 
+        // Off — nothing of the checkout is registered (decision 80); the drafts' table stays.
+        $checkout = Checkout::enabled();
+
+        if ($checkout) {
+            Checkout::register($this->app);
+        }
+
         if (! $this->app->runningInConsole()) {
             return;
+        }
+
+        if ($checkout) {
+            $this->commands([PruneDraftsCommand::class]);
         }
 
         $this->publishes([

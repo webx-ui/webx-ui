@@ -17,7 +17,7 @@ use WebxUi\Orders\Site\VisitorOrders;
  * cancellation, the contacts and the note; `orders.refund` records money given back, apart,
  * because it is money. Whoever may manage or refund may also read. The statuses and the settings
  * of the section are `orders.statuses` alone (§11.4): naming the shop's stages is not working an
- * order. The visitor of an order (§13.3) is `orders.manage`, and only with the visitors installed;
+ * order; the tab «Checkout» of the settings is `orders.checkout.settings` (§31.1). The visitor of an order (§13.3) is `orders.manage`, and only with the visitors installed;
  * finding one is reading the customers, so `users.view` as well.
  */
 Route::prefix((string) config('webx-admin.api_path').'/orders')
@@ -59,6 +59,10 @@ Route::prefix((string) config('webx-admin.api_path').'/orders')
             Route::put('statuses/internal/{status}', [StatusController::class, 'update'])->whereNumber('status')->name('statuses.update');
             Route::delete('statuses/internal/{status}', [StatusController::class, 'destroy'])->whereNumber('status')->name('statuses.destroy');
             Route::post('statuses/internal/{status}/restore', [StatusController::class, 'restore'])->whereNumber('status')->name('statuses.restore');
+        });
+
+        // The settings screen holds both tabs; each field stands behind its tab's `can`.
+        Route::middleware('cms.can:'.OrdersModule::STATUSES.','.OrdersModule::CHECKOUT_SETTINGS)->group(function (): void {
             Route::get('settings', [SettingsController::class, 'show'])->name('settings.show');
             Route::put('settings', [SettingsController::class, 'update'])->name('settings.update');
         });

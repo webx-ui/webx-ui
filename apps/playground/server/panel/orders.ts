@@ -1133,6 +1133,15 @@ const settings: Record<string, unknown> = {
   'orders.notify.received': [],
   'orders.notify.cancelled': [],
   'orders.notify.refunded': [],
+  // The tab «Checkout» (§31.2) with the defaults a site starts with.
+  'orders.checkout.fields.last_name': 'optional',
+  'orders.checkout.fields.phone': 'required',
+  'orders.checkout.fields.email': 'required',
+  'orders.checkout.recipient': 'on',
+  'orders.checkout.comment': 'on',
+  'orders.checkout.terms': 'notice',
+  'orders.checkout.terms_page': null,
+  'orders.checkout.privacy_page': null,
 }
 
 const LANGUAGES = ['en', 'ru']
@@ -1587,6 +1596,18 @@ function registerStatuses(on: On, fail: Fail, line: Line): void {
       const words = line(locale, 'webx-orders', 'screen.number-taken').replace(':number', sample)
 
       throw fail(422, words, undefined, { 'orders.number.prefix': [words] })
+    }
+
+    // An order needs a phone or an e-mail (§20.3): one of the two stays required.
+    const presence = (key: string) => values[key] ?? settings[key]
+
+    if (
+      presence('orders.checkout.fields.phone') !== 'required' &&
+      presence('orders.checkout.fields.email') !== 'required'
+    ) {
+      const words = line(locale, 'webx-orders', 'checkout.settings.contact-needed')
+
+      throw fail(422, words, undefined, { 'orders.checkout.fields.phone': [words] })
     }
 
     Object.assign(settings, values)

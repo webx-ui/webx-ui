@@ -20,7 +20,8 @@ use WebxUi\Orders\Mcp\StatusTools;
 /**
  * «Orders» in the panel (spec §11): the list, the card, the statuses and the settings of the
  * section, behind four permissions of its own — reading, working an order, money given back, and
- * the statuses with the settings. The checkout's tab adds a fifth with its own stage (§31.1).
+ * the statuses with the settings — and a fifth for the tab «Checkout» of the settings (§31.1): the
+ * shop's page is not edited by whoever names the stages.
  *
  * The same for an agent (§12): the `orders_*` tools and `orders://catalog`. The demo (§15) is twelve
  * orders made through the service, the visitor's among them when visitors are installed.
@@ -43,6 +44,9 @@ final class OrdersModule extends AbstractModule implements ProvidesDemo, Provide
 
     /** The screens of the statuses and the settings of the section. */
     public const string STATUSES = 'orders.statuses';
+
+    /** The tab «Checkout» of the settings (§31.2): the fields, the terms. */
+    public const string CHECKOUT_SETTINGS = 'orders.checkout.settings';
 
     /** The card of an order, a described screen neighbours add their tabs to (§11.3). */
     public const string SCREEN = 'orders.show';
@@ -78,7 +82,7 @@ final class OrdersModule extends AbstractModule implements ProvidesDemo, Provide
      */
     public function permissions(): array
     {
-        return [self::VIEW, self::MANAGE, self::REFUND, self::STATUSES];
+        return [self::VIEW, self::MANAGE, self::REFUND, self::STATUSES, self::CHECKOUT_SETTINGS];
     }
 
     /** @return list<string> */

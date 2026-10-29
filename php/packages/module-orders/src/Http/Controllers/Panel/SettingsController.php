@@ -13,8 +13,9 @@ use WebxUi\Orders\OrderSettings;
 use WebxUi\Orders\Panel\SettingsScreen;
 
 /**
- * `/api/cms/orders/settings` (spec §11.4), behind `orders.statuses`: the format of the number with
- * its trial number, and the statuses a new order comes into. Checked against the screen
+ * `/api/cms/orders/settings` (spec §11.4, §31.2), behind `orders.statuses` or
+ * `orders.checkout.settings`: the format of the number with its trial number, the statuses a new
+ * order comes into — and the tab «Checkout», each field behind its tab's right. Checked against the screen
  * `orders.settings` and kept where every setting of the site is; on a site without
  * `module-settings` the screen says the config decides, and a save finds nothing to keep.
  */
@@ -27,7 +28,7 @@ final readonly class SettingsController
 
     public function show(): JsonResponse
     {
-        return ApiResponse::data($this->settings->describe());
+        return ApiResponse::data($this->settings->describe(checkout: true));
     }
 
     /** `dry_run` checks the values and answers the trial number; nothing is kept. */
@@ -48,11 +49,11 @@ final readonly class SettingsController
         if ($request->boolean('dry_run')) {
             $this->settings->check($valid);
 
-            return ApiResponse::data([...$this->settings->describe(), 'sample' => $this->settings->sample($valid)]);
+            return ApiResponse::data([...$this->settings->describe(checkout: true), 'sample' => $this->settings->sample($valid)]);
         }
 
         $this->settings->store($valid);
 
-        return ApiResponse::data($this->settings->describe());
+        return ApiResponse::data($this->settings->describe(checkout: true));
     }
 }

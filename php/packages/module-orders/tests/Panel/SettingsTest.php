@@ -7,12 +7,13 @@ namespace WebxUi\Orders\Tests\Panel;
 use Illuminate\Foundation\Application;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Orders\Models\OrderStatus;
+use WebxUi\Orders\OrderSettings;
 use WebxUi\Settings\SettingsServiceProvider;
 
 /**
  * The screen `orders.settings` (spec §4, §5.2, §11.4) on a site with `module-settings`: the number
  * with its trial number, the statuses a new order comes into — and the status chosen there is the
- * one the statuses screen will not let go.
+ * one the statuses screen will not let go. The tab «Checkout» (§31.2) behind its own right.
  */
 final class SettingsTest extends PanelTestCase
 {
@@ -55,6 +56,15 @@ final class SettingsTest extends PanelTestCase
                 'orders.notify.received' => [],
                 'orders.notify.cancelled' => [],
                 'orders.notify.refunded' => [],
+                // The tab «Checkout» (§31.2), nothing saved: the defaults.
+                'orders.checkout.fields.last_name' => 'optional',
+                'orders.checkout.fields.phone' => 'required',
+                'orders.checkout.fields.email' => 'required',
+                'orders.checkout.recipient' => 'on',
+                'orders.checkout.comment' => 'on',
+                'orders.checkout.terms' => 'notice',
+                'orders.checkout.terms_page' => null,
+                'orders.checkout.privacy_page' => null,
             ]);
 
         $values = ['orders.number.prefix' => 'A-', 'orders.number.start' => 0, 'orders.number.pad' => 6];
@@ -111,5 +121,50 @@ final class SettingsTest extends PanelTestCase
         $this->putJson($this->api('settings'), ['values' => ['orders.initial_status' => $this->named('Being packed')->id]])
             ->assertUnprocessable()
             ->assertJsonValidationErrors('orders.initial_status');
+    }
+
+    #[Test]
+    public function each_tab_is_behind_its_own_right(): void
+    {
+        $this->signIn(['orders.checkout.settings']);
+
+        $root = $this->getJson('/api/cms/screens/orders.settings')->assertOk()->json('data.root');
+        $this->assertSame(['checkout-tab'], array_column($root[0]['children'], 'id'));
+
+        // The section's keys are not this right's to write: they are dropped, the tab's are kept.
+        $values = $this->putJson($this->api('settings'), ['values' => ['orders.number.prefix' => 'X-', 'orders.checkout.terms' => 'checkbox', 'orders.checkout.fields.last_name' => 'hidden']])
+            ->assertOk()
+            ->json('data.values');
+        $this->assertSame('', $values['orders.number.prefix']);
+        $this->assertSame('checkbox', $values['orders.checkout.terms']);
+        $this->assertSame('hidden', $values['orders.checkout.fields.last_name']);
+
+        $this->putJson($this->api('settings'), ['values' => ['orders.checkout.terms' => 'always']])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('orders.checkout.terms');
+
+        $this->signIn(['orders.statuses']);
+        $root = $this->getJson('/api/cms/screens/orders.settings')->assertOk()->json('data.root');
+        $this->assertSame(['orders-tab'], array_column($root[0]['children'], 'id'));
+        $this->putJson($this->api('settings'), ['values' => ['orders.checkout.terms' => 'none']])->assertOk();
+        $this->assertSame('checkbox', $this->app->make(OrderSettings::class)->get('orders.checkout.terms'));
+
+        $this->signIn(['orders.view']);
+        $this->getJson($this->api('settings'))->assertForbidden();
+    }
+
+    #[Test]
+    public function the_phone_or_the_email_stays_required(): void
+    {
+        $this->signIn(['orders.checkout.settings']);
+
+        $this->putJson($this->api('settings'), ['values' => ['orders.checkout.fields.phone' => 'optional']])->assertOk();
+        // Both optional — an order could come with neither: refused, and so is hiding both.
+        $this->putJson($this->api('settings'), ['values' => ['orders.checkout.fields.email' => 'optional']])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('orders.checkout.fields.phone');
+        $this->putJson($this->api('settings'), ['values' => ['orders.checkout.fields.phone' => 'hidden', 'orders.checkout.fields.email' => 'hidden']])
+            ->assertUnprocessable();
+        $this->putJson($this->api('settings'), ['values' => ['orders.checkout.fields.phone' => 'hidden', 'orders.checkout.fields.email' => 'required']])->assertOk();
     }
 }

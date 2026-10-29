@@ -7,6 +7,7 @@ namespace WebxUi\Orders;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Validation\ValidationException;
+use WebxUi\Orders\Checkout\Checkout;
 use WebxUi\Orders\Models\Order;
 use WebxUi\Orders\Models\OrderStatus;
 use WebxUi\Orders\Notifications\OrderChannels;
@@ -17,6 +18,9 @@ use WebxUi\Settings\Settings;
  * new order comes into. The screen `orders.settings` writes them where every setting of the site
  * is kept (`orders.number.prefix`, `orders.initial_status`, `orders.notify.placed`…); a key nobody saved there — and every
  * key on a site without `module-settings` — reads the config `webx-orders` instead.
+ *
+ * The tab «Checkout» (§31.2) keeps `orders.checkout.*` the same way, while the checkout is on; a
+ * key nobody saved reads its default here — the shop's page is not the config's business.
  */
 final readonly class OrderSettings
 {
@@ -33,6 +37,18 @@ final readonly class OrderSettings
         'orders.notify.received' => 'webx-orders.notify.received',
         'orders.notify.cancelled' => 'webx-orders.notify.cancelled',
         'orders.notify.refunded' => 'webx-orders.notify.refunded',
+    ];
+
+    /** The tab «Checkout» (§20.3, §23.4, §31.2) and what a key nobody saved reads. */
+    public const array CHECKOUT = [
+        'orders.checkout.fields.last_name' => 'optional',
+        'orders.checkout.fields.phone' => 'required',
+        'orders.checkout.fields.email' => 'required',
+        'orders.checkout.recipient' => 'on',
+        'orders.checkout.comment' => 'on',
+        'orders.checkout.terms' => 'notice',
+        'orders.checkout.terms_page' => null,
+        'orders.checkout.privacy_page' => null,
     ];
 
     /** The channels of the milestones' events (§10.1): ids of channels of the notifications module. */
@@ -65,6 +81,10 @@ final readonly class OrderSettings
             return $stored[$key];
         }
 
+        if (array_key_exists($key, self::CHECKOUT)) {
+            return self::CHECKOUT[$key];
+        }
+
         return $this->config->get(self::KEYS[$key] ?? 'webx-orders.'.substr($key, strlen('orders.')));
     }
 
@@ -78,6 +98,26 @@ final readonly class OrderSettings
         $all = [];
 
         foreach (array_keys(self::KEYS) as $key) {
+            $all[$key] = $this->get($key);
+        }
+
+        return $all;
+    }
+
+    /**
+     * The keys of the tab «Checkout» as the site reads them now; none while the checkout is off.
+     *
+     * @return array<string, mixed>
+     */
+    public function checkout(): array
+    {
+        if (! Checkout::enabled()) {
+            return [];
+        }
+
+        $all = [];
+
+        foreach (array_keys(self::CHECKOUT) as $key) {
             $all[$key] = $this->get($key);
         }
 
@@ -152,6 +192,15 @@ final readonly class OrderSettings
             }
         }
 
+        // An order needs a phone or an e-mail (§6.1, §20.3): one of the two stays required.
+        if (array_key_exists('orders.checkout.fields.phone', $values) || array_key_exists('orders.checkout.fields.email', $values)) {
+            $pick = fn (string $key): mixed => array_key_exists($key, $values) ? $values[$key] : $this->get($key);
+
+            if ($pick('orders.checkout.fields.phone') !== 'required' && $pick('orders.checkout.fields.email') !== 'required') {
+                $errors['orders.checkout.fields.phone'] = (string) __('webx-orders::checkout.settings.contact-needed');
+            }
+        }
+
         if ($errors !== []) {
             throw ValidationException::withMessages($errors);
         }
@@ -159,16 +208,17 @@ final readonly class OrderSettings
 
     /**
      * The settings as the screen and the agent read them: whether the site keeps them, the values,
-     * and the trial number of the next order.
+     * and the trial number of the next order. The screen reads the tab «Checkout» too; the agent
+     * has the checkout's own tools for it (§32).
      *
      * @return array{stored: bool, values: array<string, mixed>, next_id: int, sample: string}
      */
-    public function describe(): array
+    public function describe(bool $checkout = false): array
     {
         return [
             // Without the settings module there is nowhere to keep them: the site's config rules.
             'stored' => $this->stored() !== null,
-            'values' => $this->all(),
+            'values' => $checkout ? [...$this->all(), ...$this->checkout()] : $this->all(),
             'next_id' => self::nextId(),
             'sample' => $this->sample(),
         ];

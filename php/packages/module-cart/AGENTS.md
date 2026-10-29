@@ -35,7 +35,8 @@ plug into. No page, no panel section: a JSON API, `cart()` and a buy button for 
   `isEmpty()`, `has($type, $ref)` — no query without a cookie, one with it — and `state()`.
 - **Accounts** (`Accounts\AccountCarts` on the panel's `Visitor*` events, not `module-users`): a signed-in
   cart by `user_id` (`CartOwner`), the cookie opens only a guest's. Sign-in merges the guest's lines in
-  (capped at `qty_max`/`maxQty`, bundles whole), re-keys the cookie; sign-out drops it; deleting deletes.
+  (capped at `qty_max`/`maxQty`, bundles whole), dispatches `Events\CartsMerging(guestCartId, accountCartId)`
+  in the transaction before the guest's row goes, re-keys the cookie; sign-out drops it; deleting deletes.
 - **JSON API** (`routes/web.php`, `Http\CartController`, prefix `webx-cart.path`): `GET /api/cart`,
   `POST /api/cart/items` (a batch), `PATCH|DELETE /api/cart/items/{id}`, `DELETE /api/cart`. Every
   answer is `CartState::toArray()`; the `web` group (CSRF), `throttle:webx-cart` on writes,
@@ -140,8 +141,7 @@ if (class_exists(\WebxUi\Cart\Purchasables::class)) {
   live price; a deleted record shows `gone: true` with its snapshot name.
 - `curl -s https://<site>/api/cart` answers an empty state and sets no cookie.
 - `php artisan webx:mcp-tools` lists `cart_list`, `cart_get`, `cart_summary`, `cart_quote`.
-- `vendor/bin/phpunit vendor/webx-ui/module-cart/tests` in the monorepo — the batch, the bundle,
-  the chain and the formats.
+- `vendor/bin/phpunit vendor/webx-ui/module-cart/tests` in the monorepo — batch, bundle, chain, formats.
 
 ## Read more
 

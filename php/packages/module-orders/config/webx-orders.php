@@ -80,4 +80,44 @@ return [
     /** Orders a page of «My orders» shows. */
     'account_per_page' => 20,
 
+    /*
+    |--------------------------------------------------------------------------
+    | Checkout
+    |--------------------------------------------------------------------------
+    |
+    | The site's own page that places an order (spec §19–§31). Off — no
+    | checkout routes, drafts, tools or prune command, and no tab «Checkout»
+    | in the settings: orders still come from the site's code or an agent
+    | through Orders::place() (decision 80). What the shop edits — the
+    | fields, the terms — is that tab, not this file.
+    |
+    */
+
+    'checkout' => [
+        'enabled' => (bool) env('WEBX_ORDERS_CHECKOUT', true),
+
+        // The address of the page, inside the site's `{locale?}` (§19).
+        'path' => 'checkout',
+
+        // The layout the page stands in; null — `layout.minimal` (§27.1).
+        'layout' => env('WEBX_ORDERS_CHECKOUT_LAYOUT'),
+
+        // Where «The cart is empty» leads; null — the home page (§20.4).
+        'empty_url' => null,
+
+        // A draft untouched this many days goes, the contacts with it, whatever its cart
+        // (§21.3); null — drafts go only with their carts.
+        'draft_days' => 30,
+
+        // A confirmation sooner than this after the page was shown is a bot's (§28).
+        'min_seconds' => 3,
+
+        // The limits of `throttle:webx-orders-checkout` (§28).
+        'throttle' => [
+            'place_per_minute' => 10,
+            'orders_per_hour' => 5,
+            'steps_per_minute' => 60,
+        ],
+    ],
+
 ];

@@ -72,23 +72,28 @@ const message = useErrorText()
 
 const canManage = computed(() => admin.can('orders.manage'))
 
-/* The statuses and the settings of the section, for whoever may change them (§11.4). */
-const headActions = computed<ScreenAction[]>(() =>
-  admin.can('orders.statuses')
+/* The statuses and the settings of the section, for whoever may change them (§11.4); the settings
+ * also for whoever edits only their tab «Checkout» (§31.1). */
+const headActions = computed<ScreenAction[]>(() => [
+  ...(admin.can('orders.statuses')
     ? [
         {
           key: 'statuses',
           label: t('panel.to-statuses'),
           run: () => void router.push(`${props.base}/statuses`),
         },
+      ]
+    : []),
+  ...(admin.can('orders.statuses') || admin.can('orders.checkout.settings')
+    ? [
         {
           key: 'settings',
           label: t('panel.to-settings'),
           run: () => void router.push(`${props.base}/settings`),
         },
       ]
-    : [],
-)
+    : []),
+])
 
 const page = ref<OrdersPage | null>(null)
 const meta = ref<OrdersMeta>({

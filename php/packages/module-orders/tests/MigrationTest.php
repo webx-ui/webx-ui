@@ -29,6 +29,8 @@ final class MigrationTest extends TestCase
         'order_milestones',
         'order_refunds',
         'order_status_changes',
+        // The checkout's draft (§21.1), made whether the checkout is on or not.
+        'order_checkout_drafts',
     ];
 
     #[Test]

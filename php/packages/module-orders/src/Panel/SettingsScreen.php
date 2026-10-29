@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Orders\Panel;
 
 use Illuminate\Contracts\Container\Container;
+use WebxUi\Orders\Checkout\Checkout;
 use WebxUi\Orders\Models\OrderStatus;
 use WebxUi\Orders\Notifications\OrderChannels;
 use WebxUi\Settings\Settings;
@@ -17,7 +18,8 @@ use WebxUi\Settings\Settings;
  *
  * The channels of the milestones' events only with `webx-ui/module-notifications` installed.
  * Without `module-settings` there is nowhere to keep these; the cards give way to a line that
- * says the config `webx-orders` decides.
+ * says the config `webx-orders` decides. The tab «Checkout» (§31.2) stands only while the checkout
+ * is on, and only where the settings are kept.
  */
 final readonly class SettingsScreen
 {
@@ -30,8 +32,11 @@ final readonly class SettingsScreen
      */
     public function patch(): array
     {
+        $checkout = Checkout::enabled() ? [] : [['op' => 'remove', 'target' => 'checkout-tab']];
+
         if (! $this->container->bound(Settings::class)) {
             return [
+                ['op' => 'remove', 'target' => 'checkout-tab'],
                 ['op' => 'remove', 'target' => 'initial-card'],
                 ['op' => 'remove', 'target' => 'notify-card'],
                 ['op' => 'replace', 'target' => 'number-card', 'node' => [
@@ -65,6 +70,7 @@ final readonly class SettingsScreen
             ['op' => 'set', 'target' => 'initial-awaiting', 'props' => ['options' => $options]],
             // The channels of the milestones (§10.1) are chosen only where there are channels.
             ...($this->container->make(OrderChannels::class)->available() ? [] : [['op' => 'remove', 'target' => 'notify-card']]),
+            ...$checkout,
         ];
     }
 }

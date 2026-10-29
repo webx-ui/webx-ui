@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 return [
+    'tab-orders' => 'Orders',
     'tab-items' => 'Items',
     'tab-customer' => 'Buyer',
     'tab-history' => 'History',
