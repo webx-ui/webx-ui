@@ -79,7 +79,7 @@ final class PanelTest extends PanelTestCase
         $this->assertSame('Item A', $card['order']['items'][0]['name']);
         $this->assertSame(2, $card['order']['items'][0]['qty']);
         $this->assertSame($this->money(9998), $card['order']['totals']['total']);
-        $this->assertSame(['status' => false, 'paid' => false, 'received' => false, 'cancel' => false, 'details' => false, 'refund' => false], $card['order']['actions']);
+        $this->assertSame(['status' => false, 'paid' => false, 'received' => false, 'cancel' => false, 'details' => false, 'refund' => false, 'visitor' => false, 'visitor_search' => false], $card['order']['actions']);
         $this->assertSame('Alex', $card['values']['customer.first_name']);
         $this->assertSame('alex@example.test', $card['values']['customer.email']);
         $this->assertSame(['milestone', 'status'], array_column($card['order']['timeline'], 'kind'));

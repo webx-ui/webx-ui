@@ -7,6 +7,7 @@ namespace WebxUi\Orders;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Closure;
+use Illuminate\Container\Container;
 use Illuminate\Contracts\Auth\Factory as Auth;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Contracts\Events\Dispatcher;
@@ -17,6 +18,8 @@ use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
 use WebxUi\Admin\History\Journal;
+use WebxUi\Admin\Visitors\Visitor;
+use WebxUi\Admin\Visitors\Visitors;
 use WebxUi\Cart\CartService;
 use WebxUi\Cart\Contracts\CurrencySource;
 use WebxUi\Cart\Models\Cart;
@@ -526,6 +529,105 @@ final class Orders
                 $adminId,
                 $at,
             ));
+        });
+    }
+
+    /**
+     * The order belongs to this visitor from now on (§13.3): it shows in their «My orders». A
+     * guest's order is linked, another visitor's is moved in the same step. Only `user_id`
+     * changes — the contacts stay what the buyer typed. A line of the history, the journal and
+     * `OrderDetailsChanged` with the old `user_id`; the visitor is not written to.
+     *
+     * A dry run answers the same and writes nothing.
+     *
+     * @throws VisitorRefused no such visitor, or no visitors module
+     */
+    public function linkVisitor(Order $order, int $userId, string $source, bool $dryRun = false): VisitorLink
+    {
+        $visitor = Container::getInstance()->make(Visitors::class)->find($userId) ?? throw new VisitorRefused;
+
+        return $this->relink($order, $visitor, $source, $dryRun);
+    }
+
+    /** The order is a guest's again (§13.3): gone from the visitor's «My orders», nothing else. */
+    public function unlinkVisitor(Order $order, string $source, bool $dryRun = false): VisitorLink
+    {
+        return $this->relink($order, null, $source, $dryRun);
+    }
+
+    /**
+     * A visitor's account is going (§13.2, `VisitorDeleting`): their orders become guests' — the
+     * contacts in them are the record of the sale and stay. One update and one line of history
+     * an order, no event: nobody is told an order changed hands, because it did not.
+     *
+     * @return int how many orders let go
+     */
+    public function forgetVisitor(int $userId, string $source): int
+    {
+        $ids = Order::query()->where('user_id', $userId)->pluck('id')->all();
+
+        if ($ids === []) {
+            return 0;
+        }
+
+        $visitor = Container::getInstance()->make(Visitors::class)->find($userId);
+        $note = 'unlinked: '.($visitor !== null ? VisitorLink::name($visitor) : "#{$userId}");
+        $at = CarbonImmutable::now();
+
+        $this->db->transaction(function () use ($ids, $source, $note, $at): void {
+            Order::query()->whereIn('id', $ids)->update(['user_id' => null]);
+            StatusChange::query()->insert(array_map(static fn (int $id): array => [
+                'order_id' => $id,
+                'kind' => StatusChange::VISITOR,
+                'source' => (string) self::cut($source, 64),
+                'admin_id' => null,
+                'note' => $note,
+                'created_at' => $at,
+            ], $ids));
+        });
+
+        return count($ids);
+    }
+
+    private function relink(Order $order, ?Visitor $visitor, string $source, bool $dryRun): VisitorLink
+    {
+        $plan = function (?int $before) use ($visitor, $dryRun): VisitorLink {
+            $previous = $before !== null ? Container::getInstance()->make(Visitors::class)->find($before) : null;
+            $outcome = $before === $visitor?->id
+                ? VisitorLink::UNCHANGED
+                : ($visitor !== null ? VisitorLink::LINKED : VisitorLink::UNLINKED);
+
+            return new VisitorLink($outcome, $visitor, $before, $previous, $dryRun);
+        };
+
+        if ($dryRun) {
+            $before = Order::query()->whereKey($order->id)->value('user_id');
+
+            return $plan($before !== null ? (int) $before : null);
+        }
+
+        $adminId = $this->adminId($source);
+
+        return $this->locked($order, function (Order $locked) use ($plan, $visitor, $source, $adminId): VisitorLink {
+            $before = $locked->user_id;
+            $link = $plan($before);
+
+            if (! $link->changed()) {
+                return $link;
+            }
+
+            $at = CarbonImmutable::now();
+            $named = static fn (?Visitor $one, ?int $id): ?string => $one !== null ? VisitorLink::name($one) : ($id !== null ? "#{$id}" : null);
+            $locked->user_id = $visitor?->id;
+            $locked->save();
+
+            $this->journal->record($locked, 'updated', ['user_id' => [$named($link->previous, $before), $named($visitor, $visitor?->id)]]);
+            $this->line($locked, StatusChange::VISITOR, $source, $adminId, $at, $visitor !== null
+                ? 'linked: '.VisitorLink::name($visitor)
+                : 'unlinked: '.$named($link->previous, $before));
+            $this->events->dispatch(new OrderDetailsChanged($this->snapshot($locked), ['user_id'], ['user_id' => $before], $source, $adminId, $at));
+
+            return $link;
         });
     }
 

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace WebxUi\Orders\Panel;
 
+use Illuminate\Container\Container;
 use WebxUi\Admin\Support\Authors;
+use WebxUi\Admin\Visitors\Visitors;
 use WebxUi\Cart\Money;
 use WebxUi\Orders\Milestone;
 use WebxUi\Orders\Models\Order;
@@ -15,6 +17,7 @@ use WebxUi\Orders\Models\OrderRefund;
 use WebxUi\Orders\Models\OrderTender;
 use WebxUi\Orders\Models\StatusChange;
 use WebxUi\Orders\Notifications\OrderChannels;
+use WebxUi\Orders\Site\VisitorOrders;
 
 /**
  * The card of an order on the server (spec §11.3): what `orders.show` draws — the head with the
@@ -107,6 +110,7 @@ final readonly class OrderCard
             'exponent' => $this->money->exponent($currency),
             'guest' => $order->user_id === null,
             'user_id' => $order->user_id,
+            'visitor' => $this->visitor($order),
             'status' => $statuses->find($order->status_id, $locale),
             'statuses' => $statuses->grouped($locale),
             'awaiting_payment' => $order->awaiting_payment && ! $cancelled,
@@ -155,8 +159,29 @@ final readonly class OrderCard
                 'cancel' => $manage && ! $cancelled && $order->refunded_at === null,
                 'details' => $manage,
                 'refund' => $can('orders.refund') && ($refundable > 0 || $tendersLeft > 0 || $unitsLeft > 0),
+                // Linking to a visitor (§13.3): only with the visitors installed; finding one is
+                // reading the customers too.
+                'visitor' => $manage && VisitorOrders::installed(),
+                'visitor_search' => $manage && VisitorOrders::installed() && $can('users.view'),
             ],
         ];
+    }
+
+    /**
+     * The visitor the order belongs to, as the account is now — one look-up; an id whose account
+     * is gone is shown by the id alone.
+     *
+     * @return array{id: int, name: string|null, email: string|null}|null
+     */
+    private function visitor(Order $order): ?array
+    {
+        if ($order->user_id === null) {
+            return null;
+        }
+
+        $visitor = Container::getInstance()->make(Visitors::class)->find($order->user_id);
+
+        return ['id' => $order->user_id, 'name' => $visitor?->name(), 'email' => $visitor?->email];
     }
 
     /**
@@ -294,6 +319,12 @@ final readonly class OrderCard
                 $line['to'] = $to['name'] ?? null;
                 $line['to_color'] = $to['color'] ?? null;
                 $line['public'] = $change->from_public_id !== $change->to_public_id ? ($to['public']['name'] ?? null) : null;
+            }
+
+            // «linked: Anna <anna@…>» / «unlinked: …» — the words are the panel's, the name the moment's.
+            if ($change->kind === StatusChange::VISITOR && $change->note !== null && preg_match('/^(linked|unlinked): (.*)$/s', $change->note, $match) === 1) {
+                $line['kind'] = 'visitor-'.$match[1];
+                $line['note'] = $match[2];
             }
 
             if ($change->kind === StatusChange::DETAILS && $change->note !== null) {

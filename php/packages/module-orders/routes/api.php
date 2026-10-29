@@ -7,7 +7,9 @@ use WebxUi\Orders\Http\Controllers\Panel\MassController;
 use WebxUi\Orders\Http\Controllers\Panel\OrderController;
 use WebxUi\Orders\Http\Controllers\Panel\SettingsController;
 use WebxUi\Orders\Http\Controllers\Panel\StatusController;
+use WebxUi\Orders\Http\Controllers\Panel\VisitorController;
 use WebxUi\Orders\Panel\OrdersModule;
+use WebxUi\Orders\Site\VisitorOrders;
 
 /*
  * «Orders» in the panel (spec §11.1): `orders.view` reads the list and the card — the contacts
@@ -15,7 +17,8 @@ use WebxUi\Orders\Panel\OrdersModule;
  * cancellation, the contacts and the note; `orders.refund` records money given back, apart,
  * because it is money. Whoever may manage or refund may also read. The statuses and the settings
  * of the section are `orders.statuses` alone (§11.4): naming the shop's stages is not working an
- * order.
+ * order. The visitor of an order (§13.3) is `orders.manage`, and only with the visitors installed;
+ * finding one is reading the customers, so `users.view` as well.
  */
 Route::prefix((string) config('webx-admin.api_path').'/orders')
     ->middleware('webx.panel')
@@ -37,6 +40,12 @@ Route::prefix((string) config('webx-admin.api_path').'/orders')
             Route::post('{order}/milestones', [OrderController::class, 'mark'])->whereNumber('order')->name('mark');
             Route::post('{order}/cancel', [OrderController::class, 'cancel'])->whereNumber('order')->name('cancel');
             Route::put('{order}/details', [OrderController::class, 'details'])->whereNumber('order')->name('details');
+
+            if (VisitorOrders::installed()) {
+                Route::get('{order}/visitors', [VisitorController::class, 'search'])->middleware('cms.can:users.view')->whereNumber('order')->name('visitor.search');
+                Route::post('{order}/visitor', [VisitorController::class, 'link'])->whereNumber('order')->name('visitor.link');
+                Route::delete('{order}/visitor', [VisitorController::class, 'unlink'])->whereNumber('order')->name('visitor.unlink');
+            }
         });
 
         Route::middleware('cms.can:'.OrdersModule::STATUSES)->group(function (): void {

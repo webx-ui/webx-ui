@@ -8,6 +8,7 @@ return [
     'empty' => 'Na razie brak zamówień.',
     'empty-help' => 'Zamówienie pojawi się tutaj, gdy tylko zostanie złożone na stronie.',
     'order' => 'Zamówienie',
+    'statuses-cache' => 'Statusy zamówień',
     'fields' => [
         'customer_first_name' => 'Imię',
         'customer_last_name' => 'Nazwisko',
@@ -16,6 +17,7 @@ return [
         'recipient' => 'Odbiorca',
         'comment' => 'Komentarz kupującego',
         'manager_note' => 'Notatka menedżera',
+        'user_id' => 'Odwiedzający',
     ],
     'milestones' => [
         'placed' => 'Złożone',

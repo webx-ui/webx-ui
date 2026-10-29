@@ -65,6 +65,25 @@ final class VisitorsTest extends TestCase
     }
 
     #[Test]
+    public function the_search_finds_visitors_by_a_part_of_the_name_and_of_the_address(): void
+    {
+        $anna = $this->visitor(['email' => 'anna.petrova@example.test', 'first_name' => 'Anna', 'last_name' => 'Petrova']);
+        $boris = $this->visitor(['email' => 'boris@mail.test', 'first_name' => 'Boris', 'last_name' => 'Ivanov']);
+        $other = $this->visitor(['email' => 'petrova@example.test', 'first_name' => 'Maria']);
+        $search = $this->app->make(UserVisitors::class);
+        $ids = static fn (array $found): array => array_map(static fn (Visitor $visitor): int => $visitor->id, $found);
+
+        // A part of the address, a part of the name, the name in either order.
+        $this->assertSame([$boris->id], $ids($search->search('mail.te')));
+        $this->assertSame([$boris->id], $ids($search->search('vano')));
+        $this->assertSame([$anna->id], $ids($search->search('Petrova Anna')));
+        // The exact address before the newer account that only contains it.
+        $this->assertSame([$other->id, $anna->id], $ids($search->search('PETROVA@example.test')));
+        $this->assertSame([$other->id], $ids($search->search('example', 1)));
+        $this->assertSame([], $search->search('  '));
+    }
+
+    #[Test]
     public function a_guest_of_a_page_behind_the_seam_goes_to_sign_in_and_comes_back(): void
     {
         $this->get('/orders?page=2')->assertRedirect('http://localhost/account/sign-in?back=%2Forders%3Fpage%3D2');

@@ -30,7 +30,7 @@ in here — shop modules plug into the seam, the module knows none of them.
 - **Guard** `site` (`webx-users.guard`), provider `webx-users` (`Auth\UserProvider`: null for a blocked
   visitor — the session ends). Added to `auth` only if the site has not declared them; `web` untouched.
 - **The seam** `UserVisitors` bound to `Visitors` (scoped): `current()`, `find($id)`, `findByEmail()`
-  (exact, never a search), `signInUrl($back)` — where `webx.visitor` of `module-admin` sends a guest.
+  (exact), `signInUrl($back)`; `search(term, limit)` — by a part of the name, e-mail, phone, for panels.
 - **Pages** (`routes/web.php`, all `webx_service`, `no-store`, `noindex`, inside the language prefix
   `{webxLocale}` like the blog's feed):
   - `GET|POST /account/sign-in` (`SignInController`) — «Remember me»; every wrong pair is «Wrong

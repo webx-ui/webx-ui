@@ -5,9 +5,8 @@ cart (`webx-ui/module-cart`) at placing: lines, prices, discounts, tenders, bene
 of the buyer and the recipient, and the blocks delivery and payment write. After that it depends
 on no live record. It moves along two axes: **milestones** — fixed facts the system and
 neighbours rely on (placed, paid, received, cancelled…) — and **statuses**, the shop's own stages,
-which the buyer sees grouped into public ones.
-
-This release holds the orders, their panel, MCP and notifications; the checkout comes next.
+which the buyer sees grouped into public ones. The checkout is not in this release yet.
+Dictionary `webx-orders` (`module`, `statuses`, `panel`, `screen`, `site`), ten languages.
 
 ## What it owns
 
@@ -43,56 +42,57 @@ This release holds the orders, their panel, MCP and notifications; the checkout 
     `manual` only, no gateway. `RefundRequest`: `amount`, `tenders` (id → amount), `items` (id →
     qty), `reference`, `reason`, `source`; the manager splits it, each part ≤ what is left
     (`RefundRefused`: `empty`, `amount`, `tender`, `qty`, with `field`). Money and every tender back
-    → milestone `refunded`, once; lines and totals never change.
+    → milestone `refunded`, once; lines and totals never change;
+  - `linkVisitor(order, userId, source, dryRun?)`, `unlinkVisitor(order, source, dryRun?)` →
+    `VisitorLink` (`linked`, `unlinked`, `unchanged`; `visitor`, `previous`): only `user_id`, a
+    history line `visitor`, `OrderDetailsChanged` (`fields: ['user_id']`); `VisitorRefused` —
+    no such account. `forgetVisitor(userId, source)` — on `VisitorDeleting`, no event.
 - **The statuses** `WebxUi\Orders\OrderStatuses` (§5.6): `writePublic`, `removePublic(…, moveTo?)`,
   `restorePublic`, `write`, `remove`, `restore`, `arrange(publics, groups)` — each with `dryRun` →
   `StatusPlan` (`orders`, `rebound`, `active`); `StatusRefused`: `initial`, `last_active`,
   `public_deleted`, `has_active`. Switching a stage off is held like deleting it.
 - **Events** `Events\OrderPlacing` (in the transaction: spend, reserve, or throw `OrderRefused`);
-  after the commit, each with `Data\OrderData` (plain values, serialisable), `source`, `adminId`,
-  `at`: `OrderPlaced`, `OrderPaid`, `OrderReceived`, `OrderCancelled` (`wasPaid`,
-  `tendersReturned`), `OrderRefunded` (`RefundData`, `full`), `OrderPaymentFailed`, `OrderStatusChanged`, `OrderPublicStatusChanged` (only
-  when the public one changes), `OrderBlockUpdated`, `OrderDetailsChanged` (`fields`, `before`).
+  after the commit, with `Data\OrderData`, `source`, `adminId`, `at`: `OrderPlaced`, `OrderPaid`,
+  `OrderReceived`, `OrderCancelled` (`wasPaid`, `tendersReturned`), `OrderRefunded` (`RefundData`, `full`),
+  `OrderPaymentFailed`, `OrderStatusChanged`, `OrderPublicStatusChanged` (only when the public one
+  changes), `OrderBlockUpdated`, `OrderDetailsChanged` (`fields`, `before`).
 - **Notifications** (§10, with `webx-ui/module-notifications`): seven `orders.*` events
   (`Notifications\OrderEvents`, `OrderValues`, `OrderTemplates`); channels — `orders.notify.*` for
   a milestone, `options.notify_channels` of a public status; a move inside a group tells nobody.
   `migrate` makes the starting set once (`DefaultChannels`): «Order accepted», «Payment received»
   to `customer_email`, «New order» to the first contacts e-mail. `{{status}}` is `internal`.
-- **Journal** type `orders.order` of the panel's history: what `updateDetails()` changed. **Blocks**
-  `Blocks\OrderBlocks` — `register(new BlockDefinition('delivery'|'payment', module, validate, summary))`
-  in your `boot()`; an unregistered block is refused.
+- **Journal** `orders.order`: what `updateDetails()` and the links changed. **Blocks** `OrderBlocks` —
+  `register(new BlockDefinition('delivery'|'payment', module, validate, summary))` in `boot()`.
 - **Config** `webx-orders`: `number` (`prefix`, `start` = 1000, `pad`), `initial_status`,
   `initial_status_awaiting_payment` (ids; null — «New» and «Awaiting payment» of the default set),
-  `notify.*`. Read through `OrderSettings`: the keys saved by the screen `orders.settings` in
+  `notify.*`, `layout`, `middleware`, `account_per_page`. Read through `OrderSettings`: the keys saved by the screen `orders.settings` in
   `module-settings` first, the config for the rest. `webx:doctor`: `Doctor\OrdersNotificationsCheck`.
-- **Tables** (all `order_*` but `orders`):
-  - `orders` (`WebxUi\Orders\Models\Order`) — money in minor units of `currency`, contacts with
-    the first and the last name apart, `recipient`, `delivery` and `payment` blocks (json), and a
-    copy of the milestones (`placed_at`, `awaiting_payment`, `paid_at`, …) for the filters;
-  - `order_items` (`OrderItem`, a child's `qty` is absolute), `order_adjustments`,
-    `order_tenders`, `order_benefits`, `order_milestones` (`OrderMilestone`, unique per order and
-    milestone), `order_refunds`, `order_status_changes` (`StatusChange`, the history);
-  - `order_public_statuses` (`PublicStatus`: `code`, `name`, `description`) and `order_statuses`
-    (`OrderStatus`: `public_status_id`, `name`, `color`, `sets_milestone`, `is_active`), both
-    soft-deleted.
-- **Enums** `WebxUi\Orders\Milestone` (`placed`, `awaiting_payment`, `paid`, `received`,
-  `cancelled`, `refunded`; `settableByStatus()` — only `paid`, `received`, `cancelled`) and
-  `WebxUi\Orders\StatusColor`, the closed palette of a status (`neutral`, `info`, `success`,
-  `warning`, `danger`, `accent`) the panel turns into `--wx-*` tokens.
-- **The default statuses**, seeded once by the migration from `lang/*/statuses.php` in every
-  language of the site: «Accepted» (New, Awaiting payment), «In progress» (Taken into work,
-  Waiting for a call, Being packed), «Shipped» (Handed to delivery), «Completed» (Completed —
-  sets `received`), «Cancelled» (Cancelled — sets `cancelled`). After that they are the site's.
-- **The dictionary** `webx-orders` (`module`, `statuses`, `panel`, `screen`), ten languages.
-- **The section** `orders` of the panel (`Panel\OrdersModule`), npm half `@webx-ui/module-orders`:
-  `api/cms/orders` — the list (`view` new / awaiting / failed / all, search, filters, `counts`),
-  `meta`, the card, `{id}/status`, `{id}/milestones`, `{id}/cancel`, `{id}/details`,
-  `{id}/refunds`, the selection's `status` and `cancel`; every write is a call of `Orders`, and
-  `dry_run` is the service's own. The card is the screen `orders.show` with the public ids
-  `header-actions`, `tabs`, `summary`; its fields are `customer.*`, `recipient.*`, `comment`,
-  `manager_note`. The ready-made role `orders` («Order manager»: view, manage, `users.view`).
-  `statuses` (the board, `arrange`, `public/{id}`, `internal/{id}`, `…/restore`) and `settings`
-  (with the trial number) — under `orders.statuses`. The selection is `Panel\StatusBatch`.
+- **Tables**: `orders` (`Models\Order` — money in minor units, the names apart, `recipient`, the
+  blocks as json, a copy of the milestones for the filters); `order_items` (a child's `qty` is
+  absolute), `order_adjustments`, `order_tenders`, `order_benefits`, `order_milestones` (unique per
+  milestone), `order_refunds`, `order_status_changes` (`StatusChange`, the history);
+  `order_public_statuses` (`PublicStatus`) and `order_statuses` (`OrderStatus`), soft-deleted.
+- **Enums** `Milestone` (`placed`, `awaiting_payment`, `paid`, `received`, `cancelled`, `refunded`;
+  `settableByStatus()` — `paid`, `received`, `cancelled`) and `StatusColor` (`neutral`, `info`,
+  `success`, `warning`, `danger`, `accent`), which the panel turns into `--wx-*` tokens.
+- **The default statuses**, seeded once from `lang/*/statuses.php` in every language of the site:
+  «Accepted», «In progress», «Shipped», «Completed» (sets `received`), «Cancelled» (sets
+  `cancelled`), eight stages under them. After that they are the site's.
+- **The buyer's page** (§13.1) `/order/{number}` (`webx.orders.order`, `.localised`): a signed link
+  without an end, `Site\OrderLinks::page(number, locale)`; a bad signature — 404; `no-store`. View
+  `webx-orders::order.show` (`order.body`), layout `webx-orders.layout` (handle `orders.order`),
+  `webx-order*` in `resources/theme/orders.css`; statuses in the cache group `order-statuses`.
+- **With `webx-ui/module-users`** (`Site\VisitorOrders`): «My orders» `account/orders[/{number}]`
+  (`webx.orders.account.*`, another visitor's order — 404) with the badge of orders in progress, the
+  warning of `DeletionWarnings`, the tab `orders-tab` (`wx-orders-list`) and `orders-count` on
+  `users.form`, the card `visitor-card` on `orders.show`; panel `{id}/visitors` (+ `users.view`),
+  `{id}/visitor` POST / DELETE; MCP `orders_link_visitor`. Without it none of these exist.
+- **The section** `orders` (`Panel\OrdersModule`, npm `@webx-ui/module-orders`): `api/cms/orders` —
+  the list (views, search, filters, `user`, `counts`), `meta`, the card, `{id}/status|milestones|
+cancel|details|refunds`, the selection's `status` and `cancel`; every write a call of `Orders`,
+  `dry_run` the service's own. The card `orders.show`: public ids `header-actions`, `tabs`, `summary`,
+  `customer`; fields `customer.*`, `recipient.*`, `comment`, `manager_note`. Role `orders` («Order
+  manager»). `statuses` and `settings` — under `orders.statuses`. The selection: `Panel\StatusBatch`.
 - **MCP** (§12, `Mcp\OrdersTools`, `Mcp\StatusTools` on `OrdersModule`): `orders_list|get|history|summary`,
   `orders_set_status` (`order` or `numbers` ≤ 200), `orders_mark|cancel|refund|update|note`,
   `orders_statuses_list|save|delete|restore|reorder`, `orders_public_statuses_save|delete|restore|reorder`,
@@ -102,14 +102,15 @@ This release holds the orders, their panel, MCP and notifications; the checkout 
 
 ### Permissions
 
-| Permission        | Opens                                                        |
-| ----------------- | ------------------------------------------------------------ |
-| `orders.view`     | the list, the card and the history of orders                 |
-| `orders.manage`   | statuses, milestones by hand, cancelling, contacts and notes |
-| `orders.refund`   | recording money given back                                   |
-| `orders.statuses` | the screens of statuses and the settings of the section      |
+| Permission        | Opens                                                     |
+| ----------------- | --------------------------------------------------------- |
+| `orders.view`     | the list, the card and the history of orders              |
+| `orders.manage`   | statuses, marks, cancelling, contacts, notes, the visitor |
+| `orders.refund`   | recording money given back                                |
+| `orders.statuses` | the screens of statuses and the settings of the section   |
 
-Routes ask with `cms.can`, tools with `permission:`: reading — any of the first three; writing as the table says.
+Routes ask with `cms.can`, tools with `permission:`: reading — any of the first three; writing as
+the table says. Finding a visitor to link (`{id}/visitors`) wants `users.view` as well.
 
 ## Change it without forking
 
@@ -128,22 +129,21 @@ Routes ask with `cms.can`, tools with `permission:`: reading — any of the firs
   through the `Orders` service (spec decision 18), which keeps the history, the milestone copies
   and the events together.
 - Do not do anything slow in `OrderPlacing` (HTTP, letters): the cart's row is locked meanwhile.
-- Do not delete an order: it is the document of a deal. Cancel it instead.
-- Do not delete a status row for good: orders keep pointing at it and the history shows its name.
-  Soft-delete it with `OrderStatuses::remove()`, which leaves the orders where they are.
+- Do not delete an order: it is the document of a deal. Cancel it instead. Do not link it to a
+  visitor by writing `user_id`: `Orders::linkVisitor()` keeps the history and the event.
+- Do not delete a status row for good: orders point at it. Soft-delete it — `OrderStatuses::remove()`.
 - Do not store a hex colour in `order_statuses.color`: it is a `StatusColor` name for the dark theme.
 
 ## Check your work
 
-- `Panel/PanelTest`, `Panel/ScreenTest`, `Panel/AccessCoverageTest`, `Panel/BoundariesTest` (the
-  panel never writes an order itself), `Panel/PerformanceTest` (the list's budget),
-  `Panel/StatusesTest`, `Panel/SettingsTest`, `Panel/StatusReasonTest`, `CancelByStatusTest`.
+- `Panel/*Test` — `BoundariesTest`: the panel never writes an order itself; `PerformanceTest`: the
+  list's budget; `AccessCoverageTest`. `CancelByStatusTest`.
 - `Mcp/McpTest` (parity with the panel, dry runs write nothing), `Mcp/PerformanceTest`,
-  `Mcp/AccessCoverageTest`; `php artisan webx:mcp-tools --module=orders` lists 21 tools.
+  `Mcp/AccessCoverageTest`, `Mcp/LinkVisitorTest`; `webx:mcp-tools --module=orders` lists 21 (22 with users).
+- `Site/OrderPageTest` (the signed page, its budget, nothing without users), `Site/VisitorOrdersTest`.
 - `PlaceTest`, `MilestonesTest`, `StatusMoveTest`, `DetailsTest`, `RefundTest`, `PerformanceTest` (the budget of
   `place()`), and `CartLockTest`, `MilestoneRaceTest` against a real server: `WEBX_TEST_MYSQL_URL=mariadb://user:password@host:3306/db vendor/bin/phpunit …`.
-- `migrate` / `migrate:rollback` — the tables come and go; after it five public statuses and
-  eight stages, named in every language. `Notifications/*Test` — with and without the module.
+- `migrate` / `migrate:rollback` — the tables come and go. `Notifications/*Test` — with and without it.
 
 ## Read more
 

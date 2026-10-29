@@ -61,4 +61,23 @@ return [
         'refunded' => [],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | The buyer's page of an order
+    |--------------------------------------------------------------------------
+    |
+    | `/order/{number}` behind a signed link (§13.1): the layout it stands in —
+    | `'layout'` for the site's `<x-layout>`, empty for the package's own bare
+    | document — and the middleware of the page. «My orders» of the account
+    | stands in the account's frame of `webx-ui/module-users` instead.
+    |
+    */
+
+    'layout' => env('WEBX_ORDERS_LAYOUT'),
+
+    'middleware' => ['web', 'webx.locale'],
+
+    /** Orders a page of «My orders» shows. */
+    'account_per_page' => 20,
+
 ];

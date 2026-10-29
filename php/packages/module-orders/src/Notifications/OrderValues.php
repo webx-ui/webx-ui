@@ -6,13 +6,12 @@ namespace WebxUi\Orders\Notifications;
 
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\URL;
 use WebxUi\Cart\Money;
 use WebxUi\Orders\Data\ItemData;
 use WebxUi\Orders\Data\OrderData;
 use WebxUi\Orders\Models\PublicStatus;
 use WebxUi\Orders\Panel\OrderList;
+use WebxUi\Orders\Site\OrderLinks;
 
 /**
  * The values of an order for its templates (spec §10.2) — a snapshot of what the event carried:
@@ -25,7 +24,7 @@ use WebxUi\Orders\Panel\OrderList;
 final readonly class OrderValues
 {
     /** The page of the order for the buyer (§13.1), when the site has it. */
-    public const string PUBLIC_ROUTE = 'webx.orders.order';
+    public const string PUBLIC_ROUTE = OrderLinks::PAGE;
 
     public function __construct(
         private Container $container,
@@ -101,11 +100,7 @@ final readonly class OrderValues
      */
     public static function publicUrl(string $number, string $locale): string
     {
-        if (! Route::has(self::PUBLIC_ROUTE)) {
-            return '';
-        }
-
-        return URL::signedRoute(self::PUBLIC_ROUTE, ['number' => $number, 'locale' => $locale]);
+        return app(OrderLinks::class)->page($number, $locale);
     }
 
     public function format(int $minor, string $currency): string

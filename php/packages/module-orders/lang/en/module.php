@@ -8,6 +8,7 @@ return [
     'empty' => 'No orders yet.',
     'empty-help' => 'An order appears here as soon as it is placed on the site.',
     'order' => 'Order',
+    'statuses-cache' => 'Order statuses',
     'fields' => [
         'customer_first_name' => 'First name',
         'customer_last_name' => 'Last name',
@@ -16,6 +17,7 @@ return [
         'recipient' => 'Recipient',
         'comment' => 'Buyer\'s comment',
         'manager_note' => 'Manager note',
+        'user_id' => 'Visitor',
     ],
     'milestones' => [
         'placed' => 'Placed',

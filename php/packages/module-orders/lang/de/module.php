@@ -8,6 +8,7 @@ return [
     'empty' => 'Noch keine Bestellungen.',
     'empty-help' => 'Eine Bestellung erscheint hier, sobald sie auf der Website aufgegeben wird.',
     'order' => 'Bestellung',
+    'statuses-cache' => 'Bestellstatus',
     'fields' => [
         'customer_first_name' => 'Vorname',
         'customer_last_name' => 'Nachname',
@@ -16,6 +17,7 @@ return [
         'recipient' => 'Empfänger',
         'comment' => 'Kommentar des Käufers',
         'manager_note' => 'Notiz des Managers',
+        'user_id' => 'Besucher',
     ],
     'milestones' => [
         'placed' => 'Aufgegeben',

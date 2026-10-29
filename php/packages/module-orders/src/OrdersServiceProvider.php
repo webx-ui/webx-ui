@@ -4,19 +4,27 @@ declare(strict_types=1);
 
 namespace WebxUi\Orders;
 
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Admin\History\HistoryTypes;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Admin\Visitors\Events\VisitorDeleting;
+use WebxUi\Cache\CacheGroups;
+use WebxUi\Compositions\Compositions;
 use WebxUi\Notifications\NotificationEvents;
 use WebxUi\Orders\Blocks\OrderBlocks;
 use WebxUi\Orders\Doctor\OrdersNotificationsCheck;
 use WebxUi\Orders\Models\Order;
+use WebxUi\Orders\Models\OrderStatus;
+use WebxUi\Orders\Models\PublicStatus;
 use WebxUi\Orders\Notifications\OrderEvents;
 use WebxUi\Orders\Notifications\SendOrderNotifications;
 use WebxUi\Orders\Panel\OrdersModule;
 use WebxUi\Orders\Panel\SettingsScreen;
+use WebxUi\Orders\Site\OrderPage;
+use WebxUi\Orders\Site\VisitorOrders;
 
 /**
  * Orders and, in later stages, the checkout (spec §1): the tables of an order and its two sets of
@@ -54,7 +62,28 @@ class OrdersServiceProvider extends ServiceProvider
     {
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-orders');
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-orders');
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
+        $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+        Compositions::handles('orders', ['orders.order']);
+
+        // Both sets of statuses as the buyer's pages read them (§16).
+        $groups = $this->app->make(CacheGroups::class);
+        $groups->declare(OrderPage::GROUP, 'webx-orders::module.statuses-cache');
+        $groups->bumpOn(OrderPage::GROUP, PublicStatus::class, OrderStatus::class);
+
+        // An account that goes leaves its orders to nobody (§13.2): the event is the panel's, so
+        // it is heard whichever visitors module deletes the account.
+        Event::listen(VisitorDeleting::class, function (VisitorDeleting $event): void {
+            $this->app->make(Orders::class)->forgetVisitor($event->visitorId, 'users');
+        });
+
+        // «My orders», the warning before the account goes and the visitor's tab in the panel —
+        // only where there are visitors (§13.2).
+        if (VisitorOrders::installed()) {
+            VisitorOrders::register($this->app);
+            $this->loadRoutesFrom(__DIR__.'/../routes/account.php');
+        }
 
         $this->app->make(ModuleRegistry::class)->register($this->app->make(OrdersModule::class));
         $this->registerHistory();
@@ -78,6 +107,10 @@ class OrdersServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../lang' => lang_path('vendor/webx-orders'),
         ], 'webx-orders-lang');
+
+        $this->publishes([
+            __DIR__.'/../resources/views' => resource_path('views/vendor/webx-orders'),
+        ], 'webx-orders-views');
     }
 
     /**
@@ -89,7 +122,7 @@ class OrdersServiceProvider extends ServiceProvider
     {
         $fields = [];
 
-        foreach (['customer_first_name', 'customer_last_name', 'customer_phone', 'customer_email', 'recipient', 'comment', 'manager_note'] as $field) {
+        foreach (['customer_first_name', 'customer_last_name', 'customer_phone', 'customer_email', 'recipient', 'comment', 'manager_note', 'user_id'] as $field) {
             $fields[$field] = 'webx-orders::module.fields.'.$field;
         }
 

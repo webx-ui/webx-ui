@@ -8,6 +8,7 @@ return [
     'empty' => 'Aucune commande pour l’instant.',
     'empty-help' => 'Une commande apparaît ici dès qu’elle est passée sur le site.',
     'order' => 'Commande',
+    'statuses-cache' => 'Statuts des commandes',
     'fields' => [
         'customer_first_name' => 'Prénom',
         'customer_last_name' => 'Nom',
@@ -16,6 +17,7 @@ return [
         'recipient' => 'Destinataire',
         'comment' => 'Commentaire de l\'acheteur',
         'manager_note' => 'Note du gestionnaire',
+        'user_id' => 'Visiteur',
     ],
     'milestones' => [
         'placed' => 'Passée',

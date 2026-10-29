@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace WebxUi\Orders\Mcp;
 
 use Closure;
+use Illuminate\Container\Container;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Validation\Factory as Validation;
 use Illuminate\Events\Dispatcher as EventDispatcher;
 use Illuminate\Support\Carbon;
+use WebxUi\Admin\Visitors\Visitors;
 use WebxUi\Cart\Money;
 use WebxUi\Mcp\Arguments;
 use WebxUi\Mcp\Exceptions\ToolFailure;
@@ -42,7 +44,9 @@ use WebxUi\Orders\RefundRefused;
 use WebxUi\Orders\RefundRequest;
 use WebxUi\Orders\RefundResult;
 use WebxUi\Orders\Refusal;
+use WebxUi\Orders\Site\VisitorOrders;
 use WebxUi\Orders\StatusMoveRefused;
+use WebxUi\Orders\VisitorLink;
 
 /**
  * The orders for an agent (spec §12): reading them, and working them the way the card does.
@@ -93,7 +97,7 @@ final readonly class OrdersTools
         ];
         $flag = static fn (string $what): array => ['type' => 'boolean', 'description' => $what];
 
-        return Arguments::strictAll([
+        $tools = [
             Tool::read(
                 'list',
                 'Orders, newest first, twenty a page: number, when placed, the buyer (name, phone, e-mail — personal data, '
@@ -252,7 +256,28 @@ final readonly class OrdersTools
                 ['properties' => ['order' => $order, 'text' => ['type' => 'string']], 'required' => ['order', 'text']],
                 permission: OrdersModule::MANAGE,
             ),
-        ], 'orders_');
+        ];
+
+        // The visitor of an order (§13.3) — only where there are visitors.
+        if (VisitorOrders::installed()) {
+            $tools[] = Tool::mutating(
+                'link_visitor',
+                'Link an order to a visitor\'s account — it then shows in their «My orders» —, move it to another visitor in one '
+                .'step, or unlink it (`unlink: true`) so it is a guest\'s again. `visitor` is the account\'s id or its exact '
+                .'e-mail (users_list finds one by a part of the name or the address). Only the link changes: the contacts in '
+                .'the order stay what the buyer typed; the history keeps who was linked, and no letter goes to the buyer. '
+                .'`dry_run` answers whom it finds, and whom the order belonged to before.',
+                fn (array $arguments): array => $this->linkVisitor($arguments),
+                ['properties' => [
+                    'order' => $order,
+                    'visitor' => ['type' => ['integer', 'string'], 'description' => 'The visitor: the account id or its exact e-mail.'],
+                    'unlink' => $flag('Unlink instead: the order is a guest\'s again.'),
+                ], 'required' => ['order']],
+                permission: OrdersModule::MANAGE,
+            );
+        }
+
+        return Arguments::strictAll($tools, 'orders_');
     }
 
     /**
@@ -762,6 +787,40 @@ final readonly class OrdersTools
         }
 
         return ['number' => $order->number, 'note' => $text, 'dry_run' => $dryRun];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function linkVisitor(array $arguments): array
+    {
+        $order = $this->order($arguments['order'] ?? null);
+        $dryRun = $this->dryRun($arguments);
+
+        if ((bool) ($arguments['unlink'] ?? false)) {
+            $link = $this->orders->unlinkVisitor($order, self::SOURCE, $dryRun);
+        } else {
+            $reference = $arguments['visitor'] ?? null;
+            $visitors = Container::getInstance()->make(Visitors::class);
+            $visitor = match (true) {
+                is_int($reference), is_string($reference) && ctype_digit($reference) => $visitors->find((int) $reference),
+                is_string($reference) && str_contains($reference, '@') => $visitors->findByEmail($reference),
+                default => throw new ToolFailure('`visitor` is the account id or its exact e-mail; `unlink: true` unlinks.'),
+            } ?? throw new ToolFailure('There is no such visitor. users_list finds one by a part of the name or the address.');
+
+            $link = $this->orders->linkVisitor($order, $visitor->id, self::SOURCE, $dryRun);
+        }
+
+        return [
+            'number' => $order->number,
+            ...$link->toArray(),
+            'message' => match ($link->outcome) {
+                VisitorLink::LINKED => 'The order shows in «My orders» of '.VisitorLink::name($link->visitor ?? throw new ToolFailure('No visitor.')).'.',
+                VisitorLink::UNLINKED => 'The order is a guest\'s: it is gone from the visitor\'s «My orders».',
+                default => 'Nothing changes: the order is linked so already.',
+            },
+        ];
     }
 
     /**

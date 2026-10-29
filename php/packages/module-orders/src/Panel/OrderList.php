@@ -56,6 +56,8 @@ final class OrderList
             'awaiting' => ['nullable', 'boolean'],
             'failed' => ['nullable', 'boolean'],
             'visitor' => ['nullable', Rule::in(['guest', 'visitor'])],
+            // One visitor's orders: the tab «Orders» of the visitor's card (§13.2).
+            'user' => ['nullable', 'integer', 'min:1'],
             'delivery' => ['nullable', 'string', 'max:64'],
             'payment' => ['nullable', 'string', 'max:64'],
             'from' => ['nullable', 'date_format:Y-m-d'],
@@ -208,6 +210,10 @@ final class OrderList
             $query->whereNull('user_id');
         } elseif ($visitor === 'visitor') {
             $query->whereNotNull('user_id');
+        }
+
+        if (is_numeric($filters['user'] ?? null)) {
+            $query->where('user_id', (int) $filters['user']);
         }
 
         foreach (OrderBlocks::KEYS as $block) {

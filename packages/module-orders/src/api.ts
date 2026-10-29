@@ -17,6 +17,8 @@ import type {
   StatusArrangement,
   StatusBoardData,
   StatusConsequences,
+  VisitorChoice,
+  VisitorLinkPreview,
 } from './types'
 
 /** Where «Orders» answer under the panel's API (§11). */
@@ -94,6 +96,12 @@ export interface OrdersApi {
   arrange(arrangement: StatusArrangement): Promise<StatusBoardData>
   settings(): Promise<OrdersSettings>
   saveSettings(values: ScreenModel): Promise<OrdersSettings>
+  /** Customers to link the order to (§13.3), by a part of the name, the e-mail or the phone. */
+  searchVisitors(id: number, search: string): Promise<VisitorChoice[]>
+  previewLink(id: number, userId: number): Promise<VisitorLinkPreview>
+  link(id: number, userId: number): Promise<OrderDetail>
+  previewUnlink(id: number): Promise<VisitorLinkPreview>
+  unlink(id: number): Promise<OrderDetail>
 }
 
 export function createOrdersApi(admin: AdminContext): OrdersApi {
@@ -217,5 +225,25 @@ export function createOrdersApi(admin: AdminContext): OrdersApi {
     settings: () => admin.http.get<{ data: OrdersSettings }>(`${base}/settings`).then(data),
     saveSettings: (values) =>
       admin.http.put<{ data: OrdersSettings }>(`${base}/settings`, { values }).then(data),
+    searchVisitors: (id, search) =>
+      admin.http
+        .get<{ data: VisitorChoice[] }>(`${base}/${id}/visitors?${new URLSearchParams({ search })}`)
+        .then(data),
+    previewLink: (id, userId) =>
+      admin.http
+        .post<{ data: VisitorLinkPreview }>(`${base}/${id}/visitor`, {
+          user_id: userId,
+          dry_run: true,
+        })
+        .then(data),
+    link: (id, userId) =>
+      admin.http
+        .post<{ data: OrderDetail }>(`${base}/${id}/visitor`, { user_id: userId })
+        .then(data),
+    previewUnlink: (id) =>
+      admin.http
+        .delete<{ data: VisitorLinkPreview }>(`${base}/${id}/visitor`, { query: { dry_run: 1 } })
+        .then(data),
+    unlink: (id) => admin.http.delete<{ data: OrderDetail }>(`${base}/${id}/visitor`).then(data),
   }
 }

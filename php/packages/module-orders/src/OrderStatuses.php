@@ -8,11 +8,13 @@ use Illuminate\Contracts\Validation\Factory as Validation;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Localization\Locales;
 use WebxUi\Orders\Models\Order;
 use WebxUi\Orders\Models\OrderStatus;
 use WebxUi\Orders\Models\PublicStatus;
 use WebxUi\Orders\Notifications\OrderChannels;
+use WebxUi\Orders\Site\OrderPage;
 
 /**
  * The two sets of statuses as the screen `orders.statuses` and the agent write them (spec §5.6,
@@ -35,6 +37,7 @@ final readonly class OrderStatuses
         private ConnectionInterface $db,
         private Validation $validation,
         private Locales $locales,
+        private CacheGroups $groups,
     ) {}
 
     /**
@@ -331,12 +334,15 @@ final readonly class OrderStatuses
             throw new StatusRefused($plan);
         }
 
-        $this->db->transaction(static function () use ($publics, $groups, $statuses): void {
+        $this->db->transaction(function () use ($publics, $groups, $statuses): void {
             // A dozen rows, written only when the screen is dragged: one statement a row is
             // simpler than a CASE, and as quick here.
             foreach ($publics as $position => $id) {
                 PublicStatus::query()->whereKey($id)->where('position', '!=', $position)->update(['position' => $position]);
             }
+
+            // The order of the public groups is the scale on the buyer's page: no event above.
+            $this->groups->bump(OrderPage::GROUP);
 
             $position = 0;
 

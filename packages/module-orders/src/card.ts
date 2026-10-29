@@ -13,6 +13,9 @@ export interface OrderCardContext {
   mark(milestone: 'paid' | 'received'): Promise<void>
   cancel(): Promise<void>
   refund(): Promise<void>
+  /** Link the order to a visitor, or to another one (§13.3). */
+  linkVisitor(): Promise<void>
+  unlinkVisitor(): Promise<void>
 }
 
 export const orderCardKey: InjectionKey<OrderCardContext> = Symbol('webx-orders-card')

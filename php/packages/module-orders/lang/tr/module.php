@@ -8,6 +8,7 @@ return [
     'empty' => 'Henüz sipariş yok.',
     'empty-help' => 'Sitede bir sipariş verildiği anda burada görünür.',
     'order' => 'Sipariş',
+    'statuses-cache' => 'Sipariş durumları',
     'fields' => [
         'customer_first_name' => 'Ad',
         'customer_last_name' => 'Soyad',
@@ -16,6 +17,7 @@ return [
         'recipient' => 'Alıcı',
         'comment' => 'Müşteri yorumu',
         'manager_note' => 'Yönetici notu',
+        'user_id' => 'Ziyaretçi',
     ],
     'milestones' => [
         'placed' => 'Verildi',

@@ -78,6 +78,8 @@ export interface OrderQuery {
   awaiting?: boolean
   failed?: boolean
   visitor?: 'guest' | 'visitor'
+  /** One visitor's orders — the tab «Orders» of the visitor's card. */
+  user?: number
   delivery?: string
   payment?: string
   from?: string
@@ -145,6 +147,8 @@ export interface OrderCardData {
   exponent: number
   guest: boolean
   user_id: number | null
+  /** The account the order belongs to as it is now; name and e-mail are null for one deleted. */
+  visitor: { id: number; name: string | null; email: string | null } | null
   status: OrderStatus | null
   statuses: PublicStatusGroup[]
   awaiting_payment: boolean
@@ -175,7 +179,37 @@ export interface OrderCardData {
     cancel: boolean
     details: boolean
     refund: boolean
+    /** Link and unlink a visitor — only with the visitors installed. */
+    visitor: boolean
+    /** Finding one needs the right to read the customers as well. */
+    visitor_search: boolean
   }
+}
+
+/** A customer the dialog of the link offers. */
+export interface VisitorChoice {
+  id: number
+  name: string
+  email: string
+  phone: string | null
+  /** The order belongs to them now. */
+  current: boolean
+  /** The address of the order is theirs. */
+  same_email: boolean
+}
+
+interface VisitorBrief {
+  id: number
+  name: string | null
+  email: string | null
+}
+
+/** What a link or an unlink does, from the service's dry run. */
+export interface VisitorLinkPreview {
+  outcome: 'linked' | 'unlinked' | 'unchanged'
+  visitor: VisitorBrief | null
+  previous: VisitorBrief | null
+  dry_run: boolean
 }
 
 /** One row of the log of the notifications module: a channel, a recipient, what came of it. */

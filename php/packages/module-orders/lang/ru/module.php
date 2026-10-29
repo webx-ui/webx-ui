@@ -8,6 +8,7 @@ return [
     'empty' => 'Заказов пока нет.',
     'empty-help' => 'Заказ появится здесь, как только его оформят на сайте.',
     'order' => 'Заказ',
+    'statuses-cache' => 'Статусы заказов',
     'fields' => [
         'customer_first_name' => 'Имя',
         'customer_last_name' => 'Фамилия',
@@ -16,6 +17,7 @@ return [
         'recipient' => 'Получатель',
         'comment' => 'Комментарий покупателя',
         'manager_note' => 'Заметка менеджера',
+        'user_id' => 'Посетитель',
     ],
     'milestones' => [
         'placed' => 'Оформлен',

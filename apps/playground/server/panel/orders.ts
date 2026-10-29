@@ -618,6 +618,14 @@ function card(record: OrderRecord, locale: string, line: Line) {
       exponent: 2,
       guest: record.guest,
       user_id: record.guest ? null : 1,
+      // The playground has no visitors module: the linking of §13.3 is not offered.
+      visitor: record.guest
+        ? null
+        : {
+            id: 1,
+            name: `${record.first_name} ${record.last_name ?? ''}`.trim(),
+            email: record.email,
+          },
       status: statusOf(record.status, locale, line),
       statuses: grouped(locale, line),
       awaiting_payment: record.awaiting && !cancelled,
@@ -670,6 +678,8 @@ function card(record: OrderRecord, locale: string, line: Line) {
         cancel: !cancelled && !record.marks.refunded,
         details: true,
         refund: refundable > 0 || tendersLeft > 0 || unitsLeft > 0,
+        visitor: false,
+        visitor_search: false,
       },
     },
     values: {

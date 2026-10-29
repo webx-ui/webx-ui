@@ -290,7 +290,8 @@ final class NotificationsTest extends PlaceTestCase
         $this->assertSame('Товар A', $values['items'][0]['name']);
         $this->assertSame('2', $values['items'][0]['qty']);
         $this->assertSame('Принят', $values['public_status']);
-        $this->assertSame('', $values['public_url']);
+        // The signed page of the order in its language (§13.1): the prefix is signed with the path.
+        $this->assertStringStartsWith('http://localhost/ru/order/'.$order->number.'?signature=', $values['public_url']);
         $this->assertSame('', $values['discount']);
         $this->assertIsString($values['payable']);
     }

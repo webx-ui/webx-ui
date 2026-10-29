@@ -8,6 +8,7 @@ return [
     'empty' => 'Замовлень поки немає.',
     'empty-help' => 'Замовлення з’явиться тут, щойно його оформлять на сайті.',
     'order' => 'Замовлення',
+    'statuses-cache' => 'Статуси замовлень',
     'fields' => [
         'customer_first_name' => 'Ім’я',
         'customer_last_name' => 'Прізвище',
@@ -16,6 +17,7 @@ return [
         'recipient' => 'Одержувач',
         'comment' => 'Коментар покупця',
         'manager_note' => 'Нотатка менеджера',
+        'user_id' => 'Відвідувач',
     ],
     'milestones' => [
         'placed' => 'Оформлено',

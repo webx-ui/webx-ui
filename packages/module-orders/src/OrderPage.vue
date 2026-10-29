@@ -32,6 +32,7 @@ import { NAMESPACE, useOrdersMessages } from './i18n'
 import MarkDialog from './MarkDialog.vue'
 import RefundDialog from './RefundDialog.vue'
 import StatusDialog from './StatusDialog.vue'
+import VisitorDialog from './VisitorDialog.vue'
 import { toneOf } from './tones'
 import type { OrderCardData, OrderDetail, PublicStatusGroup } from './types'
 
@@ -100,6 +101,9 @@ const cancelDialog = createModal<OrderDetail, { orderId: number; number: string 
   CancelDialog,
 )
 const refundDialog = createModal<OrderDetail, { order: OrderCardData }>(RefundDialog)
+const visitorDialog = createModal<OrderDetail, { order: OrderCardData; email: string | null }>(
+  VisitorDialog,
+)
 
 /** A new answer of the server; what is being typed in the contacts stays unless asked. */
 function take(detail: OrderDetail, withValues = true): void {
@@ -179,7 +183,50 @@ async function refund(): Promise<void> {
   await after(refundDialog({ order: open }), t('panel.refunded-toast'))
 }
 
-provideOrderCard({ order, busy, changeStatus, mark, cancel, refund })
+async function linkVisitor(): Promise<void> {
+  const open = order.value
+
+  if (!open) return
+
+  const email = values.value['customer.email']
+
+  await after(
+    visitorDialog({ order: open, email: typeof email === 'string' ? email : null }),
+    t('panel.visitor-linked'),
+  )
+}
+
+/** Unlinking asks first, with whom the order leaves — the service's dry run says. */
+async function unlinkVisitor(): Promise<void> {
+  const open = order.value
+
+  if (!open || busy.value) return
+
+  busy.value = true
+
+  try {
+    const plan = await api.previewUnlink(open.id)
+    const name = plan.previous?.name ?? plan.previous?.email ?? `#${plan.previous?.id ?? ''}`
+    const agreed = await confirm({
+      title: t('panel.visitor-unlink-title', { number: open.number ?? `#${open.id}` }),
+      message: `${t('panel.visitor-unlink-text', { name })} ${t('panel.visitor-no-letter')}`,
+      confirmText: t('panel.visitor-unlink'),
+      cancelText: t('panel.dismiss'),
+      tone: 'danger',
+    })
+
+    if (!agreed) return
+
+    take(await api.unlink(open.id), false)
+    toast.success(t('panel.visitor-unlinked'))
+  } catch (error) {
+    toast.danger(message(error))
+  } finally {
+    busy.value = false
+  }
+}
+
+provideOrderCard({ order, busy, changeStatus, mark, cancel, refund, linkVisitor, unlinkVisitor })
 
 async function save(): Promise<void> {
   const open = order.value

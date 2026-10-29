@@ -8,6 +8,7 @@ return [
     'empty' => 'Ainda não há pedidos.',
     'empty-help' => 'Um pedido aparece aqui assim que é feito no site.',
     'order' => 'Pedido',
+    'statuses-cache' => 'Estados das encomendas',
     'fields' => [
         'customer_first_name' => 'Nome',
         'customer_last_name' => 'Apelido',
@@ -16,6 +17,7 @@ return [
         'recipient' => 'Destinatário',
         'comment' => 'Comentário do comprador',
         'manager_note' => 'Nota do gestor',
+        'user_id' => 'Visitante',
     ],
     'milestones' => [
         'placed' => 'Realizado',

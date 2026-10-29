@@ -8,6 +8,7 @@ return [
     'empty' => 'Ancora nessun ordine.',
     'empty-help' => 'Un ordine compare qui non appena viene fatto sul sito.',
     'order' => 'Ordine',
+    'statuses-cache' => 'Stati degli ordini',
     'fields' => [
         'customer_first_name' => 'Nome',
         'customer_last_name' => 'Cognome',
@@ -16,6 +17,7 @@ return [
         'recipient' => 'Destinatario',
         'comment' => 'Commento dell\'acquirente',
         'manager_note' => 'Nota del gestore',
+        'user_id' => 'Visitatore',
     ],
     'milestones' => [
         'placed' => 'Effettuato',
