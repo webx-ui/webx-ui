@@ -6,6 +6,7 @@ namespace WebxUi\Catalog\Tests;
 
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\View;
+use Illuminate\View\FileViewFinder;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Cart\CartServiceProvider;
 use WebxUi\Compositions\CompositionsServiceProvider;
@@ -118,7 +119,9 @@ final class QuickButtonTest extends TestCase
         $views = sys_get_temp_dir().'/webx-catalog-quick-'.getmypid();
         @mkdir($views.'/parts/catalog/product', 0777, true);
         file_put_contents($views.'/parts/catalog/product/quick.blade.php', '');
-        View::getFinder()->prependLocation($views);
+        $finder = View::getFinder();
+        $this->assertInstanceOf(FileViewFinder::class, $finder);
+        $finder->prependLocation($views);
 
         try {
             $this->get($product->url())
