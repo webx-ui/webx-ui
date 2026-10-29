@@ -75,7 +75,8 @@
         │        │      │        │                                    │
         │        │      │   module-coupons                            │
         │        │      │                                             │
-        │   module-checkout ── cart, orders (+ delivery, payments — по желанию)
+        │  (оформление — внутри module-orders: + widgets, compositions;
+        │   delivery, payments — по желанию, слоты)
         │        │
         └── module-wallet (users, orders)
                ├── module-certificates (+ cart)
@@ -84,19 +85,20 @@
 
 ### 3.1. База
 
-| Пакет             | Что                                                                                                                                                         | Зависит от                                                                                                     |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| конструктор       | `WxConditionBuilder` в `@webx-ui/core` и серверный вычислитель условий в `module-admin`; поля условий регистрируют модули; общий, не только для скидок      | — (часть `@webx-ui/core` и `module-admin`, не пакет)                                                           |
-| `module-cart`     | корзины гостя (токен в cookie) и покупателя, строки с `parent_id`, контракт `Purchasable`, вычислитель итогов, JSON API, виджет, хелпер `cart()`            | `module-admin`, `widgets`                                                                                      |
-| `module-orders`   | заказ как снимок: строки, цены, скидки, привилегии, оплаты; вехи; события §6; раздел панели                                                                 | `module-cart`                                                                                                  |
-| `module-users`    | посетители сайта (запланирован отдельно); для магазина — группы покупателей, история заказов, привязка гостевой корзины при входе                           | `module-admin`                                                                                                 |
-| `module-checkout` | шаги оформления, слоты доставки и оплаты, пропуск доставки без shippable-строк, сверка показанной суммы с пересчитанной перед созданием заказа, свой layout | `module-cart`, `module-orders`, `compositions`; `module-delivery` и `module-payments` — необязательные (слоты) |
-| `module-delivery` | реестр способов доставки; из коробки — самовывоз и курьер                                                                                                   | `module-cart` (решение 19 спеки доставки)                                                                      |
-| `module-payments` | реестр способов оплаты; из коробки — оплата при получении и по реквизитам                                                                                   | `module-orders` (решение 12 спеки оплаты)                                                                      |
+| Пакет             | Что                                                                                                                                                                                                                                                         | Зависит от                                                                                               |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| конструктор       | `WxConditionBuilder` в `@webx-ui/core` и серверный вычислитель условий в `module-admin`; поля условий регистрируют модули; общий, не только для скидок                                                                                                      | — (часть `@webx-ui/core` и `module-admin`, не пакет)                                                     |
+| `module-cart`     | корзины гостя (токен в cookie) и покупателя, строки с `parent_id`, контракт `Purchasable`, вычислитель итогов, JSON API, виджет, хелпер `cart()`                                                                                                            | `module-admin`, `widgets`                                                                                |
+| `module-orders`   | заказ как снимок: строки, цены, скидки, привилегии, оплаты; вехи; события §6; раздел панели; оформление — шаги, слоты доставки и оплаты, пропуск доставки без shippable-строк, сверка показанной суммы с пересчитанной, свой layout; выключается настройкой | `module-cart`, `widgets`, `compositions`; `module-delivery` и `module-payments` — необязательные (слоты) |
+| `module-users`    | посетители сайта (запланирован отдельно); для магазина — группы покупателей, история заказов, привязка гостевой корзины при входе                                                                                                                           | `module-admin`                                                                                           |
+| `module-delivery` | реестр способов доставки; из коробки — самовывоз и курьер                                                                                                                                                                                                   | `module-cart` (решение 19 спеки доставки)                                                                |
+| `module-payments` | реестр способов оплаты; из коробки — оплата при получении и по реквизитам                                                                                                                                                                                   | `module-orders` (решение 12 спеки оплаты)                                                                |
 
 Оформление без `module-delivery` и `module-payments` — контакты покупателя, получатель и комментарий;
 шаг доставки появляется, только если стоит доставка, шаг оплаты — только если стоит оплата
-(решение 27.10.2026 по webx-ui#58, [`WEBX_UI_MODULE_CHECKOUT.md`](WEBX_UI_MODULE_CHECKOUT.md) §1.1).
+(решение 27.10.2026 по webx-ui#58). Оформление — часть `module-orders`, отдельного пакета нет; его
+можно выключить, и тогда заказ создаёт код сайта или API через `Orders::place()` (решение 29.10.2026
+по webx-ui#89, [`WEBX_UI_MODULE_ORDERS.md`](WEBX_UI_MODULE_ORDERS.md) §1, §1.1).
 
 Корзина — без своей страницы: только виджет (выдвижная панель, диалог или выпадающее меню —
 выбор темы) и API. Страница — у оформления.
@@ -163,7 +165,7 @@ Composer-имя — без префикса `module-`: `payment-<шлюз>`, `de
   магазин», и способ доставки показывает ноль. Сумму в цепочку она не пишет.
 - **Подсказка (hint)** — текст для покупателя из ближайшего невыполненного условия правила.
 - **Доставка** — строка цепочки после скидок (стоимость способа, если её не сняла привилегия);
-  точное место и налог доставки — спека `module-checkout`.
+  точное место — оформление (§22.2 `WEBX_UI_MODULE_ORDERS.md`); налогов в v1 нет.
 
 Перед созданием заказа оформление пересчитывает цепочку и сверяет с суммой, которую видел
 покупатель. Расходятся — заказ не создаётся, покупатель видит новую сумму.
@@ -179,7 +181,7 @@ Composer-имя — без префикса `module-`: `payment-<шлюз>`, `de
 | слагаемые цепочки        | `module-cart`       | правила (скидки), кошелёк (зачёты), доставка                            |
 | способы доставки         | `module-delivery`   | сам модуль (самовывоз, курьер), `delivery-*`                            |
 | способы оплаты           | `module-payments`   | сам модуль (при получении, по реквизитам), `payment-*`                  |
-| шаги оформления          | `module-checkout`   | сам модуль; проект — свои                                               |
+| шаги оформления          | `module-orders`     | сам модуль; проект — свои                                               |
 
 Сигнатуры и порядок опроса — в спеках модулей-владельцев.
 
@@ -225,24 +227,23 @@ Composer-имя — без префикса `module-`: `payment-<шлюз>`, `de
 
 Файлов ещё нет; каждый появится в своей задаче.
 
-| Модуль                    | Спека                            |
-| ------------------------- | -------------------------------- |
-| конструктор условий       | `WEBX_UI_CONDITIONS.md`          |
-| `module-cart`             | `WEBX_UI_MODULE_CART.md`         |
-| `module-orders`           | `WEBX_UI_MODULE_ORDERS.md`       |
-| `module-users`            | `WEBX_UI_MODULE_USERS.md`        |
-| `module-checkout`         | `WEBX_UI_MODULE_CHECKOUT.md`     |
-| `module-delivery`         | `WEBX_UI_MODULE_DELIVERY.md`     |
-| `module-payments`         | `WEBX_UI_MODULE_PAYMENTS.md`     |
-| `module-cart-rules`       | `WEBX_UI_MODULE_CART_RULES.md`   |
-| `module-coupons`          | `WEBX_UI_MODULE_COUPONS.md`      |
-| `module-wallet`           | `WEBX_UI_MODULE_WALLET.md`       |
-| `module-certificates`     | `WEBX_UI_MODULE_CERTIFICATES.md` |
-| `module-loyalty`          | `WEBX_UI_MODULE_LOYALTY.md`      |
-| `delivery-*`, `payment-*` | своя спека у каждой интеграции   |
+| Модуль                      | Спека                            |
+| --------------------------- | -------------------------------- |
+| конструктор условий         | `WEBX_UI_CONDITIONS.md`          |
+| `module-cart`               | `WEBX_UI_MODULE_CART.md`         |
+| `module-orders`, оформление | `WEBX_UI_MODULE_ORDERS.md`       |
+| `module-users`              | `WEBX_UI_MODULE_USERS.md`        |
+| `module-delivery`           | `WEBX_UI_MODULE_DELIVERY.md`     |
+| `module-payments`           | `WEBX_UI_MODULE_PAYMENTS.md`     |
+| `module-cart-rules`         | `WEBX_UI_MODULE_CART_RULES.md`   |
+| `module-coupons`            | `WEBX_UI_MODULE_COUPONS.md`      |
+| `module-wallet`             | `WEBX_UI_MODULE_WALLET.md`       |
+| `module-certificates`       | `WEBX_UI_MODULE_CERTIFICATES.md` |
+| `module-loyalty`            | `WEBX_UI_MODULE_LOYALTY.md`      |
+| `delivery-*`, `payment-*`   | своя спека у каждой интеграции   |
 
 Порядок по зависимостям: конструктор и `module-cart` → `module-orders`, `module-delivery`,
-`module-payments` → `module-checkout`; `module-users` — параллельно; спутники — после базы
+`module-payments` → оформление в `module-orders`; `module-users` — параллельно; спутники — после базы
 (`cart-rules` → `coupons`; `wallet` → `certificates`, `loyalty`).
 
 ## 9. Открытые вопросы (решает человек)

@@ -3,7 +3,7 @@
 Статус: спроектировано, ждёт приёмки (webx-ui#60, этап 1); пакет не начат. Карта семейства —
 [`WEBX_UI_COMMERCE.md`](WEBX_UI_COMMERCE.md): принципы, цепочка итогов, события заказа. Соседи:
 заказы — [`WEBX_UI_MODULE_ORDERS.md`](WEBX_UI_MODULE_ORDERS.md) (вехи §5, блоки снимка §6.4, возврат
-§9), оформление — [`WEBX_UI_MODULE_CHECKOUT.md`](WEBX_UI_MODULE_CHECKOUT.md) (слот `PaymentSlot`
+§9), оформление — часть II [`WEBX_UI_MODULE_ORDERS.md`](WEBX_UI_MODULE_ORDERS.md) (слот `PaymentSlot`
 §6.3, подтверждение §8, «Спасибо» §10), доставка — [`WEBX_UI_MODULE_DELIVERY.md`](WEBX_UI_MODULE_DELIVERY.md)
 (наложенный платёж в накладной §11.2, шаблон спутника §13), доступ агентов —
 [`WEBX_UI_MCP_ACCESS.md`](WEBX_UI_MCP_ACCESS.md).
@@ -45,7 +45,7 @@
   сертификаты, кешбек меняют итог раньше, в оплате они не учитываются и не показываются.
 - **Заказ, вехи, история, отмена и возврат как запись** — `module-orders`; оплата пишет в заказ
   только через сервис `Orders` (решение 18 спеки заказов).
-- **Порядок шагов, сверка суммы, создание заказа, «Спасибо»** — `module-checkout`; оплата отдаёт ему
+- **Порядок шагов, сверка суммы, создание заказа, «Спасибо»** — оформление `module-orders`; оплата отдаёт ему
   слот (§10).
 - **Способ доставки и наложенный платёж в накладной** — `module-delivery`; оплата говорит, какую
   сумму взять при получении (§12.1), доставка — поддерживает ли выбранный способ наложенный платёж
@@ -63,7 +63,7 @@
 - возврат денег через шлюз и автоотмена неоплаченного заказа — не в v1 (решения 13, 15);
 - холдирование (двухстадийная оплата), рассрочка, подписки и рекуррентные платежи — отложены
   (§21.2);
-- комиссия за способ («+2 % за оплату картой») — в v1 нет (§6.3 спеки оформления).
+- комиссия за способ («+2 % за оплату картой») — в v1 нет (§22.3 спеки заказов).
 
 ### 1.1. Без соседей
 
@@ -72,7 +72,7 @@
 
 | Нет модуля             | Что меняется                                                                                                    |
 | ---------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `module-checkout`      | слота нет; способ в заказ кладёт код сайта или менеджер (`switchMethod`, §8.5); страница оплаты заказа работает |
+| оформление выключено   | слота нет; способ в заказ кладёт код сайта или менеджер (`switchMethod`, §8.5); страница оплаты заказа работает |
 | `module-delivery`      | правило доступности по доставке не применяется (§7.3): «при получении» доступен как «по договорённости»         |
 | `module-notifications` | переменных оплаты в письмах нет; ссылку на оплату менеджер копирует из карточки                                 |
 | спутники `payment-*`   | только встроенные способы; онлайн-оплаты, адреса уведомлений и опроса нет                                       |
@@ -241,7 +241,7 @@ POST /payments/notify/{method}      уведомление шлюза (§9.2): �
 ### `payment_selections` — выбор покупателя для корзины
 
 `cart_id` (bigint unsigned, **unique**, без FK — корзины чистят), `method_key` (string(64)),
-`updated_at`. По образцу `delivery_selections` (решение 13 спеки оформления): выбор переживает
+`updated_at`. По образцу `delivery_selections` (решение 56 спеки заказов): выбор переживает
 перезагрузку и возврат на следующий день; чистится вместе с корзиной (слушатель удаления корзины) и
 ночной командой по сроку черновиков оформления.
 
@@ -533,7 +533,7 @@ interface CancelsPayments extends ChargesOnline
 контекст оплаты нейтральное описание выбранной доставки:
 
 ```php
-namespace WebxUi\Checkout\Slots;
+namespace WebxUi\Orders\Checkout\Slots;
 
 /** What the payment step may know about the chosen delivery; built by ShippingSlot. */
 final readonly class ShippingChoice
@@ -547,7 +547,7 @@ final readonly class ShippingChoice
 }
 ```
 
-- `ShippingChoice` — класс `module-checkout`; его даёт `ShippingSlot::choice(CheckoutContext): ?ShippingChoice`
+- `ShippingChoice` — класс оформления `module-orders`; его даёт `ShippingSlot::choice(CheckoutContext): ?ShippingChoice`
   (новый метод слота доставки), а `PaymentSlot` получает через `CheckoutContext::shippingChoice()`.
   Ни доставка, ни оплата друг друга в `require` не держат. Решение 14; контракт оформления (§6.2 и
   §6.3 там) приводится к этой спеке.
@@ -597,7 +597,7 @@ final readonly class ShippingChoice
 ### 8.2. Переход в шлюз
 
 ```
-подтверждение оформления (§8.1 спеки оформления)
+подтверждение оформления (§24.1 спеки заказов)
   → Orders::place(awaitPayment: true, blocks.payment = snapshot)       заказ «ожидает оплаты»
   → после коммита PaymentSlot::next(order)
         Payments::begin(order, method, source: checkout)               строка payments, status = created
@@ -626,7 +626,7 @@ final readonly class ShippingChoice
 1. попытка по uuid; нет — 404
 2. статус уже окончательный (уведомление пришло раньше) → сразу шаг 4
 3. fetchStatus() → settle(kind = return)        таймаут или ошибка шлюза — статус не трогаем
-4. paid                → успех: «Спасибо» оформления, если номер в сессии (§10 спеки оформления),
+4. paid                → успех: «Спасибо» оформления, если номер в сессии (§26 спеки заказов),
                          иначе подписанная страница заказа; flash «Оплата получена»
    failed / cancelled / expired → страница оплаты заказа с причиной и кнопками (§8.4)
    pending / created     → страница оплаты заказа в состоянии «в обработке» (§8.4)
@@ -774,7 +774,7 @@ final class Payments
 
 ### 10.1. Слот
 
-`WebxUi\Payments\Checkout\PaymentsCheckoutSlot` реализует `PaymentSlot` (§6.3 спеки оформления) и
+`WebxUi\Payments\Checkout\PaymentsCheckoutSlot` реализует `PaymentSlot` (§22.3 спеки заказов) и
 регистрируется в `boot()`, если стоит оформление:
 
 | Метод             | Что делает                                                                                                                                  |
@@ -799,13 +799,13 @@ final class Payments
   `CheckoutContext`, клиент его не присылает.
 - `PUT /api/payments/selection` (`method`) — проверка §7.1 и запись `payment_selections`; ответ —
   `summary` и событие страницы `webx:checkout:slot-changed`.
-- Без JavaScript — обычная форма шага с перезагрузкой (решение 12 спеки оформления).
+- Без JavaScript — обычная форма шага с перезагрузкой (решение 55 спеки заказов).
 
 ### 10.3. Компоненты
 
 `<x-webx-payments::step>` (шаг), `<x-webx-payments::instructions :order>` (реквизиты на «Спасибо»,
 странице заказа и странице оплаты), `<x-webx-payments::status :order>` (строка «Ждёт оплаты» /
-«Оплачен» с кнопкой «Оплатить»). Классы — `.wx-payments-*`, вид — тема (§11.2 спеки оформления).
+«Оплачен» с кнопкой «Оплатить»). Классы — `.wx-payments-*`, вид — тема (§27.2 спеки заказов).
 
 ### 10.4. Блок `payment` заказа
 
@@ -1195,7 +1195,7 @@ $this->callAfterResolving(MethodTypes::class, fn (MethodTypes $t) => $t->registe
 
 Задача webx-ui#60, этапы 2–9 (этап 1 — эта спека). Каждый — один проверяемый результат, гейты JS
 и PHP зелёные. Все — после выпуска `module-orders` (нужны `Orders::mark`, `paymentFailed`,
-`patchBlock`, `stopAwaitingPayment`, блоки снимка); этапы 3 и дальше — после `module-checkout`
+`patchBlock`, `stopAwaitingPayment`, блоки снимка); этапы 3 и дальше — после оформления `module-orders`
 (слот, `ShippingChoice`).
 
 | Этап | Что                                                                                                                                                                                                                                                 | Проверка                                                                                                                                                                                                               |
@@ -1210,7 +1210,7 @@ $this->callAfterResolving(MethodTypes::class, fn (MethodTypes $t) => $t->registe
 | 9    | **Демо, гайды, сквозная проверка**: `ProvidesDemo` (оба встроенных способа и `FakeGateway` на демо), `apps/docs/guide/payments.md` и `guide/payment-gateways.md` (как написать спутник, контрактный тест), строка в реестре пакетов                 | живой сайт на `site up`: заказ по реквизитам с отметкой, онлайн через `FakeGateway` со всеми кнопками, письмо «оплата получена»; гейты PHP и JS                                                                        |
 
 **Вне этой задачи:** спутники шлюза A и шлюза B — отдельные задачи по шаблону §14 после утверждения
-спеки (решение 4); правки соседей, которые требует спека: `ShippingChoice` в `module-checkout`
+спеки (решение 4); правки соседей, которые требует спека: `ShippingChoice` в оформлении `module-orders`
 (решение 14), `Orders::stopAwaitingPayment()` и канал покупателю на `orders.paid` в наборе по
 умолчанию в `module-orders` (решения 16, 18), зависимость на карте коммерции (решение 12).
 
