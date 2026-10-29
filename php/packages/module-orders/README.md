@@ -75,10 +75,28 @@ $orders->updateDetails($order, (new OrderDetails)->managerNote('Call after six')
 down when the method was switched to one that does not await it, `note()` writes a line of the
 history. Lines, money and milestones are never edited.
 
+## Cancelling and refunds
+
+```php
+$orders->cancel($order, 'panel', 'The buyer asked');   // the tenders left go back to the wallet
+
+$orders->refund($order, new RefundRequest(
+    amount: 4999,                     // money given back outside the site, minor units
+    tenders: [$tenderId => 400],      // back to the wallet
+    items: [$itemId => 1],            // units returned
+    reference: 'BANK-1',
+));
+```
+
+A cancellation does not give money back: its answer says whether the order was paid and how much
+is left. A refund only records what the manager gave back — a bank, a till, the ledger — and each
+part is kept to what is left. When the money and every tender are back, the order gets the
+milestone «refunded» and `OrderRefunded` comes with `full = true`. Both take `dryRun: true`.
+
 ## Status
 
-This release has the tables, the placing of an order, its milestones and statuses. Cancelling
-with a reason, refunds, the screens of the panel, the MCP tools, the buyer's page and the checkout come in the
+This release has the tables, the placing of an order, its milestones and statuses, cancelling and
+refunds. The screens of the panel, the MCP tools, the buyer's page and the checkout come in the
 next ones; the spec is
 [`WEBX_UI_MODULE_ORDERS.md`](https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_ORDERS.md).
 

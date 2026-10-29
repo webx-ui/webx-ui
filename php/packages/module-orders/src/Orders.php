@@ -30,6 +30,7 @@ use WebxUi\Orders\Blocks\BlockRefused;
 use WebxUi\Orders\Blocks\OrderBlocks;
 use WebxUi\Orders\Data\OrderData;
 use WebxUi\Orders\Data\PublicStatusData;
+use WebxUi\Orders\Data\RefundData;
 use WebxUi\Orders\Data\StatusData;
 use WebxUi\Orders\Data\TenderData;
 use WebxUi\Orders\Events\OrderBlockUpdated;
@@ -41,12 +42,14 @@ use WebxUi\Orders\Events\OrderPlaced;
 use WebxUi\Orders\Events\OrderPlacing;
 use WebxUi\Orders\Events\OrderPublicStatusChanged;
 use WebxUi\Orders\Events\OrderReceived;
+use WebxUi\Orders\Events\OrderRefunded;
 use WebxUi\Orders\Events\OrderStatusChanged;
 use WebxUi\Orders\Models\Order;
 use WebxUi\Orders\Models\OrderAdjustment;
 use WebxUi\Orders\Models\OrderBenefit;
 use WebxUi\Orders\Models\OrderItem;
 use WebxUi\Orders\Models\OrderMilestone;
+use WebxUi\Orders\Models\OrderRefund;
 use WebxUi\Orders\Models\OrderStatus;
 use WebxUi\Orders\Models\OrderTender;
 use WebxUi\Orders\Models\StatusChange;
@@ -57,7 +60,7 @@ use WebxUi\Orders\Models\StatusChange;
  * none of them writes the tables of an order, and neither does a listener of a neighbour.
  *
  * Every method that changes an order is one transaction with the order's row locked, and its
- * events go after the commit (§7.1). Cancellation with its reason and refunds come next.
+ * events go after the commit (§7.1).
  */
 final class Orders
 {
@@ -329,6 +332,100 @@ final class Orders
         $text = self::text($text, 1000) ?? throw new InvalidArgumentException('A note says something.');
 
         $this->line($order, StatusChange::NOTE, $source, $this->adminId($source), CarbonImmutable::now(), $text);
+    }
+
+    /**
+     * Cancel the order (§9.1): the milestone «cancelled» with its reason — one the panel and the
+     * agent must give — and the tenders left on it marked given back in the same transaction.
+     * Money is not given back: a paid order answers `wasPaid` and how much is left, and the
+     * manager records the refund. A cancelled order is silence; one given back whole too.
+     *
+     * A dry run answers the same and writes nothing.
+     *
+     * @throws ValidationException no reason from the panel or an agent
+     */
+    public function cancel(Order $order, string $source, ?string $reason = null, bool $dryRun = false): MilestoneMark
+    {
+        $reason = self::text($reason, 500);
+
+        if (in_array($source, ['panel', 'mcp'], true)) {
+            $this->validation->make(['reason' => $reason], ['reason' => ['required', 'string']])->validate();
+        }
+
+        $adminId = $this->adminId($source);
+
+        if ($dryRun) {
+            return $this->cancelling(Order::query()->findOrFail($order->id), $source, $adminId, $reason, true);
+        }
+
+        return $this->locked($order, fn (Order $locked): MilestoneMark => $this->cancelling($locked, $source, $adminId, $reason, false));
+    }
+
+    /**
+     * Record money given back outside the site (§9.3, §9.4, decision 27): `manual` only, no
+     * gateway is called — the wallet gives the tenders back on `OrderRefunded`. Nothing is
+     * counted for the manager: the amount, each tender and each qty are checked against what is
+     * left of them. When the money and every tender are back — by refunds, or the tenders by a
+     * cancellation — the milestone «refunded» is set, once (§9.2). The lines and the totals of the
+     * order stay as they were; the refunds lie beside them.
+     *
+     * A dry run answers what is left and whether it would be full, and a refusal in the answer.
+     *
+     * @throws RefundRefused
+     */
+    public function refund(Order $order, RefundRequest $request, bool $dryRun = false): RefundResult
+    {
+        if ($dryRun) {
+            return $this->refundPlan(Order::query()->findOrFail($order->id), $request, true);
+        }
+
+        $adminId = $this->adminId($request->source);
+        $reference = self::text($request->reference, 190);
+        $reason = self::text($request->reason, 500);
+
+        return $this->locked($order, function (Order $locked) use ($request, $adminId, $reference, $reason): RefundResult {
+            $plan = $this->refundPlan($locked, $request, false);
+
+            if ($plan->refusal !== null) {
+                throw new RefundRefused($plan);
+            }
+
+            $at = CarbonImmutable::now();
+            $refund = new OrderRefund([
+                'order_id' => $locked->id,
+                'amount' => $plan->amount,
+                'tenders' => array_map(static fn (int $id, int $amount): array => ['tender_id' => $id, 'amount' => $amount], array_keys($plan->tenders), $plan->tenders),
+                'items' => array_map(static fn (int $id, int $qty): array => ['item_id' => $id, 'qty' => $qty], array_keys($plan->items), $plan->items),
+                'method' => OrderRefund::MANUAL,
+                'reference' => $reference,
+                'reason' => $reason,
+                'source' => (string) self::cut($request->source, 64),
+                'admin_id' => $adminId,
+                'created_at' => $at,
+            ]);
+            $refund->save();
+
+            foreach ($plan->tenders as $id => $amount) {
+                OrderTender::query()->whereKey($id)->increment('refunded_amount', $amount);
+            }
+
+            foreach ($plan->items as $id => $qty) {
+                OrderItem::query()->whereKey($id)->increment('refunded_qty', $qty);
+            }
+
+            $locked->refunded_total += $plan->amount;
+
+            if ($plan->milestone !== null) {
+                // Its event is OrderRefunded itself, with full = true.
+                $this->setMilestone($locked, $plan->milestone, $request->source, $adminId, $at, $reference, $reason);
+            } else {
+                $locked->save();
+            }
+
+            $this->events->dispatch(new OrderRefunded($this->snapshot($locked), RefundData::of($refund), $plan->full, $request->source, $adminId, $at));
+
+            return $plan->recorded($refund->id);
+        });
     }
 
     /**
@@ -801,13 +898,23 @@ final class Orders
      */
     private function returnTenders(Order $order): array
     {
-        $left = OrderTender::query()->where('order_id', $order->id)->whereColumn('refunded_amount', '<', 'amount')->orderBy('id')->get();
+        $left = $this->tendersLeft($order);
 
-        if ($left->isEmpty()) {
-            return [];
+        if ($left !== []) {
+            OrderTender::query()->whereKey(array_map(static fn (TenderData $tender): int => $tender->id, $left))->update(['refunded_amount' => $this->db->raw('amount')]);
         }
 
-        OrderTender::query()->whereKey($left->modelKeys())->update(['refunded_amount' => $this->db->raw('amount')]);
+        return $left;
+    }
+
+    /**
+     * What is left of each tender to give back, as a cancellation would return it.
+     *
+     * @return list<TenderData> `amount` — what is left; `refundedAmount` — the whole of it
+     */
+    private function tendersLeft(Order $order): array
+    {
+        $left = OrderTender::query()->where('order_id', $order->id)->whereColumn('refunded_amount', '<', 'amount')->orderBy('id')->get();
 
         return array_values($left->map(static fn (OrderTender $tender): TenderData => new TenderData(
             $tender->id,
@@ -817,6 +924,98 @@ final class Orders
             $tender->amount,
             $tender->meta ?? [],
         ))->all());
+    }
+
+    /** The cancellation, or on a dry run what it would be, read from the order as it is. */
+    private function cancelling(Order $order, string $source, ?int $adminId, ?string $reason, bool $dryRun): MilestoneMark
+    {
+        $at = CarbonImmutable::now();
+        $wasPaid = $order->paid_at !== null;
+        $money = $wasPaid ? max(0, $order->payable - $order->refunded_total) : 0;
+        $tenders = $this->tendersLeft($order);
+
+        if ($dryRun) {
+            $first = OrderMilestone::query()->where('order_id', $order->id)->where('milestone', Milestone::Cancelled->value)->first();
+
+            $mark = match (true) {
+                $first !== null => new MilestoneMark(Milestone::Cancelled, MilestoneMark::ALREADY_MARKED, CarbonImmutable::instance($first->at), $first->source, $first->admin_id, $first->reference, $first->note),
+                $order->refunded_at !== null => new MilestoneMark(Milestone::Cancelled, MilestoneMark::REFUNDED, CarbonImmutable::instance($order->refunded_at), $source, $adminId),
+                default => new MilestoneMark(Milestone::Cancelled, MilestoneMark::MARKED, $at, $source, $adminId, null, $reason),
+            };
+        } else {
+            [$mark, $event] = $this->setMilestone($order, Milestone::Cancelled, $source, $adminId, $at, null, $reason);
+
+            if ($event !== null) {
+                $this->events->dispatch($event($this->snapshot($order)));
+            }
+        }
+
+        // Silence gives nothing back.
+        return $mark->cancelling($wasPaid, $money, $mark->marked() ? $tenders : [], $dryRun);
+    }
+
+    /** What a refund would record, checked against what is left — the dry run's answer and the refund's plan. */
+    private function refundPlan(Order $order, RefundRequest $request, bool $dryRun): RefundResult
+    {
+        $moneyLeft = max(0, $order->payable - $order->refunded_total);
+        $tendersLeft = [];
+        $itemsLeft = [];
+
+        foreach (OrderTender::query()->where('order_id', $order->id)->orderBy('id')->get(['id', 'amount', 'refunded_amount']) as $tender) {
+            $tendersLeft[$tender->id] = $tender->amount - $tender->refunded_amount;
+        }
+
+        foreach (OrderItem::query()->where('order_id', $order->id)->orderBy('position')->orderBy('id')->get(['id', 'qty', 'refunded_qty']) as $item) {
+            $itemsLeft[$item->id] = $item->qty - $item->refunded_qty;
+        }
+
+        $tenders = array_filter($request->tenders, static fn (int $amount): bool => $amount !== 0);
+        $items = array_filter($request->items, static fn (int $qty): bool => $qty !== 0);
+        [$refusal, $field] = [null, null];
+
+        if ($request->amount < 0 || $request->amount > $moneyLeft) {
+            [$refusal, $field] = [RefundResult::AMOUNT, 'amount'];
+        }
+
+        foreach ($tenders as $id => $amount) {
+            if ($refusal === null && ($amount < 0 || $amount > ($tendersLeft[$id] ?? 0))) {
+                [$refusal, $field] = [RefundResult::TENDER, "tenders.{$id}"];
+            }
+        }
+
+        foreach ($items as $id => $qty) {
+            if ($refusal === null && ($qty < 0 || $qty > ($itemsLeft[$id] ?? 0))) {
+                [$refusal, $field] = [RefundResult::QTY, "items.{$id}"];
+            }
+        }
+
+        if ($refusal === null && $request->amount === 0 && $tenders === [] && $items === []) {
+            $refusal = RefundResult::EMPTY;
+        }
+
+        // Full when it gives back money or a tender and after it the money and every tender are
+        // back — a cancellation gave its tenders back already. The units do not count: money back
+        // without the goods is a full refund too, and units alone after it complete nothing; an
+        // order paid by tenders alone and cancelled has nothing for a refund to give back (§9.2).
+        $full = $refusal === null
+            && ($request->amount > 0 || $tenders !== [])
+            && $request->amount === $moneyLeft
+            && array_all($tendersLeft, static fn (int $left, int $id): bool => $left === ($tenders[$id] ?? 0));
+
+        return new RefundResult(
+            $request->amount,
+            $tenders,
+            $items,
+            $moneyLeft,
+            $tendersLeft,
+            $itemsLeft,
+            $full,
+            $full && $order->refunded_at === null ? Milestone::Refunded : null,
+            $refusal,
+            $field,
+            null,
+            $dryRun,
+        );
     }
 
     /** What a move would do, read from the order as it is — the dry run's answer and the move's plan. */

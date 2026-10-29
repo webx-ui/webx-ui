@@ -8,8 +8,8 @@ neighbours rely on (placed, paid, received, cancelled…) — and **statuses**, 
 which the buyer sees grouped into public ones.
 
 This release holds the tables, the models, the default statuses, the section of the panel,
-`Orders::place()` and the milestones and statuses through the service; cancelling with a reason,
-refunds, the screens, MCP tools and the checkout come next.
+`Orders::place()`, the milestones and statuses, cancelling and refunds through the service; the
+screens, MCP tools and the checkout come next.
 
 ## What it owns
 
@@ -35,11 +35,19 @@ refunds, the screens, MCP tools and the checkout come next.
     `publicTo`, `publicChanged`, `moved`, `milestone`, `notifications`, `refusal`); a refusal
     (`inactive`, `deleted`, `cancelled`) throws `StatusMoveRefused`, a dry run answers it;
   - `patchBlock(order, block, patch, source)`, `note(order, text, source)`,
-    `updateDetails(order, OrderDetails, source)` — contacts, recipient, comment, manager note.
+    `updateDetails(order, OrderDetails, source)` — contacts, recipient, comment, manager note;
+  - `cancel(order, source, reason?, dryRun?)` → `MilestoneMark` with `wasPaid`, `moneyToRefund`,
+    `tendersReturned`: the tenders left marked given back, money not; `panel` and `mcp` must give a
+    reason (`ValidationException`);
+  - `refund(order, RefundRequest, dryRun?)` → `RefundResult` — money given back outside the site,
+    `manual` only, no gateway. `RefundRequest`: `amount`, `tenders` (id → amount), `items` (id →
+    qty), `reference`, `reason`, `source`; the manager splits it, each part ≤ what is left
+    (`RefundRefused`: `empty`, `amount`, `tender`, `qty`, with `field`). Money and every tender back
+    → milestone `refunded`, once; lines and totals never change.
 - **Events** `Events\OrderPlacing` (in the transaction: spend, reserve, or throw `OrderRefused`);
   after the commit, each with `Data\OrderData` (plain values, serialisable), `source`, `adminId`,
   `at`: `OrderPlaced`, `OrderPaid`, `OrderReceived`, `OrderCancelled` (`wasPaid`,
-  `tendersReturned`), `OrderPaymentFailed`, `OrderStatusChanged`, `OrderPublicStatusChanged` (only
+  `tendersReturned`), `OrderRefunded` (`RefundData`, `full`), `OrderPaymentFailed`, `OrderStatusChanged`, `OrderPublicStatusChanged` (only
   when the public one changes), `OrderBlockUpdated`, `OrderDetailsChanged` (`fields`, `before`).
 - **Journal** type `orders.order` of the panel's history: what `updateDetails()` changed.
 - **Blocks** `Blocks\OrderBlocks` — `register(new BlockDefinition('delivery'|'payment', module,
@@ -101,7 +109,7 @@ No route or tool asks for them yet: the screens and the MCP tools that do come i
 
 ## Check your work
 
-- `PlaceTest`, `MilestonesTest`, `StatusMoveTest`, `DetailsTest`, `PerformanceTest` (the budget of
+- `PlaceTest`, `MilestonesTest`, `StatusMoveTest`, `DetailsTest`, `RefundTest`, `PerformanceTest` (the budget of
   `place()`), and `CartLockTest`, `MilestoneRaceTest` against a real server: `WEBX_TEST_MYSQL_URL=mariadb://user:password@host:3306/db vendor/bin/phpunit …`.
 
 - `php artisan migrate` and `php artisan migrate:rollback` — the tables come and go.

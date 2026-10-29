@@ -29,6 +29,9 @@ class OrderRefund extends Model
 {
     protected $table = 'order_refunds';
 
+    /** The money went back outside the site: a bank, a till, the ledger (§9.4). */
+    public const string MANUAL = 'manual';
+
     public const UPDATED_AT = null;
 
     protected $guarded = [];
