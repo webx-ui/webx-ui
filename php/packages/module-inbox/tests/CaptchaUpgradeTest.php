@@ -141,7 +141,7 @@ final class CaptchaUpgradeTest extends TestCase
         $this->migrate('up');
 
         $this->assertSame('turnstile', app(Settings::class)->get('captcha.provider'));
-        Log::shouldHaveReceived('warning')->withArgs(static fn (string $message): bool => str_contains($message, 'different captchas'))->once();
+        Log::getFacadeRoot()->shouldHaveReceived('warning')->withArgs(static fn (string $message): bool => str_contains($message, 'different captchas'))->once();
     }
 
     #[Test]
