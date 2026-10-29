@@ -35,10 +35,34 @@ The colour of a status is a name from the closed palette `WebxUi\Orders\StatusCo
 `order_milestones`, `order_refunds`, `order_status_changes`, `order_public_statuses`,
 `order_statuses`. Money is an integer in the minor units of the order's currency everywhere.
 
+## Placing an order
+
+Every change of an order goes through the service `WebxUi\Orders\Orders`. An order comes to be
+only by `place()`:
+
+```php
+use WebxUi\Orders\{Contact, Orders, PlaceOrder};
+
+$order = app(Orders::class)->place(new PlaceOrder(
+    cart: $cart,
+    locale: 'en',
+    customer: new Contact('Alex', 'Doe', phone: '+1 555 010-0000', email: 'alex@example.test'),
+    expectedPayable: 29298,      // what the buyer saw; null — no check
+    idempotencyKey: $formToken,  // a repeat returns the same order
+));
+```
+
+It counts the cart again under the lock of its row, refuses a cart that cannot be ordered
+(`CartNotOrderable`) or an amount the buyer did not see (`PayableChanged`), writes the snapshot,
+lets `OrderPlacing` listeners do what must happen with it (or refuse with `OrderRefused`), empties
+the cart — its row and cookie stay — and dispatches `OrderPlaced` after the commit. The number is
+made of the id: `webx-orders.number` (`prefix`, `start`, `pad`).
+
 ## Status
 
-This release is the package and its tables. The `Orders` service, the screens of the panel, the
-MCP tools, the buyer's page and the checkout come in the next ones; the spec is
+This release has the tables and the placing of an order. Milestones and statuses through the
+service, the screens of the panel, the MCP tools, the buyer's page and the checkout come in the
+next ones; the spec is
 [`WEBX_UI_MODULE_ORDERS.md`](https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_ORDERS.md).
 
 ## License

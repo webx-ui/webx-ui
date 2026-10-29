@@ -28,9 +28,9 @@ plug into. No page, no panel section: a JSON API, `cart()` and a buy button for 
   (`toArray()` puts `*_formatted` beside every amount). Five registries, empty here:
   `LineSources`, `AdjustmentSources`, `TenderSources`, `BenefitSources`, `HintSources`, each
   `register($source, int $priority = 0)` — lower runs first.
-- **Writes** go through `WebxUi\Cart\CartService`: `add()` (a batch, all or nothing, `key` and
-  `parent` for a bundle), `update()`, `remove()`, `clear()`. A refusal is a `ValidationException`;
-  a batch's is a `CartRefusal`, whose `atLimit` names the lines already at their maximum.
+- **Writes** go through `WebxUi\Cart\CartService`: `add()` (a batch, all or nothing; `key` and `parent` for
+  a bundle), `update()`, `remove()`, `clear()` (the row too), `empty()` (lines and declined rules go, row and
+  token stay) — each under `lock()` of the cart's row. A refusal is a `ValidationException`; a batch's a `CartRefusal` (`atLimit`).
 - **`cart()`** (`WebxUi\Cart\CartHandle`, facade `WebxUi\Cart\Facades\Cart`): `count()`,
   `isEmpty()`, `has($type, $ref)` — no query without a cookie, one with it — and `state()`.
 - **Accounts** (`Accounts\AccountCarts` on the panel's `Visitor*` events, not `module-users`): a signed-in

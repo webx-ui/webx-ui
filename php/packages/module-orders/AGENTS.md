@@ -7,10 +7,28 @@ on no live record. It moves along two axes: **milestones** — fixed facts the s
 neighbours rely on (placed, paid, received, cancelled…) — and **statuses**, the shop's own stages,
 which the buyer sees grouped into public ones.
 
-This release holds the tables, the models, the default statuses and the section of the panel;
-the `Orders` service, the screens, MCP tools and the checkout come next.
+This release holds the tables, the models, the default statuses, the section of the panel and
+`Orders::place()`; milestones and statuses through the service, the screens, MCP tools and the
+checkout come next.
 
 ## What it owns
+
+- **The service** `WebxUi\Orders\Orders` — the one door to an order (spec §5.3):
+  - `place(PlaceOrder)` — the cart counted with `Purpose::Order` under the lock of its row
+    (`CartService::lock()`), checked, frozen into the order and emptied (`CartService::empty()`:
+    the cart's row, cookie and draft stay), one transaction. `PlaceOrder`: `cart`, `locale`,
+    `customer` (`Contact`: `firstName`, `lastName`, `phone`, `email` — a first name and a phone or
+    an e-mail), `recipient`, `comment`, `expectedPayable`, `awaitPayment`, `blocks`,
+    `idempotencyKey`, `userId`, `source`. Refusals: `ValidationException` (contacts),
+    `CartNotOrderable` (`empty`, `currency`, `lines` with the cart's warnings), `PayableChanged`
+    (the fresh `CartState`), `OrderRefused` (a listener), `Blocks\BlockRefused`;
+  - `findByIdempotencyKey($key)` — the order a form token made; a repeat of `place()` returns it.
+- **Events** `Events\OrderPlacing` (in the transaction: spend, reserve, or throw `OrderRefused`)
+  and `Events\OrderPlaced` (after the commit, `Data\OrderData` — plain values, serialisable).
+- **Blocks** `Blocks\OrderBlocks` — `register(new BlockDefinition('delivery'|'payment', module,
+validate, summary))` in your `boot()`; an unregistered block is refused.
+- **Config** `webx-orders`: `number` (`prefix`, `start` = 1000, `pad`), `initial_status`,
+  `initial_status_awaiting_payment` (ids; null — «New» and «Awaiting payment» of the default set).
 
 - **Tables** (all `order_*` but `orders`):
   - `orders` (`WebxUi\Orders\Models\Order`) — money in minor units of `currency`, contacts with
@@ -50,13 +68,14 @@ No route or tool asks for them yet: the screens and the MCP tools that do come i
 | ------------------------------------ | --------------------------------------------------------------------------------------------------- |
 | other words for the default statuses | `php artisan vendor:publish --tag=webx-orders-lang` before `migrate`, or rename the rows afterwards |
 | other statuses                       | rows of `order_statuses` / `order_public_statuses` — they are the site's own                        |
-| to react to an order                 | wait for the events of the `Orders` service; do not watch the tables                                |
+| to react to an order                 | listen to `OrderPlaced`; to do it with the order or not at all — `OrderPlacing`                     |
 
 ## Do not
 
 - Do not write the order tables yourself, not even from a listener: every change of an order goes
   through the `Orders` service (spec decision 18), which keeps the history, the milestone copies
-  and the events together. Until it exists, read the models only.
+  and the events together.
+- Do not do anything slow in `OrderPlacing` (HTTP, letters): the cart's row is locked meanwhile.
 - Do not delete an order: it is the document of a deal. Cancel it instead.
 - Do not delete a status row for good: orders keep pointing at it and the history shows its name.
   Soft-delete it (`delete()`), which leaves the orders where they are.
@@ -64,6 +83,9 @@ No route or tool asks for them yet: the screens and the MCP tools that do come i
   dark theme of the panel can read it.
 
 ## Check your work
+
+- `PlaceTest`, `PerformanceTest` (the budget of `place()`), and `CartLockTest` against a real
+  server: `WEBX_TEST_MYSQL_URL=mariadb://user:password@host:3306/db vendor/bin/phpunit …`.
 
 - `php artisan migrate` and `php artisan migrate:rollback` — the tables come and go.
 - After `migrate`, `order_public_statuses` holds five rows and `order_statuses` eight, each
