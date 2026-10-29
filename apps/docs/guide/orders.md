@@ -8,7 +8,8 @@ to the panel, a page of the order for the buyer, «My orders» in the visitor's 
 An order is made of a cart (`webx-ui/module-cart`) and lives on its own afterwards: changing a
 price, a rule or a product never changes an order that was already placed. Delivery, payment,
 visitors, notifications, the wallet and coupons are neighbours: each is optional and joins in
-when it is installed.
+when it is installed. The shop's page that places an order is in the same package — see
+[Checkout](/guide/checkout).
 
 ## Install
 
