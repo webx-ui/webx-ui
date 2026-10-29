@@ -17,7 +17,10 @@ use WebxUi\Orders\OrderRefused;
 /** `orders_create` (§29.2): `Orders::placeByManager()` for the agent. */
 final class CreateOrderTest extends McpTestCase
 {
-    /** @return array<string, mixed> */
+    /**
+     * @param  array<string, mixed>  $with
+     * @return array<string, mixed>
+     */
     private static function arguments(array $with = []): array
     {
         return [
@@ -29,7 +32,7 @@ final class CreateOrderTest extends McpTestCase
     }
 
     /** @return list<int> how many rows the order and its cart left */
-    private static function rows(): array
+    private function rows(): array
     {
         return [Cart::query()->count(), CartItem::query()->count(), Order::query()->count(), OrderMilestone::query()->count(), StatusChange::query()->count()];
     }
@@ -62,12 +65,11 @@ final class CreateOrderTest extends McpTestCase
         $this->assertSame(['Item A', 'Part C'], array_column($preview['totals']['lines'], 'name'));
         $this->assertSame(2 * 4999 + 700, $preview['totals']['payable']);
         $this->assertArrayHasKey('warnings', $preview['totals']);
-        $this->assertSame([0, 0, 0, 0, 0], self::rows());
 
-        // A dry run is refused as the call is.
+        // A dry run is refused as the call is; none of them left a row.
         $this->agent('orders_create', self::arguments(['lines' => [], 'dry_run' => true]))->assertHasErrors(['items']);
         $this->agent('orders_create', self::arguments(['customer' => ['first_name' => 'Alex', 'phone' => 'call me'], 'dry_run' => true]))->assertHasErrors(['customer.phone']);
-        $this->assertSame([0, 0, 0, 0, 0], self::rows());
+        $this->assertSame([0, 0, 0, 0, 0], $this->rows());
     }
 
     #[Test]
@@ -80,7 +82,7 @@ final class CreateOrderTest extends McpTestCase
         Event::listen(OrderPlacing::class, static fn () => throw new OrderRefused('test.refused', 'Not today.'));
         $this->agent('orders_create', self::arguments())->assertHasErrors(['Not today.']);
 
-        $this->assertSame([0, 0, 0, 0, 0], self::rows());
+        $this->assertSame([0, 0, 0, 0, 0], $this->rows());
     }
 
     #[Test]
@@ -101,6 +103,6 @@ final class CreateOrderTest extends McpTestCase
             $this->agent('orders_create', self::arguments(['dry_run' => true]), $this->manager($permissions))->assertHasErrors();
         }
 
-        $this->assertSame([0, 0, 0, 0, 0], self::rows());
+        $this->assertSame([0, 0, 0, 0, 0], $this->rows());
     }
 }
