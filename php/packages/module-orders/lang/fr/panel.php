@@ -167,6 +167,7 @@ return [
     'visitor-unlinked' => 'La commande est détachée.',
     'visitor-no-search' => 'Pour trouver un visiteur, il faut le droit de consulter les clients.',
     'visitor-no-letter' => 'L’acheteur ne reçoit aucun e-mail à ce sujet.',
+    'visitor-pick-hint' => 'Choisissez un visiteur : avant l’association, la fenêtre indique dans quelles «Mes commandes» la commande ira.',
     'source-panel' => 'Panneau',
     'source-api' => 'API du site',
     'source-mcp' => 'Agent',

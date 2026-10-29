@@ -212,6 +212,8 @@ export const ordersMessages: Record<string, Messages> = {
     'visitor-unlinked': 'The order is unlinked.',
     'visitor-no-search': 'Finding a visitor needs the right to read customers.',
     'visitor-no-letter': 'The buyer gets no letter about it.',
+    'visitor-pick-hint':
+      'Pick a visitor: before linking, the dialog shows whose «My orders» the order goes to.',
     'source-panel': 'Panel',
     'source-api': 'Site API',
     'source-mcp': 'Agent',

@@ -167,6 +167,7 @@ return [
     'visitor-unlinked' => 'A encomenda está desassociada.',
     'visitor-no-search' => 'Para encontrar um visitante é preciso a permissão de ver os clientes.',
     'visitor-no-letter' => 'O comprador não recebe nenhum e-mail sobre isto.',
+    'visitor-pick-hint' => 'Escolha um visitante: antes de vincular, a janela mostra em que «Meus pedidos» o pedido vai ficar.',
     'source-panel' => 'Painel',
     'source-api' => 'API do site',
     'source-mcp' => 'Agente',

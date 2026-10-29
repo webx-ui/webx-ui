@@ -6,10 +6,13 @@ namespace WebxUi\Orders\Panel;
 
 use Illuminate\Contracts\Container\Container;
 use WebxUi\Admin\AbstractModule;
+use WebxUi\Admin\Contracts\ProvidesDemo;
+use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Mcp\Contracts\ProvidesMcpTools;
 use WebxUi\Mcp\McpResource;
 use WebxUi\Mcp\ProvidesMcpDefaults;
 use WebxUi\Mcp\Tool;
+use WebxUi\Orders\Demo\OrdersDemo;
 use WebxUi\Orders\Mcp\OrdersResources;
 use WebxUi\Orders\Mcp\OrdersTools;
 use WebxUi\Orders\Mcp\StatusTools;
@@ -19,9 +22,10 @@ use WebxUi\Orders\Mcp\StatusTools;
  * section, behind four permissions of its own — reading, working an order, money given back, and
  * the statuses with the settings. The checkout's tab adds a fifth with its own stage (§31.1).
  *
- * The same for an agent (§12): the `orders_*` tools and `orders://catalog`.
+ * The same for an agent (§12): the `orders_*` tools and `orders://catalog`. The demo (§15) is twelve
+ * orders made through the service, the visitor's among them when visitors are installed.
  */
-final class OrdersModule extends AbstractModule implements ProvidesMcpTools
+final class OrdersModule extends AbstractModule implements ProvidesDemo, ProvidesMcpTools
 {
     use ProvidesMcpDefaults;
 
@@ -75,6 +79,17 @@ final class OrdersModule extends AbstractModule implements ProvidesMcpTools
     public function permissions(): array
     {
         return [self::VIEW, self::MANAGE, self::REFUND, self::STATUSES];
+    }
+
+    /** @return list<string> */
+    public function requires(): array
+    {
+        return $this->container->make(OrdersDemo::class)->requires();
+    }
+
+    public function seed(DemoLedger $ledger): void
+    {
+        $this->container->make(OrdersDemo::class)->seed($ledger);
     }
 
     /**

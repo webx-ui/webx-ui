@@ -177,6 +177,13 @@ async function apply(): Promise<void> {
             .join(' ')
         "
       />
+      <!-- The preview's place is taken before a pick: the dialog is centred, and a preview that
+           grew it would move the list from under the pointer that just picked a row. -->
+      <wx-alert
+        v-else-if="found.length > 0"
+        type="info"
+        :description="t('panel.visitor-pick-hint')"
+      />
     </div>
 
     <template #footer>

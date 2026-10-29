@@ -167,6 +167,7 @@ return [
     'visitor-unlinked' => 'El pedido está desvinculado.',
     'visitor-no-search' => 'Para encontrar un visitante hace falta el permiso de ver los clientes.',
     'visitor-no-letter' => 'El comprador no recibe ningún correo sobre esto.',
+    'visitor-pick-hint' => 'Elija un visitante: antes de vincular, el diálogo muestra a qué «Mis pedidos» irá el pedido.',
     'source-panel' => 'Panel',
     'source-api' => 'API del sitio',
     'source-mcp' => 'Agente',

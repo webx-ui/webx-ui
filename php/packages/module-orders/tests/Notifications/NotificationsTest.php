@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Bus;
 use Illuminate\Validation\ValidationException;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\AdminServiceProvider;
+use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Admin\Doctor\Diagnosis;
 use WebxUi\Auth\AuthServiceProvider;
 use WebxUi\Cart\CartServiceProvider;
@@ -188,6 +189,20 @@ final class NotificationsTest extends PlaceTestCase
         $this->assertSame('Accepted', $values['public_status']);
 
         $this->assertSame([Diagnosis::OK], array_map(static fn (Diagnosis $one): string => $one->state, $this->app->make(OrdersNotificationsCheck::class)->run()));
+    }
+
+    #[Test]
+    public function the_demo_orders_tell_nobody_and_the_next_real_one_does(): void
+    {
+        $this->restartWithContacts('shop@example.com');
+
+        $this->artisan('webx:demo', ['--module' => 'orders'])->assertSuccessful();
+        @unlink($this->app->make(DemoLedger::class)->path());
+
+        $this->assertSame(12, Order::query()->count());
+        $this->assertSame(0, Delivery::query()->count());
+
+        $this->assertCount(2, $this->rows($this->place($this->cart())));
     }
 
     #[Test]

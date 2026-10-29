@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Orders\Notifications;
 
+use Closure;
 use Illuminate\Contracts\Events\Dispatcher;
 use WebxUi\Orders\Data\OrderData;
 use WebxUi\Orders\Events\OrderCancelled;
@@ -24,9 +25,33 @@ use WebxUi\Orders\Models\PublicStatus;
  * 12) — the buyer hears of `OrderPublicStatusChanged` alone. Without `webx-ui/module-notifications`
  * every handler is a no-op: the events are still fired for the site's own listeners.
  */
-final readonly class SendOrderNotifications
+final class SendOrderNotifications
 {
-    public function __construct(private OrderChannels $channels) {}
+    /** Set while the demo makes its orders: made-up orders tell nobody. */
+    private static bool $quiet = false;
+
+    public function __construct(private readonly OrderChannels $channels) {}
+
+    /**
+     * Run without a notification going out: the demo's twelve orders would otherwise mail the
+     * shop's contacts and the made-up buyers the first time anybody looks at the site.
+     *
+     * @template T
+     *
+     * @param  Closure(): T  $run
+     * @return T
+     */
+    public static function quietly(Closure $run): mixed
+    {
+        $was = self::$quiet;
+        self::$quiet = true;
+
+        try {
+            return $run();
+        } finally {
+            self::$quiet = $was;
+        }
+    }
 
     /** Listened to by class and method, so nothing is built until an order moves. */
     public static function listen(Dispatcher $events): void
@@ -47,7 +72,7 @@ final readonly class SendOrderNotifications
 
     public function publicStatus(OrderPublicStatusChanged $event): void
     {
-        if (! $this->channels->available()) {
+        if (self::$quiet || ! $this->channels->available()) {
             return;
         }
 
@@ -91,7 +116,7 @@ final readonly class SendOrderNotifications
      */
     private function milestone(string $key, OrderData $order, array $extra = []): void
     {
-        if (! $this->channels->available()) {
+        if (self::$quiet || ! $this->channels->available()) {
             return;
         }
 

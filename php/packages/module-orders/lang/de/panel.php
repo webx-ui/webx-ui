@@ -167,6 +167,7 @@ return [
     'visitor-unlinked' => 'Die Bestellung ist gelöst.',
     'visitor-no-search' => 'Um einen Besucher zu finden, ist das Recht zum Lesen der Kunden nötig.',
     'visitor-no-letter' => 'Der Käufer erhält darüber keine E-Mail.',
+    'visitor-pick-hint' => 'Wählen Sie einen Besucher: Vor dem Verknüpfen zeigt der Dialog, in wessen «Meine Bestellungen» die Bestellung kommt.',
     'source-panel' => 'Panel',
     'source-api' => 'Website-API',
     'source-mcp' => 'Agent',

@@ -167,6 +167,7 @@ return [
     'visitor-unlinked' => 'Zamówienie odłączone.',
     'visitor-no-search' => 'Aby znaleźć odwiedzającego, potrzebne jest prawo do przeglądania klientów.',
     'visitor-no-letter' => 'Kupujący nie dostaje o tym wiadomości.',
+    'visitor-pick-hint' => 'Wybierz odwiedzającego: przed powiązaniem okno pokaże, do czyich «Moich zamówień» trafi zamówienie.',
     'source-panel' => 'Panel',
     'source-api' => 'API strony',
     'source-mcp' => 'Agent',

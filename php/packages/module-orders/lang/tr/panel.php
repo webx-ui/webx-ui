@@ -167,6 +167,7 @@ return [
     'visitor-unlinked' => 'Siparişin bağlantısı kaldırıldı.',
     'visitor-no-search' => 'Ziyaretçi bulmak için müşterileri görüntüleme yetkisi gerekir.',
     'visitor-no-letter' => 'Alıcıya bununla ilgili e-posta gitmez.',
+    'visitor-pick-hint' => 'Bir ziyaretçi seçin: bağlamadan önce pencere, siparişin kimin «Siparişlerim» bölümüne gideceğini gösterir.',
     'source-panel' => 'Panel',
     'source-api' => 'Site API’si',
     'source-mcp' => 'Ajan',

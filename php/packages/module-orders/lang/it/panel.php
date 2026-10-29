@@ -167,6 +167,7 @@ return [
     'visitor-unlinked' => 'L’ordine è scollegato.',
     'visitor-no-search' => 'Per trovare un visitatore serve il permesso di vedere i clienti.',
     'visitor-no-letter' => 'L’acquirente non riceve alcuna e-mail al riguardo.',
+    'visitor-pick-hint' => 'Scegli un visitatore: prima del collegamento, la finestra mostra in quali «I miei ordini» andrà l’ordine.',
     'source-panel' => 'Pannello',
     'source-api' => 'API del sito',
     'source-mcp' => 'Agente',
