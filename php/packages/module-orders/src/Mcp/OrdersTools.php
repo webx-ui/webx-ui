@@ -13,14 +13,18 @@ use Illuminate\Events\Dispatcher as EventDispatcher;
 use Illuminate\Support\Carbon;
 use WebxUi\Admin\Visitors\Visitors;
 use WebxUi\Cart\Money;
+use WebxUi\Localization\Locales;
 use WebxUi\Mcp\Arguments;
 use WebxUi\Mcp\Exceptions\ToolFailure;
 use WebxUi\Mcp\Rehearsal;
 use WebxUi\Mcp\Tool;
+use WebxUi\Orders\CartNotOrderable;
+use WebxUi\Orders\Checkout\CheckoutPreview;
 use WebxUi\Orders\Contact;
 use WebxUi\Orders\Events\OrderPaid;
 use WebxUi\Orders\Events\OrderReceived;
 use WebxUi\Orders\Http\Controllers\Panel\MassController;
+use WebxUi\Orders\ManagerOrder;
 use WebxUi\Orders\Milestone;
 use WebxUi\Orders\Models\Order;
 use WebxUi\Orders\Models\OrderAdjustment;
@@ -32,6 +36,7 @@ use WebxUi\Orders\Models\OrderTender;
 use WebxUi\Orders\Models\PublicStatus;
 use WebxUi\Orders\Notifications\OrderChannels;
 use WebxUi\Orders\OrderDetails;
+use WebxUi\Orders\OrderRefused;
 use WebxUi\Orders\Orders;
 use WebxUi\Orders\OrderStatuses;
 use WebxUi\Orders\Panel\Consequences;
@@ -121,7 +126,7 @@ final readonly class OrdersTools
                     'visitor' => ['type' => 'string', 'enum' => ['guest', 'visitor'], 'description' => 'Placed by a guest or by a signed-in visitor.'],
                     'delivery' => ['type' => 'string', 'description' => 'The delivery method as the block keeps it.'],
                     'payment' => ['type' => 'string', 'description' => 'The payment method as the block keeps it.'],
-                    'source' => ['type' => 'string', 'description' => 'Where the order came from: checkout, quick («Buy in one click»), api, mcp — or the code\'s own source.'],
+                    'source' => ['type' => 'string', 'description' => 'Where the order came from: checkout, quick («Buy in one click»), panel and mcp (a manager placed it), api — or the code\'s own source.'],
                     'from' => ['type' => 'string', 'description' => 'Placed on this day or later, YYYY-MM-DD.'],
                     'to' => ['type' => 'string', 'description' => 'Placed on this day or earlier, YYYY-MM-DD.'],
                     'sort' => ['type' => 'string', 'enum' => ['-placed_at', 'placed_at', '-total', 'total', '-number', 'number'], 'description' => '`-` for the largest first; -placed_at by default.'],
@@ -247,6 +252,37 @@ final readonly class OrdersTools
                     'comment' => ['type' => ['string', 'null']],
                     'manager_note' => ['type' => ['string', 'null']],
                 ], 'required' => ['order']],
+                permission: OrdersModule::MANAGE,
+            ),
+
+            Tool::mutating(
+                'create',
+                'Place an order for a buyer, as a manager takes one on the phone: the lines (`lines`: type, ref, qty, '
+                .'options — as «Add to cart» takes them; catalog_products_get has a product\'s ref and options), the buyer '
+                .'(`customer`: first_name required, last_name, a phone or an e-mail), the recipient if another person, a '
+                .'comment. The order is counted as on the checkout — today\'s prices and the cart\'s rules, the next number, '
+                .'its letters — with no delivery or payment chosen; a price or a discount of your own is not possible. '
+                .'`key` makes a repeat the same order. `dry_run` answers the lines, totals and warnings it would have, and '
+                .'whether it can be placed, and writes nothing.',
+                fn (array $arguments): array => $this->create($arguments),
+                ['properties' => [
+                    'lines' => ['type' => 'array', 'items' => ['type' => 'object', 'properties' => [
+                        'type' => ['type' => 'string', 'description' => 'What is bought: `catalog.product`.'],
+                        'ref' => ['type' => ['integer', 'string']],
+                        'qty' => ['type' => 'integer', 'description' => '1 by default.'],
+                        'options' => ['type' => 'object', 'description' => 'The chosen options, as the product names them.'],
+                    ], 'required' => ['type', 'ref']]],
+                    'customer' => ['type' => 'object', 'properties' => [
+                        'first_name' => ['type' => 'string'], 'last_name' => ['type' => ['string', 'null']],
+                        'phone' => ['type' => ['string', 'null']], 'email' => ['type' => ['string', 'null']],
+                    ], 'required' => ['first_name']],
+                    'recipient' => ['type' => ['object', 'null'], 'properties' => [
+                        'first_name' => ['type' => 'string'], 'last_name' => ['type' => ['string', 'null']], 'phone' => ['type' => ['string', 'null']],
+                    ]],
+                    'comment' => ['type' => ['string', 'null']],
+                    'locale' => ['type' => 'string', 'description' => 'The order\'s language: its names and letters. The site\'s default language when left out.'],
+                    'key' => ['type' => 'string', 'description' => 'Any string of yours: a second call with it is the order of the first.'],
+                ], 'required' => ['lines', 'customer']],
                 permission: OrdersModule::MANAGE,
             ),
 
@@ -762,6 +798,79 @@ final readonly class OrdersTools
         $answer = $this->attempt(fn (): array => $dryRun ? Rehearsal::run($work, $order->getConnectionName()) : $work());
 
         return ['number' => $order->number, ...$answer, 'dry_run' => $dryRun];
+    }
+
+    /**
+     * §29.2 through `Orders::placeByManager()`: the dry run is the service's count, rolled back.
+     *
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function create(array $arguments): array
+    {
+        $text = static fn (mixed $value): ?string => is_scalar($value) && trim((string) $value) !== '' ? (string) $value : null;
+        $contact = static function (mixed $value, string $name, array $keys) use ($text): Contact {
+            if (! is_array($value)) {
+                throw new ToolFailure("`{$name}` is an object of ".implode(', ', $keys).'.');
+            }
+
+            Arguments::refuseUnknown($value, $keys, "`{$name}`");
+
+            return new Contact((string) $text($value['first_name'] ?? null), $text($value['last_name'] ?? null), $text($value['phone'] ?? null), $text($value['email'] ?? null));
+        };
+
+        $lines = $arguments['lines'] ?? null;
+
+        if (! is_array($lines) || ! array_is_list($lines)) {
+            throw new ToolFailure('`lines` is a list of { type, ref, qty, options }.');
+        }
+
+        foreach ($lines as $index => $line) {
+            if (! is_array($line)) {
+                throw new ToolFailure("`lines.{$index}` is an object of type, ref, qty, options.");
+            }
+
+            Arguments::refuseUnknown($line, ['type', 'ref', 'qty', 'options'], "`lines.{$index}`");
+        }
+
+        $locales = Container::getInstance()->make(Locales::class);
+        $locale = isset($arguments['locale']) ? (string) $arguments['locale'] : $locales->defaultCode();
+
+        if (! $locales->has($locale)) {
+            throw new ToolFailure("The site has no language «{$locale}»: ".implode(', ', $locales->codes()).'.');
+        }
+
+        $recipient = $arguments['recipient'] ?? null;
+        $input = new ManagerOrder(
+            lines: $lines,
+            locale: $locale,
+            customer: $contact($arguments['customer'] ?? null, 'customer', ['first_name', 'last_name', 'phone', 'email']),
+            recipient: $recipient !== null ? $contact($recipient, 'recipient', ['first_name', 'last_name', 'phone']) : null,
+            comment: $text($arguments['comment'] ?? null),
+            idempotencyKey: $text($arguments['key'] ?? null),
+        );
+
+        if ($this->dryRun($arguments)) {
+            $preview = $this->attempt(fn () => $this->orders->previewByManager($input));
+
+            return [
+                'orderable' => $preview->orderable(),
+                'refusal' => $preview->refusal?->reason,
+                'message' => $preview->refusal !== null ? CheckoutPreview::notOrderable($preview->refusal) : null,
+                'totals' => $preview->state->toArray(),
+                'dry_run' => true,
+            ];
+        }
+
+        try {
+            $order = $this->attempt(fn (): Order => $this->orders->placeByManager($input, self::SOURCE));
+        } catch (CartNotOrderable $refused) {
+            throw new ToolFailure('The order cannot be placed: '.CheckoutPreview::notOrderable($refused));
+        } catch (OrderRefused $refused) {
+            throw new ToolFailure('The order cannot be placed: '.$refused->getMessage());
+        }
+
+        return ['order' => $this->get(['order' => $order->number]), 'dry_run' => false];
     }
 
     /**

@@ -122,6 +122,76 @@ final class Orders
         }
     }
 
+    /**
+     * §29.2 — an order a manager makes in the panel, the buyer on the phone. The lines go into a
+     * cart of its own, as for «Buy in one click» (§29.1): a row of `carts` whose token nobody is
+     * given. `place()` makes the order of it, so prices, rules, the snapshot, the number, the
+     * events and the letters are those of any order, and then the cart goes. One transaction: a
+     * refusal at any step leaves neither the cart nor the order.
+     *
+     * The right (`orders.manage`) is the caller's to check, as for every method here; the
+     * manager is in the history by the source (`panel`, `mcp`).
+     *
+     * @throws ValidationException the lines (none, unknown, options, qty), the contacts, the comment
+     * @throws CartNotOrderable a line that cannot be bought
+     * @throws OrderRefused a listener of OrderPlacing would not have it
+     */
+    public function placeByManager(ManagerOrder $input, string $source = 'panel'): Order
+    {
+        $this->validateManager($input);
+
+        if ($input->idempotencyKey !== null && $input->idempotencyKey !== '' && ($order = $this->findByIdempotencyKey($input->idempotencyKey)) !== null) {
+            return $order;
+        }
+
+        return $this->db->transaction(function () use ($input, $source): Order {
+            $cart = $this->carts->add(null, $input->lines, $input->locale)->cart;
+
+            $order = $this->place(new PlaceOrder(
+                cart: $cart,
+                locale: $input->locale,
+                customer: $input->customer,
+                recipient: $input->recipient,
+                comment: $input->comment,
+                idempotencyKey: $input->idempotencyKey,
+                source: $source,
+            ));
+
+            $this->carts->clear($cart);
+
+            return $order;
+        });
+    }
+
+    /**
+     * The order a manager's lines would make, counted and not placed: the dry run of
+     * `orders_create` and the totals of the panel's form. The same checks as `placeByManager()`,
+     * and the cart is really made, counted for the order and rolled back — so the count is the
+     * one `place()` would freeze, and nothing stays.
+     *
+     * @throws ValidationException as placeByManager()
+     */
+    public function previewByManager(ManagerOrder $input): ManagerPreview
+    {
+        $this->validateManager($input);
+        $this->db->beginTransaction();
+
+        try {
+            $cart = $this->carts->add(null, $input->lines, $input->locale)->cart;
+            $state = $this->calculator->calculate($cart, $input->locale, Purpose::Order);
+
+            try {
+                $this->orderable($cart, $state);
+            } catch (CartNotOrderable $refused) {
+                return new ManagerPreview($state, $refused);
+            }
+
+            return new ManagerPreview($state);
+        } finally {
+            $this->db->rollBack();
+        }
+    }
+
     /** The order a checkout's form token made (§6.2, step 1), or null; the key is hashed the same way. */
     public function findByIdempotencyKey(string $key): ?Order
     {
@@ -629,6 +699,19 @@ final class Orders
 
             return $link;
         });
+    }
+
+    /**
+     * The contacts before the cart: a form with a wrong phone is answered by field and makes no
+     * row, even one rolled back.
+     *
+     * @throws ValidationException
+     */
+    private function validateManager(ManagerOrder $input): void
+    {
+        $comment = $input->comment !== null && trim($input->comment) !== '' ? trim($input->comment) : null;
+
+        $this->validate($input->customer->normalised(), $input->recipient?->normalised(), $comment);
     }
 
     private function write(PlaceOrder $input, Contact $customer, ?Contact $recipient, ?string $comment, ?string $key): Order

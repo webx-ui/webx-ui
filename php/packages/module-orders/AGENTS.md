@@ -16,7 +16,7 @@ grouped into public ones. Dictionary `webx-orders` (`module`, `statuses`, `panel
     or an e-mail), `recipient`, `comment`, `expectedPayable`, `awaitPayment`, `blocks`, `idempotencyKey`, `userId`, `source`.
     Refusals: `ValidationException` (contacts), `CartNotOrderable` (`empty`, `currency`, `lines` with the cart's warnings),
     `PayableChanged` (the fresh `CartState`), `OrderRefused` (a listener), `Blocks\BlockRefused`;
-  - `findByIdempotencyKey($key)` — the order a form token made; a repeat of `place()` returns it;
+  - `findByIdempotencyKey($key)` — the order a form token made; a repeat of `place()` returns it; `placeByManager(ManagerOrder, source = 'panel')` (§29.2) — the manager's lines into a service cart (`CartService::add(null, …)`), `place()`, `clear()`, one transaction; `previewByManager()` → `ManagerPreview` (counted for the order, rolled back);
   - every other method is one transaction with the order's row locked, events after the commit, and refreshes the model passed
     in. `mark(order, Milestone, source, at?, reference?, note?)` — `paid`, `received`, `cancelled` once (`MilestoneMark`:
     `marked`, `already_marked` with the first mark, `refunded`); others — `MilestoneRefused`; paid or received of a cancelled
@@ -76,7 +76,7 @@ grouped into public ones. Dictionary `webx-orders` (`module`, `statuses`, `panel
   `tabs`, `summary`, `customer`; fields `customer.*`, `recipient.*`, `comment`, `manager_note`. Role `orders` («Order manager»).
   `statuses` and `settings` — under `orders.statuses` (`settings` also `orders.checkout.settings`). The selection: `Panel\StatusBatch`.
 - **MCP** (§12, `Mcp\OrdersTools`, `Mcp\StatusTools` on `OrdersModule`): `orders_list|get|history|summary`, `orders_set_status`
-  (`order` or `numbers` ≤ 200), `orders_mark|cancel|refund|update|note`, `orders_statuses_list|save|delete|restore|reorder`,
+  (`order` or `numbers` ≤ 200), `orders_mark|cancel|refund|update|create|note`, `orders_statuses_list|save|delete|restore|reorder`,
   `orders_public_statuses_save|delete|restore|reorder`, `orders_settings_get|set`; resource `orders://catalog`. Source `mcp`;
   money in minor units with `*_formatted`; a dry run is the panel dialog's answer (`Consequences`, `StatusBoard`,
   `StatusBatch`), rolled back where the service has none.
@@ -105,13 +105,13 @@ grouped into public ones. Dictionary `webx-orders` (`module`, `statuses`, `panel
 
 ### Permissions
 
-| Permission                 | Opens                                                     |
-| -------------------------- | --------------------------------------------------------- |
-| `orders.view`              | the list, the card and the history of orders              |
-| `orders.manage`            | statuses, marks, cancelling, contacts, notes, the visitor |
-| `orders.refund`            | recording money given back                                |
-| `orders.statuses`          | the screens of statuses and the settings of the section   |
-| `orders.checkout.settings` | the tab «Checkout», `orders_checkout_settings_set`        |
+| Permission                 | Opens                                                                                    |
+| -------------------------- | ---------------------------------------------------------------------------------------- |
+| `orders.view`              | the list, the card and the history of orders                                             |
+| `orders.manage`            | statuses, marks, cancelling, contacts, notes, the visitor, a new order (`orders_create`) |
+| `orders.refund`            | recording money given back                                                               |
+| `orders.statuses`          | the screens of statuses and the settings of the section                                  |
+| `orders.checkout.settings` | the tab «Checkout», `orders_checkout_settings_set`                                       |
 
 Routes ask with `cms.can`, tools with `permission:`: reading — any of the first three; writing as the table says. Finding a visitor to link (`{id}/visitors`) wants `users.view` as well.
 
@@ -138,9 +138,9 @@ Routes ask with `cms.can`, tools with `permission:`: reading — any of the firs
 ## Check your work
 
 - `Panel/*Test` — `BoundariesTest`: the panel never writes an order itself; `PerformanceTest`: the list's budget; `AccessCoverageTest`. `CancelByStatusTest`.
-- `Mcp/McpTest` (parity with the panel, dry runs write nothing), `Mcp/CheckoutToolsTest` (preview = `place`, masks), `Mcp/PerformanceTest`, `Mcp/AccessCoverageTest`, `Mcp/LinkVisitorTest`; 27 tools (28 with users, 21 with the checkout off).
+- `Mcp/McpTest` (parity with the panel, dry runs write nothing), `Mcp/CheckoutToolsTest` (preview = `place`, masks), `Mcp/PerformanceTest`, `Mcp/AccessCoverageTest`, `Mcp/LinkVisitorTest`, `Mcp/CreateOrderTest`; 28 tools (29 with users, 22 with the checkout off).
 - `Site/OrderPageTest` (the signed page, its budget, nothing without users), `Site/VisitorOrdersTest`. `Notifications/*Test` — with and without it.
-- `PlaceTest`, `MilestonesTest`, `StatusMoveTest`, `DetailsTest`, `RefundTest`, `PerformanceTest` (the budget of `place()`), and
+- `PlaceTest`, `MilestonesTest`, `StatusMoveTest`, `DetailsTest`, `RefundTest`, `ManagerOrderTest`, `PerformanceTest` (the budget of `place()`), and
   `CartLockTest`, `MilestoneRaceTest` against a real server: `WEBX_TEST_MYSQL_URL=mariadb://user:password@host:3306/db`; `migrate` / `migrate:rollback`.
 - `Checkout/*Test`: `CheckoutWithoutNeighboursTest`, `PlaceIdempotencyTest`, `PayableChangedTest`, `PerformanceTest` (`GET /checkout`),
   `PlacePerformanceTest`, `StepOrderTest`, `CheckoutSlotsTest`, `CheckoutViewTest`, `CheckoutSignInTest`, `CheckoutDisabledTest`, `QuickOrderTest`; a slot extends `SlotContractTestCase`.
