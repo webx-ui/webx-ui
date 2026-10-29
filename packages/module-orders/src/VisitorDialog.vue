@@ -161,7 +161,7 @@ async function apply(): Promise<void> {
         </li>
       </ul>
 
-      <wx-alert v-if="error" type="error" :description="error" />
+      <wx-alert v-if="error" type="danger" :description="error" />
       <wx-alert
         v-else-if="plan && plan.visitor"
         type="info"

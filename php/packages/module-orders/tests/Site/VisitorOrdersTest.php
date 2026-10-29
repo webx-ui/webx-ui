@@ -35,6 +35,9 @@ use WebxUi\Users\UsersServiceProvider;
  */
 final class VisitorOrdersTest extends PanelTestCase
 {
+    /** @var list<OrderDetailsChanged> */
+    private array $heard = [];
+
     /**
      * @param  Application  $app
      * @return list<class-string>
@@ -99,40 +102,39 @@ final class VisitorOrdersTest extends PanelTestCase
         $boris = $this->visitor('boris@example.test', 'Boris');
         $order = $this->order();
         $orders = $this->app->make(Orders::class);
-        $heard = [];
-        Event::listen(OrderDetailsChanged::class, static function (OrderDetailsChanged $event) use (&$heard): void {
-            $heard[] = $event;
+        Event::listen(OrderDetailsChanged::class, function (OrderDetailsChanged $event): void {
+            $this->heard[] = $event;
         });
 
         $plan = $orders->linkVisitor($order, $anna->id, 'panel', dryRun: true);
         $this->assertSame(VisitorLink::LINKED, $plan->outcome);
         $this->assertNull($plan->previousId);
-        $this->assertNull($order->fresh()?->user_id);
+        $this->assertNull($order->refresh()->user_id);
         $this->assertSame(0, StatusChange::query()->where('kind', StatusChange::VISITOR)->count());
-        $this->assertSame([], $heard);
+        $this->assertCount(0, $this->heard);
 
         $orders->linkVisitor($order, $anna->id, 'panel');
-        $this->assertSame($anna->id, $order->fresh()?->user_id);
+        $this->assertSame($anna->id, $order->refresh()->user_id);
         $this->assertSame('linked: Anna Petrova <anna@example.test>', StatusChange::query()->where('kind', StatusChange::VISITOR)->value('note'));
-        $this->assertCount(1, $heard);
-        $this->assertSame(['user_id'], $heard[0]->fields);
-        $this->assertSame(['user_id' => null], $heard[0]->before);
-        $this->assertSame($anna->id, $heard[0]->order->userId);
+        $this->assertCount(1, $this->heard);
+        $this->assertSame(['user_id'], $this->heard[0]->fields);
+        $this->assertSame(['user_id' => null], $this->heard[0]->before);
+        $this->assertSame($anna->id, $this->heard[0]->order->userId);
         $this->assertSame(1, HistoryEntry::query()->where('subject_id', $order->id)->where('event', 'updated')->count());
         // The contacts stay what the buyer typed.
-        $this->assertSame('alex@example.test', $order->fresh()?->customer_email);
+        $this->assertSame('alex@example.test', $order->refresh()->customer_email);
 
         // Moved to another visitor in one step, and back to nobody.
         $moved = $orders->linkVisitor($order, $boris->id, 'panel');
         $this->assertSame($anna->id, $moved->previous?->id);
-        $this->assertSame(['user_id' => $anna->id], $heard[1]->before);
+        $this->assertSame(['user_id' => $anna->id], $this->heard[1]->before);
         $orders->unlinkVisitor($order, 'panel');
-        $this->assertNull($order->fresh()?->user_id);
+        $this->assertNull($order->refresh()->user_id);
         $this->assertSame('unlinked: Boris <boris@example.test>', StatusChange::query()->where('kind', StatusChange::VISITOR)->orderByDesc('id')->value('note'));
 
         // So already: silence.
         $this->assertSame(VisitorLink::UNCHANGED, $orders->unlinkVisitor($order, 'panel')->outcome);
-        $this->assertCount(3, $heard);
+        $this->assertCount(3, $this->heard);
 
         $this->expectException(VisitorRefused::class);
         $orders->linkVisitor($order, $boris->id + 100, 'panel');
@@ -161,14 +163,14 @@ final class VisitorOrdersTest extends PanelTestCase
 
         $plan = $this->postJson($this->api($order->id.'/visitor'), ['user_id' => $anna->id, 'dry_run' => true])->assertOk()->json('data');
         $this->assertSame('linked', $plan['outcome']);
-        $this->assertNull($order->fresh()?->user_id);
+        $this->assertNull($order->refresh()->user_id);
 
         $card = $this->postJson($this->api($order->id.'/visitor'), ['user_id' => $anna->id])->assertOk()->json('data.order');
         $this->assertSame(['id' => $anna->id, 'name' => 'Anna Petrova', 'email' => 'alex@example.test'], $card['visitor']);
         $this->assertContains('visitor-linked', array_column($card['timeline'], 'kind'));
 
         $this->deleteJson($this->api($order->id.'/visitor'))->assertOk();
-        $this->assertNull($order->fresh()?->user_id);
+        $this->assertNull($order->refresh()->user_id);
         $this->postJson($this->api($order->id.'/visitor'), ['user_id' => 999999])->assertUnprocessable()->assertJsonValidationErrors('user_id');
 
         // Working an order is `orders.manage`.
@@ -193,7 +195,7 @@ final class VisitorOrdersTest extends PanelTestCase
 
         $this->assertSame(0, Order::query()->where('user_id', $anna->id)->count());
         // The contacts are the record of the sale.
-        $this->assertSame('alex@example.test', $active->fresh()?->customer_email);
+        $this->assertSame('alex@example.test', $active->refresh()->customer_email);
         $this->assertSame(2, StatusChange::query()->where('kind', StatusChange::VISITOR)->where('note', 'unlinked: Anna <anna@example.test>')->count());
     }
 

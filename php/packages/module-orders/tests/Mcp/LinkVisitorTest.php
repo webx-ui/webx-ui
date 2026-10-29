@@ -42,14 +42,14 @@ final class LinkVisitorTest extends McpTestCase
         $this->assertSame('linked', $plan['outcome']);
         $this->assertSame($anna->id, $plan['visitor']['id']);
         $this->assertTrue($plan['dry_run']);
-        $this->assertNull($order->fresh()?->user_id);
+        $this->assertNull($order->refresh()->user_id);
 
         $this->ask('orders_link_visitor', ['order' => $order->number, 'visitor' => $anna->id]);
-        $this->assertSame($anna->id, $order->fresh()?->user_id);
+        $this->assertSame($anna->id, $order->refresh()->user_id);
         $this->assertSame('mcp', StatusChange::query()->where('kind', StatusChange::VISITOR)->value('source'));
 
         $this->assertSame('unlinked', $this->ask('orders_link_visitor', ['order' => $order->number, 'unlink' => true])['outcome']);
-        $this->assertNull($order->fresh()?->user_id);
+        $this->assertNull($order->refresh()->user_id);
 
         // A part of an address is not one: the tool looks up, it does not search.
         $this->agent('orders_link_visitor', ['order' => $order->number, 'visitor' => 'anna@'])->assertHasErrors();

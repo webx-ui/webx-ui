@@ -114,6 +114,8 @@ parameters:
                 - packages/module-seo/src/Rendering/Seo.php
                 - packages/module-cart/src/Rendering/Panel.php
                 - packages/module-cart/src/View/Components/Widget.php
+                - packages/module-orders/src/Http/Controllers/Site/AccountOrdersController.php
+                - packages/module-orders/src/Http/Controllers/Site/OrderPageController.php
                 - packages/module-users/src/Http/Controllers/RegisterController.php
                 - packages/module-users/src/Http/Controllers/EmailController.php
                 - packages/module-users/src/Http/Controllers/ForgotController.php

@@ -88,7 +88,8 @@ final class PanelTest extends PanelTestCase
 
         $this->signIn();
         $actions = $this->getJson($this->api($order->id))->json('data.order.actions');
-        $this->assertSame(['status' => true, 'paid' => true, 'received' => true, 'cancel' => true, 'details' => true, 'refund' => true], $actions);
+        // No linking to a visitor without the visitors module (§13.3).
+        $this->assertSame(['status' => true, 'paid' => true, 'received' => true, 'cancel' => true, 'details' => true, 'refund' => true, 'visitor' => false, 'visitor_search' => false], $actions);
 
         $this->getJson($this->api(999999))->assertNotFound();
     }

@@ -17,16 +17,20 @@ describe('orders()', () => {
     ])
   })
 
-  /* The screen `orders.show` names these; a type it names and the panel does not know is drawn
-     as a loud placeholder, so the two lists have to stay one. */
+  /* The screen `orders.show` names these, and the patches of the server with the visitors (the
+     account of the order, the tab and the count on `users.form`); a type it names and the panel
+     does not know is drawn as a loud placeholder, so the two lists have to stay one. */
   it('registers every node type of the card and the settings', () => {
     expect(Object.keys(orders().types ?? {}).sort()).toEqual([
+      'wx-orders-count',
       'wx-orders-items',
       'wx-orders-layout',
+      'wx-orders-list',
       'wx-orders-number-sample',
       'wx-orders-status',
       'wx-orders-summary',
       'wx-orders-timeline',
+      'wx-orders-visitor',
     ])
   })
 })
