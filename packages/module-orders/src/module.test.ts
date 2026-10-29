@@ -5,7 +5,7 @@ import { orders } from './module'
 import { sampleNumber } from './settings'
 
 describe('orders()', () => {
-  it('mounts the list, the card, the statuses and the settings under the path it is given', () => {
+  it('mounts the list, the card, the statuses, the settings and «New order» under the path it is given', () => {
     const section = orders({ path: '/shop/orders' })
 
     expect(section.id).toBe('orders')
@@ -13,6 +13,7 @@ describe('orders()', () => {
       '/shop/orders',
       '/shop/orders/statuses',
       '/shop/orders/settings',
+      '/shop/orders/new',
       '/shop/orders/:id(\\d+)',
     ])
   })

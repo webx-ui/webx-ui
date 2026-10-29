@@ -33,7 +33,7 @@ question is about one of them.
 - **Storefront points** that satellites print into: `catalog.card.badges`, `catalog.card.meta`,
   `catalog.product.aside`, `catalog.product.tabs`, `catalog.product.unavailable`,
   `catalog.listing.top`, `catalog.listing.bottom`; `catalog.product.quick` — the orders' «Buy in one
-  click» beside the cart's button while `orders` is a registered module (`Orders\QuickButton`).
+  click» beside the cart's button while `orders` is a registered module (`Orders\QuickButton`). With the cart, `Cart\ProductPurchasable` is `catalog.product` and `FindsPurchasables` (the orders' «New order»: `matching()`, unpublished — unavailable).
 - **Panel screens** `catalog.product-form` (tabs `main`, `description-tab`, `images-tab`,
   `seo-tab`, `settings-tab`, `history-tab`) and `catalog.category-form` (`main`, `filters-tab`,
   `seo-tab`, `history-tab`). Also the exchange forms `catalog.exchange-import` and `catalog.exchange-profile`. The API is under `/api/cms/catalog`.

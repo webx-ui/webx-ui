@@ -5,11 +5,15 @@ import type {
   MassCancelAnswer,
   MassStatusAnswer,
   MoveConsequences,
+  NewOrderInput,
+  NewOrderMeta,
+  NewOrderPreview,
   OrderDetail,
   OrderQuery,
   OrdersMeta,
   OrdersPage,
   OrdersSettings,
+  ProductChoice,
   PublicStatusInput,
   RefundInput,
   RefundPreview,
@@ -102,6 +106,13 @@ export interface OrdersApi {
   link(id: number, userId: number): Promise<OrderDetail>
   previewUnlink(id: number): Promise<VisitorLinkPreview>
   unlink(id: number): Promise<OrderDetail>
+  /** «New order» (§29.2): the languages an order may be in. */
+  newMeta(): Promise<NewOrderMeta>
+  /** Products for a line, found by a word through whichever module sells them. */
+  findProducts(search: string, locale: string): Promise<ProductChoice[]>
+  /** The lines counted as the order would count them; nothing is written. */
+  previewNew(lines: NewOrderInput['lines'], locale: string): Promise<NewOrderPreview>
+  create(input: NewOrderInput): Promise<{ id: number; number: string }>
 }
 
 export function createOrdersApi(admin: AdminContext): OrdersApi {
@@ -245,5 +256,18 @@ export function createOrdersApi(admin: AdminContext): OrdersApi {
         .delete<{ data: VisitorLinkPreview }>(`${base}/${id}/visitor`, { query: { dry_run: 1 } })
         .then(data),
     unlink: (id) => admin.http.delete<{ data: OrderDetail }>(`${base}/${id}/visitor`).then(data),
+    newMeta: () => admin.http.get<{ data: NewOrderMeta }>(`${base}/new`).then(data),
+    findProducts: (search, locale) =>
+      admin.http
+        .get<{
+          data: ProductChoice[]
+        }>(`${base}/new/products?${new URLSearchParams({ search, locale })}`)
+        .then(data),
+    previewNew: (lines, locale) =>
+      admin.http
+        .post<{ data: NewOrderPreview }>(`${base}/new/preview`, { lines, locale })
+        .then(data),
+    create: (input) =>
+      admin.http.post<{ data: { id: number; number: string } }>(`${base}/new`, input).then(data),
   }
 }

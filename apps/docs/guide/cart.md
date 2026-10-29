@@ -317,6 +317,10 @@ final class TicketPurchasable implements Purchasable
   still shows its name.
 - A price that depends on a choice: implement `ResolvesWithOptions`; accepting options at all:
   `ChecksOptions`. Without it, a line with options is refused.
+- Found by a manager in «New order» of the orders' panel: implement `FindsPurchasables` —
+  `find($term, $locale, $limit)` returns `PurchasableChoice`s: the ref, its `PurchasableLine`, the
+  `ChoiceOption`s a line must name (a size, a colour — the same `options` your `ChecksOptions`
+  reads) and a hint such as the category. A provider without it is simply not searched.
 
 Register it from your provider's `boot()`, so your module works with the cart and without it:
 

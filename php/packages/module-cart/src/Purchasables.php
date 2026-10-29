@@ -7,6 +7,7 @@ namespace WebxUi\Cart;
 use Illuminate\Contracts\Container\Container;
 use InvalidArgumentException;
 use LogicException;
+use WebxUi\Cart\Contracts\FindsPurchasables;
 use WebxUi\Cart\Contracts\Purchasable;
 
 /**
@@ -65,5 +66,30 @@ final class Purchasables
     public function types(): array
     {
         return array_keys($this->providers);
+    }
+
+    /**
+     * What every provider that can be searched finds by the term, by type in the order of
+     * registration; a provider without `FindsPurchasables` is left out, not asked.
+     *
+     * @return array<string, list<PurchasableChoice>>
+     */
+    public function find(string $term, string $locale, int $limit): array
+    {
+        $found = [];
+
+        foreach ($this->types() as $type) {
+            $provider = $this->get($type);
+
+            if ($provider instanceof FindsPurchasables) {
+                $choices = $provider->find($term, $locale, $limit);
+
+                if ($choices !== []) {
+                    $found[$type] = $choices;
+                }
+            }
+        }
+
+        return $found;
     }
 }

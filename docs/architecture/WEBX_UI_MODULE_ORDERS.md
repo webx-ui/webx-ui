@@ -2302,7 +2302,7 @@ Orders::placeByManager(ManagerOrder, source = panel) → DB::transaction:
   (токен формы: второе нажатие — тот же заказ). Цены нет: заказ считает цепочка корзины.
 - **Источник и автор.** Панель зовёт с `source = panel`, MCP — с `source = mcp` (как все
   инструменты, §12). Для обоих `place()` пишет `admin_id` вошедшего администратора в веху `placed`
-  и первую строку истории. Отметка «Создан в панели» и `panel` в фильтре списка — этап 22.
+  и первую строку истории. Отметка «Создан в панели» в списке и карточке, `panel` в фильтре списка.
 - **Отказы** — те же, что у `place()`: `ValidationException` по полям (`items` — пустой состав,
   `items.N.ref` — нет товара или он не продаётся, `customer.*` — контакты), `CartNotOrderable`,
   `OrderRefused` слушателя `OrderPlacing`.
@@ -2314,6 +2314,16 @@ Orders::placeByManager(ManagerOrder, source = panel) → DB::transaction:
   `permission:`), как у всех методов `Orders`.
 - **Доставка и оплата** не выбираются, ручной цены и скидки нет (§18): блоки дописывают модули
   через `patchBlock()` (§6.4), как у «одного клика».
+- **Экран «Новый заказ»** (`/orders/new`, кнопка в списке при `orders.manage`;
+  `Http\Controllers\Panel\NewOrderController` только оборачивает `Orders`):
+  - **поиск** — `GET new/products?search=`: `Purchasables::find()` модуля корзины спрашивает
+    поставщиков с `FindsPurchasables` (§5.1 спеки корзины), заказ не знает каталога; у товара с
+    вариантом — `options` с выбором, строка без выбора не считается и не оформляется;
+  - **живые итоги** — `POST new/preview`: `previewByManager(input, contacts: false)` — только
+    строки, контакты ещё вводятся; ответ — `orderable`, `message`, `totals` (`CartState`, с
+    предупреждениями); отказ строки — 422 `items.N.*` под этой строкой;
+  - **заказ** — `POST new`: `placeByManager(source: panel)`, ключ повтора — токен формы; ответ —
+    `id` и номер, экран открывает карточку; язык заказа — язык сайта, выбор при нескольких.
 
 ## 30. События
 

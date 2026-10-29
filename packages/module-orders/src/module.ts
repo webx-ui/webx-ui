@@ -17,8 +17,8 @@ export interface OrdersOptions {
 /**
  * «Orders» as a section of the panel (spec §11): the list and the card of an order, and under them
  * the statuses and the settings of the section (§11.4), which the list links to for whoever holds
- * `orders.statuses`. A section whose server half is not installed never appears — the entry is
- * built from the manifest.
+ * `orders.statuses`, and «New order» (§29.2) for whoever holds `orders.manage`. A section whose
+ * server half is not installed never appears — the entry is built from the manifest.
  *
  * The node types are the parts of `orders.show` a field cannot be: the two columns of the card, the strip of
  * the status and the marks (`header-actions`, a container a neighbour adds its buttons to), the lines, the
@@ -48,6 +48,12 @@ export function orders(options: OrdersOptions = {}): AdminModule {
         path: `${path}/settings`,
         name: 'webx.orders.settings',
         component: () => import('./SettingsPage.vue'),
+        props,
+      },
+      {
+        path: `${path}/new`,
+        name: 'webx.orders.new',
+        component: () => import('./NewOrderPage.vue'),
         props,
       },
       {

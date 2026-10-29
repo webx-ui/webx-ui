@@ -169,11 +169,17 @@ final class Orders
      * and the cart is really made, counted for the order and rolled back — so the count is the
      * one `place()` would freeze, and nothing stays.
      *
+     * @param  bool  $contacts  false — the lines alone: the panel's form counts them while the
+     *                          contacts are still being typed, and placing checks them anyway
+     *
      * @throws ValidationException as placeByManager()
      */
-    public function previewByManager(ManagerOrder $input): ManagerPreview
+    public function previewByManager(ManagerOrder $input, bool $contacts = true): ManagerPreview
     {
-        $this->validateManager($input);
+        if ($contacts) {
+            $this->validateManager($input);
+        }
+
         $this->db->beginTransaction();
 
         try {

@@ -72,9 +72,20 @@ const message = useErrorText()
 
 const canManage = computed(() => admin.can('orders.manage'))
 
-/* The statuses and the settings of the section, for whoever may change them (§11.4); the settings
- * also for whoever edits only their tab «Checkout» (§31.1). */
+/* «New order» for whoever works orders; the statuses and the settings of the section, for whoever
+ * may change them (§11.4); the settings also for whoever edits only their tab «Checkout» (§31.1). */
 const headActions = computed<ScreenAction[]>(() => [
+  // An order taken by phone (§29.2) — working orders, so `orders.manage`.
+  ...(canManage.value
+    ? [
+        {
+          key: 'new',
+          label: t('panel.new-order'),
+          primary: true,
+          run: () => void router.push(`${props.base}/new`),
+        },
+      ]
+    : []),
   ...(admin.can('orders.statuses')
     ? [
         {
@@ -178,7 +189,16 @@ const visitorOptions = computed(() => [
 ])
 
 /** Where an order may come from; a source of the site's own code is still found by the address. */
-const SOURCES = ['checkout', 'quick', 'api', 'mcp'] as const
+const SOURCES = ['checkout', 'quick', 'panel', 'api', 'mcp'] as const
+
+/* An order that did not come through the checkout says so beside the buyer: a one-click order and
+ * one a manager took by phone (§29.1, §29.2) both wait for delivery and payment to be filled in. */
+const sourceMark = (value: unknown): string | null =>
+  value === 'quick'
+    ? t('panel.source-quick')
+    : value === 'panel'
+      ? t('panel.source-panel-mark')
+      : null
 
 const sourceOptions = computed(() =>
   SOURCES.map((value) => ({ value, label: t(`panel.source-${value}`) })),
@@ -646,8 +666,8 @@ onMounted(async () => {
               <wx-badge v-if="meta.visitors && row.guest" size="sm" variant="outline">
                 {{ t('panel.guest') }}
               </wx-badge>
-              <wx-badge v-if="row.source === 'quick'" size="sm" variant="outline">
-                {{ t('panel.source-quick') }}
+              <wx-badge v-if="sourceMark(row.source)" size="sm" variant="outline">
+                {{ sourceMark(row.source) }}
               </wx-badge>
             </span>
             <span class="wx-orders__text wx-orders__muted">
@@ -728,8 +748,8 @@ onMounted(async () => {
               <wx-badge :type="toneOf(row.status?.color)" dot size="sm">
                 {{ row.status?.name ?? '—' }}
               </wx-badge>
-              <wx-badge v-if="row.source === 'quick'" size="sm" variant="outline">
-                {{ t('panel.source-quick') }}
+              <wx-badge v-if="sourceMark(row.source)" size="sm" variant="outline">
+                {{ sourceMark(row.source) }}
               </wx-badge>
               <wx-text size="sm" weight="medium">{{ row.total }}</wx-text>
               <wx-text size="sm" tone="muted">{{ numberOf(row) }}</wx-text>

@@ -66,6 +66,8 @@ interface ItemRecord {
   refunded_qty: number
   discount: number
   label: string | null
+  /** The variant chosen, as the line's label shows it: «Size: M». */
+  options?: string | null
 }
 
 interface HistoryRecord {
@@ -421,6 +423,9 @@ function grouped(locale: string, line: Line) {
 const name = (record: OrderRecord) =>
   [record.first_name, record.last_name].filter(Boolean).join(' ')
 
+/** Where the order came from: the source of its first step (§29). */
+const sourceOf = (record: OrderRecord) => record.marks.placed?.source ?? record.history[0]?.source
+
 function row(record: OrderRecord, locale: string, line: Line) {
   const roots = record.items.filter((one) => one.parent === null)
 
@@ -442,6 +447,7 @@ function row(record: OrderRecord, locale: string, line: Line) {
     refunded: record.refunded > 0,
     delivery: record.delivery?.summary ?? null,
     payment: record.payment?.summary ?? null,
+    source: sourceOf(record),
   }
 }
 
@@ -492,6 +498,7 @@ function matches(record: OrderRecord, query: URLSearchParams): boolean {
 
   if (refunded !== null && record.refunded > 0 !== refunded) return false
   if (query.get('delivery') && record.delivery?.method !== query.get('delivery')) return false
+  if (query.get('source') && sourceOf(record) !== query.get('source')) return false
 
   const from = query.get('from')
   const to = query.get('to')
@@ -547,7 +554,7 @@ function lines(record: OrderRecord, parent: number | null): unknown[] {
       id: one.id,
       name: one.name,
       sku: one.sku,
-      options: null,
+      options: one.options ?? null,
       image: null,
       label: one.label,
       price: money(one.price),
@@ -769,6 +776,87 @@ function mark(
 
   if (key === 'paid') record.awaiting = false
   if (key === 'cancelled') for (const tender of record.tenders) tender.refunded = tender.amount
+}
+
+/* ---------------------------------------------------------------------------- new order ----- */
+
+/** What a manager finds for a line (§29.2): the shirt has a size to pick, the bench no price. */
+const CATALOGUE: {
+  ref: number
+  name: string
+  sku: string
+  hint: string
+  price: number
+  sizes?: string[]
+}[] = [
+  { ref: 101, name: 'Cordless drill', sku: 'DRILL-1', hint: 'Tools', price: 12900 },
+  { ref: 102, name: 'Drill bits, set of 10', sku: 'BITS-10', hint: 'Tools', price: 1490 },
+  {
+    ref: 103,
+    name: 'Work shirt',
+    sku: 'SHIRT-W',
+    hint: 'Clothing',
+    price: 2500,
+    sizes: ['S', 'M', 'L', 'XL'],
+  },
+  { ref: 104, name: 'Safety gloves', sku: 'GLOVES', hint: 'Clothing', price: 650 },
+  { ref: 105, name: 'Workbench', sku: 'BENCH-1', hint: 'Furniture', price: 0 },
+]
+
+/** The orders a form's token made: a second press is the first order. */
+const placedByKey = new Map<string, OrderRecord>()
+
+/** The lines counted as the order would count them; a refused one is 422 under its index. */
+function counted(value: unknown, fail: Fail) {
+  const refuse = (field: string, message: string) =>
+    fail(422, message, undefined, { [field]: [message] })
+
+  const sent = Array.isArray(value) ? (value as Record<string, unknown>[]) : []
+
+  if (sent.length === 0) throw refuse('items', 'Add at least one product.')
+
+  const picked = sent.map((one, index) => {
+    const product = CATALOGUE.find((entry) => entry.ref === Number(one.ref))
+
+    if (!product || product.price === 0)
+      throw refuse(`items.${index}.ref`, 'This product cannot be bought now.')
+
+    const options = (one.options ?? {}) as Record<string, unknown>
+    const size = product.sizes?.find((entry) => entry.toLowerCase() === options.size)
+
+    if (product.sizes && !size) throw refuse(`items.${index}.options`, 'Choose a size.')
+
+    return { product, size: size ?? null, qty: Math.max(1, Number(one.qty ?? 1) || 1) }
+  })
+
+  const lines = picked.map(({ product, size, qty }, index) => ({
+    id: index + 1,
+    name: product.name,
+    qty,
+    options_label: size ? `Size: ${size}` : null,
+    price_formatted: money(product.price),
+    line_total_formatted: money(product.price * qty),
+    available: true,
+    label: null,
+    children: [],
+  }))
+  const sum = picked.reduce((all, one) => all + one.product.price * one.qty, 0)
+
+  return {
+    picked,
+    orderable: true,
+    message: null,
+    totals: {
+      lines,
+      subtotal_formatted: money(sum),
+      adjustments: [],
+      total_formatted: money(sum),
+      tenders: [],
+      payable: sum,
+      payable_formatted: money(sum),
+      warnings: [],
+    },
+  }
 }
 
 /* ------------------------------------------------------------------------------- routes ----- */
@@ -1113,6 +1201,126 @@ export function registerOrders(on: On, fail: Fail, line: Line): void {
     }
 
     return { data: tally }
+  })
+
+  /* «New order» (§29.2): the products of a made-up catalogue found by a word, a variant to pick
+     on the shirt, the totals counted as the cart would, and the order placed with the source
+     `panel` — the card and the list then say where it came from. */
+  on('GET', '/orders/new', () => ({
+    data: {
+      locales: [
+        { code: 'en', name: 'English' },
+        { code: 'ru', name: 'Russian' },
+      ],
+      locale: 'en',
+    },
+  }))
+
+  on('GET', '/orders/new/products', ({ query }) => {
+    const term = (query.get('search') ?? '').trim().toLowerCase()
+
+    return {
+      data: CATALOGUE.filter(
+        (one) =>
+          term === '' ||
+          one.name.toLowerCase().includes(term) ||
+          one.sku.toLowerCase().includes(term),
+      ).map((one) => ({
+        type: 'catalog.product',
+        ref: one.ref,
+        name: one.name,
+        sku: one.sku,
+        hint: one.hint,
+        image: null,
+        price: one.price,
+        price_formatted: one.price > 0 ? money(one.price) : null,
+        available: one.price > 0,
+        options: one.sizes
+          ? [
+              {
+                key: 'size',
+                label: 'Size',
+                values: one.sizes.map((size) => ({ value: size.toLowerCase(), label: size })),
+              },
+            ]
+          : [],
+      })),
+    }
+  })
+
+  on('POST', '/orders/new/preview', ({ body }) => {
+    const { picked: _picked, ...answer } = counted(body.lines, fail)
+
+    return { data: answer }
+  })
+
+  on('POST', '/orders/new', ({ body }) => {
+    const key = text(body.key)
+    const again = key ? placedByKey.get(key) : undefined
+
+    if (again) return { data: { id: again.id, number: again.number } }
+
+    const count = counted(body.lines, fail)
+    const customer = (body.customer ?? {}) as Record<string, unknown>
+    const wanted = (body.recipient ?? null) as Record<string, unknown> | null
+    const errors: Record<string, string[]> = {}
+    const phoneOk = (value: string | null) => value === null || /^\+?[0-9][0-9 ().-]*$/.test(value)
+
+    if (!text(customer.first_name)) errors['customer.first_name'] = ['Enter the first name.']
+    if (!text(customer.phone) && !text(customer.email))
+      errors['customer.phone'] = ['Enter a phone or an e-mail.']
+    if (!phoneOk(text(customer.phone))) errors['customer.phone'] = ['This is not a phone number.']
+    if (wanted && !text(wanted.first_name))
+      errors['recipient.first_name'] = ['Enter the first name.']
+    if (Object.keys(errors).length > 0)
+      throw fail(422, Object.values(errors)[0]![0]!, undefined, errors)
+
+    const at = new Date().toISOString().replace(/\.\d{3}Z$/, '+00:00')
+    const id = Math.max(...orders.map((one) => one.id)) + 1
+    const record: OrderRecord = {
+      ...order(id - 1, {}),
+      placed_at: at,
+      status: 1,
+      guest: true,
+      first_name: text(customer.first_name)!,
+      last_name: text(customer.last_name),
+      phone: text(customer.phone),
+      email: text(customer.email),
+      recipient: wanted
+        ? {
+            first_name: text(wanted.first_name)!,
+            last_name: text(wanted.last_name),
+            phone: text(wanted.phone),
+          }
+        : null,
+      comment: text(body.comment),
+      items: count.picked.map(({ product, qty, size }) =>
+        item('a', qty, {
+          name: product.name,
+          sku: product.sku,
+          price: product.price,
+          options: size ? `Size: ${size}` : null,
+        }),
+      ),
+      marks: { placed: { at, source: 'panel', reference: null } },
+      history: [
+        {
+          key: `h${id}-0`,
+          kind: 'status',
+          at,
+          source: 'panel',
+          admin: 'Demo manager',
+          note: null,
+          from: null,
+          to: 1,
+        },
+      ],
+    }
+
+    orders.push(record)
+    if (key) placedByKey.set(key, record)
+
+    return { data: { id: record.id, number: record.number } }
   })
 
   registerStatuses(on, fail, line)

@@ -401,3 +401,91 @@ export interface OrdersSettings {
   next_id: number
   sample: string
 }
+
+/* ------------------------------------------------------------------ «New order» (§29.2) ----- */
+
+/** A choice a line of a found product must name — a size, a colour — as its provider offers it. */
+export interface ProductChoiceOption {
+  key: string
+  label: string
+  /** A value goes back exactly as given: an integer stays an integer. */
+  values: { value: string | number; label: string }[]
+}
+
+/** A product found for a line, through whichever module sells it. */
+export interface ProductChoice {
+  type: string
+  ref: number
+  name: string
+  sku: string | null
+  /** What tells two of one name apart: a category, a brand. */
+  hint: string | null
+  image: string | null
+  price: number
+  price_formatted: string | null
+  /** Taken off the site, out of stock or with its price on request: shown, not offered. */
+  available: boolean
+  options: ProductChoiceOption[]
+}
+
+export interface NewOrderMeta {
+  locales: { code: string; name: string }[]
+  /** The site's own language: what an order is in unless the manager says otherwise. */
+  locale: string
+}
+
+/** A line as «Add to cart» takes it; the price is never the manager's (§18). */
+export interface NewOrderLine {
+  type: string
+  ref: number
+  qty: number
+  options?: Record<string, string | number>
+}
+
+export interface NewOrderContact {
+  first_name: string
+  last_name: string
+  phone: string
+  email?: string
+}
+
+export interface NewOrderInput {
+  lines: NewOrderLine[]
+  locale: string
+  customer: NewOrderContact
+  /** Empty — the buyer takes it. */
+  recipient: NewOrderContact | null
+  comment: string
+  /** The form's token: a second press is the order of the first. */
+  key: string
+}
+
+/** A line of the count, as the cart's chain answers it (`CartState::toArray()`). */
+export interface CountedLine {
+  id: number | string
+  name: string
+  qty: number
+  options_label: string | null
+  price_formatted: string | null
+  line_total_formatted: string | null
+  available: boolean
+  label: string | null
+  children: CountedLine[]
+}
+
+/** The lines counted as the order would count them, before the contacts (§29.2). */
+export interface NewOrderPreview {
+  orderable: boolean
+  /** Why it cannot be ordered, in the panel's words. */
+  message: string | null
+  totals: {
+    lines: CountedLine[]
+    subtotal_formatted: string | null
+    adjustments: { label: string; amount_formatted: string | null }[]
+    total_formatted: string | null
+    tenders: { label: string; amount_formatted: string | null }[]
+    payable: number
+    payable_formatted: string | null
+    warnings: { code: string; line: number | string | null; message: string }[]
+  }
+}

@@ -19,8 +19,8 @@ plug into. No page, no panel section: a JSON API, `cart()` and a buy button for 
   - `price` is an integer in minor units; `0` is «price on request» and cannot be bought.
   - `names` (locale → name) feeds the `name_at_add` snapshot shown when the record is gone.
   - A provider whose price depends on the choice implements `ResolvesWithOptions`; one that
-    accepts options at all implements `ChecksOptions`. Without it, non-empty options are refused.
-- **The registry** `WebxUi\Cart\Purchasables`: `register('<module>.<entity>', Provider::class)`.
+    accepts options at all implements `ChecksOptions`. Without it, non-empty options are refused. One a manager can search (the orders' «New order») implements `FindsPurchasables::find(term, locale, limit)` → `PurchasableChoice` (ref, line, `ChoiceOption`s, hint).
+- **The registry** `WebxUi\Cart\Purchasables`: `register('<module>.<entity>', Provider::class)`; `find()` asks the searchable ones.
 - **Currency** `Contracts\CurrencySource` (default `ConfigCurrency`, bound with `singletonIf`),
   `CurrencyFormat`, and `WebxUi\Cart\Money`: `format(int $minor, string $currency)` — the same
   string in every language — and `toMinor('49.90', 'EUR')` without floats.

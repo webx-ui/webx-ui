@@ -109,6 +109,34 @@ A refusal is an exception with the reason in words: `StatusMoveRefused`, `Refund
   tender are back, the order gets `refunded`, once. The order's own lines and totals stay as
   they were; the refunds lie beside them.
 
+### An order taken by phone
+
+A manager with `orders.manage` opens «New order» from the list: finds products by a word, picks a
+variant where the product has one, sets the quantities and types the buyer's contacts. The totals
+beside the form are the order's own count, made again on each change — prices, the cart's rules
+and their warnings come from the site, never from the manager. «Create order» opens the card; the
+card and the list mark it «Created in the panel», and the list filters it by `source = panel`.
+
+Under it is `placeByManager()`: the lines go into a cart of its own, without a cookie, the order is
+the same `place()` as the checkout's, and the cart is gone in the same transaction — so the order
+gets its number, its letters and its events like any other. Code and the agent's `orders_create`
+call it too:
+
+```php
+use WebxUi\Orders\Contact;
+use WebxUi\Orders\ManagerOrder;
+
+$order = $orders->placeByManager(new ManagerOrder(
+    lines: [['type' => 'catalog.product', 'ref' => 42, 'qty' => 2]],
+    locale: 'en',
+    customer: new Contact('Alex', 'Doe', '+800 1234 5678', 'alex@example.com'),
+));
+```
+
+Products are found through the cart: whichever module sells something implements
+`FindsPurchasables` ([Cart](/guide/cart)), and «New order» offers it. Delivery and payment are not
+chosen there; their modules fill the blocks later, as for a one-click order.
+
 ## Listening to an order
 
 Every event is in `WebxUi\Orders\Events` and carries `OrderData` — a frozen snapshot of the order

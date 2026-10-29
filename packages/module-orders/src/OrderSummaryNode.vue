@@ -21,8 +21,19 @@ const order = computed(() => card?.order.value ?? null)
 
 const ORDER: MilestoneKey[] = ['placed', 'paid', 'received', 'cancelled', 'refunded']
 
-/** «Buy in one click» (§29): the manager calls back and fills in the delivery and the payment. */
-const quick = computed(() => order.value?.milestones.placed?.source === 'quick')
+/**
+ * Where an order came from, when not through the checkout: «Buy in one click» (§29) — the manager
+ * calls back and fills in the delivery and the payment — or taken by a manager in the panel (§29.2).
+ */
+const source = computed(() => {
+  const placed = order.value?.milestones.placed?.source
+
+  return placed === 'quick'
+    ? t('panel.source-quick')
+    : placed === 'panel'
+      ? t('panel.source-panel-mark')
+      : null
+})
 
 const dates = computed(() =>
   ORDER.flatMap((key) => {
@@ -63,12 +74,12 @@ const dates = computed(() =>
         <dt>{{ t(`module.milestones.${mark.key}`) }}</dt>
         <dd>
           <wx-badge
-            v-if="mark.key === 'placed' && quick"
+            v-if="mark.key === 'placed' && source"
             class="wx-orders-summary__source"
             size="sm"
             variant="outline"
           >
-            {{ t('panel.source-quick') }}
+            {{ source }}
           </wx-badge>
           <wx-date :value="mark.at" size="sm" />
           <wx-text v-if="mark.reference" size="sm" tone="muted" class="wx-orders-summary__ref">

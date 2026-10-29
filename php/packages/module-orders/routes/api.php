@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use WebxUi\Orders\Http\Controllers\Panel\MassController;
+use WebxUi\Orders\Http\Controllers\Panel\NewOrderController;
 use WebxUi\Orders\Http\Controllers\Panel\OrderController;
 use WebxUi\Orders\Http\Controllers\Panel\SettingsController;
 use WebxUi\Orders\Http\Controllers\Panel\StatusController;
@@ -17,7 +18,8 @@ use WebxUi\Orders\Site\VisitorOrders;
  * cancellation, the contacts and the note; `orders.refund` records money given back, apart,
  * because it is money. Whoever may manage or refund may also read. The statuses and the settings
  * of the section are `orders.statuses` alone (§11.4): naming the shop's stages is not working an
- * order; the tab «Checkout» of the settings is `orders.checkout.settings` (§31.1). The visitor of an order (§13.3) is `orders.manage`, and only with the visitors installed;
+ * order; the tab «Checkout» of the settings is `orders.checkout.settings` (§31.1). An order taken by
+ * phone (§29.2) is `orders.manage`: its form finds products and counts them, then places it. The visitor of an order (§13.3) is `orders.manage`, and only with the visitors installed;
  * finding one is reading the customers, so `users.view` as well.
  */
 Route::prefix((string) config('webx-admin.api_path').'/orders')
@@ -34,6 +36,10 @@ Route::prefix((string) config('webx-admin.api_path').'/orders')
         });
 
         Route::middleware($manage)->group(function (): void {
+            Route::get('new', [NewOrderController::class, 'meta'])->name('new.meta');
+            Route::get('new/products', [NewOrderController::class, 'products'])->name('new.products');
+            Route::post('new/preview', [NewOrderController::class, 'preview'])->name('new.preview');
+            Route::post('new', [NewOrderController::class, 'store'])->name('new.store');
             Route::post('status', [MassController::class, 'status'])->name('mass.status');
             Route::post('cancel', [MassController::class, 'cancel'])->name('mass.cancel');
             Route::post('{order}/status', [OrderController::class, 'status'])->whereNumber('order')->name('status');

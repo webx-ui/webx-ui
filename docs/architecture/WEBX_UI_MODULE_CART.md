@@ -366,6 +366,14 @@ final class PurchasableLine
   - Слияние одинаковых строк (решение 18) сравнивает `options` нормализованными (ключи по
     алфавиту): одна и та же конфигурация не двоится.
   - `optionsLabel` от `resolveLines()` — подпись выбора («Цвет: белый, 120 × 60») на языке запроса.
+  - **`FindsPurchasables`** (заказ из панели, §29.2 спеки заказов) — поставщик, чьи записи менеджер
+    ищет словом: `find(string $term, string $locale, int $limit): list<PurchasableChoice>`.
+    `PurchasableChoice` — `ref`, `line` (`PurchasableLine`: название, цена, `available`), `options`
+    (`list<ChoiceOption>`: `key`, `label`, `values` — то, что строка должна назвать, как кнопка
+    покупки называет вариант) и `hint` (категория, бренд). Значение варианта возвращается как дано —
+    его читает `checkOptions()` того же поставщика. `Purchasables::find()` спрашивает только
+    поставщиков с этим интерфейсом; первым его реализует `catalog.product` (`Product::matching()`,
+    неопубликованный — `available = false`).
 
 ### 5.2. Реестр `Purchasables`
 
