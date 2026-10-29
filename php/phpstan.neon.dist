@@ -52,6 +52,8 @@ parameters:
         - packages/module-menu/tests
         - packages/module-notifications/src
         - packages/module-notifications/tests
+        - packages/module-orders/src
+        - packages/module-orders/tests
         - packages/module-pages/src
         - packages/module-pages/tests
         - packages/module-press/src

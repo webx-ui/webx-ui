@@ -270,6 +270,14 @@ final class Catalogue
             'requires' => [],
             'demo' => [],
         ],
+        'orders' => [
+            'package' => 'webx-ui/module-orders',
+            'npm' => '@webx-ui/module-orders',
+            'label' => 'Orders — what was bought from the cart, with the statuses the shop names and the milestones the system sets (needs the cart)',
+            'default' => false,
+            'requires' => ['cart'],
+            'demo' => [],
+        ],
         'users' => [
             'package' => 'webx-ui/module-users',
             'npm' => '@webx-ui/module-users',

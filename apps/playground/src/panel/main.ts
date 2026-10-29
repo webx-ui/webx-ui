@@ -27,6 +27,7 @@ import { notifications } from '@webx-ui/module-notifications'
 import { pages } from '@webx-ui/module-pages'
 import { press } from '@webx-ui/module-press'
 import { recipes } from '@webx-ui/module-recipes'
+import { orders } from '@webx-ui/module-orders'
 import { reviews } from '@webx-ui/module-reviews'
 import { seo } from '@webx-ui/module-seo'
 import { services } from '@webx-ui/module-services'
@@ -94,6 +95,7 @@ const admin = createAdmin({
     ...reviews(),
     team(),
     ...users(),
+    orders(),
     ...recipes(),
     press(),
     banners(),

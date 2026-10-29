@@ -1,0 +1,76 @@
+{
+    "name": "webx-ui/module-orders",
+    "description": "Orders and the checkout for WebX UI sites: an order is a snapshot of the cart with milestones the system sets and statuses the shop names, one service every door goes through, and the page where a buyer places it.",
+    "license": "MIT",
+    "type": "library",
+    "keywords": [
+        "webx-ui",
+        "laravel",
+        "cms",
+        "orders",
+        "checkout",
+        "commerce"
+    ],
+    "homepage": "https://github.com/webx-ui/webx-ui",
+    "authors": [
+        {
+            "name": "WebX UI",
+            "homepage": "https://github.com/webx-ui"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/webx-ui/webx-ui/issues",
+        "source": "https://github.com/webx-ui/webx-ui/tree/main/php/packages/module-orders"
+    },
+    "require": {
+        "php": "^8.4",
+        "illuminate/contracts": "^13.0",
+        "illuminate/database": "^13.0",
+        "illuminate/support": "^13.0",
+        "webx-ui/compositions": "^0.89.0",
+        "webx-ui/localization": "^0.89.0",
+        "webx-ui/module-admin": "^0.89.0",
+        "webx-ui/module-cart": "^0.89.0",
+        "webx-ui/widgets": "^0.89.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^11.0",
+        "phpunit/phpunit": "^12.0 || ^13.0"
+    },
+    "suggest": {
+        "webx-ui/module-notifications": "Letters and messages on the order's events and on entering a public status; without it there are none, and webx:doctor says so.",
+        "webx-ui/module-users": "An order made signed in belongs to the visitor: «My orders» in the account, and linking a guest order to a visitor in the panel."
+    },
+    "autoload": {
+        "psr-4": {
+            "WebxUi\\Orders\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "WebxUi\\Orders\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "WebxUi\\Orders\\OrdersServiceProvider"
+            ]
+        },
+        "webx": {
+            "module": "orders",
+            "npm": {
+                "@webx-ui/module-orders": "^0.1.0"
+            },
+            "panel": {
+                "import": "import { orders } from '@webx-ui/module-orders'",
+                "register": "orders()"
+            }
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
