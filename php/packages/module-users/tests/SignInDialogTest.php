@@ -39,6 +39,10 @@ final class SignInDialogTest extends TestCase
         Route::middleware('web')->get('/catalog', static fn (): string => Blade::render(
             '<html><body><main><p>Shoes</p></main></body></html>',
         ));
+        // «Thank you» of a checkout: the registration with the order's address (orders §26).
+        Route::middleware('web')->get('/thanks', static fn (): string => Blade::render(
+            '<html><body><main><x-webx-users::sign-in-button view="register" email="buyer-a@example.com">Save</x-webx-users::sign-in-button><x-webx-users::sign-in-button view="register" email="not an address">Bad</x-webx-users::sign-in-button></main></body></html>',
+        ));
         Route::middleware('web')->get('/both', static fn (): string => Blade::render(
             '<html><body><main><x-webx-users::sign-in-dialog /><x-webx-users::sign-in-button view="register">Join</x-webx-users::sign-in-button></main></body></html>',
         ));
@@ -58,6 +62,24 @@ final class SignInDialogTest extends TestCase
         $this->assertGreaterThan(strpos($html, 'Your order'), strpos($html, '<dialog'));
         $this->assertLessThan(strrpos($html, '</body>'), strpos($html, '<dialog'));
         $this->assertMatchesRegularExpression('~<script type="module" src="http://localhost/webx/users/sign-in\.js\?v=[0-9a-f]{16}"></script>~', $html);
+    }
+
+    #[Test]
+    public function the_button_of_a_registration_brings_the_address_to_the_dialog_and_to_the_page(): void
+    {
+        $html = (string) $this->get('/thanks')->assertOk()->getContent();
+
+        $this->assertStringContainsString(
+            '<a href="http://localhost/account/register?email=buyer-a%40example.com&amp;back=%2Fthanks" rel="nofollow" data-webx-sign-in-email="buyer-a@example.com" class="webx-users-sign-in-button" data-webx-sign-in="register" data-webx-users-guest>Save</a>',
+            $html,
+        );
+        // Not an address — the button as it was without one.
+        $this->assertStringContainsString('<a href="http://localhost/account/register?back=%2Fthanks" rel="nofollow" class="webx-users-sign-in-button" data-webx-sign-in="register" data-webx-users-guest>Bad</a>', $html);
+
+        // Without JavaScript the page of the registration starts with it.
+        $page = (string) $this->get('/account/register?email=buyer-a%40example.com&back=%2Fthanks')->assertOk()->getContent();
+        $this->assertMatchesRegularExpression('~<input[^>]*name="email"[^>]*value="buyer-a@example.com"~', $page);
+        $this->assertDoesNotMatchRegularExpression('~name="email"[^>]*value="not~', (string) $this->get('/account/register?email=not')->getContent());
     }
 
     #[Test]

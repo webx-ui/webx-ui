@@ -35,6 +35,7 @@ use WebxUi\Orders\Checkout\PlacingListener;
 use WebxUi\Orders\Checkout\Slots\CheckoutSlots;
 use WebxUi\Orders\Checkout\Slots\SlotStep;
 use WebxUi\Orders\Checkout\Steps\CheckoutSteps;
+use WebxUi\Orders\Checkout\Summary\CheckoutSummaryParts;
 use WebxUi\Orders\Data\OrderData;
 use WebxUi\Orders\Models\Order;
 use WebxUi\Orders\Notifications\OrderChannels;
@@ -44,6 +45,8 @@ use WebxUi\Orders\Orders;
 use WebxUi\Orders\PayableChanged;
 use WebxUi\Orders\Site\OrderLinks;
 use WebxUi\Orders\Site\OrderPage;
+use WebxUi\Orders\Site\VisitorOrders;
+use WebxUi\Users\SignIn;
 use WebxUi\Widgets\Forms\FormResponse;
 
 /**
@@ -67,6 +70,7 @@ final readonly class CheckoutController
         private CheckoutContexts $contexts,
         private CheckoutSteps $steps,
         private CheckoutSlots $slots,
+        private CheckoutSummaryParts $parts,
         private CheckoutSummary $summary,
         private CheckoutSettings $settings,
         private CheckoutTerms $terms,
@@ -94,6 +98,7 @@ final readonly class CheckoutController
             'warnings' => $this->summary->warnings($context),
             'summary' => $this->column($context),
             'summaryUrl' => $this->links->to(CheckoutLinks::SUMMARY, $context->locale),
+            'parts' => $this->parts->render($context),
         ]);
     }
 
@@ -272,6 +277,7 @@ final readonly class CheckoutController
         }
 
         $decrease = $this->placed->decrease($number);
+        $visitor = $container->bound(Visitors::class) ? $container->make(Visitors::class)->current() : null;
 
         return $this->views->make('webx-orders::checkout.thanks', [
             'order' => $page->of($order, app()->getLocale()),
@@ -280,6 +286,10 @@ final readonly class CheckoutController
             'link' => $orderLinks->page($number, $order->locale),
             'pay' => $order->awaiting_payment ? $this->payAgain($order) : null,
             'analytics' => ['number' => $number, 'payable' => $order->payable, 'currency' => $order->currency],
+            // «Save your orders in an account» — a guest, where visitors can register (§26).
+            'register' => $visitor === null && $order->customer_email !== null && VisitorOrders::installed() && SignIn::registrationOpen()
+                ? $order->customer_email
+                : null,
         ]);
     }
 

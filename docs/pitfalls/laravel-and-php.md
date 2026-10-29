@@ -296,6 +296,12 @@ MCP-сервер, движок Manticore, загрузки файлов. Всё 
   Регистрировать с префиксом (`Blade::anonymousComponentPath(__DIR__.'/Fixtures/views', 'site')`)
   в `setUp()` и сбрасывать `DynamicComponent::$compiler` и `$componentClasses` в `setUp()` и
   `tearDown()` через `ReflectionProperty`.
+- **Вид падает «Unable to locate a class or view for component [webx-users::…]» на сайте без
+  этого модуля, хотя тег стоит под `@if`.** Blade разрешает `<x-модуль::компонент>` при компиляции
+  вида, а не при показе: условие не спасает. Кнопку или кусок необязательного соседа (`suggest`)
+  печатать `<x-dynamic-component component="webx-users::sign-in-button" …>` под проверкой, что
+  сосед стоит (`VisitorOrders::installed()`, а не `class_exists` — в монорепе класс есть всегда).
+  Проверка — тесты пакета без соседа в провайдерах.
 - **Скомпилированный Blade переживает регистрацию директивы** — в ответе буквальное
   `@webxSeo($page)`: вьюха осталась в кеше Testbench
   (`vendor/orchestra/testbench-core/laravel/storage/framework/views`). Снести каталог.

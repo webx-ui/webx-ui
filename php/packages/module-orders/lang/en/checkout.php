@@ -21,6 +21,8 @@ return [
         'edit' => 'Change',
         'save' => 'Save',
         'signed-in' => 'You are signed in as :name',
+        'sign-out' => 'Sign out',
+        'have-account' => 'Have an account?',
         'failed' => 'Could not load this step. Try again later.',
     ],
     'fields' => [
@@ -77,6 +79,8 @@ return [
         'decrease' => 'The order came to :amount less.',
         'order-page' => 'Order page',
         'pay' => 'Pay',
+        'register' => 'Save your orders in an account: the next ones go faster, and you can see them all in one place.',
+        'register-button' => 'Create an account',
     ],
     'history' => [
         'terms' => 'Agreement with the terms: :title (:url), version :version, :time',

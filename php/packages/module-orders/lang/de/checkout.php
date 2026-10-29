@@ -21,6 +21,8 @@ return [
         'edit' => 'Ändern',
         'save' => 'Speichern',
         'signed-in' => 'Sie sind angemeldet als :name',
+        'sign-out' => 'Abmelden',
+        'have-account' => 'Schon ein Konto?',
         'failed' => 'Dieser Schritt konnte nicht geladen werden. Versuchen Sie es später erneut.',
     ],
     'fields' => [
@@ -77,6 +79,8 @@ return [
         'decrease' => 'Die Bestellung ist um :amount günstiger geworden.',
         'order-page' => 'Bestellseite',
         'pay' => 'Bezahlen',
+        'register' => 'Speichern Sie Ihre Bestellungen in einem Konto: Die nächsten gehen schneller, und alle sind an einem Ort.',
+        'register-button' => 'Konto erstellen',
     ],
     'history' => [
         'terms' => 'Zustimmung zu den Bedingungen: :title (:url), Version :version, :time',

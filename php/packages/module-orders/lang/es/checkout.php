@@ -21,6 +21,8 @@ return [
         'edit' => 'Cambiar',
         'save' => 'Guardar',
         'signed-in' => 'Has iniciado sesión como :name',
+        'sign-out' => 'Cerrar sesión',
+        'have-account' => '¿Ya tienes una cuenta?',
         'failed' => 'No se pudo cargar este paso. Inténtelo más tarde.',
     ],
     'fields' => [
@@ -77,6 +79,8 @@ return [
         'decrease' => 'El importe del pedido bajó :amount.',
         'order-page' => 'Página del pedido',
         'pay' => 'Pagar',
+        'register' => 'Guarda tus pedidos en una cuenta: los próximos serán más rápidos y todos estarán en un solo lugar.',
+        'register-button' => 'Crear una cuenta',
     ],
     'history' => [
         'terms' => 'Aceptación de las condiciones: :title (:url), versión :version, :time',

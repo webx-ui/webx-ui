@@ -7,6 +7,7 @@ use WebxUi\Localization\Http\Middleware\OneSpellingPerAddress;
 use WebxUi\Orders\Checkout\Checkout;
 use WebxUi\Orders\Checkout\CheckoutLinks;
 use WebxUi\Orders\Checkout\Http\CheckoutController;
+use WebxUi\Orders\Checkout\Http\ScriptController;
 use WebxUi\Orders\Http\KeepPrivate;
 
 /*
@@ -32,6 +33,9 @@ $routes = static function (string $prefix, string $suffix) use ($path): void {
         ->where('number', '[^/]+')
         ->name(CheckoutLinks::THANKS.$suffix);
 };
+
+// The script of the page (§27.3): no session, no language — the same file for everybody.
+Route::get('webx/orders/checkout.js', ScriptController::class)->name(ScriptController::ROUTE);
 
 Route::group(['webx_service' => true], static function () use ($middleware, $routes): void {
     Route::middleware($middleware)->group(static fn () => $routes('', ''));

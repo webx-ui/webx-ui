@@ -148,8 +148,12 @@ order with plain forms: a repeat of the confirmation is the same order, an amoun
 is placed at once, the agreement with the terms is a line of the order's history, a honeypot, a
 mark of time and limits guard it, and «Thank you» follows. Delivery and payment come into the
 checkout as slots of their modules (`CheckoutSlots`): the line «Delivery cost», the order awaiting
-an online payment, a gateway after it and «Pay» on «Thank you»; the modules themselves and the look
-of the checkout come in the next ones; the spec is
+an online payment, a gateway after it and «Pay» on «Thank you». The page is the composition
+`checkout.page` in the theme's `layout.minimal` — a theme moves its columns and folds the steps
+(theme-default does) with a patch — with its stylesheet and `checkout.js`: a step saved, a slot
+and a sign-in redraw the column in place, «To pay · Confirm» sticks to the bottom of a phone, and
+«Thank you» offers a guest an account with the order's address. The modules of delivery and
+payment come in the next ones; the spec is
 [`WEBX_UI_MODULE_ORDERS.md`](https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_ORDERS.md).
 
 ## License

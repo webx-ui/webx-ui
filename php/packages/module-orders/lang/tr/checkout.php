@@ -21,6 +21,8 @@ return [
         'edit' => 'Değiştir',
         'save' => 'Kaydet',
         'signed-in' => ':name olarak giriş yaptınız',
+        'sign-out' => 'Çıkış yap',
+        'have-account' => 'Hesabınız var mı?',
         'failed' => 'Bu adım yüklenemedi. Daha sonra tekrar deneyin.',
     ],
     'fields' => [
@@ -77,6 +79,8 @@ return [
         'decrease' => 'Sipariş tutarı :amount azaldı.',
         'order-page' => 'Sipariş sayfası',
         'pay' => 'Öde',
+        'register' => 'Siparişlerinizi bir hesapta saklayın: sonrakiler daha hızlı olur ve hepsi tek bir yerde durur.',
+        'register-button' => 'Hesap oluştur',
     ],
     'history' => [
         'terms' => 'Koşulların kabulü: :title (:url), sürüm :version, :time',

@@ -69,7 +69,10 @@ class OrdersServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-orders');
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
         $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
-        Compositions::handles('orders', ['orders.order']);
+        // The buyer's page of an order, the checkout and «Thank you» (§27.1); the checkout page is a
+        // composition of its own, which a theme patches by id.
+        Compositions::handles('orders', ['orders.order', 'checkout.page', 'checkout.thanks']);
+        Compositions::load(__DIR__.'/../resources/compositions');
 
         // Both sets of statuses as the buyer's pages read them (§16).
         $groups = $this->app->make(CacheGroups::class);

@@ -21,6 +21,8 @@ return [
         'edit' => 'Zmień',
         'save' => 'Zapisz',
         'signed-in' => 'Zalogowano jako :name',
+        'sign-out' => 'Wyloguj się',
+        'have-account' => 'Masz już konto?',
         'failed' => 'Nie udało się wczytać tego kroku. Spróbuj później.',
     ],
     'fields' => [
@@ -77,6 +79,8 @@ return [
         'decrease' => 'Kwota zamówienia zmniejszyła się o :amount.',
         'order-page' => 'Strona zamówienia',
         'pay' => 'Zapłać',
+        'register' => 'Zapisz zamówienia na koncie: kolejne złożysz szybciej, a wszystkie będą w jednym miejscu.',
+        'register-button' => 'Załóż konto',
     ],
     'history' => [
         'terms' => 'Zgoda na warunki: :title (:url), wersja :version, :time',

@@ -18,6 +18,7 @@ use WebxUi\Orders\Checkout\Slots\SlotStep;
 use WebxUi\Orders\Checkout\Steps\CheckoutSteps;
 use WebxUi\Orders\Checkout\Steps\CommentStep;
 use WebxUi\Orders\Checkout\Steps\ContactsStep;
+use WebxUi\Orders\Checkout\Summary\CheckoutSummaryParts;
 use WebxUi\Orders\Events\OrderPlacing;
 
 /**
@@ -52,6 +53,7 @@ final class Checkout
     public static function bind(Application $app): void
     {
         $app->singleton(CheckoutSlots::class);
+        $app->singleton(CheckoutSummaryParts::class);
         $app->singleton(CheckoutSteps::class, static function (Application $app): CheckoutSteps {
             $steps = new CheckoutSteps;
             $steps->register($app->make(ContactsStep::class), self::CONTACTS);
@@ -92,6 +94,11 @@ final class Checkout
     /** Inside the cart's transaction, while the guest's row still stands. */
     public static function moveDraft(CartsMerging $event): void
     {
+        // The cart under the page is another one now: the next column prints a new key (§25).
+        if (app()->bound('session')) {
+            app(PlaceKeys::class)->forget();
+        }
+
         if (CheckoutDraft::query()->whereKey($event->accountCartId)->exists()) {
             return;
         }

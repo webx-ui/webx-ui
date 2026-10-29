@@ -21,6 +21,8 @@ return [
         'edit' => 'Modifica',
         'save' => 'Salva',
         'signed-in' => 'Hai effettuato l\'accesso come :name',
+        'sign-out' => 'Esci',
+        'have-account' => 'Hai già un account?',
         'failed' => 'Impossibile caricare questo passaggio. Riprova più tardi.',
     ],
     'fields' => [
@@ -77,6 +79,8 @@ return [
         'decrease' => 'L’importo dell’ordine è sceso di :amount.',
         'order-page' => 'Pagina dell’ordine',
         'pay' => 'Paga',
+        'register' => 'Salva i tuoi ordini in un account: i prossimi saranno più veloci e li troverai tutti in un unico posto.',
+        'register-button' => 'Crea un account',
     ],
     'history' => [
         'terms' => 'Accettazione delle condizioni: :title (:url), versione :version, :time',

@@ -16,6 +16,8 @@ use WebxUi\Orders\Checkout\CheckoutSettings;
 use WebxUi\Orders\Checkout\Models\CheckoutDraft;
 use WebxUi\Orders\Checkout\PlaceOrderBuilder;
 use WebxUi\Orders\Contact;
+use WebxUi\Orders\Site\VisitorOrders;
+use WebxUi\Users\Urls;
 
 /**
  * The buyer and the recipient (spec §20.3): the first name always, the last name, the phone and the
@@ -65,6 +67,11 @@ final readonly class ContactsStep implements Step
             ],
             'withRecipient' => $this->settings->recipient(),
             'visitor' => $context->visitor,
+            // «Sign in» and «Sign out» of the visitors' module, where the site has it (§25).
+            'signIn' => $context->visitor === null && VisitorOrders::installed(),
+            'signOut' => $context->visitor !== null && VisitorOrders::installed()
+                ? ['action' => app(Urls::class)->to('sign-out'), 'back' => $this->links->page($context->locale)]
+                : null,
         ])->render());
     }
 

@@ -6,7 +6,7 @@
     Classes: webx-orders-checkout, is-empty, __empty.
 --}}
 @php($title = __('webx-orders::checkout.page.title'))
-<x-dynamic-component :component="config('webx-orders.checkout.layout') ?: (config('webx-orders.layout') ?: 'webx-orders::standalone')" handle="checkout.page">
+<x-dynamic-component :component="\WebxUi\Orders\Checkout\CheckoutLayout::name()" handle="checkout.page">
     <x-slot:head>
         <title>{{ $title }}@if (is_string(config('app.name')) && config('app.name') !== '') — {{ config('app.name') }}@endif</title>
         <meta name="robots" content="noindex">

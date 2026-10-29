@@ -85,8 +85,7 @@ grouped into public ones. Dictionary `webx-orders` (`module`, `statuses`, `panel
 
 - **Switch** `webx-orders.checkout.enabled` (`WEBX_ORDERS_CHECKOUT`, on; `Checkout\Checkout::enabled()`). Off — no checkout
   routes, drafts, tools, prune or tab; `Orders::place()` from code works. Also `path`, `layout`, `empty_url`, `draft_days`.
-- **Draft** `order_checkout_drafts` (`CheckoutDraft`, key `cart_id`), only by a `POST`; `CartsMerging` moves the guest's to an
-  account's cart without one. `webx:orders:checkout-prune [--days=] [--dry-run]`, daily — older than `draft_days` (30).
+- **Draft** `order_checkout_drafts` (`CheckoutDraft`, key `cart_id`), only by a `POST`; `CartsMerging` moves the guest's to an account's cart without one. `webx:orders:checkout-prune [--days=] [--dry-run]`, daily — older than `draft_days` (30).
 - **Tab «Checkout»** of `orders.settings` (`OrderSettings::CHECKOUT` — defaults): `orders.checkout.fields.*` (`required`,
   `optional`, `hidden`; phone or e-mail stays `required`), `recipient`, `comment`, `terms`, `terms_page`, `privacy_page`.
 - **Page** `/checkout` (route `checkout` — the cart's button; also behind `{locale}/`), `Checkout\Http\CheckoutController`:
@@ -98,6 +97,9 @@ grouped into public ones. Dictionary `webx-orders` (`module`, `statuses`, `panel
 - **Confirm** `POST place`: antispam (`webx_hp`, `webx_ts`, origin, `throttle:webx-orders-checkout`) → `place_key` (a
   repeat is the same order) → steps → `Orders::place()`; came to less — placed again with it. `PlacingListener` (only that
   order) notes the agreement, clears the draft but the contacts. `GET thanks/{number}` — for the session that placed it.
+- **View** (§27): composition `checkout.page` (ids `checkout`, `.main`, `.steps`, `.aside`, `.summary`, `.summary.parts` —
+  `CheckoutSummaryParts`, `.trust`, `.sticky`) in `CheckoutLayout` (`layout.minimal`); `data-steps` `open` | `collapse` (theme-default);
+  `resources/theme/checkout.css`, `webx/orders/checkout.js` (redraws, `webx:users:signed-in` cancelled); «Thank you» — an account.
 
 ### Permissions
 
@@ -109,8 +111,7 @@ grouped into public ones. Dictionary `webx-orders` (`module`, `statuses`, `panel
 | `orders.statuses`          | the screens of statuses and the settings of the section   |
 | `orders.checkout.settings` | the tab «Checkout» of the settings                        |
 
-Routes ask with `cms.can`, tools with `permission:`: reading — any of the first three; writing as
-the table says. Finding a visitor to link (`{id}/visitors`) wants `users.view` as well.
+Routes ask with `cms.can`, tools with `permission:`: reading — any of the first three; writing as the table says. Finding a visitor to link (`{id}/visitors`) wants `users.view` as well.
 
 ## Change it without forking
 
@@ -135,15 +136,14 @@ the table says. Finding a visitor to link (`{id}/visitors`) wants `users.view` a
 ## Check your work
 
 - `Panel/*Test` — `BoundariesTest`: the panel never writes an order itself; `PerformanceTest`: the list's budget; `AccessCoverageTest`. `CancelByStatusTest`.
-- `Mcp/McpTest` (parity with the panel, dry runs write nothing), `Mcp/PerformanceTest`, `Mcp/AccessCoverageTest`,
-  `Mcp/LinkVisitorTest`; `webx:mcp-tools --module=orders` lists 21 (22 with users).
+- `Mcp/McpTest` (parity with the panel, dry runs write nothing), `Mcp/PerformanceTest`, `Mcp/AccessCoverageTest`, `Mcp/LinkVisitorTest`; 21 tools (22 with users).
 - `Site/OrderPageTest` (the signed page, its budget, nothing without users), `Site/VisitorOrdersTest`.
 - `PlaceTest`, `MilestonesTest`, `StatusMoveTest`, `DetailsTest`, `RefundTest`, `PerformanceTest` (the budget of `place()`), and
   `CartLockTest`, `MilestoneRaceTest` against a real server:
   `WEBX_TEST_MYSQL_URL=mariadb://user:password@host:3306/db vendor/bin/phpunit …`.
 - `migrate` / `migrate:rollback` — the tables come and go. `Notifications/*Test` — with and without it.
 - `Checkout/*Test`: `CheckoutWithoutNeighboursTest` (plain forms), `PlaceIdempotencyTest`, `PayableChangedTest`, `PlacePerformanceTest`,
-  `StepOrderTest`, `CheckoutSlotsTest`; a slot of another module extends `SlotContractTestCase` (fakes: `tests/Fixtures`).
+  `StepOrderTest`, `CheckoutSlotsTest`, `CheckoutViewTest`, `CheckoutSignInTest`; a slot of another module extends `SlotContractTestCase`.
 
 ## Read more
 

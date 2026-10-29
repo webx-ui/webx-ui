@@ -22,6 +22,7 @@ final class Source
     /**
      * @param  string  $label  who the layer is, as the findings and the generated views say it
      * @param  array<string, array<string, array<string, mixed>>>  $patches  the config's, by composition and handle
+     * @param  bool  $packaged  a theme installed from a package rather than the site's own: one theme for many sites
      */
     public function __construct(
         public readonly string $label,
@@ -29,6 +30,7 @@ final class Source
         public readonly ?string $dir = null,
         private readonly array $patches = [],
         private readonly string $display = '',
+        public readonly bool $packaged = false,
     ) {}
 
     /** @return list<string> the compositions this layer has files for */

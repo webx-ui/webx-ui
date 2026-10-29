@@ -21,6 +21,8 @@ return [
         'edit' => 'Modifier',
         'save' => 'Enregistrer',
         'signed-in' => 'Vous êtes connecté en tant que :name',
+        'sign-out' => 'Se déconnecter',
+        'have-account' => 'Vous avez déjà un compte ?',
         'failed' => 'Impossible de charger cette étape. Réessayez plus tard.',
     ],
     'fields' => [
@@ -77,6 +79,8 @@ return [
         'decrease' => 'Le montant de la commande a baissé de :amount.',
         'order-page' => 'Page de la commande',
         'pay' => 'Payer',
+        'register' => 'Enregistrez vos commandes dans un compte : les prochaines seront plus rapides, et toutes seront au même endroit.',
+        'register-button' => 'Créer un compte',
     ],
     'history' => [
         'terms' => 'Acceptation des conditions : :title (:url), version :version, :time',
