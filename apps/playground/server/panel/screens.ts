@@ -122,6 +122,11 @@ const SCREENS: Record<string, { base: string; patches: (string | Patch)[] }> = {
     base: 'php/packages/module-team/resources/screens/form.json',
     patches: [],
   },
+  // The project patch is a neighbour as it would add itself: a tab «Delivery» after «Items» (§11.3).
+  'orders.show': {
+    base: 'php/packages/module-orders/resources/screens/show.json',
+    patches: ['apps/playground/server/panel/project/orders.show.json'],
+  },
   'users.form': {
     base: 'php/packages/module-users/resources/screens/form.json',
     patches: [],

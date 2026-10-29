@@ -7,6 +7,7 @@ namespace WebxUi\Orders;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\History\HistoryTypes;
 use WebxUi\Admin\ModuleRegistry;
+use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Orders\Blocks\OrderBlocks;
 use WebxUi\Orders\Models\Order;
 use WebxUi\Orders\Panel\OrdersModule;
@@ -33,9 +34,12 @@ class OrdersServiceProvider extends ServiceProvider
     {
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-orders');
+        $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
 
         $this->app->make(ModuleRegistry::class)->register(new OrdersModule);
         $this->registerHistory();
+        // The card of an order (§11.3): neighbours add their tabs to it with a patch of `tabs`.
+        $this->app->make(ScreenRegistry::class)->register(OrdersModule::SCREEN, __DIR__.'/../resources/screens/show.json');
 
         if (! $this->app->runningInConsole()) {
             return;
@@ -67,7 +71,7 @@ class OrdersServiceProvider extends ServiceProvider
             'orders.order',
             Order::class,
             fields: $fields,
-            permission: ['orders.view', 'orders.manage', 'orders.refund', 'orders.statuses'],
+            permission: [OrdersModule::VIEW, OrdersModule::MANAGE, OrdersModule::REFUND, OrdersModule::STATUSES],
             module: 'orders',
             label: 'webx-orders::module.order',
         );

@@ -7,9 +7,9 @@ on no live record. It moves along two axes: **milestones** — fixed facts the s
 neighbours rely on (placed, paid, received, cancelled…) — and **statuses**, the shop's own stages,
 which the buyer sees grouped into public ones.
 
-This release holds the tables, the models, the default statuses, the section of the panel,
-`Orders::place()`, the milestones and statuses, cancelling and refunds through the service; the
-screens, MCP tools and the checkout come next.
+This release holds the tables, the models, the default statuses, `Orders::place()`, the
+milestones and statuses, cancelling and refunds through the service, and the panel's list and
+card of an order; the statuses screen, the MCP tools and the checkout come next.
 
 ## What it owns
 
@@ -73,8 +73,14 @@ validate, summary))` in your `boot()`; an unregistered block is refused.
   language of the site: «Accepted» (New, Awaiting payment), «In progress» (Taken into work,
   Waiting for a call, Being packed), «Shipped» (Handed to delivery), «Completed» (Completed —
   sets `received`), «Cancelled» (Cancelled — sets `cancelled`). After that they are the site's.
-- **The dictionary** `webx-orders` (`module`, `statuses`), ten languages.
-- **The section** `orders` of the panel (`Panel\OrdersModule`), npm half `@webx-ui/module-orders`.
+- **The dictionary** `webx-orders` (`module`, `statuses`, `panel`, `screen`), ten languages.
+- **The section** `orders` of the panel (`Panel\OrdersModule`), npm half `@webx-ui/module-orders`:
+  `api/cms/orders` — the list (`view` new / awaiting / failed / all, search, filters, `counts`),
+  `meta`, the card, `{id}/status`, `{id}/milestones`, `{id}/cancel`, `{id}/details`,
+  `{id}/refunds`, the selection's `status` and `cancel`; every write is a call of `Orders`, and
+  `dry_run` is the service's own. The card is the screen `orders.show` with the public ids
+  `header-actions`, `tabs`, `summary`; its fields are `customer.*`, `recipient.*`, `comment`,
+  `manager_note`. The ready-made role `orders` («Order manager»: view, manage, `users.view`).
 
 ### Permissions
 
@@ -85,7 +91,7 @@ validate, summary))` in your `boot()`; an unregistered block is refused.
 | `orders.refund`   | recording money given back                                   |
 | `orders.statuses` | the screens of statuses and the settings of the section      |
 
-No route or tool asks for them yet: the screens and the MCP tools that do come in later releases.
+The routes ask for them with `cms.can` (`AccessCoverageTest`); the MCP tools come next.
 
 ## Change it without forking
 
@@ -94,6 +100,8 @@ No route or tool asks for them yet: the screens and the MCP tools that do come i
 | other words for the default statuses | `php artisan vendor:publish --tag=webx-orders-lang` before `migrate`, or rename the rows afterwards |
 | other statuses                       | rows of `order_statuses` / `order_public_statuses` — they are the site's own                        |
 | to react to an order                 | listen to `OrderPlaced`; to do it with the order or not at all — `OrderPlacing`                     |
+| a tab of yours on the card           | `Screens::extend('orders.show', [['op' => 'add', 'target' => 'tabs', 'node' => […]]])`              |
+| a button beside the status           | the same with `'target' => 'header-actions'`                                                        |
 
 ## Do not
 
@@ -109,6 +117,8 @@ No route or tool asks for them yet: the screens and the MCP tools that do come i
 
 ## Check your work
 
+- `Panel/PanelTest`, `Panel/ScreenTest`, `Panel/AccessCoverageTest`, `Panel/BoundariesTest` (the
+  panel never writes an order itself), `Panel/PerformanceTest` (the list's budget).
 - `PlaceTest`, `MilestonesTest`, `StatusMoveTest`, `DetailsTest`, `RefundTest`, `PerformanceTest` (the budget of
   `place()`), and `CartLockTest`, `MilestoneRaceTest` against a real server: `WEBX_TEST_MYSQL_URL=mariadb://user:password@host:3306/db vendor/bin/phpunit …`.
 

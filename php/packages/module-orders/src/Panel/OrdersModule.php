@@ -16,6 +16,21 @@ final class OrdersModule extends AbstractModule
     /** The id in the panel — and the name `webx:setup` knows the module by. */
     public const string ID = 'orders';
 
+    /** The list, the card and the history — read. */
+    public const string VIEW = 'orders.view';
+
+    /** The status, the marks, the cancellation, the contacts and the note, the blocks. */
+    public const string MANAGE = 'orders.manage';
+
+    /** Money given back — apart from the rest, because it is money. */
+    public const string REFUND = 'orders.refund';
+
+    /** The screens of the statuses and the settings of the section. */
+    public const string STATUSES = 'orders.statuses';
+
+    /** The card of an order, a described screen neighbours add their tabs to (§11.3). */
+    public const string SCREEN = 'orders.show';
+
     public function id(): string
     {
         return self::ID;
@@ -41,6 +56,6 @@ final class OrdersModule extends AbstractModule
      */
     public function permissions(): array
     {
-        return ['orders.view', 'orders.manage', 'orders.refund', 'orders.statuses'];
+        return [self::VIEW, self::MANAGE, self::REFUND, self::STATUSES];
     }
 }

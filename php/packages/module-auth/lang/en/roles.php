@@ -35,6 +35,7 @@ return [
     'default-seo' => 'SEO specialist',
     'default-leads' => 'Lead manager',
     'default-catalog' => 'Catalogue manager',
+    'default-orders' => 'Order manager',
     'default-developer' => 'Site developer',
     'default-viewer' => 'Viewer',
 ];

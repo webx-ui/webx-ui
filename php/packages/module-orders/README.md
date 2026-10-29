@@ -93,10 +93,29 @@ is left. A refund only records what the manager gave back — a bank, a till, th
 part is kept to what is left. When the money and every tender are back, the order gets the
 milestone «refunded» and `OrderRefunded` comes with `full = true`. Both take `dryRun: true`.
 
+## In the panel
+
+«Orders» lists what was placed, with four views — new, awaiting payment, payment failed, all — a
+search by number, phone in any spelling, e-mail or name, and filters by both statuses, the
+milestones, the period and the methods of delivery and payment. The selection moves to a status or
+cancels, each with a preview of what it does first. The card of an order is the screen
+`orders.show`: the status with what the buyer sees, the lines, the buyer's contacts and the
+notes, the history, the totals. A module adds its own tab to it with a patch:
+
+```php
+Screens::extend('orders.show', [
+    ['op' => 'add', 'target' => 'tabs', 'position' => 'after:items', 'node' => [
+        'id' => 'delivery', 'type' => 'wx-tab', 'label' => 'Delivery', 'children' => [/* … */],
+    ]],
+]);
+```
+
+Every action of the panel is a call of `Orders`: nothing there writes an order of its own.
+
 ## Status
 
 This release has the tables, the placing of an order, its milestones and statuses, cancelling and
-refunds. The screens of the panel, the MCP tools, the buyer's page and the checkout come in the
+refunds, and the list and the card in the panel. The statuses screen, the MCP tools, the buyer's page and the checkout come in the
 next ones; the spec is
 [`WEBX_UI_MODULE_ORDERS.md`](https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_ORDERS.md).
 

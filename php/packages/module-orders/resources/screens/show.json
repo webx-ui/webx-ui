@@ -1,0 +1,274 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "orders.show",
+  "model": "orders-order",
+  "root": [
+    {
+      "id": "header-actions",
+      "type": "wx-orders-status"
+    },
+    {
+      "id": "body",
+      "type": "wx-orders-layout",
+      "children": [
+        {
+          "id": "tabs",
+          "type": "wx-tabs",
+          "children": [
+            {
+              "id": "items",
+              "type": "wx-tab",
+              "label": "trans::webx-orders::screen.tab-items",
+              "children": [
+                {
+                  "id": "items-list",
+                  "type": "wx-orders-items"
+                }
+              ]
+            },
+            {
+              "id": "customer",
+              "type": "wx-tab",
+              "label": "trans::webx-orders::screen.tab-customer",
+              "children": [
+                {
+                  "id": "buyer",
+                  "type": "wx-card",
+                  "label": "trans::webx-orders::screen.buyer",
+                  "children": [
+                    {
+                      "id": "buyer-names",
+                      "type": "wx-row",
+                      "children": [
+                        {
+                          "id": "buyer-first-name-col",
+                          "type": "wx-col",
+                          "props": {
+                            "span": 24,
+                            "sm": 12
+                          },
+                          "children": [
+                            {
+                              "id": "buyer-first-name",
+                              "type": "wx-input",
+                              "name": "customer.first_name",
+                              "label": "trans::webx-orders::screen.first-name",
+                              "props": {
+                                "maxlength": 190,
+                                "autocomplete": "off"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "id": "buyer-last-name-col",
+                          "type": "wx-col",
+                          "props": {
+                            "span": 24,
+                            "sm": 12
+                          },
+                          "children": [
+                            {
+                              "id": "buyer-last-name",
+                              "type": "wx-input",
+                              "name": "customer.last_name",
+                              "label": "trans::webx-orders::screen.last-name",
+                              "props": {
+                                "maxlength": 190,
+                                "autocomplete": "off"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "id": "buyer-contacts",
+                      "type": "wx-row",
+                      "children": [
+                        {
+                          "id": "buyer-phone-col",
+                          "type": "wx-col",
+                          "props": {
+                            "span": 24,
+                            "sm": 12
+                          },
+                          "children": [
+                            {
+                              "id": "buyer-phone",
+                              "type": "wx-input",
+                              "name": "customer.phone",
+                              "label": "trans::webx-orders::screen.phone",
+                              "props": {
+                                "maxlength": 32,
+                                "autocomplete": "off",
+                                "type": "tel"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "id": "buyer-email-col",
+                          "type": "wx-col",
+                          "props": {
+                            "span": 24,
+                            "sm": 12
+                          },
+                          "children": [
+                            {
+                              "id": "buyer-email",
+                              "type": "wx-input",
+                              "name": "customer.email",
+                              "label": "trans::webx-orders::screen.email",
+                              "props": {
+                                "maxlength": 190,
+                                "autocomplete": "off",
+                                "type": "email"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "recipient",
+                  "type": "wx-card",
+                  "label": "trans::webx-orders::screen.recipient",
+                  "help": "trans::webx-orders::screen.recipient-help",
+                  "children": [
+                    {
+                      "id": "recipient-names",
+                      "type": "wx-row",
+                      "children": [
+                        {
+                          "id": "recipient-first-name-col",
+                          "type": "wx-col",
+                          "props": {
+                            "span": 24,
+                            "sm": 12
+                          },
+                          "children": [
+                            {
+                              "id": "recipient-first-name",
+                              "type": "wx-input",
+                              "name": "recipient.first_name",
+                              "label": "trans::webx-orders::screen.first-name",
+                              "props": {
+                                "maxlength": 190,
+                                "autocomplete": "off"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "id": "recipient-last-name-col",
+                          "type": "wx-col",
+                          "props": {
+                            "span": 24,
+                            "sm": 12
+                          },
+                          "children": [
+                            {
+                              "id": "recipient-last-name",
+                              "type": "wx-input",
+                              "name": "recipient.last_name",
+                              "label": "trans::webx-orders::screen.last-name",
+                              "props": {
+                                "maxlength": 190,
+                                "autocomplete": "off"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "id": "recipient-contacts",
+                      "type": "wx-row",
+                      "children": [
+                        {
+                          "id": "recipient-phone-col",
+                          "type": "wx-col",
+                          "props": {
+                            "span": 24,
+                            "sm": 12
+                          },
+                          "children": [
+                            {
+                              "id": "recipient-phone",
+                              "type": "wx-input",
+                              "name": "recipient.phone",
+                              "label": "trans::webx-orders::screen.phone",
+                              "props": {
+                                "maxlength": 32,
+                                "autocomplete": "off",
+                                "type": "tel"
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "notes",
+                  "type": "wx-card",
+                  "label": "trans::webx-orders::screen.notes",
+                  "children": [
+                    {
+                      "id": "comment",
+                      "type": "wx-textarea",
+                      "name": "comment",
+                      "label": "trans::webx-orders::screen.comment",
+                      "props": {
+                        "rows": 3,
+                        "maxlength": 5000
+                      }
+                    },
+                    {
+                      "id": "manager-note",
+                      "type": "wx-textarea",
+                      "name": "manager_note",
+                      "label": "trans::webx-orders::screen.manager-note",
+                      "help": "trans::webx-orders::screen.manager-note-help",
+                      "props": {
+                        "rows": 3,
+                        "maxlength": 5000
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "history",
+              "type": "wx-tab",
+              "label": "trans::webx-orders::screen.tab-history",
+              "children": [
+                {
+                  "id": "timeline",
+                  "type": "wx-orders-timeline"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "summary",
+          "type": "wx-card",
+          "label": "trans::webx-orders::screen.summary",
+          "children": [
+            {
+              "id": "totals",
+              "type": "wx-orders-summary"
+            }
+          ],
+          "slot": "side"
+        }
+      ]
+    }
+  ]
+}

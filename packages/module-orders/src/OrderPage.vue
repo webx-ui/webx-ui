@@ -1,0 +1,351 @@
+<script setup lang="ts">
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
+import {
+  confirm,
+  createModal,
+  toast,
+  WxActionBar,
+  WxBadge,
+  WxBreadcrumb,
+  WxBreadcrumbItem,
+  WxButton,
+  WxCard,
+  WxSkeleton,
+} from '@webx-ui/core'
+import {
+  useAdmin,
+  useBodyKeys,
+  useDates,
+  useErrorText,
+  useTranslate,
+  WxSaveState,
+  WxScreen,
+  WxScreenHead,
+  type ScreenAction,
+} from '@webx-ui/module-admin'
+import type { ScreenModel } from '@webx-ui/schema'
+import { createOrdersApi } from './api'
+import { provideOrderCard } from './card'
+import CancelDialog from './CancelDialog.vue'
+import { NAMESPACE, useOrdersMessages } from './i18n'
+import MarkDialog from './MarkDialog.vue'
+import RefundDialog from './RefundDialog.vue'
+import StatusDialog from './StatusDialog.vue'
+import { toneOf } from './tones'
+import type { OrderCardData, OrderDetail, PublicStatusGroup } from './types'
+
+/**
+ * One order (spec §11.3): the head with the number, the date and the actions; `orders.show`
+ * under it — the strip of the status and the marks (`header-actions`), the tabs «Items»,
+ * «Buyer» and «History» (`tabs`, where a neighbour adds its own with a patch), the side card of
+ * the totals (`summary`). The buyer's contacts and the notes are the screen's fields and saved
+ * with the bar at the bottom; everything else is a dialog that asks the server what it will do
+ * before it does it.
+ */
+defineOptions({ name: 'WxOrderPage' })
+
+const props = withDefaults(defineProps<{ base?: string }>(), { base: '/orders' })
+
+const admin = useAdmin()
+const api = createOrdersApi(admin)
+const route = useRoute()
+const router = useRouter()
+useOrdersMessages()
+
+const t = useTranslate(NAMESPACE)
+const dates = useDates()
+const message = useErrorText()
+
+const id = computed(() => Number(route.params.id))
+
+const order = ref<OrderCardData | null>(null)
+const values = ref<ScreenModel>({})
+const snapshot = ref('')
+const loading = ref(true)
+const saving = ref(false)
+const busy = ref(false)
+const errors = ref<Record<string, string[]>>({})
+
+const canEdit = computed(() => order.value?.actions.details ?? false)
+const locked = computed(() => !canEdit.value || saving.value)
+
+const current = computed(() => JSON.stringify(values.value))
+const dirty = computed(() => snapshot.value !== '' && current.value !== snapshot.value)
+
+const state = computed<'saving' | 'unsaved' | 'saved'>(() => {
+  if (saving.value) return 'saving'
+
+  return dirty.value ? 'unsaved' : 'saved'
+})
+
+const section = computed(
+  () =>
+    admin.state.manifest?.modules.find((module) => module.id === 'orders')?.title ??
+    t('module.orders'),
+)
+
+const title = computed(() =>
+  order.value ? t('panel.order-title', { number: order.value.number ?? `#${order.value.id}` }) : '',
+)
+
+const statusDialog = createModal<
+  OrderDetail,
+  { statuses: PublicStatusGroup[]; orderId: number; current: number | null }
+>(StatusDialog)
+const markDialog = createModal<OrderDetail, { orderId: number; milestone: 'paid' | 'received' }>(
+  MarkDialog,
+)
+const cancelDialog = createModal<OrderDetail, { orderId: number; number: string | null }>(
+  CancelDialog,
+)
+const refundDialog = createModal<OrderDetail, { order: OrderCardData }>(RefundDialog)
+
+/** A new answer of the server; what is being typed in the contacts stays unless asked. */
+function take(detail: OrderDetail, withValues = true): void {
+  order.value = detail.order
+
+  if (withValues || !dirty.value) {
+    values.value = { ...detail.values }
+    snapshot.value = JSON.stringify(values.value)
+  }
+}
+
+async function load(): Promise<void> {
+  loading.value = true
+  errors.value = {}
+
+  try {
+    take(await api.get(id.value))
+  } catch (error) {
+    toast.danger(message(error))
+    void router.push(props.base)
+  } finally {
+    loading.value = false
+  }
+}
+
+/** A dialog's answer is the card as it stands after: the head, the marks, the history. */
+async function after(dialog: Promise<OrderDetail | undefined>, done: string): Promise<void> {
+  busy.value = true
+
+  try {
+    const answer = await dialog
+
+    if (answer) {
+      take(answer, false)
+      toast.success(done)
+    }
+  } finally {
+    busy.value = false
+  }
+}
+
+async function changeStatus(): Promise<void> {
+  const open = order.value
+
+  if (!open) return
+
+  await after(
+    statusDialog({ statuses: open.statuses, orderId: open.id, current: open.status?.id ?? null }),
+    t('panel.status-changed'),
+  )
+}
+
+async function mark(milestone: 'paid' | 'received'): Promise<void> {
+  const open = order.value
+
+  if (!open) return
+
+  await after(
+    markDialog({ orderId: open.id, milestone }),
+    t(milestone === 'paid' ? 'panel.marked-paid' : 'panel.marked-received'),
+  )
+}
+
+async function cancel(): Promise<void> {
+  const open = order.value
+
+  if (!open) return
+
+  await after(cancelDialog({ orderId: open.id, number: open.number }), t('panel.cancelled-toast'))
+}
+
+async function refund(): Promise<void> {
+  const open = order.value
+
+  if (!open) return
+
+  await after(refundDialog({ order: open }), t('panel.refunded-toast'))
+}
+
+provideOrderCard({ order, busy, changeStatus, mark, cancel, refund })
+
+async function save(): Promise<void> {
+  const open = order.value
+
+  if (!open || saving.value || !canEdit.value) return
+
+  saving.value = true
+  errors.value = {}
+
+  try {
+    take(await api.saveDetails(open.id, values.value))
+    toast.success(t('panel.saved'))
+  } catch (error) {
+    const body = (error as { body?: { errors?: Record<string, string[]> } }).body
+
+    if (body?.errors && Object.keys(body.errors).length > 0) {
+      errors.value = body.errors
+      toast.danger(Object.values(body.errors)[0]?.[0] ?? t('panel.save-failed'))
+    } else {
+      toast.danger(message(error))
+    }
+  } finally {
+    saving.value = false
+  }
+}
+
+const actions = computed<ScreenAction[]>(() => {
+  const open = order.value
+
+  if (!open) return []
+
+  const list: ScreenAction[] = []
+
+  if (open.actions.paid) {
+    list.push({
+      key: 'paid',
+      label: t('panel.mark-paid'),
+      icon: 'check',
+      run: () => void mark('paid'),
+    })
+  }
+
+  if (open.actions.received) {
+    list.push({
+      key: 'received',
+      label: t('panel.mark-received'),
+      icon: 'map-pin',
+      menu: open.actions.paid,
+      run: () => void mark('received'),
+    })
+  }
+
+  if (open.actions.refund) {
+    list.push({
+      key: 'refund',
+      label: t('panel.refund'),
+      icon: 'arrow-left',
+      menu: true,
+      run: () => void refund(),
+    })
+  }
+
+  if (open.actions.cancel) {
+    list.push({
+      key: 'cancel',
+      label: t('panel.cancel-order'),
+      icon: 'close',
+      danger: true,
+      run: () => void cancel(),
+    })
+  }
+
+  return list
+})
+
+function leaveGuard(event: BeforeUnloadEvent): void {
+  if (dirty.value) event.preventDefault()
+}
+
+function onKeydown(event: KeyboardEvent): void {
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+    event.preventDefault()
+    if (dirty.value) void save()
+  }
+}
+
+useBodyKeys(onKeydown)
+
+watch(id, () => void load())
+
+onMounted(() => {
+  void load()
+  window.addEventListener('beforeunload', leaveGuard)
+})
+
+onBeforeUnmount(() => window.removeEventListener('beforeunload', leaveGuard))
+
+onBeforeRouteLeave(async () => {
+  if (!dirty.value || !canEdit.value) return true
+
+  return await confirm({
+    title: t('panel.leave-title'),
+    message: t('panel.leave-text'),
+    confirmText: t('panel.leave'),
+    cancelText: t('panel.dismiss'),
+    tone: 'danger',
+  })
+})
+</script>
+
+<template>
+  <div class="wx-order-page" @keydown="onKeydown">
+    <template v-if="loading">
+      <wx-skeleton class="wx-order-page__ghost" title :rows="1" />
+      <wx-card><wx-skeleton :rows="6" /></wx-card>
+    </template>
+
+    <template v-else-if="order">
+      <wx-screen-head
+        divider
+        :back="props.base"
+        :back-label="section"
+        :title="title"
+        :subtitle="dates.short(order.placed_at)"
+        :actions="actions"
+      >
+        <template #trail>
+          <wx-breadcrumb size="sm" :label="t('panel.trail')">
+            <wx-breadcrumb-item :as="'router-link'" :to="props.base">
+              {{ section }}
+            </wx-breadcrumb-item>
+            <wx-breadcrumb-item current>{{ title }}</wx-breadcrumb-item>
+          </wx-breadcrumb>
+        </template>
+
+        <template #title-after>
+          <wx-badge :type="toneOf(order.status?.color)" dot size="sm">
+            {{ order.status?.name ?? '—' }}
+          </wx-badge>
+        </template>
+      </wx-screen-head>
+
+      <wx-screen v-model="values" name="orders.show" :errors="errors" :disabled="locked" />
+
+      <wx-action-bar v-if="canEdit && dirty">
+        <template #state>
+          <wx-save-state :state="state" />
+        </template>
+
+        <wx-button type="primary" :loading="saving" :disabled="!dirty" @click="save">
+          {{ t('panel.save') }}
+        </wx-button>
+      </wx-action-bar>
+    </template>
+  </div>
+</template>
+
+<style scoped>
+.wx-order-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-gap, var(--wx-space-16));
+  container-type: inline-size;
+}
+
+.wx-order-page__ghost {
+  max-width: 420px;
+}
+</style>
