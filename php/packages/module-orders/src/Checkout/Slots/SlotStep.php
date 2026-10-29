@@ -15,6 +15,7 @@ use WebxUi\Cart\Totals\Purpose;
 use WebxUi\Orders\Checkout\CheckoutContext;
 use WebxUi\Orders\Checkout\Models\CheckoutDraft;
 use WebxUi\Orders\Checkout\PlaceOrderBuilder;
+use WebxUi\Orders\Checkout\Steps\NamesErrors;
 use WebxUi\Orders\Checkout\Steps\Step;
 use WebxUi\Orders\Checkout\Steps\StepError;
 use WebxUi\Orders\Data\OrderData;
@@ -25,7 +26,7 @@ use WebxUi\Orders\Models\Order;
  * it: while the buyer looks, its section says it could not be loaded and the error goes to the
  * log; on the confirmation the order is not placed — like a source of the cart's chain.
  */
-final class SlotStep implements Step
+final class SlotStep implements NamesErrors, Step
 {
     /** What a slot dispatches on `document` after each change of the choice; detail: slot, summary. */
     public const string CHANGED = 'webx:checkout:slot-changed';
@@ -103,6 +104,15 @@ final class SlotStep implements Step
 
             return null;
         }
+    }
+
+    /** The failure of the slot itself, and the codes the slot names, if it does. */
+    public function errorCodes(): array
+    {
+        return [
+            $this->slot->key().'.failed' => 'the slot failed to answer: its module logged why',
+            ...($this->slot instanceof NamesErrors ? $this->slot->errorCodes() : []),
+        ];
     }
 
     /** The slot keeps the buyer's choice in its own table by the cart and through its own API. */

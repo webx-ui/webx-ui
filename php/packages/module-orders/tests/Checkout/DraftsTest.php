@@ -51,8 +51,9 @@ final class DraftsTest extends PlaceTestCase
     #[Test]
     public function the_table_has_the_columns_of_the_spec_and_the_index_the_prune_reads(): void
     {
-        $this->assertSame(
-            ['cart_id', 'customer', 'recipient', 'comment', 'steps', 'terms_accepted_at', 'terms_version', 'place_key', 'shown_payable', 'last_step', 'created_at', 'updated_at'],
+        // payable_changes came with the funnel (§32): a migration of its own, so SQLite puts it last.
+        $this->assertEqualsCanonicalizing(
+            ['cart_id', 'customer', 'recipient', 'comment', 'steps', 'terms_accepted_at', 'terms_version', 'place_key', 'shown_payable', 'payable_changes', 'last_step', 'created_at', 'updated_at'],
             Schema::getColumnListing('order_checkout_drafts'),
         );
 

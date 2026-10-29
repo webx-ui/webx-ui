@@ -85,9 +85,8 @@ grouped into public ones. Dictionary `webx-orders` (`module`, `statuses`, `panel
 
 - **Switch** `webx-orders.checkout.enabled` (`WEBX_ORDERS_CHECKOUT`, on; `Checkout\Checkout::enabled()`). Off — no checkout
   routes, drafts, tools, prune or tab; `Orders::place()` from code works. Also `path`, `layout`, `empty_url`, `draft_days`.
-- **Draft** `order_checkout_drafts` (`CheckoutDraft`, key `cart_id`), only by a `POST`; `CartsMerging` moves the guest's to an account's cart without one. `webx:orders:checkout-prune [--days=] [--dry-run]`, daily — older than `draft_days` (30).
-- **Tab «Checkout»** of `orders.settings` (`OrderSettings::CHECKOUT` — defaults): `orders.checkout.fields.*` (`required`,
-  `optional`, `hidden`; phone or e-mail stays `required`), `recipient`, `comment`, `terms`, `terms_page`, `privacy_page`.
+- **Draft** `order_checkout_drafts` (`CheckoutDraft`, key `cart_id`), only by a `POST`; `CartsMerging` moves the guest's to an account's cart without one. `webx:orders:checkout-prune [--days=] [--dry-run]`, daily — older than `draft_days` (30). `last_step` `confirm` — it placed an order.
+- **Tab «Checkout»** of `orders.settings` (`OrderSettings::CHECKOUT` — defaults): `orders.checkout.fields.*` (`required`, `optional`, `hidden`; phone or e-mail stays `required`), `recipient`, `comment`, `terms`, `terms_page`, `privacy_page`.
 - **Page** `/checkout` (route `checkout` — the cart's button; also behind `{locale}/`), `Checkout\Http\CheckoutController`:
   `POST steps/{key}` keeps a step in the draft, `GET summary` — the column; `CheckoutSteps`: `contacts` 100, `comment` 900,
   a project's `Step` by position; `CheckoutContext` — the cart counted once. A `GET` never makes a draft.
@@ -100,6 +99,9 @@ grouped into public ones. Dictionary `webx-orders` (`module`, `statuses`, `panel
 - **View** (§27): composition `checkout.page` (ids `checkout`, `.main`, `.steps`, `.aside`, `.summary`, `.summary.parts` —
   `CheckoutSummaryParts`, `.trust`, `.sticky`) in `CheckoutLayout` (`layout.minimal`); `data-steps` `open` | `collapse` (theme-default);
   `resources/theme/checkout.css`, `webx/orders/checkout.js` (redraws, `webx:users:signed-in` cancelled); «Thank you» — an account.
+- **Events** (§30, `Checkout\Events`): `CheckoutStepSaved(cartId, step)`, `CheckoutPayableChanged(cartId, from, to)` (the draft counts `payable_changes`), `CheckoutPlaced(orderId, cartId)` after the commit; the order's own — `OrderPlaced`.
+- **MCP** (§32, `Mcp\CheckoutTools`, only while on): `orders_checkout_steps|preview|funnel|drafts_list|settings_get|settings_set`,
+  `orders://checkout`. `preview` asks what `place` asks (`CheckoutPreview`, `CheckoutAnswers`), writes nothing; a draft's contacts come masked (`ContactMask`).
 
 ### Permissions
 
@@ -109,7 +111,7 @@ grouped into public ones. Dictionary `webx-orders` (`module`, `statuses`, `panel
 | `orders.manage`            | statuses, marks, cancelling, contacts, notes, the visitor |
 | `orders.refund`            | recording money given back                                |
 | `orders.statuses`          | the screens of statuses and the settings of the section   |
-| `orders.checkout.settings` | the tab «Checkout» of the settings                        |
+| `orders.checkout.settings` | the tab «Checkout», `orders_checkout_settings_set`        |
 
 Routes ask with `cms.can`, tools with `permission:`: reading — any of the first three; writing as the table says. Finding a visitor to link (`{id}/visitors`) wants `users.view` as well.
 
@@ -136,14 +138,12 @@ Routes ask with `cms.can`, tools with `permission:`: reading — any of the firs
 ## Check your work
 
 - `Panel/*Test` — `BoundariesTest`: the panel never writes an order itself; `PerformanceTest`: the list's budget; `AccessCoverageTest`. `CancelByStatusTest`.
-- `Mcp/McpTest` (parity with the panel, dry runs write nothing), `Mcp/PerformanceTest`, `Mcp/AccessCoverageTest`, `Mcp/LinkVisitorTest`; 21 tools (22 with users).
-- `Site/OrderPageTest` (the signed page, its budget, nothing without users), `Site/VisitorOrdersTest`.
+- `Mcp/McpTest` (parity with the panel, dry runs write nothing), `Mcp/CheckoutToolsTest` (preview = `place`, masks), `Mcp/PerformanceTest`, `Mcp/AccessCoverageTest`, `Mcp/LinkVisitorTest`; 27 tools (28 with users, 21 with the checkout off).
+- `Site/OrderPageTest` (the signed page, its budget, nothing without users), `Site/VisitorOrdersTest`. `Notifications/*Test` — with and without it.
 - `PlaceTest`, `MilestonesTest`, `StatusMoveTest`, `DetailsTest`, `RefundTest`, `PerformanceTest` (the budget of `place()`), and
-  `CartLockTest`, `MilestoneRaceTest` against a real server:
-  `WEBX_TEST_MYSQL_URL=mariadb://user:password@host:3306/db vendor/bin/phpunit …`.
-- `migrate` / `migrate:rollback` — the tables come and go. `Notifications/*Test` — with and without it.
-- `Checkout/*Test`: `CheckoutWithoutNeighboursTest` (plain forms), `PlaceIdempotencyTest`, `PayableChangedTest`, `PlacePerformanceTest`,
-  `StepOrderTest`, `CheckoutSlotsTest`, `CheckoutViewTest`, `CheckoutSignInTest`; a slot of another module extends `SlotContractTestCase`.
+  `CartLockTest`, `MilestoneRaceTest` against a real server: `WEBX_TEST_MYSQL_URL=mariadb://user:password@host:3306/db`; `migrate` / `migrate:rollback`.
+- `Checkout/*Test`: `CheckoutWithoutNeighboursTest`, `PlaceIdempotencyTest`, `PayableChangedTest`, `PerformanceTest` (`GET /checkout`),
+  `PlacePerformanceTest`, `StepOrderTest`, `CheckoutSlotsTest`, `CheckoutViewTest`, `CheckoutSignInTest`, `CheckoutDisabledTest`; a slot extends `SlotContractTestCase`.
 
 ## Read more
 

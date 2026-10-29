@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use WebxUi\Cart\Events\CartsMerging;
 use WebxUi\Orders\Checkout\Console\PruneDraftsCommand;
+use WebxUi\Orders\Checkout\Events\CheckoutPayableChanged;
 use WebxUi\Orders\Checkout\Models\CheckoutDraft;
 use WebxUi\Orders\Checkout\Slots\CheckoutSlots;
 use WebxUi\Orders\Checkout\Slots\SlotStep;
@@ -78,6 +79,8 @@ final class Checkout
         $app->make('events')->listen(CartsMerging::class, [self::class, 'moveDraft']);
         // The agreement into the history and the draft cleared, in the order's transaction (§21.2).
         $app->make('events')->listen(OrderPlacing::class, PlacingListener::class);
+        // The funnel's «the amount went apart» (§32), counted by the draft.
+        $app->make('events')->listen(CheckoutPayableChanged::class, [self::class, 'countDivergence']);
 
         RateLimiter::for(self::THROTTLE_PLACE, static fn (Request $request): Limit => Limit::perMinute(
             max(1, (int) config('webx-orders.checkout.throttle.place_per_minute', 10)),
@@ -89,6 +92,11 @@ final class Checkout
         $app->afterResolving(Schedule::class, static function (Schedule $schedule): void {
             $schedule->command(PruneDraftsCommand::NAME)->daily()->name('webx-orders:checkout-prune');
         });
+    }
+
+    public static function countDivergence(CheckoutPayableChanged $event): void
+    {
+        CheckoutDraft::query()->whereKey($event->cartId)->increment('payable_changes');
     }
 
     /** Inside the cart's transaction, while the guest's row still stands. */

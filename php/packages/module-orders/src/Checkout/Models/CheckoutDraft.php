@@ -23,6 +23,7 @@ use WebxUi\Cart\Models\Cart;
  * @property string|null $terms_version
  * @property string|null $place_key
  * @property int|null $shown_payable
+ * @property int $payable_changes the amounts that went apart on the way (§30), for the funnel
  * @property string|null $last_step
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -46,6 +47,7 @@ class CheckoutDraft extends Model
             'steps' => 'array',
             'terms_accepted_at' => 'datetime',
             'shown_payable' => 'integer',
+            'payable_changes' => 'integer',
         ];
     }
 

@@ -704,11 +704,12 @@ final class Orders
 
     /**
      * Lines are never dropped quietly: an empty cart, another currency, or a line that cannot be
-     * bought is a refusal the checkout shows the buyer.
+     * bought is a refusal the checkout shows the buyer. Public for the agent's trial confirmation
+     * (`orders_checkout_preview`), which asks it of a count it made itself.
      *
      * @throws CartNotOrderable
      */
-    private function orderable(Cart $cart, CartState $state): void
+    public function orderable(Cart $cart, CartState $state): void
     {
         $stored = array_filter($state->lines, static fn (ResolvedLine $line): bool => ! $line->generated());
 

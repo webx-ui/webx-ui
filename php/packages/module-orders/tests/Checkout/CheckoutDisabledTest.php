@@ -10,13 +10,18 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Cart\Events\CartsMerging;
+use WebxUi\Mcp\McpResource;
+use WebxUi\Mcp\McpServiceProvider;
+use WebxUi\Mcp\Registry\BoundTool;
+use WebxUi\Mcp\Registry\ToolRegistry;
 use WebxUi\Orders\Tests\Panel\PanelTestCase;
 use WebxUi\Settings\Settings;
 use WebxUi\Settings\SettingsServiceProvider;
 
 /**
  * `webx-orders.checkout.enabled = false` (spec §19, decision 80): nothing of the checkout is wired
- * in — no prune command or its schedule, no listener of the cart's merge, no tab «Checkout» —
+ * in — no prune command or its schedule, no listener of the cart's merge, no tab «Checkout», no
+ * tools `orders_checkout_*` or `orders://checkout` —
  * while orders, their settings and `Orders::place()` stand as they were.
  */
 final class CheckoutDisabledTest extends PanelTestCase
@@ -27,7 +32,7 @@ final class CheckoutDisabledTest extends PanelTestCase
      */
     protected function getPackageProviders($app): array
     {
-        return [...parent::getPackageProviders($app), SettingsServiceProvider::class];
+        return [...parent::getPackageProviders($app), SettingsServiceProvider::class, McpServiceProvider::class];
     }
 
     /** @param  Application  $app */
@@ -63,6 +68,17 @@ final class CheckoutDisabledTest extends PanelTestCase
 
         $this->putJson($this->api('settings'), ['values' => ['orders.checkout.terms' => 'checkbox']])->assertOk();
         $this->assertArrayNotHasKey('orders.checkout.terms', $this->app->make(Settings::class)->raw());
+    }
+
+    #[Test]
+    public function an_agent_has_no_tools_of_the_checkout(): void
+    {
+        $registry = $this->app->make(ToolRegistry::class);
+        $names = array_map(static fn (BoundTool $tool): string => $tool->fullName(), $registry->toolsOf('orders'));
+
+        $this->assertContains('orders_list', $names);
+        $this->assertSame([], array_values(array_filter($names, static fn (string $name): bool => str_starts_with($name, 'orders_checkout_'))));
+        $this->assertNotContains('orders://checkout', array_map(static fn (McpResource $resource): string => $resource->uri, $registry->resources()));
     }
 
     #[Test]

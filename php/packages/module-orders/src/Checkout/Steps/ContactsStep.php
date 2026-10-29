@@ -25,7 +25,7 @@ use WebxUi\Users\Urls;
  * contacts fill the fields until the draft holds the buyer's own (§25); what goes into the order is
  * what the buyer typed, the profile is not changed.
  */
-final readonly class ContactsStep implements Step
+final readonly class ContactsStep implements NamesErrors, Step
 {
     public const string KEY = 'contacts';
 
@@ -124,6 +124,21 @@ final readonly class ContactsStep implements Step
         }
 
         return $errors;
+    }
+
+    public function errorCodes(): array
+    {
+        $codes = ['contacts.phone_or_email' => 'neither a phone nor an e-mail, and the settings ask for one of the two'];
+
+        foreach (['first_name', 'last_name', 'phone', 'email', 'recipient_first_name', 'recipient_last_name', 'recipient_phone'] as $field) {
+            $codes["contacts.{$field}_required"] = "{$field} is required";
+
+            if (! str_ends_with($field, 'name')) {
+                $codes["contacts.{$field}_invalid"] = "{$field} is not one";
+            }
+        }
+
+        return $codes;
     }
 
     public function contribute(CheckoutContext $context, PlaceOrderBuilder $order): void

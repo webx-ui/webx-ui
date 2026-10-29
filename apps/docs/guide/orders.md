@@ -225,6 +225,11 @@ The `orders_*` tools read and work orders the way the panel does: `orders_list`,
 `orders_link_visitor`, the statuses and the settings. Every write takes `dry_run` and answers what
 the panel's dialog would show. `orders://catalog` lists the statuses and what each one sets.
 
+With the checkout on, `orders_checkout_*` look at the shop's page: the steps and why one is not
+shown for a cart, a trial confirmation of a cart (`orders_checkout_preview` — what placing it
+would answer, nothing written), the funnel of the last day, week and month, the drafts with their
+contacts masked, and the tab «Checkout» of the settings. `orders://checkout` describes the page.
+
 ## Rights
 
 | Right             | What it gives                                               |

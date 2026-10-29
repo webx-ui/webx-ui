@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace WebxUi\Orders\Checkout;
 
 use Illuminate\Contracts\Container\Container;
+use WebxUi\Admin\Visitors\Visitor;
 use WebxUi\Admin\Visitors\Visitors;
 use WebxUi\Cart\CartHandle;
+use WebxUi\Cart\Models\Cart;
 use WebxUi\Cart\Totals\Calculator;
 use WebxUi\Cart\Totals\Purpose;
 use WebxUi\Orders\Checkout\Models\CheckoutDraft;
@@ -36,18 +38,39 @@ final class CheckoutContexts
             return $this->current;
         }
 
-        $locale = app()->getLocale();
         $cart = $this->carts->cart();
         $cart?->touchIfStale();
+
+        return $this->current = $this->make(
+            $cart,
+            app()->getLocale(),
+            $this->container->bound(Visitors::class) ? $this->container->make(Visitors::class)->current() : null,
+        );
+    }
+
+    /**
+     * The checkout of a cart as its owner would see it — for an agent's trial confirmation
+     * (`orders_checkout_preview`, §32), never for a page: the visitor is the cart's account, if it
+     * has one, the language is the cart's. Not kept, not touched.
+     */
+    public function of(Cart $cart): CheckoutContext
+    {
+        $visitors = $this->container->bound(Visitors::class) ? $this->container->make(Visitors::class) : null;
+
+        return $this->make($cart, $cart->locale, $cart->user_id !== null ? $visitors?->find($cart->user_id) : null);
+    }
+
+    private function make(?Cart $cart, string $locale, ?Visitor $visitor): CheckoutContext
+    {
         $state = $cart !== null
             ? $this->calculator->calculate($cart, $locale, Purpose::Checkout)
             : $this->calculator->empty($locale);
 
-        return $this->current = new CheckoutContext(
+        return new CheckoutContext(
             cart: $cart,
             state: $state,
             draft: $cart !== null ? CheckoutDraft::query()->find($cart->id) : null,
-            visitor: $this->container->bound(Visitors::class) ? $this->container->make(Visitors::class)->current() : null,
+            visitor: $visitor,
             locale: $locale,
             currency: $state->currency,
             shipping: $this->shippingChoice(...),

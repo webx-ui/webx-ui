@@ -24,6 +24,19 @@ final class CheckoutSummaryParts
     }
 
     /**
+     * Every registered part by key with its class and position, in their order — for `orders://checkout`.
+     *
+     * @return array<string, array{class: class-string, position: int}>
+     */
+    public function describe(): array
+    {
+        $parts = $this->parts;
+        uasort($parts, static fn (array $a, array $b): int => $a['position'] <=> $b['position']);
+
+        return array_map(static fn (array $entry): array => ['class' => $entry['part']::class, 'position' => $entry['position']], $parts);
+    }
+
+    /**
      * The HTML of the parts that apply, by key in the order of their positions. A part that
      * throws is left out and logged: the column, and the confirmation in it, stays.
      *

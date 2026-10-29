@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Orders\Checkout\Http;
 
 use Illuminate\Contracts\Container\Container;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\View\Factory as Views;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -20,13 +21,18 @@ use WebxUi\Admin\Visitors\Visitors;
 use WebxUi\Cart\Money;
 use WebxUi\Cart\Totals\Purpose;
 use WebxUi\Orders\CartNotOrderable;
+use WebxUi\Orders\Checkout\CheckoutAnswers;
 use WebxUi\Orders\Checkout\CheckoutAntispam;
 use WebxUi\Orders\Checkout\CheckoutContext;
 use WebxUi\Orders\Checkout\CheckoutContexts;
 use WebxUi\Orders\Checkout\CheckoutLinks;
+use WebxUi\Orders\Checkout\CheckoutPreview;
 use WebxUi\Orders\Checkout\CheckoutSettings;
 use WebxUi\Orders\Checkout\CheckoutSummary;
 use WebxUi\Orders\Checkout\CheckoutTerms;
+use WebxUi\Orders\Checkout\Events\CheckoutPayableChanged;
+use WebxUi\Orders\Checkout\Events\CheckoutPlaced;
+use WebxUi\Orders\Checkout\Events\CheckoutStepSaved;
 use WebxUi\Orders\Checkout\Models\CheckoutDraft;
 use WebxUi\Orders\Checkout\PlacedOrders;
 use WebxUi\Orders\Checkout\PlaceKeys;
@@ -80,6 +86,7 @@ final readonly class CheckoutController
         private PlacedOrders $placed,
         private Views $views,
         private Money $money,
+        private Dispatcher $events,
     ) {}
 
     /** `GET /checkout`. */
@@ -115,7 +122,7 @@ final readonly class CheckoutController
         $key = (string) $request->route('step');
 
         if ($this->antispam->foreign($request)) {
-            return $this->refusal($request, $context, 'checkout.origin', 403);
+            return $this->refusal($request, $context, CheckoutAnswers::ORIGIN, 403);
         }
 
         if ($context->isEmpty() || $context->cart === null) {
@@ -137,6 +144,7 @@ final readonly class CheckoutController
         $draft->last_step = $key;
         $draft->save();
         $this->contexts->forget();
+        $this->events->dispatch(new CheckoutStepSaved($context->cart->id, $key));
 
         return $this->stepSaved($request, $context, $key);
     }
@@ -154,7 +162,7 @@ final readonly class CheckoutController
 
         // 1. The antispam (§28): a bot that filled the hidden field is answered as if it worked.
         if ($this->antispam->foreign($request)) {
-            return $this->refusal($request, $context, 'checkout.origin', 403);
+            return $this->refusal($request, $context, CheckoutAnswers::ORIGIN, 403);
         }
 
         if ($this->antispam->trapped($request)) {
@@ -164,7 +172,7 @@ final readonly class CheckoutController
         }
 
         if ($this->antispam->tooFast($request)) {
-            return $this->refusal($request, $context, 'checkout.retry', 422);
+            return $this->refusal($request, $context, CheckoutAnswers::RETRY, 422);
         }
 
         // 2. The key: a repeat of a confirmation that made an order is that order (§24.3).
@@ -182,7 +190,7 @@ final readonly class CheckoutController
         }
 
         if (! $this->keys->current($context->draft, $key)) {
-            return $this->conflict($request, $context, 'checkout.stale', (string) __('webx-orders::checkout.errors.stale'));
+            return $this->conflict($request, $context, CheckoutAnswers::STALE, (string) __('webx-orders::checkout.errors.stale'));
         }
 
         // 3. The steps, before the transaction: nothing is written while one of them lacks something.
@@ -191,7 +199,7 @@ final readonly class CheckoutController
         $limit = self::ORDERS_LIMIT.$context->cart->id;
 
         if (RateLimiter::tooManyAttempts($limit, max(1, (int) config('webx-orders.checkout.throttle.orders_per_hour', 5)))) {
-            return $this->refusal($request, $context, 'checkout.too_many', 429);
+            return $this->refusal($request, $context, CheckoutAnswers::TOO_MANY, 429);
         }
 
         $draft = $context->draft ?? new CheckoutDraft(['cart_id' => $context->cart->id]);
@@ -222,25 +230,31 @@ final readonly class CheckoutController
             try {
                 $order = $orders->place($builder->build($context, $expected, $key));
             } catch (PayableChanged $e) {
+                $this->diverged($context->cart->id, $e);
+
                 if ($expected === null || $e->state->payable >= $expected) {
                     throw $e;
                 }
 
                 $decrease = $expected - $e->state->payable;
-                $order = $orders->place($builder->build($context, $e->state->payable, $key));
+
+                try {
+                    $order = $orders->place($builder->build($context, $e->state->payable, $key));
+                } catch (PayableChanged $again) {
+                    $this->diverged($context->cart->id, $again);
+
+                    throw $again;
+                }
             }
         } catch (PayableChanged $e) {
-            return $this->conflict($request, $context, 'checkout.payable_changed', (string) __('webx-orders::checkout.errors.payable-changed', [
+            return $this->conflict($request, $context, CheckoutAnswers::PAYABLE_CHANGED, (string) __('webx-orders::checkout.errors.payable-changed', [
                 'was' => $this->format($expected, $context->currency),
                 'now' => $this->format($e->state->payable, $context->currency),
             ]));
         } catch (CartNotOrderable $e) {
-            return $this->conflict($request, $context, 'checkout.cart_not_orderable', implode(' ', array_map(
-                static fn ($warning): string => $warning->message,
-                $e->warnings,
-            )) ?: (string) __('webx-orders::checkout.errors.not-orderable'));
+            return $this->conflict($request, $context, CheckoutAnswers::NOT_ORDERABLE, CheckoutPreview::notOrderable($e));
         } catch (OrderRefused $e) {
-            return $this->conflict($request, $context, 'checkout.refused', $e->getMessage());
+            return $this->conflict($request, $context, CheckoutAnswers::REFUSED, $e->getMessage());
         } finally {
             $listener->expect(null);
         }
@@ -251,6 +265,7 @@ final readonly class CheckoutController
         $this->keys->forget();
         $this->placed->remember((string) $order->number, $decrease);
         $this->contexts->forget();
+        $this->events->dispatch(new CheckoutPlaced($order->id, $context->cart->id));
         $gateway = $payment?->next($order);
 
         return FormResponse::redirect($gateway ?? $this->links->thanks((string) $order->number, $order->locale));
@@ -396,6 +411,12 @@ final readonly class CheckoutController
         }
     }
 
+    /** The amount on the page and the count of the confirmation went apart (§30): the funnel counts it. */
+    private function diverged(int $cartId, PayableChanged $e): void
+    {
+        $this->events->dispatch(new CheckoutPayableChanged($cartId, $e->expected, $e->state->payable));
+    }
+
     /** The order a key made, when it was this cart's (§24.3) — anybody else's key is no answer. */
     private function madeWith(string $key, CheckoutContext $context, Orders $orders): ?Order
     {
@@ -446,7 +467,7 @@ final readonly class CheckoutController
     /** Turned away by the antispam or a limit (§28): «Try again», nothing written. */
     private function refusal(Request $request, CheckoutContext $context, string $code, int $status): JsonResponse|RedirectResponse
     {
-        $message = (string) __($code === 'checkout.too_many' ? 'webx-orders::checkout.errors.too-many' : 'webx-orders::checkout.errors.retry');
+        $message = (string) __($code === CheckoutAnswers::TOO_MANY ? 'webx-orders::checkout.errors.too-many' : 'webx-orders::checkout.errors.retry');
 
         return $this->conflict($request, $context, $code, $message, $status);
     }

@@ -12,7 +12,9 @@ use WebxUi\Mcp\Contracts\ProvidesMcpTools;
 use WebxUi\Mcp\McpResource;
 use WebxUi\Mcp\ProvidesMcpDefaults;
 use WebxUi\Mcp\Tool;
+use WebxUi\Orders\Checkout\Checkout;
 use WebxUi\Orders\Demo\OrdersDemo;
+use WebxUi\Orders\Mcp\CheckoutTools;
 use WebxUi\Orders\Mcp\OrdersResources;
 use WebxUi\Orders\Mcp\OrdersTools;
 use WebxUi\Orders\Mcp\StatusTools;
@@ -23,7 +25,8 @@ use WebxUi\Orders\Mcp\StatusTools;
  * the statuses with the settings — and a fifth for the tab «Checkout» of the settings (§31.1): the
  * shop's page is not edited by whoever names the stages.
  *
- * The same for an agent (§12): the `orders_*` tools and `orders://catalog`. The demo (§15) is twelve
+ * The same for an agent (§12, §32): the `orders_*` tools and `orders://catalog`; with the checkout on,
+ * `orders_checkout_*` and `orders://checkout`. The demo (§15) is twelve
  * orders made through the service, the visitor's among them when visitors are installed.
  */
 final class OrdersModule extends AbstractModule implements ProvidesDemo, ProvidesMcpTools
@@ -101,7 +104,12 @@ final class OrdersModule extends AbstractModule implements ProvidesDemo, Provide
      */
     public function mcpTools(): array
     {
-        return [...$this->container->make(OrdersTools::class)->all(), ...$this->container->make(StatusTools::class)->all()];
+        return [
+            ...$this->container->make(OrdersTools::class)->all(),
+            ...$this->container->make(StatusTools::class)->all(),
+            // Off — the checkout's tools and resource are not there at all (§32).
+            ...(Checkout::enabled() ? $this->container->make(CheckoutTools::class)->all() : []),
+        ];
     }
 
     /**
@@ -109,6 +117,9 @@ final class OrdersModule extends AbstractModule implements ProvidesDemo, Provide
      */
     public function mcpResources(): array
     {
-        return $this->container->make(OrdersResources::class)->all();
+        return [
+            ...$this->container->make(OrdersResources::class)->all(),
+            ...(Checkout::enabled() ? $this->container->make(CheckoutTools::class)->resources() : []),
+        ];
     }
 }

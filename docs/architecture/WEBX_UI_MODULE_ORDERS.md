@@ -400,6 +400,16 @@
     посреди пачки. Предпросмотр диалога (`dry_run` из панели до ввода причины) зовёт сервис с
     причиной-заглушкой — как диалог отмены; ничего не пишется.
 
+Решение человека от 29.10.2026 по итогам этапа 16:
+
+84. **Патч пакетной темы к композиции модуля, которого на сайте нет, — замечание, а не ошибка
+    `webx:theme:check`.** Пакетная тема (`theme-default`) одна на много сайтов и несёт патчи к
+    страницам модулей, которых у сайта может не быть (`checkout.page` без `module-orders`): патч
+    ждёт базы и применится, когда модуль её даст. У локальной темы сайта такой файл —
+    по-прежнему находка: его никто не применит. Признак пакетной — `compositions/Source::$packaged`,
+    проверка — `themes/CompositionCheck`; правило записано и в `WEBX_UI_COMPOSITIONS.md` (§6,
+    `webx:theme:check`).
+
 ## 3. Таблицы
 
 Деньги — `bigint` в минимальных единицах валюты заказа (`orders.currency`), `float` нет нигде
@@ -2056,21 +2066,38 @@ interface SummaryPart
       "id": "checkout.main",
       "tag": "div",
       "attrs": { "class": "webx-orders-checkout__main" },
-      "children": [{ "id": "checkout.steps", "view": "webx-orders::checkout.parts.steps" }]
+      "children": [
+        { "id": "checkout.steps", "view": "webx-orders::checkout.parts.steps", "protected": true }
+      ]
     },
     {
       "id": "checkout.aside",
       "tag": "aside",
       "attrs": { "class": "webx-orders-checkout__aside" },
       "children": [
-        { "id": "checkout.summary", "view": "webx-orders::checkout.summary" },
+        {
+          "id": "checkout.summary",
+          "view": "webx-orders::checkout.parts.summary",
+          "protected": true
+        },
         { "id": "checkout.summary.parts", "view": "webx-orders::checkout.parts.summary-parts" },
         { "id": "checkout.trust", "slot": "checkout.trust" }
       ]
-    }
+    },
+    { "id": "checkout.sticky", "view": "webx-orders::checkout.parts.sticky" }
   ]
 }
 ```
+
+- **`checkout.summary`** — вид `webx-orders::checkout.parts.summary`: он оборачивает фрагмент
+  колонки `webx-orders::checkout.summary`, который `GET /checkout/summary` отдаёт скрипту отдельно
+  (§23.2). `checkout.steps` и `checkout.summary` — защищённые (`protected`): в них формы заказа и
+  сумма, с которой сверяется подтверждение; тема их двигает, но не снимает и не заменяет.
+- **`data-slot-event`** (`webx:checkout:slot-changed`, §22.1) и **`data-summary`** (адрес
+  `GET /checkout/summary`) стоят на списке шагов `<ol class="webx-orders-checkout__steps">` вида
+  `checkout.parts.steps`, а не на корне `checkout`: скрипт слушает события слотов там, где шаги.
+- **`checkout.sticky`** — липкая строка «К оплате · Подтвердить» (§20.1, `__sticky`): видна в узком
+  контейнере, пока колонка итогов вне экрана. Тема снимает её `remove` или переносит.
 
 Тема переставляет колонки, добавляет блок доверия («Гарантия возврата») в слот
 `checkout.trust`, переносит место промокода, выбирает вид шагов (`data-steps`, §20.1) — патчем, не
@@ -2236,6 +2263,11 @@ POST /checkout/quick → DB::transaction:
 На странице — `webx:checkout:slot-changed` (§22.1), `webx:checkout:placed` (`detail`: номер, сумма,
 валюта — для счётчиков с согласием).
 
+Классы — `WebxUi\Orders\Checkout\Events\…`. `CheckoutPayableChanged` бросается на каждое
+расхождение: нажатие, которое разошлось дважды (§24.4), — два события; черновик считает их в
+`order_checkout_drafts.payable_changes` для воронки (§32). Заказ из подтверждения ставит
+черновику `last_step = confirm` — так воронка видит, кто дошёл до заказа.
+
 ## 31. Права и настройки
 
 ### 31.1. Права
@@ -2295,6 +2327,14 @@ POST /checkout/quick → DB::transaction:
 - Полных контактов черновика MCP не отдаёт: это не покупатели, а люди, которые не оформили заказ;
   контакты оформленного — `orders_get`.
 - `orders_checkout_preview` и `orders_checkout_funnel` — в `PerformanceTest` тёплыми.
+- **Пробное подтверждение задаёт вопросы `place` в его порядке** (`CheckoutPreview`): шаги с
+  `check(Purpose::Order)` — как проверяет само подтверждение, ошибки по полям, как в его 422;
+  затем расчёт `Purpose::Order` и `Orders::orderable()` — 409 `cart_not_orderable`; затем сумма
+  против той, что страница последней показала покупателю (`shown_payable` черновика; без черновика —
+  сумма страницы сейчас): больше — 409 `payable_changed`, меньше — заказ с ней и `decrease`.
+  Антиспам, ключ повтора и флажок согласия — свойства запроса покупателя, их пробный вызов не
+  проверяет (флажок — `terms_checkbox: true` в ответе). Коды ответов — `CheckoutAnswers`, коды
+  ошибок шагов — `NamesErrors::errorCodes()` шага или слота (необязательный интерфейс).
 
 ## 33. Слова — группа `checkout.*` словаря `webx-orders`
 
