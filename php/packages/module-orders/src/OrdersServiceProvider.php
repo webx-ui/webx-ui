@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace WebxUi\Orders;
 
 use Illuminate\Support\ServiceProvider;
+use WebxUi\Admin\History\HistoryTypes;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Orders\Blocks\OrderBlocks;
+use WebxUi\Orders\Models\Order;
 use WebxUi\Orders\Panel\OrdersModule;
 
 /**
@@ -33,6 +35,7 @@ class OrdersServiceProvider extends ServiceProvider
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-orders');
 
         $this->app->make(ModuleRegistry::class)->register(new OrdersModule);
+        $this->registerHistory();
 
         if (! $this->app->runningInConsole()) {
             return;
@@ -45,5 +48,28 @@ class OrdersServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../lang' => lang_path('vendor/webx-orders'),
         ], 'webx-orders-lang');
+    }
+
+    /**
+     * The panel's journal of an order: who changed the contacts, the recipient, the comment or
+     * the note (§8). Lines, money and milestones are never edited, so they are not here; read
+     * behind any right of the section.
+     */
+    private function registerHistory(): void
+    {
+        $fields = [];
+
+        foreach (['customer_first_name', 'customer_last_name', 'customer_phone', 'customer_email', 'recipient', 'comment', 'manager_note'] as $field) {
+            $fields[$field] = 'webx-orders::module.fields.'.$field;
+        }
+
+        $this->app->make(HistoryTypes::class)->register(
+            'orders.order',
+            Order::class,
+            fields: $fields,
+            permission: ['orders.view', 'orders.manage', 'orders.refund', 'orders.statuses'],
+            module: 'orders',
+            label: 'webx-orders::module.order',
+        );
     }
 }

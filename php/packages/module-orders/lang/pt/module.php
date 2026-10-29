@@ -7,6 +7,16 @@ return [
     'description' => 'Os pedidos feitos no site: o que foi comprado, por quem e em que ponto está cada um.',
     'empty' => 'Ainda não há pedidos.',
     'empty-help' => 'Um pedido aparece aqui assim que é feito no site.',
+    'order' => 'Pedido',
+    'fields' => [
+        'customer_first_name' => 'Nome',
+        'customer_last_name' => 'Apelido',
+        'customer_phone' => 'Telefone',
+        'customer_email' => 'E-mail',
+        'recipient' => 'Destinatário',
+        'comment' => 'Comentário do comprador',
+        'manager_note' => 'Nota do gestor',
+    ],
     'milestones' => [
         'placed' => 'Realizado',
         'awaiting_payment' => 'Aguardando pagamento',

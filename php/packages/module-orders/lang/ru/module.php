@@ -7,6 +7,16 @@ return [
     'description' => 'Заказы, оформленные на сайте: что купили, кто и на каком этапе каждый из них.',
     'empty' => 'Заказов пока нет.',
     'empty-help' => 'Заказ появится здесь, как только его оформят на сайте.',
+    'order' => 'Заказ',
+    'fields' => [
+        'customer_first_name' => 'Имя',
+        'customer_last_name' => 'Фамилия',
+        'customer_phone' => 'Телефон',
+        'customer_email' => 'E-mail',
+        'recipient' => 'Получатель',
+        'comment' => 'Комментарий покупателя',
+        'manager_note' => 'Заметка менеджера',
+    ],
     'milestones' => [
         'placed' => 'Оформлен',
         'awaiting_payment' => 'Ожидает оплаты',

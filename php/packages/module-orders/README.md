@@ -58,10 +58,27 @@ lets `OrderPlacing` listeners do what must happen with it (or refuse with `Order
 the cart — its row and cookie stay — and dispatches `OrderPlaced` after the commit. The number is
 made of the id: `webx-orders.number` (`prefix`, `start`, `pad`).
 
+## Milestones and statuses
+
+After that the order changes only through the same service, each call one transaction with the
+order's row locked, its events after the commit:
+
+```php
+$orders->mark($order, Milestone::Paid, 'payment:gateway-a', reference: 'PAY-1'); // once; a repeat is silence
+$orders->moveTo($order, $packed, 'panel', dryRun: true);  // StatusMove: what would happen
+$orders->moveTo($order, $completed, 'panel');            // and the milestone «received» it sets
+$orders->patchBlock($order, 'delivery', ['waybill' => 'WB-100'], 'delivery:carrier-a');
+$orders->updateDetails($order, (new OrderDetails)->managerNote('Call after six'), 'panel');
+```
+
+`paymentFailed()` records a failed try, `stopAwaitingPayment()` takes the «awaiting payment» flag
+down when the method was switched to one that does not await it, `note()` writes a line of the
+history. Lines, money and milestones are never edited.
+
 ## Status
 
-This release has the tables and the placing of an order. Milestones and statuses through the
-service, the screens of the panel, the MCP tools, the buyer's page and the checkout come in the
+This release has the tables, the placing of an order, its milestones and statuses. Cancelling
+with a reason, refunds, the screens of the panel, the MCP tools, the buyer's page and the checkout come in the
 next ones; the spec is
 [`WEBX_UI_MODULE_ORDERS.md`](https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_ORDERS.md).
 

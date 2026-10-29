@@ -7,6 +7,16 @@ return [
     'description' => 'Sitede verilen siparişler: ne alındı, kim aldı ve her biri ne durumda.',
     'empty' => 'Henüz sipariş yok.',
     'empty-help' => 'Sitede bir sipariş verildiği anda burada görünür.',
+    'order' => 'Sipariş',
+    'fields' => [
+        'customer_first_name' => 'Ad',
+        'customer_last_name' => 'Soyad',
+        'customer_phone' => 'Telefon',
+        'customer_email' => 'E-posta',
+        'recipient' => 'Alıcı',
+        'comment' => 'Alıcının yorumu',
+        'manager_note' => 'Yönetici notu',
+    ],
     'milestones' => [
         'placed' => 'Verildi',
         'awaiting_payment' => 'Ödeme bekleniyor',

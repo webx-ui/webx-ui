@@ -41,6 +41,9 @@ class StatusChange extends Model
 
     public const string VISITOR = 'visitor';
 
+    /** Contacts, the recipient, the comment or the manager note changed; `note` lists the fields. */
+    public const string DETAILS = 'details';
+
     protected $table = 'order_status_changes';
 
     public const UPDATED_AT = null;

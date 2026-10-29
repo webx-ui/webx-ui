@@ -7,9 +7,9 @@ on no live record. It moves along two axes: **milestones** — fixed facts the s
 neighbours rely on (placed, paid, received, cancelled…) — and **statuses**, the shop's own stages,
 which the buyer sees grouped into public ones.
 
-This release holds the tables, the models, the default statuses, the section of the panel and
-`Orders::place()`; milestones and statuses through the service, the screens, MCP tools and the
-checkout come next.
+This release holds the tables, the models, the default statuses, the section of the panel,
+`Orders::place()` and the milestones and statuses through the service; cancelling with a reason,
+refunds, the screens, MCP tools and the checkout come next.
 
 ## What it owns
 
@@ -22,9 +22,26 @@ checkout come next.
     `idempotencyKey`, `userId`, `source`. Refusals: `ValidationException` (contacts),
     `CartNotOrderable` (`empty`, `currency`, `lines` with the cart's warnings), `PayableChanged`
     (the fresh `CartState`), `OrderRefused` (a listener), `Blocks\BlockRefused`;
-  - `findByIdempotencyKey($key)` — the order a form token made; a repeat of `place()` returns it.
-- **Events** `Events\OrderPlacing` (in the transaction: spend, reserve, or throw `OrderRefused`)
-  and `Events\OrderPlaced` (after the commit, `Data\OrderData` — plain values, serialisable).
+  - `findByIdempotencyKey($key)` — the order a form token made; a repeat of `place()` returns it;
+  - every other method is one transaction with the order's row locked, events after the commit,
+    and refreshes the model passed in. `mark(order, Milestone, source, at?, reference?, note?)` —
+    `paid`, `received`, `cancelled` once (`MilestoneMark`: `marked`, `already_marked` with the
+    first mark, `refunded`); others — `MilestoneRefused`; paid or received of a cancelled order —
+    `OrderCancelledAlready`; `cancelled` marks the tenders left given back;
+  - `paymentFailed(order, source, reason?)` — a history line and `payment_failed_at`;
+    `stopAwaitingPayment(order, source)` — the flag down, a line, no event (`OrderPaidAlready`,
+    `OrderCancelledAlready`);
+  - `moveTo(order, OrderStatus, source, note?, dryRun?)` → `StatusMove` (`from`, `to`, `publicFrom`,
+    `publicTo`, `publicChanged`, `moved`, `milestone`, `notifications`, `refusal`); a refusal
+    (`inactive`, `deleted`, `cancelled`) throws `StatusMoveRefused`, a dry run answers it;
+  - `patchBlock(order, block, patch, source)`, `note(order, text, source)`,
+    `updateDetails(order, OrderDetails, source)` — contacts, recipient, comment, manager note.
+- **Events** `Events\OrderPlacing` (in the transaction: spend, reserve, or throw `OrderRefused`);
+  after the commit, each with `Data\OrderData` (plain values, serialisable), `source`, `adminId`,
+  `at`: `OrderPlaced`, `OrderPaid`, `OrderReceived`, `OrderCancelled` (`wasPaid`,
+  `tendersReturned`), `OrderPaymentFailed`, `OrderStatusChanged`, `OrderPublicStatusChanged` (only
+  when the public one changes), `OrderBlockUpdated`, `OrderDetailsChanged` (`fields`, `before`).
+- **Journal** type `orders.order` of the panel's history: what `updateDetails()` changed.
 - **Blocks** `Blocks\OrderBlocks` — `register(new BlockDefinition('delivery'|'payment', module,
 validate, summary))` in your `boot()`; an unregistered block is refused.
 - **Config** `webx-orders`: `number` (`prefix`, `start` = 1000, `pad`), `initial_status`,
@@ -84,8 +101,8 @@ No route or tool asks for them yet: the screens and the MCP tools that do come i
 
 ## Check your work
 
-- `PlaceTest`, `PerformanceTest` (the budget of `place()`), and `CartLockTest` against a real
-  server: `WEBX_TEST_MYSQL_URL=mariadb://user:password@host:3306/db vendor/bin/phpunit …`.
+- `PlaceTest`, `MilestonesTest`, `StatusMoveTest`, `DetailsTest`, `PerformanceTest` (the budget of
+  `place()`), and `CartLockTest`, `MilestoneRaceTest` against a real server: `WEBX_TEST_MYSQL_URL=mariadb://user:password@host:3306/db vendor/bin/phpunit …`.
 
 - `php artisan migrate` and `php artisan migrate:rollback` — the tables come and go.
 - After `migrate`, `order_public_statuses` holds five rows and `order_statuses` eight, each

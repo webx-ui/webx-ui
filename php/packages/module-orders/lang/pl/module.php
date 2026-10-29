@@ -7,6 +7,16 @@ return [
     'description' => 'Zamówienia złożone na stronie: co kupiono, kto i na jakim etapie jest każde z nich.',
     'empty' => 'Na razie brak zamówień.',
     'empty-help' => 'Zamówienie pojawi się tutaj, gdy tylko zostanie złożone na stronie.',
+    'order' => 'Zamówienie',
+    'fields' => [
+        'customer_first_name' => 'Imię',
+        'customer_last_name' => 'Nazwisko',
+        'customer_phone' => 'Telefon',
+        'customer_email' => 'E-mail',
+        'recipient' => 'Odbiorca',
+        'comment' => 'Komentarz kupującego',
+        'manager_note' => 'Notatka menedżera',
+    ],
     'milestones' => [
         'placed' => 'Złożone',
         'awaiting_payment' => 'Oczekuje na płatność',

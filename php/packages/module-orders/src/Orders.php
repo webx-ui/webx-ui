@@ -5,13 +5,18 @@ declare(strict_types=1);
 namespace WebxUi\Orders;
 
 use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
+use Closure;
 use Illuminate\Contracts\Auth\Factory as Auth;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Validation\Factory as Validation;
 use Illuminate\Database\ConnectionInterface;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Validation\ValidationException;
+use InvalidArgumentException;
+use WebxUi\Admin\History\Journal;
 use WebxUi\Cart\CartService;
 use WebxUi\Cart\Contracts\CurrencySource;
 use WebxUi\Cart\Models\Cart;
@@ -24,8 +29,19 @@ use WebxUi\Cart\Totals\Tender;
 use WebxUi\Orders\Blocks\BlockRefused;
 use WebxUi\Orders\Blocks\OrderBlocks;
 use WebxUi\Orders\Data\OrderData;
+use WebxUi\Orders\Data\PublicStatusData;
+use WebxUi\Orders\Data\StatusData;
+use WebxUi\Orders\Data\TenderData;
+use WebxUi\Orders\Events\OrderBlockUpdated;
+use WebxUi\Orders\Events\OrderCancelled;
+use WebxUi\Orders\Events\OrderDetailsChanged;
+use WebxUi\Orders\Events\OrderPaid;
+use WebxUi\Orders\Events\OrderPaymentFailed;
 use WebxUi\Orders\Events\OrderPlaced;
 use WebxUi\Orders\Events\OrderPlacing;
+use WebxUi\Orders\Events\OrderPublicStatusChanged;
+use WebxUi\Orders\Events\OrderReceived;
+use WebxUi\Orders\Events\OrderStatusChanged;
 use WebxUi\Orders\Models\Order;
 use WebxUi\Orders\Models\OrderAdjustment;
 use WebxUi\Orders\Models\OrderBenefit;
@@ -40,8 +56,8 @@ use WebxUi\Orders\Models\StatusChange;
  * and the site's API check the right, read the input, call one method and give back its answer;
  * none of them writes the tables of an order, and neither does a listener of a neighbour.
  *
- * This stage has the order come to be (§6); its milestones, statuses, cancellation and refunds
- * come with the next ones.
+ * Every method that changes an order is one transaction with the order's row locked, and its
+ * events go after the commit (§7.1). Cancellation with its reason and refunds come next.
  */
 final class Orders
 {
@@ -57,6 +73,7 @@ final class Orders
         private readonly Validation $validation,
         private readonly Auth $auth,
         private readonly Repository $config,
+        private readonly Journal $journal,
     ) {}
 
     /**
@@ -103,6 +120,307 @@ final class Orders
     public function findByIdempotencyKey(string $key): ?Order
     {
         return $key === '' ? null : $this->byHash(self::hash($key));
+    }
+
+    /**
+     * Set a milestone once (§5.1). A repeat is silence: the first mark comes back and nothing is
+     * dispatched — the order's row is locked, so a gateway and a manager marking it paid at the
+     * same moment make one event, not two.
+     *
+     * @throws MilestoneRefused «placed», «awaiting payment», «refunded»: they are not set by hand
+     * @throws OrderCancelledAlready «paid» or «received» of a cancelled order
+     */
+    public function mark(
+        Order $order,
+        Milestone $milestone,
+        string $source,
+        ?CarbonInterface $at = null,
+        ?string $reference = null,
+        ?string $note = null,
+    ): MilestoneMark {
+        if (! $milestone->settableByStatus()) {
+            throw new MilestoneRefused($milestone);
+        }
+
+        $adminId = $this->adminId($source);
+        $at = $at !== null ? CarbonImmutable::instance($at) : CarbonImmutable::now();
+
+        return $this->locked($order, function (Order $locked) use ($milestone, $source, $at, $reference, $note, $adminId): MilestoneMark {
+            if ($this->forbidden($locked, $milestone)) {
+                throw new OrderCancelledAlready("«{$milestone->value}»");
+            }
+
+            [$mark, $event] = $this->setMilestone($locked, $milestone, $source, $adminId, $at, self::cut($reference, 190), self::cut($note, 500));
+
+            if ($event !== null) {
+                $this->events->dispatch($event($this->snapshot($locked)));
+            }
+
+            return $mark;
+        });
+    }
+
+    /**
+     * A payment try that did not go through (§5.4): a history line and `payment_failed_at`, not a
+     * milestone — there may be several. The order keeps awaiting payment.
+     */
+    public function paymentFailed(Order $order, string $source, ?string $reason = null): void
+    {
+        $adminId = $this->adminId($source);
+        $reason = self::text($reason, 1000);
+
+        $this->locked($order, function (Order $locked) use ($source, $reason, $adminId): void {
+            $at = CarbonImmutable::now();
+
+            // A late answer of a gateway about an order paid meanwhile is history, not a flag:
+            // «paid» is what took the flag down.
+            if ($locked->paid_at === null) {
+                $locked->setAttribute('payment_failed_at', $at);
+                $locked->save();
+            }
+
+            $this->line($locked, StatusChange::PAYMENT_FAILED, $source, $adminId, $at, $reason);
+            $this->events->dispatch(new OrderPaymentFailed($this->snapshot($locked), $reason, $source, $adminId, $at));
+        });
+    }
+
+    /**
+     * The order stops awaiting payment without being paid (§5.5, decision 42): its method was
+     * switched to one that does not await it. A history line, no event; an order that does not
+     * await payment is silence.
+     *
+     * @throws OrderPaidAlready
+     * @throws OrderCancelledAlready
+     */
+    public function stopAwaitingPayment(Order $order, string $source): void
+    {
+        $adminId = $this->adminId($source);
+
+        $this->locked($order, function (Order $locked) use ($source, $adminId): void {
+            if ($locked->cancelled_at !== null) {
+                throw new OrderCancelledAlready('to stop awaiting payment');
+            }
+
+            if ($locked->paid_at !== null) {
+                throw new OrderPaidAlready('to stop awaiting payment');
+            }
+
+            if (! $locked->awaiting_payment) {
+                return;
+            }
+
+            $at = CarbonImmutable::now();
+            $locked->awaiting_payment = false;
+            $locked->save();
+
+            // The row «awaiting_payment» of order_milestones stays: it is history (decision 24).
+            $this->line($locked, StatusChange::PAYMENT_AWAITING_STOPPED, $source, $adminId, $at);
+        });
+    }
+
+    /**
+     * Move the order to another internal status (§5.2): freely, back too. A status with a
+     * milestone sets it with the source `status#<id>`; when the order may not take it, the move
+     * is refused whole. The same status is silence. A dry run answers the same and writes nothing.
+     *
+     * @throws StatusMoveRefused
+     */
+    public function moveTo(Order $order, OrderStatus $to, string $source, ?string $note = null, bool $dryRun = false): StatusMove
+    {
+        $note = self::text($note, 1000);
+
+        if ($dryRun) {
+            return $this->plan(Order::query()->findOrFail($order->id), $to, true);
+        }
+
+        $adminId = $this->adminId($source);
+
+        return $this->locked($order, function (Order $locked) use ($to, $source, $note, $adminId): StatusMove {
+            $move = $this->plan($locked, $to, false);
+
+            if ($move->refusal !== null) {
+                throw new StatusMoveRefused($move);
+            }
+
+            if (! $move->moved) {
+                return $move;
+            }
+
+            $at = CarbonImmutable::now();
+            $locked->status_id = $move->to->id;
+            $locked->save();
+
+            StatusChange::query()->insert([
+                'order_id' => $locked->id,
+                'kind' => StatusChange::STATUS,
+                'from_status_id' => $move->from->id,
+                'to_status_id' => $move->to->id,
+                'from_public_id' => $move->publicFrom->id,
+                'to_public_id' => $move->publicTo->id,
+                'source' => $source,
+                'admin_id' => $adminId,
+                'note' => $note,
+                'created_at' => $at,
+            ]);
+
+            $event = null;
+
+            if ($move->milestone !== null) {
+                [, $event] = $this->setMilestone($locked, $move->milestone, "status#{$move->to->id}", $adminId, $at, null, self::cut($note, 500));
+            }
+
+            // One snapshot for all of them, after everything; the order of §7.2: the status, the
+            // public one, the milestone — all after the one commit.
+            $data = $this->snapshot($locked);
+            $this->events->dispatch(new OrderStatusChanged($data, $move->from, $move->to, $move->publicChanged, $note, $source, $adminId, $at));
+
+            if ($move->publicChanged) {
+                $this->events->dispatch(new OrderPublicStatusChanged($data, $move->publicFrom, $move->publicTo, $source, $adminId, $at));
+            }
+
+            if ($event !== null) {
+                $this->events->dispatch($event($data));
+            }
+
+            return $move;
+        });
+    }
+
+    /**
+     * Write a part of a block (§6.4) — the waybill number into `delivery`, a new method into
+     * `payment`: merged into what is there, checked by the block's owner, a history line and
+     * `OrderBlockUpdated`. A patch that changes nothing is silence.
+     *
+     * @param  array<string, mixed>  $patch
+     *
+     * @throws BlockRefused a block no module registered, or the result its owner refuses
+     */
+    public function patchBlock(Order $order, string $block, array $patch, string $source): void
+    {
+        if (! $this->blocks->has($block)) {
+            throw new BlockRefused($block, ['no module registered it']);
+        }
+
+        $adminId = $this->adminId($source);
+
+        $this->locked($order, function (Order $locked) use ($block, $patch, $source, $adminId): void {
+            /** @var array<string, mixed>|null $current */
+            $current = $locked->getAttribute($block);
+            $merged = array_replace_recursive($current ?? [], $patch);
+
+            if ($current !== null && $merged === $current) {
+                return;
+            }
+
+            $this->blocks->check([$block => $merged]);
+
+            $at = CarbonImmutable::now();
+            $locked->setAttribute($block, $merged);
+            $locked->save();
+
+            $this->line($locked, StatusChange::BLOCK, $source, $adminId, $at, $block);
+            $this->events->dispatch(new OrderBlockUpdated($this->snapshot($locked), $block, $patch, $source, $adminId, $at));
+        });
+    }
+
+    /** A line in the order's history from a module (§5.3, §8): «the parcel came back». No event. */
+    public function note(Order $order, string $text, string $source): void
+    {
+        $text = self::text($text, 1000) ?? throw new InvalidArgumentException('A note says something.');
+
+        $this->line($order, StatusChange::NOTE, $source, $this->adminId($source), CarbonImmutable::now(), $text);
+    }
+
+    /**
+     * The contacts, the recipient, the comment, the manager note (§8) — the lines, the money and
+     * the milestones never. What changed goes to the panel's journal and to the order's timeline,
+     * and `OrderDetailsChanged` carries the old values; a patch that changes nothing is silence.
+     *
+     * @throws ValidationException
+     */
+    public function updateDetails(Order $order, OrderDetails $patch, string $source): void
+    {
+        if ($patch->isEmpty()) {
+            return;
+        }
+
+        $adminId = $this->adminId($source);
+
+        $this->locked($order, function (Order $locked) use ($patch, $source, $adminId): void {
+            $before = $this->details($locked);
+            $after = $before;
+
+            if ($patch->has('customer')) {
+                /** @var Contact $customer */
+                $customer = $patch->get('customer');
+                $customer = $customer->normalised();
+                $after = [
+                    ...$after,
+                    'customer_first_name' => $customer->firstName,
+                    'customer_last_name' => $customer->lastName,
+                    'customer_phone' => $customer->phone,
+                    'customer_email' => $customer->email,
+                ];
+            }
+
+            if ($patch->has('recipient')) {
+                /** @var Contact|null $recipient */
+                $recipient = $patch->get('recipient');
+                $recipient = $recipient?->normalised();
+                $after['recipient'] = $recipient !== null
+                    ? ['first_name' => $recipient->firstName, 'last_name' => $recipient->lastName, 'phone' => $recipient->phone]
+                    : null;
+            }
+
+            foreach (['comment', 'manager_note'] as $field) {
+                if ($patch->has($field)) {
+                    $value = $patch->get($field);
+                    $after[$field] = is_string($value) && trim($value) !== '' ? trim($value) : null;
+                }
+            }
+
+            $customer = new Contact((string) $after['customer_first_name'], $after['customer_last_name'], $after['customer_phone'], $after['customer_email']);
+            /** @var array{first_name: string, last_name: string|null, phone: string|null}|null $recipient */
+            $recipient = $after['recipient'];
+            $this->validate(
+                $customer,
+                $recipient !== null ? new Contact($recipient['first_name'], $recipient['last_name'] ?? null, $recipient['phone'] ?? null) : null,
+                $after['comment'],
+                $after['manager_note'],
+            );
+
+            $fields = array_keys(array_filter($after, static fn (mixed $value, string $field): bool => $value !== $before[$field], ARRAY_FILTER_USE_BOTH));
+
+            if ($fields === []) {
+                return;
+            }
+
+            $at = CarbonImmutable::now();
+            $locked->fill(array_intersect_key($after, array_flip($fields)));
+
+            if (in_array('customer_phone', $fields, true)) {
+                $locked->customer_phone_key = $customer->phoneKey();
+            }
+
+            $locked->save();
+
+            $changes = [];
+
+            foreach ($fields as $field) {
+                $changes[$field] = [self::shown($before[$field]), self::shown($after[$field])];
+            }
+
+            $this->journal->record($locked, 'updated', $changes);
+            $this->line($locked, StatusChange::DETAILS, $source, $adminId, $at, implode(',', $fields));
+            $this->events->dispatch(new OrderDetailsChanged(
+                $this->snapshot($locked),
+                $fields,
+                array_intersect_key($before, array_flip($fields)),
+                $source,
+                $adminId,
+                $at,
+            ));
+        });
     }
 
     private function write(PlaceOrder $input, Contact $customer, ?Contact $recipient, ?string $comment, ?string $key): Order
@@ -361,12 +679,13 @@ final class Orders
      *
      * @throws ValidationException
      */
-    private function validate(Contact $customer, ?Contact $recipient, ?string $comment): void
+    private function validate(Contact $customer, ?Contact $recipient, ?string $comment, ?string $managerNote = null): void
     {
         $phone = ['nullable', 'string', 'max:32', 'regex:/^\+?[0-9][0-9 ().\-]*$/'];
         $data = [
             'customer' => ['first_name' => $customer->firstName, 'last_name' => $customer->lastName, 'phone' => $customer->phone, 'email' => $customer->email],
             'comment' => $comment,
+            'manager_note' => $managerNote,
         ];
         $rules = [
             'customer.first_name' => ['required', 'string', 'max:190'],
@@ -374,6 +693,7 @@ final class Orders
             'customer.phone' => [...$phone, 'required_without:customer.email'],
             'customer.email' => ['nullable', 'string', 'max:190', 'email:filter', 'required_without:customer.phone'],
             'comment' => ['nullable', 'string', 'max:5000'],
+            'manager_note' => ['nullable', 'string', 'max:5000'],
         ];
 
         if ($recipient !== null) {
@@ -386,6 +706,224 @@ final class Orders
         }
 
         $this->validation->make($data, $rules)->validate();
+    }
+
+    /**
+     * One transaction with the order's row locked (§5.3): two writers of one order take turns,
+     * and the second sees what the first did. The model passed in is brought up to date after.
+     *
+     * @template T
+     *
+     * @param  Closure(Order): T  $work
+     * @return T
+     */
+    private function locked(Order $order, Closure $work): mixed
+    {
+        $locked = null;
+        $result = $this->db->transaction(function () use ($order, $work, &$locked): mixed {
+            $locked = Order::query()->whereKey($order->id)->lockForUpdate()->firstOrFail();
+
+            return $work($locked);
+        });
+
+        if ($locked instanceof Order) {
+            $order->setRawAttributes($locked->getAttributes(), true);
+            $order->unsetRelations();
+        }
+
+        return $result;
+    }
+
+    /** «Paid» and «received» are not for a cancelled order (§5.1). */
+    private function forbidden(Order $order, Milestone $milestone): bool
+    {
+        return in_array($milestone, [Milestone::Paid, Milestone::Received], true) && $order->cancelled_at !== null;
+    }
+
+    /**
+     * The milestone, its copy on `orders`, and the event to dispatch once the caller has its
+     * snapshot — or the first mark, when it is there already.
+     *
+     * @return array{MilestoneMark, (Closure(OrderData): object)|null}
+     */
+    private function setMilestone(Order $locked, Milestone $milestone, string $source, ?int $adminId, CarbonImmutable $at, ?string $reference, ?string $note): array
+    {
+        $first = OrderMilestone::query()->where('order_id', $locked->id)->where('milestone', $milestone->value)->first();
+
+        if ($first !== null) {
+            return [new MilestoneMark($milestone, MilestoneMark::ALREADY_MARKED, CarbonImmutable::instance($first->at), $first->source, $first->admin_id, $first->reference, $first->note), null];
+        }
+
+        // Given back whole, nothing is left to cancel — and «cancelled» would say otherwise.
+        if ($milestone === Milestone::Cancelled && $locked->refunded_at !== null) {
+            return [new MilestoneMark($milestone, MilestoneMark::REFUNDED, CarbonImmutable::instance($locked->refunded_at), $source, $adminId), null];
+        }
+
+        OrderMilestone::query()->insert([
+            'order_id' => $locked->id,
+            'milestone' => $milestone->value,
+            'at' => $at,
+            'source' => self::cut($source, 64),
+            'admin_id' => $adminId,
+            'reference' => $reference,
+            'note' => $note,
+            'created_at' => CarbonImmutable::now(),
+        ]);
+
+        $wasPaid = $locked->paid_at !== null;
+        $locked->setAttribute($milestone->column(), $at);
+
+        if ($milestone === Milestone::Paid) {
+            // The row «awaiting_payment» of order_milestones stays; the flags of the list go.
+            $locked->awaiting_payment = false;
+            $locked->payment_failed_at = null;
+        }
+
+        $returned = $milestone === Milestone::Cancelled ? $this->returnTenders($locked) : [];
+        $locked->save();
+
+        return [
+            new MilestoneMark($milestone, MilestoneMark::MARKED, $at, $source, $adminId, $reference, $note),
+            static fn (OrderData $data): object => match ($milestone) {
+                Milestone::Paid => new OrderPaid($data, $reference, $source, $adminId, $at),
+                Milestone::Received => new OrderReceived($data, $reference, $source, $adminId, $at),
+                default => new OrderCancelled($data, $note, $wasPaid, $returned, $source, $adminId, $at),
+            },
+        ];
+    }
+
+    /**
+     * A cancellation gives the tenders back (§9.1): what was left of each is marked returned in
+     * the same transaction and goes to the event — the wallet returns exactly that, and a refund
+     * cannot return it a second time.
+     *
+     * @return list<TenderData> `amount` — what goes back now
+     */
+    private function returnTenders(Order $order): array
+    {
+        $left = OrderTender::query()->where('order_id', $order->id)->whereColumn('refunded_amount', '<', 'amount')->orderBy('id')->get();
+
+        if ($left->isEmpty()) {
+            return [];
+        }
+
+        OrderTender::query()->whereKey($left->modelKeys())->update(['refunded_amount' => $this->db->raw('amount')]);
+
+        return array_values($left->map(static fn (OrderTender $tender): TenderData => new TenderData(
+            $tender->id,
+            $tender->source,
+            $tender->label,
+            $tender->amount - $tender->refunded_amount,
+            $tender->amount,
+            $tender->meta ?? [],
+        ))->all());
+    }
+
+    /** What a move would do, read from the order as it is — the dry run's answer and the move's plan. */
+    private function plan(Order $order, OrderStatus $to, bool $dryRun): StatusMove
+    {
+        $statuses = OrderStatus::withTrashed()->with('publicStatus')->whereKey(array_unique([$order->status_id, $to->id]))->get()->keyBy('id');
+        $from = $statuses->get($order->status_id);
+        $target = $statuses->get($to->id) ?? throw (new ModelNotFoundException)->setModel(OrderStatus::class, [$to->id]);
+        $from ??= $target;
+
+        $moved = $from->id !== $target->id;
+        $publicChanged = $moved && $from->public_status_id !== $target->public_status_id;
+        $milestone = null;
+        $refusal = null;
+
+        if ($moved) {
+            $sets = $target->sets_milestone;
+
+            if ($target->trashed()) {
+                $refusal = StatusMove::DELETED;
+            } elseif (! $target->is_active) {
+                $refusal = StatusMove::INACTIVE;
+            } elseif ($sets !== null && $order->getAttribute($sets->column()) === null) {
+                if ($this->forbidden($order, $sets)) {
+                    $refusal = StatusMove::CANCELLED;
+                    $milestone = $sets;
+                } elseif ($sets !== Milestone::Cancelled || $order->refunded_at === null) {
+                    $milestone = $sets;
+                }
+            }
+        }
+
+        // The channels of a public status that is deleted do not fire (§5.6).
+        $public = $target->publicStatus;
+        $notifications = $publicChanged && ! $public->trashed()
+            ? array_values(array_map(intval(...), $public->options['notify_channels'] ?? []))
+            : [];
+
+        return new StatusMove(
+            StatusData::of($from, $order->locale),
+            StatusData::of($target, $order->locale),
+            PublicStatusData::of($from->publicStatus, $order->locale),
+            PublicStatusData::of($public, $order->locale),
+            $publicChanged,
+            $moved,
+            $milestone,
+            $notifications,
+            $refusal,
+            $dryRun,
+        );
+    }
+
+    /** A line of the history that is not a move: a note, a failed payment, a block, details. */
+    private function line(Order $order, string $kind, string $source, ?int $adminId, CarbonImmutable $at, ?string $note = null): void
+    {
+        StatusChange::query()->insert([
+            'order_id' => $order->id,
+            'kind' => $kind,
+            'source' => (string) self::cut($source, 64),
+            'admin_id' => $adminId,
+            'note' => $note,
+            'created_at' => $at,
+        ]);
+    }
+
+    /** The order as an event carries it, read again after what was just written. */
+    private function snapshot(Order $order): OrderData
+    {
+        $order->unsetRelations();
+
+        return OrderData::of($order);
+    }
+
+    /**
+     * The fields `updateDetails()` may change, as they are now.
+     *
+     * @return array{customer_first_name: string, customer_last_name: string|null, customer_phone: string|null, customer_email: string|null, recipient: array{first_name: string, last_name: string|null, phone: string|null}|null, comment: string|null, manager_note: string|null}
+     */
+    private function details(Order $order): array
+    {
+        return [
+            'customer_first_name' => $order->customer_first_name,
+            'customer_last_name' => $order->customer_last_name,
+            'customer_phone' => $order->customer_phone,
+            'customer_email' => $order->customer_email,
+            'recipient' => $order->recipient,
+            'comment' => $order->comment,
+            'manager_note' => $order->manager_note,
+        ];
+    }
+
+    /** A value as the journal shows it: the recipient as one line, not as json. */
+    private static function shown(mixed $value): ?string
+    {
+        if (is_array($value)) {
+            $value = implode(', ', array_filter([trim(($value['first_name'] ?? '').' '.($value['last_name'] ?? '')), $value['phone'] ?? null], static fn (mixed $part): bool => is_string($part) && $part !== ''));
+        }
+
+        return is_string($value) && $value !== '' ? $value : null;
+    }
+
+    /** Trimmed, cut to the column, and null when nothing is left. */
+    private static function text(?string $value, int $length): ?string
+    {
+        $value = $value !== null ? trim($value) : null;
+
+        return $value !== null && $value !== '' ? mb_substr($value, 0, $length) : null;
     }
 
     private function byHash(string $hash): ?Order

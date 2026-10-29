@@ -7,6 +7,16 @@ return [
     'description' => 'Замовлення, оформлені на сайті: що купили, хто і на якому етапі кожне з них.',
     'empty' => 'Замовлень поки немає.',
     'empty-help' => 'Замовлення з’явиться тут, щойно його оформлять на сайті.',
+    'order' => 'Замовлення',
+    'fields' => [
+        'customer_first_name' => 'Ім’я',
+        'customer_last_name' => 'Прізвище',
+        'customer_phone' => 'Телефон',
+        'customer_email' => 'E-mail',
+        'recipient' => 'Одержувач',
+        'comment' => 'Коментар покупця',
+        'manager_note' => 'Нотатка менеджера',
+    ],
     'milestones' => [
         'placed' => 'Оформлено',
         'awaiting_payment' => 'Очікує оплати',
