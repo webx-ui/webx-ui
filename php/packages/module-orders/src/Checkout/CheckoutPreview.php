@@ -101,7 +101,7 @@ final readonly class CheckoutPreview
         }
 
         // 3. The amount on the page against the order's.
-        $shown = $context->draft?->shown_payable ?? $state->payable;
+        $shown = $context->draft->shown_payable ?? $state->payable;
 
         if ($order->payable > $shown) {
             return [...$answer, 'outcome' => self::CONFLICT, 'code' => CheckoutAnswers::PAYABLE_CHANGED, 'message' => (string) __('webx-orders::checkout.errors.payable-changed', [
