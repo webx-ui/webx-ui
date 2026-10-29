@@ -32,6 +32,7 @@ return [
         'recipient-last-name' => 'Apelido do destinatário',
         'recipient-phone' => 'Telefone do destinatário',
         'comment' => 'Comentário sobre a encomenda',
+        'honeypot' => 'Deixe este campo vazio',
     ],
     'summary' => [
         'title' => 'A sua encomenda',
@@ -57,6 +58,19 @@ return [
         'terms' => 'Aceite as condições para fazer a encomenda.',
         'payable-changed' => 'O valor mudou: era :was, agora é :now. Verifique a encomenda e confirme de novo.',
         'not-orderable' => 'Alguns artigos do carrinho não podem ser encomendados. Abra o carrinho.',
+        'stale' => 'A página está desatualizada. Verifique o pedido e confirme-o novamente.',
+        'retry' => 'Algo correu mal. Tente novamente.',
+        'too-many' => 'Demasiados pedidos deste carrinho. Tente mais tarde.',
+    ],
+    'thanks' => [
+        'title' => 'O pedido :number foi feito',
+        'sent' => 'Enviámos uma confirmação para :email.',
+        'decrease' => 'O valor do pedido diminuiu :amount.',
+        'order-page' => 'Página do pedido',
+    ],
+    'history' => [
+        'terms' => 'Aceitação das condições: :title (:url), versão :version, :time',
+        'version-unknown' => 'desconhecida',
     ],
     'settings' => [
         'tab' => 'Checkout',

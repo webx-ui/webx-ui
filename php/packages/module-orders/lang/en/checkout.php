@@ -32,6 +32,7 @@ return [
         'recipient-last-name' => 'Recipient\'s last name',
         'recipient-phone' => 'Recipient\'s phone',
         'comment' => 'Comment on the order',
+        'honeypot' => 'Leave this field empty',
     ],
     'summary' => [
         'title' => 'Your order',
@@ -57,6 +58,19 @@ return [
         'terms' => 'Agree with the terms to place the order.',
         'payable-changed' => 'The amount has changed: it was :was, now it is :now. Check the order and confirm it again.',
         'not-orderable' => 'Some items of the cart cannot be ordered. Open the cart.',
+        'stale' => 'The page is out of date. Check the order and confirm it again.',
+        'retry' => 'Something went wrong. Try again.',
+        'too-many' => 'Too many orders from this cart. Try again later.',
+    ],
+    'thanks' => [
+        'title' => 'Order :number is placed',
+        'sent' => 'We sent a confirmation to :email.',
+        'decrease' => 'The order came to :amount less.',
+        'order-page' => 'Order page',
+    ],
+    'history' => [
+        'terms' => 'Agreement with the terms: :title (:url), version :version, :time',
+        'version-unknown' => 'unknown',
     ],
     'settings' => [
         'tab' => 'Checkout',

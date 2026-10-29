@@ -45,7 +45,6 @@ final readonly class CheckoutSummary
             'payable_formatted' => $array['payable_formatted'],
             'terms' => $this->settings->terms(),
             'documents' => $this->settings->terms() === CheckoutSettings::TERMS_NONE ? [] : $this->settings->documents($context->locale),
-            'accepted' => $context->draft?->terms_accepted_at !== null,
         ];
     }
 

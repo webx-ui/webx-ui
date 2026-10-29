@@ -32,6 +32,7 @@ return [
         'recipient-last-name' => 'Alıcının soyadı',
         'recipient-phone' => 'Alıcının telefonu',
         'comment' => 'Sipariş notu',
+        'honeypot' => 'Bu alanı boş bırakın',
     ],
     'summary' => [
         'title' => 'Siparişiniz',
@@ -57,6 +58,19 @@ return [
         'terms' => 'Sipariş vermek için koşulları kabul edin.',
         'payable-changed' => 'Tutar değişti: önce :was idi, şimdi :now. Siparişi kontrol edip yeniden onaylayın.',
         'not-orderable' => 'Sepetteki bazı ürünler sipariş edilemez. Sepeti açın.',
+        'stale' => 'Sayfa güncel değil. Siparişi kontrol edip yeniden onaylayın.',
+        'retry' => 'Bir sorun oluştu. Yeniden deneyin.',
+        'too-many' => 'Bu sepetten çok fazla sipariş verildi. Daha sonra yeniden deneyin.',
+    ],
+    'thanks' => [
+        'title' => ':number numaralı sipariş verildi',
+        'sent' => 'Onayı :email adresine gönderdik.',
+        'decrease' => 'Sipariş tutarı :amount azaldı.',
+        'order-page' => 'Sipariş sayfası',
+    ],
+    'history' => [
+        'terms' => 'Koşulların kabulü: :title (:url), sürüm :version, :time',
+        'version-unknown' => 'bilinmiyor',
     ],
     'settings' => [
         'tab' => 'Ödeme sayfası',

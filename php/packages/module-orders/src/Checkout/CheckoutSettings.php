@@ -65,9 +65,10 @@ final readonly class CheckoutSettings
 
     /**
      * The documents of the agreement — the terms, then the privacy policy — each with its title
-     * and address; a link that leads nowhere is left out.
+     * and address, and the entity of the site it is, if it is one; a link that leads nowhere is
+     * left out.
      *
-     * @return list<array{key: string, title: string, url: string}>
+     * @return list<array{key: string, title: string, url: string, entity_type: string|null, entity_id: int|null}>
      */
     public function documents(?string $locale = null): array
     {
@@ -92,6 +93,8 @@ final readonly class CheckoutSettings
                 'key' => $name,
                 'title' => $candidate !== null ? $candidate->title : (string) __('webx-orders::checkout.terms.'.$name),
                 'url' => $url,
+                'entity_type' => $candidate !== null ? $link->entityType : null,
+                'entity_id' => $candidate !== null ? $link->entityId : null,
             ];
         }
 

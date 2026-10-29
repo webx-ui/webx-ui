@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace WebxUi\Orders\Tests\Checkout;
 
 use Illuminate\Foundation\Application;
-use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\HttpFoundation\Response;
@@ -22,6 +21,8 @@ use WebxUi\Themes\ThemeServiceProvider;
  */
 final class CheckoutFieldsTest extends PlaceTestCase
 {
+    use VisitsCheckout;
+
     /**
      * @param  Application  $app
      * @return list<class-string>
@@ -109,12 +110,12 @@ final class CheckoutFieldsTest extends PlaceTestCase
             ->assertSee('name="terms"', false)
             ->assertSee('href="https://shop.example.test/terms"', false)
             ->assertDontSee('By pressing the button');
-        $this->visit($cart, '/checkout/place', ['expected_payable' => '4999'], json: true)
+        $this->submit($cart, ['expected_payable' => '4999'], json: true)
             ->assertStatus(422)
             ->assertJsonPath('errors', ['terms' => ['Agree with the terms to place the order.']]);
         $this->assertSame(0, Order::query()->count());
 
-        $this->visit($cart, '/checkout/place', ['expected_payable' => '4999', 'terms' => '1'])->assertRedirect();
+        $this->submit($cart, ['expected_payable' => '4999', 'terms' => '1'])->assertRedirect();
         $this->assertSame(1, Order::query()->count());
 
         $this->settings(['orders.checkout.terms' => 'none']);
@@ -139,22 +140,6 @@ final class CheckoutFieldsTest extends PlaceTestCase
     /** @return TestResponse<Response> */
     private function confirm(AddResult $cart): TestResponse
     {
-        return $this->visit($cart, '/checkout/place', ['expected_payable' => '4999']);
-    }
-
-    /**
-     * @param  array<string, mixed>|null  $post  null — a GET
-     * @return TestResponse<Response>
-     */
-    private function visit(AddResult $cart, string $uri, ?array $post = null, bool $json = false): TestResponse
-    {
-        $this->flushHeaders();
-        $request = $this->withCookie('webx_cart', (string) ($cart->token ?? ''))->withoutMiddleware(ValidateCsrfToken::class);
-
-        if ($json) {
-            $request = $request->withHeader('Accept', 'application/json');
-        }
-
-        return $post === null ? $request->get($uri) : $request->post($uri, $post);
+        return $this->submit($cart, ['expected_payable' => '4999']);
     }
 }

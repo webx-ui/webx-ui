@@ -5,10 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Orders\Tests\Checkout;
 
 use Illuminate\Foundation\Application;
-use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
-use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Test;
-use Symfony\Component\HttpFoundation\Response;
 use WebxUi\Admin\Visitors\Visitor;
 use WebxUi\Cart\AddResult;
 use WebxUi\Cart\CartHandle;
@@ -32,6 +29,8 @@ use WebxUi\Widgets\Forms\FormResponse;
  */
 final class CheckoutWithoutNeighboursTest extends PlaceTestCase
 {
+    use VisitsCheckout;
+
     /**
      * The theme engine first: the widgets the page stands on want it.
      *
@@ -110,11 +109,11 @@ final class CheckoutWithoutNeighboursTest extends PlaceTestCase
             ->assertSee('id="checkout-step-contacts" class="webx-orders-checkout__step is-done"', false)
             ->assertSee('Buyer A, +800 1234 5678');
 
-        $placed = $this->visit($cart, '/checkout/place', ['expected_payable' => '4999', FormResponse::FORM => CheckoutController::PLACE_FORM]);
+        $placed = $this->submit($cart, ['expected_payable' => '4999', FormResponse::FORM => CheckoutController::PLACE_FORM]);
 
         $order = Order::query()->sole();
         $placed->assertRedirect();
-        $this->assertStringContainsString('/order/'.$order->number, (string) $placed->headers->get('Location'));
+        $this->assertSame(url('/checkout/thanks/'.$order->number), $placed->headers->get('Location'));
         $this->assertSame('Buyer', $order->customer_first_name);
         $this->assertSame('A', $order->customer_last_name);
         $this->assertSame('buyer-a@example.test', $order->customer_email);
@@ -144,7 +143,7 @@ final class CheckoutWithoutNeighboursTest extends PlaceTestCase
     {
         $cart = $this->cart();
 
-        $this->visit($cart, '/checkout/place', ['expected_payable' => '4999'], json: true)
+        $this->submit($cart, ['expected_payable' => '4999'], json: true)
             ->assertStatus(422)
             ->assertJsonValidationErrors(['customer.first_name']);
 
@@ -157,14 +156,14 @@ final class CheckoutWithoutNeighboursTest extends PlaceTestCase
         $cart = $this->cart();
         $this->fill($cart);
 
-        $this->visit($cart, '/checkout/place', ['expected_payable' => '4000'], json: true)
+        $this->submit($cart, ['expected_payable' => '4000'], json: true)
             ->assertStatus(409)
             ->assertJsonPath('code', 'checkout.payable_changed')
             ->assertJsonPath('message', fn (string $message): bool => str_contains($message, '40,00') && str_contains($message, '49,99'))
             ->assertJsonPath('html', fn (string $html): bool => str_contains($html, 'value="4999"'));
 
         // Without JavaScript the page comes back with the message under the confirmation.
-        $this->visit($cart, '/checkout/place', ['expected_payable' => '4000'])->assertRedirect(url('/checkout'));
+        $this->submit($cart, ['expected_payable' => '4000'])->assertRedirect(url('/checkout'));
         $this->visit($cart, '/checkout')->assertSee('The amount has changed');
 
         $this->assertSame(0, Order::query()->count());
@@ -181,7 +180,7 @@ final class CheckoutWithoutNeighboursTest extends PlaceTestCase
             ->assertSee('id="checkout-warnings"', false)
             ->assertSee('Open the cart');
 
-        $this->visit($cart, '/checkout/place', ['expected_payable' => '4999'], json: true)
+        $this->submit($cart, ['expected_payable' => '4999'], json: true)
             ->assertStatus(409)
             ->assertJsonPath('code', 'checkout.cart_not_orderable');
     }
@@ -223,25 +222,5 @@ final class CheckoutWithoutNeighboursTest extends PlaceTestCase
         $this->visit($cart, '/checkout/steps/contacts', [
             'customer' => ['first_name' => 'Buyer', 'phone' => '+800 1234 5678', 'email' => 'buyer@example.test'],
         ])->assertRedirect();
-    }
-
-    /**
-     * @param  array<string, mixed>|null  $post  null — a GET
-     * @return TestResponse<Response>
-     */
-    private function visit(AddResult $cart, string $uri, ?array $post = null, bool $json = false): TestResponse
-    {
-        // The headers of one request are not the next one's.
-        $this->flushHeaders();
-        $request = $this->withCookie('webx_cart', (string) ($cart->token ?? ''));
-
-        if ($json) {
-            $request = $request->withHeader('Accept', 'application/json');
-        }
-
-        // The middleware of the web group checks the token; the tests of the forms are not about it.
-        $request = $request->withoutMiddleware(ValidateCsrfToken::class);
-
-        return $post === null ? $request->get($uri) : $request->post($uri, $post);
     }
 }

@@ -2,10 +2,11 @@
     The column of the totals (spec §23) and the confirmation: printed by the page and alone by
     `GET /checkout/summary`, so the script puts a fresh one in place. Every amount is the cart's
     formatted string; a row with nothing to say is not printed. `expected_payable` is the amount
-    on the screen — what the order is placed with, and checked against (§24.4).
+    on the screen — what the order is placed with, and checked against (§24.4); `place_key` makes
+    a repeat the same order (§24.3); the mark of time and the hidden field are the antispam (§28).
 
     Classes: webx-orders-checkout__summary, __summary-title, __row, __row--discount, __lines,
-    __line, __change, __benefit, __hint, __payable, __place, __terms.
+    __line, __change, __benefit, __hint, __payable, __place, __terms, __honeypot.
 --}}
 <div class="webx-orders-checkout__summary" id="checkout-summary">
     <h2 class="webx-orders-checkout__summary-title">{{ __('webx-orders::checkout.summary.title') }}</h2>
@@ -60,6 +61,9 @@
     </details>
     <x-webx-form :action="$action" :id="$form" class="webx-orders-checkout__place">
         <input type="hidden" name="expected_payable" value="{{ $payable }}">
+        <input type="hidden" name="place_key" value="{{ $place_key }}">
+        <input type="hidden" name="{{ \WebxUi\Orders\Checkout\CheckoutAntispam::TIMESTAMP }}" value="{{ $timestamp }}">
+        @include('webx-orders::checkout.parts.honeypot', ['id' => $form.'-hp'])
         @if ($terms === 'checkbox')
             <x-webx-field type="consent" name="terms" :checked="$accepted" required>
                 {{ __('webx-orders::checkout.terms.agree') }}@foreach ($documents as $document){{ $loop->first ? ': ' : ', ' }}<a href="{{ $document['url'] }}" target="_blank" rel="noopener">{{ $document['title'] }}</a>@endforeach

@@ -24,8 +24,10 @@ final readonly class CheckoutLinks
 
     public const string PLACE = 'checkout.place';
 
+    public const string THANKS = 'checkout.thanks';
+
     /** Every route of the checkout; `.localised` after each is its copy behind the language prefix. */
-    public const array ROUTES = [self::PAGE, self::STEP, self::SUMMARY, self::PLACE];
+    public const array ROUTES = [self::PAGE, self::STEP, self::SUMMARY, self::PLACE, self::THANKS];
 
     public function __construct(
         private UrlGenerator $url,
@@ -46,6 +48,12 @@ final readonly class CheckoutLinks
     public function page(string $locale): string
     {
         return $this->to(self::PAGE, $locale);
+    }
+
+    /** «Thank you» for an order (§26), in the order's language. */
+    public function thanks(string $number, string $locale): string
+    {
+        return $this->to(self::THANKS, $locale, ['number' => $number]);
     }
 
     public function step(string $key, string $locale): string

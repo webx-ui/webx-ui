@@ -6,6 +6,7 @@
     Classes: webx-orders-checkout__form, __visitor, __recipient.
 --}}
 <x-webx-form :action="$action" id="checkout-step-contacts-form" class="webx-orders-checkout__form">
+    @include('webx-orders::checkout.parts.honeypot', ['id' => 'checkout-step-contacts-hp'])
     @if ($visitor !== null)
         <p class="webx-orders-checkout__visitor">{{ __('webx-orders::checkout.steps.signed-in', ['name' => $visitor->name()]) }}</p>
     @endif

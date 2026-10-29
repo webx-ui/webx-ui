@@ -32,6 +32,7 @@ return [
         'recipient-last-name' => 'Nom du destinataire',
         'recipient-phone' => 'Téléphone du destinataire',
         'comment' => 'Commentaire sur la commande',
+        'honeypot' => 'Laissez ce champ vide',
     ],
     'summary' => [
         'title' => 'Votre commande',
@@ -57,6 +58,19 @@ return [
         'terms' => 'Acceptez les conditions pour passer la commande.',
         'payable-changed' => 'Le montant a changé : il était de :was, il est maintenant de :now. Vérifiez la commande et validez-la à nouveau.',
         'not-orderable' => 'Certains articles du panier ne peuvent pas être commandés. Ouvrez le panier.',
+        'stale' => 'La page n’est plus à jour. Vérifiez la commande et confirmez-la de nouveau.',
+        'retry' => 'Une erreur s’est produite. Réessayez.',
+        'too-many' => 'Trop de commandes depuis ce panier. Réessayez plus tard.',
+    ],
+    'thanks' => [
+        'title' => 'La commande :number est passée',
+        'sent' => 'Nous avons envoyé une confirmation à :email.',
+        'decrease' => 'Le montant de la commande a baissé de :amount.',
+        'order-page' => 'Page de la commande',
+    ],
+    'history' => [
+        'terms' => 'Acceptation des conditions : :title (:url), version :version, :time',
+        'version-unknown' => 'inconnue',
     ],
     'settings' => [
         'tab' => 'Commande',

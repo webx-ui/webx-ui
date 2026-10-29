@@ -53,6 +53,29 @@ final readonly class OrderChannels
     }
 
     /**
+     * Whether a milestone's event writes to the buyer: a channel of it is on and sends to the
+     * order's own e-mail — what «Thank you» promises the buyer (§26).
+     */
+    public function reachesBuyer(string $event): bool
+    {
+        $ids = $this->forEvent($event);
+
+        if ($ids === [] || ! $this->available()) {
+            return false;
+        }
+
+        foreach (Channel::query()->whereKey($ids)->where('enabled', true)->get(['id', 'recipients']) as $channel) {
+            foreach ((array) $channel->recipients as $recipient) {
+                if (is_array($recipient) && ($recipient['variable'] ?? null) === 'customer_email') {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * The channels of a public status — none once it is deleted (§5.6).
      *
      * @return list<int>

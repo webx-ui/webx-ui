@@ -32,6 +32,7 @@ return [
         'recipient-last-name' => 'Nazwisko odbiorcy',
         'recipient-phone' => 'Telefon odbiorcy',
         'comment' => 'Komentarz do zamówienia',
+        'honeypot' => 'Zostaw to pole puste',
     ],
     'summary' => [
         'title' => 'Twoje zamówienie',
@@ -57,6 +58,19 @@ return [
         'terms' => 'Aby złożyć zamówienie, zaakceptuj warunki.',
         'payable-changed' => 'Kwota się zmieniła: było :was, jest :now. Sprawdź zamówienie i potwierdź je ponownie.',
         'not-orderable' => 'Niektórych produktów z koszyka nie można zamówić. Otwórz koszyk.',
+        'stale' => 'Strona jest nieaktualna. Sprawdź zamówienie i potwierdź je ponownie.',
+        'retry' => 'Coś poszło nie tak. Spróbuj ponownie.',
+        'too-many' => 'Zbyt wiele zamówień z tego koszyka. Spróbuj później.',
+    ],
+    'thanks' => [
+        'title' => 'Zamówienie :number zostało złożone',
+        'sent' => 'Wysłaliśmy potwierdzenie na :email.',
+        'decrease' => 'Kwota zamówienia zmniejszyła się o :amount.',
+        'order-page' => 'Strona zamówienia',
+    ],
+    'history' => [
+        'terms' => 'Zgoda na warunki: :title (:url), wersja :version, :time',
+        'version-unknown' => 'nieznana',
     ],
     'settings' => [
         'tab' => 'Składanie zamówienia',

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use WebxUi\Localization\Http\Middleware\OneSpellingPerAddress;
+use WebxUi\Orders\Checkout\Checkout;
 use WebxUi\Orders\Checkout\CheckoutLinks;
 use WebxUi\Orders\Checkout\Http\CheckoutController;
 use WebxUi\Orders\Http\KeepPrivate;
@@ -22,8 +23,14 @@ $routes = static function (string $prefix, string $suffix) use ($path): void {
     Route::get($prefix.$path.'/summary', [CheckoutController::class, 'summary'])->name(CheckoutLinks::SUMMARY.$suffix);
     Route::post($prefix.$path.'/steps/{step}', [CheckoutController::class, 'step'])
         ->where('step', '[a-z][a-z0-9-]*')
+        ->middleware('throttle:'.Checkout::THROTTLE_STEPS)
         ->name(CheckoutLinks::STEP.$suffix);
-    Route::post($prefix.$path.'/place', [CheckoutController::class, 'place'])->name(CheckoutLinks::PLACE.$suffix);
+    Route::post($prefix.$path.'/place', [CheckoutController::class, 'place'])
+        ->middleware('throttle:'.Checkout::THROTTLE_PLACE)
+        ->name(CheckoutLinks::PLACE.$suffix);
+    Route::get($prefix.$path.'/thanks/{number}', [CheckoutController::class, 'thanks'])
+        ->where('number', '[^/]+')
+        ->name(CheckoutLinks::THANKS.$suffix);
 };
 
 Route::group(['webx_service' => true], static function () use ($middleware, $routes): void {

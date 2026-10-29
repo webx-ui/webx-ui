@@ -88,15 +88,16 @@ which the buyer sees grouped into public ones. Dictionary `webx-orders` (`module
 
 - **Switch** `webx-orders.checkout.enabled` (`WEBX_ORDERS_CHECKOUT`, on; `Checkout\Checkout::enabled()`). Off — no checkout
   routes, drafts, tools, prune or tab; `Orders::place()` from code works. Also `path`, `layout`, `empty_url`, `draft_days`.
-- **Draft** `order_checkout_drafts` (`Checkout\Models\CheckoutDraft`, key `cart_id`, gone with the cart), written only by a
-  checkout `POST`; the cart's `CartsMerging` at sign-in moves the guest's to the account's cart that has none.
-  `webx:orders:checkout-prune [--days=] [--dry-run]`, daily — older than `draft_days` (30), cart or not.
+- **Draft** `order_checkout_drafts` (`CheckoutDraft`, key `cart_id`), only by a `POST`; `CartsMerging` moves the guest's to an
+  account's cart without one. `webx:orders:checkout-prune [--days=] [--dry-run]`, daily — older than `draft_days` (30).
 - **Tab «Checkout»** of `orders.settings` (`OrderSettings::CHECKOUT` — defaults): `orders.checkout.fields.*` (`required`,
   `optional`, `hidden`; phone or e-mail stays `required`), `recipient`, `comment`, `terms`, `terms_page`, `privacy_page`.
 - **Page** `/checkout` (route `checkout` — the cart's button; also behind `{locale}/`), `Checkout\Http\CheckoutController`:
-  `POST steps/{key}` keeps a step in the draft, `GET summary` — the column, `POST place` → `Orders::place()` with
-  `expected_payable`. `Checkout\Steps\CheckoutSteps`: `contacts` 100, `comment` 900, a project's `Step` by position;
-  `CheckoutContext` — the visitor's cart counted once with `Purpose::Checkout`. A `GET` never makes a draft.
+  `POST steps/{key}` keeps a step in the draft, `GET summary` — the column; `CheckoutSteps`: `contacts` 100, `comment` 900,
+  a project's `Step` by position; `CheckoutContext` — the cart counted once. A `GET` never makes a draft.
+- **Confirm** `POST place`: antispam (`webx_hp`, `webx_ts`, origin, `throttle:webx-orders-checkout`) → `place_key` (a
+  repeat is the same order) → steps → `Orders::place()`; came to less — placed again with it. `PlacingListener` (only that
+  order) notes the agreement, clears the draft but the contacts. `GET thanks/{number}` — for the session that placed it.
 
 ### Permissions
 
@@ -142,7 +143,7 @@ the table says. Finding a visitor to link (`{id}/visitors`) wants `users.view` a
   `CartLockTest`, `MilestoneRaceTest` against a real server:
   `WEBX_TEST_MYSQL_URL=mariadb://user:password@host:3306/db vendor/bin/phpunit …`.
 - `migrate` / `migrate:rollback` — the tables come and go. `Notifications/*Test` — with and without it.
-- `Checkout/DraftsTest`, `CheckoutDisabledTest`, `CheckoutWithoutNeighboursTest` (plain forms), `CheckoutFieldsTest`.
+- `Checkout/*Test`: `CheckoutWithoutNeighboursTest` (plain forms), `PlaceIdempotencyTest`, `PayableChangedTest`, `PlacePerformanceTest`.
 
 ## Read more
 

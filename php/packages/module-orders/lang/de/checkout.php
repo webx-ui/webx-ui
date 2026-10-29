@@ -32,6 +32,7 @@ return [
         'recipient-last-name' => 'Nachname des Empfängers',
         'recipient-phone' => 'Telefon des Empfängers',
         'comment' => 'Kommentar zur Bestellung',
+        'honeypot' => 'Dieses Feld leer lassen',
     ],
     'summary' => [
         'title' => 'Ihre Bestellung',
@@ -57,6 +58,19 @@ return [
         'terms' => 'Stimmen Sie den Bedingungen zu, um zu bestellen.',
         'payable-changed' => 'Der Betrag hat sich geändert: vorher :was, jetzt :now. Prüfen Sie die Bestellung und bestätigen Sie erneut.',
         'not-orderable' => 'Einige Artikel im Warenkorb können nicht bestellt werden. Öffnen Sie den Warenkorb.',
+        'stale' => 'Die Seite ist veraltet. Prüfen Sie die Bestellung und bestätigen Sie sie erneut.',
+        'retry' => 'Etwas ist schiefgelaufen. Versuchen Sie es erneut.',
+        'too-many' => 'Zu viele Bestellungen aus diesem Warenkorb. Versuchen Sie es später erneut.',
+    ],
+    'thanks' => [
+        'title' => 'Bestellung :number ist aufgegeben',
+        'sent' => 'Wir haben eine Bestätigung an :email gesendet.',
+        'decrease' => 'Die Bestellung ist um :amount günstiger geworden.',
+        'order-page' => 'Bestellseite',
+    ],
+    'history' => [
+        'terms' => 'Zustimmung zu den Bedingungen: :title (:url), Version :version, :time',
+        'version-unknown' => 'unbekannt',
     ],
     'settings' => [
         'tab' => 'Checkout',
