@@ -21,6 +21,17 @@ import { snippetsFormPatches } from './snippets'
  * Each screen: whose description it is, and who writes over it — a file, or a patch a provider
  * builds in code on the server (the satellites' cards in the product form).
  */
+const ORDER_STATUS_OPTIONS = [
+  { value: 1, label: 'Accepted → New' },
+  { value: 2, label: 'Accepted → Awaiting payment' },
+  { value: 3, label: 'In progress → Taken into work' },
+  { value: 4, label: 'In progress → Waiting for a call' },
+  { value: 5, label: 'In progress → Being packed' },
+  { value: 6, label: 'Shipped → Handed to delivery' },
+  { value: 7, label: 'Completed → Completed' },
+  { value: 8, label: 'Cancelled → Cancelled' },
+]
+
 const SCREENS: Record<string, { base: string; patches: (string | Patch)[] }> = {
   'pages.form': {
     base: 'php/packages/module-pages/resources/screens/form.json',
@@ -126,6 +137,17 @@ const SCREENS: Record<string, { base: string; patches: (string | Patch)[] }> = {
   'orders.show': {
     base: 'php/packages/module-orders/resources/screens/show.json',
     patches: ['apps/playground/server/panel/project/orders.show.json'],
+  },
+  'orders.settings': {
+    base: 'php/packages/module-orders/resources/screens/settings.json',
+    // The server builds the choice of the initial statuses from the live ones; the fixture lays
+    // the set it starts with.
+    patches: [
+      [
+        { op: 'set', target: 'initial-status', props: { options: ORDER_STATUS_OPTIONS } },
+        { op: 'set', target: 'initial-awaiting', props: { options: ORDER_STATUS_OPTIONS } },
+      ],
+    ],
   },
   'users.form': {
     base: 'php/packages/module-users/resources/screens/form.json',

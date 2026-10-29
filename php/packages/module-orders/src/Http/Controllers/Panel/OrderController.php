@@ -118,8 +118,10 @@ final readonly class OrderController
             'status_id' => (string) __('webx-orders::panel.errors.no-status'),
         ]);
 
+        $dryRun = (bool) ($validated['dry_run'] ?? false);
+
         try {
-            $move = $this->orders->moveTo($found, $target, 'panel', $validated['note'] ?? null, (bool) ($validated['dry_run'] ?? false));
+            $move = $this->orders->moveTo($found, $target, 'panel', self::previewNote($validated['note'] ?? null, $dryRun), $dryRun);
         } catch (StatusMoveRefused $refused) {
             throw ValidationException::withMessages(['status_id' => (string) __('webx-orders::panel.refusals.'.$refused->reason)]);
         }
@@ -167,9 +169,7 @@ final readonly class OrderController
         $found = self::find($order);
         $dryRun = (bool) ($validated['dry_run'] ?? false);
         $reason = $validated['reason'] ?? null;
-        // The dialog asks what a cancellation does before the reason is typed; a dry run writes
-        // nothing, so the reason it is asked with is never kept anywhere.
-        $reason = $dryRun && ($reason === null || trim($reason) === '') ? '…' : $reason;
+        $reason = self::previewNote($reason, $dryRun);
         $mark = $this->refusing(fn () => $this->orders->cancel($found, 'panel', $reason, $dryRun), 'reason');
 
         if ($mark->dryRun) {
@@ -317,6 +317,16 @@ final readonly class OrderController
         } catch (Refusal $refused) {
             throw ValidationException::withMessages([$field => (string) __('webx-orders::panel.refusals.'.$refused->reason)]);
         }
+    }
+
+    /**
+     * The dialog asks what a cancellation — or a status that cancels — does before the reason is
+     * typed; a dry run writes nothing, so the reason it is asked with is never kept anywhere. The
+     * real call gets the reason as typed, and the service refuses an empty one.
+     */
+    public static function previewNote(?string $note, bool $dryRun): ?string
+    {
+        return $dryRun && ($note === null || trim($note) === '') ? '…' : $note;
     }
 
     private static function find(int $id): Order

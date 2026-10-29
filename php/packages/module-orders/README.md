@@ -112,11 +112,26 @@ Screens::extend('orders.show', [
 
 Every action of the panel is a call of `Orders`: nothing there writes an order of its own.
 
+«Orders → Statuses» holds both levels: what the buyer sees, and the stages of the shop inside
+each, with the orders standing in every one. Both are dragged; a stage dragged into another group
+is bound to it, and the panel first says how many buyers will see another name — at once, without
+a message. A stage is deleted softly: its orders stay in it, and «Deleted» brings it back. What
+would leave an order nowhere to go is refused: the status new orders come into, the last active
+stage of a group with orders, a public status with stages still in it. In code the same is
+`OrderStatuses`.
+
+«Orders → Settings» is the format of the number, with the number the next order would get, and
+the statuses a new order comes into. They are kept with the site's settings (`module-settings`);
+without it, the config `webx-orders` decides.
+
+A status that cancels the order is a cancellation: moved there from the panel or by an agent, the
+order needs a reason, given as the note.
+
 ## Status
 
 This release has the tables, the placing of an order, its milestones and statuses, cancelling and
-refunds, and the list and the card in the panel. The statuses screen, the MCP tools, the buyer's page and the checkout come in the
-next ones; the spec is
+refunds, the list and the card in the panel, and the screens of the statuses and the settings. The
+MCP tools, the buyer's page and the checkout come in the next ones; the spec is
 [`WEBX_UI_MODULE_ORDERS.md`](https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_ORDERS.md).
 
 ## License

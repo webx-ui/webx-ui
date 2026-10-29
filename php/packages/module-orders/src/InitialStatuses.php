@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace WebxUi\Orders;
 
-use Illuminate\Contracts\Config\Repository;
 use LogicException;
 use WebxUi\Orders\Models\OrderStatus;
 
@@ -16,11 +15,11 @@ use WebxUi\Orders\Models\OrderStatus;
  */
 final class InitialStatuses
 {
-    public function __construct(private readonly Repository $config) {}
+    public function __construct(private readonly OrderSettings $settings) {}
 
     public function for(bool $awaitPayment): OrderStatus
     {
-        $chosen = $this->config->get($awaitPayment ? 'webx-orders.initial_status_awaiting_payment' : 'webx-orders.initial_status');
+        $chosen = $this->settings->get($awaitPayment ? 'orders.initial_status_awaiting_payment' : 'orders.initial_status');
         $statuses = $this->active(is_numeric($chosen) ? (int) $chosen : null);
 
         if ($statuses === []) {

@@ -14,7 +14,7 @@ return [
         'customer_phone' => 'Telefon',
         'customer_email' => 'E-posta',
         'recipient' => 'Alıcı',
-        'comment' => 'Alıcının yorumu',
+        'comment' => 'Müşteri yorumu',
         'manager_note' => 'Yönetici notu',
     ],
     'milestones' => [

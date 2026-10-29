@@ -8,8 +8,9 @@ neighbours rely on (placed, paid, received, cancelled…) — and **statuses**, 
 which the buyer sees grouped into public ones.
 
 This release holds the tables, the models, the default statuses, `Orders::place()`, the
-milestones and statuses, cancelling and refunds through the service, and the panel's list and
-card of an order; the statuses screen, the MCP tools and the checkout come next.
+milestones and statuses, cancelling and refunds through the service, the panel's list and card
+of an order, and the screens of the statuses and the settings; the MCP tools and the checkout
+come next.
 
 ## What it owns
 
@@ -33,7 +34,9 @@ card of an order; the statuses screen, the MCP tools and the checkout come next.
     `OrderCancelledAlready`);
   - `moveTo(order, OrderStatus, source, note?, dryRun?)` → `StatusMove` (`from`, `to`, `publicFrom`,
     `publicTo`, `publicChanged`, `moved`, `milestone`, `notifications`, `refusal`); a refusal
-    (`inactive`, `deleted`, `cancelled`) throws `StatusMoveRefused`, a dry run answers it;
+    (`inactive`, `deleted`, `cancelled`) throws `StatusMoveRefused`, a dry run answers it; into
+    a status that sets `cancelled`, `panel` and `mcp` give the reason in `note`
+    (`ValidationException` under `note`, on a dry run too);
   - `patchBlock(order, block, patch, source)`, `note(order, text, source)`,
     `updateDetails(order, OrderDetails, source)` — contacts, recipient, comment, manager note;
   - `cancel(order, source, reason?, dryRun?)` → `MilestoneMark` with `wasPaid`, `moneyToRefund`,
@@ -44,6 +47,10 @@ card of an order; the statuses screen, the MCP tools and the checkout come next.
     qty), `reference`, `reason`, `source`; the manager splits it, each part ≤ what is left
     (`RefundRefused`: `empty`, `amount`, `tender`, `qty`, with `field`). Money and every tender back
     → milestone `refunded`, once; lines and totals never change.
+- **The statuses** `WebxUi\Orders\OrderStatuses` (§5.6): `writePublic`, `removePublic(…, moveTo?)`,
+  `restorePublic`, `write`, `remove`, `restore`, `arrange(publics, groups)` — each with `dryRun` →
+  `StatusPlan` (`orders`, `rebound`, `active`); `StatusRefused`: `initial`, `last_active`,
+  `public_deleted`, `has_active`. Switching a stage off is held like deleting it.
 - **Events** `Events\OrderPlacing` (in the transaction: spend, reserve, or throw `OrderRefused`);
   after the commit, each with `Data\OrderData` (plain values, serialisable), `source`, `adminId`,
   `at`: `OrderPlaced`, `OrderPaid`, `OrderReceived`, `OrderCancelled` (`wasPaid`,
@@ -54,6 +61,8 @@ card of an order; the statuses screen, the MCP tools and the checkout come next.
 validate, summary))` in your `boot()`; an unregistered block is refused.
 - **Config** `webx-orders`: `number` (`prefix`, `start` = 1000, `pad`), `initial_status`,
   `initial_status_awaiting_payment` (ids; null — «New» and «Awaiting payment» of the default set).
+  Read through `OrderSettings`: the keys `orders.number.*`, `orders.initial_status*` saved by the
+  screen `orders.settings` in `module-settings` first, the config for the rest.
 
 - **Tables** (all `order_*` but `orders`):
   - `orders` (`WebxUi\Orders\Models\Order`) — money in minor units of `currency`, contacts with
@@ -81,6 +90,8 @@ validate, summary))` in your `boot()`; an unregistered block is refused.
   `dry_run` is the service's own. The card is the screen `orders.show` with the public ids
   `header-actions`, `tabs`, `summary`; its fields are `customer.*`, `recipient.*`, `comment`,
   `manager_note`. The ready-made role `orders` («Order manager»: view, manage, `users.view`).
+  `statuses` (the board, `arrange`, `public/{id}`, `internal/{id}`, `…/restore`) and `settings`
+  (with the trial number) — under `orders.statuses`.
 
 ### Permissions
 
@@ -98,7 +109,7 @@ The routes ask for them with `cms.can` (`AccessCoverageTest`); the MCP tools com
 | You want                             | Do                                                                                                  |
 | ------------------------------------ | --------------------------------------------------------------------------------------------------- |
 | other words for the default statuses | `php artisan vendor:publish --tag=webx-orders-lang` before `migrate`, or rename the rows afterwards |
-| other statuses                       | rows of `order_statuses` / `order_public_statuses` — they are the site's own                        |
+| other statuses                       | «Orders → Statuses», or `OrderStatuses` in code — they are the site's own                           |
 | to react to an order                 | listen to `OrderPlaced`; to do it with the order or not at all — `OrderPlacing`                     |
 | a tab of yours on the card           | `Screens::extend('orders.show', [['op' => 'add', 'target' => 'tabs', 'node' => […]]])`              |
 | a button beside the status           | the same with `'target' => 'header-actions'`                                                        |
@@ -111,14 +122,15 @@ The routes ask for them with `cms.can` (`AccessCoverageTest`); the MCP tools com
 - Do not do anything slow in `OrderPlacing` (HTTP, letters): the cart's row is locked meanwhile.
 - Do not delete an order: it is the document of a deal. Cancel it instead.
 - Do not delete a status row for good: orders keep pointing at it and the history shows its name.
-  Soft-delete it (`delete()`), which leaves the orders where they are.
+  Soft-delete it with `OrderStatuses::remove()`, which leaves the orders where they are.
 - Do not store a hex colour in `order_statuses.color`: it is a name from `StatusColor`, so the
   dark theme of the panel can read it.
 
 ## Check your work
 
 - `Panel/PanelTest`, `Panel/ScreenTest`, `Panel/AccessCoverageTest`, `Panel/BoundariesTest` (the
-  panel never writes an order itself), `Panel/PerformanceTest` (the list's budget).
+  panel never writes an order itself), `Panel/PerformanceTest` (the list's budget),
+  `Panel/StatusesTest`, `Panel/SettingsTest`, `Panel/StatusReasonTest`, `CancelByStatusTest`.
 - `PlaceTest`, `MilestonesTest`, `StatusMoveTest`, `DetailsTest`, `RefundTest`, `PerformanceTest` (the budget of
   `place()`), and `CartLockTest`, `MilestoneRaceTest` against a real server: `WEBX_TEST_MYSQL_URL=mariadb://user:password@host:3306/db vendor/bin/phpunit …`.
 

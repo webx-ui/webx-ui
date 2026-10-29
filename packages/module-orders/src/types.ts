@@ -234,6 +234,8 @@ export interface MassStatusAnswer {
   public_changed: number
   notifications: number
   milestones: number
+  /** How many of them the move would cancel — each wants the reason. */
+  cancels: number
   refused: MassRefusal[]
   dry_run: boolean
 }
@@ -245,4 +247,92 @@ export interface MassCancelAnswer {
   paid: number
   refused: MassRefusal[]
   dry_run: boolean
+}
+
+/** Words of a status in every language of the site, as the dialogs edit them. */
+export type StatusWords = Record<string, string>
+
+/** An internal status on the screen of the statuses (spec §11.4), with the orders standing in it. */
+export interface BoardStatus {
+  id: number
+  public_status_id: number
+  name: StatusWords
+  /** The name in the panel's language. */
+  label: string
+  color: StatusColor
+  milestone: MilestoneKey | null
+  active: boolean
+  deleted: boolean
+  orders: number
+}
+
+export interface BoardGroup {
+  id: number
+  code: string
+  name: StatusWords
+  description: StatusWords
+  label: string
+  deleted: boolean
+  statuses: BoardStatus[]
+  orders?: number
+}
+
+export interface DeletedStatus extends BoardStatus {
+  public: { id: number; name: string; deleted: boolean }
+}
+
+export interface StatusBoardData {
+  groups: BoardGroup[]
+  deleted: { groups: BoardGroup[]; statuses: DeletedStatus[] }
+  /** The statuses new orders come into now. */
+  initial: number[]
+  colors: { value: StatusColor; label: string }[]
+  milestones: { value: MilestoneKey; label: string }[]
+}
+
+/** What a change of the statuses does, said before it is made (§5.6) — or why it cannot be. */
+export interface StatusConsequences {
+  refusal: string | null
+  message: string | null
+  orders: number
+  rebound: {
+    id: number
+    from: number
+    to: number
+    orders: number
+    name: string
+    from_name: string
+    to_name: string
+  }[]
+  active: { id: number; name: string }[]
+  lines: string[]
+}
+
+export interface PublicStatusInput {
+  code: string
+  name: StatusWords
+  description: StatusWords
+}
+
+export interface StageInput {
+  public_status_id: number
+  name: StatusWords
+  color: StatusColor
+  sets_milestone: MilestoneKey | null
+  is_active: boolean
+}
+
+/** The order of both levels as dragged: the groups, and each group's statuses. */
+export interface StatusArrangement {
+  publics: number[]
+  groups: Record<number, number[]>
+}
+
+/** The settings of the section (§11.4): stored only with the settings module installed. */
+export interface OrdersSettings {
+  stored: boolean
+  values: Record<string, unknown>
+  /** The id the next order would get — what the trial number is made of. */
+  next_id: number
+  sample: string
 }

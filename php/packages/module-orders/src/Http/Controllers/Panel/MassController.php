@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use WebxUi\Admin\Http\ApiResponse;
+use WebxUi\Orders\Milestone;
 use WebxUi\Orders\Models\Order;
 use WebxUi\Orders\Orders;
 use WebxUi\Orders\Panel\StatusChoices;
@@ -45,13 +46,20 @@ final readonly class MassController
             'status_id' => (string) __('webx-orders::panel.errors.no-status'),
         ]);
 
-        $tally = ['orders' => 0, 'moved' => 0, 'unchanged' => 0, 'public_changed' => 0, 'notifications' => 0, 'milestones' => 0, 'refused' => []];
+        // A status that cancels wants its reason (§9.1): asked once for the whole selection,
+        // before any order moves — not refused order by order halfway through it.
+        if (! $dryRun && $target->sets_milestone === Milestone::Cancelled) {
+            $request->validate(['note' => ['required', 'string']]);
+        }
+
+        $note = OrderController::previewNote($validated['note'] ?? null, $dryRun);
+        $tally = ['orders' => 0, 'moved' => 0, 'unchanged' => 0, 'public_changed' => 0, 'notifications' => 0, 'milestones' => 0, 'cancels' => 0, 'refused' => []];
 
         foreach ($this->find($validated['ids']) as $order) {
             $tally['orders']++;
 
             try {
-                $move = $this->orders->moveTo($order, $target, 'panel', $validated['note'] ?? null, $dryRun);
+                $move = $this->orders->moveTo($order, $target, 'panel', $note, $dryRun);
             } catch (Refusal $refused) {
                 $tally['refused'][] = $this->refusal($order, $refused->reason);
 
@@ -105,7 +113,7 @@ final readonly class MassController
     }
 
     /**
-     * @param  array{orders: int, moved: int, unchanged: int, public_changed: int, notifications: int, milestones: int, refused: list<array<string, mixed>>}  $tally
+     * @param  array{orders: int, moved: int, unchanged: int, public_changed: int, notifications: int, milestones: int, cancels: int, refused: list<array<string, mixed>>}  $tally
      */
     private function count(array &$tally, StatusMove $move): void
     {
@@ -119,6 +127,7 @@ final readonly class MassController
         $tally['public_changed'] += $move->publicChanged ? 1 : 0;
         $tally['notifications'] += count($move->notifications);
         $tally['milestones'] += $move->milestone !== null ? 1 : 0;
+        $tally['cancels'] += $move->milestone === Milestone::Cancelled ? 1 : 0;
     }
 
     /**

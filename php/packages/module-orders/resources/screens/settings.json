@@ -1,0 +1,69 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "orders.settings",
+  "model": "settings",
+  "root": [
+    {
+      "id": "number-card",
+      "type": "wx-card",
+      "label": "trans::webx-orders::screen.number",
+      "children": [
+        {
+          "id": "number-prefix",
+          "type": "wx-input",
+          "name": "orders.number.prefix",
+          "label": "trans::webx-orders::screen.number-prefix",
+          "help": "trans::webx-orders::screen.number-prefix-help",
+          "props": { "maxlength": 20, "placeholder": "A-" }
+        },
+        {
+          "id": "number-start",
+          "type": "wx-input-number",
+          "name": "orders.number.start",
+          "label": "trans::webx-orders::screen.number-start",
+          "help": "trans::webx-orders::screen.number-start-help",
+          "props": { "min": 0, "max": 999999999, "placeholder": "1000" }
+        },
+        {
+          "id": "number-pad",
+          "type": "wx-input-number",
+          "name": "orders.number.pad",
+          "label": "trans::webx-orders::screen.number-pad",
+          "help": "trans::webx-orders::screen.number-pad-help",
+          "props": { "min": 0, "max": 20, "placeholder": "0" }
+        },
+        {
+          "id": "number-sample",
+          "type": "wx-orders-number-sample",
+          "props": {
+            "label": "trans::webx-orders::screen.number-sample",
+            "help": "trans::webx-orders::screen.number-sample-help"
+          }
+        }
+      ]
+    },
+    {
+      "id": "initial-card",
+      "type": "wx-card",
+      "label": "trans::webx-orders::screen.initial",
+      "children": [
+        {
+          "id": "initial-status",
+          "type": "wx-select",
+          "name": "orders.initial_status",
+          "label": "trans::webx-orders::screen.initial-status",
+          "help": "trans::webx-orders::screen.initial-status-help",
+          "props": { "clearable": true, "placeholder": "trans::webx-orders::screen.initial-first" }
+        },
+        {
+          "id": "initial-awaiting",
+          "type": "wx-select",
+          "name": "orders.initial_status_awaiting_payment",
+          "label": "trans::webx-orders::screen.initial-awaiting",
+          "help": "trans::webx-orders::screen.initial-awaiting-help",
+          "props": { "clearable": true, "placeholder": "trans::webx-orders::screen.initial-first" }
+        }
+      ]
+    }
+  ]
+}

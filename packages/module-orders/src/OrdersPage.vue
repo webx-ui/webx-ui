@@ -31,6 +31,7 @@ import {
   WxRowMenu,
   type AppliedFilter,
   type RowAction,
+  type ScreenAction,
 } from '@webx-ui/module-admin'
 import { createOrdersApi } from './api'
 import CancelDialog from './CancelDialog.vue'
@@ -70,6 +71,26 @@ const panel = useTranslate('webx-admin')
 const message = useErrorText()
 
 const canManage = computed(() => admin.can('orders.manage'))
+
+/* The statuses and the settings of the section, for whoever may change them (§11.4). */
+const headActions = computed<ScreenAction[]>(() =>
+  admin.can('orders.statuses')
+    ? [
+        {
+          key: 'statuses',
+          label: t('panel.to-statuses'),
+          icon: 'list',
+          run: () => void router.push(`${props.base}/statuses`),
+        },
+        {
+          key: 'settings',
+          label: t('panel.to-settings'),
+          icon: 'settings',
+          run: () => void router.push(`${props.base}/settings`),
+        },
+      ]
+    : [],
+)
 
 const page = ref<OrdersPage | null>(null)
 const meta = ref<OrdersMeta>({
@@ -438,7 +459,7 @@ onMounted(async () => {
 
 <template>
   <div ref="root" class="wx-orders">
-    <wx-list-screen v-model:view="view" :title="title" :views="views">
+    <wx-list-screen v-model:view="view" :title="title" :views="views" :actions="headActions">
       <wx-table
         v-model:search="search"
         v-model:page="pageNumber"

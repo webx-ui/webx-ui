@@ -5,13 +5,17 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use WebxUi\Orders\Http\Controllers\Panel\MassController;
 use WebxUi\Orders\Http\Controllers\Panel\OrderController;
+use WebxUi\Orders\Http\Controllers\Panel\SettingsController;
+use WebxUi\Orders\Http\Controllers\Panel\StatusController;
 use WebxUi\Orders\Panel\OrdersModule;
 
 /*
  * «Orders» in the panel (spec §11.1): `orders.view` reads the list and the card — the contacts
  * among them, which is personal data; `orders.manage` works an order — its status, the marks, the
  * cancellation, the contacts and the note; `orders.refund` records money given back, apart,
- * because it is money. Whoever may manage or refund may also read.
+ * because it is money. Whoever may manage or refund may also read. The statuses and the settings
+ * of the section are `orders.statuses` alone (§11.4): naming the shop's stages is not working an
+ * order.
  */
 Route::prefix((string) config('webx-admin.api_path').'/orders')
     ->middleware('webx.panel')
@@ -35,6 +39,20 @@ Route::prefix((string) config('webx-admin.api_path').'/orders')
             Route::put('{order}/details', [OrderController::class, 'details'])->whereNumber('order')->name('details');
         });
 
+        Route::middleware('cms.can:'.OrdersModule::STATUSES)->group(function (): void {
+            Route::get('statuses', [StatusController::class, 'index'])->name('statuses.index');
+            Route::put('statuses/arrange', [StatusController::class, 'arrange'])->name('statuses.arrange');
+            Route::post('statuses/public', [StatusController::class, 'storePublic'])->name('statuses.public.store');
+            Route::put('statuses/public/{status}', [StatusController::class, 'updatePublic'])->whereNumber('status')->name('statuses.public.update');
+            Route::delete('statuses/public/{status}', [StatusController::class, 'destroyPublic'])->whereNumber('status')->name('statuses.public.destroy');
+            Route::post('statuses/public/{status}/restore', [StatusController::class, 'restorePublic'])->whereNumber('status')->name('statuses.public.restore');
+            Route::post('statuses/internal', [StatusController::class, 'store'])->name('statuses.store');
+            Route::put('statuses/internal/{status}', [StatusController::class, 'update'])->whereNumber('status')->name('statuses.update');
+            Route::delete('statuses/internal/{status}', [StatusController::class, 'destroy'])->whereNumber('status')->name('statuses.destroy');
+            Route::post('statuses/internal/{status}/restore', [StatusController::class, 'restore'])->whereNumber('status')->name('statuses.restore');
+            Route::get('settings', [SettingsController::class, 'show'])->name('settings.show');
+            Route::put('settings', [SettingsController::class, 'update'])->name('settings.update');
+        });
         Route::post('{order}/refunds', [OrderController::class, 'refund'])
             ->middleware('cms.can:'.OrdersModule::REFUND)
             ->whereNumber('order')

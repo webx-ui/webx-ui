@@ -2,24 +2,28 @@
 import { describe, expect, it } from 'vitest'
 import { orderSearch } from './api'
 import { orders } from './module'
+import { sampleNumber } from './settings'
 
 describe('orders()', () => {
-  it('mounts the list and the card under the path it is given', () => {
+  it('mounts the list, the card, the statuses and the settings under the path it is given', () => {
     const section = orders({ path: '/shop/orders' })
 
     expect(section.id).toBe('orders')
     expect((section.routes ?? []).map((route) => route.path)).toEqual([
       '/shop/orders',
+      '/shop/orders/statuses',
+      '/shop/orders/settings',
       '/shop/orders/:id(\\d+)',
     ])
   })
 
   /* The screen `orders.show` names these; a type it names and the panel does not know is drawn
      as a loud placeholder, so the two lists have to stay one. */
-  it('registers every node type of the card', () => {
+  it('registers every node type of the card and the settings', () => {
     expect(Object.keys(orders().types ?? {}).sort()).toEqual([
       'wx-orders-items',
       'wx-orders-layout',
+      'wx-orders-number-sample',
       'wx-orders-status',
       'wx-orders-summary',
       'wx-orders-timeline',
@@ -32,5 +36,21 @@ describe('orderSearch()', () => {
     expect(
       orderSearch({ view: 'new', search: '', paid: false, cancelled: true, page: 2 }).toString(),
     ).toBe('view=new&paid=0&cancelled=1&page=2')
+  })
+})
+
+describe('sampleNumber()', () => {
+  /* The same number the server's `OrderNumbers::compose()` makes, so the trial number is true. */
+  it('is the prefix, then start + id padded with zeros', () => {
+    expect(sampleNumber({}, 1)).toBe('1001')
+    expect(
+      sampleNumber(
+        { 'orders.number.prefix': 'A-', 'orders.number.start': 0, 'orders.number.pad': 6 },
+        42,
+      ),
+    ).toBe('A-000042')
+    expect(sampleNumber({ 'orders.number.start': '', 'orders.number.pad': 99 }, 7)).toBe(
+      '00000000000000001007',
+    )
   })
 })

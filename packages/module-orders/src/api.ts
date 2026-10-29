@@ -9,8 +9,14 @@ import type {
   OrderQuery,
   OrdersMeta,
   OrdersPage,
+  OrdersSettings,
+  PublicStatusInput,
   RefundInput,
   RefundPreview,
+  StageInput,
+  StatusArrangement,
+  StatusBoardData,
+  StatusConsequences,
 } from './types'
 
 /** Where «Orders» answer under the panel's API (§11). */
@@ -71,6 +77,23 @@ export interface OrdersApi {
     dryRun: boolean,
   ): Promise<MassStatusAnswer>
   massCancel(ids: number[], reason: string, dryRun: boolean): Promise<MassCancelAnswer>
+  /** Both levels of the statuses with the orders in each (§11.4). */
+  statuses(): Promise<StatusBoardData>
+  savePublic(id: number | null, input: PublicStatusInput): Promise<StatusBoardData>
+  /** `move_to` takes the group's stages elsewhere first; a dry run says what it does. */
+  previewRemovePublic(id: number, moveTo: number | null): Promise<StatusConsequences>
+  removePublic(id: number, moveTo: number | null): Promise<StatusBoardData>
+  restorePublic(id: number): Promise<StatusBoardData>
+  /** Moved to another group, a stage's buyers are counted first. */
+  previewStage(id: number, input: StageInput): Promise<StatusConsequences>
+  saveStage(id: number | null, input: StageInput): Promise<StatusBoardData>
+  previewRemoveStage(id: number): Promise<StatusConsequences>
+  removeStage(id: number): Promise<StatusBoardData>
+  restoreStage(id: number): Promise<StatusBoardData>
+  previewArrange(arrangement: StatusArrangement): Promise<StatusConsequences>
+  arrange(arrangement: StatusArrangement): Promise<StatusBoardData>
+  settings(): Promise<OrdersSettings>
+  saveSettings(values: ScreenModel): Promise<OrdersSettings>
 }
 
 export function createOrdersApi(admin: AdminContext): OrdersApi {
@@ -136,5 +159,63 @@ export function createOrdersApi(admin: AdminContext): OrdersApi {
       admin.http
         .post<{ data: MassCancelAnswer }>(`${base}/cancel`, { ids, reason, dry_run: dryRun })
         .then(data),
+    statuses: () => admin.http.get<{ data: StatusBoardData }>(`${base}/statuses`).then(data),
+    savePublic: (id, input) =>
+      (id === null
+        ? admin.http.post<{ data: StatusBoardData }>(`${base}/statuses/public`, input)
+        : admin.http.put<{ data: StatusBoardData }>(`${base}/statuses/public/${id}`, input)
+      ).then(data),
+    previewRemovePublic: (id, moveTo) =>
+      admin.http
+        .delete<{ data: StatusConsequences }>(`${base}/statuses/public/${id}`, {
+          query: { move_to: moveTo, dry_run: 1 },
+        })
+        .then(data),
+    removePublic: (id, moveTo) =>
+      admin.http
+        .delete<{ data: StatusBoardData }>(`${base}/statuses/public/${id}`, {
+          query: { move_to: moveTo },
+        })
+        .then(data),
+    restorePublic: (id) =>
+      admin.http
+        .post<{ data: StatusBoardData }>(`${base}/statuses/public/${id}/restore`)
+        .then(data),
+    previewStage: (id, input) =>
+      admin.http
+        .put<{ data: StatusConsequences }>(`${base}/statuses/internal/${id}`, {
+          ...input,
+          dry_run: true,
+        })
+        .then(data),
+    saveStage: (id, input) =>
+      (id === null
+        ? admin.http.post<{ data: StatusBoardData }>(`${base}/statuses/internal`, input)
+        : admin.http.put<{ data: StatusBoardData }>(`${base}/statuses/internal/${id}`, input)
+      ).then(data),
+    previewRemoveStage: (id) =>
+      admin.http
+        .delete<{ data: StatusConsequences }>(`${base}/statuses/internal/${id}`, {
+          query: { dry_run: 1 },
+        })
+        .then(data),
+    removeStage: (id) =>
+      admin.http.delete<{ data: StatusBoardData }>(`${base}/statuses/internal/${id}`).then(data),
+    restoreStage: (id) =>
+      admin.http
+        .post<{ data: StatusBoardData }>(`${base}/statuses/internal/${id}/restore`)
+        .then(data),
+    previewArrange: (arrangement) =>
+      admin.http
+        .put<{ data: StatusConsequences }>(`${base}/statuses/arrange`, {
+          ...arrangement,
+          dry_run: true,
+        })
+        .then(data),
+    arrange: (arrangement) =>
+      admin.http.put<{ data: StatusBoardData }>(`${base}/statuses/arrange`, arrangement).then(data),
+    settings: () => admin.http.get<{ data: OrdersSettings }>(`${base}/settings`).then(data),
+    saveSettings: (values) =>
+      admin.http.put<{ data: OrdersSettings }>(`${base}/settings`, { values }).then(data),
   }
 }

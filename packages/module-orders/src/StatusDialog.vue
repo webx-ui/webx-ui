@@ -26,6 +26,9 @@ import type { MassStatusAnswer, MoveConsequences, OrderDetail, PublicStatusGroup
  * statuses are not offered. Under it, before anything is done, the line of consequences from the
  * service's own dry run: whether the buyer sees a change and through which channels they hear of
  * it, which mark the status sets — or, for a batch, how many of each.
+ *
+ * A status that cancels the order is a cancellation, and wants its reason as `CancelDialog` does
+ * (§9.1): the note turns into a required reason while such a status is chosen.
  */
 const props = defineProps<{
   statuses: PublicStatusGroup[]
@@ -51,6 +54,7 @@ const batch = ref<MassStatusAnswer | null>(null)
 const previewing = ref(false)
 const applying = ref(false)
 const error = ref<string | null>(null)
+const errors = ref<Record<string, string[]>>({})
 
 const mass = computed(() => props.orderId === undefined)
 const count = computed(() => props.ids?.length ?? 0)
@@ -120,6 +124,15 @@ const lines = computed(() => {
 
 const refused = computed(() => single.value?.message ?? null)
 
+/** Whether the move would cancel an order — the one of the card, or any of the selection. */
+const cancels = computed(() => {
+  if (mass.value) return (batch.value?.cancels ?? 0) > 0
+
+  return single.value?.milestone?.key === 'cancelled'
+})
+
+watch([note, chosen], () => (errors.value = {}))
+
 const canApply = computed(() => {
   if (chosen.value === null || previewing.value || applying.value) return false
   if (mass.value) return (batch.value?.moved ?? 0) > 0
@@ -130,6 +143,12 @@ const canApply = computed(() => {
 async function apply(): Promise<void> {
   if (!canApply.value || chosen.value === null) return
 
+  if (cancels.value && note.value.trim() === '') {
+    errors.value = { note: [t('panel.cancel-reason-required')] }
+
+    return
+  }
+
   applying.value = true
 
   try {
@@ -139,7 +158,10 @@ async function apply(): Promise<void> {
         : await api.moveTo(props.orderId as number, chosen.value, note.value),
     )
   } catch (failure) {
-    toast.danger(message(failure))
+    const body = (failure as { body?: { errors?: Record<string, string[]> } }).body
+
+    if (body?.errors?.note) errors.value = { note: body.errors.note }
+    else toast.danger(message(failure))
   } finally {
     applying.value = false
   }
@@ -209,7 +231,12 @@ async function apply(): Promise<void> {
         </wx-alert>
       </div>
 
-      <wx-form-item :label="t('panel.note')" :help="t('panel.note-help')">
+      <wx-form-item
+        :label="cancels ? t('panel.cancel-reason') : t('panel.note')"
+        :help="t('panel.note-help')"
+        :error="errors.note"
+        :required="cancels"
+      >
         <wx-textarea v-model="note" :rows="2" :maxlength="1000" :disabled="applying" />
       </wx-form-item>
     </div>

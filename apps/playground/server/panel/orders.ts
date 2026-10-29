@@ -5,6 +5,11 @@
  * cancelled order takes no payment, a refund is held to what is left.
  *
  * Fake buyers only: «Buyer A»…, phones `+800 1234 5678` and on, addresses on `example.com`.
+ *
+ * The statuses and the settings of the section (§5.6, §11.4) are here too: both levels in the
+ * order of the arrays, written, dragged, deleted softly and brought back under the service's
+ * rules — the initial status stays, a group with orders keeps an active stage, a public group goes
+ * only empty or with its stages moved.
  */
 
 type On = (
@@ -32,6 +37,10 @@ interface PublicRecord {
   id: number
   code: string
   channels: string[]
+  /** Words typed in the panel; until then the dictionary's. */
+  names?: Record<string, string>
+  descriptions?: Record<string, string>
+  deleted?: boolean
 }
 
 interface StatusRecord {
@@ -42,6 +51,7 @@ interface StatusRecord {
   milestone: Milestone | null
   active: boolean
   deleted: boolean
+  names?: Record<string, string>
 }
 
 interface ItemRecord {
@@ -345,6 +355,23 @@ seedMarks()
 
 /* -------------------------------------------------------------------------------- words ----- */
 
+/** A status's name in the panel's language: what was typed, else the dictionary's. */
+function stageName(status: StatusRecord, locale: string, line: Line): string {
+  return (
+    status.names?.[locale] ??
+    status.names?.en ??
+    (status.key ? line(locale, 'webx-orders', `statuses.internal.${status.key}`) : '')
+  )
+}
+
+function groupName(group: PublicRecord, locale: string, line: Line): string {
+  return (
+    group.names?.[locale] ??
+    group.names?.en ??
+    line(locale, 'webx-orders', `statuses.public.${group.code}.name`)
+  )
+}
+
 function statusOf(id: number, locale: string, line: Line) {
   const status = statuses.find((one) => one.id === id)
 
@@ -354,7 +381,7 @@ function statusOf(id: number, locale: string, line: Line) {
 
   return {
     id: status.id,
-    name: line(locale, 'webx-orders', `statuses.internal.${status.key}`),
+    name: stageName(status, locale, line),
     color: status.color,
     milestone: status.milestone,
     active: status.active,
@@ -362,7 +389,7 @@ function statusOf(id: number, locale: string, line: Line) {
     public: {
       id: group.id,
       code: group.code,
-      name: line(locale, 'webx-orders', `statuses.public.${group.code}.name`),
+      name: groupName(group, locale, line),
     },
   }
 }
@@ -371,8 +398,8 @@ function grouped(locale: string, line: Line) {
   return publics.map((group) => ({
     id: group.id,
     code: group.code,
-    name: line(locale, 'webx-orders', `statuses.public.${group.code}.name`),
-    deleted: false,
+    name: groupName(group, locale, line),
+    deleted: group.deleted ?? false,
     statuses: statuses
       .filter((one) => one.public === group.id)
       // A status inside its group: the group is the parent, not a field of it.
@@ -666,7 +693,7 @@ function plan(record: OrderRecord, to: StatusRecord, locale: string, line: Line)
   return {
     moved,
     public_changed: publicChanged,
-    public: line(locale, 'webx-orders', `statuses.public.${group.code}.name`),
+    public: groupName(group, locale, line),
     milestone: milestone
       ? { key: milestone, label: line(locale, 'webx-orders', `module.milestones.${milestone}`) }
       : null,
@@ -774,6 +801,11 @@ export function registerOrders(on: On, fail: Fail, line: Line): void {
     if (body.dry_run) return { data: outcome }
     if (outcome.message)
       throw fail(422, outcome.message, undefined, { status_id: [outcome.message] })
+    // A status that cancels is a cancellation, and wants its reason (§9.1).
+    if (outcome.milestone?.key === 'cancelled' && !text(body.note))
+      throw fail(422, 'The note field is required.', undefined, {
+        note: ['The note field is required.'],
+      })
 
     move(record, to, text(body.note), outcome)
 
@@ -985,9 +1017,15 @@ export function registerOrders(on: On, fail: Fail, line: Line): void {
       public_changed: 0,
       notifications: 0,
       milestones: 0,
+      cancels: 0,
       refused: [] as unknown[],
       dry_run: Boolean(body.dry_run),
     }
+
+    if (!body.dry_run && to.milestone === 'cancelled' && !text(body.note))
+      throw fail(422, 'The note field is required.', undefined, {
+        note: ['The note field is required.'],
+      })
 
     for (const record of orders.filter((one) => ids.includes(one.id))) {
       const outcome = plan(record, to, locale, line)
@@ -1013,6 +1051,7 @@ export function registerOrders(on: On, fail: Fail, line: Line): void {
       tally.public_changed += outcome.public_changed ? 1 : 0
       tally.notifications += outcome.channels.length
       tally.milestones += outcome.milestone ? 1 : 0
+      tally.cancels += outcome.milestone?.key === 'cancelled' ? 1 : 0
 
       if (!body.dry_run) move(record, to, text(body.note), outcome)
     }
@@ -1053,5 +1092,473 @@ export function registerOrders(on: On, fail: Fail, line: Line): void {
     }
 
     return { data: tally }
+  })
+
+  registerStatuses(on, fail, line)
+}
+
+/* ----------------------------------------------------------------------------- statuses ----- */
+
+const settings: Record<string, unknown> = {
+  'orders.number.prefix': '',
+  'orders.number.start': 1000,
+  'orders.number.pad': 0,
+  'orders.initial_status': null,
+  'orders.initial_status_awaiting_payment': null,
+}
+
+const LANGUAGES = ['en', 'ru']
+
+const ordersIn = (status: number) => orders.filter((one) => one.status === status).length
+const alive = () => statuses.filter((one) => !one.deleted)
+const liveGroups = () => publics.filter((one) => !one.deleted)
+const groupAlive = (id: number) => liveGroups().some((one) => one.id === id)
+
+/** The statuses new orders come into: the settings', else the first two of the first group. */
+function initial(): number[] {
+  const usable = alive().filter((one) => one.active && groupAlive(one.public))
+  const chosen = (key: string) => usable.find((one) => one.id === Number(settings[key]))?.id ?? null
+  const first = usable.filter((one) => one.public === usable[0]?.public)
+
+  return [
+    ...new Set(
+      [
+        chosen('orders.initial_status') ?? first[0]?.id,
+        chosen('orders.initial_status_awaiting_payment') ?? first[1]?.id ?? first[0]?.id,
+      ].filter((id): id is number => id !== undefined),
+    ),
+  ]
+}
+
+/** Why an active stage may not leave its group — deleted, switched off, or moved out. */
+function leaving(status: StatusRecord, gone: boolean): string | null {
+  if (gone && initial().includes(status.id)) return 'initial'
+
+  const others = alive().filter((one) => one.active && one.id !== status.id)
+
+  if (gone && others.length === 0) return 'last_active'
+  if (others.some((one) => one.public === status.public)) return null
+
+  const inGroup = statuses.filter((one) => one.public === status.public)
+
+  return inGroup.some((one) => ordersIn(one.id) > 0) ? 'last_active' : null
+}
+
+function words(value: unknown): Record<string, string> {
+  if (!value || typeof value !== 'object') return {}
+
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>).filter(
+      (entry): entry is [string, string] => typeof entry[1] === 'string' && entry[1].trim() !== '',
+    ),
+  )
+}
+
+function localized(fill: (locale: string) => string): Record<string, string> {
+  return Object.fromEntries(LANGUAGES.map((locale) => [locale, fill(locale)]))
+}
+
+function board(locale: string, line: Line) {
+  const stage = (status: StatusRecord) => ({
+    id: status.id,
+    public_status_id: status.public,
+    name: status.names ?? localized((one) => stageName(status, one, line)),
+    label: stageName(status, locale, line),
+    color: status.color,
+    milestone: status.milestone,
+    active: status.active,
+    deleted: status.deleted,
+    orders: ordersIn(status.id),
+  })
+  const group = (one: PublicRecord) => ({
+    id: one.id,
+    code: one.code,
+    name: one.names ?? localized((code) => groupName(one, code, line)),
+    description:
+      one.descriptions ??
+      localized((code) => line(code, 'webx-orders', `statuses.public.${one.code}.description`)),
+    label: groupName(one, locale, line),
+    deleted: one.deleted ?? false,
+  })
+
+  return {
+    data: {
+      groups: liveGroups().map((one) => {
+        const stages = alive()
+          .filter((status) => status.public === one.id)
+          .map(stage)
+
+        return {
+          ...group(one),
+          statuses: stages,
+          orders: stages.reduce((sum, status) => sum + status.orders, 0),
+        }
+      }),
+      deleted: {
+        groups: publics
+          .filter((one) => one.deleted)
+          .map((one) => ({ ...group(one), statuses: [] })),
+        statuses: statuses
+          .filter((one) => one.deleted || !groupAlive(one.public))
+          .map((one) => {
+            const where = publics.find((candidate) => candidate.id === one.public) as PublicRecord
+
+            return {
+              ...stage(one),
+              public: {
+                id: where.id,
+                name: groupName(where, locale, line),
+                deleted: where.deleted ?? false,
+              },
+            }
+          }),
+      },
+      initial: initial(),
+      colors: (['neutral', 'info', 'success', 'warning', 'danger', 'accent'] as Color[]).map(
+        (value) => ({ value, label: line(locale, 'webx-orders', `module.colors.${value}`) }),
+      ),
+      milestones: (['paid', 'received', 'cancelled'] as Milestone[]).map((value) => ({
+        value,
+        label: line(locale, 'webx-orders', `module.milestones.${value}`),
+      })),
+    },
+  }
+}
+
+interface Move {
+  id: number
+  from: number
+  to: number
+  orders: number
+}
+
+function said(
+  locale: string,
+  line: Line,
+  change: 'delete' | 'delete-public' | 'save' | 'arrange',
+  plan: {
+    refusal: string | null
+    id?: number
+    orders?: number
+    rebound?: Move[]
+    active?: number[]
+  },
+) {
+  const word = (key: string, values: Record<string, string | number> = {}) =>
+    Object.entries(values).reduce(
+      (text, [name, value]) => text.replaceAll(`:${name}`, String(value)),
+      line(locale, 'webx-orders', `panel.statuses.${key}`),
+    )
+  const status = (id: number) => statuses.find((one) => one.id === id) as StatusRecord
+  const group = (id: number) => publics.find((one) => one.id === id) as PublicRecord
+  const rebound = (plan.rebound ?? []).map((move) => ({
+    ...move,
+    name: stageName(status(move.id), locale, line),
+    from_name: groupName(group(move.from), locale, line),
+    to_name: groupName(group(move.to), locale, line),
+  }))
+  const lines: string[] = []
+  const own = change !== 'delete-public' && plan.id ? status(plan.id) : null
+
+  if (change === 'delete' && own) {
+    lines.push(
+      word('delete-orders', { status: stageName(own, locale, line), count: plan.orders ?? 0 }),
+    )
+    lines.push(word('delete-stay', { public: groupName(group(own.public), locale, line) }))
+    lines.push(word('delete-restore'))
+  }
+
+  if (change === 'delete-public' && plan.id && !plan.refusal)
+    lines.push(word('delete-public-stay', { public: groupName(group(plan.id), locale, line) }))
+
+  for (const move of rebound)
+    lines.push(
+      word('rebind', {
+        status: move.name,
+        from: move.from_name,
+        to: move.to_name,
+        count: move.orders,
+      }),
+    )
+
+  if (rebound.length > 0 || change === 'delete') lines.push(word('no-messages'))
+
+  const publicName =
+    change === 'delete-public' && plan.id
+      ? groupName(group(plan.id), locale, line)
+      : own
+        ? groupName(group(own.public), locale, line)
+        : ''
+
+  return {
+    refusal: plan.refusal,
+    message: plan.refusal ? word(`refusals.${plan.refusal}`, { public: publicName }) : null,
+    orders: plan.orders ?? 0,
+    rebound,
+    active: (plan.active ?? []).map((id) => ({ id, name: stageName(status(id), locale, line) })),
+    lines,
+  }
+}
+
+function registerStatuses(on: On, fail: Fail, line: Line): void {
+  const refuse = (message: string | null) =>
+    fail(422, message ?? 'Refused.', undefined, { status: [message ?? 'Refused.'] })
+  const dry = (value: unknown) => value === true || value === 1 || value === '1' || value === 'true'
+  const stageOf = (id: string) => {
+    const found = statuses.find((one) => one.id === Number(id))
+
+    if (!found) throw fail(404, 'No such status.')
+
+    return found
+  }
+  const groupOf = (id: string | number) => {
+    const found = publics.find((one) => one.id === Number(id))
+
+    if (!found) throw fail(404, 'No such status.')
+
+    return found
+  }
+  const named = (body: Record<string, unknown>) => {
+    const name = words(body.name)
+
+    if (!name.en)
+      throw fail(422, 'The name field is required.', undefined, {
+        'name.en': ['The name field is required.'],
+      })
+
+    return name
+  }
+
+  on('GET', '/orders/statuses', ({ locale }) => board(locale, line))
+
+  on('POST', '/orders/statuses/public', ({ body, locale }) => {
+    const code = String(body.code ?? '')
+      .trim()
+      .toLowerCase()
+
+    if (!/^[a-z][a-z0-9_]*$/.test(code) || publics.some((one) => one.code === code))
+      throw fail(422, 'The code is not right.', undefined, {
+        code: [line(locale, 'webx-orders', 'panel.statuses.errors.code-taken')],
+      })
+
+    publics.push({
+      id: Math.max(...publics.map((one) => one.id)) + 1,
+      code,
+      channels: [],
+      names: named(body),
+      descriptions: words(body.description),
+    })
+
+    return board(locale, line)
+  })
+
+  on('PUT', '/orders/statuses/public/(\\d+)', ({ params, body, locale }) => {
+    const group = groupOf(params[0])
+
+    group.names = named(body)
+    group.descriptions = words(body.description)
+    if (typeof body.code === 'string' && body.code.trim() !== '') group.code = body.code.trim()
+
+    return board(locale, line)
+  })
+
+  on('DELETE', '/orders/statuses/public/(\\d+)', ({ params, query, locale }) => {
+    const group = groupOf(params[0])
+    const moveTo = query.get('move_to') ? groupOf(query.get('move_to') as string) : null
+    const living = alive().filter((one) => one.public === group.id)
+    const plan = {
+      id: group.id,
+      refusal: living.length > 0 && !moveTo ? 'has_active' : null,
+      orders: living.reduce((sum, one) => sum + ordersIn(one.id), 0),
+      active: living.map((one) => one.id),
+      rebound: moveTo
+        ? living.map((one) => ({
+            id: one.id,
+            from: group.id,
+            to: moveTo.id,
+            orders: ordersIn(one.id),
+          }))
+        : [],
+    }
+
+    if (dry(query.get('dry_run'))) return { data: said(locale, line, 'delete-public', plan) }
+    if (plan.refusal) throw refuse(said(locale, line, 'delete-public', plan).message)
+
+    for (const one of living) {
+      one.public = moveTo?.id ?? one.public
+      statuses.splice(statuses.indexOf(one), 1)
+      statuses.push(one)
+    }
+    group.deleted = true
+
+    return board(locale, line)
+  })
+
+  on('POST', '/orders/statuses/public/(\\d+)/restore', ({ params, locale }) => {
+    groupOf(params[0]).deleted = false
+
+    return board(locale, line)
+  })
+
+  on('POST', '/orders/statuses/internal', ({ body, locale }) => {
+    statuses.push({
+      id: Math.max(...statuses.map((one) => one.id)) + 1,
+      key: '',
+      public: groupOf(Number(body.public_status_id)).id,
+      color: (body.color as Color) ?? 'neutral',
+      milestone: (body.sets_milestone as Milestone | null) ?? null,
+      active: body.is_active !== false,
+      deleted: false,
+      names: named(body),
+    })
+
+    return board(locale, line)
+  })
+
+  on('PUT', '/orders/statuses/internal/(\\d+)', ({ params, body, locale }) => {
+    const status = stageOf(params[0])
+    const to = groupOf(Number(body.public_status_id))
+    const active = body.is_active !== false
+    const rebound =
+      to.id !== status.public
+        ? [{ id: status.id, from: status.public, to: to.id, orders: ordersIn(status.id) }]
+        : []
+    const refusal =
+      to.deleted && !status.deleted
+        ? 'public_deleted'
+        : !status.deleted && status.active && !active
+          ? leaving(status, true)
+          : rebound.length > 0 && !status.deleted && status.active
+            ? leaving(status, false)
+            : null
+    const plan = { id: status.id, refusal, orders: ordersIn(status.id), rebound }
+
+    if (dry(body.dry_run)) return { data: said(locale, line, 'save', plan) }
+    if (refusal) throw refuse(said(locale, line, 'save', plan).message)
+
+    status.names = named(body)
+    status.color = (body.color as Color) ?? status.color
+    status.milestone = (body.sets_milestone as Milestone | null) ?? null
+    status.active = active
+
+    if (rebound.length > 0) {
+      status.public = to.id
+      statuses.splice(statuses.indexOf(status), 1)
+      statuses.push(status)
+    }
+
+    return board(locale, line)
+  })
+
+  on('DELETE', '/orders/statuses/internal/(\\d+)', ({ params, query, locale }) => {
+    const status = stageOf(params[0])
+    const plan = {
+      id: status.id,
+      refusal: status.active && !status.deleted ? leaving(status, true) : null,
+      orders: ordersIn(status.id),
+    }
+
+    if (dry(query.get('dry_run'))) return { data: said(locale, line, 'delete', plan) }
+    if (plan.refusal) throw refuse(said(locale, line, 'delete', plan).message)
+
+    status.deleted = true
+
+    return board(locale, line)
+  })
+
+  on('POST', '/orders/statuses/internal/(\\d+)/restore', ({ params, locale }) => {
+    const status = stageOf(params[0])
+
+    if (!groupAlive(status.public))
+      throw refuse(said(locale, line, 'save', { id: status.id, refusal: 'public_deleted' }).message)
+
+    status.deleted = false
+
+    return board(locale, line)
+  })
+
+  on('PUT', '/orders/statuses/arrange', ({ body, locale }) => {
+    const order = (Array.isArray(body.publics) ? body.publics : []).map(Number)
+    const groups = (body.groups ?? {}) as Record<string, number[]>
+    const rebound: Move[] = []
+
+    for (const [group, ids] of Object.entries(groups))
+      for (const id of ids) {
+        const status = stageOf(String(id))
+
+        if (status.public !== Number(group))
+          rebound.push({
+            id: status.id,
+            from: status.public,
+            to: Number(group),
+            orders: ordersIn(status.id),
+          })
+      }
+
+    // A group that loses its stages keeps an active one while orders stand in it.
+    const after = (id: number) =>
+      Object.entries(groups).find(([, ids]) => ids.map(Number).includes(id))?.[0]
+    const emptied = [...new Set(rebound.map((move) => move.from))].some((group) => {
+      const stages = statuses.filter((one) =>
+        one.deleted ? one.public === group : Number(after(one.id)) === group,
+      )
+
+      return (
+        !stages.some((one) => one.active && !one.deleted) &&
+        stages.some((one) => ordersIn(one.id) > 0)
+      )
+    })
+    const plan = {
+      refusal: emptied ? 'last_active' : null,
+      rebound,
+      orders: rebound.reduce((sum, move) => sum + move.orders, 0),
+    }
+
+    if (dry(body.dry_run)) return { data: said(locale, line, 'arrange', plan) }
+    if (plan.refusal) throw refuse(said(locale, line, 'arrange', plan).message)
+
+    publics.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id))
+    const placed = order.flatMap((group) =>
+      (groups[group] ?? []).map((id) => {
+        const status = stageOf(String(id))
+
+        status.public = group
+
+        return status
+      }),
+    )
+    const rest = statuses.filter((one) => !placed.includes(one))
+    statuses.splice(0, statuses.length, ...placed, ...rest)
+
+    return board(locale, line)
+  })
+
+  const settingsAnswer = () => ({
+    stored: true,
+    values: { ...settings },
+    next_id: Math.max(...orders.map((one) => one.id)) + 1,
+    sample: '',
+  })
+
+  on('GET', '/orders/settings', () => ({ data: settingsAnswer() }))
+
+  on('PUT', '/orders/settings', ({ body, locale }) => {
+    const values = (body.values ?? {}) as Record<string, unknown>
+    const id = settingsAnswer().next_id
+    const start = values['orders.number.start'] ?? settings['orders.number.start']
+    const pad = values['orders.number.pad'] ?? settings['orders.number.pad']
+    const prefix = values['orders.number.prefix'] ?? settings['orders.number.prefix']
+    const sample =
+      String(prefix ?? '') + String(Number(start ?? 1000) + id).padStart(Number(pad ?? 0), '0')
+
+    if (orders.some((one) => one.number === sample)) {
+      const words = line(locale, 'webx-orders', 'screen.number-taken').replace(':number', sample)
+
+      throw fail(422, words, undefined, { 'orders.number.prefix': [words] })
+    }
+
+    Object.assign(settings, values)
+
+    return { data: settingsAnswer() }
   })
 }

@@ -226,14 +226,21 @@ final class Orders
      * milestone sets it with the source `status#<id>`; when the order may not take it, the move
      * is refused whole. The same status is silence. A dry run answers the same and writes nothing.
      *
+     * A status that cancels the order is a cancellation: the panel and an agent give its reason
+     * in the note, as they do to `cancel()` (§9.1), and a dry run asks for it too.
+     *
      * @throws StatusMoveRefused
+     * @throws ValidationException no note to a status that cancels, from the panel or an agent
      */
     public function moveTo(Order $order, OrderStatus $to, string $source, ?string $note = null, bool $dryRun = false): StatusMove
     {
         $note = self::text($note, 1000);
 
         if ($dryRun) {
-            return $this->plan(Order::query()->findOrFail($order->id), $to, true);
+            $move = $this->plan(Order::query()->findOrFail($order->id), $to, true);
+            $this->reasonOf($move, $source, $note);
+
+            return $move;
         }
 
         $adminId = $this->adminId($source);
@@ -244,6 +251,8 @@ final class Orders
             if ($move->refusal !== null) {
                 throw new StatusMoveRefused($move);
             }
+
+            $this->reasonOf($move, $source, $note);
 
             if (! $move->moved) {
                 return $move;
@@ -1066,6 +1075,21 @@ final class Orders
             $refusal,
             $dryRun,
         );
+    }
+
+    /**
+     * A move that would cancel the order wants its reason under `note` from the panel and an
+     * agent, as `cancel()` does under `reason`; a move refused, or one that sets nothing, does not.
+     *
+     * @throws ValidationException
+     */
+    private function reasonOf(StatusMove $move, string $source, ?string $note): void
+    {
+        if ($move->refusal !== null || $move->milestone !== Milestone::Cancelled || ! in_array($source, ['panel', 'mcp'], true)) {
+            return;
+        }
+
+        $this->validation->make(['note' => $note], ['note' => ['required', 'string']])->validate();
     }
 
     /** A line of the history that is not a move: a note, a failed payment, a block, details. */
