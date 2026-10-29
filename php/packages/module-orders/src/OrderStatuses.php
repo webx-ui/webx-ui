@@ -8,7 +8,6 @@ use Illuminate\Contracts\Validation\Factory as Validation;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
-use LogicException;
 use WebxUi\Localization\Locales;
 use WebxUi\Orders\Models\Order;
 use WebxUi\Orders\Models\OrderStatus;
@@ -370,17 +369,7 @@ final readonly class OrderStatuses
      */
     public function initial(): array
     {
-        $ids = [];
-
-        foreach ([false, true] as $awaitPayment) {
-            try {
-                $ids[] = $this->initial->for($awaitPayment)->id;
-            } catch (LogicException) {
-                // No active status at all: nothing is initial, and nothing more can be taken away.
-            }
-        }
-
-        return array_values(array_unique($ids));
+        return $this->initial->ids();
     }
 
     /**

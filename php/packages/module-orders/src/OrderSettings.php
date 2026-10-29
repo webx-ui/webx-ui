@@ -121,6 +121,23 @@ final readonly class OrderSettings
         }
     }
 
+    /**
+     * The settings as the screen and the agent read them: whether the site keeps them, the values,
+     * and the trial number of the next order.
+     *
+     * @return array{stored: bool, values: array<string, mixed>, next_id: int, sample: string}
+     */
+    public function describe(): array
+    {
+        return [
+            // Without the settings module there is nowhere to keep them: the site's config rules.
+            'stored' => $this->stored() !== null,
+            'values' => $this->all(),
+            'next_id' => self::nextId(),
+            'sample' => $this->sample(),
+        ];
+    }
+
     /** The id the next order would get, as far as the table tells: one past the last. */
     public static function nextId(): int
     {

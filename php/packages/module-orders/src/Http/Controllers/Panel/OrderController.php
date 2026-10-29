@@ -49,26 +49,7 @@ final readonly class OrderController
 
     public function index(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'view' => ['nullable', Rule::in(OrderList::VIEWS)],
-            'search' => ['nullable', 'string', 'max:255'],
-            'status' => ['nullable', 'string', 'max:255'],
-            'public' => ['nullable', 'string', 'max:255'],
-            'paid' => ['nullable', 'boolean'],
-            'received' => ['nullable', 'boolean'],
-            'cancelled' => ['nullable', 'boolean'],
-            'refunded' => ['nullable', 'boolean'],
-            'awaiting' => ['nullable', 'boolean'],
-            'failed' => ['nullable', 'boolean'],
-            'visitor' => ['nullable', Rule::in(['guest', 'visitor'])],
-            'delivery' => ['nullable', 'string', 'max:64'],
-            'payment' => ['nullable', 'string', 'max:64'],
-            'from' => ['nullable', 'date_format:Y-m-d'],
-            'to' => ['nullable', 'date_format:Y-m-d'],
-            'sort' => ['nullable', 'string', 'max:32'],
-            'page' => ['nullable', 'integer', 'min:1'],
-            'per_page' => ['nullable', 'integer', 'min:1', 'max:200'],
-        ]);
+        $validated = $request->validate(OrderList::rules());
 
         $locale = app()->getLocale();
         $statuses = new StatusChoices;

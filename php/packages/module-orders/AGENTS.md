@@ -7,10 +7,9 @@ on no live record. It moves along two axes: **milestones** — fixed facts the s
 neighbours rely on (placed, paid, received, cancelled…) — and **statuses**, the shop's own stages,
 which the buyer sees grouped into public ones.
 
-This release holds the tables, the models, the default statuses, `Orders::place()`, the
-milestones and statuses, cancelling and refunds through the service, the panel's list and card
-of an order, and the screens of the statuses and the settings; the MCP tools and the checkout
-come next.
+This release holds the tables, the default statuses, `Orders::place()`, the milestones and
+statuses, cancelling and refunds, the panel's list, card, statuses and settings, and the MCP
+tools; the checkout comes next.
 
 ## What it owns
 
@@ -56,14 +55,13 @@ come next.
   `at`: `OrderPlaced`, `OrderPaid`, `OrderReceived`, `OrderCancelled` (`wasPaid`,
   `tendersReturned`), `OrderRefunded` (`RefundData`, `full`), `OrderPaymentFailed`, `OrderStatusChanged`, `OrderPublicStatusChanged` (only
   when the public one changes), `OrderBlockUpdated`, `OrderDetailsChanged` (`fields`, `before`).
-- **Journal** type `orders.order` of the panel's history: what `updateDetails()` changed.
-- **Blocks** `Blocks\OrderBlocks` — `register(new BlockDefinition('delivery'|'payment', module,
-validate, summary))` in your `boot()`; an unregistered block is refused.
+- **Journal** type `orders.order` of the panel's history: what `updateDetails()` changed. **Blocks**
+  `Blocks\OrderBlocks` — `register(new BlockDefinition('delivery'|'payment', module, validate, summary))`
+  in your `boot()`; an unregistered block is refused.
 - **Config** `webx-orders`: `number` (`prefix`, `start` = 1000, `pad`), `initial_status`,
   `initial_status_awaiting_payment` (ids; null — «New» and «Awaiting payment» of the default set).
   Read through `OrderSettings`: the keys `orders.number.*`, `orders.initial_status*` saved by the
   screen `orders.settings` in `module-settings` first, the config for the rest.
-
 - **Tables** (all `order_*` but `orders`):
   - `orders` (`WebxUi\Orders\Models\Order`) — money in minor units of `currency`, contacts with
     the first and the last name apart, `recipient`, `delivery` and `payment` blocks (json), and a
@@ -91,7 +89,13 @@ validate, summary))` in your `boot()`; an unregistered block is refused.
   `header-actions`, `tabs`, `summary`; its fields are `customer.*`, `recipient.*`, `comment`,
   `manager_note`. The ready-made role `orders` («Order manager»: view, manage, `users.view`).
   `statuses` (the board, `arrange`, `public/{id}`, `internal/{id}`, `…/restore`) and `settings`
-  (with the trial number) — under `orders.statuses`.
+  (with the trial number) — under `orders.statuses`. The selection is `Panel\StatusBatch`.
+- **MCP** (§12, `Mcp\OrdersTools`, `Mcp\StatusTools` on `OrdersModule`): `orders_list|get|history|summary`,
+  `orders_set_status` (`order` or `numbers` ≤ 200), `orders_mark|cancel|refund|update|note`,
+  `orders_statuses_list|save|delete|restore|reorder`, `orders_public_statuses_save|delete|restore|reorder`,
+  `orders_settings_get|set`; resource `orders://catalog`. Source `mcp`; money in minor units with
+  `*_formatted`; a dry run is the panel dialog's answer (`Consequences`, `StatusBoard`,
+  `StatusBatch`), rehearsed and rolled back where the service has none (`update`, public save).
 
 ### Permissions
 
@@ -102,7 +106,8 @@ validate, summary))` in your `boot()`; an unregistered block is refused.
 | `orders.refund`   | recording money given back                                   |
 | `orders.statuses` | the screens of statuses and the settings of the section      |
 
-The routes ask for them with `cms.can` (`AccessCoverageTest`); the MCP tools come next.
+Routes ask with `cms.can`, tools with `permission:`: reading — any of the first three; `orders:write`
+tools — `orders.manage`, `orders_refund` — `orders.refund`, statuses and settings — `orders.statuses`.
 
 ## Change it without forking
 
@@ -131,9 +136,10 @@ The routes ask for them with `cms.can` (`AccessCoverageTest`); the MCP tools com
 - `Panel/PanelTest`, `Panel/ScreenTest`, `Panel/AccessCoverageTest`, `Panel/BoundariesTest` (the
   panel never writes an order itself), `Panel/PerformanceTest` (the list's budget),
   `Panel/StatusesTest`, `Panel/SettingsTest`, `Panel/StatusReasonTest`, `CancelByStatusTest`.
+- `Mcp/McpTest` (parity with the panel, dry runs write nothing), `Mcp/PerformanceTest`,
+  `Mcp/AccessCoverageTest`; `php artisan webx:mcp-tools --module=orders` lists 21 tools.
 - `PlaceTest`, `MilestonesTest`, `StatusMoveTest`, `DetailsTest`, `RefundTest`, `PerformanceTest` (the budget of
   `place()`), and `CartLockTest`, `MilestoneRaceTest` against a real server: `WEBX_TEST_MYSQL_URL=mariadb://user:password@host:3306/db vendor/bin/phpunit …`.
-
 - `php artisan migrate` and `php artisan migrate:rollback` — the tables come and go.
 - After `migrate`, `order_public_statuses` holds five rows and `order_statuses` eight, each
   `name` with a key for every language of the site (`php artisan tinker`,
@@ -141,5 +147,4 @@ The routes ask for them with `cms.can` (`AccessCoverageTest`); the MCP tools com
 
 ## Read more
 
-- `README.md` beside this file.
-- Spec: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_ORDERS.md
+- `README.md` beside this file; spec: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_ORDERS.md

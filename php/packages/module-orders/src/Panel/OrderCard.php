@@ -50,6 +50,18 @@ final readonly class OrderCard
     }
 
     /**
+     * The timeline alone (§8) — what the card's tab «History» draws, for the agent's `orders_history`.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function history(Order $order, StatusChoices $statuses, string $locale, mixed $reader): array
+    {
+        $order->loadMissing(['milestones', 'refunds', 'history']);
+
+        return $this->timeline($order, $statuses, $locale, $reader, fn (int $minor): string => $this->money->format($minor, $order->currency));
+    }
+
+    /**
      * @return array<string, string|null>
      */
     public static function values(Order $order): array
@@ -311,6 +323,7 @@ final readonly class OrderCard
                 'at' => $refund->created_at?->toAtomString(),
                 ...$who($refund->admin_id, $refund->source),
                 'amount' => $money($refund->amount),
+                'amount_minor' => $refund->amount,
                 'units' => array_sum(array_map(static fn (array $item): int => (int) $item['qty'], $refund->items)),
                 'reference' => $refund->reference,
                 'note' => $refund->reason,

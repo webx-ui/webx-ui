@@ -127,11 +127,23 @@ without it, the config `webx-orders` decides.
 A status that cancels the order is a cancellation: moved there from the panel or by an agent, the
 order needs a reason, given as the note.
 
+## For an agent
+
+The same through the panel's MCP server: `orders_list`, `orders_get`, `orders_history` and
+`orders_summary` read; `orders_set_status` (one order, or up to 200 by `numbers`),
+`orders_mark`, `orders_cancel`, `orders_refund`, `orders_update` and `orders_note` work an
+order; `orders_statuses_*`, `orders_public_statuses_*` and `orders_settings_get|set` are the two
+screens. Each is a call of `Orders` or `OrderStatuses` with the source `mcp`, behind the
+permission the panel asks for, and `dry_run: true` answers what the panel's dialog shows — the
+batch included — without changing anything. `orders://catalog` lists the milestones, the palette,
+both levels of the statuses, the blocks and the settings. `php artisan webx:mcp-tools
+--module=orders` shows them all.
+
 ## Status
 
 This release has the tables, the placing of an order, its milestones and statuses, cancelling and
-refunds, the list and the card in the panel, and the screens of the statuses and the settings. The
-MCP tools, the buyer's page and the checkout come in the next ones; the spec is
+refunds, the list and the card in the panel, the screens of the statuses and the settings, and the
+MCP tools. The buyer's page and the checkout come in the next ones; the spec is
 [`WEBX_UI_MODULE_ORDERS.md`](https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_ORDERS.md).
 
 ## License

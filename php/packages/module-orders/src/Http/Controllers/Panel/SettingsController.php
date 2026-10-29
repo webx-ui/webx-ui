@@ -27,7 +27,7 @@ final readonly class SettingsController
 
     public function show(): JsonResponse
     {
-        return ApiResponse::data($this->answer());
+        return ApiResponse::data($this->settings->describe());
     }
 
     /** `dry_run` checks the values and answers the trial number; nothing is kept. */
@@ -48,25 +48,11 @@ final readonly class SettingsController
         if ($request->boolean('dry_run')) {
             $this->settings->check($valid);
 
-            return ApiResponse::data([...$this->answer(), 'sample' => $this->settings->sample($valid)]);
+            return ApiResponse::data([...$this->settings->describe(), 'sample' => $this->settings->sample($valid)]);
         }
 
         $this->settings->store($valid);
 
-        return ApiResponse::data($this->answer());
-    }
-
-    /**
-     * @return array{stored: bool, values: array<string, mixed>, next_id: int, sample: string}
-     */
-    private function answer(): array
-    {
-        return [
-            // Without the settings module there is nowhere to keep them: the site's config rules.
-            'stored' => $this->settings->stored() !== null,
-            'values' => $this->settings->all(),
-            'next_id' => OrderSettings::nextId(),
-            'sample' => $this->settings->sample(),
-        ];
+        return ApiResponse::data($this->settings->describe());
     }
 }

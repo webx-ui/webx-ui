@@ -37,7 +37,7 @@ class OrdersServiceProvider extends ServiceProvider
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-orders');
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
 
-        $this->app->make(ModuleRegistry::class)->register(new OrdersModule);
+        $this->app->make(ModuleRegistry::class)->register($this->app->make(OrdersModule::class));
         $this->registerHistory();
         // The card of an order (§11.3): neighbours add their tabs to it with a patch of `tabs`.
         $screens = $this->app->make(ScreenRegistry::class);

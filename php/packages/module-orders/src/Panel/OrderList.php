@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
+use Illuminate\Validation\Rule;
 use WebxUi\Cart\Money;
 use WebxUi\Orders\Blocks\OrderBlocks;
 use WebxUi\Orders\InitialStatuses;
@@ -35,6 +36,35 @@ final class OrderList
         private readonly OrderBlocks $blocks,
         private readonly Money $money,
     ) {}
+
+    /**
+     * The shape of the filters, as the panel and the agent send them — one set of rules for both.
+     *
+     * @return array<string, list<mixed>>
+     */
+    public static function rules(): array
+    {
+        return [
+            'view' => ['nullable', Rule::in(self::VIEWS)],
+            'search' => ['nullable', 'string', 'max:255'],
+            'status' => ['nullable', 'string', 'max:255'],
+            'public' => ['nullable', 'string', 'max:255'],
+            'paid' => ['nullable', 'boolean'],
+            'received' => ['nullable', 'boolean'],
+            'cancelled' => ['nullable', 'boolean'],
+            'refunded' => ['nullable', 'boolean'],
+            'awaiting' => ['nullable', 'boolean'],
+            'failed' => ['nullable', 'boolean'],
+            'visitor' => ['nullable', Rule::in(['guest', 'visitor'])],
+            'delivery' => ['nullable', 'string', 'max:64'],
+            'payment' => ['nullable', 'string', 'max:64'],
+            'from' => ['nullable', 'date_format:Y-m-d'],
+            'to' => ['nullable', 'date_format:Y-m-d'],
+            'sort' => ['nullable', 'string', 'max:32'],
+            'page' => ['nullable', 'integer', 'min:1'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:200'],
+        ];
+    }
 
     /**
      * @param  array<string, mixed>  $filters
