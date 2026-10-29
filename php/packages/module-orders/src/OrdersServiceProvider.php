@@ -45,6 +45,7 @@ class OrdersServiceProvider extends ServiceProvider
 
         $this->app->singleton(OrderBlocks::class);
         $this->app->singleton(Orders::class);
+        Checkout::bind($this->app);
 
         // The events of an order for the channels of `webx-ui/module-notifications`, when it is
         // there (§10); without it the module stands, and `webx:doctor` says nobody is told.
@@ -104,6 +105,7 @@ class OrdersServiceProvider extends ServiceProvider
 
         if ($checkout) {
             Checkout::register($this->app);
+            $this->loadRoutesFrom(__DIR__.'/../routes/checkout.php');
         }
 
         if (! $this->app->runningInConsole()) {

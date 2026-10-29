@@ -3,10 +3,61 @@
 declare(strict_types=1);
 
 /*
- * The checkout (spec §33). The words of the page, its steps and the «Thanks» come with their
- * stages; the tab «Checkout» of the settings is here now.
+ * The checkout (spec §33): the page, its steps, the column of the totals, and the tab «Checkout»
+ * of the settings.
  */
 return [
+    'page' => [
+        'title' => 'Commande',
+        'empty' => 'Votre panier est vide.',
+        'shopping' => 'Retour à la boutique',
+        'open-cart' => 'Ouvrir le panier',
+    ],
+    'steps' => [
+        'contacts' => 'Coordonnées',
+        'comment' => 'Commentaire',
+        'edit' => 'Modifier',
+        'save' => 'Enregistrer',
+        'signed-in' => 'Vous êtes connecté en tant que :name',
+    ],
+    'fields' => [
+        'first-name' => 'Prénom',
+        'last-name' => 'Nom',
+        'phone' => 'Téléphone',
+        'phone-hint' => 'Par exemple, +800 1234 5678',
+        'email' => 'E-mail',
+        'recipient' => 'Le destinataire est une autre personne',
+        'recipient-legend' => 'Destinataire',
+        'recipient-first-name' => 'Prénom du destinataire',
+        'recipient-last-name' => 'Nom du destinataire',
+        'recipient-phone' => 'Téléphone du destinataire',
+        'comment' => 'Commentaire sur la commande',
+    ],
+    'summary' => [
+        'title' => 'Votre commande',
+        'units' => ':count article pour|:count articles pour',
+        'discount' => 'Remise',
+        'payable' => 'À payer',
+        'lines' => 'Contenu de la commande',
+        'price-down' => 'moins cher maintenant',
+        'price-up' => 'plus cher maintenant',
+        'place' => 'Valider la commande',
+    ],
+    'terms' => [
+        'agree' => 'J\'accepte les conditions',
+        'notice' => 'En cliquant sur le bouton, vous acceptez les conditions',
+        'terms' => 'Conditions de vente',
+        'privacy' => 'Politique de confidentialité',
+    ],
+    'errors' => [
+        'required' => 'Remplissez « :field ».',
+        'phone-or-email' => 'Indiquez un téléphone ou un e-mail.',
+        'phone' => 'Un téléphone, c\'est un + et des chiffres, par exemple +800 1234 5678.',
+        'email' => 'Vérifiez l\'e-mail.',
+        'terms' => 'Acceptez les conditions pour passer la commande.',
+        'payable-changed' => 'Le montant a changé : il était de :was, il est maintenant de :now. Vérifiez la commande et validez-la à nouveau.',
+        'not-orderable' => 'Certains articles du panier ne peuvent pas être commandés. Ouvrez le panier.',
+    ],
     'settings' => [
         'tab' => 'Commande',
         'fields' => 'Coordonnées de l\'acheteur',

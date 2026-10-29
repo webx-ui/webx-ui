@@ -52,7 +52,7 @@ final readonly class OrderLinks
     }
 
     /** Whether an address in this language carries it in front — the rule of `OneSpellingPerAddress`. */
-    private function prefixed(string $locale): bool
+    public function prefixed(string $locale): bool
     {
         if ((string) $this->config->get('webx-localization.strategy', 'prefix') !== 'prefix' || ! $this->locales->has($locale)) {
             return false;

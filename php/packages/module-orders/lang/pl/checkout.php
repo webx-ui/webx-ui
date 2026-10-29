@@ -3,10 +3,61 @@
 declare(strict_types=1);
 
 /*
- * The checkout (spec §33). The words of the page, its steps and the «Thanks» come with their
- * stages; the tab «Checkout» of the settings is here now.
+ * The checkout (spec §33): the page, its steps, the column of the totals, and the tab «Checkout»
+ * of the settings.
  */
 return [
+    'page' => [
+        'title' => 'Składanie zamówienia',
+        'empty' => 'Koszyk jest pusty.',
+        'shopping' => 'Wróć do sklepu',
+        'open-cart' => 'Otwórz koszyk',
+    ],
+    'steps' => [
+        'contacts' => 'Dane kontaktowe',
+        'comment' => 'Komentarz',
+        'edit' => 'Zmień',
+        'save' => 'Zapisz',
+        'signed-in' => 'Zalogowano jako :name',
+    ],
+    'fields' => [
+        'first-name' => 'Imię',
+        'last-name' => 'Nazwisko',
+        'phone' => 'Telefon',
+        'phone-hint' => 'Na przykład +800 1234 5678',
+        'email' => 'E-mail',
+        'recipient' => 'Odbiorcą jest inna osoba',
+        'recipient-legend' => 'Odbiorca',
+        'recipient-first-name' => 'Imię odbiorcy',
+        'recipient-last-name' => 'Nazwisko odbiorcy',
+        'recipient-phone' => 'Telefon odbiorcy',
+        'comment' => 'Komentarz do zamówienia',
+    ],
+    'summary' => [
+        'title' => 'Twoje zamówienie',
+        'units' => ':count produkt za|:count produkty za|:count produktów za',
+        'discount' => 'Rabat',
+        'payable' => 'Do zapłaty',
+        'lines' => 'Zawartość zamówienia',
+        'price-down' => 'teraz taniej',
+        'price-up' => 'teraz drożej',
+        'place' => 'Potwierdź zamówienie',
+    ],
+    'terms' => [
+        'agree' => 'Akceptuję warunki',
+        'notice' => 'Klikając przycisk, akceptujesz warunki',
+        'terms' => 'Warunki sprzedaży',
+        'privacy' => 'Polityka prywatności',
+    ],
+    'errors' => [
+        'required' => 'Wypełnij pole «:field».',
+        'phone-or-email' => 'Podaj telefon lub e-mail.',
+        'phone' => 'Telefon to + i cyfry, na przykład +800 1234 5678.',
+        'email' => 'Sprawdź e-mail.',
+        'terms' => 'Aby złożyć zamówienie, zaakceptuj warunki.',
+        'payable-changed' => 'Kwota się zmieniła: było :was, jest :now. Sprawdź zamówienie i potwierdź je ponownie.',
+        'not-orderable' => 'Niektórych produktów z koszyka nie można zamówić. Otwórz koszyk.',
+    ],
     'settings' => [
         'tab' => 'Składanie zamówienia',
         'fields' => 'Dane kontaktowe kupującego',

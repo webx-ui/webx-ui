@@ -9,6 +9,9 @@ use Illuminate\Contracts\Foundation\Application;
 use WebxUi\Cart\Events\CartsMerging;
 use WebxUi\Orders\Checkout\Console\PruneDraftsCommand;
 use WebxUi\Orders\Checkout\Models\CheckoutDraft;
+use WebxUi\Orders\Checkout\Steps\CheckoutSteps;
+use WebxUi\Orders\Checkout\Steps\CommentStep;
+use WebxUi\Orders\Checkout\Steps\ContactsStep;
 
 /**
  * The checkout inside `module-orders` (spec §19–§34, decisions 75–80): the switch, and what it
@@ -22,6 +25,25 @@ final class Checkout
     public static function enabled(): bool
     {
         return (bool) config('webx-orders.checkout.enabled', true);
+    }
+
+    /** The positions of the checkout's own steps (§20.2); delivery 200 and payment 300 are slots. */
+    public const int CONTACTS = 100;
+
+    public const int COMMENT = 900;
+
+    /** The registry of the steps and the context of a request: bound on every site, used only while it is on. */
+    public static function bind(Application $app): void
+    {
+        $app->singleton(CheckoutSteps::class, static function (Application $app): CheckoutSteps {
+            $steps = new CheckoutSteps;
+            $steps->register($app->make(ContactsStep::class), self::CONTACTS);
+            $steps->register($app->make(CommentStep::class), self::COMMENT);
+
+            return $steps;
+        });
+        // One count of the cart a request (§34).
+        $app->scoped(CheckoutContexts::class);
     }
 
     public static function register(Application $app): void

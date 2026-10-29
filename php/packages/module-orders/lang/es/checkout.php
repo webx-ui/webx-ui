@@ -3,10 +3,61 @@
 declare(strict_types=1);
 
 /*
- * The checkout (spec §33). The words of the page, its steps and the «Thanks» come with their
- * stages; the tab «Checkout» of the settings is here now.
+ * The checkout (spec §33): the page, its steps, the column of the totals, and the tab «Checkout»
+ * of the settings.
  */
 return [
+    'page' => [
+        'title' => 'Finalizar compra',
+        'empty' => 'Tu carrito está vacío.',
+        'shopping' => 'Volver a la tienda',
+        'open-cart' => 'Abrir el carrito',
+    ],
+    'steps' => [
+        'contacts' => 'Contacto',
+        'comment' => 'Comentario',
+        'edit' => 'Cambiar',
+        'save' => 'Guardar',
+        'signed-in' => 'Has iniciado sesión como :name',
+    ],
+    'fields' => [
+        'first-name' => 'Nombre',
+        'last-name' => 'Apellido',
+        'phone' => 'Teléfono',
+        'phone-hint' => 'Por ejemplo, +800 1234 5678',
+        'email' => 'Correo electrónico',
+        'recipient' => 'El destinatario es otra persona',
+        'recipient-legend' => 'Destinatario',
+        'recipient-first-name' => 'Nombre del destinatario',
+        'recipient-last-name' => 'Apellido del destinatario',
+        'recipient-phone' => 'Teléfono del destinatario',
+        'comment' => 'Comentario sobre el pedido',
+    ],
+    'summary' => [
+        'title' => 'Tu pedido',
+        'units' => ':count artículo por|:count artículos por',
+        'discount' => 'Descuento',
+        'payable' => 'A pagar',
+        'lines' => 'Contenido del pedido',
+        'price-down' => 'ahora más barato',
+        'price-up' => 'ahora más caro',
+        'place' => 'Confirmar el pedido',
+    ],
+    'terms' => [
+        'agree' => 'Acepto las condiciones',
+        'notice' => 'Al pulsar el botón aceptas las condiciones',
+        'terms' => 'Condiciones de venta',
+        'privacy' => 'Política de privacidad',
+    ],
+    'errors' => [
+        'required' => 'Rellena «:field».',
+        'phone-or-email' => 'Indica un teléfono o un correo electrónico.',
+        'phone' => 'Un teléfono es un + y cifras, por ejemplo +800 1234 5678.',
+        'email' => 'Revisa el correo electrónico.',
+        'terms' => 'Acepta las condiciones para hacer el pedido.',
+        'payable-changed' => 'El importe ha cambiado: era :was, ahora es :now. Revisa el pedido y confírmalo de nuevo.',
+        'not-orderable' => 'Algunos artículos del carrito no se pueden pedir. Abre el carrito.',
+    ],
     'settings' => [
         'tab' => 'Checkout',
         'fields' => 'Datos de contacto del comprador',

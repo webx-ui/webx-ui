@@ -3,10 +3,61 @@
 declare(strict_types=1);
 
 /*
- * The checkout (spec §33). The words of the page, its steps and the «Thanks» come with their
- * stages; the tab «Checkout» of the settings is here now.
+ * The checkout (spec §33): the page, its steps, the column of the totals, and the tab «Checkout»
+ * of the settings.
  */
 return [
+    'page' => [
+        'title' => 'Cassa',
+        'empty' => 'Il carrello è vuoto.',
+        'shopping' => 'Torna al negozio',
+        'open-cart' => 'Apri il carrello',
+    ],
+    'steps' => [
+        'contacts' => 'Contatti',
+        'comment' => 'Commento',
+        'edit' => 'Modifica',
+        'save' => 'Salva',
+        'signed-in' => 'Hai effettuato l\'accesso come :name',
+    ],
+    'fields' => [
+        'first-name' => 'Nome',
+        'last-name' => 'Cognome',
+        'phone' => 'Telefono',
+        'phone-hint' => 'Ad esempio, +800 1234 5678',
+        'email' => 'E-mail',
+        'recipient' => 'Il destinatario è un\'altra persona',
+        'recipient-legend' => 'Destinatario',
+        'recipient-first-name' => 'Nome del destinatario',
+        'recipient-last-name' => 'Cognome del destinatario',
+        'recipient-phone' => 'Telefono del destinatario',
+        'comment' => 'Commento all\'ordine',
+    ],
+    'summary' => [
+        'title' => 'Il tuo ordine',
+        'units' => ':count articolo per|:count articoli per',
+        'discount' => 'Sconto',
+        'payable' => 'Da pagare',
+        'lines' => 'Contenuto dell\'ordine',
+        'price-down' => 'ora costa meno',
+        'price-up' => 'ora costa di più',
+        'place' => 'Conferma l\'ordine',
+    ],
+    'terms' => [
+        'agree' => 'Accetto le condizioni',
+        'notice' => 'Premendo il pulsante accetti le condizioni',
+        'terms' => 'Condizioni di vendita',
+        'privacy' => 'Informativa sulla privacy',
+    ],
+    'errors' => [
+        'required' => 'Compila «:field».',
+        'phone-or-email' => 'Indica un telefono o un\'e-mail.',
+        'phone' => 'Un telefono è un + e delle cifre, ad esempio +800 1234 5678.',
+        'email' => 'Controlla l\'e-mail.',
+        'terms' => 'Accetta le condizioni per effettuare l\'ordine.',
+        'payable-changed' => 'L\'importo è cambiato: era :was, ora è :now. Controlla l\'ordine e confermalo di nuovo.',
+        'not-orderable' => 'Alcuni articoli del carrello non si possono ordinare. Apri il carrello.',
+    ],
     'settings' => [
         'tab' => 'Checkout',
         'fields' => 'Contatti dell\'acquirente',

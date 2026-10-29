@@ -3,10 +3,61 @@
 declare(strict_types=1);
 
 /*
- * The checkout (spec §33). The words of the page, its steps and the «Thanks» come with their
- * stages; the tab «Checkout» of the settings is here now.
+ * The checkout (spec §33): the page, its steps, the column of the totals, and the tab «Checkout»
+ * of the settings.
  */
 return [
+    'page' => [
+        'title' => 'Checkout',
+        'empty' => 'Your cart is empty.',
+        'shopping' => 'Back to the shop',
+        'open-cart' => 'Open the cart',
+    ],
+    'steps' => [
+        'contacts' => 'Contacts',
+        'comment' => 'Comment',
+        'edit' => 'Change',
+        'save' => 'Save',
+        'signed-in' => 'You are signed in as :name',
+    ],
+    'fields' => [
+        'first-name' => 'First name',
+        'last-name' => 'Last name',
+        'phone' => 'Phone',
+        'phone-hint' => 'For example, +800 1234 5678',
+        'email' => 'E-mail',
+        'recipient' => 'The recipient is someone else',
+        'recipient-legend' => 'Recipient',
+        'recipient-first-name' => 'Recipient\'s first name',
+        'recipient-last-name' => 'Recipient\'s last name',
+        'recipient-phone' => 'Recipient\'s phone',
+        'comment' => 'Comment on the order',
+    ],
+    'summary' => [
+        'title' => 'Your order',
+        'units' => ':count item for|:count items for',
+        'discount' => 'Discount',
+        'payable' => 'To pay',
+        'lines' => 'Order contents',
+        'price-down' => 'cheaper now',
+        'price-up' => 'dearer now',
+        'place' => 'Place the order',
+    ],
+    'terms' => [
+        'agree' => 'I agree with the terms',
+        'notice' => 'By pressing the button you agree with the terms',
+        'terms' => 'Terms of sale',
+        'privacy' => 'Privacy policy',
+    ],
+    'errors' => [
+        'required' => 'Fill in «:field».',
+        'phone-or-email' => 'Enter a phone or an e-mail.',
+        'phone' => 'A phone is a + and digits, for example +800 1234 5678.',
+        'email' => 'Check the e-mail.',
+        'terms' => 'Agree with the terms to place the order.',
+        'payable-changed' => 'The amount has changed: it was :was, now it is :now. Check the order and confirm it again.',
+        'not-orderable' => 'Some items of the cart cannot be ordered. Open the cart.',
+    ],
     'settings' => [
         'tab' => 'Checkout',
         'fields' => 'Buyer\'s contacts',

@@ -142,8 +142,10 @@ both levels of the statuses, the blocks and the settings. `php artisan webx:mcp-
 ## Status
 
 This release has the tables, the placing of an order, its milestones and statuses, cancelling and
-refunds, the list and the card in the panel, the screens of the statuses and the settings, and the
-MCP tools. The buyer's page and the checkout come in the next ones; the spec is
+refunds, the list and the card in the panel, the screens of the statuses and the settings, the MCP
+tools, the buyer's page, and the checkout page with the steps «Contacts» and «Comment» placing an
+order with plain forms. Delivery and payment in the checkout, its «Thank you» and its look come in
+the next ones; the spec is
 [`WEBX_UI_MODULE_ORDERS.md`](https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_ORDERS.md).
 
 ## License

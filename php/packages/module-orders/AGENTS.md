@@ -93,6 +93,10 @@ which the buyer sees grouped into public ones. Dictionary `webx-orders` (`module
   `webx:orders:checkout-prune [--days=] [--dry-run]`, daily — older than `draft_days` (30), cart or not.
 - **Tab «Checkout»** of `orders.settings` (`OrderSettings::CHECKOUT` — defaults): `orders.checkout.fields.*` (`required`,
   `optional`, `hidden`; phone or e-mail stays `required`), `recipient`, `comment`, `terms`, `terms_page`, `privacy_page`.
+- **Page** `/checkout` (route `checkout` — the cart's button; also behind `{locale}/`), `Checkout\Http\CheckoutController`:
+  `POST steps/{key}` keeps a step in the draft, `GET summary` — the column, `POST place` → `Orders::place()` with
+  `expected_payable`. `Checkout\Steps\CheckoutSteps`: `contacts` 100, `comment` 900, a project's `Step` by position;
+  `CheckoutContext` — the visitor's cart counted once with `Purpose::Checkout`. A `GET` never makes a draft.
 
 ### Permissions
 
@@ -138,7 +142,7 @@ the table says. Finding a visitor to link (`{id}/visitors`) wants `users.view` a
   `CartLockTest`, `MilestoneRaceTest` against a real server:
   `WEBX_TEST_MYSQL_URL=mariadb://user:password@host:3306/db vendor/bin/phpunit …`.
 - `migrate` / `migrate:rollback` — the tables come and go. `Notifications/*Test` — with and without it.
-- `Checkout/DraftsTest`, `Checkout/CheckoutDisabledTest`; `webx:orders:checkout-prune --dry-run` counts.
+- `Checkout/DraftsTest`, `CheckoutDisabledTest`, `CheckoutWithoutNeighboursTest` (plain forms), `CheckoutFieldsTest`.
 
 ## Read more
 

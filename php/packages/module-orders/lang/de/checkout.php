@@ -3,10 +3,61 @@
 declare(strict_types=1);
 
 /*
- * The checkout (spec §33). The words of the page, its steps and the «Thanks» come with their
- * stages; the tab «Checkout» of the settings is here now.
+ * The checkout (spec §33): the page, its steps, the column of the totals, and the tab «Checkout»
+ * of the settings.
  */
 return [
+    'page' => [
+        'title' => 'Kasse',
+        'empty' => 'Ihr Warenkorb ist leer.',
+        'shopping' => 'Zurück zum Shop',
+        'open-cart' => 'Warenkorb öffnen',
+    ],
+    'steps' => [
+        'contacts' => 'Kontaktdaten',
+        'comment' => 'Kommentar',
+        'edit' => 'Ändern',
+        'save' => 'Speichern',
+        'signed-in' => 'Sie sind angemeldet als :name',
+    ],
+    'fields' => [
+        'first-name' => 'Vorname',
+        'last-name' => 'Nachname',
+        'phone' => 'Telefon',
+        'phone-hint' => 'Zum Beispiel +800 1234 5678',
+        'email' => 'E-Mail',
+        'recipient' => 'Der Empfänger ist eine andere Person',
+        'recipient-legend' => 'Empfänger',
+        'recipient-first-name' => 'Vorname des Empfängers',
+        'recipient-last-name' => 'Nachname des Empfängers',
+        'recipient-phone' => 'Telefon des Empfängers',
+        'comment' => 'Kommentar zur Bestellung',
+    ],
+    'summary' => [
+        'title' => 'Ihre Bestellung',
+        'units' => ':count Artikel für|:count Artikel für',
+        'discount' => 'Rabatt',
+        'payable' => 'Zu zahlen',
+        'lines' => 'Inhalt der Bestellung',
+        'price-down' => 'jetzt günstiger',
+        'price-up' => 'jetzt teurer',
+        'place' => 'Bestellung abschicken',
+    ],
+    'terms' => [
+        'agree' => 'Ich stimme den Bedingungen zu',
+        'notice' => 'Mit dem Klick auf die Schaltfläche stimmen Sie den Bedingungen zu',
+        'terms' => 'Verkaufsbedingungen',
+        'privacy' => 'Datenschutzerklärung',
+    ],
+    'errors' => [
+        'required' => 'Füllen Sie «:field» aus.',
+        'phone-or-email' => 'Geben Sie eine Telefonnummer oder eine E-Mail-Adresse an.',
+        'phone' => 'Eine Telefonnummer besteht aus + und Ziffern, zum Beispiel +800 1234 5678.',
+        'email' => 'Prüfen Sie die E-Mail-Adresse.',
+        'terms' => 'Stimmen Sie den Bedingungen zu, um zu bestellen.',
+        'payable-changed' => 'Der Betrag hat sich geändert: vorher :was, jetzt :now. Prüfen Sie die Bestellung und bestätigen Sie erneut.',
+        'not-orderable' => 'Einige Artikel im Warenkorb können nicht bestellt werden. Öffnen Sie den Warenkorb.',
+    ],
     'settings' => [
         'tab' => 'Checkout',
         'fields' => 'Kontaktdaten des Käufers',

@@ -3,10 +3,61 @@
 declare(strict_types=1);
 
 /*
- * The checkout (spec §33). The words of the page, its steps and the «Thanks» come with their
- * stages; the tab «Checkout» of the settings is here now.
+ * The checkout (spec §33): the page, its steps, the column of the totals, and the tab «Checkout»
+ * of the settings.
  */
 return [
+    'page' => [
+        'title' => 'Оформлення замовлення',
+        'empty' => 'Кошик порожній.',
+        'shopping' => 'Повернутися до магазину',
+        'open-cart' => 'Відкрити кошик',
+    ],
+    'steps' => [
+        'contacts' => 'Контакти',
+        'comment' => 'Коментар',
+        'edit' => 'Змінити',
+        'save' => 'Зберегти',
+        'signed-in' => 'Ви увійшли як :name',
+    ],
+    'fields' => [
+        'first-name' => 'Ім\'я',
+        'last-name' => 'Прізвище',
+        'phone' => 'Телефон',
+        'phone-hint' => 'Наприклад, +800 1234 5678',
+        'email' => 'E-mail',
+        'recipient' => 'Отримувач — інша людина',
+        'recipient-legend' => 'Отримувач',
+        'recipient-first-name' => 'Ім\'я отримувача',
+        'recipient-last-name' => 'Прізвище отримувача',
+        'recipient-phone' => 'Телефон отримувача',
+        'comment' => 'Коментар до замовлення',
+    ],
+    'summary' => [
+        'title' => 'Ваше замовлення',
+        'units' => ':count товар на суму|:count товари на суму|:count товарів на суму',
+        'discount' => 'Знижка',
+        'payable' => 'До сплати',
+        'lines' => 'Склад замовлення',
+        'price-down' => 'подешевшав',
+        'price-up' => 'подорожчав',
+        'place' => 'Підтвердити замовлення',
+    ],
+    'terms' => [
+        'agree' => 'Я погоджуюся з умовами',
+        'notice' => 'Натискаючи кнопку, ви погоджуєтеся з умовами',
+        'terms' => 'Умови продажу',
+        'privacy' => 'Політика конфіденційності',
+    ],
+    'errors' => [
+        'required' => 'Заповніть поле «:field».',
+        'phone-or-email' => 'Вкажіть телефон або e-mail.',
+        'phone' => 'Телефон — це + і цифри, наприклад +800 1234 5678.',
+        'email' => 'Перевірте e-mail.',
+        'terms' => 'Щоб оформити замовлення, погодьтеся з умовами.',
+        'payable-changed' => 'Сума змінилася: було :was, стало :now. Перевірте замовлення і підтвердьте ще раз.',
+        'not-orderable' => 'Деякі товари кошика не можна замовити. Відкрийте кошик.',
+    ],
     'settings' => [
         'tab' => 'Оформлення',
         'fields' => 'Контакти покупця',

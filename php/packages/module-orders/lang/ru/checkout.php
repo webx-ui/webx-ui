@@ -3,10 +3,61 @@
 declare(strict_types=1);
 
 /*
- * The checkout (spec §33). The words of the page, its steps and the «Thanks» come with their
- * stages; the tab «Checkout» of the settings is here now.
+ * The checkout (spec §33): the page, its steps, the column of the totals, and the tab «Checkout»
+ * of the settings.
  */
 return [
+    'page' => [
+        'title' => 'Оформление заказа',
+        'empty' => 'Корзина пуста.',
+        'shopping' => 'Вернуться в магазин',
+        'open-cart' => 'Открыть корзину',
+    ],
+    'steps' => [
+        'contacts' => 'Контакты',
+        'comment' => 'Комментарий',
+        'edit' => 'Изменить',
+        'save' => 'Сохранить',
+        'signed-in' => 'Вы вошли как :name',
+    ],
+    'fields' => [
+        'first-name' => 'Имя',
+        'last-name' => 'Фамилия',
+        'phone' => 'Телефон',
+        'phone-hint' => 'Например, +800 1234 5678',
+        'email' => 'E-mail',
+        'recipient' => 'Получатель — другой человек',
+        'recipient-legend' => 'Получатель',
+        'recipient-first-name' => 'Имя получателя',
+        'recipient-last-name' => 'Фамилия получателя',
+        'recipient-phone' => 'Телефон получателя',
+        'comment' => 'Комментарий к заказу',
+    ],
+    'summary' => [
+        'title' => 'Ваш заказ',
+        'units' => ':count товар на сумму|:count товара на сумму|:count товаров на сумму',
+        'discount' => 'Скидка',
+        'payable' => 'К оплате',
+        'lines' => 'Состав заказа',
+        'price-down' => 'подешевел',
+        'price-up' => 'подорожал',
+        'place' => 'Подтвердить заказ',
+    ],
+    'terms' => [
+        'agree' => 'Я согласен с условиями',
+        'notice' => 'Нажимая кнопку, вы соглашаетесь с условиями',
+        'terms' => 'Условия продажи',
+        'privacy' => 'Политика конфиденциальности',
+    ],
+    'errors' => [
+        'required' => 'Заполните поле «:field».',
+        'phone-or-email' => 'Укажите телефон или e-mail.',
+        'phone' => 'Телефон — это + и цифры, например +800 1234 5678.',
+        'email' => 'Проверьте e-mail.',
+        'terms' => 'Чтобы оформить заказ, согласитесь с условиями.',
+        'payable-changed' => 'Сумма изменилась: было :was, стало :now. Проверьте заказ и подтвердите ещё раз.',
+        'not-orderable' => 'Некоторые товары корзины нельзя заказать. Откройте корзину.',
+    ],
     'settings' => [
         'tab' => 'Оформление',
         'fields' => 'Контакты покупателя',
