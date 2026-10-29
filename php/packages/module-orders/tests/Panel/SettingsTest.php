@@ -48,6 +48,13 @@ final class SettingsTest extends PanelTestCase
                 'orders.number.pad' => 0,
                 'orders.initial_status' => null,
                 'orders.initial_status_awaiting_payment' => null,
+                // Read from the config: the site has no notifications module, nothing is told.
+                'orders.notify.placed' => [],
+                'orders.notify.paid' => [],
+                'orders.notify.payment_failed' => [],
+                'orders.notify.received' => [],
+                'orders.notify.cancelled' => [],
+                'orders.notify.refunded' => [],
             ]);
 
         $values = ['orders.number.prefix' => 'A-', 'orders.number.start' => 0, 'orders.number.pad' => 6];

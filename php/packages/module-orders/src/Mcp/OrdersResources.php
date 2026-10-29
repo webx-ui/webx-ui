@@ -12,6 +12,8 @@ use WebxUi\Orders\Events\OrderPlaced;
 use WebxUi\Orders\Events\OrderReceived;
 use WebxUi\Orders\Events\OrderRefunded;
 use WebxUi\Orders\Milestone;
+use WebxUi\Orders\Notifications\OrderChannels;
+use WebxUi\Orders\Notifications\OrderEvents;
 use WebxUi\Orders\OrderSettings;
 use WebxUi\Orders\OrderStatuses;
 use WebxUi\Orders\Panel\StatusChoices;
@@ -49,6 +51,7 @@ final readonly class OrdersResources
         private OrderStatuses $statuses,
         private OrderBlocks $blocks,
         private OrderSettings $settings,
+        private OrderChannels $channels,
     ) {}
 
     /**
@@ -62,7 +65,8 @@ final readonly class OrdersResources
                 'Orders catalog',
                 'The milestones of an order (who sets each, the event it comes with, whether a status may set it), the palette '
                 .'of a status, both levels of the statuses with the ones new orders come into, the blocks and the modules that '
-                .'write them, and the settings of the section. Read it before changing an order or a status.',
+                .'write them, the events the notifications module is told of with their values, and the settings of the '
+                .'section. Read it before changing an order or a status.',
                 fn (): array => $this->catalog(),
             ),
         ];
@@ -90,8 +94,34 @@ final readonly class OrdersResources
                 'key' => $key,
                 'module' => $this->blocks->get($key)?->module,
             ], OrderBlocks::KEYS),
+            'notifications' => $this->notifications($locale),
             'settings' => $this->settings->describe(),
             'sources' => ['panel', 'mcp', 'api', 'checkout', 'status#<id> — a milestone a status set'],
         ];
+    }
+
+    /**
+     * The events of an order and where each takes its channels from (§10.1) — null without the
+     * notifications module, where nobody is told of anything.
+     *
+     * @return list<array<string, mixed>>|null
+     */
+    private function notifications(string $locale): ?array
+    {
+        if (! $this->channels->available()) {
+            return null;
+        }
+
+        return array_map(fn (string $key): array => [
+            'key' => $key,
+            'label' => (string) __(OrderEvents::definition($key)->label, [], $locale),
+            'channels_from' => OrderEvents::SETTINGS[$key] ?? 'the public status the order comes into: notify_channels',
+            'channels' => isset(OrderEvents::SETTINGS[$key]) ? $this->channels->forEvent($key) : null,
+            'variables' => array_map(static fn ($variable): array => [
+                'name' => $variable->name,
+                'internal' => $variable->internal,
+                'address' => $variable->address,
+            ], OrderEvents::definition($key)->variables),
+        ], OrderEvents::keys());
     }
 }

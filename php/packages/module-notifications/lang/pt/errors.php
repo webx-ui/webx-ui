@@ -20,6 +20,7 @@ return [
     'variable' => 'O modelo usa {{:variable}}, que o evento «:event» não tem. Disponíveis: :variables.',
     'variable-unknown' => 'Nenhum evento tem {{:variable}}: ficará vazia. Será um erro de escrita?',
     'variable-list' => '{{:variable}} é uma lista: percorra-a com {{#:variable}}…{{/:variable}} e mostre os campos de cada linha.',
+    'variable-internal' => '{{:variable}} é para a equipa, e este canal escreve para :addressee: o comprador vai lê-lo. É intencional?',
     'template-unclosed' => 'A secção {{#:section}} não está fechada: termine-a com {{/:section}}.',
     'template-unexpected' => '{{/:section}} fecha uma secção que nunca foi aberta.',
     'template-tag' => 'A etiqueta {{:tag não está fechada: termine-a com }}.',

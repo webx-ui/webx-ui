@@ -7,9 +7,7 @@ on no live record. It moves along two axes: **milestones** — fixed facts the s
 neighbours rely on (placed, paid, received, cancelled…) — and **statuses**, the shop's own stages,
 which the buyer sees grouped into public ones.
 
-This release holds the tables, the default statuses, `Orders::place()`, the milestones and
-statuses, cancelling and refunds, the panel's list, card, statuses and settings, and the MCP
-tools; the checkout comes next.
+This release holds the orders, their panel, MCP and notifications; the checkout comes next.
 
 ## What it owns
 
@@ -55,13 +53,18 @@ tools; the checkout comes next.
   `at`: `OrderPlaced`, `OrderPaid`, `OrderReceived`, `OrderCancelled` (`wasPaid`,
   `tendersReturned`), `OrderRefunded` (`RefundData`, `full`), `OrderPaymentFailed`, `OrderStatusChanged`, `OrderPublicStatusChanged` (only
   when the public one changes), `OrderBlockUpdated`, `OrderDetailsChanged` (`fields`, `before`).
+- **Notifications** (§10, with `webx-ui/module-notifications`): seven `orders.*` events
+  (`Notifications\OrderEvents`, `OrderValues`, `OrderTemplates`); channels — `orders.notify.*` for
+  a milestone, `options.notify_channels` of a public status; a move inside a group tells nobody.
+  `migrate` makes the starting set once (`DefaultChannels`): «Order accepted», «Payment received»
+  to `customer_email`, «New order» to the first contacts e-mail. `{{status}}` is `internal`.
 - **Journal** type `orders.order` of the panel's history: what `updateDetails()` changed. **Blocks**
   `Blocks\OrderBlocks` — `register(new BlockDefinition('delivery'|'payment', module, validate, summary))`
   in your `boot()`; an unregistered block is refused.
 - **Config** `webx-orders`: `number` (`prefix`, `start` = 1000, `pad`), `initial_status`,
-  `initial_status_awaiting_payment` (ids; null — «New» and «Awaiting payment» of the default set).
-  Read through `OrderSettings`: the keys `orders.number.*`, `orders.initial_status*` saved by the
-  screen `orders.settings` in `module-settings` first, the config for the rest.
+  `initial_status_awaiting_payment` (ids; null — «New» and «Awaiting payment» of the default set),
+  `notify.*`. Read through `OrderSettings`: the keys saved by the screen `orders.settings` in
+  `module-settings` first, the config for the rest. `webx:doctor`: `Doctor\OrdersNotificationsCheck`.
 - **Tables** (all `order_*` but `orders`):
   - `orders` (`WebxUi\Orders\Models\Order`) — money in minor units of `currency`, contacts with
     the first and the last name apart, `recipient`, `delivery` and `payment` blocks (json), and a
@@ -106,8 +109,7 @@ tools; the checkout comes next.
 | `orders.refund`   | recording money given back                                   |
 | `orders.statuses` | the screens of statuses and the settings of the section      |
 
-Routes ask with `cms.can`, tools with `permission:`: reading — any of the first three; `orders:write`
-tools — `orders.manage`, `orders_refund` — `orders.refund`, statuses and settings — `orders.statuses`.
+Routes ask with `cms.can`, tools with `permission:`: reading — any of the first three; writing as the table says.
 
 ## Change it without forking
 
@@ -116,6 +118,7 @@ tools — `orders.manage`, `orders_refund` — `orders.refund`, statuses and set
 | other words for the default statuses | `php artisan vendor:publish --tag=webx-orders-lang` before `migrate`, or rename the rows afterwards |
 | other statuses                       | «Orders → Statuses», or `OrderStatuses` in code — they are the site's own                           |
 | to react to an order                 | listen to `OrderPlaced`; to do it with the order or not at all — `OrderPlacing`                     |
+| a letter or a message about an order | a channel of an `orders.*` event in «Notifications», chosen in Settings or on a public status       |
 | a tab of yours on the card           | `Screens::extend('orders.show', [['op' => 'add', 'target' => 'tabs', 'node' => […]]])`              |
 | a button beside the status           | the same with `'target' => 'header-actions'`                                                        |
 
@@ -128,8 +131,7 @@ tools — `orders.manage`, `orders_refund` — `orders.refund`, statuses and set
 - Do not delete an order: it is the document of a deal. Cancel it instead.
 - Do not delete a status row for good: orders keep pointing at it and the history shows its name.
   Soft-delete it with `OrderStatuses::remove()`, which leaves the orders where they are.
-- Do not store a hex colour in `order_statuses.color`: it is a name from `StatusColor`, so the
-  dark theme of the panel can read it.
+- Do not store a hex colour in `order_statuses.color`: it is a `StatusColor` name for the dark theme.
 
 ## Check your work
 
@@ -140,10 +142,8 @@ tools — `orders.manage`, `orders_refund` — `orders.refund`, statuses and set
   `Mcp/AccessCoverageTest`; `php artisan webx:mcp-tools --module=orders` lists 21 tools.
 - `PlaceTest`, `MilestonesTest`, `StatusMoveTest`, `DetailsTest`, `RefundTest`, `PerformanceTest` (the budget of
   `place()`), and `CartLockTest`, `MilestoneRaceTest` against a real server: `WEBX_TEST_MYSQL_URL=mariadb://user:password@host:3306/db vendor/bin/phpunit …`.
-- `php artisan migrate` and `php artisan migrate:rollback` — the tables come and go.
-- After `migrate`, `order_public_statuses` holds five rows and `order_statuses` eight, each
-  `name` with a key for every language of the site (`php artisan tinker`,
-  `WebxUi\Orders\Models\OrderStatus::all()->pluck('name')`).
+- `migrate` / `migrate:rollback` — the tables come and go; after it five public statuses and
+  eight stages, named in every language. `Notifications/*Test` — with and without the module.
 
 ## Read more
 

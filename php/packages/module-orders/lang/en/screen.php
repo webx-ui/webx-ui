@@ -35,4 +35,7 @@ return [
     'initial-awaiting-help' => 'Where an order paid online waits until the money arrives.',
     'initial-first' => 'The first of the list',
     'no-settings' => 'The settings module is not installed: the number format and the initial statuses come from the config webx-orders.',
+    'notify' => 'Notifications',
+    'notify-help' => 'The channels told of each mark of an order. A public status keeps its own channels, on the page of the statuses.',
+    'notify-ids' => 'Choose channels from the list.',
 ];

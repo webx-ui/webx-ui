@@ -28,6 +28,7 @@ use WebxUi\Orders\Models\OrderRefund;
 use WebxUi\Orders\Models\OrderStatus;
 use WebxUi\Orders\Models\OrderTender;
 use WebxUi\Orders\Models\PublicStatus;
+use WebxUi\Orders\Notifications\OrderChannels;
 use WebxUi\Orders\OrderDetails;
 use WebxUi\Orders\Orders;
 use WebxUi\Orders\OrderStatuses;
@@ -78,6 +79,7 @@ final readonly class OrdersTools
         private Money $money,
         private Validation $validation,
         private Dispatcher $events,
+        private OrderChannels $channels,
     ) {}
 
     /**
@@ -139,7 +141,8 @@ final readonly class OrdersTools
                 'history',
                 'The timeline of an order, oldest first — the card\'s tab «History»: moves between statuses, milestones, '
                 .'refunds, notes, changed contacts and blocks, each with when, the source (panel, mcp, api, checkout, '
-                .'status#<id>) and the administrator\'s name where known.',
+                .'status#<id>) and the administrator\'s name where known. With the notifications module, `notifications` — what '
+                .'its channels sent about the order, newest first, and why a row was not sent; null without it.',
                 fn (array $arguments, ?Authenticatable $caller = null): array => $this->history($arguments, $caller),
                 ['properties' => ['order' => $order], 'required' => ['order']],
                 permission: self::READ,
@@ -394,6 +397,7 @@ final readonly class OrdersTools
 
                 return $line;
             }, $lines),
+            'notifications' => $this->channels->available() ? $this->channels->deliveries($order) : null,
         ];
     }
 

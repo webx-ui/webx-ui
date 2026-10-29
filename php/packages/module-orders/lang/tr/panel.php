@@ -154,6 +154,8 @@ return [
     'to-settings' => 'Ayarlar',
     'settings-title' => 'Sipariş ayarları',
     'settings-saved' => 'Ayarlar kaydedildi.',
+    'notifications' => 'Bildirimler',
+    'notifications-empty' => 'Bu sipariş için hiçbir şey gönderilmedi.',
     'statuses' => [
         'title' => 'Sipariş durumları',
         'help' => 'Müşterinin gördüğü ve her durumun içindeki mağaza aşamaları. Sıralamak için sürükleyin; başka bir gruba sürüklenen aşama oraya geçer.',
@@ -186,6 +188,8 @@ return [
         'delete' => 'Sil',
         'edit' => 'Düzenle',
         'add-here' => 'Aşama ekle',
+        'channels' => 'Şunlarla bildir',
+        'channels-help' => 'Bir sipariş bu duruma girdiğinde. Aynı durumun aşamaları arasında geçiş kimseye bildirilmez.',
         'delete-title' => '«:status» silinsin mi?',
         'delete-public-title' => '«:public» silinsin mi?',
         'delete-orders' => '«:status» içindeki sipariş: :count.',

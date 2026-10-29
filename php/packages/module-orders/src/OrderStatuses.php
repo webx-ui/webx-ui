@@ -12,6 +12,7 @@ use WebxUi\Localization\Locales;
 use WebxUi\Orders\Models\Order;
 use WebxUi\Orders\Models\OrderStatus;
 use WebxUi\Orders\Models\PublicStatus;
+use WebxUi\Orders\Notifications\OrderChannels;
 
 /**
  * The two sets of statuses as the screen `orders.statuses` and the agent write them (spec §5.6,
@@ -49,7 +50,7 @@ final readonly class OrderStatuses
         $code = $input['code'] ?? null;
         $input['code'] = is_string($code) ? strtolower(trim($code)) : $code;
 
-        /** @var array{code: string, name: array<string, string|null>, description?: array<string, string|null>|null} $valid */
+        /** @var array{code: string, name: array<string, string|null>, description?: array<string, string|null>|null, notify_channels?: list<int>|null} $valid */
         $valid = $this->validation->make($input, [
             'code' => ['required', 'string', 'max:48', 'regex:'.self::CODE, Rule::unique('order_public_statuses', 'code')->ignore($status?->id)],
             'name' => ['required', 'array'],
@@ -57,6 +58,8 @@ final readonly class OrderStatuses
             'name.*' => ['nullable', 'string', 'max:120'],
             'description' => ['nullable', 'array'],
             'description.*' => ['nullable', 'string', 'max:255'],
+            'notify_channels' => ['nullable', 'array'],
+            'notify_channels.*' => ['integer', 'min:1'],
         ], [
             'code.regex' => (string) __('webx-orders::panel.statuses.errors.code'),
             'code.unique' => (string) __('webx-orders::panel.statuses.errors.code-taken'),
@@ -66,6 +69,8 @@ final readonly class OrderStatuses
             "name.{$fallback}" => (string) __('webx-orders::panel.statuses.name'),
             'name.*' => (string) __('webx-orders::panel.statuses.name'),
             'description.*' => (string) __('webx-orders::panel.statuses.description'),
+            'notify_channels' => (string) __('webx-orders::panel.statuses.channels'),
+            'notify_channels.*' => (string) __('webx-orders::panel.statuses.channels'),
         ])->validate();
 
         $status ??= new PublicStatus(['position' => (int) PublicStatus::withTrashed()->max('position') + 1]);
@@ -73,6 +78,14 @@ final readonly class OrderStatuses
         $status->setAttribute('name', self::words($valid['name']));
         $description = self::words($valid['description'] ?? []);
         $status->setAttribute('description', $description === [] ? null : $description);
+
+        // The channels told when an order comes into the group (§10.1); left out — as they were.
+        if (array_key_exists('notify_channels', $valid)) {
+            $options = $status->options ?? [];
+            $options[OrderChannels::OPTION] = app(OrderChannels::class)->existing(OrderChannels::ids($valid['notify_channels'] ?? []));
+            $status->options = $options;
+        }
+
         $status->save();
 
         return $status;

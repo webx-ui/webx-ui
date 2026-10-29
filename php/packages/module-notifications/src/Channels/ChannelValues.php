@@ -129,6 +129,10 @@ final class ChannelValues
             }
         }
 
+        if ($event !== null && ! isset($errors['template']) && ! isset($errors['subject']) && ! isset($errors['recipients'])) {
+            $warnings = [...$warnings, ...$this->internalToAddressee($event, $values, $channel)];
+        }
+
         if (array_key_exists('enabled', $input)) {
             $enabled = is_bool($input['enabled']) ? $input['enabled'] : filter_var($input['enabled'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
 
@@ -450,6 +454,51 @@ final class ChannelValues
         if ($kind === Template::VALUE && $event->variable($name)?->isList() === true && ! $this->isField($event, $name, $sections)) {
             throw new Refusal($this->say('variable-list', ['variable' => $name]));
         }
+    }
+
+    /**
+     * A channel that writes to an addressee of the event — the buyer, the visitor — and uses a
+     * value the event keeps for the staff (`internal`): saved, with a warning per value. Read from
+     * what is being saved over what the channel has, so a new template and an old recipient meet.
+     *
+     * @param  array<string, mixed>  $values
+     * @return list<string>
+     */
+    private function internalToAddressee(EventDefinition $event, array $values, Channel $channel): array
+    {
+        $recipients = $values['recipients'] ?? $channel->recipientList();
+        $addressed = array_filter($recipients, static fn (mixed $one): bool => is_array($one) && isset($one['variable']));
+
+        if ($addressed === []) {
+            return [];
+        }
+
+        $warnings = [];
+
+        foreach (['template', 'subject'] as $field) {
+            foreach ($values[$field] ?? $channel->getTranslations($field) as $text) {
+                if (! is_string($text)) {
+                    continue;
+                }
+
+                try {
+                    $usages = Template::usages($text);
+                } catch (TemplateError) {
+                    continue;
+                }
+
+                foreach ($usages as $usage) {
+                    if ($event->variable($usage['name'])?->internal === true && ! $this->isField($event, $usage['name'], $usage['sections'])) {
+                        $warnings[] = $this->say('variable-internal', [
+                            'variable' => $usage['name'],
+                            'addressee' => implode(', ', array_map(static fn (array $one): string => (string) $one['variable'], array_values($addressed))),
+                        ]);
+                    }
+                }
+            }
+        }
+
+        return $warnings;
     }
 
     /**

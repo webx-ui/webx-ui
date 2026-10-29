@@ -20,6 +20,7 @@ return [
     'variable' => 'Il modello usa {{:variable}}, che l\'evento «:event» non ha. Disponibili: :variables.',
     'variable-unknown' => 'Nessun evento ha {{:variable}}: resterà vuota. È un refuso?',
     'variable-list' => '{{:variable}} è un elenco: scorrilo con {{#:variable}}…{{/:variable}} e stampa i campi di ogni riga.',
+    'variable-internal' => '{{:variable}} è per lo staff, e questo canale scrive a :addressee: lo leggerà l\'acquirente. È voluto?',
     'template-unclosed' => 'La sezione {{#:section}} non è chiusa: terminala con {{/:section}}.',
     'template-unexpected' => '{{/:section}} chiude una sezione che non è mai stata aperta.',
     'template-tag' => 'Il tag {{:tag non è chiuso: terminalo con }}.',

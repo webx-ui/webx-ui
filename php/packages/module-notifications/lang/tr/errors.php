@@ -20,6 +20,7 @@ return [
     'variable' => 'Şablon {{:variable}} kullanıyor, ancak “:event” olayında bu değişken yok. Mevcut olanlar: :variables.',
     'variable-unknown' => 'Hiçbir olayda {{:variable}} yok: boş kalacak. Yazım hatası mı?',
     'variable-list' => '{{:variable}} bir listedir: {{#:variable}}…{{/:variable}} ile üzerinden geçin ve her satırın alanlarını yazdırın.',
+    'variable-internal' => '{{:variable}} çalışanlar içindir ve bu kanal :addressee adresine yazıyor: alıcı bunu okuyacak. Bilerek mi?',
     'template-unclosed' => '{{#:section}} bölümü kapatılmamış: {{/:section}} ile bitirin.',
     'template-unexpected' => '{{/:section}} hiç açılmamış bir bölümü kapatıyor.',
     'template-tag' => '{{:tag etiketi kapatılmamış: }} ile bitirin.',

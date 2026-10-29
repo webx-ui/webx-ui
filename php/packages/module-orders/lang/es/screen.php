@@ -35,4 +35,7 @@ return [
     'initial-awaiting-help' => 'Dónde espera un pedido pagado en línea hasta que llega el dinero.',
     'initial-first' => 'El primero de la lista',
     'no-settings' => 'El módulo de ajustes no está instalado: el formato del número y los estados iniciales vienen de la configuración webx-orders.',
+    'notify' => 'Notificaciones',
+    'notify-help' => 'Los canales avisados de cada marca de un pedido. Un estado público tiene sus propios canales, en la página de estados.',
+    'notify-ids' => 'Elige canales de la lista.',
 ];

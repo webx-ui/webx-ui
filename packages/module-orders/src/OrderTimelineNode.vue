@@ -1,18 +1,21 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { WxCard, WxEmpty, WxText, WxTimeline, WxTimelineItem } from '@webx-ui/core'
+import { WxBadge, WxCard, WxEmpty, WxText, WxTimeline, WxTimelineItem } from '@webx-ui/core'
 import { useDates, useTranslate } from '@webx-ui/module-admin'
 import type { TimelineItemType } from '@webx-ui/core'
 import { useOrderCard } from './card'
 import { NAMESPACE, useOrdersMessages } from './i18n'
 import { toneOf } from './tones'
-import type { TimelineLine } from './types'
+import type { OrderDelivery, TimelineLine } from './types'
 
 /**
  * `wx-orders-timeline` — «History» of the card (spec §8): one timeline out of the moves, the
  * notes and the rest of the history, the milestones and the refunds, oldest first, as the server
  * merged them. Who did it is the administrator's name where one is known; otherwise the source in
  * the panel's words — «Site API», «Agent» — or as the module that wrote it named itself.
+ *
+ * Under it, with the notifications module there, «Notifications»: what its channels sent about
+ * the order, newest first, in that module's own words — and why a row was not sent.
  */
 defineOptions({ name: 'WxOrdersTimeline' })
 
@@ -22,6 +25,15 @@ const t = useTranslate(NAMESPACE)
 const dates = useDates()
 const card = useOrderCard()
 const lines = computed(() => card?.order.value?.timeline ?? [])
+const deliveries = computed(() => card?.order.value?.notifications ?? null)
+
+function deliveryTone(row: OrderDelivery): 'danger' | 'success' | 'warning' | 'default' {
+  if (row.status === 'failed') return 'danger'
+  if (row.status === 'skipped') return 'warning'
+  if (row.status === 'sent') return 'success'
+
+  return 'default'
+}
 
 /** The sources the panel has a word for; a gateway's or a carrier's own name stays as it is. */
 const KNOWN = ['panel', 'api', 'mcp', 'checkout', 'quick', 'command']
@@ -87,33 +99,96 @@ function details(line: TimelineLine): string[] {
 </script>
 
 <template>
-  <wx-card class="wx-orders-timeline">
-    <wx-empty v-if="lines.length === 0" :title="t('panel.timeline-empty')" size="sm" />
+  <div class="wx-orders-history">
+    <wx-card class="wx-orders-timeline">
+      <wx-empty v-if="lines.length === 0" :title="t('panel.timeline-empty')" size="sm" />
 
-    <wx-timeline v-else>
-      <wx-timeline-item
-        v-for="line in lines"
-        :key="line.key"
-        :title="title(line)"
-        :type="tone(line)"
-        :timestamp="`${dates.short(line.at)} · ${who(line)}`"
-        :datetime="dates.iso(line.at)"
-      >
-        <wx-text
-          v-for="(part, index) in details(line)"
-          :key="index"
-          class="wx-orders-timeline__part"
-          size="sm"
-          :tone="index === 0 && line.public ? undefined : 'muted'"
+      <wx-timeline v-else>
+        <wx-timeline-item
+          v-for="line in lines"
+          :key="line.key"
+          :title="title(line)"
+          :type="tone(line)"
+          :timestamp="`${dates.short(line.at)} · ${who(line)}`"
+          :datetime="dates.iso(line.at)"
         >
-          {{ part }}
-        </wx-text>
-      </wx-timeline-item>
-    </wx-timeline>
-  </wx-card>
+          <wx-text
+            v-for="(part, index) in details(line)"
+            :key="index"
+            class="wx-orders-timeline__part"
+            size="sm"
+            :tone="index === 0 && line.public ? undefined : 'muted'"
+          >
+            {{ part }}
+          </wx-text>
+        </wx-timeline-item>
+      </wx-timeline>
+    </wx-card>
+
+    <wx-card
+      v-if="deliveries !== null"
+      class="wx-orders-deliveries"
+      :title="t('panel.notifications')"
+    >
+      <wx-empty v-if="deliveries.length === 0" :title="t('panel.notifications-empty')" size="sm" />
+
+      <ul v-else class="wx-orders-deliveries__list">
+        <li v-for="row in deliveries" :key="row.id" class="wx-orders-deliveries__row">
+          <div class="wx-orders-deliveries__text">
+            <wx-text size="sm">{{ row.channel }}</wx-text>
+            <wx-text v-if="row.recipient !== ''" size="sm" tone="muted">
+              {{ row.recipient_label ?? row.recipient }}
+            </wx-text>
+            <wx-text v-if="row.created_at" size="sm" tone="muted">
+              {{ dates.short(row.created_at) }}
+            </wx-text>
+            <wx-text
+              v-if="row.error ?? row.reason_label"
+              size="sm"
+              tone="muted"
+              class="wx-orders-timeline__part"
+            >
+              {{ row.error ?? row.reason_label }}
+            </wx-text>
+          </div>
+          <wx-badge :type="deliveryTone(row)">{{ row.status_label }}</wx-badge>
+        </li>
+      </ul>
+    </wx-card>
+  </div>
 </template>
 
 <style scoped>
+/* Two cards, one tab: the history, then what the channels sent about it. */
+.wx-orders-history {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-16);
+  min-width: 0;
+}
+
+.wx-orders-deliveries__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-12);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wx-orders-deliveries__row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--wx-space-12);
+}
+
+.wx-orders-deliveries__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
 .wx-orders-timeline__part {
   display: block;
   overflow-wrap: anywhere;

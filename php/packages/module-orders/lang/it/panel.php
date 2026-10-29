@@ -154,6 +154,8 @@ return [
     'to-settings' => 'Impostazioni',
     'settings-title' => 'Impostazioni degli ordini',
     'settings-saved' => 'Impostazioni salvate.',
+    'notifications' => 'Notifiche',
+    'notifications-empty' => 'Per questo ordine non è stato inviato nulla.',
     'statuses' => [
         'title' => 'Stati degli ordini',
         'help' => 'Ciò che vede l’acquirente e le fasi del negozio in ciascuno stato. Trascina per riordinare; una fase trascinata in un altro gruppo passa lì.',
@@ -186,6 +188,8 @@ return [
         'delete' => 'Elimina',
         'edit' => 'Modifica',
         'add-here' => 'Aggiungi una fase',
+        'channels' => 'Avvisa tramite',
+        'channels-help' => 'Quando un ordine entra in questo stato. Passare tra le fasi di uno stesso stato non avvisa nessuno.',
         'delete-title' => 'Eliminare «:status»?',
         'delete-public-title' => 'Eliminare «:public»?',
         'delete-orders' => 'Ordini in «:status»: :count.',

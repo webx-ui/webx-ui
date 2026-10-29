@@ -154,6 +154,8 @@ return [
     'to-settings' => 'Ustawienia',
     'settings-title' => 'Ustawienia zamówień',
     'settings-saved' => 'Ustawienia zapisane.',
+    'notifications' => 'Powiadomienia',
+    'notifications-empty' => 'W sprawie tego zamówienia nic nie wysłano.',
     'statuses' => [
         'title' => 'Statusy zamówień',
         'help' => 'Co widzi kupujący i etapy sklepu w każdym statusie. Kolejność zmienia się przeciąganiem; etap przeciągnięty do innej grupy przechodzi do niej.',
@@ -186,6 +188,8 @@ return [
         'delete' => 'Usuń',
         'edit' => 'Edytuj',
         'add-here' => 'Dodaj etap',
+        'channels' => 'Powiadamiaj przez',
+        'channels-help' => 'Gdy zamówienie wchodzi w ten status. Przejście między etapami jednego statusu nikogo nie powiadamia.',
         'delete-title' => 'Usunąć «:status»?',
         'delete-public-title' => 'Usunąć «:public»?',
         'delete-orders' => 'Zamówień w «:status»: :count.',

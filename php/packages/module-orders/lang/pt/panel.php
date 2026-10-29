@@ -154,6 +154,8 @@ return [
     'to-settings' => 'Definições',
     'settings-title' => 'Definições de encomendas',
     'settings-saved' => 'Definições guardadas.',
+    'notifications' => 'Notificações',
+    'notifications-empty' => 'Nada foi enviado sobre esta encomenda.',
     'statuses' => [
         'title' => 'Estados das encomendas',
         'help' => 'O que o comprador vê e as etapas da loja dentro de cada estado. Arraste para reordenar; uma etapa arrastada para outro grupo passa para ele.',
@@ -186,6 +188,8 @@ return [
         'delete' => 'Eliminar',
         'edit' => 'Editar',
         'add-here' => 'Adicionar etapa',
+        'channels' => 'Avisar por',
+        'channels-help' => 'Quando uma encomenda entra neste estado. Passar entre etapas do mesmo estado não avisa ninguém.',
         'delete-title' => 'Eliminar «:status»?',
         'delete-public-title' => 'Eliminar «:public»?',
         'delete-orders' => 'Encomendas em «:status»: :count.',

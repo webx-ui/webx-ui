@@ -154,6 +154,8 @@ return [
     'to-settings' => 'Einstellungen',
     'settings-title' => 'Bestelleinstellungen',
     'settings-saved' => 'Einstellungen gespeichert.',
+    'notifications' => 'Benachrichtigungen',
+    'notifications-empty' => 'Zu dieser Bestellung wurde nichts gesendet.',
     'statuses' => [
         'title' => 'Bestellstatus',
         'help' => 'Was der Käufer sieht, und die Schritte des Shops darin. Zum Umsortieren ziehen; ein Schritt, der in eine andere Gruppe gezogen wird, wechselt dorthin.',
@@ -186,6 +188,8 @@ return [
         'delete' => 'Löschen',
         'edit' => 'Bearbeiten',
         'add-here' => 'Schritt hinzufügen',
+        'channels' => 'Benachrichtigen über',
+        'channels-help' => 'Wenn eine Bestellung in diesen Status kommt. Ein Wechsel zwischen den Stufen eines Status informiert niemanden.',
         'delete-title' => '«:status» löschen?',
         'delete-public-title' => '«:public» löschen?',
         'delete-orders' => 'Bestellungen in «:status»: :count.',

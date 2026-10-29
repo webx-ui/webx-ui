@@ -6,6 +6,7 @@ namespace WebxUi\Orders\Panel;
 
 use Illuminate\Contracts\Container\Container;
 use WebxUi\Orders\Models\OrderStatus;
+use WebxUi\Orders\Notifications\OrderChannels;
 use WebxUi\Settings\Settings;
 
 /**
@@ -14,6 +15,7 @@ use WebxUi\Settings\Settings;
  * status is not offered, and the server holds the same list. Built when the tree is built, so a
  * status added a moment ago is there.
  *
+ * The channels of the milestones' events only with `webx-ui/module-notifications` installed.
  * Without `module-settings` there is nowhere to keep these; the cards give way to a line that
  * says the config `webx-orders` decides.
  */
@@ -31,6 +33,7 @@ final readonly class SettingsScreen
         if (! $this->container->bound(Settings::class)) {
             return [
                 ['op' => 'remove', 'target' => 'initial-card'],
+                ['op' => 'remove', 'target' => 'notify-card'],
                 ['op' => 'replace', 'target' => 'number-card', 'node' => [
                     'id' => 'number-card',
                     'type' => 'wx-alert',
@@ -60,6 +63,8 @@ final readonly class SettingsScreen
         return [
             ['op' => 'set', 'target' => 'initial-status', 'props' => ['options' => $options]],
             ['op' => 'set', 'target' => 'initial-awaiting', 'props' => ['options' => $options]],
+            // The channels of the milestones (§10.1) are chosen only where there are channels.
+            ...($this->container->make(OrderChannels::class)->available() ? [] : [['op' => 'remove', 'target' => 'notify-card']]),
         ];
     }
 }

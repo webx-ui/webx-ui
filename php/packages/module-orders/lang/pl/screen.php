@@ -35,4 +35,7 @@ return [
     'initial-awaiting-help' => 'Gdzie zamówienie opłacane online czeka, aż wpłyną pieniądze.',
     'initial-first' => 'Pierwszy z listy',
     'no-settings' => 'Moduł ustawień nie jest zainstalowany: format numeru i statusy początkowe pochodzą z konfiguracji webx-orders.',
+    'notify' => 'Powiadomienia',
+    'notify-help' => 'Kanały powiadamiane o każdym znaczniku zamówienia. Status publiczny ma własne kanały — na stronie statusów.',
+    'notify-ids' => 'Wybierz kanały z listy.',
 ];

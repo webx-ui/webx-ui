@@ -74,7 +74,10 @@ const stageDialog = createModal<
     milestones: StatusBoardData['milestones']
   }
 >(StageDialog)
-const publicDialog = createModal<StatusBoardData, { group: BoardGroup | null }>(PublicStatusDialog)
+const publicDialog = createModal<
+  StatusBoardData,
+  { group: BoardGroup | null; notifications: boolean }
+>(PublicStatusDialog)
 const removeGroup = createModal<StatusBoardData, { group: BoardGroup; groups: BoardGroup[] }>(
   RemoveGroupDialog,
 )
@@ -188,7 +191,7 @@ async function editStage(status: BoardStatus | null, groupId?: number): Promise<
 }
 
 async function editGroup(group: BoardGroup | null): Promise<void> {
-  const answer = await publicDialog({ group })
+  const answer = await publicDialog({ group, notifications: board.value?.notifications ?? false })
 
   if (answer) {
     take(answer)

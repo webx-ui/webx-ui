@@ -154,6 +154,8 @@ return [
     'to-settings' => 'Ajustes',
     'settings-title' => 'Ajustes de pedidos',
     'settings-saved' => 'Ajustes guardados.',
+    'notifications' => 'Notificaciones',
+    'notifications-empty' => 'No se ha enviado nada sobre este pedido.',
     'statuses' => [
         'title' => 'Estados de los pedidos',
         'help' => 'Lo que ve el comprador y las etapas de la tienda dentro de cada estado. Arrastre para reordenar; una etapa arrastrada a otro grupo pasa a él.',
@@ -186,6 +188,8 @@ return [
         'delete' => 'Eliminar',
         'edit' => 'Editar',
         'add-here' => 'Añadir una etapa',
+        'channels' => 'Avisar por',
+        'channels-help' => 'Cuando un pedido entra en este estado. Pasar entre las etapas de un mismo estado no avisa a nadie.',
         'delete-title' => '¿Eliminar «:status»?',
         'delete-public-title' => '¿Eliminar «:public»?',
         'delete-orders' => 'Pedidos en «:status»: :count.',

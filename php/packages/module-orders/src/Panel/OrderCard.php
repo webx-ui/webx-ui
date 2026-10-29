@@ -14,6 +14,7 @@ use WebxUi\Orders\Models\OrderMilestone;
 use WebxUi\Orders\Models\OrderRefund;
 use WebxUi\Orders\Models\OrderTender;
 use WebxUi\Orders\Models\StatusChange;
+use WebxUi\Orders\Notifications\OrderChannels;
 
 /**
  * The card of an order on the server (spec §11.3): what `orders.show` draws — the head with the
@@ -36,6 +37,7 @@ final readonly class OrderCard
     public function __construct(
         private Money $money,
         private OrderList $list,
+        private OrderChannels $channels,
     ) {}
 
     /**
@@ -144,6 +146,8 @@ final readonly class OrderCard
             ],
             'blocks' => $this->blocks($order, $locale),
             'timeline' => $this->timeline($order, $statuses, $locale, $reader, $money),
+            // The block «Notifications» under the timeline (§8): null without the module.
+            'notifications' => $this->channels->available() ? $this->channels->deliveries($order) : null,
             'actions' => [
                 'status' => $manage,
                 'paid' => $manage && ! $paid && ! $cancelled,

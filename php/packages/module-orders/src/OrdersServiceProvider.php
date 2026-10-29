@@ -5,11 +5,16 @@ declare(strict_types=1);
 namespace WebxUi\Orders;
 
 use Illuminate\Support\ServiceProvider;
+use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Admin\History\HistoryTypes;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Notifications\NotificationEvents;
 use WebxUi\Orders\Blocks\OrderBlocks;
+use WebxUi\Orders\Doctor\OrdersNotificationsCheck;
 use WebxUi\Orders\Models\Order;
+use WebxUi\Orders\Notifications\OrderEvents;
+use WebxUi\Orders\Notifications\SendOrderNotifications;
 use WebxUi\Orders\Panel\OrdersModule;
 use WebxUi\Orders\Panel\SettingsScreen;
 
@@ -29,6 +34,20 @@ class OrdersServiceProvider extends ServiceProvider
 
         $this->app->singleton(OrderBlocks::class);
         $this->app->singleton(Orders::class);
+
+        // The events of an order for the channels of `webx-ui/module-notifications`, when it is
+        // there (§10); without it the module stands, and `webx:doctor` says nobody is told.
+        if (class_exists(NotificationEvents::class)) {
+            $this->callAfterResolving(NotificationEvents::class, static function (NotificationEvents $events): void {
+                foreach (OrderEvents::definitions() as $definition) {
+                    $events->register($definition);
+                }
+            });
+        }
+
+        $this->callAfterResolving(DoctorChecks::class, static function (DoctorChecks $checks): void {
+            $checks->register(OrdersNotificationsCheck::class);
+        });
     }
 
     public function boot(): void
@@ -39,6 +58,7 @@ class OrdersServiceProvider extends ServiceProvider
 
         $this->app->make(ModuleRegistry::class)->register($this->app->make(OrdersModule::class));
         $this->registerHistory();
+        SendOrderNotifications::listen($this->app->make('events'));
         // The card of an order (§11.3): neighbours add their tabs to it with a patch of `tabs`.
         $screens = $this->app->make(ScreenRegistry::class);
         $screens->register(OrdersModule::SCREEN, __DIR__.'/../resources/screens/show.json');

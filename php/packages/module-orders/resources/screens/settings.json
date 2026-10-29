@@ -14,7 +14,10 @@
           "name": "orders.number.prefix",
           "label": "trans::webx-orders::screen.number-prefix",
           "help": "trans::webx-orders::screen.number-prefix-help",
-          "props": { "maxlength": 20, "placeholder": "A-" }
+          "props": {
+            "maxlength": 20,
+            "placeholder": "A-"
+          }
         },
         {
           "id": "number-start",
@@ -22,7 +25,11 @@
           "name": "orders.number.start",
           "label": "trans::webx-orders::screen.number-start",
           "help": "trans::webx-orders::screen.number-start-help",
-          "props": { "min": 0, "max": 999999999, "placeholder": "1000" }
+          "props": {
+            "min": 0,
+            "max": 999999999,
+            "placeholder": "1000"
+          }
         },
         {
           "id": "number-pad",
@@ -30,7 +37,11 @@
           "name": "orders.number.pad",
           "label": "trans::webx-orders::screen.number-pad",
           "help": "trans::webx-orders::screen.number-pad-help",
-          "props": { "min": 0, "max": 20, "placeholder": "0" }
+          "props": {
+            "min": 0,
+            "max": 20,
+            "placeholder": "0"
+          }
         },
         {
           "id": "number-sample",
@@ -53,7 +64,10 @@
           "name": "orders.initial_status",
           "label": "trans::webx-orders::screen.initial-status",
           "help": "trans::webx-orders::screen.initial-status-help",
-          "props": { "clearable": true, "placeholder": "trans::webx-orders::screen.initial-first" }
+          "props": {
+            "clearable": true,
+            "placeholder": "trans::webx-orders::screen.initial-first"
+          }
         },
         {
           "id": "initial-awaiting",
@@ -61,7 +75,79 @@
           "name": "orders.initial_status_awaiting_payment",
           "label": "trans::webx-orders::screen.initial-awaiting",
           "help": "trans::webx-orders::screen.initial-awaiting-help",
-          "props": { "clearable": true, "placeholder": "trans::webx-orders::screen.initial-first" }
+          "props": {
+            "clearable": true,
+            "placeholder": "trans::webx-orders::screen.initial-first"
+          }
+        }
+      ]
+    },
+    {
+      "id": "notify-card",
+      "type": "wx-card",
+      "label": "trans::webx-orders::screen.notify",
+      "children": [
+        {
+          "id": "notify-help",
+          "type": "wx-alert",
+          "props": {
+            "type": "info",
+            "description": "trans::webx-orders::screen.notify-help"
+          }
+        },
+        {
+          "id": "notify-placed",
+          "type": "wx-notifications-channels",
+          "name": "orders.notify.placed",
+          "label": "trans::webx-orders::notifications.events.placed",
+          "props": {
+            "event": "orders.placed"
+          }
+        },
+        {
+          "id": "notify-paid",
+          "type": "wx-notifications-channels",
+          "name": "orders.notify.paid",
+          "label": "trans::webx-orders::notifications.events.paid",
+          "props": {
+            "event": "orders.paid"
+          }
+        },
+        {
+          "id": "notify-payment-failed",
+          "type": "wx-notifications-channels",
+          "name": "orders.notify.payment_failed",
+          "label": "trans::webx-orders::notifications.events.payment_failed",
+          "props": {
+            "event": "orders.payment_failed"
+          }
+        },
+        {
+          "id": "notify-received",
+          "type": "wx-notifications-channels",
+          "name": "orders.notify.received",
+          "label": "trans::webx-orders::notifications.events.received",
+          "props": {
+            "event": "orders.received"
+          }
+        },
+        {
+          "id": "notify-cancelled",
+          "type": "wx-notifications-channels",
+          "name": "orders.notify.cancelled",
+          "label": "trans::webx-orders::notifications.events.cancelled",
+          "props": {
+            "event": "orders.cancelled"
+          }
+        },
+        {
+          "id": "notify-refunded",
+          "type": "wx-notifications-channels",
+          "name": "orders.notify.refunded",
+          "label": "trans::webx-orders::notifications.events.refunded",
+          "props": {
+            "event": "orders.refunded"
+          }
         }
       ]
     }

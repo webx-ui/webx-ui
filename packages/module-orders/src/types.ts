@@ -166,6 +166,8 @@ export interface OrderCardData {
   }
   blocks: { key: string; summary: string | null; value: Record<string, unknown> }[]
   timeline: TimelineLine[]
+  /** The log of the notifications module about the order; null without the module. */
+  notifications: OrderDelivery[] | null
   actions: {
     status: boolean
     paid: boolean
@@ -174,6 +176,24 @@ export interface OrderCardData {
     details: boolean
     refund: boolean
   }
+}
+
+/** One row of the log of the notifications module: a channel, a recipient, what came of it. */
+export interface OrderDelivery {
+  id: number
+  event: string
+  channel_id: number | null
+  channel: string
+  provider: string
+  recipient: string
+  recipient_label: string | null
+  status: 'queued' | 'sent' | 'failed' | 'skipped'
+  status_label: string
+  reason: string | null
+  reason_label: string | null
+  error: string | null
+  created_at: string | null
+  sent_at: string | null
 }
 
 export interface OrderDetail {
@@ -275,6 +295,8 @@ export interface BoardGroup {
   deleted: boolean
   statuses: BoardStatus[]
   orders?: number
+  /** The channels told when an order comes into the group (§10.1). */
+  channels: number[]
 }
 
 export interface DeletedStatus extends BoardStatus {
@@ -288,6 +310,8 @@ export interface StatusBoardData {
   initial: number[]
   colors: { value: StatusColor; label: string }[]
   milestones: { value: MilestoneKey; label: string }[]
+  /** Whether the notifications module is there: only then a group chooses channels. */
+  notifications: boolean
 }
 
 /** What a change of the statuses does, said before it is made (§5.6) — or why it cannot be. */
@@ -312,6 +336,8 @@ export interface PublicStatusInput {
   code: string
   name: StatusWords
   description: StatusWords
+  /** Only with the notifications module there; left out, the channels stay as they are. */
+  notify_channels?: number[]
 }
 
 export interface StageInput {

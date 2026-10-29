@@ -20,6 +20,7 @@ return [
     'variable' => 'Die Vorlage verwendet {{:variable}}, das Ereignis „:event“ hat diese Variable aber nicht. Vorhanden: :variables.',
     'variable-unknown' => 'Kein Ereignis hat {{:variable}}: Die Variable bleibt leer. Ein Tippfehler?',
     'variable-list' => '{{:variable}} ist eine Liste: Durchlaufen Sie sie mit {{#:variable}}…{{/:variable}} und geben Sie die Felder jeder Zeile aus.',
+    'variable-internal' => '{{:variable}} ist für das Team, und dieser Kanal schreibt an :addressee: Der Käufer liest es. Ist das gewollt?',
     'template-unclosed' => 'Der Abschnitt {{#:section}} ist nicht geschlossen: Beenden Sie ihn mit {{/:section}}.',
     'template-unexpected' => '{{/:section}} schließt einen Abschnitt, der nie geöffnet wurde.',
     'template-tag' => 'Das Tag {{:tag ist nicht geschlossen: Beenden Sie es mit }}.',

@@ -143,7 +143,8 @@ const PROVIDERS = [
   },
 ]
 
-/* Two events: what the Inbox will declare (§15.1), and an order with a list in it (§7.2). */
+/* The events: what the Inbox declares (§15.1), an order with a list in it (§7.2), and the public
+ * events of an order (module-orders §10.1). */
 const EVENTS = [
   {
     key: 'inbox.submission',
@@ -298,6 +299,45 @@ const EVENTS = [
       },
     },
   },
+  /* What `module-orders` declares (§10.1), cut to a few of its values. */
+  ...(
+    [
+      ['orders.placed', 'Order: placed'],
+      ['orders.public_status', 'Order: public status changed'],
+      ['orders.paid', 'Order: paid'],
+      ['orders.payment_failed', 'Order: payment failed'],
+      ['orders.received', 'Order: received'],
+      ['orders.cancelled', 'Order: cancelled'],
+      ['orders.refunded', 'Order: refunded'],
+    ] as const
+  ).map(([key, label]) => ({
+    key,
+    label,
+    module: 'orders',
+    variables: [
+      { name: 'number', label: 'Order number', example: '1024', address: null, fields: [] },
+      {
+        name: 'public_status',
+        label: 'Public status',
+        example: 'In progress',
+        address: null,
+        fields: [],
+      },
+      {
+        name: 'customer_email',
+        label: "Buyer's e-mail",
+        example: 'buyer-a@example.com',
+        address: 'email',
+        fields: [],
+      },
+    ],
+    sample: {
+      '*': {
+        subject: { en: 'Order {{number}}: {{public_status}}' },
+        template: { en: 'Order {{number}} is now «{{public_status}}».' },
+      },
+    },
+  })),
 ]
 
 const ADMINS = [

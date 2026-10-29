@@ -40,4 +40,25 @@ return [
 
     'initial_status_awaiting_payment' => null,
 
+    /*
+    |--------------------------------------------------------------------------
+    | Notifications
+    |--------------------------------------------------------------------------
+    |
+    | The channels of webx-ui/module-notifications each milestone's event goes
+    | to (§10.1), by id — read when the settings of the section never saved a
+    | list. A public status keeps its own channels. Without the notifications
+    | module these are not read at all.
+    |
+    */
+
+    'notify' => [
+        'placed' => [],
+        'paid' => [],
+        'payment_failed' => [],
+        'received' => [],
+        'cancelled' => [],
+        'refunded' => [],
+    ],
+
 ];

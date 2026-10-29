@@ -35,4 +35,7 @@ return [
     'initial-awaiting-help' => 'Onde uma encomenda paga online espera até o dinheiro chegar.',
     'initial-first' => 'O primeiro da lista',
     'no-settings' => 'O módulo de definições não está instalado: o formato do número e os estados iniciais vêm da configuração webx-orders.',
+    'notify' => 'Notificações',
+    'notify-help' => 'Os canais avisados de cada marca de uma encomenda. Um estado público tem os seus próprios canais, na página dos estados.',
+    'notify-ids' => 'Escolha canais da lista.',
 ];

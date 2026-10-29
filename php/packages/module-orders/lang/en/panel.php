@@ -154,6 +154,8 @@ return [
     'to-settings' => 'Settings',
     'settings-title' => 'Order settings',
     'settings-saved' => 'Settings saved.',
+    'notifications' => 'Notifications',
+    'notifications-empty' => 'Nothing has been sent about this order.',
     'statuses' => [
         'title' => 'Order statuses',
         'help' => 'What the buyer sees, and the stages of the shop inside each. Drag to reorder; drag a stage into another group to move it there.',
@@ -186,6 +188,8 @@ return [
         'delete' => 'Delete',
         'edit' => 'Edit',
         'add-here' => 'Add a stage',
+        'channels' => 'Notify through',
+        'channels-help' => 'Told when an order comes into this status. A move between the stages of one status tells nobody.',
         'delete-title' => 'Delete «:status»?',
         'delete-public-title' => 'Delete «:public»?',
         'delete-orders' => 'Orders in «:status»: :count.',

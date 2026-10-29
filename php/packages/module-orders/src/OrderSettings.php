@@ -9,12 +9,13 @@ use Illuminate\Contracts\Container\Container;
 use Illuminate\Validation\ValidationException;
 use WebxUi\Orders\Models\Order;
 use WebxUi\Orders\Models\OrderStatus;
+use WebxUi\Orders\Notifications\OrderChannels;
 use WebxUi\Settings\Settings;
 
 /**
  * The settings of the section (spec §4, §5.2, §11.4): the format of the number and the statuses a
  * new order comes into. The screen `orders.settings` writes them where every setting of the site
- * is kept (`orders.number.prefix`, `orders.initial_status`…); a key nobody saved there — and every
+ * is kept (`orders.number.prefix`, `orders.initial_status`, `orders.notify.placed`…); a key nobody saved there — and every
  * key on a site without `module-settings` — reads the config `webx-orders` instead.
  */
 final readonly class OrderSettings
@@ -26,6 +27,22 @@ final readonly class OrderSettings
         'orders.number.pad' => 'webx-orders.number.pad',
         'orders.initial_status' => 'webx-orders.initial_status',
         'orders.initial_status_awaiting_payment' => 'webx-orders.initial_status_awaiting_payment',
+        'orders.notify.placed' => 'webx-orders.notify.placed',
+        'orders.notify.paid' => 'webx-orders.notify.paid',
+        'orders.notify.payment_failed' => 'webx-orders.notify.payment_failed',
+        'orders.notify.received' => 'webx-orders.notify.received',
+        'orders.notify.cancelled' => 'webx-orders.notify.cancelled',
+        'orders.notify.refunded' => 'webx-orders.notify.refunded',
+    ];
+
+    /** The channels of the milestones' events (§10.1): ids of channels of the notifications module. */
+    public const array NOTIFY = [
+        'orders.notify.placed',
+        'orders.notify.paid',
+        'orders.notify.payment_failed',
+        'orders.notify.received',
+        'orders.notify.cancelled',
+        'orders.notify.refunded',
     ];
 
     public function __construct(
@@ -38,6 +55,11 @@ final readonly class OrderSettings
         // Through the container on every read: the settings drop their cache on a save, and a
         // value kept here would outlive it.
         $stored = $this->stored();
+
+        // A list of channels saved empty is a choice: nobody is told, whatever the config says.
+        if ($stored !== null && in_array($key, self::NOTIFY, true) && array_key_exists($key, $stored)) {
+            return is_array($stored[$key]) ? $stored[$key] : [];
+        }
 
         if ($stored !== null && array_key_exists($key, $stored) && $stored[$key] !== null && $stored[$key] !== '') {
             return $stored[$key];
@@ -86,6 +108,12 @@ final readonly class OrderSettings
     {
         $this->check($values);
 
+        foreach (self::NOTIFY as $key) {
+            if (array_key_exists($key, $values)) {
+                $values[$key] = $this->container->make(OrderChannels::class)->existing(OrderChannels::ids($values[$key]));
+            }
+        }
+
         if ($this->container->bound(Settings::class) && $values !== []) {
             $this->container->make(Settings::class)->save($values);
         }
@@ -113,6 +141,14 @@ final readonly class OrderSettings
 
             if ($id !== null && $id !== '' && ! OrderStatus::query()->whereKey($id)->where('is_active', true)->whereHas('publicStatus', static fn ($group) => $group->whereNull('deleted_at'))->exists()) {
                 $errors[$key] = (string) __('validation.in', ['attribute' => (string) __('webx-orders::screen.'.($key === 'orders.initial_status' ? 'initial-status' : 'initial-awaiting'))]);
+            }
+        }
+
+        foreach (self::NOTIFY as $key) {
+            $ids = $values[$key] ?? [];
+
+            if (! is_array($ids) || count(OrderChannels::ids($ids)) !== count($ids)) {
+                $errors[$key] = (string) __('webx-orders::screen.notify-ids');
             }
         }
 

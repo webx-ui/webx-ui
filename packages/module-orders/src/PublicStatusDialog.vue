@@ -10,7 +10,7 @@ import {
   WxSpace,
   type LocalizedValue,
 } from '@webx-ui/core'
-import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
+import { useAdmin, useErrorText, useTranslate, WxRelationsField } from '@webx-ui/module-admin'
 import { createOrdersApi } from './api'
 import { NAMESPACE, useOrdersMessages } from './i18n'
 import type { BoardGroup, StatusBoardData } from './types'
@@ -18,9 +18,10 @@ import type { BoardGroup, StatusBoardData } from './types'
 /**
  * One public status written (spec §11.4): what the buyer sees — a name and one line of
  * description in every language of the site — and the code templates and agents know it by,
- * which renaming the status leaves as it is.
+ * which renaming the status leaves as it is. With the notifications module, the channels told when
+ * an order comes into it (§10.1) — chosen from the channels of `orders.public_status`.
  */
-const props = defineProps<{ group: BoardGroup | null }>()
+const props = defineProps<{ group: BoardGroup | null; notifications?: boolean }>()
 
 const { resolve, dismiss, open } = useModal<StatusBoardData>()
 
@@ -34,6 +35,7 @@ const message = useErrorText()
 const code = ref(props.group?.code ?? '')
 const name = ref<LocalizedValue>({ ...(props.group?.name ?? {}) })
 const description = ref<LocalizedValue>({ ...(props.group?.description ?? {}) })
+const channels = ref<number[] | null>([...(props.group?.channels ?? [])])
 const saving = ref(false)
 const errors = ref<Record<string, string[]>>({})
 
@@ -56,6 +58,7 @@ async function save(): Promise<void> {
         code: code.value.trim(),
         name: name.value as Record<string, string>,
         description: description.value as Record<string, string>,
+        ...(props.notifications ? { notify_channels: channels.value ?? [] } : {}),
       }),
     )
   } catch (failure) {
@@ -95,6 +98,19 @@ async function save(): Promise<void> {
         required
       >
         <wx-input v-model="code" placeholder="in_progress" :maxlength="48" />
+      </wx-form-item>
+
+      <wx-form-item
+        v-if="props.notifications"
+        :label="t('panel.statuses.channels')"
+        :help="t('panel.statuses.channels-help')"
+        :error="errorOf('notify_channels')"
+      >
+        <wx-relations-field
+          v-model="channels"
+          target="notify-orders-public-status"
+          :sortable="false"
+        />
       </wx-form-item>
     </div>
 

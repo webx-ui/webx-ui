@@ -15,6 +15,7 @@ use WebxUi\Mcp\Tool;
 use WebxUi\Orders\Milestone;
 use WebxUi\Orders\Models\OrderStatus;
 use WebxUi\Orders\Models\PublicStatus;
+use WebxUi\Orders\Notifications\OrderChannels;
 use WebxUi\Orders\OrderSettings;
 use WebxUi\Orders\OrderStatuses;
 use WebxUi\Orders\Panel\OrdersModule;
@@ -118,12 +119,15 @@ final readonly class StatusTools
             Tool::mutating(
                 'public_statuses_save',
                 'Create a public status by a new `code` at the end, or change the names and the description of the one with '
-                .'this code. What is not sent stays; a language sent empty is removed.',
+                .'this code. What is not sent stays; a language sent empty is removed. `notify_channels` — with the '
+                .'notifications module — the ids of the channels told when an order comes into this status '
+                .'(notifications_channels_list, event orders.public_status); the list replaces the one kept.',
                 fn (array $arguments): array => $this->savePublic($arguments),
                 ['properties' => [
                     'code' => ['type' => 'string', 'description' => 'Lowercase Latin letters, digits and `_`, starting with a letter: what templates say.'],
                     'name' => $words('The name the buyer sees'),
                     'description' => $words('A line under it'),
+                    'notify_channels' => ['type' => 'array', 'items' => ['type' => 'integer'], 'description' => 'Ids of channels; [] tells nobody.'],
                 ], 'required' => ['code']],
                 permission: OrdersModule::STATUSES,
             ),
@@ -280,6 +284,10 @@ final readonly class StatusTools
             'name' => [...($status?->getTranslations('name') ?? []), ...$this->words($arguments['name'] ?? [], 'name')],
             'description' => [...($status?->getTranslations('description') ?? []), ...$this->words($arguments['description'] ?? [], 'description')],
         ];
+
+        if (array_key_exists('notify_channels', $arguments)) {
+            $input['notify_channels'] = $arguments['notify_channels'];
+        }
 
         $dryRun = $this->dryRun($arguments);
         $work = fn (): array => $this->publicRow($this->statuses->writePublic($input, $status));
@@ -459,6 +467,7 @@ final readonly class StatusTools
             'name' => $group->getTranslations('name'),
             'description' => $group->getTranslations('description'),
             'deleted' => $group->trashed(),
+            'notify_channels' => OrderChannels::ids($group->options[OrderChannels::OPTION] ?? []),
         ];
     }
 

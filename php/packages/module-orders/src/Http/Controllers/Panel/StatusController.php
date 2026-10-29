@@ -158,6 +158,6 @@ final readonly class StatusController
      */
     private function publicInput(Request $request): array
     {
-        return $request->only(['code', 'name', 'description']);
+        return $request->only(['code', 'name', 'description', 'notify_channels']);
     }
 }

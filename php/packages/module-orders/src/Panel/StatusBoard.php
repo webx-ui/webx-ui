@@ -7,6 +7,7 @@ namespace WebxUi\Orders\Panel;
 use WebxUi\Orders\Milestone;
 use WebxUi\Orders\Models\OrderStatus;
 use WebxUi\Orders\Models\PublicStatus;
+use WebxUi\Orders\Notifications\OrderChannels;
 use WebxUi\Orders\OrderStatuses;
 use WebxUi\Orders\StatusColor;
 use WebxUi\Orders\StatusPlan;
@@ -23,7 +24,10 @@ use WebxUi\Orders\StatusRefused;
  */
 final readonly class StatusBoard
 {
-    public function __construct(private OrderStatuses $statuses) {}
+    public function __construct(
+        private OrderStatuses $statuses,
+        private OrderChannels $channels,
+    ) {}
 
     /**
      * @return array<string, mixed>
@@ -69,6 +73,8 @@ final readonly class StatusBoard
             'initial' => $this->statuses->initial(),
             'colors' => array_map(static fn (StatusColor $color): array => ['value' => $color->value, 'label' => $color->label()], StatusColor::cases()),
             'milestones' => array_map(static fn (Milestone $milestone): array => ['value' => $milestone->value, 'label' => $milestone->label()], Milestone::settable()),
+            // Whether a group may choose its channels: only with the notifications module there.
+            'notifications' => $this->channels->available(),
         ];
     }
 
@@ -157,6 +163,7 @@ final readonly class StatusBoard
             'description' => $group->getTranslations('description'),
             'label' => (string) $group->getTranslation('name', $locale),
             'deleted' => $group->trashed(),
+            'channels' => OrderChannels::ids($group->options[OrderChannels::OPTION] ?? []),
         ];
     }
 

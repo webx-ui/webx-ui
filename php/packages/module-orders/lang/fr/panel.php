@@ -154,6 +154,8 @@ return [
     'to-settings' => 'Réglages',
     'settings-title' => 'Réglages des commandes',
     'settings-saved' => 'Réglages enregistrés.',
+    'notifications' => 'Notifications',
+    'notifications-empty' => 'Rien n\'a été envoyé pour cette commande.',
     'statuses' => [
         'title' => 'Statuts des commandes',
         'help' => 'Ce que voit l’acheteur, et les étapes de la boutique dans chaque statut. Faites glisser pour réordonner ; une étape glissée dans un autre groupe y passe.',
@@ -186,6 +188,8 @@ return [
         'delete' => 'Supprimer',
         'edit' => 'Modifier',
         'add-here' => 'Ajouter une étape',
+        'channels' => 'Prévenir via',
+        'channels-help' => 'Quand une commande entre dans ce statut. Un passage entre les étapes d\'un même statut ne prévient personne.',
         'delete-title' => 'Supprimer « :status » ?',
         'delete-public-title' => 'Supprimer « :public » ?',
         'delete-orders' => 'Commandes dans « :status » : :count.',

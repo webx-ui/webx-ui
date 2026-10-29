@@ -37,6 +37,8 @@ interface PublicRecord {
   id: number
   code: string
   channels: string[]
+  /** The ids of the channels of the notifications fixtures it tells (`options.notify_channels`). */
+  notify?: number[]
   /** Words typed in the panel; until then the dictionary's. */
   names?: Record<string, string>
   descriptions?: Record<string, string>
@@ -364,6 +366,13 @@ function stageName(status: StatusRecord, locale: string, line: Line): string {
   )
 }
 
+/** Channel ids as the server keeps them: whole, positive, each once. */
+function ids(value: unknown): number[] {
+  if (!Array.isArray(value)) return []
+
+  return [...new Set(value.map(Number).filter((id) => Number.isInteger(id) && id > 0))]
+}
+
 function groupName(group: PublicRecord, locale: string, line: Line): string {
   return (
     group.names?.[locale] ??
@@ -652,6 +661,8 @@ function card(record: OrderRecord, locale: string, line: Line) {
           : [],
       ),
       timeline: timeline(record, locale, line),
+      // Nothing was really sent in the playground: the block says so.
+      notifications: [],
       actions: {
         status: true,
         paid: !paid && !cancelled,
@@ -1105,6 +1116,13 @@ const settings: Record<string, unknown> = {
   'orders.number.pad': 0,
   'orders.initial_status': null,
   'orders.initial_status_awaiting_payment': null,
+  // The channels of the milestones (§10.1): the set a site starts with has none in the playground.
+  'orders.notify.placed': [],
+  'orders.notify.paid': [],
+  'orders.notify.payment_failed': [],
+  'orders.notify.received': [],
+  'orders.notify.cancelled': [],
+  'orders.notify.refunded': [],
 }
 
 const LANGUAGES = ['en', 'ru']
@@ -1179,6 +1197,7 @@ function board(locale: string, line: Line) {
       localized((code) => line(code, 'webx-orders', `statuses.public.${one.code}.description`)),
     label: groupName(one, locale, line),
     deleted: one.deleted ?? false,
+    channels: one.notify ?? [],
   })
 
   return {
@@ -1221,6 +1240,7 @@ function board(locale: string, line: Line) {
         value,
         label: line(locale, 'webx-orders', `module.milestones.${value}`),
       })),
+      notifications: true,
     },
   }
 }
@@ -1345,6 +1365,7 @@ function registerStatuses(on: On, fail: Fail, line: Line): void {
       id: Math.max(...publics.map((one) => one.id)) + 1,
       code,
       channels: [],
+      notify: ids(body.notify_channels),
       names: named(body),
       descriptions: words(body.description),
     })
@@ -1357,6 +1378,7 @@ function registerStatuses(on: On, fail: Fail, line: Line): void {
 
     group.names = named(body)
     group.descriptions = words(body.description)
+    if (Array.isArray(body.notify_channels)) group.notify = ids(body.notify_channels)
     if (typeof body.code === 'string' && body.code.trim() !== '') group.code = body.code.trim()
 
     return board(locale, line)

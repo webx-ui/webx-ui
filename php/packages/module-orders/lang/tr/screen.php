@@ -35,4 +35,7 @@ return [
     'initial-awaiting-help' => 'Çevrimiçi ödenen siparişin para gelene kadar beklediği yer.',
     'initial-first' => 'Listenin ilki',
     'no-settings' => 'Ayarlar modülü kurulu değil: numara biçimi ve başlangıç durumları webx-orders yapılandırmasından gelir.',
+    'notify' => 'Bildirimler',
+    'notify-help' => 'Bir siparişin her işaretinde bilgilendirilen kanallar. Genel durumun kendi kanalları vardır, durumlar sayfasında.',
+    'notify-ids' => 'Listeden kanal seçin.',
 ];

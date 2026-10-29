@@ -35,4 +35,7 @@ return [
     'initial-awaiting-help' => 'Où une commande payée en ligne attend l\'arrivée de l\'argent.',
     'initial-first' => 'Le premier de la liste',
     'no-settings' => 'Le module des réglages n\'est pas installé : le format du numéro et les statuts initiaux viennent de la configuration webx-orders.',
+    'notify' => 'Notifications',
+    'notify-help' => 'Les canaux prévenus à chaque étape d\'une commande. Un statut public a ses propres canaux, sur la page des statuts.',
+    'notify-ids' => 'Choisissez des canaux dans la liste.',
 ];

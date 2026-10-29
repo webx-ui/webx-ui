@@ -20,6 +20,7 @@ return [
     'variable' => 'The template uses {{:variable}}, which the event ":event" does not have. It has: :variables.',
     'variable-unknown' => 'No event has {{:variable}}: it will be empty. Is it a typo?',
     'variable-list' => '{{:variable}} is a list: go over it with {{#:variable}}…{{/:variable}} and print the fields of each row.',
+    'variable-internal' => '{{:variable}} is for the staff, and this channel writes to :addressee: the buyer will read it. Is that meant?',
     'template-unclosed' => 'The section {{#:section}} is not closed: end it with {{/:section}}.',
     'template-unexpected' => '{{/:section}} closes a section that was never opened.',
     'template-tag' => 'The tag {{:tag is not closed: end it with }}.',

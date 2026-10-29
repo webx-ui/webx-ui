@@ -1,0 +1,115 @@
+<?php
+
+declare(strict_types=1);
+
+namespace WebxUi\Orders\Notifications;
+
+use Illuminate\Contracts\Container\Container;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\URL;
+use WebxUi\Cart\Money;
+use WebxUi\Orders\Data\ItemData;
+use WebxUi\Orders\Data\OrderData;
+use WebxUi\Orders\Models\PublicStatus;
+use WebxUi\Orders\Panel\OrderList;
+
+/**
+ * The values of an order for its templates (spec §10.2) — a snapshot of what the event carried:
+ * the job renders later, but from the order as it was then. Money is a string in the currency of
+ * the order, a date is in its language.
+ *
+ * Knows nothing of the notifications module: an array of strings and lists, so a test, the
+ * listener and an agent's preview read the same.
+ */
+final readonly class OrderValues
+{
+    /** The page of the order for the buyer (§13.1), when the site has it. */
+    public const string PUBLIC_ROUTE = 'webx.orders.order';
+
+    public function __construct(
+        private Container $container,
+        private Money $money,
+    ) {}
+
+    /**
+     * @param  array<string, string>  $extra  the values of one event: `reason`, `reference`, `refund_amount`
+     * @return array<string, string|list<array<string, string>>>
+     */
+    public function of(OrderData $order, array $extra = []): array
+    {
+        $locale = $order->locale;
+        $money = fn (int $minor): string => $this->money->format($minor, $order->currency);
+        $nonZero = fn (int $minor): string => $minor === 0 ? '' : $money($minor);
+        $placed = $order->milestones['placed'] ?? null;
+        $public = PublicStatus::withTrashed()->find($order->publicStatus->id);
+        $list = $this->container->make(OrderList::class);
+
+        return [
+            'number' => $order->number,
+            'order_url' => self::panelUrl($order->id),
+            'public_url' => self::publicUrl($order->number, $locale),
+            'placed_at' => $placed === null ? '' : (string) Carbon::parse($placed)->locale($locale)->isoFormat('L LT'),
+            'customer_name' => $order->customer->name(),
+            'customer_first_name' => $order->customer->firstName,
+            'customer_last_name' => (string) $order->customer->lastName,
+            'customer_phone' => (string) $order->customer->phone,
+            'customer_email' => (string) $order->customer->email,
+            'recipient_name' => (string) $order->recipient?->name(),
+            'recipient_first_name' => (string) $order->recipient?->firstName,
+            'recipient_last_name' => (string) $order->recipient?->lastName,
+            'recipient_phone' => (string) $order->recipient?->phone,
+            'items' => array_map(static fn (ItemData $item): array => [
+                'name' => $item->name,
+                'options' => (string) $item->optionsLabel,
+                'qty' => (string) $item->qty,
+                'price' => $money($item->price),
+                'total' => $money($item->total),
+                // A child of a set: `{{#child}}` indents it, nothing else tells it apart.
+                'child' => $item->parentId === null ? '' : (string) trans('webx-orders::notifications.yes', [], $locale),
+            ], $order->items),
+            'subtotal' => $money($order->subtotal),
+            'discount' => $nonZero($order->adjustmentsTotal),
+            'total' => $money($order->total),
+            'tenders' => $nonZero(-$order->tendersTotal),
+            'payable' => $money($order->payable),
+            'delivery' => (string) $list->summary('delivery', $order->delivery, $locale),
+            'payment' => (string) $list->summary('payment', $order->payment, $locale),
+            'comment' => (string) $order->comment,
+            'public_status' => $order->publicStatus->name,
+            'public_status_code' => $order->publicStatus->code,
+            'public_status_description' => (string) $public?->getTranslation('description', $locale),
+            'status' => $order->status->name,
+            ...$extra,
+        ];
+    }
+
+    /**
+     * The order in the panel, from `app.url` and not from the request: the job that sends it
+     * runs in a worker.
+     */
+    public static function panelUrl(int $id): string
+    {
+        $path = trim((string) config('webx-admin.path', 'cms'), '/');
+
+        return rtrim((string) config('app.url'), '/')."/{$path}/orders/{$id}";
+    }
+
+    /**
+     * The signed page of the order for the buyer (§13.1, decision 32), or empty while the site has
+     * no such page — a template shows its link under `{{#public_url}}`.
+     */
+    public static function publicUrl(string $number, string $locale): string
+    {
+        if (! Route::has(self::PUBLIC_ROUTE)) {
+            return '';
+        }
+
+        return URL::signedRoute(self::PUBLIC_ROUTE, ['number' => $number, 'locale' => $locale]);
+    }
+
+    public function format(int $minor, string $currency): string
+    {
+        return $this->money->format($minor, $currency);
+    }
+}
