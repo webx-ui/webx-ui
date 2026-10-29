@@ -20,7 +20,13 @@ return [
             'title' => 'Formularze z captchą, do której witryna nie ma kluczy',
             'found' => 'Włączony formularz wymaga reCAPTCHA lub Turnstile, a w .env witryny brakuje klucza witryny, sekretu albo obu.',
             'why' => 'Bez klucza witryny widżet się nie pokazuje, bez sekretu nie da się sprawdzić odpowiedzi. W obu przypadkach formularz odrzuca każde wysłanie i odwiedzający nie mogą się z Tobą skontaktować.',
-            'fix' => 'Dodaj WEBX_INBOX_RECAPTCHA_KEY i WEBX_INBOX_RECAPTCHA_SECRET (lub parę TURNSTILE) do .env witryny, z WEBX_INBOX_RECAPTCHA_TYPE zgodnym z typem kluczy, i wyczyść pamięć podręczną konfiguracji (php artisan config:clear). Albo wyłącz captchę na karcie „Antyspam” formularza.',
+            'fix' => 'Dodaj WEBX_CAPTCHA_RECAPTCHA_KEY (WEBX_INBOX_RECAPTCHA_KEY) i WEBX_CAPTCHA_RECAPTCHA_SECRET (WEBX_INBOX_RECAPTCHA_SECRET) (lub parę TURNSTILE) do .env witryny, z WEBX_CAPTCHA_RECAPTCHA_TYPE (WEBX_INBOX_RECAPTCHA_TYPE) zgodnym z typem kluczy, i wyczyść pamięć podręczną konfiguracji (php artisan config:clear). Albo wyłącz captchę na karcie „Antyspam” formularza.',
+        ],
+        'captcha_provider_mismatch' => [
+            'title' => 'Formularz z inną captchą niż witryna',
+            'found' => 'Włączony formularz zachowuje własnego dostawcę — reCAPTCHA lub Turnstile — a captcha witryny to ten drugi.',
+            'why' => 'Nadal działa ze swoim dostawcą i kluczami ze środowiska witryny, ale witryna ma jedną captchę dla wszystkich formularzy: druga para kluczy do utrzymania i formularz, który przestanie działać, gdy zostaną usunięte.',
+            'fix' => 'Ustaw captchę formularza na „włączona” na jego karcie Antyspam, aby używał captchy witryny, albo wybierz dostawcę formularza na karcie Captcha w ustawieniach.',
         ],
         'captcha_unused' => [
             'title' => 'Formularze bez captchy na witrynie, która ma klucze',

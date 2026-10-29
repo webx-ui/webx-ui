@@ -20,7 +20,13 @@ return [
             'title' => 'Moduli che chiedono un captcha senza chiavi sul sito',
             'found' => 'Un modulo attivo chiede reCAPTCHA o Turnstile, e nel .env del sito manca la chiave del sito, il segreto o entrambi.',
             'why' => 'Senza chiave del sito il widget non viene mostrato; senza segreto nessuna risposta può essere verificata. In entrambi i casi il modulo rifiuta ogni invio e i visitatori non possono contattarti.',
-            'fix' => 'Aggiungi WEBX_INBOX_RECAPTCHA_KEY e WEBX_INBOX_RECAPTCHA_SECRET (o la coppia TURNSTILE) al .env del sito, con WEBX_INBOX_RECAPTCHA_TYPE secondo il tipo di chiave, e svuota la cache di configurazione (php artisan config:clear). Oppure disattiva il captcha nella scheda Antispam del modulo.',
+            'fix' => 'Aggiungi WEBX_CAPTCHA_RECAPTCHA_KEY (WEBX_INBOX_RECAPTCHA_KEY) e WEBX_CAPTCHA_RECAPTCHA_SECRET (WEBX_INBOX_RECAPTCHA_SECRET) (o la coppia TURNSTILE) al .env del sito, con WEBX_CAPTCHA_RECAPTCHA_TYPE (WEBX_INBOX_RECAPTCHA_TYPE) secondo il tipo di chiave, e svuota la cache di configurazione (php artisan config:clear). Oppure disattiva il captcha nella scheda Antispam del modulo.',
+        ],
+        'captcha_provider_mismatch' => [
+            'title' => 'Un modulo con un captcha diverso da quello del sito',
+            'found' => 'Un modulo attivo mantiene il proprio fornitore — reCAPTCHA o Turnstile — e il captcha del sito è l’altro.',
+            'why' => 'Funziona ancora con il suo fornitore e le chiavi dell’ambiente del sito, ma il sito ha un captcha per tutti i moduli: una seconda coppia di chiavi da gestire e un modulo che smette di funzionare quando vengono tolte.',
+            'fix' => 'Imposta il captcha del modulo su «attivo» nella sua scheda Antispam perché usi quello del sito, oppure scegli il fornitore del modulo nella scheda Captcha delle impostazioni.',
         ],
         'captcha_unused' => [
             'title' => 'Moduli senza captcha su un sito che ha le chiavi',

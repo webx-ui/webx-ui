@@ -19,6 +19,7 @@ use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Audit\Checks\AuditChecks;
 use WebxUi\Inbox\Antispam\Throttle;
 use WebxUi\Inbox\Audit\CaptchaKeys;
+use WebxUi\Inbox\Audit\CaptchaProviderMismatch;
 use WebxUi\Inbox\Audit\CaptchaUnused;
 use WebxUi\Inbox\Audit\LegacyViews;
 use WebxUi\Inbox\Audit\NoRecipients;
@@ -116,6 +117,9 @@ class InboxServiceProvider extends ServiceProvider
 
             // And one that asks for a captcha the site has no keys for refuses every enquiry.
             $this->app->make(AuditChecks::class)->register($this->app->make(CaptchaKeys::class));
+
+            // A form that kept a provider other than the site's captcha works, with keys of its own.
+            $this->app->make(AuditChecks::class)->register($this->app->make(CaptchaProviderMismatch::class));
 
             // A site with keys and a form left without them is a notice; a form without a
             // captcha that robots have found is the one that says it needs one. There is no

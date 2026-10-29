@@ -20,7 +20,13 @@ return [
             'title' => 'Formulários que pedem um captcha sem chaves no site',
             'found' => 'Um formulário ativo pede reCAPTCHA ou Turnstile, e falta no .env do site a chave do site, o segredo ou ambos.',
             'why' => 'Sem chave do site o widget não aparece; sem segredo nenhuma resposta pode ser verificada. Em ambos os casos o formulário recusa cada envio e os visitantes não conseguem contactá-lo.',
-            'fix' => 'Acrescente WEBX_INBOX_RECAPTCHA_KEY e WEBX_INBOX_RECAPTCHA_SECRET (ou o par TURNSTILE) ao .env do site, com WEBX_INBOX_RECAPTCHA_TYPE conforme o tipo de chave, e limpe a cache de configuração (php artisan config:clear). Ou desligue o captcha no separador Antispam do formulário.',
+            'fix' => 'Acrescente WEBX_CAPTCHA_RECAPTCHA_KEY (WEBX_INBOX_RECAPTCHA_KEY) e WEBX_CAPTCHA_RECAPTCHA_SECRET (WEBX_INBOX_RECAPTCHA_SECRET) (ou o par TURNSTILE) ao .env do site, com WEBX_CAPTCHA_RECAPTCHA_TYPE (WEBX_INBOX_RECAPTCHA_TYPE) conforme o tipo de chave, e limpe a cache de configuração (php artisan config:clear). Ou desligue o captcha no separador Antispam do formulário.',
+        ],
+        'captcha_provider_mismatch' => [
+            'title' => 'Um formulário com um captcha diferente do site',
+            'found' => 'Um formulário ligado mantém o seu próprio fornecedor — reCAPTCHA ou Turnstile — e o captcha do site é o outro.',
+            'why' => 'Continua a funcionar com o seu fornecedor e as chaves do ambiente do site, mas o site tem um captcha para todos os formulários: um segundo par de chaves para manter e um formulário que deixa de funcionar quando forem retiradas.',
+            'fix' => 'Ponha o captcha do formulário em «ligado» na aba Antispam para que use o do site, ou escolha o fornecedor do formulário na aba Captcha das definições.',
         ],
         'captcha_unused' => [
             'title' => 'Formulários sem captcha num site que tem as chaves',

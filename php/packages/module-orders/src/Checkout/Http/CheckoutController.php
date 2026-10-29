@@ -175,6 +175,8 @@ final readonly class CheckoutController
             return $this->refusal($request, $context, CheckoutAnswers::RETRY, 422);
         }
 
+        $this->antispam->checkCaptcha($request, CheckoutAntispam::PLACE_ACTION);
+
         // 2. The key: a repeat of a confirmation that made an order is that order (§24.3).
         $key = (string) $request->input('place_key', '');
         $repeat = $this->madeWith($key, $context, $orders);
@@ -383,6 +385,7 @@ final readonly class CheckoutController
             'place_key' => $key,
             'timestamp' => $this->antispam->timestamp(),
             'honeypot' => CheckoutAntispam::HONEYPOT,
+            'captcha' => $this->antispam->wantsCaptcha() ? CheckoutAntispam::PLACE_ACTION : null,
         ];
     }
 

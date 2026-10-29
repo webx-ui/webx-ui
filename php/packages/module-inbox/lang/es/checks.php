@@ -20,7 +20,13 @@ return [
             'title' => 'Formularios que piden un captcha sin claves en el sitio',
             'found' => 'Un formulario activado pide reCAPTCHA o Turnstile, y al .env del sitio le falta la clave del sitio, el secreto o ambos.',
             'why' => 'Sin clave del sitio el widget no se dibuja; sin secreto no se puede verificar ninguna respuesta. En ambos casos el formulario rechaza cada envío y los visitantes no pueden contactarle.',
-            'fix' => 'Añada WEBX_INBOX_RECAPTCHA_KEY y WEBX_INBOX_RECAPTCHA_SECRET (o el par TURNSTILE) al .env del sitio, con WEBX_INBOX_RECAPTCHA_TYPE según el tipo de clave, y limpie la caché de configuración (php artisan config:clear). O desactive el captcha en la pestaña Antispam del formulario.',
+            'fix' => 'Añada WEBX_CAPTCHA_RECAPTCHA_KEY (WEBX_INBOX_RECAPTCHA_KEY) y WEBX_CAPTCHA_RECAPTCHA_SECRET (WEBX_INBOX_RECAPTCHA_SECRET) (o el par TURNSTILE) al .env del sitio, con WEBX_CAPTCHA_RECAPTCHA_TYPE (WEBX_INBOX_RECAPTCHA_TYPE) según el tipo de clave, y limpie la caché de configuración (php artisan config:clear). O desactive el captcha en la pestaña Antispam del formulario.',
+        ],
+        'captcha_provider_mismatch' => [
+            'title' => 'Un formulario con un captcha distinto del sitio',
+            'found' => 'Un formulario activado conserva su propio proveedor —reCAPTCHA o Turnstile— y el captcha del sitio es el otro.',
+            'why' => 'Sigue funcionando con su proveedor y las claves del entorno del sitio, pero el sitio tiene un captcha para todos los formularios: un segundo par de claves que mantener, y un formulario que deja de funcionar cuando se quitan.',
+            'fix' => 'Pon el captcha del formulario en «activado» en su pestaña Antispam para que use el del sitio, o elige el proveedor del formulario en la pestaña Captcha de los ajustes.',
         ],
         'captcha_unused' => [
             'title' => 'Formularios sin captcha en un sitio que tiene las claves',

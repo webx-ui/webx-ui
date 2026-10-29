@@ -8,7 +8,9 @@ use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\Encryption\Encrypter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Validation\ValidationException;
 use Throwable;
+use WebxUi\Widgets\Captcha;
 
 /**
  * The checkout is a form that writes to the database and sends letters (spec §28): what costs the
@@ -26,10 +28,45 @@ final readonly class CheckoutAntispam
     /** When the confirmation was drawn, encrypted. */
     public const string TIMESTAMP = 'webx_ts';
 
+    /** The v3 actions of the two forms: a token asked for one is no answer for the other. */
+    public const string PLACE_ACTION = 'webx_checkout';
+
+    public const string QUICK_ACTION = 'webx_checkout_quick';
+
     public function __construct(
         private Config $config,
         private Encrypter $encrypter,
+        private CheckoutSettings $settings,
+        private Captcha $captcha,
     ) {}
+
+    /** Whether the forms draw the site's captcha (`orders.checkout.captcha`). */
+    public function wantsCaptcha(): bool
+    {
+        return $this->settings->captcha();
+    }
+
+    /**
+     * The site's captcha, when the shop turned it on (§28): refused — the words under the widget,
+     * `captcha`, as the form engine and the page without JavaScript put them. A refusal the visitor
+     * can do nothing about — no keys, a v3 score — is «Try again», like the rest of the antispam.
+     *
+     * @throws ValidationException
+     */
+    public function checkCaptcha(Request $request, string $action): void
+    {
+        if (! $this->wantsCaptcha()) {
+            return;
+        }
+
+        $refusal = $this->captcha->check($request, $action, form: $action);
+
+        if ($refusal !== null) {
+            throw ValidationException::withMessages([
+                'captcha' => [$this->captcha->message($refusal) ?? (string) __('webx-orders::checkout.errors.retry')],
+            ]);
+        }
+    }
 
     public function trapped(Request $request): bool
     {

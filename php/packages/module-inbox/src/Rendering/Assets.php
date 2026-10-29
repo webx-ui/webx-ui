@@ -6,6 +6,7 @@ namespace WebxUi\Inbox\Rendering;
 
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\Routing\UrlGenerator;
+use WebxUi\Widgets\Captcha;
 
 /**
  * The scripts a printed form needs, each of them at most once per page.
@@ -34,15 +35,13 @@ final class Assets
     /** @var array<string, bool> */
     private array $script = [];
 
-    /** @var array<string, bool> */
-    private array $captcha = [];
-
     /** @var array<string, string> */
     private static array $versions = [];
 
     public function __construct(
         private readonly Config $config,
         private readonly UrlGenerator $url,
+        private readonly Captcha $captcha,
     ) {}
 
     /**
@@ -76,19 +75,8 @@ final class Assets
      */
     public function captchaScript(string $provider, ?string $render = null): ?string
     {
-        $src = $this->config->get("webx-inbox.captcha.{$provider}.script");
-
-        if (! is_string($src) || $src === '' || ($this->captcha[$provider] ?? false)) {
-            return null;
-        }
-
-        $this->captcha[$provider] = true;
-
-        if ($render !== null && $render !== '') {
-            $src .= (str_contains($src, '?') ? '&' : '?').'render='.rawurlencode($render);
-        }
-
-        return $src;
+        // The site's captcha keeps the count: a form of the checkout on the same page loads it too.
+        return $this->captcha->script($provider, $render);
     }
 
     /** What is served, read once per process — it cannot change under a running worker. */

@@ -47,7 +47,9 @@ cart's button leads to the route named `checkout` by itself.
   confirms again; if it counts less, the order is placed at once and «Thank you» says by how
   much. A double click, two tabs or a repeated request make one order.
 - **Antispam** is a honeypot, a time mark (`min_seconds`), the `Origin` and the limits of
-  `throttle`.
+  `throttle`. The tab «Checkout» adds [the site's captcha](/guide/forms#captcha) to the
+  confirmation (`orders.checkout.captcha`, off by default); it is refused while the site has
+  chosen no provider.
 
 The shop sets the rest in the panel, section «Orders» → settings → tab «Checkout» (right
 `orders.checkout.settings`): which of last name, phone and e-mail are asked and required, the
@@ -329,7 +331,8 @@ page chose them. While the setting is off, the component prints nothing.
 - **The answer stays in the dialog**: the shop's words and «Order 1024 for 120.00». There is no
   «Thank you» page.
 - **Antispam, stricter than the checkout's**: the mark of time, the hidden field, the origin, and
-  3 orders an hour from one address and from one phone (`webx-orders.checkout.throttle.quick_per_hour`).
+  3 orders an hour from one address and from one phone (`webx-orders.checkout.throttle.quick_per_hour`);
+  the captcha by the same setting as the confirmation.
   The same dialog sent twice within ten minutes is one order.
 - **No CSRF token.** A product's page may be cached for everybody, so the form carries nothing
   personal, as the inbox's forms do.

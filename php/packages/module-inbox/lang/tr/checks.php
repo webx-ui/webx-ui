@@ -20,7 +20,13 @@ return [
             'title' => 'Sitenin anahtarı olmayan bir captcha isteyen formlar',
             'found' => 'Açık bir form reCAPTCHA ya da Turnstile istiyor ve sitenin .env dosyasında site anahtarı, gizli anahtar ya da ikisi birden eksik.',
             'why' => 'Site anahtarı olmadan widget gösterilmez; gizli anahtar olmadan hiçbir yanıt doğrulanamaz. Her iki durumda da form her gönderimi reddeder ve ziyaretçiler size ulaşamaz.',
-            'fix' => 'Sitenin .env dosyasına WEBX_INBOX_RECAPTCHA_KEY ve WEBX_INBOX_RECAPTCHA_SECRET’ı (ya da TURNSTILE çiftini) ve anahtar türüne uygun WEBX_INBOX_RECAPTCHA_TYPE’ı ekleyin, sonra yapılandırma önbelleğini temizleyin (php artisan config:clear). Ya da formun Spam koruması sekmesinde captcha’yı kapatın.',
+            'fix' => 'Sitenin .env dosyasına WEBX_CAPTCHA_RECAPTCHA_KEY (WEBX_INBOX_RECAPTCHA_KEY) ve WEBX_CAPTCHA_RECAPTCHA_SECRET (WEBX_INBOX_RECAPTCHA_SECRET)’ı (ya da TURNSTILE çiftini) ve anahtar türüne uygun WEBX_CAPTCHA_RECAPTCHA_TYPE (WEBX_INBOX_RECAPTCHA_TYPE)’ı ekleyin, sonra yapılandırma önbelleğini temizleyin (php artisan config:clear). Ya da formun Spam koruması sekmesinde captcha’yı kapatın.',
+        ],
+        'captcha_provider_mismatch' => [
+            'title' => 'Sitenin captcha’sından farklı captcha kullanan form',
+            'found' => 'Açık bir form kendi sağlayıcısını — reCAPTCHA veya Turnstile — tutuyor ve sitenin captcha’sı diğeri.',
+            'why' => 'Kendi sağlayıcısı ve sitenin ortamındaki anahtarlarla çalışmaya devam ediyor, ama sitenin tüm formlar için tek bir captcha’sı var: bakımı gereken ikinci bir anahtar çifti ve anahtarlar kaldırılınca çalışmayı bırakan bir form.',
+            'fix' => 'Sitenin captcha’sını kullanması için formun Antispam sekmesinde captcha’yı «açık» yapın ya da ayarların Captcha sekmesinde formun sağlayıcısını seçin.',
         ],
         'captcha_unused' => [
             'title' => 'Anahtarı olan bir sitede captcha’sız formlar',

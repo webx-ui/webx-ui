@@ -65,6 +65,7 @@ final class SettingsTest extends PanelTestCase
                 'orders.checkout.terms' => 'notice',
                 'orders.checkout.terms_page' => null,
                 'orders.checkout.privacy_page' => null,
+                'orders.checkout.captcha' => 'off',
                 'orders.checkout.quick.enabled' => 'off',
                 'orders.checkout.quick.message' => null,
             ]);

@@ -77,13 +77,42 @@ final class AuditTest extends TestCase
         $this->assertSame('error', $findings[0]->severity);
         $this->assertSame((string) $broken->getKey(), $findings[0]->key);
         $this->assertSame('/inbox/forms/'.$broken->getKey().'?tab=antispam', $findings[0]->details['table']['rows'][0]['edit'] ?? null);
-        // What is missing, named the way the .env spells it.
-        $this->assertSame('WEBX_INBOX_RECAPTCHA_SECRET', $findings[0]->details['table']['rows'][0]['value'] ?? null);
+        // What is missing, named the way the .env spells it: the site's name, the inbox's of before in brackets.
+        $this->assertSame('WEBX_CAPTCHA_RECAPTCHA_SECRET (WEBX_INBOX_RECAPTCHA_SECRET)', $findings[0]->details['table']['rows'][0]['value'] ?? null);
 
         foreach (['title', 'found', 'why', 'fix'] as $text) {
             $key = 'webx-inbox::checks.inbox.captcha_keys.'.$text;
             $this->assertNotSame($key, __($key), $text);
         }
+    }
+
+    #[Test]
+    public function a_form_keeping_a_provider_other_than_the_sites_captcha_is_a_notice(): void
+    {
+        config()->set('webx-widgets.captcha.provider', 'turnstile');
+
+        $own = $this->form('contact', [], ['antispam.captcha' => 'recaptcha']);
+        $this->form('callback', [], ['antispam.captcha' => 'turnstile']);
+        $this->form('quote', [], ['antispam.captcha' => 'on']);
+        $this->form('plain');
+        $this->form('old', [], ['antispam.captcha' => 'recaptcha'])->update(['is_enabled' => false]);
+
+        $findings = $this->findings('inbox.captcha_provider_mismatch');
+
+        $this->assertCount(1, $findings);
+        $this->assertSame('notice', $findings[0]->severity);
+        $this->assertSame((string) $own->getKey(), $findings[0]->key);
+        $this->assertSame('reCAPTCHA', $findings[0]->details['table']['rows'][0]['value'] ?? null);
+
+        foreach (['title', 'found', 'why', 'fix'] as $text) {
+            $key = 'webx-inbox::checks.inbox.captcha_provider_mismatch.'.$text;
+            $this->assertNotSame($key, __($key), $text);
+        }
+
+        // A site that chose no provider has nothing to differ from: every form keeps its own.
+        config()->set('webx-widgets.captcha.provider', null);
+
+        $this->assertSame([], $this->findings('inbox.captcha_provider_mismatch'));
     }
 
     #[Test]

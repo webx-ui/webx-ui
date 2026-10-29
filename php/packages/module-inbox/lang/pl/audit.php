@@ -7,6 +7,7 @@ return [
     'notify-failed' => 'Nieudane powiadomienia z ostatnich :days dni: :count',
     'notify-queued' => 'Powiadomienia w kolejce dłużej niż :minutes min: :count',
     'captcha-keys' => 'Formularz :form (:slug) wymaga :provider, a w .env witryny brakuje :missing',
+    'captcha-provider-mismatch' => 'Formularz :form (:slug) używa :provider, a captcha witryny to :site',
     'captcha-unused' => 'Formularz :form (:slug) nie ma captchy, a witryna ma klucze do :providers',
     'spam-without-captcha' => 'Formularz :form (:slug) nie ma captchy i dostaje spam. W ciągu :days dni oznaczone jako spam: :spam, odrzucone: :refused',
     'legacy-views' => 'Formularz zgłoszeń zastępuje widok sprzed silnika formularzy: :path',

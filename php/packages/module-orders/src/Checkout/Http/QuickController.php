@@ -79,6 +79,8 @@ final readonly class QuickController
             return FormResponse::message($this->settings->quickMessage($locale));
         }
 
+        $this->antispam->checkCaptcha($request, CheckoutAntispam::QUICK_ACTION);
+
         $data = $this->validated($request);
         $name = trim((string) ($data['name'] ?? ''));
         // An order wants a first name (§6.1); a buyer who gave none is «Buyer» in the order's language.

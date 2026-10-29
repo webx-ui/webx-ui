@@ -339,6 +339,33 @@
               ]
             },
             {
+              "id": "checkout-antispam-card",
+              "type": "wx-card",
+              "label": "trans::webx-orders::checkout.settings.antispam-card",
+              "children": [
+                {
+                  "id": "checkout-captcha",
+                  "type": "wx-segmented",
+                  "name": "orders.checkout.captcha",
+                  "label": "trans::webx-orders::checkout.settings.captcha",
+                  "default": "off",
+                  "props": {
+                    "options": [
+                      {
+                        "value": "on",
+                        "label": "trans::webx-orders::checkout.settings.values.on"
+                      },
+                      {
+                        "value": "off",
+                        "label": "trans::webx-orders::checkout.settings.values.off"
+                      }
+                    ]
+                  },
+                  "help": "trans::webx-orders::checkout.settings.captcha-help"
+                }
+              ]
+            },
+            {
               "id": "checkout-quick-card",
               "type": "wx-card",
               "label": "trans::webx-orders::checkout.settings.quick-card",

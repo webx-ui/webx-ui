@@ -122,6 +122,7 @@ final class SettingsModule extends AbstractModule implements ProvidesDemo, Provi
                         'stored' => $settings->raw()[$key] ?? null,
                         'resolved' => $settings->get($key),
                         ...self::item($key),
+                        ...self::captcha($key),
                     ];
                 },
                 [
@@ -179,6 +180,19 @@ final class SettingsModule extends AbstractModule implements ProvidesDemo, Provi
             'localized' => ($node['localized'] ?? false) === true,
             ...self::item((string) $node['name']),
         ], $fields);
+    }
+
+    /**
+     * The site's captcha as the site sees it, beside a setting of its tab: the secret is the
+     * environment's and never stored, so the tab cannot show it — an agent learns whether it is set.
+     *
+     * @return array{captcha?: array<string, mixed>}
+     */
+    private static function captcha(string $key): array
+    {
+        $service = 'WebxUi\Widgets\Captcha';
+
+        return str_starts_with($key, 'captcha.') && class_exists($service) ? ['captcha' => app($service)->status()] : [];
     }
 
     /**

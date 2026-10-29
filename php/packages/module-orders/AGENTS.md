@@ -86,14 +86,14 @@ grouped into public ones. Dictionary `webx-orders` (`module`, `statuses`, `panel
 - **Switch** `webx-orders.checkout.enabled` (`WEBX_ORDERS_CHECKOUT`, on; `Checkout\Checkout::enabled()`). Off — no checkout
   routes, drafts, tools, prune or tab; `Orders::place()` from code works. Also `path`, `layout`, `empty_url`, `draft_days`.
 - **Draft** `order_checkout_drafts` (`CheckoutDraft`, key `cart_id`), only by a `POST`; `CartsMerging` moves the guest's to an account's cart without one. `webx:orders:checkout-prune [--days=] [--dry-run]`, daily — older than `draft_days` (30). `last_step` `confirm` — it placed an order.
-- **Tab «Checkout»** of `orders.settings` (`OrderSettings::CHECKOUT` — defaults): `orders.checkout.fields.*` (`required`, `optional`, `hidden`; phone or e-mail stays `required`), `recipient`, `comment`, `terms`, `terms_page`, `privacy_page`, `quick.enabled` (`off`), `quick.message` (a language each).
+- **Tab «Checkout»** of `orders.settings` (`OrderSettings::CHECKOUT` — defaults): `orders.checkout.fields.*` (`required`, `optional`, `hidden`; phone or e-mail stays `required`), `recipient`, `comment`, `terms`, `terms_page`, `privacy_page`, `captcha` (`off`; `on` — the site's captcha, refused while the site has none), `quick.enabled` (`off`), `quick.message` (a language each).
 - **Page** `/checkout` (route `checkout` — the cart's button; also behind `{locale}/`), `Checkout\Http\CheckoutController`:
   `POST steps/{key}` keeps a step in the draft, `GET summary` — the column; `CheckoutSteps`: `contacts` 100, `comment` 900,
   a project's `Step` by position; `CheckoutContext` — the cart counted once. A `GET` never makes a draft.
 - **Slots** (§22) `Checkout\Slots\CheckoutSlots`, registered by their modules: `delivery` 200 (`ShippingSlot`: `totalsLine()`
   — «Delivery cost», `choice()` → `CheckoutContext::shippingChoice()`), `payment` 300 (`PaymentSlot`: `awaitsPayment()`,
   `next()` — a gateway after the commit, `payAgainUrl()` — «Pay»). `SlotStep` wraps one: a throw — «could not load», no order.
-- **Confirm** `POST place`: antispam (`webx_hp`, `webx_ts`, origin, `throttle:webx-orders-checkout`) → `place_key` (a
+- **Confirm** `POST place`: antispam (`webx_hp`, `webx_ts`, origin, `throttle:webx-orders-checkout`, the captcha — `captcha` 422) → `place_key` (a
   repeat is the same order) → steps → `Orders::place()`; came to less — placed again with it. `PlacingListener` (only that
   order) notes the agreement, clears the draft but the contacts. `GET thanks/{number}` — for the session that placed it.
 - **View** (§27): composition `checkout.page` (ids `checkout`, `.main`, `.steps`, `.aside`, `.summary`, `.summary.parts` —
@@ -101,7 +101,7 @@ grouped into public ones. Dictionary `webx-orders` (`module`, `statuses`, `panel
   `resources/theme/checkout.css`, `webx/orders/checkout.js` (redraws, `webx:users:signed-in` cancelled); «Thank you» — an account.
 - **Events** (§30, `Checkout\Events`): `CheckoutStepSaved(cartId, step)`, `CheckoutPayableChanged(cartId, from, to)` (the draft counts `payable_changes`), `CheckoutPlaced(orderId, cartId)` after the commit; the order's own — `OrderPlaced`.
 - **MCP** (§32, `Mcp\CheckoutTools`, only while on): `orders_checkout_steps|preview|funnel|drafts_list|settings_get|settings_set`, `orders://checkout`; `preview` asks what `place` asks (`CheckoutPreview`, `CheckoutAnswers`), writes nothing; a draft's contacts come masked (`ContactMask`).
-- **One click** (§29): `<x-webx-orders::checkout.quick-button type= ref= />` → `POST checkout/quick` (`QuickController`; no CSRF — cached pages) → `QuickOrders`: a service cart of one line (`CartService::add(null, …)`, no cookie), `Orders::place(source: 'quick')`, `clear()` — one transaction, the buyer's cart and draft untouched. Phone required; no name — «Buyer» (`checkout.quick.anonymous`); 3 an hour an IP and a phone (`throttle.quick_per_hour`). The list filters `source` (milestone `placed`).
+- **One click** (§29): `<x-webx-orders::checkout.quick-button type= ref= />` → `POST checkout/quick` (`QuickController`; no CSRF — cached pages) → `QuickOrders`: a service cart of one line (`CartService::add(null, …)`, no cookie), `Orders::place(source: 'quick')`, `clear()` — one transaction, the buyer's cart and draft untouched. Phone required; no name — «Buyer» (`checkout.quick.anonymous`); 3 an hour an IP and a phone (`throttle.quick_per_hour`), the captcha by the same setting. The list filters `source` (milestone `placed`).
 
 ### Permissions
 

@@ -12,6 +12,7 @@ use WebxUi\Orders\Models\Order;
 use WebxUi\Orders\Models\OrderStatus;
 use WebxUi\Orders\Notifications\OrderChannels;
 use WebxUi\Settings\Settings;
+use WebxUi\Widgets\Captcha;
 
 /**
  * The settings of the section (spec §4, §5.2, §11.4): the format of the number and the statuses a
@@ -49,6 +50,8 @@ final readonly class OrderSettings
         'orders.checkout.terms' => 'notice',
         'orders.checkout.terms_page' => null,
         'orders.checkout.privacy_page' => null,
+        // The site's captcha on the confirmation and in «Buy in one click» (§28): `on` / `off`.
+        'orders.checkout.captcha' => 'off',
         'orders.checkout.quick.enabled' => 'off',
         // The words of the dialog after the order, a language each; null — the package's own.
         'orders.checkout.quick.message' => null,
@@ -202,6 +205,11 @@ final readonly class OrderSettings
             if ($pick('orders.checkout.fields.phone') !== 'required' && $pick('orders.checkout.fields.email') !== 'required') {
                 $errors['orders.checkout.fields.phone'] = (string) __('webx-orders::checkout.settings.contact-needed');
             }
+        }
+
+        // The checkout has no provider and no keys of its own: `on` is the site's captcha, so it needs one (§28).
+        if (in_array($values['orders.checkout.captcha'] ?? null, ['on', true, 1, '1'], true) && app(Captcha::class)->provider() === null) {
+            $errors['orders.checkout.captcha'] = (string) __('webx-orders::checkout.settings.captcha-no-provider');
         }
 
         if ($errors !== []) {

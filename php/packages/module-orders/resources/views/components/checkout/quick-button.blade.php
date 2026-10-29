@@ -50,6 +50,9 @@
                     {{ __('webx-orders::checkout.terms.notice') }}@foreach ($documents as $document){{ $loop->first ? ': ' : ', ' }}<a href="{{ $document['url'] }}" target="_blank" rel="noopener">{{ $document['title'] }}</a>@endforeach
                 </p>
             @endif
+            @if ($settings->captcha())
+                <x-webx-captcha :action="\WebxUi\Orders\Checkout\CheckoutAntispam::QUICK_ACTION" :id="$id.'-captcha'" class="webx-orders-quick__captcha" />
+            @endif
             <x-webx-form.submit>{{ __('webx-orders::checkout.quick.submit') }}</x-webx-form.submit>
         </x-webx-form>
     </x-webx-dialog>

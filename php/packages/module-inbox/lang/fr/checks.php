@@ -20,7 +20,13 @@ return [
             'title' => 'Formulaires demandant un captcha sans clés sur le site',
             'found' => 'Un formulaire activé demande reCAPTCHA ou Turnstile, et il manque au .env du site la clé du site, le secret ou les deux.',
             'why' => 'Sans clé du site le widget n’est pas affiché ; sans secret aucune réponse ne peut être vérifiée. Dans les deux cas le formulaire refuse chaque envoi et les visiteurs ne peuvent pas vous joindre.',
-            'fix' => 'Ajoutez WEBX_INBOX_RECAPTCHA_KEY et WEBX_INBOX_RECAPTCHA_SECRET (ou la paire TURNSTILE) au .env du site, avec WEBX_INBOX_RECAPTCHA_TYPE selon le type de clé, et videz le cache de configuration (php artisan config:clear). Ou désactivez le captcha dans l’onglet Antispam du formulaire.',
+            'fix' => 'Ajoutez WEBX_CAPTCHA_RECAPTCHA_KEY (WEBX_INBOX_RECAPTCHA_KEY) et WEBX_CAPTCHA_RECAPTCHA_SECRET (WEBX_INBOX_RECAPTCHA_SECRET) (ou la paire TURNSTILE) au .env du site, avec WEBX_CAPTCHA_RECAPTCHA_TYPE (WEBX_INBOX_RECAPTCHA_TYPE) selon le type de clé, et videz le cache de configuration (php artisan config:clear). Ou désactivez le captcha dans l’onglet Antispam du formulaire.',
+        ],
+        'captcha_provider_mismatch' => [
+            'title' => 'Un formulaire avec un autre captcha que celui du site',
+            'found' => 'Un formulaire activé garde son propre fournisseur — reCAPTCHA ou Turnstile — et le captcha du site est l’autre.',
+            'why' => 'Il fonctionne encore avec son fournisseur et les clés de l’environnement du site, mais le site a un captcha pour tous les formulaires : une seconde paire de clés à entretenir, et un formulaire qui cesse de fonctionner quand on les retire.',
+            'fix' => 'Réglez le captcha du formulaire sur « activé » dans son onglet Antispam pour qu’il utilise celui du site, ou choisissez le fournisseur du formulaire dans l’onglet Captcha des réglages.',
         ],
         'captcha_unused' => [
             'title' => 'Formulaires sans captcha sur un site qui a les clés',

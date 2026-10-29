@@ -7,6 +7,7 @@ return [
     'notify-failed' => 'Notificações que falharam nos últimos :days dias: :count',
     'notify-queued' => 'Notificações na fila há mais de :minutes minutos: :count',
     'captcha-keys' => 'O formulário :form (:slug) pede :provider e falta no .env do site :missing',
+    'captcha-provider-mismatch' => 'O formulário :form (:slug) usa :provider e o captcha do site é :site',
     'captcha-unused' => 'O formulário :form (:slug) não tem captcha e o site tem chaves para :providers',
     'spam-without-captcha' => 'O formulário :form (:slug) não tem captcha e recebe spam. Em :days dias, marcados como spam: :spam, recusados: :refused',
     'legacy-views' => 'O formulário de pedidos é substituído por uma vista anterior ao motor de formulários: :path',

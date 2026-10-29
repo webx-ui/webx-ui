@@ -101,6 +101,12 @@ final readonly class CheckoutSettings
         return $documents;
     }
 
+    /** The site's captcha on the confirmation and in «Buy in one click» (§28): off unless the shop turned it on. */
+    public function captcha(): bool
+    {
+        return in_array($this->settings->get('orders.checkout.captcha'), ['on', true, 1, '1'], true);
+    }
+
     /** «Buy in one click» (§29): off unless the shop turned it on — the button is not printed then. */
     public function quick(): bool
     {

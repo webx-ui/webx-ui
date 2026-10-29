@@ -20,7 +20,13 @@ return [
             'title' => 'Formulare mit einem Captcha, für das die Website keine Schlüssel hat',
             'found' => 'Ein eingeschaltetes Formular verlangt reCAPTCHA oder Turnstile, und in der .env der Website fehlen der Website-Schlüssel, das Secret oder beides.',
             'why' => 'Ohne Website-Schlüssel wird das Widget nicht gezeigt, ohne Secret lässt sich keine Antwort prüfen. So oder so lehnt das Formular jede Einsendung ab, und Besucher erreichen Sie nicht.',
-            'fix' => 'WEBX_INBOX_RECAPTCHA_KEY und WEBX_INBOX_RECAPTCHA_SECRET (oder das TURNSTILE-Paar) in die .env der Website eintragen, WEBX_INBOX_RECAPTCHA_TYPE passend zur Art der Schlüssel, und den Konfigurations-Cache leeren (php artisan config:clear). Oder das Captcha im Reiter „Spamschutz“ des Formulars ausschalten.',
+            'fix' => 'WEBX_CAPTCHA_RECAPTCHA_KEY (WEBX_INBOX_RECAPTCHA_KEY) und WEBX_CAPTCHA_RECAPTCHA_SECRET (WEBX_INBOX_RECAPTCHA_SECRET) (oder das TURNSTILE-Paar) in die .env der Website eintragen, WEBX_CAPTCHA_RECAPTCHA_TYPE (WEBX_INBOX_RECAPTCHA_TYPE) passend zur Art der Schlüssel, und den Konfigurations-Cache leeren (php artisan config:clear). Oder das Captcha im Reiter „Spamschutz“ des Formulars ausschalten.',
+        ],
+        'captcha_provider_mismatch' => [
+            'title' => 'Ein Formular mit einem anderen Captcha als die Website',
+            'found' => 'Ein eingeschaltetes Formular behält seinen eigenen Anbieter — reCAPTCHA oder Turnstile —, und das Captcha der Website ist das andere.',
+            'why' => 'Es funktioniert weiter mit seinem Anbieter und den Schlüsseln aus der Umgebung der Website, aber die Website hat ein Captcha für alle Formulare: ein zweites Schlüsselpaar zu pflegen, und ein Formular, das nicht mehr funktioniert, wenn sie entfernt werden.',
+            'fix' => 'Stellen Sie das Captcha des Formulars auf seiner Registerkarte „Antispam“ auf „ein“, damit es das der Website nutzt, oder wählen Sie den Anbieter des Formulars auf der Registerkarte „Captcha“ der Einstellungen.',
         ],
         'captcha_unused' => [
             'title' => 'Formulare ohne Captcha auf einer Website mit Schlüsseln',

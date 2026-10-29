@@ -19,8 +19,9 @@
 ;(function () {
   'use strict'
 
-  if (window.webxInboxCaptcha) return
-  window.webxInboxCaptcha = true
+  // The widgets' captcha.js is this same listener: whichever came first answers every form.
+  if (window.webxInboxCaptcha || window.webxCaptcha) return
+  window.webxInboxCaptcha = window.webxCaptcha = true
 
   var CAPTCHA = '[data-webx-captcha]'
 

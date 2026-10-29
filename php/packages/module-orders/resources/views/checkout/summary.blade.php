@@ -90,6 +90,9 @@
         <input type="hidden" name="place_key" value="{{ $place_key }}">
         <input type="hidden" name="{{ \WebxUi\Orders\Checkout\CheckoutAntispam::TIMESTAMP }}" value="{{ $timestamp }}">
         @include('webx-orders::checkout.parts.honeypot', ['id' => $form.'-hp'])
+        @if (($captcha ?? null) !== null)
+            <x-webx-captcha :action="$captcha" :id="$form.'-captcha'" :refusal="isset($errors) ? $errors->get('captcha') : []" class="webx-orders-checkout__captcha" />
+        @endif
         @if ($terms === 'checkbox')
             <x-webx-field type="consent" name="terms" :checked="$accepted" required>
                 {{ __('webx-orders::checkout.terms.agree') }}@foreach ($documents as $document){{ $loop->first ? ': ' : ', ' }}<a href="{{ $document['url'] }}" target="_blank" rel="noopener">{{ $document['title'] }}</a>@endforeach
