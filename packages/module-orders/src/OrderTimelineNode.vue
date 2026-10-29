@@ -30,6 +30,8 @@ const deliveries = computed(() => card?.order.value?.notifications ?? null)
 function deliveryTone(row: OrderDelivery): 'danger' | 'success' | 'warning' | 'default' {
   if (row.status === 'failed') return 'danger'
   if (row.status === 'skipped') return 'warning'
+  // Sent into a trap is not delivered: the label says so, and the colour must not contradict it.
+  if (row.status === 'sent' && row.trap) return 'warning'
   if (row.status === 'sent') return 'success'
 
   return 'default'
@@ -137,7 +139,7 @@ function details(line: TimelineLine): string[] {
           <div class="wx-orders-deliveries__text">
             <wx-text size="sm">{{ row.channel }}</wx-text>
             <wx-text v-if="row.recipient !== ''" size="sm" tone="muted">
-              {{ row.recipient_label ?? row.recipient }}
+              {{ row.recipient }}
             </wx-text>
             <wx-text v-if="row.created_at" size="sm" tone="muted">
               {{ dates.short(row.created_at) }}

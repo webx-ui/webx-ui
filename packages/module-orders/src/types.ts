@@ -188,6 +188,8 @@ export interface OrderDelivery {
   recipient: string
   recipient_label: string | null
   status: 'queued' | 'sent' | 'failed' | 'skipped'
+  /** Sent into a trap — the `log` mailer, a sandbox — and delivered to nobody. */
+  trap: string | null
   status_label: string
   reason: string | null
   reason_label: string | null
