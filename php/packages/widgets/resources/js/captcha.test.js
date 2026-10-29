@@ -94,7 +94,7 @@ function turnstile() {
   return api
 }
 
-describe('captcha.js — the site\'s captcha on the form engine', () => {
+describe("captcha.js — the site's captcha on the form engine", () => {
   it('leaves a form without a captcha alone', () => {
     const { form } = page({ widget: false })
     expect(submit(form)).toMatchObject({ sent: true, held: false })

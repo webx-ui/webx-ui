@@ -68,30 +68,30 @@ submissions, `cms.can:inbox.update` to change them, `cms.can:inbox.manage` for f
 
 ## Change it without forking
 
-| You want                                    | Do this                                                                                                                                                    |
-| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A form on a page                            | `<x-webx-inbox::form slug="..." />` in the view, or a block with a `wx-inbox-form` field                                                                   |
-| Sent in place on a site without a theme     | `@webxWidgets` before `</body>` in the site's layout, then `php artisan webx:theme:sync`                                                                   |
-| Which page or product it came from          | a hidden field on the form, filled with `:values="['product' => ...]"`                                                                                     |
-| A form restyled                             | classes `webx-field-*`, `webx-form-*` in the theme's CSS — like every form of the site                                                                     |
-| The same form styled per place              | `placement="footer"`, then style `.webx-inbox-form--footer` in the theme's CSS                                                                             |
-| Another control for one type                | the widgets' view `theme/views/vendor/webx-widgets/components/field/<type>.blade.php`                                                                      |
-| Different frame of the form                 | `theme/views/vendor/webx-inbox/form.blade.php`, built on `<x-webx-form>` — see Do not                                                                      |
-| Bundle the captcha script yourself          | `php artisan vendor:publish --tag=webx-inbox-assets`, then `WEBX_INBOX_SCRIPT=false`                                                                       |
+| You want                                    | Do this                                                                                                                                               |
+| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A form on a page                            | `<x-webx-inbox::form slug="..." />` in the view, or a block with a `wx-inbox-form` field                                                              |
+| Sent in place on a site without a theme     | `@webxWidgets` before `</body>` in the site's layout, then `php artisan webx:theme:sync`                                                              |
+| Which page or product it came from          | a hidden field on the form, filled with `:values="['product' => ...]"`                                                                                |
+| A form restyled                             | classes `webx-field-*`, `webx-form-*` in the theme's CSS — like every form of the site                                                                |
+| The same form styled per place              | `placement="footer"`, then style `.webx-inbox-form--footer` in the theme's CSS                                                                        |
+| Another control for one type                | the widgets' view `theme/views/vendor/webx-widgets/components/field/<type>.blade.php`                                                                 |
+| Different frame of the form                 | `theme/views/vendor/webx-inbox/form.blade.php`, built on `<x-webx-form>` — see Do not                                                                 |
+| Bundle the captcha script yourself          | `php artisan vendor:publish --tag=webx-inbox-assets`, then `WEBX_INBOX_SCRIPT=false`                                                                  |
 | A captcha                                   | the site's: tab "Captcha", secrets `WEBX_CAPTCHA_RECAPTCHA_SECRET` / `WEBX_CAPTCHA_TURNSTILE_SECRET` (`WEBX_INBOX_*` still read); then on in the form |
-| Another intake path or disk, larger uploads | `WEBX_INBOX_PATH`, `WEBX_INBOX_DISK`; `WEBX_INBOX_MAX_SIZE` (KB), `upload.extensions`, `upload.max_files`                                                  |
-| Other origins, rate limit, duplicates       | `antispam.origins`, `antispam.throttle` (accepted), `antispam.attempts` (all), `duplicate_window` (`--tag=webx-inbox-config`)                              |
-| Visitors' IPs not kept whole                | `WEBX_INBOX_ANONYMISE_IP=true`                                                                                                                             |
-| Forget old submissions                      | `prune.days`, `prune.spam_days`, and schedule `webx:inbox:prune` in the site                                                                               |
-| A different letter                          | `theme/views/vendor/webx-inbox/mail/submission.blade.php`; colours via `$look('…')`                                                                        |
-| Somebody told about a form                  | `inbox_form_save` with `options.recipients`, or the editor's Notifications tab                                                                             |
-| A form read only in the panel               | leave it without recipients and ignore `inbox.no_recipients` in the audit                                                                                  |
-| Other words                                 | `php artisan vendor:publish --tag=webx-inbox-lang`                                                                                                         |
-| Send to a CRM, write back to the visitor    | a `SubmissionHandler` in `handlers` of the config, by slug or `*` — below; a gift or a PDF: a mailable to the form's e-mail field                          |
-| Your module's data in a submission          | a `Contracts\Enclosure` registered with `Submissions\Enclosures` in boot; the form sends `webx_enclosure[]=<name>`; one answer row, `field_id` null        |
-| Anything else once a submission is stored   | a listener of `WebxUi\Inbox\Events\SubmissionStored` (`Event::listen`), `ShouldQueue`                                                                      |
-| A submission in Telegram instead of letters | a channel of `inbox.submission`, then `inbox_form_save` `options.notify_via: channels`, `notify_channels`                                                  |
-| A letter sent again                         | the submission's menu in the panel; MCP `inbox_notify` (`dry_run` first)                                                                                   |
+| Another intake path or disk, larger uploads | `WEBX_INBOX_PATH`, `WEBX_INBOX_DISK`; `WEBX_INBOX_MAX_SIZE` (KB), `upload.extensions`, `upload.max_files`                                             |
+| Other origins, rate limit, duplicates       | `antispam.origins`, `antispam.throttle` (accepted), `antispam.attempts` (all), `duplicate_window` (`--tag=webx-inbox-config`)                         |
+| Visitors' IPs not kept whole                | `WEBX_INBOX_ANONYMISE_IP=true`                                                                                                                        |
+| Forget old submissions                      | `prune.days`, `prune.spam_days`, and schedule `webx:inbox:prune` in the site                                                                          |
+| A different letter                          | `theme/views/vendor/webx-inbox/mail/submission.blade.php`; colours via `$look('…')`                                                                   |
+| Somebody told about a form                  | `inbox_form_save` with `options.recipients`, or the editor's Notifications tab                                                                        |
+| A form read only in the panel               | leave it without recipients and ignore `inbox.no_recipients` in the audit                                                                             |
+| Other words                                 | `php artisan vendor:publish --tag=webx-inbox-lang`                                                                                                    |
+| Send to a CRM, write back to the visitor    | a `SubmissionHandler` in `handlers` of the config, by slug or `*` — below; a gift or a PDF: a mailable to the form's e-mail field                     |
+| Your module's data in a submission          | a `Contracts\Enclosure` registered with `Submissions\Enclosures` in boot; the form sends `webx_enclosure[]=<name>`; one answer row, `field_id` null   |
+| Anything else once a submission is stored   | a listener of `WebxUi\Inbox\Events\SubmissionStored` (`Event::listen`), `ShouldQueue`                                                                 |
+| A submission in Telegram instead of letters | a channel of `inbox.submission`, then `inbox_form_save` `options.notify_via: channels`, `notify_channels`                                             |
+| A letter sent again                         | the submission's menu in the panel; MCP `inbox_notify` (`dry_run` first)                                                                              |
 
 ### Classes
 
