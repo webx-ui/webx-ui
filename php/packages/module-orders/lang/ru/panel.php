@@ -43,6 +43,7 @@ return [
     'filter-visitor' => 'Гость или посетитель',
     'filter-delivery' => 'Доставка',
     'filter-payment' => 'Оплата',
+    'filter-source' => 'Откуда заказ',
     'filter-from' => 'Оформлен с',
     'filter-to' => 'Оформлен по',
     'selected' => 'Выбрано: :count',

@@ -43,6 +43,7 @@ return [
     'filter-visitor' => 'Misafir veya ziyaretçi',
     'filter-delivery' => 'Teslimat',
     'filter-payment' => 'Ödeme',
+    'filter-source' => 'Sipariş kaynağı',
     'filter-from' => 'Verilme tarihi, başlangıç',
     'filter-to' => 'Verilme tarihi, bitiş',
     'selected' => 'Seçilen: :count',

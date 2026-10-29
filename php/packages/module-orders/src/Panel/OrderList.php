@@ -13,7 +13,9 @@ use WebxUi\Cart\Money;
 use WebxUi\Orders\Blocks\OrderBlocks;
 use WebxUi\Orders\InitialStatuses;
 use WebxUi\Orders\Models\Order;
+use WebxUi\Orders\Milestone;
 use WebxUi\Orders\Models\OrderItem;
+use WebxUi\Orders\Models\OrderMilestone;
 use WebxUi\Orders\Models\OrderRefund;
 
 /**
@@ -60,6 +62,8 @@ final class OrderList
             'user' => ['nullable', 'integer', 'min:1'],
             'delivery' => ['nullable', 'string', 'max:64'],
             'payment' => ['nullable', 'string', 'max:64'],
+            // Where the order came from (§29): `checkout`, `quick`, `api`, `mcp`…
+            'source' => ['nullable', 'string', 'max:64'],
             'from' => ['nullable', 'date_format:Y-m-d'],
             'to' => ['nullable', 'date_format:Y-m-d'],
             'sort' => ['nullable', 'string', 'max:32'],
@@ -104,7 +108,7 @@ final class OrderList
     }
 
     /**
-     * @param  array<string, mixed>  $filters  `view`, `search`, `status`, `public`, `paid`, `received`, `cancelled`, `refunded`, `awaiting`, `failed`, `visitor`, `delivery`, `payment`, `from`, `to`, `sort`
+     * @param  array<string, mixed>  $filters  `view`, `search`, `status`, `public`, `paid`, `received`, `cancelled`, `refunded`, `awaiting`, `failed`, `visitor`, `delivery`, `payment`, `source`, `from`, `to`, `sort`
      * @return Builder<Order>
      */
     public function query(array $filters): Builder
@@ -121,6 +125,8 @@ final class OrderList
                     ->orderBy('position')
                     ->orderBy('id')
                     ->limit(1),
+                // Where it came from: the milestone «placed» keeps it, one row an order by its unique key.
+                'placed_source' => self::placed()->select('source'),
             ])
             ->withCount(['items as roots_count' => static fn (Builder $items) => $items->whereNull('parent_id')]);
 
@@ -224,6 +230,12 @@ final class OrderList
             }
         }
 
+        $source = $filters['source'] ?? null;
+
+        if (is_string($source) && $source !== '') {
+            $query->whereExists(self::placed()->toBase()->selectRaw('1')->where('source', $source));
+        }
+
         foreach (['from' => '>=', 'to' => '<='] as $key => $operator) {
             $day = $filters[$key] ?? null;
 
@@ -278,6 +290,8 @@ final class OrderList
         $names = is_string($first) ? json_decode($first, true) : null;
         $name = is_array($names) ? (string) ($names[$locale] ?? $names[$order->locale] ?? reset($names) ?: '') : null;
 
+        $source = $order->getAttribute('placed_source');
+
         return [
             'id' => $order->id,
             'number' => $order->number,
@@ -288,6 +302,7 @@ final class OrderList
                 'email' => $order->customer_email,
             ],
             'guest' => $order->user_id === null,
+            'source' => is_string($source) ? $source : null,
             'items' => ['first' => $name, 'more' => max(0, (int) $order->getAttribute('roots_count') - 1)],
             'total' => $this->money->format($order->total, $order->currency),
             'payable' => $this->money->format($order->payable, $order->currency),
@@ -348,6 +363,18 @@ final class OrderList
         $method = $value['method'] ?? null;
 
         return is_string($method) && $method !== '' ? $method : null;
+    }
+
+    /**
+     * The milestone «placed» of the order in the outer query (`order_milestones`, unique `(order_id, milestone)`).
+     *
+     * @return Builder<OrderMilestone>
+     */
+    private static function placed(): Builder
+    {
+        return OrderMilestone::query()
+            ->whereColumn('order_milestones.order_id', 'orders.id')
+            ->where('milestone', Milestone::Placed->value);
     }
 
     /** The status a new order comes into, for the tab «New»; null when there is none to come into. */

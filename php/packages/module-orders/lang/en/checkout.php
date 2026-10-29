@@ -72,6 +72,8 @@ return [
         'retry' => 'Something went wrong. Try again.',
         'too-many' => 'Too many orders from this cart. Try again later.',
         'slot-failed' => 'This step could not be checked. Try again or choose another option.',
+        'quick-unavailable' => 'This item cannot be ordered now.',
+        'quick-too-many' => 'Too many orders from this phone. Try again later.',
     ],
     'thanks' => [
         'title' => 'Order :number is placed',
@@ -81,6 +83,16 @@ return [
         'pay' => 'Pay',
         'register' => 'Save your orders in an account: the next ones go faster, and you can see them all in one place.',
         'register-button' => 'Create an account',
+    ],
+    'quick' => [
+        'button' => 'Buy in one click',
+        'title' => 'Buy in one click',
+        'description' => 'Leave your phone: we will call you back to confirm the order.',
+        'name' => 'Your name',
+        'submit' => 'Order',
+        'message' => 'Thank you! We will call you back within 15 minutes.',
+        'order' => 'Order :number for :amount.',
+        'anonymous' => 'Buyer',
     ],
     'history' => [
         'terms' => 'Agreement with the terms: :title (:url), version :version, :time',
@@ -105,6 +117,11 @@ return [
         'privacy-page' => 'Privacy policy',
         'privacy-page-help' => 'A second document, if the site has one: how personal data is processed.',
         'contact-needed' => 'Keep the phone or the e-mail required: an order needs one of them.',
+        'quick-card' => 'Buy in one click',
+        'quick' => 'The button «Buy in one click»',
+        'quick-help' => 'A button by «Buy» on a product: the buyer leaves a phone and the order comes without the cart and the steps. The manager calls back and adds the delivery and the payment.',
+        'quick-message' => 'The words after the order',
+        'quick-message-help' => 'What the dialog says once the order is placed. Empty — «Thank you! We will call you back within 15 minutes.»',
         'values' => [
             'required' => 'Required',
             'optional' => 'Optional',

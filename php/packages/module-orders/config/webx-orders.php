@@ -117,6 +117,8 @@ return [
             'place_per_minute' => 10,
             'orders_per_hour' => 5,
             'steps_per_minute' => 60,
+            // «Buy in one click» (§29): orders an hour from one address, and from one phone.
+            'quick_per_hour' => 3,
         ],
     ],
 

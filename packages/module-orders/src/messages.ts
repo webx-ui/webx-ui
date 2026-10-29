@@ -81,6 +81,7 @@ export const ordersMessages: Record<string, Messages> = {
     'filter-visitor': 'Guest or visitor',
     'filter-delivery': 'Delivery',
     'filter-payment': 'Payment',
+    'filter-source': 'Placed through',
     'filter-from': 'Placed from',
     'filter-to': 'Placed to',
     selected: 'Selected: :count',

@@ -43,6 +43,7 @@ return [
     'filter-visitor' => 'Convidado ou visitante',
     'filter-delivery' => 'Entrega',
     'filter-payment' => 'Pagamento',
+    'filter-source' => 'Feito por',
     'filter-from' => 'Realizado desde',
     'filter-to' => 'Realizado até',
     'selected' => 'Selecionados: :count',

@@ -65,6 +65,8 @@ final class SettingsTest extends PanelTestCase
                 'orders.checkout.terms' => 'notice',
                 'orders.checkout.terms_page' => null,
                 'orders.checkout.privacy_page' => null,
+                'orders.checkout.quick.enabled' => 'off',
+                'orders.checkout.quick.message' => null,
             ]);
 
         $values = ['orders.number.prefix' => 'A-', 'orders.number.start' => 0, 'orders.number.pad' => 6];

@@ -72,6 +72,8 @@ return [
         'retry' => 'Bir sorun oluştu. Yeniden deneyin.',
         'too-many' => 'Bu sepetten çok fazla sipariş verildi. Daha sonra yeniden deneyin.',
         'slot-failed' => 'Bu adım kontrol edilemedi. Tekrar deneyin veya başka bir seçenek seçin.',
+        'quick-unavailable' => 'Bu ürün şu anda sipariş edilemiyor.',
+        'quick-too-many' => 'Bu telefondan çok fazla sipariş var. Daha sonra tekrar deneyin.',
     ],
     'thanks' => [
         'title' => ':number numaralı sipariş verildi',
@@ -81,6 +83,16 @@ return [
         'pay' => 'Öde',
         'register' => 'Siparişlerinizi bir hesapta saklayın: sonrakiler daha hızlı olur ve hepsi tek bir yerde durur.',
         'register-button' => 'Hesap oluştur',
+    ],
+    'quick' => [
+        'button' => 'Tek tıkla satın al',
+        'title' => 'Tek tıkla satın al',
+        'description' => 'Telefonunuzu bırakın: siparişi onaylamak için sizi arayacağız.',
+        'name' => 'Adınız',
+        'submit' => 'Sipariş ver',
+        'message' => 'Teşekkürler! 15 dakika içinde sizi arayacağız.',
+        'order' => ':number numaralı sipariş, :amount.',
+        'anonymous' => 'Alıcı',
     ],
     'history' => [
         'terms' => 'Koşulların kabulü: :title (:url), sürüm :version, :time',
@@ -105,6 +117,11 @@ return [
         'privacy-page' => 'Gizlilik politikası',
         'privacy-page-help' => 'Sitede varsa ikinci bir belge: kişisel verilerin nasıl işlendiği.',
         'contact-needed' => 'Telefonu veya e-postayı zorunlu bırakın: bir sipariş için bunlardan biri gerekir.',
+        'quick-card' => 'Tek tıkla satın al',
+        'quick' => '«Tek tıkla satın al» düğmesi',
+        'quick-help' => 'Ürün sayfasında «Satın al» yanında bir düğme: alıcı telefonunu bırakır, sipariş sepet ve adımlar olmadan gelir. Yönetici geri arar, teslimatı ve ödemeyi ekler.',
+        'quick-message' => 'Siparişten sonraki metin',
+        'quick-message-help' => 'Sipariş verildiğinde pencerenin söyleyeceği. Boş — «Teşekkürler! 15 dakika içinde sizi arayacağız.»',
         'values' => [
             'required' => 'Zorunlu',
             'optional' => 'İsteğe bağlı',

@@ -72,6 +72,8 @@ return [
         'retry' => 'Une erreur s’est produite. Réessayez.',
         'too-many' => 'Trop de commandes depuis ce panier. Réessayez plus tard.',
         'slot-failed' => 'Impossible de vérifier cette étape. Réessayez ou choisissez une autre option.',
+        'quick-unavailable' => 'Cet article ne peut pas être commandé pour le moment.',
+        'quick-too-many' => 'Trop de commandes depuis ce téléphone. Réessayez plus tard.',
     ],
     'thanks' => [
         'title' => 'La commande :number est passée',
@@ -81,6 +83,16 @@ return [
         'pay' => 'Payer',
         'register' => 'Enregistrez vos commandes dans un compte : les prochaines seront plus rapides, et toutes seront au même endroit.',
         'register-button' => 'Créer un compte',
+    ],
+    'quick' => [
+        'button' => 'Acheter en un clic',
+        'title' => 'Acheter en un clic',
+        'description' => 'Laissez votre téléphone : nous vous rappelons pour confirmer la commande.',
+        'name' => 'Votre nom',
+        'submit' => 'Commander',
+        'message' => 'Merci ! Nous vous rappelons dans les 15 minutes.',
+        'order' => 'Commande :number pour :amount.',
+        'anonymous' => 'Acheteur',
     ],
     'history' => [
         'terms' => 'Acceptation des conditions : :title (:url), version :version, :time',
@@ -105,6 +117,11 @@ return [
         'privacy-page' => 'Politique de confidentialité',
         'privacy-page-help' => 'Un second document, si le site en a un : le traitement des données personnelles.',
         'contact-needed' => 'Gardez le téléphone ou l\'e-mail obligatoire : une commande a besoin de l\'un des deux.',
+        'quick-card' => 'Acheter en un clic',
+        'quick' => 'Bouton « Acheter en un clic »',
+        'quick-help' => 'Un bouton à côté de « Acheter » sur la fiche produit : l\'acheteur laisse un téléphone et la commande arrive sans panier ni étapes. Le gestionnaire rappelle et ajoute la livraison et le paiement.',
+        'quick-message' => 'Texte après la commande',
+        'quick-message-help' => 'Ce que dit la fenêtre une fois la commande passée. Vide — « Merci ! Nous vous rappelons dans les 15 minutes. »',
         'values' => [
             'required' => 'Obligatoire',
             'optional' => 'Facultatif',

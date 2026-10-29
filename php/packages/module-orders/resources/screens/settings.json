@@ -337,6 +337,45 @@
                   "help": "trans::webx-orders::checkout.settings.privacy-page-help"
                 }
               ]
+            },
+            {
+              "id": "checkout-quick-card",
+              "type": "wx-card",
+              "label": "trans::webx-orders::checkout.settings.quick-card",
+              "children": [
+                {
+                  "id": "checkout-quick",
+                  "type": "wx-segmented",
+                  "name": "orders.checkout.quick.enabled",
+                  "label": "trans::webx-orders::checkout.settings.quick",
+                  "default": "off",
+                  "props": {
+                    "options": [
+                      {
+                        "value": "on",
+                        "label": "trans::webx-orders::checkout.settings.values.on"
+                      },
+                      {
+                        "value": "off",
+                        "label": "trans::webx-orders::checkout.settings.values.off"
+                      }
+                    ]
+                  },
+                  "help": "trans::webx-orders::checkout.settings.quick-help"
+                },
+                {
+                  "id": "checkout-quick-message",
+                  "type": "wx-textarea",
+                  "name": "orders.checkout.quick.message",
+                  "label": "trans::webx-orders::checkout.settings.quick-message",
+                  "help": "trans::webx-orders::checkout.settings.quick-message-help",
+                  "localized": true,
+                  "props": {
+                    "rows": 2,
+                    "maxlength": 500
+                  }
+                }
+              ]
             }
           ]
         }

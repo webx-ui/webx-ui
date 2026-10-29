@@ -72,6 +72,8 @@ return [
         'retry' => 'Qualcosa è andato storto. Riprova.',
         'too-many' => 'Troppi ordini da questo carrello. Riprova più tardi.',
         'slot-failed' => 'Impossibile verificare questo passaggio. Riprova o scegli un\'altra opzione.',
+        'quick-unavailable' => 'Questo articolo non può essere ordinato ora.',
+        'quick-too-many' => 'Troppi ordini da questo telefono. Riprova più tardi.',
     ],
     'thanks' => [
         'title' => 'L’ordine :number è stato effettuato',
@@ -81,6 +83,16 @@ return [
         'pay' => 'Paga',
         'register' => 'Salva i tuoi ordini in un account: i prossimi saranno più veloci e li troverai tutti in un unico posto.',
         'register-button' => 'Crea un account',
+    ],
+    'quick' => [
+        'button' => 'Acquista con un clic',
+        'title' => 'Acquista con un clic',
+        'description' => 'Lascia il tuo telefono: ti richiameremo per confermare l\'ordine.',
+        'name' => 'Il tuo nome',
+        'submit' => 'Ordina',
+        'message' => 'Grazie! Ti richiameremo entro 15 minuti.',
+        'order' => 'Ordine :number per :amount.',
+        'anonymous' => 'Acquirente',
     ],
     'history' => [
         'terms' => 'Accettazione delle condizioni: :title (:url), versione :version, :time',
@@ -105,6 +117,11 @@ return [
         'privacy-page' => 'Informativa sulla privacy',
         'privacy-page-help' => 'Un secondo documento, se il sito ne ha uno: come vengono trattati i dati personali.',
         'contact-needed' => 'Lascia obbligatorio il telefono o l\'e-mail: un ordine ha bisogno di uno dei due.',
+        'quick-card' => 'Acquista con un clic',
+        'quick' => 'Pulsante «Acquista con un clic»',
+        'quick-help' => 'Un pulsante accanto ad «Acquista» sulla scheda prodotto: l\'acquirente lascia un telefono e l\'ordine arriva senza carrello né passaggi. Il gestore richiama e aggiunge la consegna e il pagamento.',
+        'quick-message' => 'Testo dopo l\'ordine',
+        'quick-message-help' => 'Cosa dice la finestra a ordine effettuato. Vuoto — «Grazie! Ti richiameremo entro 15 minuti.»',
         'values' => [
             'required' => 'Obbligatorio',
             'optional' => 'Facoltativo',

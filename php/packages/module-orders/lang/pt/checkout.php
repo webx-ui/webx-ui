@@ -72,6 +72,8 @@ return [
         'retry' => 'Algo correu mal. Tente novamente.',
         'too-many' => 'Demasiados pedidos deste carrinho. Tente mais tarde.',
         'slot-failed' => 'Não foi possível verificar esta etapa. Tente novamente ou escolha outra opção.',
+        'quick-unavailable' => 'Este artigo não pode ser encomendado agora.',
+        'quick-too-many' => 'Demasiados pedidos deste telefone. Tente mais tarde.',
     ],
     'thanks' => [
         'title' => 'O pedido :number foi feito',
@@ -81,6 +83,16 @@ return [
         'pay' => 'Pagar',
         'register' => 'Guarde as suas encomendas numa conta: as próximas serão mais rápidas e todas ficam num só lugar.',
         'register-button' => 'Criar uma conta',
+    ],
+    'quick' => [
+        'button' => 'Comprar com um clique',
+        'title' => 'Comprar com um clique',
+        'description' => 'Deixe o seu telefone: ligamos de volta para confirmar o pedido.',
+        'name' => 'O seu nome',
+        'submit' => 'Encomendar',
+        'message' => 'Obrigado! Ligamos de volta dentro de 15 minutos.',
+        'order' => 'Pedido :number de :amount.',
+        'anonymous' => 'Comprador',
     ],
     'history' => [
         'terms' => 'Aceitação das condições: :title (:url), versão :version, :time',
@@ -105,6 +117,11 @@ return [
         'privacy-page' => 'Política de privacidade',
         'privacy-page-help' => 'Um segundo documento, se o site o tiver: como são tratados os dados pessoais.',
         'contact-needed' => 'Mantenha o telefone ou o e-mail obrigatório: um pedido precisa de um deles.',
+        'quick-card' => 'Comprar com um clique',
+        'quick' => 'Botão «Comprar com um clique»',
+        'quick-help' => 'Um botão junto a «Comprar» na ficha do produto: o comprador deixa um telefone e o pedido chega sem carrinho nem passos. O gestor liga de volta e acrescenta a entrega e o pagamento.',
+        'quick-message' => 'Texto após o pedido',
+        'quick-message-help' => 'O que a janela diz depois do pedido. Vazio — «Obrigado! Ligamos de volta dentro de 15 minutos.»',
         'values' => [
             'required' => 'Obrigatório',
             'optional' => 'Opcional',

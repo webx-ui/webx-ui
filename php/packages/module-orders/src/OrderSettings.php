@@ -49,6 +49,9 @@ final readonly class OrderSettings
         'orders.checkout.terms' => 'notice',
         'orders.checkout.terms_page' => null,
         'orders.checkout.privacy_page' => null,
+        'orders.checkout.quick.enabled' => 'off',
+        // The words of the dialog after the order, a language each; null — the package's own.
+        'orders.checkout.quick.message' => null,
     ];
 
     /** The channels of the milestones' events (§10.1): ids of channels of the notifications module. */

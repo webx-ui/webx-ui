@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { WxDivider, WxText } from '@webx-ui/core'
+import { WxBadge, WxDivider, WxText } from '@webx-ui/core'
 import { useTranslate, WxDate } from '@webx-ui/module-admin'
 import { useOrderCard } from './card'
 import { NAMESPACE, useOrdersMessages } from './i18n'
@@ -20,6 +20,9 @@ const card = useOrderCard()
 const order = computed(() => card?.order.value ?? null)
 
 const ORDER: MilestoneKey[] = ['placed', 'paid', 'received', 'cancelled', 'refunded']
+
+/** «Buy in one click» (§29): the manager calls back and fills in the delivery and the payment. */
+const quick = computed(() => order.value?.milestones.placed?.source === 'quick')
 
 const dates = computed(() =>
   ORDER.flatMap((key) => {
@@ -59,6 +62,9 @@ const dates = computed(() =>
       <template v-for="mark in dates" :key="mark.key">
         <dt>{{ t(`module.milestones.${mark.key}`) }}</dt>
         <dd>
+          <wx-badge v-if="mark.key === 'placed' && quick" size="sm" variant="outline">
+            {{ t('panel.source-quick') }}
+          </wx-badge>
           <wx-date :value="mark.at" size="sm" />
           <wx-text v-if="mark.reference" size="sm" tone="muted" class="wx-orders-summary__ref">
             {{ mark.reference }}

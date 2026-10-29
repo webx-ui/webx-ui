@@ -101,6 +101,21 @@ final readonly class CheckoutSettings
         return $documents;
     }
 
+    /** «Buy in one click» (§29): off unless the shop turned it on — the button is not printed then. */
+    public function quick(): bool
+    {
+        return in_array($this->settings->get('orders.checkout.quick.enabled'), ['on', true, 1, '1'], true);
+    }
+
+    /** What the dialog says after the order: the shop's words in this language, or the package's. */
+    public function quickMessage(string $locale): string
+    {
+        $value = $this->settings->get('orders.checkout.quick.message');
+        $text = is_array($value) ? ($value[$locale] ?? null) : null;
+
+        return is_string($text) && trim($text) !== '' ? trim($text) : (string) __('webx-orders::checkout.quick.message', [], $locale);
+    }
+
     private function on(string $key): bool
     {
         $value = $this->settings->get($key);

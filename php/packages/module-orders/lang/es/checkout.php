@@ -72,6 +72,8 @@ return [
         'retry' => 'Algo salió mal. Inténtalo de nuevo.',
         'too-many' => 'Demasiados pedidos desde este carrito. Inténtalo más tarde.',
         'slot-failed' => 'No se pudo comprobar este paso. Inténtelo de nuevo o elija otra opción.',
+        'quick-unavailable' => 'Este artículo no se puede pedir ahora.',
+        'quick-too-many' => 'Demasiados pedidos desde este teléfono. Inténtelo más tarde.',
     ],
     'thanks' => [
         'title' => 'El pedido :number está realizado',
@@ -81,6 +83,16 @@ return [
         'pay' => 'Pagar',
         'register' => 'Guarda tus pedidos en una cuenta: los próximos serán más rápidos y todos estarán en un solo lugar.',
         'register-button' => 'Crear una cuenta',
+    ],
+    'quick' => [
+        'button' => 'Comprar en un clic',
+        'title' => 'Comprar en un clic',
+        'description' => 'Deje su teléfono: le llamaremos para confirmar el pedido.',
+        'name' => 'Su nombre',
+        'submit' => 'Pedir',
+        'message' => '¡Gracias! Le llamaremos en 15 minutos.',
+        'order' => 'Pedido :number por :amount.',
+        'anonymous' => 'Comprador',
     ],
     'history' => [
         'terms' => 'Aceptación de las condiciones: :title (:url), versión :version, :time',
@@ -105,6 +117,11 @@ return [
         'privacy-page' => 'Política de privacidad',
         'privacy-page-help' => 'Un segundo documento, si el sitio lo tiene: cómo se tratan los datos personales.',
         'contact-needed' => 'Deja el teléfono o el e-mail como obligatorio: un pedido necesita uno de ellos.',
+        'quick-card' => 'Comprar en un clic',
+        'quick' => 'Botón «Comprar en un clic»',
+        'quick-help' => 'Un botón junto a «Comprar» en la ficha del producto: el comprador deja un teléfono y el pedido llega sin carrito ni pasos. El gestor devuelve la llamada y añade el envío y el pago.',
+        'quick-message' => 'Texto tras el pedido',
+        'quick-message-help' => 'Lo que dice el diálogo cuando el pedido está hecho. Vacío — «¡Gracias! Le llamaremos en 15 minutos.»',
         'values' => [
             'required' => 'Obligatorio',
             'optional' => 'Opcional',

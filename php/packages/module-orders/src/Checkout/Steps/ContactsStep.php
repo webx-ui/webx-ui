@@ -30,7 +30,7 @@ final readonly class ContactsStep implements NamesErrors, Step
     public const string KEY = 'contacts';
 
     /** `+` and digits with separators — what `Orders::place()` accepts; no country's mask (§20.3). */
-    private const string PHONE = '/^\+?[0-9][0-9 ().\-]*$/';
+    public const string PHONE = '/^\+?[0-9][0-9 ().\-]*$/';
 
     public function __construct(
         private CheckoutSettings $settings,

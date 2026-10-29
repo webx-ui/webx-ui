@@ -72,6 +72,8 @@ return [
         'retry' => 'Etwas ist schiefgelaufen. Versuchen Sie es erneut.',
         'too-many' => 'Zu viele Bestellungen aus diesem Warenkorb. Versuchen Sie es später erneut.',
         'slot-failed' => 'Dieser Schritt konnte nicht geprüft werden. Versuchen Sie es erneut oder wählen Sie eine andere Option.',
+        'quick-unavailable' => 'Dieser Artikel kann gerade nicht bestellt werden.',
+        'quick-too-many' => 'Zu viele Bestellungen von dieser Telefonnummer. Versuchen Sie es später noch einmal.',
     ],
     'thanks' => [
         'title' => 'Bestellung :number ist aufgegeben',
@@ -81,6 +83,16 @@ return [
         'pay' => 'Bezahlen',
         'register' => 'Speichern Sie Ihre Bestellungen in einem Konto: Die nächsten gehen schneller, und alle sind an einem Ort.',
         'register-button' => 'Konto erstellen',
+    ],
+    'quick' => [
+        'button' => 'Mit einem Klick kaufen',
+        'title' => 'Mit einem Klick kaufen',
+        'description' => 'Hinterlassen Sie Ihre Telefonnummer: Wir rufen zurück und bestätigen die Bestellung.',
+        'name' => 'Ihr Name',
+        'submit' => 'Bestellen',
+        'message' => 'Vielen Dank! Wir rufen Sie innerhalb von 15 Minuten zurück.',
+        'order' => 'Bestellung :number über :amount.',
+        'anonymous' => 'Käufer',
     ],
     'history' => [
         'terms' => 'Zustimmung zu den Bedingungen: :title (:url), Version :version, :time',
@@ -105,6 +117,11 @@ return [
         'privacy-page' => 'Datenschutzerklärung',
         'privacy-page-help' => 'Ein zweites Dokument, falls die Website eines hat: wie personenbezogene Daten verarbeitet werden.',
         'contact-needed' => 'Lassen Sie Telefon oder E-Mail als Pflichtfeld: Eine Bestellung braucht eines davon.',
+        'quick-card' => 'Mit einem Klick kaufen',
+        'quick' => 'Schaltfläche «Mit einem Klick kaufen»',
+        'quick-help' => 'Eine Schaltfläche neben «Kaufen» beim Produkt: Der Käufer hinterlässt eine Telefonnummer, und die Bestellung kommt ohne Warenkorb und Schritte. Der Manager ruft zurück und ergänzt Lieferung und Zahlung.',
+        'quick-message' => 'Text nach der Bestellung',
+        'quick-message-help' => 'Was der Dialog nach der Bestellung sagt. Leer — «Vielen Dank! Wir rufen Sie innerhalb von 15 Minuten zurück.»',
         'values' => [
             'required' => 'Pflicht',
             'optional' => 'Optional',

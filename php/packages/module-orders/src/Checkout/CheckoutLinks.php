@@ -26,8 +26,11 @@ final readonly class CheckoutLinks
 
     public const string THANKS = 'checkout.thanks';
 
+    /** «Buy in one click» (§29): an order of one line, without the cart. */
+    public const string QUICK = 'checkout.quick';
+
     /** Every route of the checkout; `.localised` after each is its copy behind the language prefix. */
-    public const array ROUTES = [self::PAGE, self::STEP, self::SUMMARY, self::PLACE, self::THANKS];
+    public const array ROUTES = [self::PAGE, self::STEP, self::SUMMARY, self::PLACE, self::THANKS, self::QUICK];
 
     public function __construct(
         private UrlGenerator $url,

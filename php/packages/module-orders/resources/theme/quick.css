@@ -1,0 +1,34 @@
+/*
+ * «Buy in one click» (spec §29): the button beside «Buy» and the dialog it opens. The dialog, the
+ * form and the fields are the widgets' own; this is only the button and the line of the order
+ * under the thank-you. Site tokens only.
+ */
+.webx-orders-quick__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: var(--site-space-2) var(--site-space-4);
+  border: 1px solid var(--site-color-accent);
+  border-radius: var(--site-radius-md);
+  background: transparent;
+  color: var(--site-color-accent);
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.webx-orders-quick__button:hover {
+  background: var(--site-color-surface-muted);
+}
+
+.webx-orders-quick__button:focus-visible {
+  outline: 2px solid var(--site-color-accent);
+  outline-offset: 2px;
+}
+
+.webx-orders-quick__terms {
+  margin: 0;
+  color: var(--site-color-text-muted);
+  font-size: calc(var(--site-font-size-base) * 0.875);
+}

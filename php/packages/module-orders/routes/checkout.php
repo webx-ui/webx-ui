@@ -2,11 +2,14 @@
 
 declare(strict_types=1);
 
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Support\Facades\Route;
 use WebxUi\Localization\Http\Middleware\OneSpellingPerAddress;
 use WebxUi\Orders\Checkout\Checkout;
 use WebxUi\Orders\Checkout\CheckoutLinks;
 use WebxUi\Orders\Checkout\Http\CheckoutController;
+use WebxUi\Orders\Checkout\Http\QuickController;
 use WebxUi\Orders\Checkout\Http\ScriptController;
 use WebxUi\Orders\Http\KeepPrivate;
 
@@ -32,6 +35,13 @@ $routes = static function (string $prefix, string $suffix) use ($path): void {
     Route::get($prefix.$path.'/thanks/{number}', [CheckoutController::class, 'thanks'])
         ->where('number', '[^/]+')
         ->name(CheckoutLinks::THANKS.$suffix);
+    // «Buy in one click» (§29) is posted from a product's page, which may be cached whole with a
+    // token minted for somebody else: no CSRF, as the inbox's intake — the antispam and the limits
+    // of the controller guard it instead.
+    Route::post($prefix.$path.'/quick', QuickController::class)
+        ->withoutMiddleware([PreventRequestForgery::class, ValidateCsrfToken::class])
+        ->middleware('throttle:'.Checkout::THROTTLE_PLACE)
+        ->name(CheckoutLinks::QUICK.$suffix);
 };
 
 // The script of the page (§27.3): no session, no language — the same file for everybody.

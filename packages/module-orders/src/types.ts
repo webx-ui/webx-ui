@@ -33,6 +33,8 @@ export interface OrderRow extends Record<string, unknown> {
   placed_at: string
   customer: { name: string; phone: string | null; email: string | null }
   guest: boolean
+  /** Where the order came from: `checkout`, `quick` («Buy in one click»), `api`, `mcp`… */
+  source: string | null
   items: { first: string | null; more: number }
   total: string
   payable: string
@@ -82,6 +84,7 @@ export interface OrderQuery {
   user?: number
   delivery?: string
   payment?: string
+  source?: string
   from?: string
   to?: string
   sort?: string

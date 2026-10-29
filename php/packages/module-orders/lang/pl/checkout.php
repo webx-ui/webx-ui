@@ -72,6 +72,8 @@ return [
         'retry' => 'Coś poszło nie tak. Spróbuj ponownie.',
         'too-many' => 'Zbyt wiele zamówień z tego koszyka. Spróbuj później.',
         'slot-failed' => 'Nie udało się sprawdzić tego kroku. Spróbuj ponownie lub wybierz inną opcję.',
+        'quick-unavailable' => 'Tego produktu nie można teraz zamówić.',
+        'quick-too-many' => 'Zbyt wiele zamówień z tego telefonu. Spróbuj później.',
     ],
     'thanks' => [
         'title' => 'Zamówienie :number zostało złożone',
@@ -81,6 +83,16 @@ return [
         'pay' => 'Zapłać',
         'register' => 'Zapisz zamówienia na koncie: kolejne złożysz szybciej, a wszystkie będą w jednym miejscu.',
         'register-button' => 'Załóż konto',
+    ],
+    'quick' => [
+        'button' => 'Kup jednym kliknięciem',
+        'title' => 'Kup jednym kliknięciem',
+        'description' => 'Zostaw telefon — oddzwonimy i potwierdzimy zamówienie.',
+        'name' => 'Twoje imię',
+        'submit' => 'Zamów',
+        'message' => 'Dziękujemy! Oddzwonimy w ciągu 15 minut.',
+        'order' => 'Zamówienie :number na :amount.',
+        'anonymous' => 'Kupujący',
     ],
     'history' => [
         'terms' => 'Zgoda na warunki: :title (:url), wersja :version, :time',
@@ -105,6 +117,11 @@ return [
         'privacy-page' => 'Polityka prywatności',
         'privacy-page-help' => 'Drugi dokument, jeśli witryna go ma: jak przetwarzane są dane osobowe.',
         'contact-needed' => 'Zostaw telefon lub e-mail jako wymagany: zamówienie potrzebuje jednego z nich.',
+        'quick-card' => 'Kup jednym kliknięciem',
+        'quick' => 'Przycisk «Kup jednym kliknięciem»',
+        'quick-help' => 'Przycisk obok «Kup» na karcie produktu: kupujący zostawia telefon, a zamówienie przychodzi bez koszyka i kroków. Menedżer oddzwania i dopisuje dostawę i płatność.',
+        'quick-message' => 'Tekst po zamówieniu',
+        'quick-message-help' => 'Co powie okno po złożeniu zamówienia. Puste — «Dziękujemy! Oddzwonimy w ciągu 15 minut.»',
         'values' => [
             'required' => 'Wymagane',
             'optional' => 'Opcjonalne',

@@ -130,6 +130,7 @@ const refunded = ref<boolean | null>(flag('refunded'))
 const visitor = ref<string | null>(text('visitor'))
 const delivery = ref<string | null>(text('delivery'))
 const payment = ref<string | null>(text('payment'))
+const source = ref<string | null>(text('source'))
 const from = ref<string | null>(text('from'))
 const to = ref<string | null>(text('to'))
 const sort = ref<string>(text('sort') ?? '-placed_at')
@@ -175,6 +176,13 @@ const visitorOptions = computed(() => [
   { value: 'guest', label: t('panel.guest') },
   { value: 'visitor', label: t('panel.visitor') },
 ])
+
+/** Where an order may come from; a source of the site's own code is still found by the address. */
+const SOURCES = ['checkout', 'quick', 'api', 'mcp'] as const
+
+const sourceOptions = computed(() =>
+  SOURCES.map((value) => ({ value, label: t(`panel.source-${value}`) })),
+)
 
 const methodOptions = (block: 'delivery' | 'payment') =>
   meta.value.methods[block].map((one) => ({ value: one, label: one }))
@@ -253,6 +261,14 @@ const applied = computed<AppliedFilter[]>(() => {
     chip('payment', `${t('panel.filter-payment')}: ${payment.value}`, () => (payment.value = null))
   }
 
+  if (source.value !== null) {
+    chip(
+      'source',
+      `${t('panel.filter-source')}: ${labelOf(sourceOptions.value, source.value)}`,
+      () => (source.value = null),
+    )
+  }
+
   if (from.value !== null)
     chip('from', `${t('panel.filter-from')}: ${from.value}`, () => (from.value = null))
   if (to.value !== null) chip('to', `${t('panel.filter-to')}: ${to.value}`, () => (to.value = null))
@@ -270,6 +286,7 @@ function clearFilters(): void {
   visitor.value = null
   delivery.value = null
   payment.value = null
+  source.value = null
   from.value = null
   to.value = null
 }
@@ -287,6 +304,7 @@ function query(state?: TableState): OrderQuery {
     visitor: (visitor.value as OrderQuery['visitor']) ?? undefined,
     delivery: delivery.value ?? undefined,
     payment: payment.value ?? undefined,
+    source: source.value ?? undefined,
     from: from.value ?? undefined,
     to: to.value ?? undefined,
     sort: sort.value,
@@ -322,7 +340,7 @@ function remember(): void {
   if (q.page && q.page > 1) wanted.page = String(q.page)
   if (q.sort && q.sort !== '-placed_at') wanted.sort = q.sort
 
-  for (const key of ['status', 'public', 'visitor', 'delivery', 'payment', 'from', 'to'] as const) {
+  for (const key of ['status', 'public', 'visitor', 'delivery', 'payment', 'source', 'from', 'to'] as const) {
     if (q[key]) wanted[key] = q[key]
   }
 
@@ -350,6 +368,7 @@ watch(
     visitor,
     delivery,
     payment,
+    source,
     from,
     to,
     sort,
@@ -568,6 +587,15 @@ onMounted(async () => {
               size="sm"
             />
           </wx-form-item>
+          <wx-form-item :label="t('panel.filter-source')">
+            <wx-select
+              v-model="source"
+              :options="sourceOptions"
+              :placeholder="t('panel.any')"
+              clearable
+              size="sm"
+            />
+          </wx-form-item>
           <wx-form-item :label="t('panel.filter-from')">
             <wx-date-picker
               :model-value="from"
@@ -608,6 +636,9 @@ onMounted(async () => {
               <span class="wx-orders__text">{{ row.customer.name }}</span>
               <wx-badge v-if="meta.visitors && row.guest" size="sm" variant="outline">
                 {{ t('panel.guest') }}
+              </wx-badge>
+              <wx-badge v-if="row.source === 'quick'" size="sm" variant="outline">
+                {{ t('panel.source-quick') }}
               </wx-badge>
             </span>
             <span class="wx-orders__text wx-orders__muted">
@@ -687,6 +718,9 @@ onMounted(async () => {
             <template #meta>
               <wx-badge :type="toneOf(row.status?.color)" dot size="sm">
                 {{ row.status?.name ?? '—' }}
+              </wx-badge>
+              <wx-badge v-if="row.source === 'quick'" size="sm" variant="outline">
+                {{ t('panel.source-quick') }}
               </wx-badge>
               <wx-text size="sm" weight="medium">{{ row.total }}</wx-text>
               <wx-text size="sm" tone="muted">{{ numberOf(row) }}</wx-text>

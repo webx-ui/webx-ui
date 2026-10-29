@@ -360,6 +360,7 @@ final readonly class CheckoutTools
         return match (true) {
             str_starts_with($key, 'orders.checkout.fields.') => [CheckoutSettings::REQUIRED, CheckoutSettings::OPTIONAL, CheckoutSettings::HIDDEN],
             $key === 'orders.checkout.terms' => [CheckoutSettings::TERMS_NONE, CheckoutSettings::TERMS_NOTICE, CheckoutSettings::TERMS_CHECKBOX],
+            $key === 'orders.checkout.quick.message' => 'an object of language → text ({"en": "…"}) the dialog «Buy in one click» says after the order, or null for the package\'s words',
             str_ends_with($key, '_page') => 'a link as the panel keeps it ({"target": "entity", "entity_type": "pages", "entity_id": 3} or {"target": "url", "url": "/terms"}), or null',
             default => ['on', 'off'],
         };
@@ -430,6 +431,10 @@ final readonly class CheckoutTools
                     CheckoutSettings::TERMS_CHECKBOX => 'The buyer ticks a box to agree with the terms before the order.',
                     default => 'A line under the confirmation says that placing the order agrees with the terms.',
                 },
+                $key === 'orders.checkout.quick.enabled' => $on
+                    ? 'The button «Buy in one click» appears where the product\'s page prints it.'
+                    : 'The button «Buy in one click» disappears, and its address answers 404.',
+                $key === 'orders.checkout.quick.message' => 'The words of the dialog «Buy in one click» after an order change.',
                 default => 'The link to the '.($key === 'orders.checkout.privacy_page' ? 'privacy policy' : 'terms').' changes.',
             };
         }

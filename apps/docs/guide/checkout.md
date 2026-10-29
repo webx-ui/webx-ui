@@ -304,6 +304,38 @@ a patch, never by a copy of the view:
 «Thank you» has the handle `checkout.thanks`. The page dispatches `webx:checkout:placed` there —
 the place for a counter's goal.
 
+## Buy in one click
+
+A button beside «Buy» opens a dialog: a phone, a name if the buyer gives one, and the agreement
+with the terms as the tab «Checkout» asks for it. The order comes without the cart and without the
+steps; the manager calls back and adds the delivery and the payment to it. It is off until the
+shop turns on «Buy in one click» in the tab «Checkout» of the settings. The words the dialog says
+after the order are there too, one text a language.
+
+```blade
+<x-webx-cart::add type="catalog.product" :ref="$product->id" />
+<x-webx-orders::checkout.quick-button type="catalog.product" :ref="$product->id" />
+```
+
+Any `Purchasable` works — `type` and `ref` as the cart takes them, and `qty` and `options` when the
+page chose them. While the setting is off, the component prints nothing.
+
+- **The buyer's cart is not touched.** The line goes into a cart of its own that no cookie carries,
+  the order is placed of it through `Orders::place()` — the cart's rules, gifts and privileges
+  count as on the checkout — and that cart goes. It all happens in one transaction: a refusal at
+  any step leaves neither a cart nor an order.
+- **No name — «Buyer».** An order needs a first name, so one without it gets the word in the
+  order's language. The phone is required, the e-mail is not asked.
+- **The answer stays in the dialog**: the shop's words and «Order 1024 for 120.00». There is no
+  «Thank you» page.
+- **Antispam, stricter than the checkout's**: the mark of time, the hidden field, the origin, and
+  3 orders an hour from one address and from one phone (`webx-orders.checkout.throttle.quick_per_hour`).
+  The same dialog sent twice within ten minutes is one order.
+- **No CSRF token.** A product's page may be cached for everybody, so the form carries nothing
+  personal, as the inbox's forms do.
+- **In the panel** such an order has the mark «One-click order» in the list and in the card, and
+  the filter «Placed through» finds them (`source = quick`; `orders_list` takes `source` too).
+
 ## Turning it off
 
 A site that takes orders some other way — its own page, a phone call, an agent — turns the page
