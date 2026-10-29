@@ -17,7 +17,8 @@
     product's pictures.
 
     Two points for the satellites: `catalog.product.aside` beside the price (the stock, the brand)
-    and `catalog.product.tabs` under the description (properties, related products).
+    and `catalog.product.tabs` under the description (properties, related products); and
+    `catalog.product.quick` — the orders' «Buy in one click» beside the cart's button.
 --}}
 @php($priced = (bool) config('webx-catalog.price.enabled', true))
 @php($images = $product->images)
@@ -96,8 +97,14 @@
 
             {{-- The cart's button when the cart is installed — a form that works without JavaScript;
                  a dynamic component, so a site without the cart compiles this view too. --}}
+            {{-- «Buy in one click» of the orders beside it — a point of its own, so a theme removes it
+                 (an empty `parts/catalog/product/quick`) or prints the partial elsewhere. Both buttons
+                 get the same `$options` — the chosen variant a site's view composer gives, none in
+                 the core. --}}
             @if ($verdict->purchasable && WebxUi\Catalog\Cart\CartButton::shown())
-                <x-dynamic-component component="webx-cart::add" type="catalog.product" :ref="$product->id" class="webx-catalog-product__action">{{ __('webx-catalog::storefront.buy') }}</x-dynamic-component>
+                @php($options = isset($options) && is_array($options) ? $options : [])
+                <x-dynamic-component component="webx-cart::add" type="catalog.product" :ref="$product->id" :options="$options" class="webx-catalog-product__action">{{ __('webx-catalog::storefront.buy') }}</x-dynamic-component>
+                @webxPart('catalog.product.quick', ['product' => $product, 'options' => $options], 'webx-catalog::points.product-quick')
             @elseif ($verdict->purchasable)
                 <button type="button" class="webx-catalog-product__action" data-product="{{ $product->id }}">{{ __('webx-catalog::storefront.buy') }}</button>
             @elseif ($verdict->code === WebxUi\Catalog\Purchase\CoreRules::PRICE_ON_REQUEST)

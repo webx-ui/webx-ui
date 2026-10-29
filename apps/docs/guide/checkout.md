@@ -322,6 +322,15 @@ after the order are there too, one text a language.
 Any `Purchasable` works — `type` and `ref` as the cart takes them, and `qty` and `options` when the
 page chose them. While the setting is off, the component prints nothing.
 
+**The catalogue's product page has the button out of the box**, beside the cart's, on a site with
+the orders: nothing to add to a view, only the setting to turn on. Without `webx-ui/module-orders`
+the page shows the cart's button alone. Both buttons get the same `options` — the chosen variant,
+when a site's view composer gives `options` to `webx-catalog::product`. The button is the point
+`catalog.product.quick`, so a theme removes it with an empty
+`views/parts/catalog/product/quick.blade.php`, or moves it: that file empty and
+`@include('webx-catalog::points.product-quick', ['product' => $product, 'options' => []])` where
+the button should stand.
+
 - **The buyer's cart is not touched.** The line goes into a cart of its own that no cookie carries,
   the order is placed of it through `Orders::place()` — the cart's rules, gifts and privileges
   count as on the checkout — and that cart goes. It all happens in one transaction: a refusal at
