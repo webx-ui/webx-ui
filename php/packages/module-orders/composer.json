@@ -67,6 +67,7 @@
             },
             "panel": {
                 "import": "import { orders } from '@webx-ui/module-orders'",
+                "style": "@webx-ui/module-orders/style.css",
                 "register": "orders()"
             }
         }
