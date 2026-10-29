@@ -62,7 +62,12 @@ const dates = computed(() =>
       <template v-for="mark in dates" :key="mark.key">
         <dt>{{ t(`module.milestones.${mark.key}`) }}</dt>
         <dd>
-          <wx-badge v-if="mark.key === 'placed' && quick" size="sm" variant="outline">
+          <wx-badge
+            v-if="mark.key === 'placed' && quick"
+            class="wx-orders-summary__source"
+            size="sm"
+            variant="outline"
+          >
             {{ t('panel.source-quick') }}
           </wx-badge>
           <wx-date :value="mark.at" size="sm" />
@@ -76,6 +81,10 @@ const dates = computed(() =>
 </template>
 
 <style scoped>
+.wx-orders-summary__source {
+  margin-inline-end: var(--wx-space-8);
+}
+
 .wx-orders-summary__rows {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
