@@ -157,7 +157,6 @@ return [
     'statuses' => [
         'title' => 'Bestellstatus',
         'help' => 'Was der Käufer sieht, und die Schritte des Shops darin. Zum Umsortieren ziehen; ein Schritt, der in eine andere Gruppe gezogen wird, wechselt dorthin.',
-        'public' => 'Was der Käufer sieht',
         'internal' => 'Schritte des Shops',
         'new-public' => 'Neuer öffentlicher Status',
         'new-status' => 'Neuer Schritt',

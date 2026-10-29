@@ -157,7 +157,6 @@ return [
     'statuses' => [
         'title' => 'Statuts des commandes',
         'help' => 'Ce que voit l’acheteur, et les étapes de la boutique dans chaque statut. Faites glisser pour réordonner ; une étape glissée dans un autre groupe y passe.',
-        'public' => 'Ce que voit l\'acheteur',
         'internal' => 'Étapes de la boutique',
         'new-public' => 'Nouveau statut public',
         'new-status' => 'Nouvelle étape',

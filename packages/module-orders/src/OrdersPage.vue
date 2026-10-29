@@ -79,13 +79,11 @@ const headActions = computed<ScreenAction[]>(() =>
         {
           key: 'statuses',
           label: t('panel.to-statuses'),
-          icon: 'list',
           run: () => void router.push(`${props.base}/statuses`),
         },
         {
           key: 'settings',
           label: t('panel.to-settings'),
-          icon: 'settings',
           run: () => void router.push(`${props.base}/settings`),
         },
       ]

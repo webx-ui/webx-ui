@@ -290,20 +290,17 @@ const actions = computed<ScreenAction[]>(() =>
         {
           key: 'new-status',
           label: t('panel.statuses.new-status'),
-          icon: 'plus',
           primary: true,
           run: () => void editStage(null),
         },
         {
           key: 'new-public',
           label: t('panel.statuses.new-public'),
-          icon: 'plus',
           run: () => void editGroup(null),
         },
         {
           key: 'settings',
           label: t('panel.to-settings'),
-          icon: 'settings',
           run: () => void router.push(`${props.base}/settings`),
         },
       ]
@@ -337,12 +334,12 @@ const deletedWhere = (status: DeletedStatus) =>
       <div v-else class="wx-orders-statuses__board">
         <wx-sortable-list
           v-model="groups"
-          :title="t('panel.statuses.public')"
+          :title="t('panel.statuses.group')"
           item-key="id"
           item-label="label"
           :drag-label="t('panel.statuses.reorder')"
           :disabled="!canManage"
-          :aria-label="t('panel.statuses.public')"
+          :aria-label="t('panel.statuses.group')"
           @move="dropped"
         >
           <template #default="{ item }">

@@ -157,7 +157,6 @@ return [
     'statuses' => [
         'title' => 'Statusy zamówień',
         'help' => 'Co widzi kupujący i etapy sklepu w każdym statusie. Kolejność zmienia się przeciąganiem; etap przeciągnięty do innej grupy przechodzi do niej.',
-        'public' => 'Co widzi kupujący',
         'internal' => 'Etapy sklepu',
         'new-public' => 'Nowy status publiczny',
         'new-status' => 'Nowy etap',

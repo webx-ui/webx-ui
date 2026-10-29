@@ -157,7 +157,6 @@ return [
     'statuses' => [
         'title' => 'Sipariş durumları',
         'help' => 'Müşterinin gördüğü ve her durumun içindeki mağaza aşamaları. Sıralamak için sürükleyin; başka bir gruba sürüklenen aşama oraya geçer.',
-        'public' => 'Müşterinin gördüğü',
         'internal' => 'Mağaza aşamaları',
         'new-public' => 'Yeni genel durum',
         'new-status' => 'Yeni aşama',

@@ -157,7 +157,6 @@ return [
     'statuses' => [
         'title' => 'Stati degli ordini',
         'help' => 'Ciò che vede l’acquirente e le fasi del negozio in ciascuno stato. Trascina per riordinare; una fase trascinata in un altro gruppo passa lì.',
-        'public' => 'Ciò che vede l\'acquirente',
         'internal' => 'Fasi del negozio',
         'new-public' => 'Nuovo stato pubblico',
         'new-status' => 'Nuova fase',

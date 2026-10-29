@@ -199,7 +199,6 @@ export const ordersMessages: Record<string, Messages> = {
     statuses: {
       title: 'Order statuses',
       help: 'What the buyer sees, and the stages of the shop inside each. Drag to reorder; drag a stage into another group to move it there.',
-      public: 'What the buyer sees',
       internal: 'Stages of the shop',
       'new-public': 'New public status',
       'new-status': 'New stage',

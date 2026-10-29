@@ -157,7 +157,6 @@ return [
     'statuses' => [
         'title' => 'Estados das encomendas',
         'help' => 'O que o comprador vê e as etapas da loja dentro de cada estado. Arraste para reordenar; uma etapa arrastada para outro grupo passa para ele.',
-        'public' => 'O que o comprador vê',
         'internal' => 'Etapas da loja',
         'new-public' => 'Novo estado público',
         'new-status' => 'Nova etapa',
