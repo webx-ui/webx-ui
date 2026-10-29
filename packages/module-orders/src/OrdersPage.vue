@@ -340,7 +340,16 @@ function remember(): void {
   if (q.page && q.page > 1) wanted.page = String(q.page)
   if (q.sort && q.sort !== '-placed_at') wanted.sort = q.sort
 
-  for (const key of ['status', 'public', 'visitor', 'delivery', 'payment', 'source', 'from', 'to'] as const) {
+  for (const key of [
+    'status',
+    'public',
+    'visitor',
+    'delivery',
+    'payment',
+    'source',
+    'from',
+    'to',
+  ] as const) {
     if (q[key]) wanted[key] = q[key]
   }
 
