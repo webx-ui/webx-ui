@@ -844,17 +844,19 @@ function counted(value: unknown, fail: Fail) {
 
   return {
     picked,
-    orderable: true,
-    message: null,
-    totals: {
-      lines,
-      subtotal_formatted: money(sum),
-      adjustments: [],
-      total_formatted: money(sum),
-      tenders: [],
-      payable: sum,
-      payable_formatted: money(sum),
-      warnings: [],
+    preview: {
+      orderable: true,
+      message: null,
+      totals: {
+        lines,
+        subtotal_formatted: money(sum),
+        adjustments: [],
+        total_formatted: money(sum),
+        tenders: [],
+        payable: sum,
+        payable_formatted: money(sum),
+        warnings: [],
+      },
     },
   }
 }
@@ -1248,11 +1250,7 @@ export function registerOrders(on: On, fail: Fail, line: Line): void {
     }
   })
 
-  on('POST', '/orders/new/preview', ({ body }) => {
-    const { picked: _picked, ...answer } = counted(body.lines, fail)
-
-    return { data: answer }
-  })
+  on('POST', '/orders/new/preview', ({ body }) => ({ data: counted(body.lines, fail).preview }))
 
   on('POST', '/orders/new', ({ body }) => {
     const key = text(body.key)
