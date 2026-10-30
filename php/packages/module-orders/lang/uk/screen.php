@@ -14,6 +14,7 @@ return [
     'last-name' => 'Прізвище',
     'phone' => 'Телефон',
     'email' => 'E-mail',
+    'contacts-hint' => 'Вкажіть телефон або e-mail.',
     'notes' => 'Коментар і нотатка',
     'comment' => 'Коментар покупця',
     'manager-note' => 'Нотатка менеджера',

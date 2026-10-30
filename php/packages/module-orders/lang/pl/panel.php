@@ -195,7 +195,7 @@ return [
     'new-last-name' => 'Nazwisko',
     'new-phone' => 'Telefon',
     'new-email' => 'E-mail',
-    'new-contacts-help' => 'Przynajmniej telefon lub e-mail.',
+    'new-contacts-help' => 'Podaj telefon lub e-mail.',
     'new-recipient' => 'Odbiera ktoś inny',
     'new-comment' => 'Komentarz kupującego',
     'new-locale' => 'Język zamówienia',

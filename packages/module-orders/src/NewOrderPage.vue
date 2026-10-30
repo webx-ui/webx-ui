@@ -496,17 +496,17 @@ const optionItems = (option: ProductChoice['options'][number]) =>
               <wx-input v-model="customer.last_name" autocomplete="off" />
             </wx-form-item>
           </div>
-          <div class="wx-orders-new__pair">
-            <wx-form-item
-              :label="t('panel.new-phone')"
-              name="customer.phone"
-              :help="t('panel.new-contacts-help')"
-            >
-              <wx-input v-model="customer.phone" type="tel" autocomplete="off" />
-            </wx-form-item>
-            <wx-form-item :label="t('panel.new-email')" name="customer.email">
-              <wx-input v-model="customer.email" type="email" autocomplete="off" />
-            </wx-form-item>
+          <!-- Either of the two will do, so neither gets an asterisk: the pair gets a hint. -->
+          <div class="wx-orders-new__contacts">
+            <div class="wx-orders-new__pair">
+              <wx-form-item :label="t('panel.new-phone')" name="customer.phone">
+                <wx-input v-model="customer.phone" type="tel" autocomplete="off" />
+              </wx-form-item>
+              <wx-form-item :label="t('panel.new-email')" name="customer.email">
+                <wx-input v-model="customer.email" type="email" autocomplete="off" />
+              </wx-form-item>
+            </div>
+            <wx-text size="sm" tone="muted">{{ t('panel.new-contacts-help') }}</wx-text>
           </div>
 
           <wx-form-item>
@@ -669,6 +669,12 @@ const optionItems = (option: ProductChoice['options'][number]) =>
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 0 var(--wx-space-16);
+}
+
+.wx-orders-new__contacts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-6);
 }
 
 @container (min-width: 560px) {

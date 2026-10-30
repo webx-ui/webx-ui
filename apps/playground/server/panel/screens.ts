@@ -136,7 +136,12 @@ const SCREENS: Record<string, { base: string; patches: (string | Patch)[] }> = {
   // The project patch is a neighbour as it would add itself: a tab «Delivery» after «Items» (§11.3).
   'orders.show': {
     base: 'php/packages/module-orders/resources/screens/show.json',
-    patches: ['apps/playground/server/panel/project/orders.show.json'],
+    // `required` is what the real server reads off `ContactRules::screen()` when it hands the
+    // screen out; the fixture lays the same answer.
+    patches: [
+      'apps/playground/server/panel/project/orders.show.json',
+      [{ op: 'set', target: 'buyer-first-name', required: true }],
+    ],
   },
   'orders.settings': {
     base: 'php/packages/module-orders/resources/screens/settings.json',
@@ -151,7 +156,8 @@ const SCREENS: Record<string, { base: string; patches: (string | Patch)[] }> = {
   },
   'users.form': {
     base: 'php/packages/module-users/resources/screens/form.json',
-    patches: [],
+    // From `UserForm::rules()` on the real server: the address is always required.
+    patches: [[{ op: 'set', target: 'email', required: true }]],
   },
   'users.settings': {
     base: 'php/packages/module-users/resources/screens/settings.json',

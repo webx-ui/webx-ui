@@ -195,7 +195,7 @@ return [
     'new-last-name' => 'Фамилия',
     'new-phone' => 'Телефон',
     'new-email' => 'E-mail',
-    'new-contacts-help' => 'Нужен хотя бы телефон или e-mail.',
+    'new-contacts-help' => 'Укажите телефон или e-mail.',
     'new-recipient' => 'Получает другой человек',
     'new-comment' => 'Комментарий покупателя',
     'new-locale' => 'Язык заказа',

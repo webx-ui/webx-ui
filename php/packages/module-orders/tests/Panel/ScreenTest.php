@@ -33,6 +33,29 @@ final class ScreenTest extends PanelTestCase
     }
 
     #[Test]
+    public function only_the_first_name_of_the_buyer_carries_an_asterisk(): void
+    {
+        $this->signIn(['orders.view']);
+        $root = $this->getJson('/api/cms/screens/orders.show')->assertOk()->json('data.root');
+        $flags = [];
+
+        foreach (['buyer-first-name', 'buyer-last-name', 'buyer-phone', 'buyer-email', 'recipient-first-name', 'recipient-phone'] as $id) {
+            $flags[$id] = self::find($root, $id)['required'] ?? false;
+        }
+
+        // A phone or an e-mail — either, so neither; a recipient emptied whole is the buyer.
+        $this->assertSame([
+            'buyer-first-name' => true,
+            'buyer-last-name' => false,
+            'buyer-phone' => false,
+            'buyer-email' => false,
+            'recipient-first-name' => false,
+            'recipient-phone' => false,
+        ], $flags);
+        $this->assertNotNull(self::find($root, 'buyer-contacts-hint'));
+    }
+
+    #[Test]
     public function a_neighbour_adds_its_tab_with_a_patch(): void
     {
         $this->app->make(ScreenRegistry::class)->extend('orders.show', [[

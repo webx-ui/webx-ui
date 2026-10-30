@@ -14,6 +14,7 @@ return [
     'last-name' => 'Фамилия',
     'phone' => 'Телефон',
     'email' => 'E-mail',
+    'contacts-hint' => 'Укажите телефон или e-mail.',
     'notes' => 'Комментарий и заметка',
     'comment' => 'Комментарий покупателя',
     'manager-note' => 'Заметка менеджера',

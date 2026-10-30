@@ -14,6 +14,7 @@ return [
     'last-name' => 'Last name',
     'phone' => 'Phone',
     'email' => 'E-mail',
+    'contacts-hint' => 'Enter a phone or an e-mail.',
     'notes' => 'Comment and note',
     'comment' => 'Buyer\'s comment',
     'manager-note' => 'Manager note',

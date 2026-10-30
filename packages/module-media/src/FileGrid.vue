@@ -99,7 +99,7 @@ function copyFailed(file: MediaFile): void {
     return
   }
 
-  toast.danger(`${t('errors.copy')} ${file.url}`, { duration: 0 })
+  toast.danger(`${t('errors.copy')} ${file.url}`, { persistent: true })
 }
 </script>
 

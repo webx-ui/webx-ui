@@ -42,6 +42,10 @@
           "type": "boolean",
           "description": "The value is a record keyed by content language."
         },
+        "required": {
+          "type": "boolean",
+          "description": "For fields: always required, drawn with an asterisk. The server sets it when it hands the screen out, from the rules of the field; a description writes it only for a field its project checks itself."
+        },
         "default": {
           "description": "For fields: the value shown and read while nothing is stored. Checked by the field type's own rules; a localized field takes one plain value for every language."
         },

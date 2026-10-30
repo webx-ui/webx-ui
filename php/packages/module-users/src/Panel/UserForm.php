@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Date;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use WebxUi\Admin\Screens\ScreenRecord;
+use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Users\Emails\Mask;
 use WebxUi\Users\Emails\Verification;
 use WebxUi\Users\Fields\FieldValues;
@@ -287,12 +288,7 @@ final readonly class UserForm
             $own['email'] = User::normaliseEmail($own['email']);
         }
 
-        $rules = [
-            'first_name' => ['nullable', 'string', 'max:100'],
-            'last_name' => ['nullable', 'string', 'max:100'],
-            'phone' => ['nullable', 'string', 'max:32'],
-            'email' => ['required', 'string', 'email', 'max:191', Rule::unique('users', 'email')->ignore($user->getKey())],
-        ];
+        $rules = self::rules($user);
 
         $this->validation->make($own, array_intersect_key($rules, $own), [
             'email.unique' => (string) trans('webx-users::errors.email-taken'),
@@ -302,6 +298,22 @@ final readonly class UserForm
             'phone' => (string) trans('webx-users::screen.phone'),
             'email' => (string) trans('webx-users::screen.email'),
         ])->validate();
+    }
+
+    /**
+     * The rules of the visitor's own columns — also what the screen is told, so the address
+     * carries its asterisk ({@see ScreenRegistry::rules()}).
+     *
+     * @return array<string, list<mixed>>
+     */
+    public static function rules(?User $user = null): array
+    {
+        return [
+            'first_name' => ['nullable', 'string', 'max:100'],
+            'last_name' => ['nullable', 'string', 'max:100'],
+            'phone' => ['nullable', 'string', 'max:32'],
+            'email' => ['required', 'string', 'email', 'max:191', Rule::unique('users', 'email')->ignore($user?->getKey())],
+        ];
     }
 
     /**

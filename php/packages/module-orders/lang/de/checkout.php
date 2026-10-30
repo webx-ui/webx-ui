@@ -63,6 +63,7 @@ return [
     'errors' => [
         'required' => 'Füllen Sie «:field» aus.',
         'phone-or-email' => 'Geben Sie eine Telefonnummer oder eine E-Mail-Adresse an.',
+        'too-long' => '«:field» ist zu lang: höchstens :max Zeichen.',
         'phone' => 'Eine Telefonnummer besteht aus + und Ziffern, zum Beispiel +800 1234 5678.',
         'email' => 'Prüfen Sie die E-Mail-Adresse.',
         'terms' => 'Stimmen Sie den Bedingungen zu, um zu bestellen.',

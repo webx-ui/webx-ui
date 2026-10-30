@@ -98,6 +98,9 @@ class OrdersServiceProvider extends ServiceProvider
         // The card of an order (§11.3): neighbours add their tabs to it with a patch of `tabs`.
         $screens = $this->app->make(ScreenRegistry::class);
         $screens->register(OrdersModule::SCREEN, __DIR__.'/../resources/screens/show.json');
+        // Its fields are checked by `Orders`, not by their types: told, so the always required
+        // ones carry an asterisk.
+        $screens->rules(OrdersModule::SCREEN, ContactRules::screen());
         // The settings of the section (§11.4): the choice of the initial statuses is made of the
         // statuses as they are when the tree is built.
         $screens->register(SettingsScreen::NAME, __DIR__.'/../resources/screens/settings.json');

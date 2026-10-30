@@ -46,6 +46,7 @@ use WebxUi\Users\Models\User;
 use WebxUi\Users\Panel\GroupsModule;
 use WebxUi\Users\Panel\SettingsModule;
 use WebxUi\Users\Panel\SettingsScreen;
+use WebxUi\Users\Panel\UserForm;
 use WebxUi\Users\Panel\UsersModule;
 use WebxUi\Users\Social\DevProvider;
 use WebxUi\Users\Social\FacebookProvider;
@@ -207,6 +208,8 @@ class UsersServiceProvider extends ServiceProvider
         $screens = $this->app->make(ScreenRegistry::class);
 
         $screens->register(User::SCREEN, __DIR__.'/../resources/screens/form.json');
+        // A closure: the unique rule is built when the screen is drawn, not at boot.
+        $screens->rules(User::SCREEN, static fn (): array => UserForm::rules());
         $screens->extend(User::SCREEN, function (): array {
             $patch = [['op' => 'set', 'target' => 'groups', 'props' => ['options' => Group::query()->orderBy('name')->get(['code', 'name'])->map(
                 static fn (Group $group): array => ['value' => $group->code, 'label' => $group->name],

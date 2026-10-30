@@ -63,6 +63,7 @@ return [
     'errors' => [
         'required' => '«:field» alanını doldurun.',
         'phone-or-email' => 'Bir telefon ya da e-posta girin.',
+        'too-long' => '«:field» çok uzun: en fazla :max karakter.',
         'phone' => 'Telefon + ve rakamlardan oluşur, örneğin +800 1234 5678.',
         'email' => 'E-postayı kontrol edin.',
         'terms' => 'Sipariş vermek için koşulları kabul edin.',

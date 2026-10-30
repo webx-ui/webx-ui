@@ -195,7 +195,7 @@ return [
     'new-last-name' => 'Soyad',
     'new-phone' => 'Telefon',
     'new-email' => 'E-posta',
-    'new-contacts-help' => 'En azından bir telefon veya e-posta.',
+    'new-contacts-help' => 'Bir telefon ya da e-posta girin.',
     'new-recipient' => 'Başka biri teslim alacak',
     'new-comment' => 'Alıcının yorumu',
     'new-locale' => 'Siparişin dili',

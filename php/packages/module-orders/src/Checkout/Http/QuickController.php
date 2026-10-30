@@ -157,7 +157,10 @@ final readonly class QuickController
             'terms.accepted' => (string) __('webx-orders::checkout.errors.terms'),
         ];
 
-        $validator = Validator::make($request->all(), $rules, $messages);
+        $validator = Validator::make($request->all(), $rules, $messages, [
+            'phone' => (string) __('webx-orders::checkout.fields.phone'),
+            'name' => (string) __('webx-orders::checkout.fields.first-name'),
+        ]);
 
         // The line is the button's, not the buyer's: a broken one is one refusal, not a field.
         if ($validator->errors()->hasAny(['type', 'ref', 'qty', 'options'])) {

@@ -7,6 +7,7 @@ const NODE_KEYS = new Set([
   'label',
   'help',
   'localized',
+  'required',
   'default',
   'props',
   'children',
@@ -74,8 +75,10 @@ function checkNode(value: unknown, path: string, errors: ScreenError[], seen: Se
       errors.push({ path, message: `"${key}" must be a string` })
     }
   }
-  if ('localized' in value && typeof value.localized !== 'boolean') {
-    errors.push({ path, message: '"localized" must be a boolean' })
+  for (const key of ['localized', 'required']) {
+    if (key in value && typeof value[key] !== 'boolean') {
+      errors.push({ path, message: `"${key}" must be a boolean` })
+    }
   }
   if ('props' in value && !isRecord(value.props)) {
     errors.push({ path, message: '"props" must be an object' })

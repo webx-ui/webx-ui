@@ -24,6 +24,13 @@ export interface ScreenNode {
   /** The field is edited per content language; the value is a record keyed by locale. */
   localized?: boolean
   /**
+   * For fields: always required — the form item draws an asterisk at the label. The server
+   * sets it when it hands the screen out, from the field's rules (only a bare `required`; a
+   * `required_without` pair gets a hint instead). A description writes it only for a field its
+   * project checks itself.
+   */
+  required?: boolean
+  /**
    * For fields: what is drawn — and what the site reads — while nothing is stored. Checked
    * on the server by the type's own rules. A localized field takes one plain value for every
    * language. Never written on its own: an untouched field still saves nothing.

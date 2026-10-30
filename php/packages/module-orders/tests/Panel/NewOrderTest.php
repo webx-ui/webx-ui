@@ -142,6 +142,32 @@ final class NewOrderTest extends PanelTestCase
     }
 
     #[Test]
+    public function a_refusal_names_the_fields_in_words_of_the_panel_language(): void
+    {
+        $this->signIn();
+        $said = [
+            'en' => ['Enter a phone or an e-mail.', 'Fill in «First name».', '«Last name» is too long: at most 190 characters.'],
+            'ru' => ['Укажите телефон или e-mail.', 'Заполните поле «Имя».', 'Поле «Фамилия» слишком длинное: не больше 190 символов.'],
+            'uk' => ['Вкажіть телефон або e-mail.', "Заповніть поле «Ім'я».", 'Поле «Прізвище» задовге: не більше 190 символів.'],
+        ];
+
+        foreach ($said as $locale => [$either, $first, $long]) {
+            $response = $this->withHeader('X-Webx-Locale', $locale)
+                ->postJson($this->api('new'), ['lines' => self::lines(), 'customer' => ['first_name' => '', 'last_name' => str_repeat('x', 191)]])
+                ->assertStatus(422);
+
+            // Under both fields of the pair and in the toast: the first refusal, in words.
+            $this->assertSame([$either], $response->json('errors')['customer.phone'], $locale);
+            $this->assertSame([$either], $response->json('errors')['customer.email'], $locale);
+            $this->assertSame([$first], $response->json('errors')['customer.first_name'], $locale);
+            $this->assertSame([$long], $response->json('errors')['customer.last_name'], $locale);
+            $words = implode(' ', [(string) $response->json('message'), ...array_merge(...array_values($response->json('errors')))]);
+            $this->assertStringNotContainsString('customer.', $words, $locale);
+            $this->assertStringNotContainsString('validation.', $words, $locale);
+        }
+    }
+
+    #[Test]
     public function without_managing_orders_there_is_no_new_order(): void
     {
         $this->signIn(['orders.view', 'orders.refund']);

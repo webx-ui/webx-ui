@@ -10,6 +10,7 @@ use WebxUi\Admin\Screens\ScreenRegistry;
 /**
  * @method static void register(string $name, string|array<int|string, mixed> $screen)
  * @method static void extend(string $name, string|list<array<string, mixed>> $patch)
+ * @method static void rules(string $name, array<string, mixed>|(\Closure(): array<string, mixed>) $rules)
  * @method static bool has(string $name)
  * @method static list<string> names()
  * @method static list<array<string, mixed>> tree(string $name)

@@ -13,7 +13,7 @@ use Illuminate\Contracts\Validation\Factory as ValidationFactory;
  */
 final class ScreenValidator
 {
-    private const NODE_KEYS = ['id', 'type', 'name', 'label', 'help', 'localized', 'default', 'props', 'children', 'slot', 'visible', 'can'];
+    private const NODE_KEYS = ['id', 'type', 'name', 'label', 'help', 'localized', 'required', 'default', 'props', 'children', 'slot', 'visible', 'can'];
 
     private const OPS = ['add', 'remove', 'replace', 'move', 'set'];
 
@@ -177,8 +177,10 @@ final class ScreenValidator
             }
         }
 
-        if (array_key_exists('localized', $node) && ! is_bool($node['localized'])) {
-            $problems[] = "{$path}: \"localized\" must be a boolean";
+        foreach (['localized', 'required'] as $key) {
+            if (array_key_exists($key, $node) && ! is_bool($node[$key])) {
+                $problems[] = "{$path}: \"{$key}\" must be a boolean";
+            }
         }
 
         if (array_key_exists('props', $node) && (! is_array($node['props']) || ($node['props'] !== [] && array_is_list($node['props'])))) {

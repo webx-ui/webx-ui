@@ -14,6 +14,7 @@ return [
     'last-name' => 'Nachname',
     'phone' => 'Telefon',
     'email' => 'E-Mail',
+    'contacts-hint' => 'Geben Sie eine Telefonnummer oder eine E-Mail-Adresse an.',
     'notes' => 'Kommentar und Notiz',
     'comment' => 'Kommentar des Käufers',
     'manager-note' => 'Notiz des Managers',

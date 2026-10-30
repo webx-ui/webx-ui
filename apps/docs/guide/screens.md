@@ -49,6 +49,7 @@ switch controls whether the address field below it renders at all.
 | `label`     | no         | Text. For a field it goes on the form item; for a card it is the title; see the table below for the rest.                |
 | `help`      | no         | Hint under a field.                                                                                                      |
 | `localized` | no         | The field is edited per content language; the value is a record keyed by locale. Needs `provideLocales` above.           |
+| `required`  | no         | For fields: always required — an asterisk at the label. Set by the server from the field's rules (below).                |
 | `default`   | no         | For fields: drawn, and read by the site, while nothing is stored. Checked by the type's rules on the server.             |
 | `props`     | no         | Passed to the component as they are. The renderer does not interpret them.                                               |
 | `children`  | no         | Nested nodes.                                                                                                            |
@@ -68,6 +69,16 @@ not sent and nothing is stored for it. A localized field takes one plain value f
 (the form shows it in the main one). The server checks a default with the rules of its type, once
 the tree is patched — one the type would refuse from an editor breaks the screen like any other
 mistake in it.
+
+**The asterisk.** A field whose rules always require it — a bare `required` — is drawn with an
+asterisk at its label, and the label says nothing of it itself. The server works it out when it
+hands the screen out: the rules of the field's type, plus the rules the module checks the screen
+by on its own write path, told with `Screens::rules('orders.show', ['customer.first_name' =>
+['required', …]])`; the field comes out `"required": true`, and the renderer passes it on to
+`WxFormItem`. A field required only beside another — `required_without`, `required_if` — gets no
+asterisk: «a phone or an e-mail» marked on both says neither may be left out. Such a pair gets a
+hint under it instead. A description writes `required` itself only for a field its project
+checks; a form that is not a screen passes the same `required` prop to `<wx-form-item>`.
 
 **Translatable strings.** Any string in a node that starts with `trans::` is a dictionary key:
 `trans::<namespace>::<key>`. The marker works in `label`, `help` and anywhere inside `props`,
@@ -568,6 +579,6 @@ rules for writing it and the permissions — the server needs it no less than th
 The front end fetches a screen with `GET /api/cms/screens/<name>` when its page opens: the tree,
 server patches applied in order (other packages first, the project last), nodes without
 permission already cut out, `trans::` strings already translated. Client patches from `admin.ts`
-go on top. On the server it is `Screens::register` and `Screens::extend` in `module-admin`; the
+go on top. On the server it is `Screens::register`, `Screens::extend` and `Screens::rules` in `module-admin`; the
 design in full is
 [`docs/architecture/WEBX_UI_SCREENS.md`](https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_SCREENS.md).

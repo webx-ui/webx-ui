@@ -437,7 +437,9 @@ final class Orders
         $reason = self::text($reason, 500);
 
         if (in_array($source, ['panel', 'mcp'], true)) {
-            $this->validation->make(['reason' => $reason], ['reason' => ['required', 'string']])->validate();
+            $this->validation->make(['reason' => $reason], ['reason' => ['required', 'string']], [
+                'reason.required' => (string) __('webx-orders::panel.cancel-reason-required'),
+            ])->validate();
         }
 
         $adminId = $this->adminId($source);
@@ -973,37 +975,24 @@ final class Orders
 
     /**
      * The order needs a first name and a way to reach the buyer — a phone or an e-mail; what else
-     * a form requires is the checkout's. Answered like a form, keyed by field.
+     * a form requires is the checkout's. Answered like a form, keyed by field, in the module's
+     * words ({@see ContactRules}).
      *
      * @throws ValidationException
      */
     private function validate(Contact $customer, ?Contact $recipient, ?string $comment, ?string $managerNote = null): void
     {
-        $phone = ['nullable', 'string', 'max:32', 'regex:/^\+?[0-9][0-9 ().\-]*$/'];
         $data = [
             'customer' => ['first_name' => $customer->firstName, 'last_name' => $customer->lastName, 'phone' => $customer->phone, 'email' => $customer->email],
             'comment' => $comment,
             'manager_note' => $managerNote,
         ];
-        $rules = [
-            'customer.first_name' => ['required', 'string', 'max:190'],
-            'customer.last_name' => ['nullable', 'string', 'max:190'],
-            'customer.phone' => [...$phone, 'required_without:customer.email'],
-            'customer.email' => ['nullable', 'string', 'max:190', 'email:filter', 'required_without:customer.phone'],
-            'comment' => ['nullable', 'string', 'max:5000'],
-            'manager_note' => ['nullable', 'string', 'max:5000'],
-        ];
 
         if ($recipient !== null) {
             $data['recipient'] = ['first_name' => $recipient->firstName, 'last_name' => $recipient->lastName, 'phone' => $recipient->phone];
-            $rules += [
-                'recipient.first_name' => ['required', 'string', 'max:190'],
-                'recipient.last_name' => ['nullable', 'string', 'max:190'],
-                'recipient.phone' => $phone,
-            ];
         }
 
-        $this->validation->make($data, $rules)->validate();
+        $this->validation->make($data, ContactRules::rules($recipient !== null), ContactRules::messages(), ContactRules::attributes())->validate();
     }
 
     /**
@@ -1281,7 +1270,9 @@ final class Orders
             return;
         }
 
-        $this->validation->make(['note' => $note], ['note' => ['required', 'string']])->validate();
+        $this->validation->make(['note' => $note], ['note' => ['required', 'string']], [
+            'note.required' => (string) __('webx-orders::panel.cancel-reason-required'),
+        ])->validate();
     }
 
     /** A line of the history that is not a move: a note, a failed payment, a block, details. */

@@ -129,6 +129,15 @@
                           ]
                         }
                       ]
+                    },
+                    {
+                      "id": "buyer-contacts-hint",
+                      "type": "wx-text",
+                      "label": "trans::webx-orders::screen.contacts-hint",
+                      "props": {
+                        "size": "sm",
+                        "tone": "muted"
+                      }
                     }
                   ]
                 },

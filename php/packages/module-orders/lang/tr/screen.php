@@ -14,6 +14,7 @@ return [
     'last-name' => 'Soyad',
     'phone' => 'Telefon',
     'email' => 'E-posta',
+    'contacts-hint' => 'Bir telefon ya da e-posta girin.',
     'notes' => 'Yorum ve not',
     'comment' => 'Müşteri yorumu',
     'manager-note' => 'Yönetici notu',
