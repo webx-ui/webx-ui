@@ -136,7 +136,7 @@ final class EditNotificationsTest extends PlaceTestCase
 
         // A dry run tells nobody either, flag or not.
         $this->orders()->editItems($order, new ItemsEdit(revision: 1, qty: [$this->line($order)->id => 3], notify: true), dryRun: true);
-        $this->assertSame([], $this->rows($order, OrderEvents::ITEMS_CHANGED));
+        $this->assertSame(0, Delivery::query()->where('event', OrderEvents::ITEMS_CHANGED)->count());
     }
 
     #[Test]
