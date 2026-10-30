@@ -29,16 +29,16 @@
         "illuminate/http": "^13.0",
         "illuminate/routing": "^13.0",
         "illuminate/support": "^13.0",
-        "webx-ui/cache": "^0.90.0",
-        "webx-ui/localization": "^0.90.0",
-        "webx-ui/mcp": "^0.90.0",
-        "webx-ui/module-admin": "^0.90.0",
-        "webx-ui/module-media": "^0.90.0"
+        "webx-ui/cache": "^0.91.0",
+        "webx-ui/localization": "^0.91.0",
+        "webx-ui/mcp": "^0.91.0",
+        "webx-ui/module-admin": "^0.91.0",
+        "webx-ui/module-media": "^0.91.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
         "phpunit/phpunit": "^12.0 || ^13.0",
-        "webx-ui/module-pages": "^0.90.0"
+        "webx-ui/module-pages": "^0.91.0"
     },
     "suggest": {
         "webx-ui/module-pages": "A button of a banner can point at a page, and follows it when the page moves."
@@ -65,7 +65,7 @@
         "webx": {
             "module": "banners",
             "npm": {
-                "@webx-ui/module-banners": "^0.3.4"
+                "@webx-ui/module-banners": "^0.3.5"
             },
             "panel": {
                 "import": "import { banners } from '@webx-ui/module-banners'",
