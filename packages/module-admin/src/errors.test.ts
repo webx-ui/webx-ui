@@ -21,9 +21,9 @@ describe('errorText', () => {
 
   it('keeps a refusal the module wrote whole', () => {
     expect(errorText(refused('The order is paid already.'), t)).toBe('The order is paid already.')
-    expect(
-      errorText(refused('Not now: the list is out of date.', { list: ['Not now'] }), t),
-    ).toBe('Not now: the list is out of date.')
+    expect(errorText(refused('Not now: the list is out of date.', { list: ['Not now'] }), t)).toBe(
+      'Not now: the list is out of date.',
+    )
   })
 
   it('speaks for every other status in the panel words', () => {

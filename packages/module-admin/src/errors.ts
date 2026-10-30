@@ -73,7 +73,8 @@ function validationMessage(error: unknown): string | null {
   const first =
     errors !== null && typeof errors === 'object'
       ? Object.values(errors as Record<string, unknown>).find(
-          (messages): messages is string[] => Array.isArray(messages) && typeof messages[0] === 'string',
+          (messages): messages is string[] =>
+            Array.isArray(messages) && typeof messages[0] === 'string',
         )?.[0]
       : undefined
 
