@@ -1461,8 +1461,10 @@ export function registerOrders(on: On, fail: Fail, line: Line): void {
       amount,
       units: items.reduce((sum, [, qty]) => sum + qty, 0),
       refund_id: nextRefund(),
-      tenders: tenders.filter(([, value]) => value > 0),
-      items: items.filter(([, qty]) => qty > 0),
+      tenders: tenders
+        .filter(([, value]) => value > 0)
+        .map(([id, value]): [number, number] => [id, value]),
+      items: items.filter(([, qty]) => qty > 0).map(([id, qty]): [number, number] => [id, qty]),
     })
     if (full && !record.marks.refunded) mark(record, 'refunded', text(body.reference), null)
 
