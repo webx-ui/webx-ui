@@ -55,6 +55,7 @@ function order(patch: Partial<OrderCardData> = {}): OrderCardData {
     refunds: [],
     blocks: [],
     timeline: [],
+    notes: [],
     notifications: null,
     actions: {
       status: true,
@@ -62,6 +63,7 @@ function order(patch: Partial<OrderCardData> = {}): OrderCardData {
       received: false,
       cancel: false,
       details: true,
+      note: true,
       refund: false,
       visitor: false,
       visitor_search: false,
@@ -84,6 +86,7 @@ function card(node: object, data: OrderCardData) {
         mark: () => Promise.resolve(),
         cancel: () => Promise.resolve(),
         refund: () => Promise.resolve(),
+        note: () => Promise.resolve(true),
         linkVisitor: () => Promise.resolve(),
         unlinkVisitor: () => Promise.resolve(),
       })

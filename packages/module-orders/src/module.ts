@@ -2,6 +2,7 @@ import type { AdminModule } from '@webx-ui/module-admin'
 import OrderItemsNode from './OrderItemsNode.vue'
 import NumberSampleNode from './NumberSampleNode.vue'
 import OrderLayoutNode from './OrderLayoutNode.vue'
+import OrderNotesNode from './OrderNotesNode.vue'
 import OrderStatusNode from './OrderStatusNode.vue'
 import OrderSummaryNode from './OrderSummaryNode.vue'
 import OrderTimelineNode from './OrderTimelineNode.vue'
@@ -22,7 +23,7 @@ export interface OrdersOptions {
  *
  * The node types are the parts of `orders.show` a field cannot be: the two columns of the card, the strip of
  * the status and the marks (`header-actions`, a container a neighbour adds its buttons to), the lines, the
- * timeline and the totals. They read the open order from the page, not from the model. The trial
+ * timeline, the notes and the totals. They read the open order from the page, not from the model. The trial
  * number of `orders.settings` reads the settings page the same way.
  *
  * With the visitors installed the server patches three more onto screens (§13.2, §13.3): the account
@@ -69,6 +70,7 @@ export function orders(options: OrdersOptions = {}): AdminModule {
       'wx-orders-items': { component: OrderItemsNode, kind: 'display' },
       'wx-orders-timeline': { component: OrderTimelineNode, kind: 'display' },
       'wx-orders-summary': { component: OrderSummaryNode, kind: 'display' },
+      'wx-orders-notes': { component: OrderNotesNode, kind: 'display' },
       'wx-orders-number-sample': { component: NumberSampleNode, kind: 'display' },
       'wx-orders-visitor': { component: OrderVisitorNode, kind: 'display' },
       'wx-orders-list': { component: VisitorOrdersNode, kind: 'display' },

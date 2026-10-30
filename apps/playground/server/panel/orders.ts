@@ -323,6 +323,25 @@ function seedMarks(): void {
     record.marks.placed ??= { at: record.placed_at, source: 'checkout', reference: null }
   at(1).marks.awaiting_payment = { at: at(1).placed_at, source: 'checkout', reference: null }
   at(2).marks.awaiting_payment = { at: at(2).placed_at, source: 'checkout', reference: null }
+  // Notes of the feed «Notes»: a manager's, an agent's `orders_note`, on the first order.
+  at(0).history.push(
+    {
+      key: 'h1-note1',
+      kind: 'note',
+      at: day(-1, 11),
+      source: 'panel',
+      admin: 'Demo admin',
+      note: 'Called the buyer: they asked to deliver after 18:00.\nThe courier knows.',
+    },
+    {
+      key: 'h1-note2',
+      kind: 'note',
+      at: day(-1, 12),
+      source: 'mcp',
+      admin: 'Demo admin',
+      note: 'The second item is reserved at the warehouse until Friday.',
+    },
+  )
   mark(at(3), 'paid', 0, 'TX-4410')
   mark(at(6), 'paid', 0)
   // Cancelled, paid and given back whole outside the site.
@@ -718,6 +737,16 @@ function card(record: OrderRecord, locale: string, line: Line) {
           : [],
       ),
       timeline: timeline(record, locale, line),
+      // The notes are the history's lines of the kind `note`, as the server reads them.
+      notes: record.history
+        .filter((one) => one.kind === 'note')
+        .map((one, index) => ({
+          id: index + 1,
+          body: one.note ?? '',
+          source: one.source,
+          author: one.admin ? { id: 1, name: one.admin, avatar: null } : null,
+          created_at: one.at,
+        })),
       // Nothing was really sent in the playground: the block says so.
       notifications: [],
       actions: {
@@ -726,6 +755,7 @@ function card(record: OrderRecord, locale: string, line: Line) {
         received: !record.marks.received && !cancelled,
         cancel: !cancelled && !record.marks.refunded,
         details: true,
+        note: true,
         refund: refundable > 0 || tendersLeft > 0 || unitsLeft > 0,
         visitor: false,
         visitor_search: false,
@@ -1050,6 +1080,24 @@ export function registerOrders(on: On, fail: Fail, line: Line): void {
         reason: ['Say why the order is cancelled.'],
       })
     if (!record.marks.cancelled) cancelOrder(record, reason)
+
+    return { data: card(record, locale, line) }
+  })
+
+  on('POST', '/orders/(\\d+)/notes', ({ params, body, locale }) => {
+    const record = find(params[0])
+    const note = text(body.body)
+
+    if (!note) throw fail(422, 'The body field is required.', undefined, { body: ['Required.'] })
+
+    record.history.push({
+      key: `h${record.id}-note${record.history.length}`,
+      kind: 'note',
+      at: new Date().toISOString(),
+      source: 'panel',
+      admin: 'Demo admin',
+      note: note.slice(0, 1000),
+    })
 
     return { data: card(record, locale, line) }
   })

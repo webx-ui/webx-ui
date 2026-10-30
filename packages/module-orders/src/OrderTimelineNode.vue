@@ -5,6 +5,7 @@ import { useDates, useTranslate } from '@webx-ui/module-admin'
 import type { TimelineItemType } from '@webx-ui/core'
 import { useOrderCard } from './card'
 import { NAMESPACE, useOrdersMessages } from './i18n'
+import { authorOf } from './sources'
 import { toneOf } from './tones'
 import type { OrderDelivery, TimelineLine } from './types'
 
@@ -37,19 +38,8 @@ function deliveryTone(row: OrderDelivery): 'danger' | 'success' | 'warning' | 'd
   return 'default'
 }
 
-/** The sources the panel has a word for; a gateway's or a carrier's own name stays as it is. */
-const KNOWN = ['panel', 'api', 'mcp', 'checkout', 'quick', 'command']
-
 function who(line: TimelineLine): string {
-  if (line.source === 'mcp') {
-    return line.admin ? t('panel.source-mcp-admin', { name: line.admin }) : t('panel.source-mcp')
-  }
-
-  if (line.admin) return line.admin
-  if (line.source.startsWith('status#')) return t('panel.source-status')
-  if (KNOWN.includes(line.source)) return t(`panel.source-${line.source}`)
-
-  return line.source
+  return authorOf(t, line.source, line.admin)
 }
 
 function title(line: TimelineLine): string {

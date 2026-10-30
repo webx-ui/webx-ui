@@ -137,6 +137,23 @@ final readonly class OrderController
     }
 
     /**
+     * A note for whoever picks the order up next (decision 90): a line of its history of the kind
+     * `note`, written as `Orders::note()` writes a module's — the author the administrator. It never
+     * changes afterwards; the answer is the card, with the note in its feed and its history.
+     */
+    public function note(Request $request, int $order): JsonResponse
+    {
+        $validated = $request->validate([
+            'body' => ['required', 'string', 'max:1000'],
+        ]);
+
+        $found = self::find($order);
+        $this->orders->note($found, (string) $validated['body'], 'panel');
+
+        return $this->describe($request, $found);
+    }
+
+    /**
      * The cancellation with its reason (§9.1). `dry_run` answers what it does — whether the
      * order was paid, how much money is left to give back, the tenders that go back.
      */

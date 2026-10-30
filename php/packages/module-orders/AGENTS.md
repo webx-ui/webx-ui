@@ -71,9 +71,9 @@ grouped into public ones. Dictionary `webx-orders` (`module`, `statuses`, `panel
   (`wx-orders-list`) and `orders-count` on `users.form`, the card `visitor-card` on `orders.show`; panel `{id}/visitors` (+
   `users.view`), `{id}/visitor` POST / DELETE; MCP `orders_link_visitor`. Without it none of these exist.
 - **The section** `orders` (`Panel\OrdersModule`, npm `@webx-ui/module-orders`): `api/cms/orders` — the list (views, search,
-  filters, `user`, `counts`), `meta`, the card, `{id}/status|milestones| cancel|details|refunds`, the selection's `status` and
+  filters, `user`, `counts`), `meta`, the card, `{id}/status|milestones|cancel|details|notes|refunds`, the selection's `status` and
   `cancel`, «New order» `new` (`Http\Controllers\Panel\NewOrderController`: `new/products` — `Purchasables::find()`, `new/preview`, POST — `placeByManager()`, `panel`); every write a call of `Orders`, `dry_run` the service's own. The card `orders.show`: public ids `header-actions`,
-  `tabs`, `summary`, `customer`; fields `customer.*`, `recipient.*`, `comment`, `manager_note`. Role `orders` («Order manager»).
+  `tabs`, `order-notes` (notes = history lines `note`, `Orders::note()`), `summary`, `customer`; fields `customer.*`, `recipient.*`, `comment`, `manager_note`. Role `orders` («Order manager»).
   `statuses` and `settings` — under `orders.statuses` (`settings` also `orders.checkout.settings`). The selection: `Panel\StatusBatch`.
 - **MCP** (§12, `Mcp\OrdersTools`, `Mcp\StatusTools` on `OrdersModule`): `orders_list|get|history|summary`, `orders_set_status`
   (`order` or `numbers` ≤ 200), `orders_mark|cancel|refund|update|create|note`, `orders_statuses_list|save|delete|restore|reorder`,

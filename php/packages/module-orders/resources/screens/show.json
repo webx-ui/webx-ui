@@ -266,6 +266,10 @@
           ]
         },
         {
+          "id": "order-notes",
+          "type": "wx-orders-notes"
+        },
+        {
           "id": "summary",
           "type": "wx-card",
           "label": "trans::webx-orders::screen.summary",

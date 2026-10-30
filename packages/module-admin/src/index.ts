@@ -75,7 +75,13 @@ export {
   type EditingLabels,
   type EditingLabelsOptions,
 } from './editingLabels'
-export { createNotesApi, type EntityNote, type NoteAuthor, type NotesApi } from './notes'
+export {
+  createNotesApi,
+  type EntityNote,
+  type NoteAuthor,
+  type NoteEntry,
+  type NotesApi,
+} from './notes'
 export {
   createHistoryApi,
   historySubjectKey,
@@ -216,6 +222,7 @@ export { default as WxRenameButton } from './RenameButton.vue'
 export { default as WxHelpButton } from './HelpButton.vue'
 export { default as WxDate } from './DateText.vue'
 export { default as WxNotes } from './NotesFeed.vue'
+export { default as WxNotesList } from './NotesList.vue'
 export { default as WxHistory } from './HistoryFeed.vue'
 export { default as WxEditingAlerts } from './EditingAlerts.vue'
 export { default as WxDrafts } from './DraftsList.vue'

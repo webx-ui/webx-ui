@@ -63,7 +63,7 @@ final readonly class OrderCard
     {
         $order->loadMissing(['milestones', 'refunds', 'history']);
 
-        return $this->timeline($order, $statuses, $locale, $reader, fn (int $minor): string => $this->money->format($minor, $order->currency));
+        return $this->timeline($order, $statuses, $locale, self::people($order, $reader), fn (int $minor): string => $this->money->format($minor, $order->currency));
     }
 
     /**
@@ -100,6 +100,7 @@ final readonly class OrderCard
         $tendersLeft = $order->tenders->sum(static fn (OrderTender $tender): int => $tender->amount - $tender->refunded_amount);
         $unitsLeft = $order->items->sum(static fn (OrderItem $item): int => $item->qty - $item->refunded_qty);
         $manage = $can('orders.manage');
+        $people = self::people($order, $reader);
 
         return [
             'id' => $order->id,
@@ -159,7 +160,9 @@ final readonly class OrderCard
                 'reference' => $refund->reference,
             ])->values()->all(),
             'blocks' => $this->blocks($order, $locale),
-            'timeline' => $this->timeline($order, $statuses, $locale, $reader, $money),
+            'timeline' => $this->timeline($order, $statuses, $locale, $people, $money),
+            // The feed «Notes» under the tabs (decision 90): the history's notes, oldest first.
+            'notes' => self::notes($order, $people),
             // The block «Notifications» under the timeline (§8): null without the module.
             'notifications' => $this->channels->available() ? $this->channels->deliveries($order) : null,
             'actions' => [
@@ -168,6 +171,7 @@ final readonly class OrderCard
                 'received' => $manage && $order->received_at === null && ! $cancelled,
                 'cancel' => $manage && ! $cancelled && $order->refunded_at === null,
                 'details' => $manage,
+                'note' => $manage,
                 'refund' => $can('orders.refund') && ($refundable > 0 || $tendersLeft > 0 || $unitsLeft > 0),
                 // Linking to a visitor (§13.3): only with the visitors installed; finding one is
                 // reading the customers too.
@@ -175,6 +179,45 @@ final readonly class OrderCard
                 'visitor_search' => $manage && VisitorOrders::installed() && $can('users.view'),
             ],
         ];
+    }
+
+    /**
+     * The notes of the order (decision 90): the lines of its history of the kind `note` — a
+     * manager's from the panel, an agent's `orders_note`, a module's «the parcel came back». A
+     * line of the history never changes, so neither does a note. The author is the administrator
+     * with their photograph where one is known; otherwise only the source, which the panel names.
+     *
+     * @param  array<int, array{name: string, avatar: string|null}>  $people
+     * @return list<array{id: int, body: string, source: string, author: array{id: int, name: string, avatar: string|null}|null, created_at: string|null}>
+     */
+    private static function notes(Order $order, array $people): array
+    {
+        $notes = $order->history->filter(static fn (StatusChange $change): bool => $change->kind === StatusChange::NOTE);
+
+        return $notes->map(static fn (StatusChange $change): array => [
+            'id' => $change->id,
+            'body' => (string) $change->note,
+            'source' => $change->source,
+            'author' => $change->admin_id !== null && isset($people[$change->admin_id])
+                ? ['id' => $change->admin_id, ...$people[$change->admin_id]]
+                : null,
+            'created_at' => $change->created_at?->toAtomString(),
+        ])->values()->all();
+    }
+
+    /**
+     * The administrators who wrote anything on the order — its history, its milestones, its
+     * refunds — with their photographs, in one query for the timeline and the notes together.
+     *
+     * @return array<int, array{name: string, avatar: string|null}>
+     */
+    private static function people(Order $order, mixed $reader): array
+    {
+        return Authors::people($reader, [
+            ...$order->history->pluck('admin_id')->all(),
+            ...$order->milestones->pluck('admin_id')->all(),
+            ...$order->refunds->pluck('admin_id')->all(),
+        ]);
     }
 
     /**
@@ -313,16 +356,13 @@ final readonly class OrderCard
      * the milestones; the refunds. The author is the administrator's name where one is known,
      * otherwise the source as the panel names it.
      *
+     * @param  array<int, array{name: string, avatar: string|null}>  $people
      * @param  callable(int): string  $money
      * @return list<array<string, mixed>>
      */
-    private function timeline(Order $order, StatusChoices $statuses, string $locale, mixed $reader, callable $money): array
+    private function timeline(Order $order, StatusChoices $statuses, string $locale, array $people, callable $money): array
     {
-        $names = Authors::names($reader, [
-            ...$order->history->pluck('admin_id')->all(),
-            ...$order->milestones->pluck('admin_id')->all(),
-            ...$order->refunds->pluck('admin_id')->all(),
-        ]);
+        $names = array_map(static fn (array $person): string => $person['name'], $people);
         $who = static fn (?int $adminId, string $source): array => [
             'source' => $source,
             'admin' => $adminId !== null ? ($names[$adminId] ?? null) : null,

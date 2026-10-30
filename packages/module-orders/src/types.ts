@@ -141,6 +141,18 @@ export interface TimelineLine {
   units?: number
 }
 
+/**
+ * A note of the order (decision 90): a line of its history of the kind `note`, which never
+ * changes. `author` is the administrator where one is known; otherwise `source` names who.
+ */
+export interface OrderNote {
+  id: number
+  body: string
+  source: string
+  author: { id: number; name: string; avatar: string | null } | null
+  created_at: string | null
+}
+
 export interface OrderCardData {
   id: number
   number: string | null
@@ -177,6 +189,8 @@ export interface OrderCardData {
   refunds: OrderRefundEntry[]
   blocks: { key: string; summary: string | null; value: Record<string, unknown> }[]
   timeline: TimelineLine[]
+  /** The feed «Notes» under the tabs, oldest first. */
+  notes: OrderNote[]
   /** The log of the notifications module about the order; null without the module. */
   notifications: OrderDelivery[] | null
   actions: {
@@ -185,6 +199,8 @@ export interface OrderCardData {
     received: boolean
     cancel: boolean
     details: boolean
+    /** Write a note (`orders.manage`); reading them is the card's. */
+    note: boolean
     refund: boolean
     /** Link and unlink a visitor — only with the visitors installed. */
     visitor: boolean

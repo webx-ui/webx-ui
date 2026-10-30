@@ -109,6 +109,19 @@ A refusal is an exception with the reason in words: `StatusMoveRefused`, `Refund
   tender are back, the order gets `refunded`, once. The order's own lines and totals stay as
   they were; the refunds lie beside them.
 
+### Notes for whoever picks the order up next
+
+Under the card's tabs is «Notes»: what one manager left for the next — «called, deliver after six».
+A note is a line of the order's history (`kind = note`), so the feed holds a manager's note from
+the panel, an agent's `orders_note` and a module's `$orders->note()` alike, each with who wrote
+it and when, and the timeline shows the same lines. A line of the history never changes: a note is
+not edited or deleted — a wrong one is followed by a right one.
+
+Writing is `orders.manage` (`POST {api}/orders/{id}/notes`, up to 1000 characters); whoever only
+reads the order sees the notes and no box. The node's public id is `order-notes`, for a neighbour
+that wants something beside it. The feed is the panel's own [notes component](/guide/notes), the
+one the inbox draws.
+
 ### An order taken by phone
 
 A manager with `orders.manage` opens «New order» from the list: finds products by a word, picks a

@@ -106,6 +106,8 @@ export interface OrdersApi {
   link(id: number, userId: number): Promise<OrderDetail>
   previewUnlink(id: number): Promise<VisitorLinkPreview>
   unlink(id: number): Promise<OrderDetail>
+  /** A note in the order's history (decision 90); the answer is the card with it. */
+  note(id: number, body: string): Promise<OrderDetail>
   /** «New order» (§29.2): the languages an order may be in. */
   newMeta(): Promise<NewOrderMeta>
   /** Products for a line, found by a word through whichever module sells them. */
@@ -256,6 +258,8 @@ export function createOrdersApi(admin: AdminContext): OrdersApi {
         .delete<{ data: VisitorLinkPreview }>(`${base}/${id}/visitor`, { query: { dry_run: 1 } })
         .then(data),
     unlink: (id) => admin.http.delete<{ data: OrderDetail }>(`${base}/${id}/visitor`).then(data),
+    note: (id, body) =>
+      admin.http.post<{ data: OrderDetail }>(`${base}/${id}/notes`, { body }).then(data),
     newMeta: () => admin.http.get<{ data: NewOrderMeta }>(`${base}/new`).then(data),
     findProducts: (search, locale) =>
       admin.http

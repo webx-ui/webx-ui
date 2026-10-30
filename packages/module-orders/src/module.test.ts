@@ -27,6 +27,7 @@ describe('orders()', () => {
       'wx-orders-items',
       'wx-orders-layout',
       'wx-orders-list',
+      'wx-orders-notes',
       'wx-orders-number-sample',
       'wx-orders-status',
       'wx-orders-summary',

@@ -226,7 +226,37 @@ async function unlinkVisitor(): Promise<void> {
   }
 }
 
-provideOrderCard({ order, busy, changeStatus, mark, cancel, refund, linkVisitor, unlinkVisitor })
+/**
+ * A note goes in at once, beside the contacts' save bar and not through it: it is a line of the
+ * history, not a field of the order, and what is being typed in the contacts stays.
+ */
+async function note(body: string): Promise<boolean> {
+  const open = order.value
+
+  if (!open) return false
+
+  try {
+    take(await api.note(open.id, body), false)
+
+    return true
+  } catch (error) {
+    toast.danger(message(error))
+
+    return false
+  }
+}
+
+provideOrderCard({
+  order,
+  busy,
+  changeStatus,
+  mark,
+  cancel,
+  refund,
+  note,
+  linkVisitor,
+  unlinkVisitor,
+})
 
 async function save(): Promise<void> {
   const open = order.value
