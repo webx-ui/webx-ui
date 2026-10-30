@@ -20,7 +20,13 @@ return [
             'title' => 'Forms asking for a captcha the site has no keys for',
             'found' => 'A switched-on form asks for reCAPTCHA or Turnstile, and the site’s .env lacks the site key, the secret or both.',
             'why' => 'Without a site key the widget is not drawn; without a secret no answer can be verified. Either way the form refuses every submission, and visitors cannot reach you.',
-            'fix' => 'Add WEBX_INBOX_RECAPTCHA_KEY and WEBX_INBOX_RECAPTCHA_SECRET (or the TURNSTILE pair) to the site’s .env, with WEBX_INBOX_RECAPTCHA_TYPE matching the kind of key, and clear the configuration cache (php artisan config:clear). Or switch the captcha off on the form’s Antispam tab.',
+            'fix' => 'Add WEBX_CAPTCHA_RECAPTCHA_KEY (WEBX_INBOX_RECAPTCHA_KEY) and WEBX_CAPTCHA_RECAPTCHA_SECRET (WEBX_INBOX_RECAPTCHA_SECRET) (or the TURNSTILE pair) to the site’s .env, with WEBX_CAPTCHA_RECAPTCHA_TYPE (WEBX_INBOX_RECAPTCHA_TYPE) matching the kind of key, and clear the configuration cache (php artisan config:clear). Or switch the captcha off on the form’s Antispam tab.',
+        ],
+        'captcha_provider_mismatch' => [
+            'title' => 'A form with a captcha other than the site’s',
+            'found' => 'A switched-on form keeps its own provider — reCAPTCHA or Turnstile — and the site’s captcha is the other one.',
+            'why' => 'It still works with its own provider and the keys of the site’s environment, but the site has one captcha for every form: a second pair of keys to keep, and a form that stops working when they are removed.',
+            'fix' => 'Set the form’s captcha to “on” on its Antispam tab so that it uses the site’s, or choose the form’s provider on the Captcha tab of the settings.',
         ],
         'captcha_unused' => [
             'title' => 'Forms without a captcha on a site that has the keys',

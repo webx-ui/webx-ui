@@ -23,8 +23,7 @@ question is about one of them.
   count, «see all»; 204 for nothing asked; `noindex`, `no-store`), both always on, and
   `webx.catalog.root` (`/catalog`, only with `root.enabled`); again under a language prefix. The
   search box is the widgets' `<x-webx-suggest>` over it — a plain GET search without JavaScript.
-- **Views** `webx-catalog::category`, `root`, `search`, `suggest`, `product`, `product-unavailable`,
-  `filter`, `filter/*`, `grid`, `card`, `sort`, `pagination`, `breadcrumbs`, inside the layout.
+- **Views** `webx-catalog::category`, `root`, `search`, `suggest`, `product`, `product-unavailable`, `filter`, `filter/*`, `grid`, `card`, `sort`, `pagination`, `breadcrumbs`, inside the layout.
 - **Gallery videos** on the product page are `<x-webx-video>` of `webx-ui/widgets`, the picture
   its poster and shape: YouTube waits for consent to `media`, a file is `<video preload="none">`.
   `VideoProviders` here decides what a row stores; a provider registered only here is handed to
@@ -33,7 +32,8 @@ question is about one of them.
   `side`, `off`; window `images.zoom_frame`: `picture`, `container`), a click opening the pictures.
 - **Storefront points** that satellites print into: `catalog.card.badges`, `catalog.card.meta`,
   `catalog.product.aside`, `catalog.product.tabs`, `catalog.product.unavailable`,
-  `catalog.listing.top`, `catalog.listing.bottom`.
+  `catalog.listing.top`, `catalog.listing.bottom`; `catalog.product.quick` — the orders' «Buy in one
+  click» beside the cart's button while `orders` is a registered module (`Orders\QuickButton`). With the cart, `Cart\ProductPurchasable` is `catalog.product` and `FindsPurchasables` (the orders' «New order»: `matching()`, unpublished — unavailable).
 - **Panel screens** `catalog.product-form` (tabs `main`, `description-tab`, `images-tab`,
   `seo-tab`, `settings-tab`, `history-tab`) and `catalog.category-form` (`main`, `filters-tab`,
   `seo-tab`, `history-tab`). Also the exchange forms `catalog.exchange-import` and `catalog.exchange-profile`. The API is under `/api/cms/catalog`.

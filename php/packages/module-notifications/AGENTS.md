@@ -96,7 +96,7 @@ listener of its own Laravel event calling `send()` (`SendToChannels`), and `Chan
 module is there (`bound(NotificationEvents::class)`), the ids a form keeps, `deliveriesFor()`, `retry()`.
 
 A channel writes to an addressee with the recipient `{"variable": "customer_email"}` — only on a
-channel of that event, only an addressee of the provider's kind (`email`, `telegram`).
+channel of that event, only of the provider's kind; one using an `internal: true` variable warns.
 
 **Templates are Mustache** (`mustache/mustache`): `{{name}}`, `{{field.phone}}` (one dot),
 `{{#items}}…{{/items}}` over a list — inside, a name is a field of the row first, then a variable

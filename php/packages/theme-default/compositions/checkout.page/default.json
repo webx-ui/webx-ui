@@ -1,0 +1,5 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/composition.json",
+  "$comment": "The checkout of webx-ui/module-orders (ORDERS §20.1, §27.1): a step done folds into its summary with «Change», the one to fill next stays open.",
+  "attrs": { "checkout": { "data-steps": "collapse" } }
+}

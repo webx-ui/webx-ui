@@ -16,6 +16,10 @@ use InvalidArgumentException;
  * With `address` it is also an addressee (decision 12): its value is an address of that kind
  * (`email`, `telegram`), and a channel of the event may name it as a recipient — the visitor who
  * filled the form, the customer who placed the order.
+ *
+ * With `internal` it is for the staff: a channel that writes to an addressee and uses it is saved
+ * with a warning — the internal status of an order is not the buyer's to read. Not refused: a
+ * channel for the manager and one for the buyer are made the same way.
  */
 final readonly class Variable
 {
@@ -29,6 +33,7 @@ final readonly class Variable
         public string|array $example = '',
         public ?string $address = null,
         public array $fields = [],
+        public bool $internal = false,
     ) {
         if (preg_match('/^[a-z0-9_]+(\.([a-z0-9_]+|\*))?$/', $name) !== 1) {
             throw new InvalidArgumentException("[{$name}] is not a variable name: lowercase letters, digits and _, one dot at most.");
@@ -72,7 +77,7 @@ final readonly class Variable
     }
 
     /**
-     * @return array{name: string, label: string, example: string|list<array<string, string>>, address: string|null, fields: list<array{name: string, label: string}>}
+     * @return array{name: string, label: string, example: string|list<array<string, string>>, address: string|null, fields: list<array{name: string, label: string}>, internal: bool}
      */
     public function toArray(): array
     {
@@ -88,6 +93,7 @@ final readonly class Variable
             'example' => $this->example,
             'address' => $this->address,
             'fields' => $fields,
+            'internal' => $this->internal,
         ];
     }
 }

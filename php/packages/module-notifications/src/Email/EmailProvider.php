@@ -234,7 +234,9 @@ final class EmailProvider implements HasMailRoute, Provider, WritesHtml
                 ],
                 [],
                 function (MailMessage $mail) use ($message, $options, $to): void {
-                    $mail->to($to->key, $to->label);
+                    // The label of an address taken from the event is the variable, for the log of deliveries;
+                    // in the header it would greet the buyer as «{{customer_email}}».
+                    $mail->to($to->key, $to->label !== null && ! str_starts_with($to->label, '{{') ? $to->label : null);
                     $mail->subject((string) $message->subject);
 
                     $from = $options['from_address'] ?? null;

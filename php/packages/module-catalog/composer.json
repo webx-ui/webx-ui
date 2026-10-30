@@ -53,7 +53,8 @@
     },
     "suggest": {
         "webx-ui/module-audit": "The site audit reports published categories without a description and published products without a picture or a price.",
-        "webx-ui/module-cart": "Its products go into the cart: the product page buys through it, priced live by the catalogue."
+        "webx-ui/module-cart": "Its products go into the cart: the product page buys through it, priced live by the catalogue.",
+        "webx-ui/module-orders": "«Buy in one click» beside the cart's button on the product page, while the setting is on."
     },
     "autoload": {
         "psr-4": {

@@ -272,6 +272,7 @@ import {
 } from './catalog'
 import { registerAudit } from './audit'
 import { registerCache } from './cache'
+import { registerOrders } from './orders'
 import { registerTasks, tasksBadge } from './tasks'
 import { registerConfigurators } from './configurators'
 import {
@@ -760,6 +761,16 @@ function manifestOf(locale: string) {
         order: 402,
         group: 'users',
         permissions: [],
+        meta: {},
+      },
+      /* «Orders» (§11 of the orders spec): one entry of its own, beside the customers. */
+      {
+        id: 'orders',
+        title: line(locale, 'webx-orders', 'module.orders'),
+        icon: 'clipboard',
+        order: 350,
+        group: null,
+        permissions: ['orders.view', 'orders.manage', 'orders.refund', 'orders.statuses'],
         meta: {},
       },
       /* One entry and no group either (§5.6 of the team spec): no categories to stand beside. */
@@ -2599,6 +2610,12 @@ registerManticore(on, (status, message) => new HttpFailure(status, message), pro
 registerAudit(on, (status, message) => new HttpFailure(status, message), line)
 /* The queue of work between people and agents (WEBX_UI_MODULE_TASKS.md): «Tasks». */
 registerTasks(on, (status, message) => new HttpFailure(status, message), line)
+/* Orders placed on the site (WEBX_UI_MODULE_ORDERS.md §11): «Orders», the list and the card. */
+registerOrders(
+  on,
+  (status, message, data, errors) => new HttpFailure(status, message, data, errors),
+  line,
+)
 /* A product built to size, priced by the engine (WEBX_UI_MODULE_CONFIGURATOR.md): «Configurators». */
 registerConfigurators(
   on,

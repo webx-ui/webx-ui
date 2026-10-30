@@ -35,11 +35,21 @@ final class EmailTest extends TestCase
 
         $this->assertSame('Order 12', $email->getSubject());
         $this->assertSame('manager@example.com', $email->getTo()[0]->getAddress());
+        $this->assertSame('Manager', $email->getTo()[0]->getName());
         $this->assertSame('shop@example.com', $email->getFrom()[0]->getAddress());
         $this->assertSame('customer@example.com', $email->getReplyTo()[0]->getAddress());
         $this->assertSame("Note: <b>bold</b>\nhttps://example.test/cms/orders/12", $email->getTextBody());
         $this->assertStringContainsString('Note: &lt;b&gt;bold&lt;/b&gt;<br>', (string) $email->getHtmlBody());
         $this->assertStringContainsString('<a href="https://example.test/cms/orders/12">', (string) $email->getHtmlBody());
+    }
+
+    #[Test]
+    public function an_address_from_the_event_is_written_to_without_the_variable_for_a_name(): void
+    {
+        $this->provider()->send(new Message('S', 'B', 'B'), new Credentials, ['mode' => 'site'], new Recipient('customer@example.com', '{{customer_email}}'));
+
+        $this->assertSame('customer@example.com', $this->sent()[0]->getTo()[0]->getAddress());
+        $this->assertSame('', $this->sent()[0]->getTo()[0]->getName());
     }
 
     #[Test]

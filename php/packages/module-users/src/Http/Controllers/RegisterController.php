@@ -65,6 +65,8 @@ final readonly class RegisterController
             'action' => $this->urls->to('register'),
             ...self::form($fields),
             'back' => $back,
+            // «Save your orders in an account» after a checkout comes with the order's address.
+            'email' => is_string($email = $request->query('email')) && filter_var($email, FILTER_VALIDATE_EMAIL) !== false ? $email : null,
             'signIn' => $this->urls->to('sign-in', $back),
         ]);
     }

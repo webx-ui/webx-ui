@@ -15,6 +15,7 @@ use WebxUi\Admin\Visitors\Visitors;
 use WebxUi\Users\Http\Controllers\VerifyController;
 use WebxUi\Users\Http\KeepPrivate;
 use WebxUi\Users\Models\User;
+use WebxUi\Users\Panel\UserList;
 
 /**
  * The seam of the panel (spec §4) answered by this module: the visitor signed in on the guard
@@ -48,6 +49,35 @@ final readonly class UserVisitors implements AnswersUnverified, Visitors
         $email = User::normaliseEmail($email);
 
         return $email === '' ? null : User::query()->byEmail($email)->first()?->toVisitor();
+    }
+
+    /**
+     * Visitors by a part of the address, the name or the phone — what «Customers» of the panel
+     * finds — for a module that lets a manager pick one: a guest's order linked to an account.
+     * Unlike {@see findByEmail()} it is a search, and so a tool of the panel, never of a page of
+     * the site. The exact address comes first, then the newest accounts.
+     *
+     * @return list<Visitor>
+     */
+    public function search(string $term, int $limit = 10): array
+    {
+        $term = trim($term);
+
+        if ($term === '' || $limit < 1) {
+            return [];
+        }
+
+        $query = User::query()->with('groups:users_groups.id,users_groups.code');
+        UserList::match($query, $term);
+
+        return $query
+            ->orderByRaw('case when email = ? then 0 else 1 end', [User::normaliseEmail($term)])
+            ->orderByDesc('id')
+            ->limit($limit)
+            ->get()
+            ->map(static fn (User $user): Visitor => $user->toVisitor())
+            ->values()
+            ->all();
     }
 
     public function signInUrl(?string $back = null): string

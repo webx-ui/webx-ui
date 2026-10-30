@@ -210,6 +210,7 @@ Packagist ([`WEBX_UI_PHP_RELEASE.md`](WEBX_UI_PHP_RELEASE.md)). Версия у 
 | `module-catalog-manticore`  | Manticore Search как движок каталога                                  | `@webx-ui/module-catalog-manticore`  |
 | **Разделы: коммерция**      |                                                                       |                                      |
 | `module-cart`               | гостевая корзина: контракт `Purchasable`, цепочка итогов, `cart()`    | —                                    |
+| `module-orders`             | заказы и оформление: снимок корзины, статусы и вехи, `/checkout`      | `@webx-ui/module-orders`             |
 | **Разделы: работа**         |                                                                       |                                      |
 | `module-tasks`              | очередь работы между людьми и агентами                                | `@webx-ui/module-tasks`              |
 
@@ -654,6 +655,26 @@ httpOnly-cookie (в базе — хеш). Что лежит в строке и �
 Итоги — цепочка с пятью пустыми реестрами звеньев для спутников; хелпер `cart()`; чистка
 `webx:cart:prune` по расписанию. Раздела в панели нет, npm-половины нет; по умолчанию выключен в
 `webx:setup`.
+
+### `webx-ui/module-orders` — заказы
+
+Спека — [`WEBX_UI_MODULE_ORDERS.md`](WEBX_UI_MODULE_ORDERS.md), гайды — `apps/docs/guide/orders.md` и
+`apps/docs/guide/checkout.md`.
+Заказ — снимок корзины (`Orders::place()`), дальше живёт сам: таблицы `orders` и `order_*`, вехи
+(`Milestone`, ставятся один раз, у каждой событие) и статусы двух уровней — внутренний у менеджера,
+публичный (группа) у покупателя. Любая операция — метод сервиса `Orders` с замком строки, строкой
+истории и событием после коммита; панель, MCP `orders_*` и соседи только зовут его. Блоки `delivery`
+и `payment` заполняют их владельцы через `OrderBlocks` и `patchBlock()`. Ручной возврат, страница
+заказа по подписанной ссылке; с `module-users` — «Мои заказы» и привязка гостевого заказа, с
+`module-notifications` — каналы на вехи и публичные статусы. Требует `module-cart`, `widgets`,
+`compositions`; демо — 12 заказов; по умолчанию выключен в `webx:setup`.
+
+**Оформление** — страница `/checkout` в этом же пакете (`WebxUi\Orders\Checkout`), отдельного
+`module-checkout` нет: шаги по позициям (реестр `CheckoutSteps`, свой шаг проекта — класс `Step`),
+слоты `delivery` и `payment` для модулей доставки и оплаты (`CheckoutSlots`), куски колонки итогов
+(`CheckoutSummaryParts`), черновик `order_checkout_drafts`, сверка суммы и ключ повтора, композиция
+`checkout.page`, вкладка «Оформление» с правом `orders.checkout.settings`, MCP `orders_checkout_*`.
+Выключается `WEBX_ORDERS_CHECKOUT=false` — заказ тогда только из кода через `Orders::place()`.
 
 ---
 

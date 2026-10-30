@@ -36,6 +36,7 @@ const NAMESPACES: Record<string, string> = {
   'module-media': 'webx-media',
   'module-menu': 'webx-menu',
   'module-notifications': 'webx-notifications',
+  'module-orders': 'webx-orders',
   'module-pages': 'webx-pages',
   'module-press': 'webx-press',
   'module-recipes': 'webx-recipes',

@@ -19,8 +19,8 @@ plug into. No page, no panel section: a JSON API, `cart()` and a buy button for 
   - `price` is an integer in minor units; `0` is «price on request» and cannot be bought.
   - `names` (locale → name) feeds the `name_at_add` snapshot shown when the record is gone.
   - A provider whose price depends on the choice implements `ResolvesWithOptions`; one that
-    accepts options at all implements `ChecksOptions`. Without it, non-empty options are refused.
-- **The registry** `WebxUi\Cart\Purchasables`: `register('<module>.<entity>', Provider::class)`.
+    accepts options at all implements `ChecksOptions`. Without it, non-empty options are refused. One a manager can search (the orders' «New order») implements `FindsPurchasables::find(term, locale, limit)` → `PurchasableChoice` (ref, line, `ChoiceOption`s, hint).
+- **The registry** `WebxUi\Cart\Purchasables`: `register('<module>.<entity>', Provider::class)`; `find()` asks the searchable ones.
 - **Currency** `Contracts\CurrencySource` (default `ConfigCurrency`, bound with `singletonIf`),
   `CurrencyFormat`, and `WebxUi\Cart\Money`: `format(int $minor, string $currency)` — the same
   string in every language — and `toMinor('49.90', 'EUR')` without floats.
@@ -28,14 +28,15 @@ plug into. No page, no panel section: a JSON API, `cart()` and a buy button for 
   (`toArray()` puts `*_formatted` beside every amount). Five registries, empty here:
   `LineSources`, `AdjustmentSources`, `TenderSources`, `BenefitSources`, `HintSources`, each
   `register($source, int $priority = 0)` — lower runs first.
-- **Writes** go through `WebxUi\Cart\CartService`: `add()` (a batch, all or nothing, `key` and
-  `parent` for a bundle), `update()`, `remove()`, `clear()`. A refusal is a `ValidationException`;
-  a batch's is a `CartRefusal`, whose `atLimit` names the lines already at their maximum.
+- **Writes** go through `WebxUi\Cart\CartService`: `add()` (a batch, all or nothing; `key` and `parent` for
+  a bundle), `update()`, `remove()`, `clear()` (the row too), `empty()` (lines and declined rules go, row and
+  token stay) — each under `lock()` of the cart's row. A refusal is a `ValidationException`; a batch's a `CartRefusal` (`atLimit`).
 - **`cart()`** (`WebxUi\Cart\CartHandle`, facade `WebxUi\Cart\Facades\Cart`): `count()`,
   `isEmpty()`, `has($type, $ref)` — no query without a cookie, one with it — and `state()`.
 - **Accounts** (`Accounts\AccountCarts` on the panel's `Visitor*` events, not `module-users`): a signed-in
   cart by `user_id` (`CartOwner`), the cookie opens only a guest's. Sign-in merges the guest's lines in
-  (capped at `qty_max`/`maxQty`, bundles whole), re-keys the cookie; sign-out drops it; deleting deletes.
+  (capped at `qty_max`/`maxQty`, bundles whole), dispatches `Events\CartsMerging(guestCartId, accountCartId)`
+  in the transaction before the guest's row goes, re-keys the cookie; sign-out drops it; deleting deletes.
 - **JSON API** (`routes/web.php`, `Http\CartController`, prefix `webx-cart.path`): `GET /api/cart`,
   `POST /api/cart/items` (a batch), `PATCH|DELETE /api/cart/items/{id}`, `DELETE /api/cart`. Every
   answer is `CartState::toArray()`; the `web` group (CSRF), `throttle:webx-cart` on writes,
@@ -140,8 +141,7 @@ if (class_exists(\WebxUi\Cart\Purchasables::class)) {
   live price; a deleted record shows `gone: true` with its snapshot name.
 - `curl -s https://<site>/api/cart` answers an empty state and sets no cookie.
 - `php artisan webx:mcp-tools` lists `cart_list`, `cart_get`, `cart_summary`, `cart_quote`.
-- `vendor/bin/phpunit vendor/webx-ui/module-cart/tests` in the monorepo — the batch, the bundle,
-  the chain and the formats.
+- `vendor/bin/phpunit vendor/webx-ui/module-cart/tests` in the monorepo — batch, bundle, chain, formats.
 
 ## Read more
 

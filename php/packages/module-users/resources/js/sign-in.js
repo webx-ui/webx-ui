@@ -2,6 +2,8 @@
 // sign-in, «Forgot your password?», the registration — switched in place, the dialog's title
 // going with them. An opener — `data-webx-sign-in="<view>"` on a link or a button, or a link to
 // `#webx-sign-in` — opens it on its view; without this script the opener is a link to the page.
+// `data-webx-sign-in-email` on the opener puts that address in the view's empty e-mail field — the
+// registration after a checkout, with the order's address (orders §26).
 //
 // A form of the dialog that signed the visitor in answers `visitor` and no redirect: the dialog
 // closes, `webx:users:signed-in` goes to `document` with the name and whether the address is
@@ -33,6 +35,9 @@ function focusFirst(view) {
 
 function open(dialog, opener, name) {
   const view = show(dialog, name)
+  const email = opener.getAttribute('data-webx-sign-in-email')
+  const field = email ? view?.querySelector('input[type="email"]') : null
+  if (field && field.value === '') field.value = email
   const webx = window.webx
   if (typeof webx?.openDialog === 'function') webx.openDialog(dialog, opener)
   else if (!dialog.open) dialog.showModal?.()

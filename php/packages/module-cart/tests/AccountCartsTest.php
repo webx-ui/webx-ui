@@ -17,6 +17,7 @@ use WebxUi\Admin\Visitors\Visitors;
 use WebxUi\Cart\CartCookie;
 use WebxUi\Cart\CartHandle;
 use WebxUi\Cart\CartService;
+use WebxUi\Cart\Events\CartsMerging;
 use WebxUi\Cart\Models\Cart;
 use WebxUi\Cart\Models\CartItem;
 use WebxUi\Cart\Tests\Fakes\FakeVisitors;
@@ -111,6 +112,35 @@ final class AccountCartsTest extends TestCase
         $this->assertSame(['test.product#1' => 2], $this->lines($guest));
         $this->assertNotSame($oldToken, $guest->token);
         $this->assertSame(CartCookie::hash((string) $this->queuedCookie()?->getValue()), $guest->token);
+    }
+
+    #[Test]
+    public function the_merge_tells_neighbours_while_the_guests_cart_still_stands(): void
+    {
+        $account = $this->accountCart([['type' => 'test.product', 'ref' => 1]]);
+        $guest = $this->guestCart([['type' => 'test.product', 'ref' => 2]]);
+        $heard = [];
+
+        Event::listen(CartsMerging::class, static function (CartsMerging $event) use (&$heard): void {
+            // Synchronous and before the delete: the guest's row is there to move things from.
+            $heard[] = [$event->guestCartId, $event->accountCartId, Cart::query()->whereKey($event->guestCartId)->exists()];
+        });
+
+        $this->signIn();
+
+        $this->assertSame([[$guest->id, $account->id, true]], $heard);
+        $this->assertNull(Cart::query()->find($guest->id));
+    }
+
+    #[Test]
+    public function a_guests_cart_that_becomes_the_accounts_merges_nothing_and_tells_nobody(): void
+    {
+        $this->guestCart([['type' => 'test.product', 'ref' => 1]]);
+        Event::fake([CartsMerging::class]);
+
+        $this->signIn();
+
+        Event::assertNotDispatched(CartsMerging::class);
     }
 
     #[Test]

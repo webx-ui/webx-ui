@@ -10,6 +10,7 @@ use WebxUi\Audit\Checks\ModuleCheck;
 use WebxUi\Audit\Checks\Severity;
 use WebxUi\Inbox\Antispam\Captcha;
 use WebxUi\Inbox\Models\Form;
+use WebxUi\Widgets\Captcha as SiteCaptcha;
 
 /**
  * A switched-on form that asks for a captcha the site has no keys for.
@@ -45,8 +46,13 @@ final class CaptchaKeys extends ModuleCheck
 
             $title = FormTitle::of($form);
             $name = (string) __('webx-inbox::panel.captcha-'.$provider);
-            // Named the way they are written in the `.env`, which reads the same in every language.
-            $missing = implode(', ', array_map(static fn (string $half): string => 'WEBX_INBOX_'.strtoupper($provider).'_'.strtoupper($half), $this->captcha->missing($provider)));
+            // Named the way they are written in the `.env`, which reads the same in every language:
+            // the site's name, and the inbox's of before, which is still read, in brackets.
+            $missing = implode(', ', array_map(static function (string $half) use ($provider): string {
+                [$name, $before] = SiteCaptcha::env($provider, $half);
+
+                return $name.' ('.$before.')';
+            }, $this->captcha->missing($provider)));
 
             yield $this->found('captcha-keys', ['form' => $title, 'slug' => $form->slug, 'provider' => $name, 'missing' => $missing], key: (string) $form->id, table: [
                 'columns' => [Finding::column('title'), Finding::column('value'), Finding::column('edit', 'edit')],

@@ -25,6 +25,10 @@ use WebxUi\Cart\Totals\Calculator;
  * `key` inside the batch; the cart is one level deep. A line like one already in the cart — same
  * type, record and options, and outside any bundle — adds to that line instead of doubling it.
  *
+ * Every write takes the lock of the cart's row first, as `Orders::place()` does: a line added in
+ * another tab while an order is being made waits for it, and lands in the emptied cart instead of
+ * vanishing with the lines the order took.
+ *
  * A refusal is a {@see ValidationException} keyed by field (`items.0.ref`, `qty`), so the API
  * answers it as Laravel answers a form; a batch's is a {@see CartRefusal}, which also names the
  * lines already at their limit.
@@ -70,30 +74,16 @@ final class CartService
             $errors = $this->check($rows, $currency, $locale);
         }
 
-        $existing = $cart !== null ? $cart->items()->get()->all() : [];
-        $merges = [];
-        $atLimit = [];
-
-        if ($errors === []) {
-            [$merges, $errors, $atLimit] = $this->merges($rows, $existing, $locale);
-        }
-
-        if ($errors === []) {
-            $new = count($rows) - count($merges);
-            $linesMax = $this->limit('lines_max', 100);
-
-            if (count($existing) + $new > $linesMax) {
-                $errors['items'][] = $this->word('lines', $locale, ['max' => $linesMax]);
-            }
-        }
-
         if ($errors !== []) {
-            throw CartRefusal::of($errors, $atLimit);
+            throw CartRefusal::of($errors);
         }
 
         $token = null;
 
-        $added = $this->db->transaction(function () use (&$cart, &$token, $rows, $merges, $locale, $currency, $owner): array {
+        $added = $this->db->transaction(function () use (&$cart, &$token, $rows, $locale, $currency, $owner): array {
+            // The lines already there are read under the lock: an order made meanwhile took them.
+            $merges = $this->merging($cart !== null ? $this->lock($cart) : null, $rows, $locale);
+
             if ($cart === null) {
                 $token = CartCookie::generate();
                 $cart = Cart::query()->create([
@@ -181,13 +171,16 @@ final class CartService
             throw ValidationException::withMessages($errors);
         }
 
-        $item->qty = $qty ?? $item->qty;
-        $item->options = $options === [] ? null : $options;
-
-        $this->db->transaction(function () use ($cart, $item, $locale): void {
+        $item = $this->db->transaction(function () use ($cart, $id, $qty, $options, $locale): CartItem {
+            $this->lock($cart);
+            $item = $this->item($cart, $id);
+            $item->qty = $qty ?? $item->qty;
+            $item->options = $options === [] ? null : $options;
             $item->save();
             $cart->locale = $locale;
             $cart->touch();
+
+            return $item;
         });
 
         $this->handle->forget();
@@ -203,9 +196,10 @@ final class CartService
      */
     public function remove(Cart $cart, int $id): void
     {
-        $item = $this->item($cart, $id);
+        $this->db->transaction(function () use ($cart, $id): void {
+            $this->lock($cart);
+            $item = $this->item($cart, $id);
 
-        $this->db->transaction(function () use ($cart, $item): void {
             foreach ($item->children()->get() as $child) {
                 $child->qty *= $item->qty;
                 $child->parent_id = null;
@@ -243,8 +237,13 @@ final class CartService
             throw ValidationException::withMessages(['id' => [$this->word('not_declinable', $locale)]]);
         }
 
-        $cart->declined_rules = array_values(array_unique([...$cart->declinedRules(), $line->source]));
-        $cart->save();
+        $source = $line->source;
+
+        $this->db->transaction(function () use ($cart, $source): void {
+            // What another write declined meanwhile is kept, not overwritten.
+            $cart->declined_rules = array_values(array_unique([...$this->lock($cart)->declinedRules(), $source]));
+            $cart->save();
+        });
 
         $this->handle->forget();
     }
@@ -254,6 +253,39 @@ final class CartService
     {
         $cart->delete();
         $this->handle->forget();
+    }
+
+    /**
+     * The lines and the declined rules go; the cart stays — its row, its token and the cookie that
+     * carries it, and what hangs on the row, as the checkout's draft with the buyer's contacts. What
+     * an order does to the cart it was made from (decision 34 of the orders spec).
+     */
+    public function empty(Cart $cart): void
+    {
+        $this->db->transaction(function () use ($cart): void {
+            $this->lock($cart);
+
+            // Children first: a line of a bundle points at its parent.
+            CartItem::query()->where('cart_id', $cart->id)->whereNotNull('parent_id')->delete();
+            CartItem::query()->where('cart_id', $cart->id)->delete();
+
+            $cart->declined_rules = null;
+            $cart->save();
+            $cart->touch();
+        });
+
+        $this->handle->forget();
+    }
+
+    /**
+     * Take the lock of the cart's row for the rest of the transaction and come back with the row as
+     * it is now. The one order of locks: the cart first (§6.3 of the orders spec).
+     *
+     * @throws ModelNotFoundException the cart is gone
+     */
+    public function lock(Cart $cart): Cart
+    {
+        return Cart::query()->whereKey($cart->id)->lockForUpdate()->firstOrFail();
     }
 
     /**
@@ -472,6 +504,35 @@ final class CartService
         }
 
         return [$merges, $errors, $atLimit];
+    }
+
+    /**
+     * The lines of the cart the batch adds to, held to the stock and to the cart's limit of lines.
+     *
+     * @param  array<int, BatchRow>  $rows  folded rows are taken out
+     * @return array<int, CartItem>
+     *
+     * @throws CartRefusal
+     */
+    private function merging(?Cart $cart, array &$rows, string $locale): array
+    {
+        $existing = $cart !== null ? $cart->items()->get()->all() : [];
+        [$merges, $errors, $atLimit] = $this->merges($rows, $existing, $locale);
+
+        if ($errors === []) {
+            $new = count($rows) - count($merges);
+            $linesMax = $this->limit('lines_max', 100);
+
+            if (count($existing) + $new > $linesMax) {
+                $errors['items'][] = $this->word('lines', $locale, ['max' => $linesMax]);
+            }
+        }
+
+        if ($errors !== []) {
+            throw CartRefusal::of($errors, $atLimit);
+        }
+
+        return $merges;
     }
 
     /**

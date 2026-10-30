@@ -36,6 +36,7 @@
             <directory>packages/module-media/tests</directory>
             <directory>packages/module-menu/tests</directory>
             <directory>packages/module-notifications/tests</directory>
+            <directory>packages/module-orders/tests</directory>
             <directory>packages/module-pages/tests</directory>
             <directory>packages/module-press/tests</directory>
             <directory>packages/module-reviews/tests</directory>
@@ -84,6 +85,7 @@
             <directory>packages/module-media/src</directory>
             <directory>packages/module-menu/src</directory>
             <directory>packages/module-notifications/src</directory>
+            <directory>packages/module-orders/src</directory>
             <directory>packages/module-pages/src</directory>
             <directory>packages/module-press/src</directory>
             <directory>packages/module-reviews/src</directory>

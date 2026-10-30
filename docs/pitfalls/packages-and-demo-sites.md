@@ -363,6 +363,12 @@ pipe`. `… | grep -q` под `pipefail`: grep уходит на первом с
   Проверка — первые строки `dist/index.js`: статических `import … from "./XPage-….js"` быть не
   должно. Лечение — экспорт `defineAsyncComponent(() => import('./XPage.vue'))` под тем же
   именем. Замер — `vite build` сайта и сумма чанков, которые грузит точка входа (манифест Vite).
+- **На сайте у компонентов пакета нет стилей, в плейграунде и доках — есть.** Scoped-стили `.vue`
+  собираются в `dist/style.css`, а сайт его не подключает: в `package.json` пакета нет экспорта
+  `"./style.css"`, в его `composer.json` — `extra.webx.panel.style`, и `webx:panel` не пишет
+  строку `import '@webx-ui/module-x/style.css'` в `admin.ts`. Плейграунд берёт исходники и
+  стили видит. Лечение — оба места, как у `module-users`; проверка — строка в `admin.ts` сайта
+  после `webx:panel --sync` и `getComputedStyle` элемента пакета на сайте.
 
 ## Плейграунд
 

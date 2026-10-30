@@ -2,7 +2,8 @@
     The form of the registration, on its page and in the dialog of a checkout (spec §6.2, §12.1):
     first and last name, phone, e-mail, password — in that order — then the fields of the site
     (§10.4). The settings hide or require the first three (§10.5). No second password: the field
-    has «Show». `$dialog` — sent from the dialog (SignInDialog::INPUT).
+    has «Show». `$dialog` — sent from the dialog (SignInDialog::INPUT); `$email` — the address
+    the field starts with (`?email=` of the page, orders §26).
 
     Override: <layer>/views/vendor/webx-users/forms/register.blade.php — keep the names of the fields.
 --}}
@@ -16,7 +17,7 @@
             <x-webx-field :type="$type" :name="$name" :label="__('webx-users::auth.fields.'.$name)" :autocomplete="$autocomplete" :optional="$asked[$name] !== \WebxUi\Users\Fields\Requirement::Required" />
         @endif
     @endforeach
-    <x-webx-field type="email" name="email" :label="__('webx-users::auth.fields.email')" autocomplete="email" />
+    <x-webx-field type="email" name="email" :label="__('webx-users::auth.fields.email')" :value="$email ?? null" autocomplete="email" />
     <x-webx-field type="password" name="password" :label="__('webx-users::auth.fields.password')" :hint="__('webx-users::auth.register.password_hint', ['min' => $min])" autocomplete="new-password" />
     @foreach ($fields as $field)
         <x-webx-field :type="$field['type']" :name="$field['name']" :label="$field['label']" :hint="$field['hint']" :choices="$field['choices']" :optional="! $field['required']" />

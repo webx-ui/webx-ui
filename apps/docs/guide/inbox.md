@@ -322,11 +322,16 @@ The rate limit counts only submissions that got through (`throttle`, 5 a minute)
 mistypes their address five times is correcting a mistake, not flooding the form. Everything that
 knocks, refused or not, counts towards the second, higher limit (`attempts`, 20 a minute).
 
-The captcha is off unless a form asks for it, and its keys are the site's rather than the form's —
-one pair for every form, mapped from the Integrations group of
-[`module-settings`](/guide/settings) rather than repeated in each form's options. A form that asks
-for a captcha the site has no key for refuses submissions and says so, because a rubber stamp
-would be worse: nobody would know.
+The captcha is off unless a form asks for it, and the captcha is the site's rather than the
+form's — one provider and one pair of keys for every form, the checkout and the sign-in too
+([the site's captcha](/guide/forms#captcha)): the tab «Captcha» of the settings chooses the
+provider, the secret stays in the environment. A form says `antispam.captcha: on`. A form set up
+before the captcha was the site's names its provider instead; that still means «on», and it goes
+on drawing its own provider — the update made the provider of most forms the site's, and the audit
+(`inbox.captcha_provider_mismatch`) names a form left with the other one. The keys of before,
+`WEBX_INBOX_RECAPTCHA_*` and `WEBX_INBOX_TURNSTILE_*`, are still read. A form that asks for a
+captcha the site has no key for refuses submissions and says so, because a rubber stamp would be
+worse: nobody would know.
 
 ## Attachments
 
@@ -617,7 +622,7 @@ to tell which flat they are in.
 | `disk` · `prefix`  | `local` · `inbox` | Where attachments live                                          |
 | `upload`           | 10 MB, 10 files   | The size and the white list of extensions                       |
 | `antispam`         | see above         | Honeypot name, `min_seconds`, `throttle`, `attempts`, `origins` |
-| `captcha`          | off               | The site keys for reCAPTCHA and Turnstile                       |
+| `captcha`          | off               | The keys of before; the site's are `webx-widgets.captcha`       |
 | `script`           | `true`            | Whether the tag links the package's own script                  |
 | `duplicate_window` | `900`             | Seconds in which the same answers are the same thing            |
 | `prune`            | 30 · 0            | Days for spam, days for everything; 0 means never               |

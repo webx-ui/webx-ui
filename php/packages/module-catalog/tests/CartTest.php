@@ -93,6 +93,26 @@ final class CartTest extends TestCase
     }
 
     #[Test]
+    public function the_panel_finds_a_product_by_name_or_article_number_the_unbuyable_marked(): void
+    {
+        $tools = $this->category('tools');
+        $drill = $this->product('Cordless drill', $tools, ['price' => '120.00', 'sku' => 'DR-1', 'priority' => 5]);
+        $bits = $this->product('Drill bits', $tools, ['price' => '9.50', 'sku' => 'BT-7']);
+        $hidden = $this->product('Drill stand', null, ['price' => '30.00']);
+        $this->product('Hammer', $tools, ['price' => '15.00', 'sku' => 'HM-2']);
+
+        $found = $this->app->make(Purchasables::class)->find('drill', 'en', 10)['catalog.product'];
+
+        $this->assertSame([$drill->id, $bits->id, $hidden->id], array_map(static fn ($choice): int => $choice->ref, $found));
+        $this->assertSame(12000, $found[0]->line->price);
+        $this->assertSame('Tools', $found[0]->hint);
+        $this->assertSame([], $found[0]->options);
+        $this->assertFalse($found[2]->line->available);
+        $this->assertSame([$bits->id], array_map(static fn ($choice): int => $choice->ref, $this->app->make(Purchasables::class)->find('BT-', 'en', 10)['catalog.product']));
+        $this->assertCount(1, $this->app->make(ProductPurchasable::class)->find('drill', 'en', 1));
+    }
+
+    #[Test]
     public function a_batch_of_thirty_costs_what_one_does(): void
     {
         $tools = $this->category('tools');

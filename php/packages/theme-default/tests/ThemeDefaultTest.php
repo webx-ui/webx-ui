@@ -316,6 +316,8 @@ class ThemeDefaultTest extends TestCase
         $said = (string) preg_replace('/\s+/', ' ', Artisan::output());
 
         $this->assertSame(0, $code, $said);
+        // The checkout of module-orders, which this site lacks: a packaged theme's patch waits for it.
+        $this->assertStringContainsString('compositions/checkout.page/default.json note: no layer has a base for the composition "checkout.page": the patches of the theme apply once a module gives it', $said);
         $this->assertStringContainsString('6 block types', $said);
         $this->assertStringContainsString('27 icons, every one its templates name', $said);
         $this->assertMatchesRegularExpression('/\d+ letters, every colour from theme_token\(\)/', $said);
@@ -752,7 +754,7 @@ class ThemeDefaultTest extends TestCase
             $templates['compositions/'.basename(dirname($file)).'/'.basename($file)] = implode("\n", $html);
         }
 
-        $this->assertCount(54, $templates);
+        $this->assertCount(55, $templates);
 
         foreach ($templates as $name => $template) {
             preg_match_all("/__\\(\\s*'([^']*)'/", $template, $calls);

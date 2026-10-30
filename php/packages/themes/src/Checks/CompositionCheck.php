@@ -134,6 +134,14 @@ final class CompositionCheck implements ThemeCheckPart
 
         foreach ($sources as $source) {
             foreach ($source->compositions() as $composition) {
+                // A packaged theme is one for many sites and carries its patches for the pages of
+                // modules a site may not have (theme-default's checkout.page): they wait for it.
+                if (! in_array($composition, $compositions, true) && $source->packaged) {
+                    $lines[] = ['file' => $source->where($composition, 'default'), 'line' => null, 'note' => true, 'message' => "no layer has a base for the composition \"{$composition}\": the patches of the theme apply once a module gives it"];
+
+                    continue;
+                }
+
                 if (! in_array($composition, $compositions, true)) {
                     $lines[] = ['file' => $source->where($composition, 'default'), 'line' => null, 'message' => "no layer has a base for the composition \"{$composition}\": its files never apply"];
 

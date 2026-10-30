@@ -1,0 +1,348 @@
+/*
+ * The checkout (spec §20.1, §27.2) and «Thank you» (§26). Site tokens only; the container
+ * decides, not the window — the page may stand in a column of a theme's layout. Narrow: the
+ * column of the totals goes under the steps and «To pay · Confirm» sticks to the bottom. Wide: the
+ * column beside the steps, stuck to the top. The order of the two is the composition's, so a
+ * theme that moves `checkout.aside` before `checkout.main` gets it on the left with no CSS.
+ *
+ * `data-steps` of the root is the view of the steps: `open` — every form shows, no summaries;
+ * `collapse` — a step done shows its summary with «Change» and hides its form until then
+ * (`is-editing` from the script, `:target` of the link without it).
+ */
+.webx-orders-checkout {
+  container: webx-orders-checkout / inline-size;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--site-space-5);
+  max-width: var(--site-container-width);
+  margin: 0 auto;
+  padding: var(--site-space-5) var(--site-gutter);
+  color: var(--site-color-text);
+}
+
+.webx-orders-checkout > * {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+.webx-orders-checkout__title {
+  margin: 0;
+  font-family: var(--site-font-heading);
+  font-size: var(--site-font-size-2);
+  line-height: 1.2;
+}
+
+.webx-orders-checkout__warnings {
+  display: grid;
+  gap: var(--site-space-2);
+  padding: var(--site-space-3) var(--site-space-4);
+  border: 1px solid var(--site-color-danger);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-surface);
+}
+
+.webx-orders-checkout__warnings ul {
+  margin: 0;
+  padding-left: var(--site-space-5);
+}
+
+.webx-orders-checkout__steps {
+  display: grid;
+  gap: var(--site-space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.webx-orders-checkout__step {
+  display: grid;
+  gap: var(--site-space-3);
+  padding: var(--site-space-4);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-surface);
+  scroll-margin-top: var(--site-space-6);
+}
+
+.webx-orders-checkout__step.is-open {
+  border-color: var(--site-color-accent);
+}
+
+.webx-orders-checkout__step-head {
+  margin: 0;
+  font-family: var(--site-font-heading);
+  font-size: var(--site-font-size-4);
+  line-height: 1.3;
+}
+
+.webx-orders-checkout__step-summary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--site-space-2);
+  margin: 0;
+  color: var(--site-color-text-muted);
+}
+
+.webx-orders-checkout__step-edit {
+  color: var(--site-color-accent);
+}
+
+.webx-orders-checkout__step-body {
+  display: grid;
+  gap: var(--site-space-3);
+  min-width: 0;
+}
+
+/* `open` (and a root without the attribute): every form, no summary. */
+.webx-orders-checkout:not([data-steps='collapse']) .webx-orders-checkout__step-summary {
+  display: none;
+}
+
+/* `collapse`: a step done is its summary, until «Change». */
+.webx-orders-checkout[data-steps='collapse']
+  .webx-orders-checkout__step.is-done:not(.is-editing, :has(:target))
+  .webx-orders-checkout__step-body {
+  display: none;
+}
+
+.webx-orders-checkout[data-steps='collapse']
+  .webx-orders-checkout__step:is(.is-editing, :has(:target))
+  .webx-orders-checkout__step-summary,
+.webx-orders-checkout[data-steps='collapse']
+  .webx-orders-checkout__step:not(.is-done)
+  .webx-orders-checkout__step-summary {
+  display: none;
+}
+
+.webx-orders-checkout__visitor {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--site-space-2);
+  margin: 0;
+  color: var(--site-color-text-muted);
+}
+
+.webx-orders-checkout__visitor p {
+  margin: 0;
+}
+
+.webx-orders-checkout__sign-out button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--site-color-accent);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.webx-orders-checkout__sign-in {
+  color: var(--site-color-accent);
+}
+
+/* Someone else to receive the order only behind its checkbox — without JavaScript too. */
+.webx-orders-checkout__form:not(:has(input[name='recipient[other]']:checked))
+  .webx-orders-checkout__recipient {
+  display: none;
+}
+
+.webx-orders-checkout__recipient {
+  display: grid;
+  gap: var(--site-space-3);
+  margin: 0;
+  padding: var(--site-space-3);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-sm);
+}
+
+.webx-orders-checkout__aside {
+  display: grid;
+  gap: var(--site-space-4);
+}
+
+.webx-orders-checkout__summary {
+  display: grid;
+  gap: var(--site-space-3);
+  padding: var(--site-space-4);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-surface);
+}
+
+.webx-orders-checkout__summary-title {
+  margin: 0;
+  font-family: var(--site-font-heading);
+  font-size: var(--site-font-size-4);
+  line-height: 1.3;
+}
+
+.webx-orders-checkout__rows {
+  display: grid;
+  gap: var(--site-space-2);
+  margin: 0;
+}
+
+.webx-orders-checkout__row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--site-space-3);
+}
+
+.webx-orders-checkout__row dt,
+.webx-orders-checkout__row dd {
+  margin: 0;
+}
+
+.webx-orders-checkout__row dd {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.webx-orders-checkout__row--discount dd {
+  color: var(--site-color-success);
+}
+
+.webx-orders-checkout__was {
+  color: var(--site-color-text-muted);
+}
+
+.webx-orders-checkout__payable {
+  padding-top: var(--site-space-3);
+  border-top: 1px solid var(--site-color-border);
+  font-size: var(--site-font-size-5);
+  font-weight: 700;
+}
+
+.webx-orders-checkout__carrier,
+.webx-orders-checkout__benefit,
+.webx-orders-checkout__hint,
+.webx-orders-checkout__terms {
+  margin: 0;
+  color: var(--site-color-text-muted);
+}
+
+.webx-orders-checkout__discounts {
+  margin: 0;
+  padding-left: var(--site-space-5);
+  color: var(--site-color-text-muted);
+}
+
+.webx-orders-checkout__lines summary {
+  cursor: pointer;
+}
+
+.webx-orders-checkout__lines ul {
+  display: grid;
+  gap: var(--site-space-2);
+  margin: var(--site-space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.webx-orders-checkout__line {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--site-space-1) var(--site-space-3);
+}
+
+.webx-orders-checkout__change {
+  flex-basis: 100%;
+  color: var(--site-color-text-muted);
+}
+
+.webx-orders-checkout__place {
+  display: grid;
+  gap: var(--site-space-3);
+}
+
+.webx-orders-checkout__parts {
+  display: grid;
+  gap: var(--site-space-3);
+}
+
+/* The sticky row: only where the column went under the steps. */
+.webx-orders-checkout__sticky {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--site-space-3);
+  margin: 0 calc(-1 * var(--site-gutter)) calc(-1 * var(--site-space-5));
+  padding: var(--site-space-3) var(--site-gutter);
+  border-top: 1px solid var(--site-color-border);
+  background: var(--site-color-surface);
+  box-shadow: var(--site-shadow-md);
+}
+
+.webx-orders-checkout__sticky.is-hidden {
+  visibility: hidden;
+}
+
+.webx-orders-checkout__sticky-payable {
+  display: grid;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.webx-orders-checkout__sticky-payable span {
+  color: var(--site-color-text-muted);
+  font-size: var(--site-font-size-6);
+}
+
+@container webx-orders-checkout (min-width: 48rem) {
+  .webx-orders-checkout__main {
+    flex: 1 1 0;
+  }
+
+  .webx-orders-checkout__aside {
+    position: sticky;
+    top: var(--site-space-4);
+    flex: 0 0 20rem;
+  }
+
+  .webx-orders-checkout__sticky {
+    display: none;
+  }
+}
+
+.webx-orders-thanks {
+  display: grid;
+  gap: var(--site-space-4);
+  max-width: 56rem;
+  margin: 0 auto;
+  padding: var(--site-space-5) var(--site-gutter);
+  color: var(--site-color-text);
+}
+
+.webx-orders-thanks__title {
+  margin: 0;
+  font-family: var(--site-font-heading);
+  font-size: var(--site-font-size-2);
+  line-height: 1.2;
+}
+
+.webx-orders-thanks__sent,
+.webx-orders-thanks__decrease,
+.webx-orders-thanks__pay,
+.webx-orders-thanks__link {
+  margin: 0;
+}
+
+.webx-orders-thanks__register {
+  display: grid;
+  gap: var(--site-space-2);
+  padding: var(--site-space-4);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-surface-muted);
+}
+
+.webx-orders-thanks__register p {
+  margin: 0;
+}

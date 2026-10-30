@@ -95,7 +95,7 @@ final class Layers
 
         foreach ($this->themes === null ? [] : ($this->themes)() as $theme) {
             $dir = rtrim(str_replace('\\', '/', $theme['dir']), '/');
-            $sources[] = new Source($theme['local'] ? $this->display(dirname($dir)) : $theme['name'], Source::THEME, $dir, display: $this->display($dir));
+            $sources[] = new Source($theme['local'] ? $this->display(dirname($dir)) : $theme['name'], Source::THEME, $dir, display: $this->display($dir), packaged: ! $theme['local']);
         }
 
         $patches = $this->config->get('webx-compositions.patches', []);

@@ -39,7 +39,7 @@ page; a base of its own). A page chooses one by `<x-layout>`, `<x-layout.minimal
 ```php
 // config/webx-compositions.php
 return [
-    'layouts' => ['catalog.checkout' => 'layout.minimal'],
+    'layouts' => ['checkout.page' => 'layout.minimal'],
 ];
 ```
 

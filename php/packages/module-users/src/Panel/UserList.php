@@ -12,6 +12,7 @@ use Illuminate\Support\Carbon;
 use WebxUi\Users\Models\Identity;
 use WebxUi\Users\Models\User;
 use WebxUi\Users\Social\SocialAccounts;
+use WebxUi\Users\UserVisitors;
 
 /**
  * The query behind «Customers» (spec §16.2): searched by name, e-mail and phone; filtered by
@@ -47,7 +48,7 @@ final class UserList
         $term = trim((string) ($filters['search'] ?? ''));
 
         if ($term !== '') {
-            $this->search($query, $term);
+            self::match($query, $term);
         }
 
         $group = $filters['group'] ?? null;
@@ -102,11 +103,12 @@ final class UserList
     /**
      * By the address and the phone as typed, by the name in either order — «Anna Petrova» and
      * «Petrova» find the same person. The phone is compared by its digits too: «+800 1234» and
-     * «8001234» are one number to whoever types it.
+     * «8001234» are one number to whoever types it. The search of other modules
+     * ({@see UserVisitors::search()}) asks the same.
      *
      * @param  Builder<User>  $query
      */
-    private function search(Builder $query, string $term): void
+    public static function match(Builder $query, string $term): void
     {
         $like = '%'.str_replace(['%', '_'], ['\%', '\_'], $term).'%';
         $words = array_values(array_filter(preg_split('/\s+/u', $term) ?: []));

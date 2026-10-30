@@ -20,6 +20,7 @@ return [
     'variable' => 'Le modèle utilise {{:variable}}, que l\'événement « :event » n\'a pas. Disponibles : :variables.',
     'variable-unknown' => 'Aucun événement n\'a {{:variable}} : elle sera vide. Une faute de frappe ?',
     'variable-list' => '{{:variable}} est une liste : parcourez-la avec {{#:variable}}…{{/:variable}} et affichez les champs de chaque ligne.',
+    'variable-internal' => '{{:variable}} est réservée à l\'équipe, et ce canal écrit à :addressee : l\'acheteur la lira. Est-ce voulu ?',
     'template-unclosed' => 'La section {{#:section}} n\'est pas fermée : terminez-la par {{/:section}}.',
     'template-unexpected' => '{{/:section}} ferme une section qui n\'a jamais été ouverte.',
     'template-tag' => 'La balise {{:tag n\'est pas fermée : terminez-la par }}.',

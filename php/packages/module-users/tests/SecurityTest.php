@@ -135,6 +135,16 @@ final class SecurityTest extends TestCase
     }
 
     #[Test]
+    public function signing_out_comes_back_to_a_page_of_the_site_that_asks(): void
+    {
+        $this->actingAs($this->visitor(), 'site');
+        $this->post('/account/sign-out', ['back' => '/checkout'])->assertRedirect('http://localhost/checkout');
+
+        $this->actingAs($this->visitor(), 'site');
+        $this->post('/account/sign-out', ['back' => 'https://elsewhere.test/'])->assertRedirect('http://localhost');
+    }
+
+    #[Test]
     public function the_account_is_deleted_through_the_listeners_with_their_warnings(): void
     {
         Mail::fake();

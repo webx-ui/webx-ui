@@ -20,6 +20,7 @@ return [
     'variable' => 'La plantilla usa {{:variable}}, que el evento «:event» no tiene. Disponibles: :variables.',
     'variable-unknown' => 'Ningún evento tiene {{:variable}}: quedará vacía. ¿Es una errata?',
     'variable-list' => '{{:variable}} es una lista: recórrala con {{#:variable}}…{{/:variable}} e imprima los campos de cada fila.',
+    'variable-internal' => '{{:variable}} es para el personal, y este canal escribe a :addressee: lo leerá el comprador. ¿Es intencionado?',
     'template-unclosed' => 'La sección {{#:section}} no está cerrada: termínela con {{/:section}}.',
     'template-unexpected' => '{{/:section}} cierra una sección que nunca se abrió.',
     'template-tag' => 'La etiqueta {{:tag no está cerrada: termínela con }}.',

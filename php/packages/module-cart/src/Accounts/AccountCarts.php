@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Cart\Accounts;
 
 use Illuminate\Contracts\Config\Repository;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Cookie\CookieJar;
 use Illuminate\Database\ConnectionInterface;
 use WebxUi\Admin\Visitors\Events\VisitorDeleting;
@@ -14,6 +15,7 @@ use WebxUi\Cart\CartCookie;
 use WebxUi\Cart\CartHandle;
 use WebxUi\Cart\CartRef;
 use WebxUi\Cart\CartService;
+use WebxUi\Cart\Events\CartsMerging;
 use WebxUi\Cart\Models\Cart;
 use WebxUi\Cart\Models\CartItem;
 use WebxUi\Cart\Resolver;
@@ -24,7 +26,8 @@ use WebxUi\Cart\Resolver;
  *
  * Sign-in: the guest's cart of the cookie joins the account's. A line like one already there adds
  * its qty up to the limit (decision 18), a bundle comes over whole and never merges; the guest's
- * cart goes and the cookie switches to the account's. No account cart yet — the guest's becomes it.
+ * cart goes — `CartsMerging` first, for what neighbours keep by it — and the cookie switches to the
+ * account's. No account cart yet — the guest's becomes it.
  * Sign-out: the cookie goes, the account's cart waits for the next sign-in. Deleting the account:
  * its cart goes with it.
  */
@@ -37,6 +40,7 @@ final class AccountCarts
         private readonly CookieJar $cookies,
         private readonly ConnectionInterface $db,
         private readonly Repository $config,
+        private readonly Dispatcher $events,
     ) {}
 
     public function signedIn(VisitorSignedIn $event): void
@@ -118,6 +122,9 @@ final class AccountCarts
 
         $account->declined_rules = array_values(array_unique([...$account->declinedRules(), ...$guest->declinedRules()]));
         $account->locale = $guest->locale;
+        // Before the row goes: a neighbour moves what it keeps by the guest's cart, or lets the
+        // cascade take it.
+        $this->events->dispatch(new CartsMerging($guest->id, $account->id));
         $guest->delete();
     }
 

@@ -388,6 +388,44 @@ rows. Sent with a file, the form goes by `XMLHttpRequest` with its progress bar.
 Words: `widgets.field.remove`, `drop_file`, `drop_files` (props `remove-label`, `drop-label`);
 `--webx-files-preview` is the preview's size.
 
+## Captcha
+
+One captcha for the site — reCAPTCHA or Turnstile — and every form that wants one only turns it on:
+the Inbox's forms, the checkout, the sign-in. `WebxUi\Widgets\Captcha` keeps where it comes
+from:
+
+| What                                                      | Where, the first found                                                                                       |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| the provider                                              | the settings' tab «Captcha» (`captcha.provider`, `off` — none), `WEBX_CAPTCHA_PROVIDER`                      |
+| the site key, the kind of reCAPTCHA key, Turnstile's mode | the tab, `WEBX_CAPTCHA_RECAPTCHA_KEY` / `_TYPE`, `WEBX_CAPTCHA_TURNSTILE_KEY` / `_MODE`, then `WEBX_INBOX_*` |
+| the secret                                                | the environment only: `WEBX_CAPTCHA_RECAPTCHA_SECRET`, `WEBX_CAPTCHA_TURNSTILE_SECRET`, then `WEBX_INBOX_*`  |
+
+The secret never goes into the database; `settings_get` of a `captcha.*` key tells an agent only
+whether it is set. In a form, the widget and the place for its error:
+
+```blade
+<x-webx-form :action="route('callback')">
+    <x-webx-field type="tel" name="phone" required />
+    <x-webx-captcha action="callback" />
+    <x-webx-form.submit>Call me</x-webx-form.submit>
+</x-webx-form>
+```
+
+and on the server, before anything is written:
+
+```php
+$refusal = app(Captcha::class)->check($request, 'callback');
+
+if ($refusal !== null) {
+    throw ValidationException::withMessages(['captcha' => [app(Captcha::class)->message($refusal) ?? __('Try again.')]]);
+}
+```
+
+A checkbox is drawn by the provider's script; an invisible one and v3 are run by `captcha.js` when
+the form is sent, holding it with `detail.wait`. `action` is what a v3 token is asked for: one
+asked for another form is refused. No provider or no site key — nothing is drawn and `check()`
+refuses, with a line in the log; a provider that cannot be reached lets the form through.
+
 ## Suggestions while typing
 
 ```blade

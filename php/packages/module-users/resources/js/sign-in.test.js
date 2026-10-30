@@ -79,6 +79,27 @@ describe('sign-in.js', () => {
     expect(document.activeElement?.id).toBe('first-name')
   })
 
+  it('starts the empty e-mail field with the address of its opener — after a checkout', () => {
+    const dialog = page()
+    const register = dialog.querySelector('#webx-sign-in-register')
+    register.insertAdjacentHTML(
+      'beforeend',
+      '<input type="email" name="email" id="register-email">',
+    )
+    const opener = document.querySelector('button[data-webx-sign-in]')
+    opener.setAttribute('data-webx-sign-in-email', 'buyer-a@example.com')
+
+    opener.click()
+    expect(shown(dialog)).toEqual(['register'])
+    expect(document.getElementById('register-email').value).toBe('buyer-a@example.com')
+
+    // What the visitor typed is theirs: a second opening does not write over it.
+    dialog.close()
+    document.getElementById('register-email').value = 'other@example.com'
+    opener.click()
+    expect(document.getElementById('register-email').value).toBe('other@example.com')
+  })
+
   it('takes a link to #webx-sign-in for an opener of the sign-in', () => {
     const dialog = page()
     dialog.querySelector('[data-webx-sign-in-view="forgot"]').hidden = false

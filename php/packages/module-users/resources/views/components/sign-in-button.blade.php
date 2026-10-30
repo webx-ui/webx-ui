@@ -3,17 +3,21 @@
     dialog of the sign-in on the page — printed before </body> because this is on it. Without
     JavaScript it is the link to the page of the sign-in with the way back to this page.
 
-    `view` — `sign-in` (the default) or `register`: the view the dialog opens on. The slot — the
-    words, «Sign in» without one. On a page cached for everybody `users.js` hides it once the
+    `view` — `sign-in` (the default) or `register`: the view the dialog opens on. `email` — the
+    address the field of the view starts with, as «Save your orders in an account» after a
+    checkout gives the order's (orders §26); a field the visitor already typed in keeps theirs.
+    The slot — the words, «Sign in» without one. On a page cached for everybody `users.js` hides it once the
     cookie says the visitor is in (`data-webx-users-guest`); a page of its own — a checkout —
     prints it for a guest only.
 
     Override: <layer>/views/vendor/webx-users/components/sign-in-button.blade.php — keep
     `data-webx-sign-in`. Classes: webx-users-sign-in-button.
 --}}
-@props(['view' => 'sign-in'])
+@props(['view' => 'sign-in', 'email' => null])
 @php
     $urls = app(\WebxUi\Users\Urls::class);
     $page = $view === 'register' && \WebxUi\Users\SignIn::registrationOpen() ? 'register' : 'sign-in';
+    $email = is_string($email) && filter_var($email, FILTER_VALIDATE_EMAIL) !== false ? $email : null;
+    $href = $urls->to($page, request()->getRequestUri(), $email !== null ? ['email' => $email] : []);
 @endphp
-<a {{ $attributes->class(['webx-users-sign-in-button'])->merge(['href' => $urls->to($page, request()->getRequestUri()), 'rel' => 'nofollow']) }} data-webx-sign-in="{{ $page }}" data-webx-users-guest>{{ $slot->isEmpty() ? __('webx-users::auth.sign_in.title') : $slot }}</a>
+<a {{ $attributes->class(['webx-users-sign-in-button'])->merge(['href' => $href, 'rel' => 'nofollow', 'data-webx-sign-in-email' => $email]) }} data-webx-sign-in="{{ $page }}" data-webx-users-guest>{{ $slot->isEmpty() ? __('webx-users::auth.sign_in.title') : $slot }}</a>

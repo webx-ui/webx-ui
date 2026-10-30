@@ -101,6 +101,11 @@ point_composer() {
             { name: "packagist.org", type: "composer", url: "https://repo.packagist.org", exclude: ["webx-ui/*"] },
             { type: "path", url: monorepo + "/php/packages/*", options: { versions } },
         ]
+        // A release raises the version of every package here; the constraints setup wrote would
+        // hold the site on the previous one and the update would refuse every package.
+        for (const name of Object.keys(composer.require ?? {})) {
+            if (versions[name]) composer.require[name] = "^" + versions[name]
+        }
         writeFileSync(file, JSON.stringify(composer, null, 4) + "\n")
     ' "$(native "$1")" "$(native "$MONOREPO")"
 }

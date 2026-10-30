@@ -31,6 +31,7 @@
     "@webx-ui/module-media": "workspace:*",
     "@webx-ui/module-menu": "workspace:*",
     "@webx-ui/module-notifications": "workspace:*",
+    "@webx-ui/module-orders": "workspace:*",
     "@webx-ui/module-pages": "workspace:*",
     "@webx-ui/module-press": "workspace:*",
     "@webx-ui/module-recipes": "workspace:*",

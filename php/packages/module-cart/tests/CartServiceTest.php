@@ -314,4 +314,53 @@ final class CartServiceTest extends TestCase
         $this->assertSame(0, Cart::query()->count());
         $this->assertSame(0, CartItem::query()->count());
     }
+
+    #[Test]
+    public function empty_takes_the_lines_and_the_declined_rules_and_keeps_the_cart_and_its_token(): void
+    {
+        $result = $this->add(null, [['type' => 'test.product', 'ref' => 1, 'key' => 'set'], ['type' => 'test.product', 'ref' => 2, 'parent' => 'set'], ['type' => 'test.product', 'ref' => 3]]);
+        $cart = $result->cart;
+        $cart->forceFill(['declined_rules' => ['rule#1']])->save();
+
+        $this->service()->empty($cart);
+
+        $kept = Cart::query()->sole();
+        $this->assertSame($cart->id, $kept->id);
+        $this->assertSame(CartCookie::hash((string) $result->token), $kept->token);
+        $this->assertNull($kept->declined_rules);
+        $this->assertSame(0, CartItem::query()->count());
+
+        // The same cart takes lines again, and no new token is handed out.
+        $again = $this->add($kept, [['type' => 'test.product', 'ref' => 1]]);
+        $this->assertNull($again->token);
+        $this->assertSame(1, CartItem::query()->where('cart_id', $cart->id)->count());
+    }
+
+    #[Test]
+    public function a_write_reads_the_lines_under_the_lock_not_from_before_it(): void
+    {
+        // The model of a request that began before an order emptied the cart: the line it would
+        // add to is gone, and the batch lands as a line of its own rather than nowhere.
+        $cart = $this->add(null, [['type' => 'test.product', 'ref' => 1]])->cart;
+        $stale = Cart::query()->findOrFail($cart->id);
+        $stale->load('items');
+
+        $this->service()->empty($cart);
+        $this->add($stale, [['type' => 'test.product', 'ref' => 1, 'qty' => 2]]);
+
+        $this->assertSame(2, CartItem::query()->sole()->qty);
+
+        // A line taken by an order meanwhile is as missing to update and remove as one that never was.
+        $line = CartItem::query()->sole();
+        $this->service()->empty($cart);
+
+        foreach ([fn () => $this->service()->update($stale, $line->id, 3, null, 'en'), fn () => $this->service()->remove($stale, $line->id)] as $write) {
+            try {
+                $write();
+                $this->fail('A write went to a line that is gone.');
+            } catch (ModelNotFoundException) {
+                $this->assertSame(0, CartItem::query()->count());
+            }
+        }
+    }
 }

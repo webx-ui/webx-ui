@@ -1,0 +1,30 @@
+[
+  {
+    "op": "add",
+    "target": "tabs",
+    "position": "after:items",
+    "node": {
+      "id": "delivery",
+      "type": "wx-tab",
+      "label": "Delivery",
+      "children": [
+        {
+          "id": "delivery-card",
+          "type": "wx-card",
+          "label": "Delivery",
+          "children": [
+            {
+              "id": "delivery-note",
+              "type": "wx-alert",
+              "label": "A neighbour's tab",
+              "props": {
+                "type": "info",
+                "description": "Added by a patch of the tabs node — the way module-delivery puts its waybill and tracking here."
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

@@ -35,6 +35,7 @@ return [
     'default-seo' => 'SEO uzmanı',
     'default-leads' => 'Talep yöneticisi',
     'default-catalog' => 'Katalog yöneticisi',
+    'default-orders' => 'Sipariş yöneticisi',
     'default-developer' => 'Site geliştiricisi',
     'default-viewer' => 'İzleyici',
 ];

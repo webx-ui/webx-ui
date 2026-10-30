@@ -20,6 +20,7 @@ return [
     'variable' => 'Szablon używa {{:variable}}, a zdarzenie „:event” nie ma takiej zmiennej. Dostępne: :variables.',
     'variable-unknown' => 'Żadne zdarzenie nie ma {{:variable}}: zmienna będzie pusta. Literówka?',
     'variable-list' => '{{:variable}} to lista: przejdź po niej przez {{#:variable}}…{{/:variable}} i wypisz pola każdego wiersza.',
+    'variable-internal' => '{{:variable}} jest dla pracowników, a ten kanał pisze na :addressee: przeczyta to kupujący. Czy tak ma być?',
     'template-unclosed' => 'Sekcja {{#:section}} nie jest zamknięta: zakończ ją tagiem {{/:section}}.',
     'template-unexpected' => '{{/:section}} zamyka sekcję, która nie została otwarta.',
     'template-tag' => 'Tag {{:tag nie jest zamknięty: zakończ go przez }}.',

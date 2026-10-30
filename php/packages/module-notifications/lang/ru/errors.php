@@ -20,6 +20,7 @@ return [
     'variable' => 'В шаблоне {{:variable}}, а у события «:event» такой переменной нет. Есть: :variables.',
     'variable-unknown' => 'Переменной {{:variable}} нет ни у одного события — она будет пустой. Опечатка?',
     'variable-list' => '{{:variable}} — это список: перебирайте его через {{#:variable}}…{{/:variable}} и выводите поля каждой строки.',
+    'variable-internal' => '{{:variable}} — для сотрудников, а канал пишет на :addressee: это прочтёт покупатель. Так и задумано?',
     'template-unclosed' => 'Секция {{#:section}} не закрыта: закончите её тегом {{/:section}}.',
     'template-unexpected' => '{{/:section}} закрывает секцию, которая не была открыта.',
     'template-tag' => 'Тег {{:tag не закрыт: закончите его на }}.',

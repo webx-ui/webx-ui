@@ -102,6 +102,8 @@ export default defineConfig({
             { text: 'Vacancies', link: '/guide/vacancies' },
             { text: 'Catalogue', link: '/guide/catalog' },
             { text: 'Cart', link: '/guide/cart' },
+            { text: 'Orders', link: '/guide/orders' },
+            { text: 'Checkout', link: '/guide/checkout' },
             { text: 'Site visitors', link: '/guide/site-visitors' },
           ],
         },

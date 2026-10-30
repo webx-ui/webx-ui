@@ -1,0 +1,56 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/composition.json",
+  "$comment": "The checkout page inside the layout (ORDERS §27.1). The ids are the contract a theme patches by: it moves the columns, fills the slot checkout.trust, moves the parts of the column, and picks the view of the steps with attrs.checkout.data-steps (open — every form shows; collapse — a step done shows its summary). The leaves keep their conditions: no warnings — no markup.",
+  "vars": ["steps", "warnings", "summary", "summaryUrl", "parts"],
+  "dispatcher": "webx-orders::checkout.page",
+  "root": {
+    "id": "root",
+    "children": [
+      {
+        "id": "checkout",
+        "tag": "div",
+        "attrs": { "class": "webx-orders-checkout", "data-steps": "open" },
+        "children": [
+          { "id": "checkout.title", "view": "webx-orders::checkout.parts.title" },
+          { "id": "checkout.warnings", "view": "webx-orders::checkout.parts.warnings" },
+          {
+            "id": "checkout.main",
+            "tag": "div",
+            "attrs": { "class": "webx-orders-checkout__main" },
+            "children": [
+              {
+                "id": "checkout.steps",
+                "$comment": "Protected: the steps are the forms the order is made of.",
+                "view": "webx-orders::checkout.parts.steps",
+                "protected": true
+              }
+            ]
+          },
+          {
+            "id": "checkout.aside",
+            "tag": "aside",
+            "attrs": { "class": "webx-orders-checkout__aside" },
+            "children": [
+              {
+                "id": "checkout.summary",
+                "$comment": "Protected: the column carries the confirmation and the amount it is checked against.",
+                "view": "webx-orders::checkout.parts.summary",
+                "protected": true
+              },
+              {
+                "id": "checkout.summary.parts",
+                "view": "webx-orders::checkout.parts.summary-parts"
+              },
+              { "id": "checkout.trust", "slot": "checkout.trust" }
+            ]
+          },
+          {
+            "id": "checkout.sticky",
+            "$comment": "«To pay · Confirm» stuck to the bottom of a narrow container while the column is out of sight.",
+            "view": "webx-orders::checkout.parts.sticky"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -30,7 +30,7 @@ in here — shop modules plug into the seam, the module knows none of them.
 - **Guard** `site` (`webx-users.guard`), provider `webx-users` (`Auth\UserProvider`: null for a blocked
   visitor — the session ends). Added to `auth` only if the site has not declared them; `web` untouched.
 - **The seam** `UserVisitors` bound to `Visitors` (scoped): `current()`, `find($id)`, `findByEmail()`
-  (exact, never a search), `signInUrl($back)` — where `webx.visitor` of `module-admin` sends a guest.
+  (exact), `signInUrl($back)`; `search(term, limit)` — by a part of the name, e-mail, phone, for panels.
 - **Pages** (`routes/web.php`, all `webx_service`, `no-store`, `noindex`, inside the language prefix
   `{webxLocale}` like the blog's feed):
   - `GET|POST /account/sign-in` (`SignInController`) — «Remember me»; every wrong pair is «Wrong
@@ -38,7 +38,7 @@ in here — shop modules plug into the seam, the module knows none of them.
   - `GET|POST /account/register` (`RegisterController`) — names and phone as the settings ask, then
     `fields[…]`; signed in at once; a taken address said plainly; 404 when registration is `closed`.
   - `POST /account/sign-out` (`SignOutController`) — this device only and a new CSRF token, never
-    `session()->invalidate()`: an administrator signed in on the same browser stays in the panel.
+    `session()->invalidate()`: an administrator signed in on the same browser stays in the panel; `back` — a page to return to.
   - `GET|POST /account/forgot` (`ForgotController`) — one answer for every address, letters queued.
   - `GET|POST /account/reset/{token}` (`ResetController`) — a new `remember_token`, signed in; an
     unconfirmed address gets confirmed and **its `users_identities` rows are deleted** (§7 item 5).
@@ -49,7 +49,7 @@ in here — shop modules plug into the seam, the module knows none of them.
   - `GET /account/state` (`StateController`) — JSON `signedIn`, `name`, `verified`, `email` masked.
   - `GET /webx/users/{users,sign-in}.js` (`Http\ScriptController`) — `resources/js/*.js` as written, immutable.
 - **Dialog of a checkout** (§12, `SignInDialog`): `<dialog id="webx-sign-in">` before `</body>` once a page that has
-  `data-webx-sign-in` or `#webx-sign-in` (`<x-webx-users::sign-in-button view>` — a link to the sign-in with `back`;
+  `data-webx-sign-in` or `#webx-sign-in` (`<x-webx-users::sign-in-button view email>` — a link to the sign-in with `back`, `email` fills the view's field;
   `<x-webx-users::sign-in-dialog />`); views sign-in/forgot/register (`forms/*`, `sign-in.js`). Sent in place with
   `webx_dialog`: `visitor` → `webx:users:signed-in` on `document`, reload unless cancelled. `back` rides the reset link.
 - **Account** (§11, `Account\*`): `/account/profile` (`ProfileController`: names, phone, fields,

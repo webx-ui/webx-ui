@@ -1,0 +1,6 @@
+---
+'@webx-ui/php': minor
+'@webx-ui/module-orders': patch
+---
+
+module-orders: the buyer and the visitor (spec §13). The buyer's page of an order `/order/{number}` behind a signed link without an end (`Site\OrderLinks::page()`, the letters' `{{public_url}}`), in the language of the order behind its prefix, a wrong signature a 404, `no-store` and `noindex`: the public status with its description and the scale of the public ones, the marks, the lines, the money, the delivery and payment lines, the contacts — never the internal status or the manager's note; view `webx-orders::order.show`, layout `webx-orders.layout`, styles `resources/theme/orders.css`, the statuses in the cache group `order-statuses`. With `webx-ui/module-users`: «My orders» in the account (`webx.orders.account.*`, another visitor's order a 404) with the badge of the orders in progress, the warning before an account goes and its orders let go on `VisitorDeleting`, the tab «Orders» and the count on the visitor's card, and linking an order to a visitor — `Orders::linkVisitor()` / `unlinkVisitor()` with a history line, the journal and `OrderDetailsChanged`, in the card's tab «Buyer» with a search of the customers and as `orders_link_visitor`. module-users: `UserVisitors::search()` — the visitors by a part of the name, the e-mail or the phone, as «Customers» finds them.

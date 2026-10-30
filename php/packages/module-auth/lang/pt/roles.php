@@ -35,6 +35,7 @@ return [
     'default-seo' => 'Especialista SEO',
     'default-leads' => 'Gestor de pedidos',
     'default-catalog' => 'Gestor do catálogo',
+    'default-orders' => 'Gestor de encomendas',
     'default-developer' => 'Programador do site',
     'default-viewer' => 'Observador',
 ];

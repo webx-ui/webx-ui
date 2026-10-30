@@ -6,8 +6,10 @@ namespace WebxUi\Catalog\Cart;
 
 use Illuminate\Contracts\Config\Repository as Config;
 use WebxUi\Cart\Contracts\CurrencySource;
+use WebxUi\Cart\Contracts\FindsPurchasables;
 use WebxUi\Cart\Contracts\Purchasable;
 use WebxUi\Cart\Money;
+use WebxUi\Cart\PurchasableChoice;
 use WebxUi\Cart\PurchasableLine;
 use WebxUi\Catalog\Models\Product;
 use WebxUi\Catalog\Purchase\Purchasability;
@@ -21,8 +23,12 @@ use WebxUi\Localization\Locales;
  * one go, and the purchase rules asked of all of them at once. A deleted product is gone (null);
  * one taken off the site, out of stock or with its price on request is a line that cannot be
  * bought now (`available = false`), its name and picture still live.
+ *
+ * Found for the panel's «New order» by name, article number, barcode or id — the same match as the
+ * product list — the unpublished among them marked unavailable rather than hidden; the hint is the
+ * main category, which with the article number of the line tells two «Classic shirt» apart.
  */
-final class ProductPurchasable implements Purchasable
+final class ProductPurchasable implements FindsPurchasables, Purchasable
 {
     /** Small: a line of the cart, not a card of the grid. */
     private const THUMB = 320;
@@ -67,6 +73,29 @@ final class ProductPurchasable implements Purchasable
         }
 
         return $lines;
+    }
+
+    public function find(string $term, string $locale, int $limit): array
+    {
+        $products = Product::query()
+            ->when(trim($term) !== '', static fn ($query) => $query->matching(trim($term)))
+            ->with('category')
+            ->orderByDesc('priority')
+            ->orderBy('id')
+            ->limit($limit)
+            ->get();
+        $lines = $this->resolve(array_map(intval(...), $products->modelKeys()), $locale);
+        $found = [];
+
+        foreach ($products as $product) {
+            $line = $lines[(int) $product->id] ?? null;
+
+            if ($line !== null) {
+                $found[] = new PurchasableChoice((int) $product->id, $line, hint: $product->category?->displayName($locale));
+            }
+        }
+
+        return $found;
     }
 
     /** @return array<string, string> the name in every language of the site that has one */

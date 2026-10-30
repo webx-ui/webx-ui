@@ -1,0 +1,412 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "orders.settings",
+  "model": "settings",
+  "root": [
+    {
+      "id": "tabs",
+      "type": "wx-tabs",
+      "children": [
+        {
+          "id": "orders-tab",
+          "type": "wx-tab",
+          "label": "trans::webx-orders::screen.tab-orders",
+          "can": "orders.statuses",
+          "children": [
+            {
+              "id": "number-card",
+              "type": "wx-card",
+              "label": "trans::webx-orders::screen.number",
+              "children": [
+                {
+                  "id": "number-prefix",
+                  "type": "wx-input",
+                  "name": "orders.number.prefix",
+                  "label": "trans::webx-orders::screen.number-prefix",
+                  "help": "trans::webx-orders::screen.number-prefix-help",
+                  "props": {
+                    "maxlength": 20,
+                    "placeholder": "A-"
+                  }
+                },
+                {
+                  "id": "number-start",
+                  "type": "wx-input-number",
+                  "name": "orders.number.start",
+                  "label": "trans::webx-orders::screen.number-start",
+                  "help": "trans::webx-orders::screen.number-start-help",
+                  "props": {
+                    "min": 0,
+                    "max": 999999999,
+                    "placeholder": "1000"
+                  }
+                },
+                {
+                  "id": "number-pad",
+                  "type": "wx-input-number",
+                  "name": "orders.number.pad",
+                  "label": "trans::webx-orders::screen.number-pad",
+                  "help": "trans::webx-orders::screen.number-pad-help",
+                  "props": {
+                    "min": 0,
+                    "max": 20,
+                    "placeholder": "0"
+                  }
+                },
+                {
+                  "id": "number-sample",
+                  "type": "wx-orders-number-sample",
+                  "props": {
+                    "label": "trans::webx-orders::screen.number-sample",
+                    "help": "trans::webx-orders::screen.number-sample-help"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "initial-card",
+              "type": "wx-card",
+              "label": "trans::webx-orders::screen.initial",
+              "children": [
+                {
+                  "id": "initial-status",
+                  "type": "wx-select",
+                  "name": "orders.initial_status",
+                  "label": "trans::webx-orders::screen.initial-status",
+                  "help": "trans::webx-orders::screen.initial-status-help",
+                  "props": {
+                    "clearable": true,
+                    "placeholder": "trans::webx-orders::screen.initial-first"
+                  }
+                },
+                {
+                  "id": "initial-awaiting",
+                  "type": "wx-select",
+                  "name": "orders.initial_status_awaiting_payment",
+                  "label": "trans::webx-orders::screen.initial-awaiting",
+                  "help": "trans::webx-orders::screen.initial-awaiting-help",
+                  "props": {
+                    "clearable": true,
+                    "placeholder": "trans::webx-orders::screen.initial-first"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "notify-card",
+              "type": "wx-card",
+              "label": "trans::webx-orders::screen.notify",
+              "children": [
+                {
+                  "id": "notify-help",
+                  "type": "wx-alert",
+                  "props": {
+                    "type": "info",
+                    "description": "trans::webx-orders::screen.notify-help"
+                  }
+                },
+                {
+                  "id": "notify-placed",
+                  "type": "wx-notifications-channels",
+                  "name": "orders.notify.placed",
+                  "label": "trans::webx-orders::notifications.events.placed",
+                  "props": {
+                    "event": "orders.placed"
+                  }
+                },
+                {
+                  "id": "notify-paid",
+                  "type": "wx-notifications-channels",
+                  "name": "orders.notify.paid",
+                  "label": "trans::webx-orders::notifications.events.paid",
+                  "props": {
+                    "event": "orders.paid"
+                  }
+                },
+                {
+                  "id": "notify-payment-failed",
+                  "type": "wx-notifications-channels",
+                  "name": "orders.notify.payment_failed",
+                  "label": "trans::webx-orders::notifications.events.payment_failed",
+                  "props": {
+                    "event": "orders.payment_failed"
+                  }
+                },
+                {
+                  "id": "notify-received",
+                  "type": "wx-notifications-channels",
+                  "name": "orders.notify.received",
+                  "label": "trans::webx-orders::notifications.events.received",
+                  "props": {
+                    "event": "orders.received"
+                  }
+                },
+                {
+                  "id": "notify-cancelled",
+                  "type": "wx-notifications-channels",
+                  "name": "orders.notify.cancelled",
+                  "label": "trans::webx-orders::notifications.events.cancelled",
+                  "props": {
+                    "event": "orders.cancelled"
+                  }
+                },
+                {
+                  "id": "notify-refunded",
+                  "type": "wx-notifications-channels",
+                  "name": "orders.notify.refunded",
+                  "label": "trans::webx-orders::notifications.events.refunded",
+                  "props": {
+                    "event": "orders.refunded"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "checkout-tab",
+          "type": "wx-tab",
+          "label": "trans::webx-orders::checkout.settings.tab",
+          "can": "orders.checkout.settings",
+          "children": [
+            {
+              "id": "checkout-fields-card",
+              "type": "wx-card",
+              "label": "trans::webx-orders::checkout.settings.fields",
+              "children": [
+                {
+                  "id": "checkout-fields-help",
+                  "type": "wx-alert",
+                  "props": {
+                    "type": "info",
+                    "description": "trans::webx-orders::checkout.settings.fields-help"
+                  }
+                },
+                {
+                  "id": "checkout-last-name",
+                  "type": "wx-segmented",
+                  "name": "orders.checkout.fields.last_name",
+                  "label": "trans::webx-orders::checkout.settings.last-name",
+                  "default": "optional",
+                  "props": {
+                    "options": [
+                      {
+                        "value": "required",
+                        "label": "trans::webx-orders::checkout.settings.values.required"
+                      },
+                      {
+                        "value": "optional",
+                        "label": "trans::webx-orders::checkout.settings.values.optional"
+                      },
+                      {
+                        "value": "hidden",
+                        "label": "trans::webx-orders::checkout.settings.values.hidden"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "checkout-phone",
+                  "type": "wx-segmented",
+                  "name": "orders.checkout.fields.phone",
+                  "label": "trans::webx-orders::checkout.settings.phone",
+                  "default": "required",
+                  "props": {
+                    "options": [
+                      {
+                        "value": "required",
+                        "label": "trans::webx-orders::checkout.settings.values.required"
+                      },
+                      {
+                        "value": "optional",
+                        "label": "trans::webx-orders::checkout.settings.values.optional"
+                      },
+                      {
+                        "value": "hidden",
+                        "label": "trans::webx-orders::checkout.settings.values.hidden"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "checkout-email",
+                  "type": "wx-segmented",
+                  "name": "orders.checkout.fields.email",
+                  "label": "trans::webx-orders::checkout.settings.email",
+                  "default": "required",
+                  "props": {
+                    "options": [
+                      {
+                        "value": "required",
+                        "label": "trans::webx-orders::checkout.settings.values.required"
+                      },
+                      {
+                        "value": "optional",
+                        "label": "trans::webx-orders::checkout.settings.values.optional"
+                      },
+                      {
+                        "value": "hidden",
+                        "label": "trans::webx-orders::checkout.settings.values.hidden"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "checkout-recipient",
+                  "type": "wx-segmented",
+                  "name": "orders.checkout.recipient",
+                  "label": "trans::webx-orders::checkout.settings.recipient",
+                  "default": "on",
+                  "props": {
+                    "options": [
+                      {
+                        "value": "on",
+                        "label": "trans::webx-orders::checkout.settings.values.on"
+                      },
+                      {
+                        "value": "off",
+                        "label": "trans::webx-orders::checkout.settings.values.off"
+                      }
+                    ]
+                  },
+                  "help": "trans::webx-orders::checkout.settings.recipient-help"
+                },
+                {
+                  "id": "checkout-comment",
+                  "type": "wx-segmented",
+                  "name": "orders.checkout.comment",
+                  "label": "trans::webx-orders::checkout.settings.comment",
+                  "default": "on",
+                  "props": {
+                    "options": [
+                      {
+                        "value": "on",
+                        "label": "trans::webx-orders::checkout.settings.values.on"
+                      },
+                      {
+                        "value": "off",
+                        "label": "trans::webx-orders::checkout.settings.values.off"
+                      }
+                    ]
+                  },
+                  "help": "trans::webx-orders::checkout.settings.comment-help"
+                }
+              ]
+            },
+            {
+              "id": "checkout-terms-card",
+              "type": "wx-card",
+              "label": "trans::webx-orders::checkout.settings.terms-card",
+              "children": [
+                {
+                  "id": "checkout-terms",
+                  "type": "wx-segmented",
+                  "name": "orders.checkout.terms",
+                  "label": "trans::webx-orders::checkout.settings.terms",
+                  "default": "notice",
+                  "props": {
+                    "options": [
+                      {
+                        "value": "none",
+                        "label": "trans::webx-orders::checkout.settings.values.none"
+                      },
+                      {
+                        "value": "notice",
+                        "label": "trans::webx-orders::checkout.settings.values.notice"
+                      },
+                      {
+                        "value": "checkbox",
+                        "label": "trans::webx-orders::checkout.settings.values.checkbox"
+                      }
+                    ]
+                  },
+                  "help": "trans::webx-orders::checkout.settings.terms-help"
+                },
+                {
+                  "id": "checkout-terms-page",
+                  "type": "wx-link",
+                  "name": "orders.checkout.terms_page",
+                  "label": "trans::webx-orders::checkout.settings.terms-page",
+                  "help": "trans::webx-orders::checkout.settings.terms-page-help"
+                },
+                {
+                  "id": "checkout-privacy-page",
+                  "type": "wx-link",
+                  "name": "orders.checkout.privacy_page",
+                  "label": "trans::webx-orders::checkout.settings.privacy-page",
+                  "help": "trans::webx-orders::checkout.settings.privacy-page-help"
+                }
+              ]
+            },
+            {
+              "id": "checkout-antispam-card",
+              "type": "wx-card",
+              "label": "trans::webx-orders::checkout.settings.antispam-card",
+              "children": [
+                {
+                  "id": "checkout-captcha",
+                  "type": "wx-segmented",
+                  "name": "orders.checkout.captcha",
+                  "label": "trans::webx-orders::checkout.settings.captcha",
+                  "default": "off",
+                  "props": {
+                    "options": [
+                      {
+                        "value": "on",
+                        "label": "trans::webx-orders::checkout.settings.values.on"
+                      },
+                      {
+                        "value": "off",
+                        "label": "trans::webx-orders::checkout.settings.values.off"
+                      }
+                    ]
+                  },
+                  "help": "trans::webx-orders::checkout.settings.captcha-help"
+                }
+              ]
+            },
+            {
+              "id": "checkout-quick-card",
+              "type": "wx-card",
+              "label": "trans::webx-orders::checkout.settings.quick-card",
+              "children": [
+                {
+                  "id": "checkout-quick",
+                  "type": "wx-segmented",
+                  "name": "orders.checkout.quick.enabled",
+                  "label": "trans::webx-orders::checkout.settings.quick",
+                  "default": "off",
+                  "props": {
+                    "options": [
+                      {
+                        "value": "on",
+                        "label": "trans::webx-orders::checkout.settings.values.on"
+                      },
+                      {
+                        "value": "off",
+                        "label": "trans::webx-orders::checkout.settings.values.off"
+                      }
+                    ]
+                  },
+                  "help": "trans::webx-orders::checkout.settings.quick-help"
+                },
+                {
+                  "id": "checkout-quick-message",
+                  "type": "wx-textarea",
+                  "name": "orders.checkout.quick.message",
+                  "label": "trans::webx-orders::checkout.settings.quick-message",
+                  "help": "trans::webx-orders::checkout.settings.quick-message-help",
+                  "localized": true,
+                  "props": {
+                    "rows": 2,
+                    "maxlength": 500
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
