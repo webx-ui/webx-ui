@@ -20,6 +20,7 @@ use WebxUi\Orders\Orders;
 use WebxUi\Orders\Panel\Consequences;
 use WebxUi\Orders\Panel\OrderCard;
 use WebxUi\Orders\Panel\OrderList;
+use WebxUi\Orders\Panel\OrdersSummary;
 use WebxUi\Orders\Panel\StatusChoices;
 use WebxUi\Orders\RefundRefused;
 use WebxUi\Orders\RefundRequest;
@@ -47,19 +48,47 @@ final readonly class OrderController
         private Money $money,
     ) {}
 
+    /**
+     * A page of the list with how many each tab holds. `view=auto` is the list opened without a
+     * tab (decision 92): «New» while it holds any order, otherwise «All» — told by the same counts,
+     * so it is still one answer, and `view` says which tab it is.
+     */
     public function index(Request $request): JsonResponse
     {
-        $validated = $request->validate(OrderList::rules());
+        $validated = $request->validate([...OrderList::rules(), 'view' => ['nullable', Rule::in([...OrderList::VIEWS, 'auto'])]]);
 
         $locale = app()->getLocale();
         $statuses = new StatusChoices;
-        $page = $this->list->page($validated, (int) ($validated['per_page'] ?? 25), (int) ($validated['page'] ?? 1));
+        $counts = $this->list->counts($validated);
+        $view = (string) ($validated['view'] ?? 'all');
+
+        if ($view === 'auto') {
+            $view = $counts['new'] > 0 ? 'new' : 'all';
+        }
+
+        $page = $this->list->page([...$validated, 'view' => $view], (int) ($validated['per_page'] ?? 25), (int) ($validated['page'] ?? 1));
 
         return new JsonResponse([
             ...$page->toArray(),
             'data' => array_map(fn (Order $order): array => $this->list->row($order, $statuses, $locale), $page->items()),
-            'counts' => $this->list->counts($validated),
+            'counts' => $counts,
+            'view' => $view,
         ]);
+    }
+
+    /**
+     * The figures over the list (§11.2): the same count as the agent's `orders_summary`, asked
+     * apart so that the rows never wait for it.
+     */
+    public function summary(OrdersSummary $summary): JsonResponse
+    {
+        return ApiResponse::data($summary->describe(app()->getLocale()));
+    }
+
+    /** An opened row of the list: what the order holds and who it is for, without the card. */
+    public function glance(Request $request, int $order): JsonResponse
+    {
+        return ApiResponse::data($this->card->glance(self::find($order), app()->getLocale(), $request->user()));
     }
 
     /**

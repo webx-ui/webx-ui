@@ -6,17 +6,18 @@ import { provideOrderCard } from './card'
 import OrderNotesNode from './OrderNotesNode.vue'
 import type { OrderCardData, OrderNote } from './types'
 
-function order(notes: OrderNote[], note = true): OrderCardData {
+function order(notes: OrderNote[], note = true, pinned: string | null = null): OrderCardData {
   return {
     id: 7,
     number: '1049',
+    manager_note: pinned,
     notes,
     actions: {
       status: true,
       paid: false,
       received: false,
       cancel: false,
-      details: true,
+      details: note,
       note,
       refund: false,
       visitor: false,
@@ -29,6 +30,7 @@ function card(data: OrderCardData, kept = true) {
   const i18n = createI18n()
   const admin = { apiPath: '/api/cms', http: {}, i18n, assetUrls: null } as unknown as AdminContext
   const note = vi.fn<(body: string) => Promise<boolean>>(() => Promise.resolve(kept))
+  const pin = vi.fn<(text: string | null) => Promise<boolean>>(() => Promise.resolve(kept))
 
   const Host = defineComponent({
     setup() {
@@ -40,6 +42,7 @@ function card(data: OrderCardData, kept = true) {
         cancel: () => Promise.resolve(),
         refund: () => Promise.resolve(),
         note,
+        pin,
         linkVisitor: () => Promise.resolve(),
         unlinkVisitor: () => Promise.resolve(),
       })
@@ -52,7 +55,7 @@ function card(data: OrderCardData, kept = true) {
     global: { provide: { [adminKey as symbol]: admin, [i18nKey as symbol]: i18n } },
   })
 
-  return { wrapper, note }
+  return { wrapper, note, pin }
 }
 
 const manager: OrderNote = {
@@ -113,5 +116,69 @@ describe('WxOrdersNotes', () => {
 
     expect(wrapper.findAll('.wx-note')).toHaveLength(1)
     expect(wrapper.find('.wx-notes__new').exists()).toBe(false)
+  })
+})
+
+/**
+ * The pinned note (decision 91): the order's one standing line, over the feed and apart from it,
+ * changed in place through the card's `pin()`; emptied, it is unpinned.
+ */
+describe('WxOrdersNotes — the pinned note', () => {
+  it('stands over the feed with its caption, the line breaks kept', () => {
+    const { wrapper } = card(order([manager], true, 'Regular buyer.\nCall in the morning.'))
+
+    const plate = wrapper.find('.wx-orders-notes__pinned')
+    expect(plate.text()).toContain('Pinned')
+    expect(wrapper.find('.wx-orders-notes__pinned-text').element.textContent).toBe(
+      'Regular buyer.\nCall in the morning.',
+    )
+    // Over the feed, not in it.
+    const html = wrapper.html()
+    expect(html.indexOf('wx-orders-notes__pinned')).toBeLessThan(html.indexOf('wx-note__text'))
+  })
+
+  it('without one, offers to pin a note to whoever may manage the order', async () => {
+    const { wrapper, pin } = card(order([]))
+
+    expect(wrapper.find('.wx-orders-notes__pinned').exists()).toBe(false)
+    await wrapper.find('.wx-orders-notes__pin').trigger('click')
+    await wrapper.find('.wx-orders-notes__pin-editor textarea').setValue('  VIP  ')
+    await wrapper.find('.wx-orders-notes__pin-editor .wx-button').trigger('click')
+    await flushPromises()
+
+    expect(pin).toHaveBeenCalledWith('VIP')
+    expect(wrapper.find('.wx-orders-notes__pin-editor').exists()).toBe(false)
+  })
+
+  it('emptied, is unpinned', async () => {
+    const { wrapper, pin } = card(order([], true, 'VIP'))
+
+    await wrapper.find('.wx-orders-notes__pencil').trigger('click')
+    await wrapper.find('.wx-orders-notes__pin-editor textarea').setValue('   ')
+    await wrapper.find('.wx-orders-notes__pin-editor .wx-button').trigger('click')
+    await flushPromises()
+
+    expect(pin).toHaveBeenCalledWith(null)
+  })
+
+  it('keeps the editor open when the change was not kept', async () => {
+    const { wrapper } = card(order([], true, 'VIP'), false)
+
+    await wrapper.find('.wx-orders-notes__pencil').trigger('click')
+    await wrapper.find('.wx-orders-notes__pin-editor textarea').setValue('VIP, call first')
+    await wrapper.find('.wx-orders-notes__pin-editor .wx-button').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('.wx-orders-notes__pin-editor').exists()).toBe(true)
+  })
+
+  it('is read without `orders.manage`, with no pencil and no link to pin one', () => {
+    const { wrapper } = card(order([], false, 'VIP'))
+
+    expect(wrapper.find('.wx-orders-notes__pinned').exists()).toBe(true)
+    expect(wrapper.find('.wx-orders-notes__pencil').exists()).toBe(false)
+
+    const empty = card(order([], false))
+    expect(empty.wrapper.find('.wx-orders-notes__pin').exists()).toBe(false)
   })
 })

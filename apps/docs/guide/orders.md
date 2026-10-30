@@ -122,6 +122,32 @@ reads the order sees the notes and no box. The node's public id is `order-notes`
 that wants something beside it. The feed is the panel's own [notes component](/guide/notes), the
 one the inbox draws.
 
+Over the feed stands the **pinned note** — the order's one standing line, «regular buyer, call only
+in the morning», which a chronicle would bury. It is the order's `manager_note`: a tinted plate
+captioned «Pinned», changed in place with the pencil and emptied to unpin; with none, a manager
+sees only «Pin a note». It is saved as the contacts are (`PUT {api}/orders/{id}/details` with
+`manager_note`, the same `Orders::updateDetails()`, the journal and the history's line
+`details`), and `orders_update` still takes it. The tab «Buyer» no longer has the field.
+
+### The list
+
+Opened without a tab, «Orders» is on «New» while it holds any order and on «All» otherwise; a tab
+in the address wins. The server decides by the counts it sends anyway (`view=auto` answers
+`view`), so it is one request and no tab is shown before it says which.
+
+Over the list stand the figures: orders, revenue (paid less given back), the average paid order
+and what awaits payment now, for the last 24 hours, 7 or 30 days, with a bar a day for the last
+thirty under them. Money stays per currency. The count is `GET {api}/orders/summary` — the class
+`Panel\OrdersSummary` that answers the agent's `orders_summary` too — asked apart, so the rows
+never wait for it; folded or not, and the period, are remembered for the manager in the browser.
+
+A row opens to what the order holds without going into it: the lines with their quantity and sum,
+the buyer and the recipient, the buyer's comment, the pinned note first and the latest of the feed,
+the lines of delivery and payment, the milestones with when. It is `GET {api}/orders/{id}/glance`
+on opening, kept for the page — the list itself stays as light as it was. On a narrow list (cards)
+a row does not open: the card is one tap from the order, and an opened card would push the next
+one a screen away.
+
 ### An order taken by phone
 
 A manager with `orders.manage` opens «New order» from the list: finds products by a word, picks a

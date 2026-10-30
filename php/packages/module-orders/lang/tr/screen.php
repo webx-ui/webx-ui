@@ -15,7 +15,7 @@ return [
     'phone' => 'Telefon',
     'email' => 'E-posta',
     'contacts-hint' => 'Bir telefon ya da e-posta girin.',
-    'notes' => 'Yorum ve not',
+    'notes' => 'Yorum',
     'comment' => 'Müşteri yorumu',
     'manager-note' => 'Yönetici notu',
     'manager-note-help' => 'Yalnızca mağaza için: müşteri bunu asla görmez.',

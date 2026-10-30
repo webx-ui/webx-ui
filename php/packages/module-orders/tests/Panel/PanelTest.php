@@ -272,7 +272,9 @@ final class PanelTest extends PanelTestCase
         $this->assertSame('Alexa', $values['customer.first_name']);
         $this->assertSame('alex@example.test', $values['customer.email']);
         $this->assertSame('Sam', $values['recipient.first_name']);
-        $this->assertSame('VIP', $values['manager_note']);
+        // The note is pinned over the feed now (decision 91): the card's, not the screen's values.
+        $this->assertArrayNotHasKey('manager_note', $values);
+        $this->assertSame('VIP', $order->refresh()->manager_note);
 
         // Emptied whole, the recipient is gone: the buyer takes the order.
         $this->putJson($this->api($order->id).'/details', ['values' => ['recipient.first_name' => '', 'recipient.last_name' => '', 'recipient.phone' => '']])->assertOk();

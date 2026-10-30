@@ -246,6 +246,28 @@ async function note(body: string): Promise<boolean> {
   }
 }
 
+/**
+ * The pinned note is saved on its own, as a note is: it is the block «Notes»'s, not a field of the
+ * screen's save bar, and what is being typed in the contacts stays. The write is the contacts' own
+ * (`details`), so the journal and the history keep it as before.
+ */
+async function pin(text: string | null): Promise<boolean> {
+  const open = order.value
+
+  if (!open) return false
+
+  try {
+    take(await api.saveDetails(open.id, { manager_note: text }), false)
+    toast.success(t(text === null ? 'panel.pin-removed' : 'panel.pin-saved'))
+
+    return true
+  } catch (error) {
+    toast.danger(message(error))
+
+    return false
+  }
+}
+
 provideOrderCard({
   order,
   busy,
@@ -254,6 +276,7 @@ provideOrderCard({
   cancel,
   refund,
   note,
+  pin,
   linkVisitor,
   unlinkVisitor,
 })

@@ -185,6 +185,12 @@ final class McpTest extends McpTestCase
         $this->assertSame('Alex', $order->customer_first_name);
         $this->assertSame('Sam', $order->recipient['first_name'] ?? null);
 
+        // The manager note as before; the panel pins it over the feed of the card (decision 91).
+        $this->ask('orders_update', ['order' => $order->number, 'manager_note' => 'VIP']);
+        $this->assertSame('VIP', $order->refresh()->manager_note);
+        $this->actingAs($this->caller(), 'cms');
+        $this->assertSame('VIP', $this->getJson($this->api($order->id))->assertOk()->json('data.order.manager_note'));
+
         $this->agent('orders_update', ['order' => $order->number, 'customer' => ['email' => 'not an address']])->assertHasErrors(['customer.email']);
         $this->agent('orders_update', ['order' => $order->number])->assertHasErrors(['Nothing to change']);
         $this->agent('orders_update', ['order' => $order->number, 'customer' => ['phone2' => '1']])->assertHasErrors(['phone2']);

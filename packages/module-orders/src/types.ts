@@ -58,6 +58,50 @@ export interface OrdersPage {
   from: number | null
   to: number | null
   counts: Record<OrdersView, number>
+  /** The tab the rows are of; the one chosen when the list was asked with `view: 'auto'`. */
+  view?: OrdersView
+}
+
+/** One currency's figures of a period: placed, paid, the revenue and the average of a paid order. */
+export interface SummaryPeriodMoney {
+  currency: string
+  placed: number
+  paid: number
+  revenue: number
+  revenue_formatted: string
+  average: number
+  average_formatted: string
+}
+
+/** The figures over the list — the agent's `orders_summary`, the same count (§11.2, §12). */
+export interface OrdersSummaryData {
+  awaiting_payment: number
+  payment_failed: number
+  paid_status_waits: number
+  /** What waits for payment now, whenever it was ordered. */
+  awaiting_by_currency: {
+    currency: string
+    orders: number
+    amount: number
+    amount_formatted: string
+  }[]
+  periods: { days: number; by_currency: SummaryPeriodMoney[] }[]
+  /** Orders placed each of the last thirty days, today last. */
+  daily: { date: string; orders: number }[]
+}
+
+/** An opened row of the list: what the order holds and who it is for, without the card. */
+export interface OrderGlance {
+  id: number
+  items: { id: number; name: string; options: string | null; qty: number; total: string }[]
+  count: { lines: number; units: number; refunded_units: number }
+  customer: { name: string; phone: string | null; email: string | null }
+  recipient: { name: string; phone: string | null } | null
+  comment: string | null
+  manager_note: string | null
+  last_note: OrderNote | null
+  blocks: { key: string; summary: string | null }[]
+  milestones: Partial<Record<MilestoneKey, string>>
 }
 
 export interface OrdersMeta {
@@ -69,7 +113,8 @@ export interface OrdersMeta {
 }
 
 export interface OrderQuery {
-  view?: OrdersView
+  /** `auto` — «New» while it holds any order, otherwise «All» (decision 92). */
+  view?: OrdersView | 'auto'
   search?: string
   status?: string
   public?: string
@@ -189,6 +234,8 @@ export interface OrderCardData {
   refunds: OrderRefundEntry[]
   blocks: { key: string; summary: string | null; value: Record<string, unknown> }[]
   timeline: TimelineLine[]
+  /** The note pinned over the feed «Notes» (decision 91); null — none. */
+  manager_note: string | null
   /** The feed «Notes» under the tabs, oldest first. */
   notes: OrderNote[]
   /** The log of the notifications module about the order; null without the module. */

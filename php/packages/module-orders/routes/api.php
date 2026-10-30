@@ -32,6 +32,8 @@ Route::prefix((string) config('webx-admin.api_path').'/orders')
         Route::middleware($read)->group(function (): void {
             Route::get('/', [OrderController::class, 'index'])->name('index');
             Route::get('meta', [OrderController::class, 'meta'])->name('meta');
+            Route::get('summary', [OrderController::class, 'summary'])->name('summary');
+            Route::get('{order}/glance', [OrderController::class, 'glance'])->whereNumber('order')->name('glance');
             Route::get('{order}', [OrderController::class, 'show'])->whereNumber('order')->name('show');
         });
 

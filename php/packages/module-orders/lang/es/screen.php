@@ -15,7 +15,7 @@ return [
     'phone' => 'Teléfono',
     'email' => 'Correo electrónico',
     'contacts-hint' => 'Indica un teléfono o un correo electrónico.',
-    'notes' => 'Comentario y nota',
+    'notes' => 'Comentario',
     'comment' => 'Comentario del comprador',
     'manager-note' => 'Nota del gestor',
     'manager-note-help' => 'Solo para la tienda: el comprador nunca la ve.',

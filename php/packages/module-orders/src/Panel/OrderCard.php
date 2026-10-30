@@ -51,7 +51,11 @@ final readonly class OrderCard
     {
         $order->loadMissing(['items', 'adjustments', 'tenders', 'benefits', 'milestones', 'refunds', 'history']);
 
-        return ['order' => $this->order($order, $statuses, $locale, $can, $reader), 'values' => self::values($order)];
+        // The pinned note is the block «Notes»'s, saved on its own: the screen's save never sends it back.
+        $values = self::values($order);
+        unset($values['manager_note']);
+
+        return ['order' => $this->order($order, $statuses, $locale, $can, $reader), 'values' => $values];
     }
 
     /**
@@ -64,6 +68,48 @@ final readonly class OrderCard
         $order->loadMissing(['milestones', 'refunds', 'history']);
 
         return $this->timeline($order, $statuses, $locale, self::people($order, $reader), fn (int $minor): string => $this->money->format($minor, $order->currency));
+    }
+
+    /**
+     * What an opened row of the list shows (§11.2) without going into the order: the lines in
+     * short, the buyer and the recipient, the buyer's comment, the pinned note and the latest of
+     * the feed, the lines of the blocks, the milestones with when. One order and three relations
+     * whatever it holds — the authors of the notes in one more.
+     *
+     * @return array<string, mixed>
+     */
+    public function glance(Order $order, string $locale, mixed $reader): array
+    {
+        $order->loadMissing(['items', 'milestones', 'history']);
+        $money = fn (int $minor): string => $this->money->format($minor, $order->currency);
+        $notes = self::notes($order, Authors::people($reader, $order->history->pluck('admin_id')->all()));
+        $recipient = $order->recipient;
+
+        return [
+            'id' => $order->id,
+            'items' => $order->items->whereNull('parent_id')->map(static fn (OrderItem $item): array => [
+                'id' => $item->id,
+                'name' => $item->nameIn($locale),
+                'options' => $item->options_label,
+                'qty' => $item->qty,
+                'total' => $money($item->total),
+            ])->values()->all(),
+            'count' => self::count($order),
+            'customer' => [
+                'name' => $order->customerName(),
+                'phone' => $order->customer_phone,
+                'email' => $order->customer_email,
+            ],
+            'recipient' => is_array($recipient) && $recipient !== [] ? [
+                'name' => trim(((string) ($recipient['first_name'] ?? '')).' '.((string) ($recipient['last_name'] ?? ''))),
+                'phone' => $recipient['phone'] ?? null,
+            ] : null,
+            'comment' => $order->comment,
+            'manager_note' => $order->manager_note,
+            'last_note' => $notes === [] ? null : $notes[array_key_last($notes)],
+            'blocks' => array_map(static fn (array $block): array => ['key' => $block['key'], 'summary' => $block['summary']], $this->blocks($order, $locale)),
+            'milestones' => array_map(static fn (array $mark): string => $mark['at'], $this->milestones($order)),
+        ];
     }
 
     /**
@@ -161,6 +207,8 @@ final readonly class OrderCard
             ])->values()->all(),
             'blocks' => $this->blocks($order, $locale),
             'timeline' => $this->timeline($order, $statuses, $locale, $people, $money),
+            // The note pinned over the feed (decision 91): one standing line, changed in place.
+            'manager_note' => $order->manager_note,
             // The feed «Notes» under the tabs (decision 90): the history's notes, oldest first.
             'notes' => self::notes($order, $people),
             // The block «Notifications» under the timeline (§8): null without the module.

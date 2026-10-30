@@ -15,6 +15,8 @@ export interface OrderCardContext {
   refund(): Promise<void>
   /** Keep a note for whoever picks the order up next; true once it is kept. */
   note(body: string): Promise<boolean>
+  /** Pin the standing note over the feed, or unpin it with null (decision 91); true once kept. */
+  pin(text: string | null): Promise<boolean>
   /** Link the order to a visitor, or to another one (§13.3). */
   linkVisitor(): Promise<void>
   unlinkVisitor(): Promise<void>

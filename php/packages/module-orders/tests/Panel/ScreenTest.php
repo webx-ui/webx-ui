@@ -27,7 +27,7 @@ final class ScreenTest extends PanelTestCase
 
         $fields = $this->app->make(ScreenRegistry::class)->fields('orders.show');
         $this->assertSame(
-            ['customer.first_name', 'customer.last_name', 'customer.phone', 'customer.email', 'recipient.first_name', 'recipient.last_name', 'recipient.phone', 'comment', 'manager_note'],
+            ['customer.first_name', 'customer.last_name', 'customer.phone', 'customer.email', 'recipient.first_name', 'recipient.last_name', 'recipient.phone', 'comment'],
             array_map(static fn (array $node): string => (string) $node['name'], $fields),
         );
     }

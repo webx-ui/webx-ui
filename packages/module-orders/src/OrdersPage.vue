@@ -35,12 +35,15 @@ import {
 } from '@webx-ui/module-admin'
 import { createOrdersApi } from './api'
 import CancelDialog from './CancelDialog.vue'
+import OrderGlanceRow from './OrderGlanceRow.vue'
+import OrdersStats from './OrdersStats.vue'
 import { NAMESPACE, useOrdersMessages } from './i18n'
 import StatusDialog from './StatusDialog.vue'
 import { toneOf } from './tones'
 import type {
   MassCancelAnswer,
   MassStatusAnswer,
+  OrderGlance,
   OrderQuery,
   OrderRow,
   OrdersMeta,
@@ -55,6 +58,11 @@ import type {
  * over it — new, awaiting payment, payment failed, all — and the filters behind the funnel; all
  * of it in the address, so coming back from a card lands where the list was left. The selection
  * moves to a status or cancels, each with a preview of what it does before it does it.
+ *
+ * Opened without a tab, the list is on «New» while it holds any order and on «All» otherwise
+ * (decision 92) — the server decides by the counts it sends anyway, so it is one request and no
+ * tab is shown before the answer says which. Over the list stand the figures (decision 93); a row
+ * opens to what the order holds and who it is for (decision 94).
  */
 defineOptions({ name: 'WxOrdersPage' })
 
@@ -127,9 +135,23 @@ const flag = (key: string): boolean | null =>
   route.query[key] === '1' ? true : route.query[key] === '0' ? false : null
 
 const VIEWS: OrdersView[] = ['new', 'awaiting', 'failed', 'all']
-const view = ref<OrdersView>(
-  VIEWS.includes(text('view') as OrdersView) ? (text('view') as OrdersView) : 'all',
-)
+const addressed = VIEWS.includes(text('view') as OrdersView) ? (text('view') as OrdersView) : null
+/** The open tab; null until the server's first answer says which one, for a list opened without. */
+const view = ref<OrdersView | null>(addressed)
+/** A tab in the address or chosen since is kept there; the one the server chose is not. */
+const explicit = ref(addressed !== null)
+
+/*
+ * The tabs are told nothing until the tab is known: given no value, the strip would open its first
+ * tab by itself and show «New» for a moment on a list that turns out to be «All». A write before
+ * then is that strip's, not the reader's, and is not taken.
+ */
+const tab = computed<OrdersView | ''>({
+  get: () => view.value ?? '',
+  set: (value) => {
+    if (view.value !== null && value !== '') view.value = value
+  },
+})
 const search = ref(String(route.query.q ?? ''))
 const pageNumber = ref(Number(route.query.page ?? 1) || 1)
 const status = ref<string | null>(text('status'))
@@ -313,7 +335,7 @@ function clearFilters(): void {
 
 function query(state?: TableState): OrderQuery {
   return {
-    view: view.value === 'all' ? undefined : view.value,
+    view: view.value === null ? 'auto' : view.value === 'all' ? undefined : view.value,
     search: state?.search ?? search.value,
     status: status.value ?? undefined,
     public: publicStatus.value ?? undefined,
@@ -343,7 +365,11 @@ async function load(state?: TableState): Promise<void> {
   try {
     const answer = await api.list(query(state))
 
-    if (mine === asked) page.value = answer
+    if (mine === asked) {
+      page.value = answer
+      // The tab the server chose for a list opened without one.
+      if (view.value === null) view.value = answer.view ?? 'all'
+    }
   } catch (error) {
     toast.danger(message(error))
   } finally {
@@ -355,7 +381,7 @@ function remember(): void {
   const wanted: LocationQueryRaw = {}
   const q = query()
 
-  if (q.view) wanted.view = q.view
+  if (explicit.value && view.value !== null) wanted.view = view.value
   if (q.search) wanted.q = q.search
   if (q.page && q.page > 1) wanted.page = String(q.page)
   if (q.sort && q.sort !== '-placed_at') wanted.sort = q.sort
@@ -385,9 +411,19 @@ function onState(state: TableState): void {
   void load(state)
 }
 
+/* The tab the server chose comes with its rows already; a tab chosen since is a new question. */
+watch(view, (_, before) => {
+  if (before === null) return
+
+  explicit.value = true
+  pageNumber.value = 1
+  selected.value = []
+  remember()
+  void load()
+})
+
 watch(
   [
-    view,
     status,
     publicStatus,
     paid,
@@ -464,6 +500,40 @@ function actionsFor(row: OrderRow): RowAction[] {
   return actions
 }
 
+/*
+ * An opened row asks the server once and keeps the answer for the page: the list itself stays as
+ * light as it was, and a manager who opens three rows of twenty-five pays for three. After a mass
+ * change the answers are stale, so they go.
+ */
+const expanded = ref<(string | number)[]>([])
+const glances = ref<Record<number, OrderGlance | 'failed'>>({})
+
+async function glanceAt(id: number): Promise<void> {
+  if (glances.value[id] !== undefined) return
+
+  try {
+    const answer = await api.glance(id)
+    glances.value = { ...glances.value, [id]: answer }
+  } catch {
+    glances.value = { ...glances.value, [id]: 'failed' }
+  }
+}
+
+function onExpand(keys: (string | number)[]): void {
+  for (const key of keys) void glanceAt(Number(key))
+}
+
+function glanceOf(row: OrderRow): OrderGlance | null {
+  const answer = glances.value[row.id]
+
+  return answer === undefined || answer === 'failed' ? null : answer
+}
+
+function forget(): void {
+  glances.value = {}
+  expanded.value = []
+}
+
 const ids = computed(() => selected.value.map((key) => Number(key)))
 
 async function moveSelected(chosen = ids.value): Promise<void> {
@@ -475,6 +545,7 @@ async function moveSelected(chosen = ids.value): Promise<void> {
   if (answer.refused.length > 0)
     toast.warning(t('panel.mass-refused', { count: answer.refused.length }))
   selected.value = []
+  forget()
   void load()
 }
 
@@ -487,11 +558,12 @@ async function cancelSelected(): Promise<void> {
   if (answer.refused.length > 0)
     toast.warning(t('panel.mass-refused', { count: answer.refused.length }))
   selected.value = []
+  forget()
   void load()
 }
 
 const emptyText = computed(() =>
-  applied.value.length > 0 || search.value || view.value !== 'all'
+  applied.value.length > 0 || search.value || (view.value !== null && view.value !== 'all')
     ? t('panel.nothing-found')
     : t('module.empty'),
 )
@@ -510,11 +582,17 @@ onMounted(async () => {
 
 <template>
   <div ref="root" class="wx-orders">
-    <wx-list-screen v-model:view="view" :title="title" :views="views" :actions="headActions">
+    <wx-list-screen v-model:view="tab" :title="title" :views="views" :actions="headActions">
+      <template #before>
+        <orders-stats />
+      </template>
+
       <wx-table
         v-model:search="search"
         v-model:page="pageNumber"
         v-model:selected="selected"
+        v-model:expanded="expanded"
+        :expandable="!asCards"
         :loading-text="panel('filters.loading')"
         :data="page"
         :columns="columns"
@@ -536,7 +614,12 @@ onMounted(async () => {
         :aria-label="title"
         @row-click="open"
         @state-change="onState"
+        @expand-change="onExpand"
       >
+        <template #expanded="{ row }">
+          <order-glance-row :glance="glanceOf(row)" :failed="glances[row.id] === 'failed'" />
+        </template>
+
         <template v-if="selected.length > 0" #actions>
           <div class="wx-orders__mass">
             <wx-text size="sm" weight="medium">

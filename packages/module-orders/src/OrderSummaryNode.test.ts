@@ -87,6 +87,7 @@ function card(node: object, data: OrderCardData) {
         cancel: () => Promise.resolve(),
         refund: () => Promise.resolve(),
         note: () => Promise.resolve(true),
+        pin: () => Promise.resolve(true),
         linkVisitor: () => Promise.resolve(),
         unlinkVisitor: () => Promise.resolve(),
       })

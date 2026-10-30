@@ -236,17 +236,6 @@
                         "rows": 3,
                         "maxlength": 5000
                       }
-                    },
-                    {
-                      "id": "manager-note",
-                      "type": "wx-textarea",
-                      "name": "manager_note",
-                      "label": "trans::webx-orders::screen.manager-note",
-                      "help": "trans::webx-orders::screen.manager-note-help",
-                      "props": {
-                        "rows": 3,
-                        "maxlength": 5000
-                      }
                     }
                   ]
                 }

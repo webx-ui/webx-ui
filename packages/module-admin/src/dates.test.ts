@@ -108,6 +108,17 @@ describe('the tip', () => {
   })
 })
 
+describe('a calendar day', () => {
+  it('is the day and the month, with no clock — today included', () => {
+    const dates = createDates(panel('en'))
+
+    expect(dates.day('2026-09-17')).toBe('Sep 17')
+    expect(dates.day('2026-09-16')).toBe('Sep 16')
+    expect(dates.day('2025-12-31')).toBe('12/31/25')
+    expect(dates.day(null)).toBe('')
+  })
+})
+
 describe('the machine value', () => {
   it('is the moment itself, for `<time datetime>` and for sorting on the server', () => {
     const dates = createDates(panel('en'))

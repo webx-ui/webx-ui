@@ -15,7 +15,7 @@ return [
     'phone' => 'Phone',
     'email' => 'E-mail',
     'contacts-hint' => 'Enter a phone or an e-mail.',
-    'notes' => 'Comment and note',
+    'notes' => 'Comment',
     'comment' => 'Buyer\'s comment',
     'manager-note' => 'Manager note',
     'manager-note-help' => 'Only for the shop: the buyer never sees it.',

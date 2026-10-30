@@ -277,7 +277,10 @@ function order(index: number, fields: Partial<OrderRecord>): OrderRecord {
    cancelled unpaid and paid with a full refund, received with a partial one, a rule's discount
    with a gift, a tender of the wallet. */
 const orders: OrderRecord[] = [
-  order(0, { items: [item('a'), item('c', 2)] }),
+  order(0, {
+    items: [item('a'), item('c', 2)],
+    manager_note: 'Regular buyer: call only in the morning.',
+  }),
   order(1, { status: 2, awaiting: true, marks: {} }),
   order(2, { status: 2, awaiting: true, failed_at: day(-9, 12) }),
   order(3, {
@@ -543,7 +546,10 @@ function matches(record: OrderRecord, query: URLSearchParams): boolean {
 
 function list(query: URLSearchParams, locale: string, line: Line) {
   const filtered = orders.filter((record) => matches(record, query))
-  const view = query.get('view') ?? 'all'
+  const asked = query.get('view') ?? 'all'
+  // `auto` — the list opened without a tab (decision 92): «New» while it holds any order.
+  const view =
+    asked === 'auto' ? (filtered.some((record) => inView(record, 'new')) ? 'new' : 'all') : asked
   const rows = filtered.filter((record) => inView(record, view))
   const sort = query.get('sort') ?? '-placed_at'
   const by = sort.replace(/^-/, '')
@@ -574,6 +580,119 @@ function list(query: URLSearchParams, locale: string, line: Line) {
       awaiting: filtered.filter((record) => inView(record, 'awaiting')).length,
       failed: filtered.filter((record) => inView(record, 'failed')).length,
     },
+    view,
+  }
+}
+
+/* ------------------------------------------------------------------------------ summary ----- */
+
+/** The figures over the list (decision 93), counted as `OrdersSummary` counts them. */
+function summary() {
+  const now = Date.now()
+  const placedSince = (days: number) =>
+    orders.filter((record) => Date.parse(record.placed_at) >= now - days * 86_400_000)
+  const revenueOf = (record: OrderRecord) => payable(record) - record.refunded
+  const periods = [1, 7, 30].map((days) => {
+    const placed = placedSince(days)
+    const paid = placed.filter((record) => record.marks.paid)
+    const revenue = paid.reduce((sum, record) => sum + revenueOf(record), 0)
+    const average = paid.length > 0 ? Math.trunc(revenue / paid.length) : 0
+
+    return {
+      days,
+      by_currency:
+        placed.length === 0
+          ? []
+          : [
+              {
+                currency: 'EUR',
+                placed: placed.length,
+                paid: paid.length,
+                revenue,
+                revenue_formatted: money(revenue),
+                average,
+                average_formatted: money(average),
+              },
+            ],
+    }
+  })
+  const waiting = orders.filter((record) => record.awaiting && !record.marks.cancelled)
+  const today = new Date()
+  const daily = Array.from({ length: 30 }, (_, index) => {
+    const at = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 29 + index)
+    const date = `${at.getFullYear()}-${String(at.getMonth() + 1).padStart(2, '0')}-${String(at.getDate()).padStart(2, '0')}`
+
+    return {
+      date,
+      orders: orders.filter((record) => record.placed_at.slice(0, 10) === date).length,
+    }
+  })
+
+  return {
+    awaiting_payment: waiting.length,
+    payment_failed: waiting.filter((record) => record.failed_at !== null).length,
+    paid_status_waits: orders.filter((record) => record.marks.paid && record.status === 1).length,
+    awaiting_by_currency:
+      waiting.length === 0
+        ? []
+        : [
+            {
+              currency: 'EUR',
+              orders: waiting.length,
+              amount: waiting.reduce((sum, record) => sum + payable(record), 0),
+              amount_formatted: money(waiting.reduce((sum, record) => sum + payable(record), 0)),
+            },
+          ],
+    periods,
+    daily,
+  }
+}
+
+/** An opened row of the list (decision 94), as `OrderCard::glance()` answers it. */
+function glance(record: OrderRecord) {
+  const roots = record.items.filter((one) => one.parent === null)
+  const notes = record.history.filter((one) => one.kind === 'note')
+  const last = notes[notes.length - 1]
+
+  return {
+    id: record.id,
+    items: roots.map((one) => ({
+      id: one.id,
+      name: one.name,
+      options: one.options ?? null,
+      qty: one.qty,
+      total: money(one.price * one.qty - one.discount),
+    })),
+    count: {
+      lines: roots.length,
+      units: roots.reduce((sum, one) => sum + one.qty, 0),
+      refunded_units: roots.reduce((sum, one) => sum + one.refunded_qty, 0),
+    },
+    customer: { name: name(record), phone: record.phone, email: record.email },
+    recipient: record.recipient
+      ? {
+          name: [record.recipient.first_name, record.recipient.last_name].filter(Boolean).join(' '),
+          phone: record.recipient.phone,
+        }
+      : null,
+    comment: record.comment,
+    manager_note: record.manager_note,
+    last_note: last
+      ? {
+          id: notes.length,
+          body: last.note ?? '',
+          source: last.source,
+          author: last.admin ? { id: 1, name: last.admin, avatar: null } : null,
+          created_at: last.at,
+        }
+      : null,
+    blocks: [
+      ...(record.delivery ? [{ key: 'delivery', summary: record.delivery.summary }] : []),
+      ...(record.payment ? [{ key: 'payment', summary: record.payment.summary }] : []),
+    ],
+    milestones: Object.fromEntries(
+      Object.entries(record.marks).map(([key, mark]) => [key, mark?.at ?? null]),
+    ),
   }
 }
 
@@ -737,6 +856,8 @@ function card(record: OrderRecord, locale: string, line: Line) {
           : [],
       ),
       timeline: timeline(record, locale, line),
+      // The note pinned over the feed (decision 91).
+      manager_note: record.manager_note,
       // The notes are the history's lines of the kind `note`, as the server reads them.
       notes: record.history
         .filter((one) => one.kind === 'note')
@@ -770,7 +891,6 @@ function card(record: OrderRecord, locale: string, line: Line) {
       'recipient.last_name': record.recipient?.last_name ?? null,
       'recipient.phone': record.recipient?.phone ?? null,
       comment: record.comment,
-      manager_note: record.manager_note,
     },
   }
 }
@@ -1001,6 +1121,12 @@ export function registerOrders(on: On, fail: Fail, line: Line): void {
     typeof value === 'string' && value.trim() !== '' ? value.trim() : null
 
   on('GET', '/orders', ({ query, locale }) => list(query, locale, line))
+
+  on('GET', '/orders/summary', () => ({ data: summary() }))
+
+  on('GET', '/orders/(\\d+)/glance', ({ params }) => ({
+    data: glance(find(params[0])),
+  }))
 
   on('GET', '/orders/meta', ({ locale }) => ({
     data: {

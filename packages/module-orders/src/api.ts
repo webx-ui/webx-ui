@@ -9,10 +9,12 @@ import type {
   NewOrderMeta,
   NewOrderPreview,
   OrderDetail,
+  OrderGlance,
   OrderQuery,
   OrdersMeta,
   OrdersPage,
   OrdersSettings,
+  OrdersSummaryData,
   ProductChoice,
   PublicStatusInput,
   RefundInput,
@@ -61,6 +63,10 @@ function refundBody(input: RefundInput, dryRun: boolean) {
 export interface OrdersApi {
   list(query?: OrderQuery): Promise<OrdersPage>
   meta(): Promise<OrdersMeta>
+  /** The figures over the list, asked apart so that the rows never wait for them. */
+  summary(): Promise<OrdersSummaryData>
+  /** What an opened row shows. */
+  glance(id: number): Promise<OrderGlance>
   get(id: number): Promise<OrderDetail>
   /** The line of consequences under the choice of a status — nothing is written. */
   previewStatus(id: number, statusId: number): Promise<MoveConsequences>
@@ -128,6 +134,8 @@ export function createOrdersApi(admin: AdminContext): OrdersApi {
       return admin.http.get<OrdersPage>(search.size > 0 ? `${base}?${search}` : base)
     },
     meta: () => admin.http.get<{ data: OrdersMeta }>(`${base}/meta`).then(data),
+    summary: () => admin.http.get<{ data: OrdersSummaryData }>(`${base}/summary`).then(data),
+    glance: (id) => admin.http.get<{ data: OrderGlance }>(`${base}/${id}/glance`).then(data),
     get: (id) => admin.http.get<{ data: OrderDetail }>(`${base}/${id}`).then(data),
     previewStatus: (id, statusId) =>
       admin.http

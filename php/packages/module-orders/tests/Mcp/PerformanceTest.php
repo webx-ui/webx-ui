@@ -49,8 +49,10 @@ final class PerformanceTest extends McpTestCase
                 ['orders_list', ['per_page' => 50], 7],
                 // And the public codes turned into ids.
                 ['orders_list', ['per_page' => 50, 'search' => 'buyer', 'public' => ['shipped']], 8],
-                // The orders by status, both initial statuses, the two sets, the flags, the periods.
-                ['orders_summary', [], 7],
+                // The orders by status, both initial statuses, the two sets, the flags with what awaits
+                // payment by currency, the periods — and the orders by day of the line over the panel's
+                // list (decision 93), one more GROUP BY over `placed_at`.
+                ['orders_summary', [], 8],
                 // The board: both sets with the deleted ones, the orders by status, the initial ones.
                 ['orders_statuses_list', [], 5],
             ] as [$tool, $arguments, $budget]) {

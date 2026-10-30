@@ -10,7 +10,6 @@ use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Validation\Factory as Validation;
 use Illuminate\Events\Dispatcher as EventDispatcher;
-use Illuminate\Support\Carbon;
 use WebxUi\Admin\Visitors\Visitors;
 use WebxUi\Cart\Money;
 use WebxUi\Localization\Locales;
@@ -38,11 +37,11 @@ use WebxUi\Orders\Notifications\OrderChannels;
 use WebxUi\Orders\OrderDetails;
 use WebxUi\Orders\OrderRefused;
 use WebxUi\Orders\Orders;
-use WebxUi\Orders\OrderStatuses;
 use WebxUi\Orders\Panel\Consequences;
 use WebxUi\Orders\Panel\OrderCard;
 use WebxUi\Orders\Panel\OrderList;
 use WebxUi\Orders\Panel\OrdersModule;
+use WebxUi\Orders\Panel\OrdersSummary;
 use WebxUi\Orders\Panel\StatusBatch;
 use WebxUi\Orders\Panel\StatusChoices;
 use WebxUi\Orders\RefundRefused;
@@ -80,7 +79,6 @@ final readonly class OrdersTools
 
     public function __construct(
         private Orders $orders,
-        private OrderStatuses $statuses,
         private OrderList $list,
         private OrderCard $card,
         private Consequences $consequences,
@@ -89,6 +87,7 @@ final readonly class OrdersTools
         private Validation $validation,
         private Dispatcher $events,
         private OrderChannels $channels,
+        private OrdersSummary $summary,
     ) {}
 
     /**
@@ -163,7 +162,9 @@ final readonly class OrdersTools
                 'The orders at a glance: how many stand in each public status and in each internal one, how many await '
                 .'payment, how many have a failed payment, how many are paid while still standing in a status new orders '
                 .'come into («paid, the status waits»), and for the last 1, 7 and 30 days, by currency: orders placed, paid, '
-                .'and the revenue — what was paid less what was given back.',
+                .'and the revenue — what was paid less what was given back — with the average of a paid order; what awaits '
+                .'payment now by currency (`awaiting_by_currency`: orders and the sum); `daily` — orders placed each of the last '
+                .'30 days, today last. The panel\'s figures over the list are this same count.',
                 fn (): array => $this->summary(),
                 permission: self::READ,
             ),
@@ -466,82 +467,13 @@ final readonly class OrdersTools
     }
 
     /**
-     * Counted by `GROUP BY` and conditional sums over the indexed columns — no order is loaded.
+     * The count the panel's figures over the list show too — {@see OrdersSummary}.
      *
      * @return array<string, mixed>
      */
     private function summary(): array
     {
-        $locale = app()->getLocale();
-        $counts = $this->statuses->counts();
-        $initial = $this->statuses->initial();
-        $public = [];
-        $internal = [];
-
-        foreach ((new StatusChoices)->grouped($locale) as $group) {
-            $inGroup = 0;
-
-            foreach ($group['statuses'] as $status) {
-                $orders = $counts[$status['id']] ?? 0;
-                $inGroup += $orders;
-
-                if ($orders > 0 || ! $status['deleted']) {
-                    $internal[] = ['id' => $status['id'], 'name' => $status['name'], 'public' => $group['code'], 'deleted' => $status['deleted'], 'orders' => $orders];
-                }
-            }
-
-            $public[] = ['code' => $group['code'], 'name' => $group['name'], 'deleted' => $group['deleted'], 'orders' => $inGroup];
-        }
-
-        $waiting = $initial === [] ? '0 = 1' : 'status_id in ('.implode(',', array_fill(0, count($initial), '?')).')';
-        $flags = Order::query()->toBase()->selectRaw(
-            'sum(case when awaiting_payment = ? and cancelled_at is null then 1 else 0 end) as awaiting,'
-            .' sum(case when awaiting_payment = ? and cancelled_at is null and payment_failed_at is not null then 1 else 0 end) as failed,'
-            ." sum(case when paid_at is not null and cancelled_at is null and {$waiting} then 1 else 0 end) as paid_waiting",
-            [true, true, ...$initial],
-        )->first();
-
-        $now = Carbon::now();
-        $since = [1 => $now->copy()->subDay(), 7 => $now->copy()->subDays(7), 30 => $now->copy()->subDays(30)];
-        $select = ['currency'];
-        $bindings = [];
-
-        foreach ($since as $days => $from) {
-            $select[] = "sum(case when placed_at >= ? then 1 else 0 end) as placed_{$days}";
-            $select[] = "sum(case when placed_at >= ? and paid_at is not null then 1 else 0 end) as paid_{$days}";
-            $select[] = "sum(case when placed_at >= ? and paid_at is not null then payable - refunded_total else 0 end) as revenue_{$days}";
-            array_push($bindings, $from, $from, $from);
-        }
-
-        $rows = Order::query()->toBase()
-            ->selectRaw(implode(', ', $select), $bindings)
-            ->where('placed_at', '>=', $since[30])
-            ->groupBy('currency')
-            ->orderBy('currency')
-            ->get();
-
-        $periods = [];
-
-        foreach (array_keys($since) as $days) {
-            $periods[] = [
-                'days' => $days,
-                'by_currency' => $rows->map(fn (object $row): array => [
-                    'currency' => (string) $row->currency,
-                    'placed' => (int) $row->{"placed_{$days}"},
-                    'paid' => (int) $row->{"paid_{$days}"},
-                    ...$this->amount('revenue', (int) $row->{"revenue_{$days}"}, (string) $row->currency),
-                ])->values()->all(),
-            ];
-        }
-
-        return [
-            'public' => $public,
-            'internal' => $internal,
-            'awaiting_payment' => (int) ($flags->awaiting ?? 0),
-            'payment_failed' => (int) ($flags->failed ?? 0),
-            'paid_status_waits' => (int) ($flags->paid_waiting ?? 0),
-            'periods' => $periods,
-        ];
+        return $this->summary->describe(app()->getLocale());
     }
 
     /**
