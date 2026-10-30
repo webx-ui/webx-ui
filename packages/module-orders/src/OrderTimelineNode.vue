@@ -249,23 +249,28 @@ function details(line: TimelineLine): string[] {
   list-style: none;
 }
 
+/* On a narrow card the status and «Send again» go under the text rather than squeeze it. */
 .wx-orders-deliveries__row {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--wx-space-12);
+  gap: var(--wx-space-8) var(--wx-space-12);
 }
 
 .wx-orders-deliveries__text {
   display: flex;
+  flex: 1 1 12rem;
   flex-direction: column;
   min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 /* The status over «Send again», both at the end of the row. */
 .wx-orders-deliveries__side {
   display: flex;
-  flex: none;
+  flex: 0 1 auto;
+  margin-inline-start: auto;
   flex-direction: column;
   align-items: flex-end;
   gap: var(--wx-space-4);
