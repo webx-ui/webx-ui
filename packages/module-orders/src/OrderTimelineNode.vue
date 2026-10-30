@@ -145,9 +145,11 @@ function details(line: TimelineLine): string[] {
             v-if="reason(line)"
             class="wx-orders-timeline__reason"
             :class="
-              line.kind === 'refund' || line.kind === 'refund_reversed'
-                ? 'wx-orders-timeline__reason--warning'
-                : 'wx-orders-timeline__reason--danger'
+              line.kind === 'refund' && line.reversed
+                ? 'wx-orders-timeline__reason--muted'
+                : line.kind === 'refund' || line.kind === 'refund_reversed'
+                  ? 'wx-orders-timeline__reason--warning'
+                  : 'wx-orders-timeline__reason--danger'
             "
             data-test="timeline-reason"
           >
@@ -263,6 +265,12 @@ function details(line: TimelineLine): string[] {
 
 .wx-orders-timeline__action {
   margin-block-start: var(--wx-space-4);
+}
+
+/* The reason of a record reversed later: it no longer stands for money given back. */
+.wx-orders-timeline__reason--muted {
+  --wx-orders-timeline-edge: var(--wx-border-strong);
+  --wx-orders-timeline-tint: var(--wx-bg-subtle);
 }
 
 .wx-orders-timeline__label {
