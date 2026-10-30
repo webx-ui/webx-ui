@@ -1,9 +1,0 @@
----
-'@webx-ui/php': minor
----
-
-module-orders: the look of the checkout. The page is the composition `checkout.page` (nodes `checkout`, `checkout.main`, `checkout.steps`, `checkout.aside`, `checkout.summary`, `checkout.summary.parts`, `checkout.trust`, `checkout.sticky`) a theme patches by id — moves the columns, fills the slot `checkout.trust`, picks the view of the steps with `data-steps` (`open` in the package, `collapse` — a step done folds into its summary with «Change»); theme-default folds them. The checkout and «Thank you» stand in the theme's `layout.minimal` (handles `checkout.page`, `checkout.thanks`) unless `webx-orders.checkout.layout` names another. `resources/theme/checkout.css` on site tokens, laid out by its container: narrow — the column under the steps and «To pay · Confirm» stuck to the bottom. `webx/orders/checkout.js`: «Change», the column redrawn after a step, a slot and a 409, the payment step after delivery, the sign-in in the dialog taken over without a reload (a new key of the confirmation), `webx:checkout:placed` on «Thank you». With module-users: «Sign in» and «Sign out» in the step of the contacts, «Save your orders in an account» on «Thank you» for a guest. The registry `CheckoutSummaryParts` (`SummaryPart`) for the parts of the column a neighbour adds.
-
-module-users: `<x-webx-users::sign-in-button email="…">` — the dialog's view and the page of the registration (`?email=`) start with that address; `POST /account/sign-out` comes back to a page of the site given as `back`.
-
-themes: in `webx:theme:check` a packaged theme's patch of a composition no layer gives a base for — the page of a module the site does not have, as theme-default's `checkout.page` — is a note, not a finding (a local theme's stays a finding); compositions: `Source::$packaged`.
