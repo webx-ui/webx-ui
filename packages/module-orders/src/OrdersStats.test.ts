@@ -25,6 +25,8 @@ const summary: OrdersSummaryData = {
   awaiting_payment: 3,
   payment_failed: 1,
   paid_status_waits: 0,
+  awaiting_topup: 0,
+  topup_by_currency: [],
   awaiting_by_currency: [
     { currency: 'EUR', orders: 2, amount: 9998, amount_formatted: '€99.98' },
     { currency: 'USD', orders: 1, amount: 1000, amount_formatted: '$10.00' },
@@ -86,6 +88,25 @@ describe('WxOrdersStats', () => {
     expect(wrapper.findAll('.wx-orders-stats__bars rect')).toHaveLength(30)
   })
 
+  it('counts the paid orders waiting for a top-up, and says nothing of none', async () => {
+    const { wrapper } = mountStats(
+      Promise.resolve({
+        ...summary,
+        awaiting_topup: 2,
+        topup_by_currency: [
+          { currency: 'EUR', orders: 2, amount: 2500, amount_formatted: '€25.00' },
+        ],
+      }),
+    )
+    await flushPromises()
+
+    expect(wrapper.find('[data-test="stats-topup"]').text()).toMatch(/2.*€25\.00/)
+
+    const quiet = mountStats(Promise.resolve(summary))
+    await flushPromises()
+    expect(quiet.wrapper.find('[data-test="stats-topup"]').exists()).toBe(false)
+  })
+
   it('switches the period, a period without orders showing a dash', async () => {
     const { wrapper } = mountStats(Promise.resolve(summary))
     await flushPromises()
@@ -133,6 +154,10 @@ const glance: OrderGlance = {
     tenders: null,
     payable: '€99.98',
     refunded: null,
+    paid: null,
+    paid_first: null,
+    paid_topups: null,
+    balance: null,
   },
   paid: true,
   awaiting_payment: false,

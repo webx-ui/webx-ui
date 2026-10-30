@@ -155,7 +155,9 @@ const day = (value: DatePickerModelValue): string | null =>
       <wx-form-item
         :label="t('panel.payment-amount')"
         :help="
-          due > 0 ? t('panel.payment-due', { amount: order.totals.balance?.amount }) : undefined
+          due > 0
+            ? t('panel.payment-due', { amount: order.totals.balance?.amount ?? '' })
+            : undefined
         "
         :error="errorOf('amount')"
       >

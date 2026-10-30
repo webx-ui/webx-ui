@@ -39,6 +39,7 @@ function card(data: OrderCardData, kept = true) {
         busy: ref(false),
         changeStatus: () => Promise.resolve(),
         mark: () => Promise.resolve(),
+        recordPayment: () => Promise.resolve(),
         cancel: () => Promise.resolve(),
         refund: () => Promise.resolve(),
         reverseRefund: () => Promise.resolve(),
