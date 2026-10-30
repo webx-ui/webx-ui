@@ -86,6 +86,8 @@ const average = computed(() =>
 )
 const awaiting = computed(() => summary.value?.awaiting_by_currency ?? [])
 const awaitingCount = computed(() => awaiting.value.reduce((sum, one) => sum + one.orders, 0))
+/** Paid orders still owing a top-up after an edit (§42.4): a second line of «Awaiting payment». */
+const topups = computed(() => summary.value?.topup_by_currency ?? [])
 
 /* The line of the last thirty days: a bar a day, as tall as the busiest day allows. */
 const daily = computed(() => summary.value?.daily ?? [])
@@ -187,6 +189,17 @@ const chartLabel = computed(
               {{ one.amount_formatted }}
             </wx-text>
             <wx-text size="sm" tone="muted">{{ t('panel.stats-awaiting-help') }}</wx-text>
+            <wx-text
+              v-if="(summary?.awaiting_topup ?? 0) > 0"
+              size="sm"
+              tone="warning"
+              data-test="stats-topup"
+            >
+              {{ t('panel.stats-topup', { count: summary?.awaiting_topup ?? 0 }) }}
+              <template v-for="one in topups" :key="one.currency">
+                · {{ one.amount_formatted }}
+              </template>
+            </wx-text>
           </wx-statistic>
         </div>
 

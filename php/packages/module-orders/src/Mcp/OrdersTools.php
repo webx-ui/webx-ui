@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Orders\Mcp;
 
+use Carbon\CarbonImmutable;
 use Closure;
 use Illuminate\Container\Container;
 use Illuminate\Contracts\Auth\Authenticatable;
@@ -17,6 +18,7 @@ use WebxUi\Mcp\Arguments;
 use WebxUi\Mcp\Exceptions\ToolFailure;
 use WebxUi\Mcp\Rehearsal;
 use WebxUi\Mcp\Tool;
+use WebxUi\Orders\Balance;
 use WebxUi\Orders\CartNotOrderable;
 use WebxUi\Orders\Checkout\CheckoutPreview;
 use WebxUi\Orders\Contact;
@@ -38,6 +40,8 @@ use WebxUi\Orders\NotifyRefused;
 use WebxUi\Orders\OrderDetails;
 use WebxUi\Orders\OrderRefused;
 use WebxUi\Orders\Orders;
+use WebxUi\Orders\PaymentRecord;
+use WebxUi\Orders\PaymentRefused;
 use WebxUi\Orders\Panel\Consequences;
 use WebxUi\Orders\Panel\OrderCard;
 use WebxUi\Orders\Panel\OrderList;
@@ -110,7 +114,8 @@ final readonly class OrdersTools
                 'Orders, newest first, twenty a page: number, when placed, the buyer (name, phone, e-mail — personal data, '
                 .'which orders.view opens), the first line and how many more, total and payable in minor units with '
                 .'`*_formatted`, the internal status with its public one, the milestones and the flags «awaiting payment» '
-                .'and «payment failed», the delivery and payment lines. `counts` — how many each view holds under the same '
+                .'and «payment failed», the delivery and payment lines, `balance` (> 0 owed, < 0 to give back) and `balance_kind` '
+                .'(topup — paid and owing more, unpaid, over, null — settled). `counts` — how many each view holds under the same '
                 .'filters. Filters as in the panel; `search` finds a number, a phone in any spelling, an e-mail, a name in '
                 .'either order.',
                 fn (array $arguments): array => $this->list($arguments),
@@ -125,6 +130,7 @@ final readonly class OrdersTools
                     'refunded' => $flag('With a refund recorded or without.'),
                     'awaiting' => $flag('Awaiting payment (and not cancelled) or not.'),
                     'failed' => $flag('A payment try failed or not.'),
+                    'balance' => ['type' => 'string', 'enum' => OrderList::BALANCES, 'description' => 'Payment differs: due — paid and still owing a top-up (after an edit); over — paid more than it costs, money to give back.'],
                     'visitor' => ['type' => 'string', 'enum' => ['guest', 'visitor'], 'description' => 'Placed by a guest or by a signed-in visitor.'],
                     'delivery' => ['type' => 'string', 'description' => 'The delivery method as the block keeps it.'],
                     'payment' => ['type' => 'string', 'description' => 'The payment method as the block keeps it.'],
@@ -143,7 +149,8 @@ final readonly class OrdersTools
                 'One order in full: the buyer and the recipient (personal data), the lines as a tree (a set\'s parts under it) '
                 .'with their discounts and what was given back of them, the adjustments, tenders and benefits, the totals, the '
                 .'delivery and payment blocks, the internal and public status, every milestone with when, by whom and its '
-                .'reference, and the refunds. Money in minor units with `*_formatted`.',
+                .'reference, and the refunds. `balance`: what came in (`paid_total`), what went back, what is still `due` '
+                .'or `over` (to give back), `tenders_over`, and `kind` (topup, unpaid, over, null). Money in minor units with `*_formatted`.',
                 fn (array $arguments): array => $this->get($arguments),
                 ['properties' => ['order' => $order], 'required' => ['order']],
                 permission: self::READ,
@@ -167,7 +174,9 @@ final readonly class OrdersTools
                 .'come into («paid, the status waits»), and for calendar days in the site\'s timezone — `days` 1 is today from '
                 .'midnight, 7 and 30 are today and the 6 or 29 days before it — by currency: orders placed, paid, '
                 .'and the revenue — what was paid less what was given back — with the average of a paid order; what awaits '
-                .'payment now by currency (`awaiting_by_currency`: orders and the sum); `daily` — orders placed each of the last '
+                .'payment now by currency (`awaiting_by_currency`: orders and the sum); paid orders still owing a top-up after an '
+                .'edit (`awaiting_topup`, and `topup_by_currency`: orders and the sum); the revenue counts the money that came in, '
+                .'top-ups too; `daily` — orders placed each of the last '
                 .'30 days, today last. The panel\'s figures over the list are this same count.',
                 fn (): array => $this->summary(),
                 permission: self::READ,
@@ -203,6 +212,24 @@ final readonly class OrdersTools
                     'reference' => ['type' => 'string', 'description' => 'The bank\'s, the ledger\'s or the carrier\'s number of it.'],
                     'note' => ['type' => 'string'],
                 ], 'required' => ['order', 'milestone']],
+                permission: OrdersModule::MANAGE,
+            ),
+
+            Tool::mutating(
+                'payment_record',
+                'Record money that came in for an order that is paid already — a top-up after its lines were changed, by a '
+                .'bank transfer or at the desk. `amount` in minor units, the operation\'s `reference`, the day (`at`, '
+                .'YYYY-MM-DD; today by default), a `note`. The milestone «paid» stays one; the balance goes down, and more than is '
+                .'due shows as money to give back. An order not paid yet is refused — its first payment is orders_mark; a '
+                .'cancelled one too. `dry_run` answers the balance before and after it, or why it is refused.',
+                fn (array $arguments): array => $this->payment($arguments),
+                ['properties' => [
+                    'order' => $order,
+                    'amount' => ['type' => 'integer', 'description' => 'Money in, minor units; orders_get `balance.due` is what is owed.'],
+                    'reference' => ['type' => 'string', 'description' => 'The bank\'s or the ledger\'s number of it.'],
+                    'at' => ['type' => 'string', 'description' => 'When the money came, YYYY-MM-DD; today by default.'],
+                    'note' => ['type' => 'string'],
+                ], 'required' => ['order', 'amount']],
                 permission: OrdersModule::MANAGE,
             ),
 
@@ -458,8 +485,9 @@ final readonly class OrdersTools
                 ...$money('tenders_total', $order->tenders_total),
                 ...$money('payable', $order->payable),
                 ...$money('refunded_total', $order->refunded_total),
-                ...$money('refundable', max(0, $order->payable - $order->refunded_total)),
+                ...$money('refundable', Balance::refundable($order)),
             ],
+            'balance' => Consequences::balance(Balance::of($order), $this->money),
             'blocks' => [
                 'delivery' => $order->delivery === null ? null : ['summary' => $this->list->summary('delivery', $order->delivery, $locale), 'value' => $order->delivery],
                 'payment' => $order->payment === null ? null : ['summary' => $this->list->summary('payment', $order->payment, $locale), 'value' => $order->payment],
@@ -498,7 +526,7 @@ final readonly class OrdersTools
             'number' => $order->number,
             // A refund's money as every amount here is: an integer and the string beside it.
             'timeline' => array_map(static function (array $line): array {
-                if (in_array($line['kind'], ['refund', 'refund_reversed'], true) && array_key_exists('amount_minor', $line)) {
+                if (in_array($line['kind'], ['refund', 'refund_reversed', 'payment'], true) && array_key_exists('amount_minor', $line)) {
                     $line['amount_formatted'] = $line['amount'];
                     $line['amount'] = $line['amount_minor'];
                     unset($line['amount_minor']);
@@ -622,6 +650,63 @@ final readonly class OrdersTools
             'note' => $mark->note,
             'dry_run' => false,
         ];
+    }
+
+    /**
+     * A top-up (§36.3) — the dialog's answer, {@see Consequences::payment()}.
+     *
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function payment(array $arguments): array
+    {
+        $order = $this->order($arguments['order'] ?? null);
+        $amount = $arguments['amount'] ?? null;
+
+        if (! is_int($amount) || $amount < 1) {
+            throw new ToolFailure('`amount` is a whole number of minor units, above zero.');
+        }
+
+        $at = null;
+
+        if (isset($arguments['at'])) {
+            $day = (string) $arguments['at'];
+
+            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $day) !== 1) {
+                throw new ToolFailure('`at` is a day, YYYY-MM-DD.');
+            }
+
+            $at = CarbonImmutable::parse($day)->setTimeFrom(CarbonImmutable::now());
+        }
+
+        $record = fn (bool $dryRun): PaymentRecord => $this->orders->recordPayment(
+            $order,
+            $amount,
+            self::SOURCE,
+            isset($arguments['reference']) ? (string) $arguments['reference'] : null,
+            $at,
+            isset($arguments['note']) ? (string) $arguments['note'] : null,
+            $dryRun,
+        );
+
+        try {
+            $result = $record($this->dryRun($arguments));
+        } catch (PaymentRefused $refused) {
+            throw new ToolFailure($this->paymentRefusal($order, $refused->reason));
+        }
+
+        $answer = ['number' => $order->number, ...$this->consequences->payment($result, $this->money)];
+
+        if ($result->refusal !== null) {
+            $answer['message'] = $this->paymentRefusal($order, $result->refusal);
+        }
+
+        return $answer;
+    }
+
+    private function paymentRefusal(Order $order, string $reason): string
+    {
+        return $this->refusal($order, $reason).($reason === PaymentRecord::NOT_PAID ? ' Use orders_mark with «paid» for its first payment.' : '');
     }
 
     /**
@@ -997,6 +1082,8 @@ final readonly class OrdersTools
             'received_at' => $row['received_at'],
             'cancelled_at' => $row['cancelled_at'],
             'refunded' => $row['refunded'],
+            ...$this->amount('balance', $order->balance, $order->currency),
+            'balance_kind' => Balance::of($order)->kind(),
             'delivery' => $row['delivery'],
             'payment' => $row['payment'],
         ];

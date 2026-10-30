@@ -11,6 +11,8 @@ import type { MilestoneKey } from './types'
  * lines and units, the totals as the buyer was charged, what was given back and why, and the
  * dates of the milestones — the reason of a cancellation under its date. A refund recorded by
  * mistake is reversed from its plate (decision 98) and stays there struck through, with why.
+ * What came in, the top-ups apart, and the balance when it says more than «to pay» (§42.4): a
+ * plate «Top-up due» with «Record a top-up», or «Give back».
  * Money comes written by the server in the currency of the order; nothing is counted here.
  */
 defineOptions({ name: 'WxOrdersSummary' })
@@ -51,6 +53,19 @@ const count = computed(() => {
 })
 
 const reversible = computed(() => Boolean(order.value?.actions.refund_reverse))
+
+/** «120.00 + 15.00» once a top-up came; the whole otherwise. */
+const paid = computed(() => {
+  const totals = order.value?.totals
+
+  if (!totals?.paid) return null
+
+  return totals.paid_first && totals.paid_topups
+    ? `${totals.paid_first} + ${totals.paid_topups}`
+    : totals.paid
+})
+
+const balance = computed(() => order.value?.totals.balance ?? null)
 
 /**
  * The refunds that say something — a reason, the number of the operation, a reversal — or that
@@ -155,6 +170,38 @@ const dates = computed(() =>
           </wx-button>
         </dd>
       </template>
+      <template v-if="paid">
+        <dt>{{ t('panel.summary-paid') }}</dt>
+        <dd data-test="summary-paid">{{ paid }}</dd>
+      </template>
+      <dd
+        v-if="balance"
+        class="wx-orders-summary__note wx-orders-summary__balance"
+        :class="
+          balance.kind === 'over'
+            ? 'wx-orders-summary__note--danger'
+            : 'wx-orders-summary__note--warning'
+        "
+        data-test="summary-balance"
+      >
+        <span class="wx-orders-summary__balance-line">
+          <span class="wx-orders-summary__balance-label">
+            {{ t(balance.kind === 'over' ? 'panel.balance-over' : 'panel.balance-topup') }}
+          </span>
+          <span class="wx-orders-summary__balance-amount">{{ balance.amount }}</span>
+        </span>
+        <wx-button
+          v-if="balance.kind === 'topup' && order.actions.payment"
+          class="wx-orders-summary__reverse"
+          size="sm"
+          variant="text"
+          :disabled="card?.busy.value"
+          data-test="record-payment"
+          @click="card?.recordPayment()"
+        >
+          {{ t('panel.payment-record') }}
+        </wx-button>
+      </dd>
     </dl>
 
     <wx-divider />
@@ -268,6 +315,24 @@ const dates = computed(() =>
 .wx-orders-summary__note.is-reversed .wx-orders-summary__struck {
   color: var(--wx-text-muted);
   text-decoration: line-through;
+}
+
+.wx-orders-summary__balance-line {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--wx-space-4) var(--wx-space-12);
+}
+
+.wx-orders-summary__balance-label,
+.wx-orders-summary__balance-amount {
+  color: var(--wx-text-strong);
+  font-weight: var(--wx-font-weight-semibold);
+}
+
+.wx-orders-summary__balance-amount {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .wx-orders-summary__reverse {

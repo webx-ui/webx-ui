@@ -44,6 +44,7 @@ import { toneOf } from './tones'
 import type {
   MassCancelAnswer,
   MassStatusAnswer,
+  OrderBalanceFilter,
   OrderGlance,
   OrderQuery,
   OrderRow,
@@ -161,6 +162,10 @@ const paid = ref<boolean | null>(flag('paid'))
 const received = ref<boolean | null>(flag('received'))
 const cancelled = ref<boolean | null>(flag('cancelled'))
 const refunded = ref<boolean | null>(flag('refunded'))
+/** «Payment differs» (§42.4): waiting for a top-up, or paid over. */
+const balance = ref<OrderBalanceFilter | null>(
+  ((value) => (value === 'due' || value === 'over' ? value : null))(text('balance')),
+)
 const visitor = ref<string | null>(text('visitor'))
 const delivery = ref<string | null>(text('delivery'))
 const payment = ref<string | null>(text('payment'))
@@ -205,6 +210,19 @@ const publicOptions = computed(() =>
     label: group.deleted ? `${group.name} (${t('panel.deleted')})` : group.name,
   })),
 )
+
+const balanceOptions = computed(() => [
+  { value: 'due', label: t('panel.balance-filter-due') },
+  { value: 'over', label: t('panel.balance-filter-over') },
+])
+
+/** The badge under the total: «Top-up 15.00», «Give back 20.00». */
+const balanceBadge = (row: OrderRow): string | null =>
+  row.balance
+    ? t(row.balance.kind === 'over' ? 'panel.badge-over' : 'panel.badge-topup', {
+        amount: row.balance.amount,
+      })
+    : null
 
 const visitorOptions = computed(() => [
   { value: 'guest', label: t('panel.guest') },
@@ -296,6 +314,14 @@ const applied = computed<AppliedFilter[]>(() => {
     }
   }
 
+  if (balance.value !== null) {
+    chip(
+      'balance',
+      `${t('panel.filter-balance')}: ${labelOf(balanceOptions.value, balance.value)}`,
+      () => (balance.value = null),
+    )
+  }
+
   if (visitor.value !== null) {
     chip('visitor', labelOf(visitorOptions.value, visitor.value), () => (visitor.value = null))
   }
@@ -334,6 +360,7 @@ function clearFilters(): void {
   received.value = null
   cancelled.value = null
   refunded.value = null
+  balance.value = null
   visitor.value = null
   delivery.value = null
   payment.value = null
@@ -352,6 +379,7 @@ function query(state?: TableState): OrderQuery {
     received: received.value ?? undefined,
     cancelled: cancelled.value ?? undefined,
     refunded: refunded.value ?? undefined,
+    balance: balance.value ?? undefined,
     visitor: (visitor.value as OrderQuery['visitor']) ?? undefined,
     delivery: delivery.value ?? undefined,
     payment: payment.value ?? undefined,
@@ -398,6 +426,7 @@ function remember(): void {
   for (const key of [
     'status',
     'public',
+    'balance',
     'visitor',
     'delivery',
     'payment',
@@ -439,6 +468,7 @@ watch(
     received,
     cancelled,
     refunded,
+    balance,
     visitor,
     delivery,
     payment,
@@ -681,6 +711,15 @@ onMounted(async () => {
               @update:model-value="filter.set"
             />
           </wx-form-item>
+          <wx-form-item :label="t('panel.filter-balance')">
+            <wx-select
+              v-model="balance"
+              :options="balanceOptions"
+              :placeholder="t('panel.any')"
+              clearable
+              size="sm"
+            />
+          </wx-form-item>
           <wx-form-item v-if="meta.visitors" :label="t('panel.filter-visitor')">
             <wx-select
               v-model="visitor"
@@ -778,6 +817,14 @@ onMounted(async () => {
             <span v-if="row.payable !== row.total" class="wx-orders__text wx-orders__muted">
               {{ t('panel.payable-short', { amount: row.payable }) }}
             </span>
+            <wx-badge
+              v-if="balanceBadge(row)"
+              :type="row.balance?.kind === 'over' ? 'danger' : 'warning'"
+              size="sm"
+              data-test="row-balance"
+            >
+              {{ balanceBadge(row) }}
+            </wx-badge>
           </div>
         </template>
 
@@ -844,6 +891,13 @@ onMounted(async () => {
                 {{ sourceMark(row.source) }}
               </wx-badge>
               <wx-text size="sm" weight="medium">{{ row.total }}</wx-text>
+              <wx-badge
+                v-if="balanceBadge(row)"
+                :type="row.balance?.kind === 'over' ? 'danger' : 'warning'"
+                size="sm"
+              >
+                {{ balanceBadge(row) }}
+              </wx-badge>
               <wx-text size="sm" tone="muted">{{ numberOf(row) }}</wx-text>
               <wx-date :value="row.placed_at" compact size="sm" />
               <!-- A phone in the hand calls the buyer from here; the rest of the card opens the order. -->

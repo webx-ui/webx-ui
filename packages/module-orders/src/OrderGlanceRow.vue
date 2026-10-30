@@ -73,6 +73,16 @@ const count = computed(() => {
     : line
 })
 
+/** What came in — «120.00 + 15.00» once a top-up came (§42.4); the sum to pay before a balance existed. */
+const paid = computed(() => {
+  const totals = props.glance?.totals
+
+  if (!totals) return ''
+  if (totals.paid_first && totals.paid_topups) return `${totals.paid_first} + ${totals.paid_topups}`
+
+  return totals.paid ?? totals.payable
+})
+
 /** The mark under the totals, as the card's «Summary» puts it under «Placed». */
 const source = computed(() =>
   props.glance?.source === 'quick'
@@ -121,7 +131,7 @@ const source = computed(() =>
           </template>
           <template v-if="glance.paid">
             <dt>{{ t('module.milestones.paid') }}</dt>
-            <dd class="is-success">{{ glance.totals.payable }}</dd>
+            <dd class="is-success">{{ paid }}</dd>
           </template>
           <template v-else-if="glance.awaiting_payment">
             <dt>{{ t('module.milestones.awaiting_payment') }}</dt>
@@ -130,6 +140,20 @@ const source = computed(() =>
           <template v-if="glance.totals.refunded">
             <dt>{{ t('panel.refunded') }}</dt>
             <dd class="is-warning">−{{ glance.totals.refunded }}</dd>
+          </template>
+          <template v-if="glance.totals.balance">
+            <dt class="is-strong">
+              {{
+                t(glance.totals.balance.kind === 'over' ? 'panel.balance-over' : 'panel.balance-topup')
+              }}
+            </dt>
+            <dd
+              :class="glance.totals.balance.kind === 'over' ? 'is-danger' : 'is-warning'"
+              class="is-strong"
+              data-test="glance-balance"
+            >
+              {{ glance.totals.balance.amount }}
+            </dd>
           </template>
         </dl>
         <span v-if="source" class="wx-orders-glance__source">
@@ -321,6 +345,10 @@ const source = computed(() =>
 
 .wx-orders-glance__totals dd.is-warning {
   color: var(--wx-color-warning);
+}
+
+.wx-orders-glance__totals dd.is-danger {
+  color: var(--wx-color-danger);
 }
 
 .wx-orders-glance__source {

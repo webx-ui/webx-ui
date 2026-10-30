@@ -46,6 +46,7 @@ Route::prefix((string) config('webx-admin.api_path').'/orders')
             Route::post('cancel', [MassController::class, 'cancel'])->name('mass.cancel');
             Route::post('{order}/status', [OrderController::class, 'status'])->whereNumber('order')->name('status');
             Route::post('{order}/milestones', [OrderController::class, 'mark'])->whereNumber('order')->name('mark');
+            Route::post('{order}/payments', [OrderController::class, 'payment'])->whereNumber('order')->name('payment');
             Route::post('{order}/cancel', [OrderController::class, 'cancel'])->whereNumber('order')->name('cancel');
             Route::post('{order}/notes', [OrderController::class, 'note'])->whereNumber('order')->name('note');
             Route::put('{order}/details', [OrderController::class, 'details'])->whereNumber('order')->name('details');

@@ -30,6 +30,7 @@ import { provideOrderCard } from './card'
 import CancelDialog from './CancelDialog.vue'
 import { NAMESPACE, useOrdersMessages } from './i18n'
 import MarkDialog from './MarkDialog.vue'
+import PaymentDialog from './PaymentDialog.vue'
 import NotifyDialog from './NotifyDialog.vue'
 import RefundDialog from './RefundDialog.vue'
 import ReverseRefundDialog from './ReverseRefundDialog.vue'
@@ -99,6 +100,7 @@ const statusDialog = createModal<
 const markDialog = createModal<OrderDetail, { orderId: number; milestone: 'paid' | 'received' }>(
   MarkDialog,
 )
+const paymentDialog = createModal<OrderDetail, { order: OrderCardData }>(PaymentDialog)
 const cancelDialog = createModal<OrderDetail, { orderId: number; number: string | null }>(
   CancelDialog,
 )
@@ -171,6 +173,14 @@ async function mark(milestone: 'paid' | 'received'): Promise<void> {
     markDialog({ orderId: open.id, milestone }),
     t(milestone === 'paid' ? 'panel.marked-paid' : 'panel.marked-received'),
   )
+}
+
+async function recordPayment(): Promise<void> {
+  const open = order.value
+
+  if (!open) return
+
+  await after(paymentDialog({ order: open }), t('panel.payment-toast'))
 }
 
 async function cancel(): Promise<void> {
@@ -371,6 +381,7 @@ provideOrderCard({
   busy,
   changeStatus,
   mark,
+  recordPayment,
   cancel,
   refund,
   reverseRefund,

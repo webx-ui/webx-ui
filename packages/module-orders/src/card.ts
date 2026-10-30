@@ -11,6 +11,8 @@ export interface OrderCardContext {
   busy: Ref<boolean>
   changeStatus(): Promise<void>
   mark(milestone: 'paid' | 'received'): Promise<void>
+  /** Record a top-up of a paid order (§36.3), the amount owed offered. */
+  recordPayment(): Promise<void>
   cancel(): Promise<void>
   refund(): Promise<void>
   /** Reverse a refund record made by mistake (decision 98), then offer the right one. */

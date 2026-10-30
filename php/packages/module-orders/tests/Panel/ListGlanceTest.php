@@ -74,7 +74,7 @@ final class ListGlanceTest extends PanelTestCase
         // The totals as the card's «Summary» has them, from the order already in hand.
         $card = $this->getJson($this->api($order->id))->assertOk()->json('data.order');
         $this->assertSame(array_intersect_key($card['totals'], $glance['totals']), $glance['totals']);
-        $this->assertSame(['subtotal', 'adjustments', 'total', 'tenders', 'payable', 'refunded'], array_keys($glance['totals']));
+        $this->assertSame(['subtotal', 'adjustments', 'total', 'tenders', 'payable', 'refunded', 'paid', 'paid_first', 'paid_topups', 'balance'], array_keys($glance['totals']));
         $this->assertSame([true, false, 'checkout'], [$glance['paid'], $glance['awaiting_payment'], $glance['source']]);
         $this->assertNotSame($manager->id, $glance['last_note']['author']['id'] ?? null);
 

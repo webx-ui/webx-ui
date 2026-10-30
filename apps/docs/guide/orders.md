@@ -114,6 +114,32 @@ A refusal is an exception with the reason in words: `StatusMoveRefused`, `Refund
   right one is then recorded as any refund; the panel offers it as soon as the record is reversed.
   `OrderRefundReversed` tells the wallet to take its tenders back.
 
+### The balance: to pay more or to give back
+
+An order keeps the money that came in for it, `paid_total` — the payment and any top-up after it —
+beside what was given back. `$orders->balance($order)` answers the balance (`Balance`): what is
+still `due`, what is `over` and is the buyer's to get back, and `kind()` in one word — `unpaid`
+(nothing came in yet, the ordinary «to pay»), `topup` (paid, and owes more), `over`, or null when
+settled. A refund never makes an order owe: it gives back money that came in, so a paid order with
+one line given back stays settled. Only what came in against what the order costs now makes a debt
+— an order whose lines were changed after it was paid, or one a gateway paid short.
+
+- `mark(paid)` without an amount means «paid whole», as it always did; a gateway passes `amount`.
+- `recordPayment($order, $amount, 'panel', reference: …, at: …, note: …)` records a top-up of a
+  paid order — a line `payment` in the history and `OrderPaymentReceived`, never a second «paid».
+  An order not paid yet is refused (its first payment is `mark(paid)`), a cancelled one too.
+- A refund may give back up to `max(payable, paid_total) − refunded_total`: an overpayment is the
+  buyer's even when it is more than the order costs now.
+- A cancelled paid order shows what came in less what went back as money to give back — what the
+  cancel dialog says.
+
+The card's «Summary» shows «Paid» (the first payment and the top-ups apart, once there are any) and
+the balance line «Top-up due» or «Give back»; a manager records a top-up with «Record a top-up»
+(`orders.manage`, `POST {api}/orders/{id}/payments`, `dry_run` — the balance after it). The list
+shows a badge under the total and filters «Payment differs» — waiting for a top-up or paid over —
+by the stored `orders.balance` and its index; the figures over the list count the orders waiting
+for a top-up. The revenue is what came in less what went back.
+
 ### Notes for whoever picks the order up next
 
 Under the card's tabs is «Notes»: what one manager left for the next — «called, deliver after six».
@@ -311,7 +337,7 @@ Without the package the orders work the same and send nothing; `php artisan webx
 
 The `orders_*` tools read and work orders the way the panel does: `orders_list`, `orders_get`,
 `orders_history`, `orders_summary`, `orders_set_status` (one order or a batch by numbers),
-`orders_mark`, `orders_cancel`, `orders_refund`, `orders_refund_reverse`, `orders_notify` (a message again by hand),
+`orders_mark`, `orders_payment_record` (a top-up), `orders_cancel`, `orders_refund`, `orders_refund_reverse`, `orders_notify` (a message again by hand),
 `orders_update`, `orders_note`,
 `orders_link_visitor`, the statuses and the settings. Every write takes `dry_run` and answers what
 the panel's dialog would show. `orders://catalog` lists the statuses and what each one sets.

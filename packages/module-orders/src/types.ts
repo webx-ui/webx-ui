@@ -24,6 +24,19 @@ export interface PublicStatusGroup {
   statuses: OrderStatus[]
 }
 
+/**
+ * The balance line of an order that says more than «to pay» (§36, §42.4): `topup` — paid and
+ * owing more after an edit, `over` — paid more than it costs, money to give back.
+ */
+export interface OrderBalanceLine {
+  kind: 'topup' | 'over'
+  amount: string
+  amount_minor: number
+}
+
+/** The filter «Payment differs» (§42.4): `due` — waiting for a top-up, `over` — to give back. */
+export type OrderBalanceFilter = 'due' | 'over'
+
 /** The tabs over the list (§11.2). */
 export type OrdersView = 'new' | 'awaiting' | 'failed' | 'all'
 
@@ -45,6 +58,8 @@ export interface OrderRow extends Record<string, unknown> {
   received_at: string | null
   cancelled_at: string | null
   refunded: boolean
+  /** The badge under the total: «Top-up 15.00», «Give back 20.00»; null otherwise. */
+  balance: OrderBalanceLine | null
   delivery: string | null
   payment: string | null
 }
@@ -85,6 +100,14 @@ export interface OrdersSummaryData {
     amount: number
     amount_formatted: string
   }[]
+  /** Paid orders still owing a top-up after an edit (§36). */
+  awaiting_topup: number
+  topup_by_currency: {
+    currency: string
+    orders: number
+    amount: number
+    amount_formatted: string
+  }[]
   periods: { days: number; by_currency: SummaryPeriodMoney[] }[]
   /** Orders placed each of the last thirty days, today last. */
   daily: { date: string; orders: number }[]
@@ -103,6 +126,10 @@ export interface OrderGlance {
     tenders: string | null
     payable: string
     refunded: string | null
+    paid: string | null
+    paid_first: string | null
+    paid_topups: string | null
+    balance: OrderBalanceLine | null
   }
   paid: boolean
   awaiting_payment: boolean
@@ -137,6 +164,7 @@ export interface OrderQuery {
   refunded?: boolean
   awaiting?: boolean
   failed?: boolean
+  balance?: OrderBalanceFilter
   visitor?: 'guest' | 'visitor'
   /** One visitor's orders — the tab «Orders» of the visitor's card. */
   user?: number
@@ -196,6 +224,8 @@ export interface TimelineLine {
   milestone?: { key: MilestoneKey; label: string }
   reference?: string | null
   amount?: string
+  /** A top-up's money in minor units (§36.3), and a refund's. */
+  amount_minor?: number
   units?: number
   /** A refund's line and a reversal's: the record it is about (decision 98). */
   refund_id?: number
@@ -247,6 +277,11 @@ export interface OrderCardData {
     refunded: string | null
     refundable: string
     refundable_minor: number
+    /** What came in (§36): the whole, and with top-ups — the first payment and the top-ups apart. */
+    paid: string | null
+    paid_first: string | null
+    paid_topups: string | null
+    balance: OrderBalanceLine | null
   }
   /** The lines and their units; a set is one line, its parts are not counted apart. */
   count: { lines: number; units: number; refunded_units: number }
@@ -271,6 +306,8 @@ export interface OrderCardData {
     refund: boolean
     /** Reverse a refund record made by mistake (decision 98), each one not reversed yet. */
     refund_reverse: boolean
+    /** Record a top-up of a paid order (§36.3); the first payment is `paid`. */
+    payment?: boolean
     /** Link and unlink a visitor — only with the visitors installed. */
     visitor: boolean
     /** Finding one needs the right to read the customers as well. */
@@ -402,6 +439,44 @@ export interface OrderRefundEntry {
   reference: string | null
   /** Reversed by mistake (decision 98): it stays, struck through, and counts no more. */
   reversed: { at: string | null; reason: string | null } | null
+}
+
+/** The balance as the service counts it (§36.3), money in minor units with the string beside. */
+export interface OrderBalance {
+  kind: 'topup' | 'unpaid' | 'over' | null
+  paid_total: number
+  paid_total_formatted: string
+  refunded_total: number
+  refunded_total_formatted: string
+  due: number
+  due_formatted: string
+  over: number
+  over_formatted: string
+  tenders_over: number
+  tenders_over_formatted: string
+  balance: number
+}
+
+/** «Record a top-up» as typed: the amount in the currency's own units, the day YYYY-MM-DD. */
+export interface PaymentInput {
+  amount: string
+  reference: string
+  at: string | null
+  note: string
+}
+
+/** What a top-up does, from the service's own dry run (§36.3) — `orders_payment_record` too. */
+export interface PaymentPreview {
+  amount: number
+  amount_formatted: string
+  reference: string | null
+  note: string | null
+  at: string
+  before: OrderBalance
+  after: OrderBalance
+  refusal: string | null
+  message: string | null
+  dry_run: boolean
 }
 
 /** What reversing a refund record does, from the service's own dry run (decision 98). */

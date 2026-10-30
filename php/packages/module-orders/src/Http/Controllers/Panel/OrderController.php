@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Orders\Http\Controllers\Panel;
 
+use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -24,6 +25,7 @@ use WebxUi\Orders\Panel\OrderCard;
 use WebxUi\Orders\Panel\OrderList;
 use WebxUi\Orders\Panel\OrdersSummary;
 use WebxUi\Orders\Panel\StatusChoices;
+use WebxUi\Orders\PaymentRecord;
 use WebxUi\Orders\RefundRefused;
 use WebxUi\Orders\RefundRequest;
 use WebxUi\Orders\RefundResult;
@@ -164,6 +166,38 @@ final readonly class OrderController
             reference: $validated['reference'] ?? null,
             note: $validated['note'] ?? null,
         ), 'milestone');
+
+        return $this->describe($request, $found);
+    }
+
+    /**
+     * «Record a top-up» (§36.3, §42.3): money that came in for a paid order, typed in the
+     * currency's own units, with the operation's number, the day and a note. `dry_run` answers the
+     * balance after it; a refusal — the order is not paid yet, or cancelled — comes back under `amount`.
+     */
+    public function payment(Request $request, int $order): JsonResponse
+    {
+        $validated = $request->validate([
+            'amount' => ['required', 'numeric', 'gt:0'],
+            'reference' => ['nullable', 'string', 'max:190'],
+            'at' => ['nullable', 'date_format:Y-m-d'],
+            'note' => ['nullable', 'string', 'max:500'],
+            'dry_run' => ['nullable', 'boolean'],
+        ]);
+
+        $found = self::find($order);
+        $amount = $this->money->toMinor((string) $validated['amount'], $found->currency);
+        // A day alone is that day at this hour: the history keeps the order the lines were written in.
+        $at = isset($validated['at']) ? CarbonImmutable::parse((string) $validated['at'])->setTimeFrom(CarbonImmutable::now()) : null;
+        $record = fn (bool $dryRun): PaymentRecord => $this->orders->recordPayment(
+            $found, $amount, 'panel', $validated['reference'] ?? null, $at, $validated['note'] ?? null, $dryRun,
+        );
+
+        if ((bool) ($validated['dry_run'] ?? false)) {
+            return ApiResponse::data($this->consequences->payment($record(true), $this->money));
+        }
+
+        $this->refusing(fn () => $record(false), 'amount');
 
         return $this->describe($request, $found);
     }

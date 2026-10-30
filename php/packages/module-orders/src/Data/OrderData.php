@@ -51,6 +51,10 @@ final readonly class OrderData
         public StatusData $status,
         public PublicStatusData $publicStatus,
         public array $milestones,
+        /** Money that came in (§36.1): the payment and any top-up after an edit. */
+        public int $paidTotal = 0,
+        /** `owed − paidTotal + refundedTotal`: > 0 the buyer owes, < 0 the shop does. */
+        public int $balance = 0,
     ) {}
 
     /** From the model with its lines, money, milestones and status loaded — or loaded here. */
@@ -118,6 +122,8 @@ final readonly class OrderData
             status: StatusData::of($order->status, $locale),
             publicStatus: PublicStatusData::of($order->status->publicStatus, $locale),
             milestones: $milestones,
+            paidTotal: $order->paid_total,
+            balance: $order->balance,
         );
     }
 }

@@ -31,6 +31,8 @@ use Illuminate\Support\Carbon;
  * @property int $tenders_total
  * @property int $payable
  * @property int $refunded_total
+ * @property int $paid_total
+ * @property int $balance
  * @property string $customer_first_name
  * @property string|null $customer_last_name
  * @property string|null $customer_phone
@@ -77,6 +79,8 @@ class Order extends Model
             'tenders_total' => 'integer',
             'payable' => 'integer',
             'refunded_total' => 'integer',
+            'paid_total' => 'integer',
+            'balance' => 'integer',
             'recipient' => 'array',
             'delivery' => 'array',
             'payment' => 'array',

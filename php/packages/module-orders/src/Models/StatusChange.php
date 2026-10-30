@@ -37,6 +37,12 @@ class StatusChange extends Model
 
     public const string PAYMENT_AWAITING_STOPPED = 'payment_awaiting_stopped';
 
+    /** The order awaits payment again (§36.3): its method became one that awaits it. */
+    public const string PAYMENT_AWAITING = 'payment_awaiting';
+
+    /** Money in for an order paid already — a top-up (§36.3); `note` is «<minor>[ [reference]][: note]». */
+    public const string PAYMENT = 'payment';
+
     public const string BLOCK = 'block';
 
     public const string VISITOR = 'visitor';

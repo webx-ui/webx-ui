@@ -28,7 +28,7 @@ final class McpTest extends McpTestCase
 {
     /** The tools of §12 but `orders_link_visitor`, which comes with the visitors, and of §32. */
     private const array TOOLS = [
-        'orders_list', 'orders_get', 'orders_history', 'orders_summary', 'orders_set_status', 'orders_mark',
+        'orders_list', 'orders_get', 'orders_history', 'orders_summary', 'orders_set_status', 'orders_mark', 'orders_payment_record',
         'orders_cancel', 'orders_refund', 'orders_refund_reverse', 'orders_notify', 'orders_update', 'orders_create', 'orders_note',
         'orders_statuses_list', 'orders_statuses_save', 'orders_statuses_delete', 'orders_statuses_restore', 'orders_statuses_reorder',
         'orders_public_statuses_save', 'orders_public_statuses_delete', 'orders_public_statuses_restore', 'orders_public_statuses_reorder',
@@ -168,6 +168,41 @@ final class McpTest extends McpTestCase
         $this->assertTrue($full['full']);
         $this->assertSame(4999, $full['money_left']);
         $this->assertNotNull($order->refresh()->refunded_at);
+    }
+
+    #[Test]
+    public function a_top_up_answers_what_the_dialog_does(): void
+    {
+        $order = $this->order();
+        $this->signIn();
+        $topUp = fn (array $body): array => $this->postJson($this->api($order->id).'/payments', $body)->json('data');
+
+        // Not paid yet: both refuse it the same way, and neither writes.
+        $panel = $topUp(['amount' => '5', 'dry_run' => true]);
+        $agent = $this->writesNothing(fn (): array => $this->ask('orders_payment_record', ['order' => $order->number, 'amount' => 500, 'dry_run' => true]));
+        $this->assertSame(['not_paid', 'not_paid'], [$panel['refusal'], $agent['refusal']]);
+        $this->assertStringContainsString('orders_mark', $agent['message']);
+
+        $this->app->make(Orders::class)->mark($order, Milestone::Paid, 'api');
+        $panel = $topUp(['amount' => '5', 'reference' => 'BANK-7', 'at' => '2026-01-02', 'dry_run' => true]);
+        $agent = $this->writesNothing(fn (): array => $this->ask('orders_payment_record', ['order' => $order->number, 'amount' => 500, 'reference' => 'BANK-7', 'at' => '2026-01-02', 'dry_run' => true]));
+
+        foreach ($panel as $key => $value) {
+            // The hour is the call's own: the day is the same.
+            $key === 'at'
+                ? $this->assertSame(substr((string) $value, 0, 10), substr((string) $agent[$key], 0, 10))
+                : $this->assertSame($value, $agent[$key], "orders_payment_record says {$key} as the panel does");
+        }
+
+        $this->assertSame([0, 500, 'over'], [$agent['before']['balance'], $agent['after']['over'], $agent['after']['kind']]);
+        $this->assertSame($order->payable, $order->refresh()->paid_total);
+
+        $done = $this->ask('orders_payment_record', ['order' => $order->number, 'amount' => 500]);
+        $this->assertFalse($done['dry_run']);
+        $this->assertSame(['over', 500, $order->payable + 500], array_map(
+            fn (string $key): mixed => $this->ask('orders_get', ['order' => $order->number])['balance'][$key],
+            ['kind', 'over', 'paid_total'],
+        ));
     }
 
     #[Test]

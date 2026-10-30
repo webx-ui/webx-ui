@@ -67,7 +67,10 @@ final readonly class OrdersSummary
             .' sum(case when awaiting_payment = ? and cancelled_at is null then 1 else 0 end) as awaiting,'
             .' sum(case when awaiting_payment = ? and cancelled_at is null then payable else 0 end) as awaiting_amount,'
             .' sum(case when awaiting_payment = ? and cancelled_at is null and payment_failed_at is not null then 1 else 0 end) as failed,'
-            ." sum(case when paid_at is not null and cancelled_at is null and {$waiting} then 1 else 0 end) as paid_waiting",
+            ." sum(case when paid_at is not null and cancelled_at is null and {$waiting} then 1 else 0 end) as paid_waiting,"
+            // Paid and owing more after an edit (§36, decision 101): the balance, not the flag.
+            .' sum(case when balance > 0 and paid_total > 0 and cancelled_at is null then 1 else 0 end) as topup,'
+            .' sum(case when balance > 0 and paid_total > 0 and cancelled_at is null then balance else 0 end) as topup_amount',
             [true, true, true, ...$initial],
         )->groupBy('currency')->orderBy('currency')->get();
 
@@ -86,6 +89,15 @@ final readonly class OrdersSummary
                     'orders' => (int) $row->awaiting,
                     ...$this->amount('amount', (int) $row->awaiting_amount, (string) $row->currency),
                 ])->values()->all(),
+            'awaiting_topup' => (int) $flags->sum('topup'),
+            // What paid orders still owe after an edit, by currency: how many and how much.
+            'topup_by_currency' => $flags
+                ->filter(static fn (object $row): bool => (int) $row->topup > 0)
+                ->map(fn (object $row): array => [
+                    'currency' => (string) $row->currency,
+                    'orders' => (int) $row->topup,
+                    ...$this->amount('amount', (int) $row->topup_amount, (string) $row->currency),
+                ])->values()->all(),
             'periods' => $this->periods(),
             'daily' => $this->daily(),
         ];
@@ -93,7 +105,8 @@ final readonly class OrdersSummary
 
     /**
      * For today, the last 7 and the last 30 calendar days, by currency: orders placed, paid, the revenue — what was paid
-     * less what was given back — and the average of a paid order.
+     * less what was given back — and the average of a paid order. «What was paid» is `paid_total`, the money
+     * that came in (§36.2): a top-up and an overpayment show in the revenue.
      *
      * @return list<array{days: int, by_currency: list<array<string, mixed>>}>
      */
@@ -108,7 +121,7 @@ final readonly class OrdersSummary
             $since[$days] = $from = $today->copy()->subDays($days - 1);
             $select[] = "sum(case when placed_at >= ? then 1 else 0 end) as placed_{$days}";
             $select[] = "sum(case when placed_at >= ? and paid_at is not null then 1 else 0 end) as paid_{$days}";
-            $select[] = "sum(case when placed_at >= ? and paid_at is not null then payable - refunded_total else 0 end) as revenue_{$days}";
+            $select[] = "sum(case when placed_at >= ? and paid_at is not null then cast(paid_total as signed) - cast(refunded_total as signed) else 0 end) as revenue_{$days}";
             array_push($bindings, $from, $from, $from);
         }
 

@@ -9,6 +9,7 @@ use Illuminate\Container\Container;
 use WebxUi\Admin\Support\Authors;
 use WebxUi\Admin\Visitors\Visitors;
 use WebxUi\Cart\Money;
+use WebxUi\Orders\Balance;
 use WebxUi\Orders\Milestone;
 use WebxUi\Orders\Models\Order;
 use WebxUi\Orders\Models\OrderAdjustment;
@@ -150,7 +151,7 @@ final readonly class OrderCard
         $money = fn (int $minor): string => $this->money->format($minor, $currency);
         $paid = $order->paid_at !== null;
         $cancelled = $order->cancelled_at !== null;
-        $refundable = $order->payable - $order->refunded_total;
+        $refundable = Balance::refundable($order);
         $tendersLeft = $order->tenders->sum(static fn (OrderTender $tender): int => $tender->amount - $tender->refunded_amount);
         $unitsLeft = $order->items->sum(static fn (OrderItem $item): int => $item->qty - $item->refunded_qty);
         $manage = $can('orders.manage');
@@ -233,6 +234,8 @@ final readonly class OrderCard
                 'details' => $manage,
                 'note' => $manage,
                 'refund' => $can('orders.refund') && ($refundable > 0 || $tendersLeft > 0 || $unitsLeft > 0),
+                // A top-up of a paid order (§36.3): the first payment is «Mark as paid».
+                'payment' => $manage && $paid && ! $cancelled,
                 // Reverse a refund record made by mistake (decision 98), each one not reversed yet.
                 'refund_reverse' => $can('orders.refund'),
                 // Linking to a visitor (§13.3): only with the visitors installed; finding one is
@@ -323,11 +326,21 @@ final readonly class OrderCard
      * The totals as the buyer was charged, written in the order's currency; what is not there —
      * no discount, no tender, nothing given back — is null.
      *
+     * «Paid» is what came in (§42.4): the first payment and the top-ups after it, read off the
+     * history lines `payment` when the history is loaded. The balance line is there only when
+     * it says something beyond «to pay»: `topup` — paid and owes more, `over` — money to give back.
+     *
      * @param  Closure(int): string  $money
-     * @return array{subtotal: string, adjustments: string|null, total: string, tenders: string|null, payable: string, refunded: string|null}
+     * @return array<string, mixed>
      */
     private static function totals(Order $order, Closure $money): array
     {
+        $balance = Balance::of($order);
+        $kind = $balance->kind();
+        $topups = $order->relationLoaded('history')
+            ? (int) $order->history->sum(static fn (StatusChange $change): int => $change->kind === StatusChange::PAYMENT ? self::paymentLine($change->note)['amount'] : 0)
+            : 0;
+
         return [
             'subtotal' => $money($order->subtotal),
             'adjustments' => $order->adjustments_total !== 0 ? $money($order->adjustments_total) : null,
@@ -335,6 +348,32 @@ final readonly class OrderCard
             'tenders' => $order->tenders_total !== 0 ? $money($order->tenders_total) : null,
             'payable' => $money($order->payable),
             'refunded' => $order->refunded_total > 0 ? $money($order->refunded_total) : null,
+            'paid' => $order->paid_total > 0 ? $money($order->paid_total) : null,
+            'paid_first' => $topups > 0 && $order->paid_total > $topups ? $money($order->paid_total - $topups) : null,
+            'paid_topups' => $topups > 0 ? $money($topups) : null,
+            'balance' => in_array($kind, ['topup', 'over'], true) ? [
+                'kind' => $kind,
+                'amount' => $money($kind === 'over' ? $balance->over : $balance->due),
+                'amount_minor' => $kind === 'over' ? $balance->over : $balance->due,
+            ] : null,
+        ];
+    }
+
+    /**
+     * The money, the reference and the note of a history line `payment` ({@see \WebxUi\Orders\Orders::paymentNote()}).
+     *
+     * @return array{amount: int, reference: string|null, note: string|null}
+     */
+    public static function paymentLine(?string $line): array
+    {
+        if ($line === null || preg_match('/^(\d+)(?: \[([^\]]*)\])?(?:: (.*))?$/s', $line, $match) !== 1) {
+            return ['amount' => 0, 'reference' => null, 'note' => $line];
+        }
+
+        return [
+            'amount' => (int) $match[1],
+            'reference' => ($match[2] ?? '') !== '' ? $match[2] : null,
+            'note' => ($match[3] ?? '') !== '' ? $match[3] : null,
         ];
     }
 
@@ -492,6 +531,15 @@ final readonly class OrderCard
                 $line['event'] = $match[1];
                 $line['event_label'] = str_starts_with($match[1], 'orders.') ? (string) __('webx-orders::notifications.events.'.substr($match[1], strlen('orders.'))) : $match[1];
                 $line['note'] = $match[2] !== '' ? $match[2] : null;
+            }
+
+            // «1500 [bank-77]: by card» — a top-up's money, its reference and its note (§36.3).
+            if ($change->kind === StatusChange::PAYMENT) {
+                $payment = self::paymentLine($change->note);
+                $line['amount'] = $money($payment['amount']);
+                $line['amount_minor'] = $payment['amount'];
+                $line['reference'] = $payment['reference'];
+                $line['note'] = $payment['note'];
             }
 
             if ($change->kind === StatusChange::MILESTONE_REMOVED && $change->note !== null && ($taken = Milestone::tryFrom($change->note)) !== null) {

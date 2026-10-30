@@ -110,6 +110,8 @@ interface OrderRecord {
   tenders: { id: number; label: string; amount: number; refunded: number }[]
   benefits: { key: string; label: string }[]
   refunded: number
+  /** Σ money that came in (§36.1): the payment and the top-ups after it. */
+  paid_total: number
   awaiting: boolean
   failed_at: string | null
   marks: Partial<Record<Milestone, { at: string; source: string; reference: string | null }>>
@@ -259,6 +261,7 @@ function order(index: number, fields: Partial<OrderRecord>): OrderRecord {
     tenders: [],
     benefits: [],
     refunded: 0,
+    paid_total: 0,
     awaiting: false,
     failed_at: null,
     marks: { placed: { at: placed, source: 'checkout', reference: null } },
@@ -432,6 +435,22 @@ function seedMarks(): void {
       items: [[returned.id, 1]],
     },
   )
+
+  for (const record of orders) if (record.marks.paid) record.paid_total = payable(record)
+  // Paid short by the gateway: «Top-up» in the list and the filter «Waiting for a top-up».
+  at(6).paid_total -= 1500
+  // Topped up over at the desk: «Give back».
+  at(3).paid_total += 500
+  at(3).history.push({
+    key: 'h4-p',
+    kind: 'payment',
+    at: day(-7, 15),
+    source: 'panel',
+    admin: 'Demo admin',
+    note: 'At the desk',
+    reference: 'BANK-7',
+    amount: 500,
+  })
 }
 
 let refunds = 3
@@ -444,6 +463,65 @@ const adjustments = (record: OrderRecord) =>
 const total = (record: OrderRecord) => subtotal(record) + adjustments(record)
 const tendered = (record: OrderRecord) => record.tenders.reduce((sum, one) => sum + one.amount, 0)
 const payable = (record: OrderRecord) => total(record) - tendered(record)
+
+/* The balance of §36.1 as `Balance` counts it (decision 102): a refund never makes it owe. */
+function balanceOf(record: OrderRecord) {
+  const cancelled = Boolean(record.marks.cancelled)
+  const due = cancelled ? 0 : Math.max(0, payable(record) - record.paid_total)
+  const over = Math.max(0, record.paid_total - record.refunded - (cancelled ? 0 : payable(record)))
+  const kind =
+    over > 0 ? 'over' : due > 0 && record.paid_total > 0 ? 'topup' : due > 0 ? 'unpaid' : null
+
+  return { due, over, kind }
+}
+
+/** The badge and the line of the card: only what says more than «to pay». */
+function balanceLine(record: OrderRecord) {
+  const { due, over, kind } = balanceOf(record)
+
+  if (kind !== 'topup' && kind !== 'over') return null
+
+  const minor = kind === 'over' ? over : due
+
+  return { kind, amount: money(minor), amount_minor: minor }
+}
+
+/** `Consequences::balance()` — what the dialog of a top-up shows before and after it. */
+function balanceAnswer(record: OrderRecord) {
+  const { due, over, kind } = balanceOf(record)
+  const tendersOver = 0
+  const amounts = Object.entries({
+    paid_total: record.paid_total,
+    refunded_total: record.refunded,
+    due,
+    over,
+    tenders_over: tendersOver,
+  }).flatMap(([key, minor]) => [
+    [key, minor],
+    [`${key}_formatted`, money(minor)],
+  ])
+
+  return { kind, ...Object.fromEntries(amounts), balance: due - over }
+}
+
+/** What came in (§42.4): the whole, and with top-ups the first payment and the top-ups apart. */
+function paidTotals(record: OrderRecord) {
+  const topups = record.history.reduce(
+    (sum, one) => sum + (one.kind === 'payment' ? (one.amount ?? 0) : 0),
+    0,
+  )
+
+  return {
+    paid: record.paid_total > 0 ? money(record.paid_total) : null,
+    paid_first: topups > 0 && record.paid_total > topups ? money(record.paid_total - topups) : null,
+    paid_topups: topups > 0 ? money(topups) : null,
+    balance: balanceLine(record),
+  }
+}
+
+/** The limit of a refund (§36.2): what came in over the order's cost is the buyer's too. */
+const refundableOf = (record: OrderRecord) =>
+  Math.max(0, Math.max(payable(record), record.paid_total) - record.refunded)
 
 seedMarks()
 
@@ -535,6 +613,7 @@ function row(record: OrderRecord, locale: string, line: Line) {
     received_at: record.marks.received?.at ?? null,
     cancelled_at: record.marks.cancelled?.at ?? null,
     refunded: record.refunded > 0,
+    balance: balanceLine(record),
     delivery: record.delivery?.summary ?? null,
     payment: record.payment?.summary ?? null,
     source: sourceOf(record),
@@ -587,6 +666,13 @@ function matches(record: OrderRecord, query: URLSearchParams): boolean {
   const refunded = flag('refunded')
 
   if (refunded !== null && record.refunded > 0 !== refunded) return false
+
+  // «Payment differs» (§42.4): an order not paid yet owes its sum — that is not a top-up.
+  const balance = query.get('balance')
+  const kind = balanceOf(record).kind
+
+  if (balance === 'due' && kind !== 'topup') return false
+  if (balance === 'over' && kind !== 'over') return false
   if (query.get('delivery') && record.delivery?.method !== query.get('delivery')) return false
   if (query.get('source') && sourceOf(record) !== query.get('source')) return false
 
@@ -652,7 +738,8 @@ function summary() {
 
     return orders.filter((record) => Date.parse(record.placed_at) >= from.getTime())
   }
-  const revenueOf = (record: OrderRecord) => payable(record) - record.refunded
+  // What came in less what went back (§36.2): a top-up and an overpayment show in it.
+  const revenueOf = (record: OrderRecord) => record.paid_total - record.refunded
   const periods = [1, 7, 30].map((days) => {
     const placed = placedSince(days)
     const paid = placed.filter((record) => record.marks.paid)
@@ -678,6 +765,7 @@ function summary() {
     }
   })
   const waiting = orders.filter((record) => record.awaiting && !record.marks.cancelled)
+  const topups = orders.filter((record) => balanceOf(record).kind === 'topup')
   const today = new Date()
   const daily = Array.from({ length: 30 }, (_, index) => {
     const at = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 29 + index)
@@ -702,6 +790,20 @@ function summary() {
               orders: waiting.length,
               amount: waiting.reduce((sum, record) => sum + payable(record), 0),
               amount_formatted: money(waiting.reduce((sum, record) => sum + payable(record), 0)),
+            },
+          ],
+    awaiting_topup: topups.length,
+    topup_by_currency:
+      topups.length === 0
+        ? []
+        : [
+            {
+              currency: 'EUR',
+              orders: topups.length,
+              amount: topups.reduce((sum, record) => sum + balanceOf(record).due, 0),
+              amount_formatted: money(
+                topups.reduce((sum, record) => sum + balanceOf(record).due, 0),
+              ),
             },
           ],
     periods,
@@ -736,6 +838,7 @@ function glance(record: OrderRecord) {
       tenders: record.tenders.length > 0 ? money(tendered(record)) : null,
       payable: money(payable(record)),
       refunded: record.refunded > 0 ? money(record.refunded) : null,
+      ...paidTotals(record),
     },
     paid: Boolean(record.marks.paid),
     awaiting_payment: record.awaiting && !record.marks.cancelled,
@@ -808,6 +911,7 @@ function timeline(record: OrderRecord, locale: string, line: Line) {
             ? (to?.public?.name ?? null)
             : null,
         amount: one.amount !== undefined ? money(one.amount) : undefined,
+        amount_minor: one.kind === 'payment' ? one.amount : undefined,
         reversed: one.kind === 'refund' ? Boolean(one.reversed) : undefined,
         event_label:
           one.kind === 'notification_sent' && one.event
@@ -850,7 +954,7 @@ function timeline(record: OrderRecord, locale: string, line: Line) {
 function card(record: OrderRecord, locale: string, line: Line) {
   const paid = Boolean(record.marks.paid)
   const cancelled = Boolean(record.marks.cancelled)
-  const refundable = Math.max(0, payable(record) - record.refunded)
+  const refundable = refundableOf(record)
   const tendersLeft = record.tenders.reduce((sum, one) => sum + one.amount - one.refunded, 0)
   const unitsLeft = record.items.reduce((sum, one) => sum + one.qty - one.refunded_qty, 0)
 
@@ -913,6 +1017,7 @@ function card(record: OrderRecord, locale: string, line: Line) {
         refunded: record.refunded > 0 ? money(record.refunded) : null,
         refundable: money(refundable),
         refundable_minor: refundable,
+        ...paidTotals(record),
       },
       count: {
         lines: record.items.filter((one) => one.parent === null).length,
@@ -992,6 +1097,7 @@ function card(record: OrderRecord, locale: string, line: Line) {
         note: true,
         refund: refundable > 0 || tendersLeft > 0 || unitsLeft > 0,
         refund_reverse: true,
+        payment: paid && !cancelled,
         visitor: false,
         visitor_search: false,
         resend: true,
@@ -1129,7 +1235,10 @@ function mark(
     })
   }
 
-  if (key === 'paid') record.awaiting = false
+  if (key === 'paid') {
+    record.awaiting = false
+    record.paid_total += balanceOf(record).due
+  }
   if (key === 'cancelled') for (const tender of record.tenders) tender.refunded = tender.amount
 }
 
@@ -1414,7 +1523,7 @@ export function registerOrders(on: On, fail: Fail, line: Line): void {
     const reason = text(body.reason)
 
     if (body.dry_run) {
-      const left = Math.max(0, payable(record) - record.refunded)
+      const left = Math.max(0, record.paid_total - record.refunded)
 
       return {
         data: {
@@ -1517,7 +1626,7 @@ export function registerOrders(on: On, fail: Fail, line: Line): void {
     const items = Object.entries((body.items ?? {}) as Record<string, unknown>).map(
       ([id, qty]) => [Number(id), Number(qty) || 0] as const,
     )
-    const moneyLeft = Math.max(0, payable(record) - record.refunded)
+    const moneyLeft = refundableOf(record)
     let refusal: string | null = null
     let field: string | null = null
 
@@ -1616,6 +1725,59 @@ export function registerOrders(on: On, fail: Fail, line: Line): void {
       items: items.filter(([, qty]) => qty > 0).map(([id, qty]): [number, number] => [id, qty]),
     })
     if (full && !record.marks.refunded) mark(record, 'refunded', text(body.reference), null)
+
+    return { data: card(record, locale, line) }
+  })
+
+  /* A top-up of a paid order (§36.3): `dry_run` answers the balance after it. */
+  on('POST', '/orders/(\\d+)/payments', ({ params, body, locale }) => {
+    const record = find(params[0])
+    const amount = Math.round(Number(body.amount ?? 0) * 100) || 0
+
+    if (amount <= 0) {
+      const words = line(locale, 'webx-orders', 'panel.payment-amount-required')
+      throw fail(422, words, undefined, { amount: [words] })
+    }
+
+    const refusal = record.marks.cancelled ? 'cancelled' : !record.marks.paid ? 'not_paid' : null
+    const message = refusal ? line(locale, 'webx-orders', `panel.refusals.${refusal}`) : null
+    const at = body.at ? `${String(body.at)}T12:00:00+00:00` : new Date().toISOString()
+    const before = balanceAnswer(record)
+
+    if (body.dry_run) {
+      record.paid_total += refusal ? 0 : amount
+      const after = balanceAnswer(record)
+      record.paid_total -= refusal ? 0 : amount
+
+      return {
+        data: {
+          amount,
+          amount_formatted: money(amount),
+          reference: text(body.reference),
+          note: text(body.note),
+          at,
+          before,
+          after,
+          refusal,
+          message,
+          dry_run: true,
+        },
+      }
+    }
+
+    if (refusal && message) throw fail(422, message, undefined, { amount: [message] })
+
+    record.paid_total += amount
+    record.history.push({
+      key: `h${record.id}-p${record.history.length}`,
+      kind: 'payment',
+      at,
+      source: 'panel',
+      admin: 'Demo admin',
+      note: text(body.note),
+      reference: text(body.reference),
+      amount,
+    })
 
     return { data: card(record, locale, line) }
   })

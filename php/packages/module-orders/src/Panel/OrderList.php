@@ -10,6 +10,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
 use WebxUi\Cart\Money;
+use WebxUi\Orders\Balance;
 use WebxUi\Orders\Blocks\OrderBlocks;
 use WebxUi\Orders\InitialStatuses;
 use WebxUi\Orders\Milestone;
@@ -29,6 +30,9 @@ final class OrderList
 {
     /** What the list may be sorted by, newest first unless `-` says otherwise. */
     public const array SORTS = ['placed_at', 'total', 'number'];
+
+    /** «Payment differs» (§42.4): `due` — paid and waiting for a top-up, `over` — money to give back. */
+    public const array BALANCES = ['due', 'over'];
 
     /** The tabs over the list (§11.2). */
     public const array VIEWS = ['new', 'awaiting', 'failed', 'all'];
@@ -57,6 +61,7 @@ final class OrderList
             'refunded' => ['nullable', 'boolean'],
             'awaiting' => ['nullable', 'boolean'],
             'failed' => ['nullable', 'boolean'],
+            'balance' => ['nullable', Rule::in(self::BALANCES)],
             'visitor' => ['nullable', Rule::in(['guest', 'visitor'])],
             // One visitor's orders: the tab «Orders» of the visitor's card (§13.2).
             'user' => ['nullable', 'integer', 'min:1'],
@@ -108,7 +113,7 @@ final class OrderList
     }
 
     /**
-     * @param  array<string, mixed>  $filters  `view`, `search`, `status`, `public`, `paid`, `received`, `cancelled`, `refunded`, `awaiting`, `failed`, `visitor`, `delivery`, `payment`, `source`, `from`, `to`, `sort`
+     * @param  array<string, mixed>  $filters  `view`, `search`, `status`, `public`, `paid`, `received`, `cancelled`, `refunded`, `awaiting`, `failed`, `balance`, `visitor`, `delivery`, `payment`, `source`, `from`, `to`, `sort`
      * @return Builder<Order>
      */
     public function query(array $filters): Builder
@@ -199,6 +204,14 @@ final class OrderList
         if ($failed !== null) {
             $failed ? $query->whereNotNull('payment_failed_at') : $query->whereNull('payment_failed_at');
         }
+
+        // By the index (balance, placed_at): a range of the stored balance. An order not paid yet
+        // owes its whole sum — that is «to pay», not a top-up (decision 101, question 5).
+        match ($filters['balance'] ?? null) {
+            'due' => $query->where('balance', '>', 0)->where('paid_total', '>', 0),
+            'over' => $query->where('balance', '<', 0),
+            default => null,
+        };
 
         $refunded = self::flag($filters['refunded'] ?? null);
 
@@ -313,9 +326,30 @@ final class OrderList
             'received_at' => $order->received_at?->toAtomString(),
             'cancelled_at' => $order->cancelled_at?->toAtomString(),
             'refunded' => $order->refunded_total > 0 || $order->refunded_at !== null,
+            'balance' => self::balance($order, $this->money),
             'delivery' => $this->summary('delivery', $order->delivery, $locale),
             'payment' => $this->summary('payment', $order->payment, $locale),
         ];
+    }
+
+    /**
+     * The badge under the total (§42.4): «Top-up 15.00» of a paid order that owes more, «Give back
+     * 20.00» of one paid over; null otherwise — an order not paid yet just owes its sum.
+     *
+     * @return array{kind: string, amount: string, amount_minor: int}|null
+     */
+    public static function balance(Order $order, Money $money): ?array
+    {
+        $balance = Balance::of($order);
+        $kind = $balance->kind();
+
+        if (! in_array($kind, ['topup', 'over'], true)) {
+            return null;
+        }
+
+        $minor = $kind === 'over' ? $balance->over : $balance->due;
+
+        return ['kind' => $kind, 'amount' => $money->format($minor, $order->currency), 'amount_minor' => $minor];
     }
 
     /**

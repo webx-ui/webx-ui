@@ -7,8 +7,10 @@ namespace WebxUi\Orders\Panel;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Cart\Money;
 use WebxUi\Notifications\Models\Channel;
+use WebxUi\Orders\Balance;
 use WebxUi\Orders\Milestone;
 use WebxUi\Orders\MilestoneMark;
+use WebxUi\Orders\PaymentRecord;
 use WebxUi\Orders\RefundReversal;
 use WebxUi\Orders\StatusMove;
 
@@ -98,6 +100,54 @@ final class Consequences
             'message' => $reversal->refusal === null ? null : (string) __('webx-orders::panel.reverse-refusals.'.$reversal->refusal),
             'dry_run' => $reversal->dryRun,
         ];
+    }
+
+    /**
+     * What a top-up does (§36.3) — the same answer for «Record a top-up» and
+     * `orders_payment_record`: the money, the balance before and after it, or why it is refused.
+     *
+     * @return array<string, mixed>
+     */
+    public function payment(PaymentRecord $record, Money $money): array
+    {
+        return [
+            ...self::amount('amount', $record->amount, $record->after->currency, $money),
+            'reference' => $record->reference,
+            'note' => $record->note,
+            'at' => $record->at->toAtomString(),
+            'before' => self::balance($record->before, $money),
+            'after' => self::balance($record->after, $money),
+            'refusal' => $record->refusal,
+            'message' => $record->refusal === null ? null : (string) __('webx-orders::panel.refusals.'.$record->refusal),
+            'dry_run' => $record->dryRun,
+        ];
+    }
+
+    /**
+     * The balance as the panel and an agent read it (§36.3): what came in, what went back, what is
+     * still due or over, in minor units with the string beside each.
+     *
+     * @return array<string, mixed>
+     */
+    public static function balance(Balance $balance, Money $money): array
+    {
+        return [
+            'kind' => $balance->kind(),
+            ...self::amount('paid_total', $balance->paid, $balance->currency, $money),
+            ...self::amount('refunded_total', $balance->refunded, $balance->currency, $money),
+            ...self::amount('due', $balance->due, $balance->currency, $money),
+            ...self::amount('over', $balance->over, $balance->currency, $money),
+            ...self::amount('tenders_over', $balance->tendersOver, $balance->currency, $money),
+            'balance' => $balance->due - $balance->over,
+        ];
+    }
+
+    /**
+     * @return array<string, int|string>
+     */
+    private static function amount(string $key, int $minor, string $currency, Money $money): array
+    {
+        return [$key => $minor, $key.'_formatted' => $money->format($minor, $currency)];
     }
 
     /**

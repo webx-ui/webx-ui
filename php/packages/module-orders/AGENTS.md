@@ -18,11 +18,11 @@ grouped into public ones. Dictionary `webx-orders` (`module`, `statuses`, `panel
     `PayableChanged` (the fresh `CartState`), `OrderRefused` (a listener), `Blocks\BlockRefused`;
   - `findByIdempotencyKey($key)` — the order a form token made; a repeat of `place()` returns it; `placeByManager(ManagerOrder, source = 'panel')` (§29.2) — the manager's lines into a service cart (`CartService::add(null, …)`), `place()`, `clear()`, one transaction; `previewByManager(input, contacts = true)` → `ManagerPreview` (counted for the order, rolled back; `false` — the lines alone);
   - every other method is one transaction with the order's row locked, events after the commit, and refreshes the model passed
-    in. `mark(order, Milestone, source, at?, reference?, note?)` — `paid`, `received`, `cancelled` once (`MilestoneMark`:
+    in. `mark(order, Milestone, source, at?, reference?, note?, amount?)` — `paid`, `received`, `cancelled` once (`MilestoneMark`:
     `marked`, `already_marked` with the first mark, `refunded`); others — `MilestoneRefused`; paid or received of a cancelled
     order — `OrderCancelledAlready`; `cancelled` marks the tenders left given back;
-  - `paymentFailed(order, source, reason?)` — a history line and `payment_failed_at`; `stopAwaitingPayment(order, source)` — the
-    flag down, a line, no event (`OrderPaidAlready`, `OrderCancelledAlready`);
+  - `paymentFailed(order, source, reason?)` — a history line and `payment_failed_at`; `stopAwaitingPayment(order, source)` / `awaitPayment(order, source)` — the flag down / up, a line, no event (`OrderPaidAlready`, `OrderCancelledAlready`);
+  - **balance** (§36, decision 102): `balance(order)` → `Balance` (`due`, `over`, `kind()` — `topup`, `unpaid`, `over`); `orders.paid_total` and the stored `balance = due − over` (a refund never makes it owe), written by each method that moves a term; `recordPayment(order, amount, source, reference?, at?, note?, dryRun?)` → `PaymentRecord` — a top-up of a paid order, line `payment`, `OrderPaymentReceived` (`PaymentRefused`: `not_paid`, `cancelled`); a refund's limit is `max(payable, paid_total) − refunded_total`;
   - `moveTo(order, OrderStatus, source, note?, dryRun?)` → `StatusMove` (`from`, `to`, `publicFrom`, `publicTo`,
     `publicChanged`, `moved`, `milestone`, `notifications`, `refusal`); a refusal (`inactive`, `deleted`, `cancelled`) throws
     `StatusMoveRefused`, a dry run answers it; into a status that sets `cancelled`, `panel` and `mcp` give the reason in `note`
@@ -43,7 +43,7 @@ grouped into public ones. Dictionary `webx-orders` (`module`, `statuses`, `panel
   `StatusRefused`: `initial`, `last_active`, `public_deleted`, `has_active`. Switching a stage off is held like deleting it.
 - **Events** `Events\OrderPlacing` (in the transaction: spend, reserve, or throw `OrderRefused`); after the commit, with
   `Data\OrderData`, `source`, `adminId`, `at`: `OrderPlaced`, `OrderPaid`, `OrderReceived`, `OrderCancelled` (`wasPaid`,
-  `tendersReturned`), `OrderRefunded` (`RefundData`, `full`), `OrderRefundReversed` (`reason`, `milestoneRemoved`), `OrderPaymentFailed`, `OrderStatusChanged`,
+  `tendersReturned`), `OrderRefunded` (`RefundData`, `full`), `OrderRefundReversed` (`reason`, `milestoneRemoved`), `OrderPaymentFailed`, `OrderPaymentReceived`, `OrderStatusChanged`,
   `OrderPublicStatusChanged` (only when the public one changes), `OrderBlockUpdated`, `OrderDetailsChanged` (`fields`, `before`).
 - **Notifications** (§10, with `webx-ui/module-notifications`): seven `orders.*` events (`Notifications\OrderEvents`,
   `OrderValues`, `OrderTemplates`); channels — `orders.notify.*` for a milestone, `options.notify_channels` of a public status;
@@ -71,12 +71,12 @@ grouped into public ones. Dictionary `webx-orders` (`module`, `statuses`, `panel
   (`wx-orders-list`) and `orders-count` on `users.form`, the card `visitor-card` on `orders.show`; panel `{id}/visitors` (+
   `users.view`), `{id}/visitor` POST / DELETE; MCP `orders_link_visitor`. Without it none of these exist.
 - **The section** `orders` (`Panel\OrdersModule`, npm `@webx-ui/module-orders`): `api/cms/orders` — the list (views, `view=auto` — «New» or «All», search,
-  filters, `user`, `counts`), `meta`, `summary` (= `orders_summary`, `Panel\OrdersSummary`; today / 7 / 30 calendar days in `app.timezone`), `{id}/glance` (an opened row), the card, `{id}/status|milestones|cancel|details|notes|refunds|refunds/{refund}/reverse`, the selection's `status` and
+  filters — `balance=due|over` by the index `(balance, placed_at)`, `user`, `counts`), `meta`, `summary` (= `orders_summary`, `Panel\OrdersSummary`; today / 7 / 30 calendar days in `app.timezone`), `{id}/glance` (an opened row), the card, `{id}/status|milestones|cancel|details|notes|payments|refunds|refunds/{refund}/reverse`, the selection's `status` and
   `cancel`, «New order» `new` (`Http\Controllers\Panel\NewOrderController`: `new/products` — `Purchasables::find()`, `new/preview`, POST — `placeByManager()`, `panel`); every write a call of `Orders`, `dry_run` the service's own. The card `orders.show`: public ids `header-actions`,
   `tabs`, `order-notes` (notes = history lines `note`, `Orders::note()`; over them the pinned `manager_note`, saved by `details`), `summary`, `customer`; fields `customer.*`, `recipient.*`, `comment`. Role `orders` («Order manager»).
   `statuses` and `settings` — under `orders.statuses` (`settings` also `orders.checkout.settings`). The selection: `Panel\StatusBatch`.
 - **MCP** (§12, `Mcp\OrdersTools`, `Mcp\StatusTools` on `OrdersModule`): `orders_list|get|history|summary`, `orders_set_status`
-  (`order` or `numbers` ≤ 200), `orders_mark|cancel|refund|refund_reverse|notify|update|create|note`, `orders_statuses_list|save|delete|restore|reorder`,
+  (`order` or `numbers` ≤ 200), `orders_mark|payment_record|cancel|refund|refund_reverse|notify|update|create|note`, `orders_statuses_list|save|delete|restore|reorder`,
   `orders_public_statuses_save|delete|restore|reorder`, `orders_settings_get|set`; resource `orders://catalog`. Source `mcp`;
   money in minor units with `*_formatted`; a dry run is the panel dialog's answer (`Consequences`, `StatusBoard`,
   `StatusBatch`), rolled back where the service has none.
@@ -138,9 +138,9 @@ Routes ask with `cms.can`, tools with `permission:`: reading — any of the firs
 ## Check your work
 
 - `Panel/*Test` — `BoundariesTest`: the panel never writes an order itself; `PerformanceTest`: the list's budget; `AccessCoverageTest`; `NewOrderTest` (search, live totals, `panel`); `ListGlanceTest` (the default tab, an opened row, the pinned note). `CancelByStatusTest`.
-- `Mcp/McpTest` (parity with the panel, dry runs write nothing), `Mcp/SummaryTest` (the list's figures = `orders_summary`), `Mcp/SummaryDaysTest` (midnight of the site), `Mcp/CheckoutToolsTest` (preview = `place`, masks), `Mcp/PerformanceTest`, `Mcp/AccessCoverageTest`, `Mcp/LinkVisitorTest`, `Mcp/CreateOrderTest`; 30 tools (31 with users, 24 with the checkout off).
+- `Mcp/McpTest` (parity with the panel, dry runs write nothing), `Mcp/SummaryTest` (the list's figures = `orders_summary`), `Mcp/SummaryDaysTest` (midnight of the site), `Mcp/CheckoutToolsTest` (preview = `place`, masks), `Mcp/PerformanceTest`, `Mcp/AccessCoverageTest`, `Mcp/LinkVisitorTest`, `Mcp/CreateOrderTest`; 31 tools (32 with users, 25 with the checkout off).
 - `Site/OrderPageTest` (the signed page, its budget, nothing without users), `Site/VisitorOrdersTest`. `Notifications/*Test` — with and without it; `ResendTest` — by hand, the second press.
-- `PlaceTest`, `MilestonesTest`, `StatusMoveTest`, `DetailsTest`, `RefundTest`, `RefundReversalTest`, `ManagerOrderTest`, `PerformanceTest` (the budget of `place()`), and
+- `PlaceTest`, `BalanceTest` (the column = the formula after each method), `MilestonesTest`, `StatusMoveTest`, `DetailsTest`, `RefundTest`, `RefundReversalTest`, `ManagerOrderTest`, `PerformanceTest` (the budget of `place()`), and
   `CartLockTest`, `MilestoneRaceTest` against a real server: `WEBX_TEST_MYSQL_URL=mariadb://user:password@host:3306/db`; `migrate` / `migrate:rollback`.
 - `Checkout/*Test`: `CheckoutWithoutNeighboursTest`, `PlaceIdempotencyTest`, `PayableChangedTest`, `PerformanceTest` (`GET /checkout`),
   `PlacePerformanceTest`, `StepOrderTest`, `CheckoutSlotsTest`, `CheckoutViewTest`, `CheckoutSignInTest`, `CheckoutDisabledTest`, `QuickOrderTest`; a slot extends `SlotContractTestCase`.

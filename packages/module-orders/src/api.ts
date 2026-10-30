@@ -17,6 +17,8 @@ import type {
   OrdersPage,
   OrdersSettings,
   OrdersSummaryData,
+  PaymentInput,
+  PaymentPreview,
   ProductChoice,
   PublicStatusInput,
   RefundInput,
@@ -63,6 +65,17 @@ function refundBody(input: RefundInput, dryRun: boolean) {
   }
 }
 
+/** A top-up as the server reads it: an empty day is today, empty words are none. */
+function paymentBody(input: PaymentInput, dryRun: boolean) {
+  return {
+    amount: input.amount,
+    reference: input.reference || null,
+    at: input.at || null,
+    note: input.note || null,
+    dry_run: dryRun,
+  }
+}
+
 export interface OrdersApi {
   list(query?: OrderQuery): Promise<OrdersPage>
   meta(): Promise<OrdersMeta>
@@ -80,6 +93,9 @@ export interface OrdersApi {
     reference: string,
     note: string,
   ): Promise<OrderDetail>
+  /** A top-up of a paid order (§36.3): the balance after it, then the card. */
+  previewPayment(id: number, input: PaymentInput): Promise<PaymentPreview>
+  recordPayment(id: number, input: PaymentInput): Promise<OrderDetail>
   previewCancel(id: number): Promise<CancelConsequences>
   cancel(id: number, reason: string): Promise<OrderDetail>
   saveDetails(id: number, values: ScreenModel): Promise<OrderDetail>
@@ -171,6 +187,14 @@ export function createOrdersApi(admin: AdminContext): OrdersApi {
           reference: reference || null,
           note: note || null,
         })
+        .then(data),
+    previewPayment: (id, input) =>
+      admin.http
+        .post<{ data: PaymentPreview }>(`${base}/${id}/payments`, paymentBody(input, true))
+        .then(data),
+    recordPayment: (id, input) =>
+      admin.http
+        .post<{ data: OrderDetail }>(`${base}/${id}/payments`, paymentBody(input, false))
         .then(data),
     previewCancel: (id) =>
       admin.http

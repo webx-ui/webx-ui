@@ -41,6 +41,7 @@ use WebxUi\Orders\Events\OrderCancelled;
 use WebxUi\Orders\Events\OrderDetailsChanged;
 use WebxUi\Orders\Events\OrderPaid;
 use WebxUi\Orders\Events\OrderPaymentFailed;
+use WebxUi\Orders\Events\OrderPaymentReceived;
 use WebxUi\Orders\Events\OrderPlaced;
 use WebxUi\Orders\Events\OrderPlacing;
 use WebxUi\Orders\Events\OrderPublicStatusChanged;
@@ -211,6 +212,9 @@ final class Orders
      * dispatched — the order's row is locked, so a gateway and a manager marking it paid at the
      * same moment make one event, not two.
      *
+     * «Paid» counts money in (§36.3): `$amount` is what a gateway confirmed; without it — a
+     * manager's «Mark as paid» — the order is paid whole, what it still owes.
+     *
      * @throws MilestoneRefused «placed», «awaiting payment», «refunded»: they are not set by hand
      * @throws OrderCancelledAlready «paid» or «received» of a cancelled order
      */
@@ -221,20 +225,25 @@ final class Orders
         ?CarbonInterface $at = null,
         ?string $reference = null,
         ?string $note = null,
+        ?int $amount = null,
     ): MilestoneMark {
         if (! $milestone->settableByStatus()) {
             throw new MilestoneRefused($milestone);
         }
 
+        if ($amount !== null && $amount < 0) {
+            throw new InvalidArgumentException('A payment is not below zero.');
+        }
+
         $adminId = $this->adminId($source);
         $at = $at !== null ? CarbonImmutable::instance($at) : CarbonImmutable::now();
 
-        return $this->locked($order, function (Order $locked) use ($milestone, $source, $at, $reference, $note, $adminId): MilestoneMark {
+        return $this->locked($order, function (Order $locked) use ($milestone, $source, $at, $reference, $note, $adminId, $amount): MilestoneMark {
             if ($this->forbidden($locked, $milestone)) {
                 throw new OrderCancelledAlready("«{$milestone->value}»");
             }
 
-            [$mark, $event] = $this->setMilestone($locked, $milestone, $source, $adminId, $at, self::cut($reference, 190), self::cut($note, 500));
+            [$mark, $event] = $this->setMilestone($locked, $milestone, $source, $adminId, $at, self::cut($reference, 190), self::cut($note, 500), $amount);
 
             if ($event !== null) {
                 $this->events->dispatch($event($this->snapshot($locked)));
@@ -299,6 +308,111 @@ final class Orders
 
             // The row «awaiting_payment» of order_milestones stays: it is history (decision 24).
             $this->line($locked, StatusChange::PAYMENT_AWAITING_STOPPED, $source, $adminId, $at);
+        });
+    }
+
+    /**
+     * The order starts awaiting payment again (§36.3): its method was switched to one that awaits
+     * it — cash on receipt → online (§41.2). The pair of `stopAwaitingPayment()` (decision 42): the
+     * flag, the milestone «awaiting payment» if it was never set, a history line, no event; an order
+     * that awaits payment already is silence.
+     *
+     * @throws OrderPaidAlready
+     * @throws OrderCancelledAlready
+     */
+    public function awaitPayment(Order $order, string $source): void
+    {
+        $adminId = $this->adminId($source);
+
+        $this->locked($order, function (Order $locked) use ($source, $adminId): void {
+            if ($locked->cancelled_at !== null) {
+                throw new OrderCancelledAlready('to await payment');
+            }
+
+            if ($locked->paid_at !== null) {
+                throw new OrderPaidAlready('to await payment');
+            }
+
+            if ($locked->awaiting_payment) {
+                return;
+            }
+
+            $at = CarbonImmutable::now();
+            $locked->awaiting_payment = true;
+            $locked->save();
+
+            $set = OrderMilestone::query()->where('order_id', $locked->id)->where('milestone', Milestone::AwaitingPayment->value)->exists();
+
+            if (! $set) {
+                OrderMilestone::query()->insert([
+                    'order_id' => $locked->id,
+                    'milestone' => Milestone::AwaitingPayment->value,
+                    'at' => $at,
+                    'source' => self::cut($source, 64),
+                    'admin_id' => $adminId,
+                    'created_at' => $at,
+                ]);
+            }
+
+            $this->line($locked, StatusChange::PAYMENT_AWAITING, $source, $adminId, $at);
+        });
+    }
+
+    /** §36.1 — the order's money in one answer: owed, paid, refunded, due (> 0), over (> 0). */
+    public function balance(Order $order): Balance
+    {
+        return Balance::of($order);
+    }
+
+    /**
+     * Money that came in for an order that is paid already: a top-up after an edit (§36.3, §37).
+     * No milestone — «paid» is set once (decision 24) and `OrderPaid` is not dispatched again;
+     * `paid_total` grows, a history line `payment` and `OrderPaymentReceived`. More than is due
+     * is taken as it came: the balance shows it as money to give back.
+     *
+     * A dry run answers the balance after it, and a refusal in the answer; it writes nothing.
+     *
+     * @throws ValidationException the amount is not a positive number of minor units
+     * @throws PaymentRefused `not_paid` — the first payment is `mark(paid)`; `cancelled`
+     */
+    public function recordPayment(
+        Order $order,
+        int $amount,
+        string $source,
+        ?string $reference = null,
+        ?CarbonInterface $at = null,
+        ?string $note = null,
+        bool $dryRun = false,
+    ): PaymentRecord {
+        if ($amount < 1) {
+            throw ValidationException::withMessages(['amount' => (string) __('webx-orders::panel.payment-amount-required')]);
+        }
+
+        $reference = self::text($reference, 190);
+        $note = self::text($note, 500);
+        $at = $at !== null ? CarbonImmutable::instance($at) : CarbonImmutable::now();
+
+        if ($dryRun) {
+            return $this->paymentPlan(Order::query()->findOrFail($order->id), $amount, $reference, $note, $at, true);
+        }
+
+        $adminId = $this->adminId($source);
+
+        return $this->locked($order, function (Order $locked) use ($amount, $source, $reference, $note, $at, $adminId): PaymentRecord {
+            $plan = $this->paymentPlan($locked, $amount, $reference, $note, $at, false);
+
+            if ($plan->refusal !== null) {
+                throw new PaymentRefused($plan);
+            }
+
+            $locked->paid_total += $amount;
+            $locked->balance = Balance::stored($locked);
+            $locked->save();
+
+            $this->line($locked, StatusChange::PAYMENT, $source, $adminId, $at, self::paymentNote($amount, $reference, $note));
+            $this->events->dispatch(new OrderPaymentReceived($this->snapshot($locked), $amount, $reference, $plan->after, $source, $adminId, $at));
+
+            return $plan;
         });
     }
 
@@ -509,6 +623,7 @@ final class Orders
             }
 
             $locked->refunded_total += $plan->amount;
+            $locked->balance = Balance::stored($locked);
 
             if ($plan->milestone !== null) {
                 // Its event is OrderRefunded itself, with full = true.
@@ -579,6 +694,7 @@ final class Orders
             }
 
             $locked->refunded_total = $plan->refundedTotal;
+            $locked->balance = Balance::stored($locked);
             $this->line($locked, StatusChange::REFUND_REVERSED, $source, $adminId, $at, "refund#{$refund->id}".($reason !== null ? ": {$reason}" : ''));
 
             if ($plan->milestoneRemoved !== null) {
@@ -872,6 +988,8 @@ final class Orders
             'tenders_total' => array_sum(array_map(static fn (Tender $tender): int => $tender->amount, $state->tenders)),
             'payable' => $state->payable,
             'refunded_total' => 0,
+            'paid_total' => 0,
+            'balance' => $state->payable,
             'customer_first_name' => $customer->firstName,
             'customer_last_name' => $customer->lastName,
             'customer_phone' => $customer->phone,
@@ -1143,9 +1261,13 @@ final class Orders
      * The milestone, its copy on `orders`, and the event to dispatch once the caller has its
      * snapshot — or the first mark, when it is there already.
      *
+     * «Paid» counts `$amount` into `paid_total`, or what the order still owes when no amount is
+     * given (§36.2); every milestone writes the balance again — a cancellation takes what it owes
+     * to 0.
+     *
      * @return array{MilestoneMark, (Closure(OrderData): object)|null}
      */
-    private function setMilestone(Order $locked, Milestone $milestone, string $source, ?int $adminId, CarbonImmutable $at, ?string $reference, ?string $note): array
+    private function setMilestone(Order $locked, Milestone $milestone, string $source, ?int $adminId, CarbonImmutable $at, ?string $reference, ?string $note, ?int $amount = null): array
     {
         $first = OrderMilestone::query()->where('order_id', $locked->id)->where('milestone', $milestone->value)->first();
 
@@ -1176,9 +1298,11 @@ final class Orders
             // The row «awaiting_payment» of order_milestones stays; the flags of the list go.
             $locked->awaiting_payment = false;
             $locked->payment_failed_at = null;
+            $locked->paid_total += $amount ?? max(0, Balance::stored($locked));
         }
 
         $returned = $milestone === Milestone::Cancelled ? $this->returnTenders($locked) : [];
+        $locked->balance = Balance::stored($locked);
         $locked->save();
 
         return [
@@ -1233,7 +1357,8 @@ final class Orders
     {
         $at = CarbonImmutable::now();
         $wasPaid = $order->paid_at !== null;
-        $money = $wasPaid ? max(0, $order->payable - $order->refunded_total) : 0;
+        // What came in less what went back — the balance a cancellation leaves (§36.1).
+        $money = $wasPaid ? max(0, $order->paid_total - $order->refunded_total) : 0;
         $tenders = $this->tendersLeft($order);
 
         $move = null;
@@ -1318,7 +1443,7 @@ final class Orders
     /** What a refund would record, checked against what is left — the dry run's answer and the refund's plan. */
     private function refundPlan(Order $order, RefundRequest $request, bool $dryRun): RefundResult
     {
-        $moneyLeft = max(0, $order->payable - $order->refunded_total);
+        $moneyLeft = Balance::refundable($order);
         $tendersLeft = [];
         $itemsLeft = [];
 
@@ -1416,14 +1541,15 @@ final class Orders
 
         $refundedTotal = max(0, $order->refunded_total - $refund->amount);
         // Given back whole after it as well — a record of units alone — keeps the milestone (§9.2).
-        $whole = $refundedTotal >= $order->payable && array_all($tendersLeft, static fn (int $left): bool => $left === 0);
+        $ceiling = max($order->payable, $order->paid_total);
+        $whole = $refundedTotal >= $ceiling && array_all($tendersLeft, static fn (int $left): bool => $left === 0);
 
         return new RefundReversal(
             $refund->id,
             $refund->amount,
             $tenders,
             $items,
-            max(0, $order->payable - $refundedTotal),
+            max(0, $ceiling - $refundedTotal),
             $tendersLeft,
             $itemsLeft,
             $refundedTotal,
@@ -1498,6 +1624,34 @@ final class Orders
         $this->validation->make(['note' => $note], ['note' => ['required', 'string']], [
             'note.required' => (string) __('webx-orders::panel.cancel-reason-required'),
         ])->validate();
+    }
+
+    /** What a payment would record, and the balance before and after it — the dry run's answer and the payment's plan. */
+    private function paymentPlan(Order $order, int $amount, ?string $reference, ?string $note, CarbonImmutable $at, bool $dryRun): PaymentRecord
+    {
+        $refusal = match (true) {
+            $order->cancelled_at !== null => PaymentRecord::CANCELLED,
+            $order->paid_at === null => PaymentRecord::NOT_PAID,
+            default => null,
+        };
+
+        $after = clone $order;
+        $after->paid_total += $refusal === null ? $amount : 0;
+
+        return new PaymentRecord($amount, $reference, $note, $at, Balance::of($order), Balance::of($after), $refusal, $dryRun);
+    }
+
+    /**
+     * The history line of a top-up: «1500», «1500 [bank-77]», «1500 [bank-77]: by card at the
+     * desk» — the panel reads the money and the reference back from it.
+     */
+    public static function paymentNote(int $amount, ?string $reference, ?string $note): string
+    {
+        $line = (string) $amount
+            .($reference !== null ? ' ['.str_replace(']', ')', $reference).']' : '')
+            .($note !== null ? ': '.$note : '');
+
+        return mb_substr($line, 0, 1000);
     }
 
     /** A line of the history that is not a move: a note, a failed payment, a block, details. */
