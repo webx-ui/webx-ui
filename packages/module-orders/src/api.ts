@@ -18,6 +18,8 @@ import type {
   OrdersSettings,
   OrdersSummaryData,
   PaymentInput,
+  ItemsEditInput,
+  ItemsEditPreview,
   PaymentPreview,
   ProductChoice,
   PublicStatusInput,
@@ -76,6 +78,19 @@ function paymentBody(input: PaymentInput, dryRun: boolean) {
   }
 }
 
+/** An edit of the lines as the server reads it; the reason is asked for only on saving. */
+function itemsBody(input: ItemsEditInput) {
+  return {
+    revision: input.revision,
+    add: input.add,
+    qty: input.qty,
+    remove: input.remove,
+    reason: input.reason || null,
+    message: input.message || null,
+    notify: input.notify,
+  }
+}
+
 export interface OrdersApi {
   list(query?: OrderQuery): Promise<OrdersPage>
   meta(): Promise<OrdersMeta>
@@ -96,6 +111,9 @@ export interface OrdersApi {
   /** A top-up of a paid order (§36.3): the balance after it, then the card. */
   previewPayment(id: number, input: PaymentInput): Promise<PaymentPreview>
   recordPayment(id: number, input: PaymentInput): Promise<OrderDetail>
+  /** «Change the lines» (§42.1): the live totals, then the card with the edit beside it. */
+  previewItems(id: number, input: ItemsEditInput): Promise<ItemsEditPreview>
+  saveItems(id: number, input: ItemsEditInput): Promise<OrderDetail>
   previewCancel(id: number): Promise<CancelConsequences>
   cancel(id: number, reason: string): Promise<OrderDetail>
   saveDetails(id: number, values: ScreenModel): Promise<OrderDetail>
@@ -196,6 +214,12 @@ export function createOrdersApi(admin: AdminContext): OrdersApi {
       admin.http
         .post<{ data: OrderDetail }>(`${base}/${id}/payments`, paymentBody(input, false))
         .then(data),
+    previewItems: (id, input) =>
+      admin.http
+        .post<{ data: ItemsEditPreview }>(`${base}/${id}/items/preview`, itemsBody(input))
+        .then(data),
+    saveItems: (id, input) =>
+      admin.http.put<{ data: OrderDetail }>(`${base}/${id}/items`, itemsBody(input)).then(data),
     previewCancel: (id) =>
       admin.http
         .post<{ data: CancelConsequences }>(`${base}/${id}/cancel`, { dry_run: true })

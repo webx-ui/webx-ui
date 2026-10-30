@@ -75,6 +75,8 @@ function title(line: TimelineLine): string {
       return t('panel.timeline-milestone_removed', { milestone: line.milestone?.label ?? '' })
     case 'block':
       return t('panel.timeline-block', { block: line.note ?? '' })
+    case 'items':
+      return t('panel.timeline-items', { number: line.revision?.number ?? '' })
     default:
       return t(`panel.timeline-${line.kind}`)
   }
@@ -84,6 +86,7 @@ function tone(line: TimelineLine): TimelineItemType {
   if (line.kind === 'status') return toneOf(line.to_color)
   if (line.kind === 'payment_failed') return 'danger'
   if (line.kind === 'payment') return 'success'
+  if (line.kind === 'items') return 'primary'
   if (line.kind === 'refund') return line.reversed ? 'default' : 'warning'
   if (line.kind === 'refund_reversed' || line.kind === 'milestone_removed') return 'warning'
   if (line.kind === 'milestone') {
@@ -104,9 +107,49 @@ function tone(line: TimelineLine): TimelineItemType {
 function reason(line: TimelineLine): string | null {
   const cancels = line.kind === 'milestone' && line.milestone?.key === 'cancelled'
 
-  return (cancels || line.kind === 'refund' || line.kind === 'refund_reversed') && line.note
+  return (cancels ||
+    line.kind === 'refund' ||
+    line.kind === 'refund_reversed' ||
+    line.kind === 'items') &&
+    line.note
     ? line.note
     : null
+}
+
+/**
+ * An edit of the lines (§38.2) in lines: what was added, taken out and counted again, the total
+ * before and after, the balance it left, the words for the buyer.
+ */
+function edited(revision: NonNullable<TimelineLine['revision']>): string[] {
+  const parts = revision.changes.map((change) => {
+    const name = change.options_label ? `${change.name} (${change.options_label})` : change.name
+
+    if (change.op === 'add') return t('panel.timeline-items-add', { name, qty: change.qty_to })
+    if (change.op === 'remove') return t('panel.timeline-items-remove', { name })
+
+    return t('panel.timeline-items-qty', { name, from: change.qty_from, to: change.qty_to })
+  })
+
+  if (revision.total_from && revision.total_to) {
+    parts.push(
+      t('panel.timeline-items-total', { from: revision.total_from, to: revision.total_to }),
+    )
+  }
+
+  if (revision.balance) {
+    parts.push(
+      t(
+        revision.balance.kind === 'due' ? 'panel.timeline-items-due' : 'panel.timeline-items-over',
+        {
+          amount: revision.balance.amount,
+        },
+      ),
+    )
+  }
+
+  if (revision.message) parts.push(t('panel.timeline-items-message', { message: revision.message }))
+
+  return parts
 }
 
 /** The line under the title: the note, the reference, the units — what the row has. */
@@ -119,6 +162,7 @@ function details(line: TimelineLine): string[] {
     parts.push(t('panel.timeline-refund-units', { count: line.units }))
   }
   if (line.reference) parts.push(t('panel.timeline-reference', { reference: line.reference }))
+  if (line.revision) parts.push(...edited(line.revision))
   // A block's line names the block in its title already; the note is that name.
   if (line.note && line.kind !== 'block' && reason(line) === null) parts.push(line.note)
 
@@ -153,7 +197,7 @@ function details(line: TimelineLine): string[] {
             v-if="reason(line)"
             class="wx-orders-timeline__reason"
             :class="
-              line.kind === 'refund' && line.reversed
+              (line.kind === 'refund' && line.reversed) || line.kind === 'items'
                 ? 'wx-orders-timeline__reason--muted'
                 : line.kind === 'refund' || line.kind === 'refund_reversed'
                   ? 'wx-orders-timeline__reason--warning'

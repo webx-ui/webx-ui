@@ -127,13 +127,14 @@ final class OrderList
                     ->select('name')
                     ->whereColumn('order_items.order_id', 'orders.id')
                     ->whereNull('parent_id')
+                    ->where(self::shown(...))
                     ->orderBy('position')
                     ->orderBy('id')
                     ->limit(1),
                 // Where it came from: the milestone «placed» keeps it, one row an order by its unique key.
                 'placed_source' => self::placed()->select('source'),
             ])
-            ->withCount(['items as roots_count' => static fn (Builder $items) => $items->whereNull('parent_id')]);
+            ->withCount(['items as roots_count' => static fn (Builder $items) => $items->whereNull('parent_id')->where(self::shown(...))]);
 
         $this->filtered($query, $filters);
 
@@ -327,9 +328,21 @@ final class OrderList
             'cancelled_at' => $order->cancelled_at?->toAtomString(),
             'refunded' => $order->refunded_total > 0 || $order->refunded_at !== null,
             'balance' => self::balance($order, $this->money),
+            // «Edited» beside the total (§42.4): the lines are not the ones placed any more.
+            'edited' => $order->items_revision > 0,
             'delivery' => $this->summary('delivery', $order->delivery, $locale),
             'payment' => $this->summary('payment', $order->payment, $locale),
         ];
+    }
+
+    /**
+     * A line the order still shows ({@see OrderItem::shown()}), as a condition of a query.
+     *
+     * @param  Builder<OrderItem>  $lines
+     */
+    public static function shown(Builder $lines): void
+    {
+        $lines->whereNull('removed_at')->orWhere('qty', '>', 0);
     }
 
     /**

@@ -91,6 +91,7 @@ function card(node: object, data: OrderCardData) {
         changeStatus,
         mark: () => Promise.resolve(),
         recordPayment: () => Promise.resolve(),
+        editItems: () => Promise.resolve(),
         cancel: () => Promise.resolve(),
         refund: () => Promise.resolve(),
         reverseRefund,
@@ -209,5 +210,75 @@ describe('WxOrdersTimeline — «Notifications»', () => {
     expect(wrapper.text()).toContain('Message sent again: Order placed')
     expect(wrapper.text()).toContain('buyer-a@example.com')
     expect(wrapper.text()).toContain('Manager A')
+  })
+
+  it('tells an edit of the lines: what changed, the total, the balance, the reason', () => {
+    const { wrapper } = card(
+      OrderTimelineNode,
+      order({
+        timeline: [
+          {
+            key: 'history-8',
+            kind: 'items',
+            at: '2026-10-30T12:00:00+00:00',
+            source: 'panel',
+            admin: 'Manager A',
+            note: 'The buyer called back',
+            revision: {
+              number: 2,
+              changes: [
+                {
+                  op: 'add',
+                  item_id: 41,
+                  name: 'Item D',
+                  options_label: 'Red',
+                  price: '$15.00',
+                  qty_from: 0,
+                  qty_to: 1,
+                  total_from: '$0.00',
+                  total_to: '$15.00',
+                },
+                {
+                  op: 'qty',
+                  item_id: 40,
+                  name: 'Item A',
+                  options_label: null,
+                  price: '$10.00',
+                  qty_from: 2,
+                  qty_to: 3,
+                  total_from: '$20.00',
+                  total_to: '$30.00',
+                },
+                {
+                  op: 'remove',
+                  item_id: 39,
+                  name: 'Item B',
+                  options_label: null,
+                  price: '$5.00',
+                  qty_from: 1,
+                  qty_to: 0,
+                  total_from: '$5.00',
+                  total_to: '$0.00',
+                },
+              ],
+              total_from: '$120.00',
+              total_to: '$135.00',
+              balance: { kind: 'due', amount: '$15.00' },
+              message: null,
+            },
+          },
+        ],
+      }),
+    )
+
+    const text = wrapper.text()
+
+    expect(text).toContain('Lines changed (edit 2)')
+    expect(text).toContain('Added: Item D (Red) × 1')
+    expect(text).toContain('Item A: 2 → 3')
+    expect(text).toContain('Taken out: Item B')
+    expect(text).toContain('Total: $120.00 → $135.00')
+    expect(text).toContain('Owed after it: $15.00')
+    expect(wrapper.find('[data-test="timeline-reason"]').text()).toContain('The buyer called back')
   })
 })

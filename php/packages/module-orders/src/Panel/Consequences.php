@@ -8,6 +8,7 @@ use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Cart\Money;
 use WebxUi\Notifications\Models\Channel;
 use WebxUi\Orders\Balance;
+use WebxUi\Orders\ItemsEditResult;
 use WebxUi\Orders\Milestone;
 use WebxUi\Orders\MilestoneMark;
 use WebxUi\Orders\PaymentRecord;
@@ -121,6 +122,92 @@ final class Consequences
             'message' => $record->refusal === null ? null : (string) __('webx-orders::panel.refusals.'.$record->refusal),
             'dry_run' => $record->dryRun,
         ];
+    }
+
+    /**
+     * What an edit of the lines does (§37.1, §42.1) — one answer for the editor's live totals and
+     * for `orders_items_edit`: each line «before → after», the discounts that follow their lines,
+     * the totals before and after, the balance after it, the warnings of §37.7 in the panel's
+     * words, or the refusal with the field it is about. Money in minor units with the string beside.
+     *
+     * @return array<string, mixed>
+     */
+    public function itemsEdit(ItemsEditResult $result, string $currency, Money $money): array
+    {
+        $amount = static fn (string $key, int $minor): array => self::amount($key, $minor, $currency, $money);
+        $totals = static function (array $totals) use ($amount): array {
+            $out = [];
+
+            foreach ($totals as $key => $minor) {
+                $out = [...$out, ...$amount((string) $key, (int) $minor)];
+            }
+
+            return $out;
+        };
+
+        return [
+            'changes' => array_map(static fn (array $change): array => [
+                'op' => $change['op'],
+                'item_id' => $change['item_id'],
+                'name' => $change['name'],
+                'options_label' => $change['options_label'],
+                ...$amount('price', $change['price']),
+                'qty_from' => $change['qty_from'],
+                'qty_to' => $change['qty_to'],
+                ...$amount('total_from', $change['total_from']),
+                ...$amount('total_to', $change['total_to']),
+            ], $result->changes),
+            'adjustments' => array_map(static fn (array $adjustment): array => [
+                'adjustment_id' => $adjustment['adjustment_id'],
+                'label' => $adjustment['label'],
+                ...$amount('amount_from', $adjustment['amount_from']),
+                ...$amount('amount_to', $adjustment['amount_to']),
+            ], $result->adjustments),
+            'before' => $totals($result->before),
+            'after' => $totals($result->after),
+            'balance' => self::balance($result->balance, $money),
+            'warnings' => array_map(static fn (array $warning): array => [
+                ...$warning,
+                'message' => self::editWarning($warning, $currency, $money),
+            ], $result->warnings),
+            'refusal' => $result->refusal,
+            'field' => $result->field,
+            'message' => $result->refusal === null ? null : (string) __('webx-orders::panel.items-refusals.'.$result->refusal),
+            'revision' => $result->revision,
+            'dry_run' => $result->dryRun,
+        ];
+    }
+
+    /**
+     * A warning of an edit as the dialog says it (§37.7); a line's warning of the cart comes
+     * with the cart's own words.
+     *
+     * @param  array<string, mixed>  $warning
+     */
+    private static function editWarning(array $warning, string $currency, Money $money): string
+    {
+        $format = static fn (mixed $minor): string => $money->format((int) $minor, $currency);
+
+        return match ($warning['code']) {
+            ItemsEditResult::WARN_PAID => (string) __('webx-orders::panel.items-warnings.paid-'.match (true) {
+                (int) $warning['due'] > 0 => 'due',
+                (int) $warning['over'] > 0 => 'over',
+                default => 'even',
+            }, [
+                'paid' => $format($warning['paid']),
+                'payable' => $format($warning['payable']),
+                'due' => $format($warning['due']),
+                'over' => $format($warning['over']),
+            ]),
+            ItemsEditResult::WARN_ADJUSTMENT_KEPT => (string) __('webx-orders::panel.items-warnings.adjustment_kept', [
+                'label' => (string) $warning['label'],
+                'subtotal' => $format($warning['subtotal']),
+            ]),
+            ItemsEditResult::WARN_BENEFIT_KEPT => (string) __('webx-orders::panel.items-warnings.benefit_kept', ['label' => (string) $warning['label']]),
+            ItemsEditResult::WARN_NOTHING_SHIPPABLE => (string) __('webx-orders::panel.items-warnings.nothing_shippable'),
+            ItemsEditResult::WARN_TENDERS_OVER => (string) __('webx-orders::panel.items-warnings.tenders_over', ['amount' => $format($warning['amount'])]),
+            default => is_string($warning['message'] ?? null) ? $warning['message'] : (string) $warning['code'],
+        };
     }
 
     /**

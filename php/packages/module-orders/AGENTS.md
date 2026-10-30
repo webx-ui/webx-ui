@@ -71,12 +71,12 @@ grouped into public ones. Dictionary `webx-orders` (`module`, `statuses`, `panel
   (`wx-orders-list`) and `orders-count` on `users.form`, the card `visitor-card` on `orders.show`; panel `{id}/visitors` (+
   `users.view`), `{id}/visitor` POST / DELETE; MCP `orders_link_visitor`. Without it none of these exist.
 - **The section** `orders` (`Panel\OrdersModule`, npm `@webx-ui/module-orders`): `api/cms/orders` — the list (views, `view=auto` — «New» or «All», search,
-  filters — `balance=due|over` by the index `(balance, placed_at)`, `user`, `counts`), `meta`, `summary` (= `orders_summary`, `Panel\OrdersSummary`; today / 7 / 30 calendar days in `app.timezone`), `{id}/glance` (an opened row), the card, `{id}/status|milestones|cancel|details|notes|payments|refunds|refunds/{refund}/reverse`, the selection's `status` and
+  filters — `balance=due|over` by the index `(balance, placed_at)`, `user`, `counts`), `meta`, `summary` (= `orders_summary`, `Panel\OrdersSummary`; today / 7 / 30 calendar days in `app.timezone`), `{id}/glance` (an opened row), the card, `{id}/status|milestones|cancel|details|notes|payments|refunds|refunds/{refund}/reverse`, «Change the lines» `{id}/items/preview` (dry run) and PUT `{id}/items` (`ItemsController`, `editItems()`; `stale` — under `revision`), the selection's `status` and
   `cancel`, «New order» `new` (`Http\Controllers\Panel\NewOrderController`: `new/products` — `Purchasables::find()`, `new/preview`, POST — `placeByManager()`, `panel`); every write a call of `Orders`, `dry_run` the service's own. The card `orders.show`: public ids `header-actions`,
   `tabs`, `order-notes` (notes = history lines `note`, `Orders::note()`; over them the pinned `manager_note`, saved by `details`), `summary`, `customer`; fields `customer.*`, `recipient.*`, `comment`. Role `orders` («Order manager»).
   `statuses` and `settings` — under `orders.statuses` (`settings` also `orders.checkout.settings`). The selection: `Panel\StatusBatch`.
 - **MCP** (§12, `Mcp\OrdersTools`, `Mcp\StatusTools` on `OrdersModule`): `orders_list|get|history|summary`, `orders_set_status`
-  (`order` or `numbers` ≤ 200), `orders_mark|payment_record|cancel|refund|refund_reverse|notify|update|create|note`, `orders_statuses_list|save|delete|restore|reorder`,
+  (`order` or `numbers` ≤ 200), `orders_mark|payment_record|items_edit|cancel|refund|refund_reverse|notify|update|create|note` (`orders_history` — `revisions`), `orders_statuses_list|save|delete|restore|reorder`,
   `orders_public_statuses_save|delete|restore|reorder`, `orders_settings_get|set`; resource `orders://catalog`. Source `mcp`;
   money in minor units with `*_formatted`; a dry run is the panel dialog's answer (`Consequences`, `StatusBoard`,
   `StatusBatch`), rolled back where the service has none.
@@ -105,13 +105,13 @@ grouped into public ones. Dictionary `webx-orders` (`module`, `statuses`, `panel
 
 ### Permissions
 
-| Permission                 | Opens                                                                                                                         |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `orders.view`              | the list, the card and the history of orders                                                                                  |
-| `orders.manage`            | statuses, marks, cancelling, contacts, notes, the visitor, a new order (`orders_create`), a message by hand (`orders_notify`) |
-| `orders.refund`            | recording money given back                                                                                                    |
-| `orders.statuses`          | the screens of statuses and the settings of the section                                                                       |
-| `orders.checkout.settings` | the tab «Checkout», `orders_checkout_settings_set`                                                                            |
+| Permission                 | Opens                                                                                                                                                          |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `orders.view`              | the list, the card and the history of orders                                                                                                                   |
+| `orders.manage`            | statuses, marks, cancelling, contacts, notes, the visitor, a new order (`orders_create`), the lines (`orders_items_edit`), a message by hand (`orders_notify`) |
+| `orders.refund`            | recording money given back                                                                                                                                     |
+| `orders.statuses`          | the screens of statuses and the settings of the section                                                                                                        |
+| `orders.checkout.settings` | the tab «Checkout», `orders_checkout_settings_set`                                                                                                             |
 
 Routes ask with `cms.can`, tools with `permission:`: reading — any of the first three; writing as the table says. Finding a visitor to link (`{id}/visitors`) wants `users.view` as well.
 
@@ -138,7 +138,7 @@ Routes ask with `cms.can`, tools with `permission:`: reading — any of the firs
 ## Check your work
 
 - `Panel/*Test` — `BoundariesTest`: the panel never writes an order itself; `PerformanceTest`: the list's budget; `AccessCoverageTest`; `NewOrderTest` (search, live totals, `panel`); `ListGlanceTest` (the default tab, an opened row, the pinned note). `CancelByStatusTest`.
-- `Mcp/McpTest` (parity with the panel, dry runs write nothing), `Mcp/SummaryTest` (the list's figures = `orders_summary`), `Mcp/SummaryDaysTest` (midnight of the site), `Mcp/CheckoutToolsTest` (preview = `place`, masks), `Mcp/PerformanceTest`, `Mcp/AccessCoverageTest`, `Mcp/LinkVisitorTest`, `Mcp/CreateOrderTest`; 31 tools (32 with users, 25 with the checkout off).
+- `Mcp/McpTest` (parity with the panel, dry runs write nothing), `Mcp/SummaryTest` (the list's figures = `orders_summary`), `Mcp/SummaryDaysTest` (midnight of the site), `Mcp/CheckoutToolsTest` (preview = `place`, masks), `Mcp/PerformanceTest`, `Mcp/AccessCoverageTest`, `Mcp/LinkVisitorTest`, `Mcp/CreateOrderTest`, `Mcp/ItemsEditToolTest` (editor = `orders_items_edit`, `stale`); 32 tools (33 with users, 26 with the checkout off).
 - `Site/OrderPageTest` (the signed page, its budget, nothing without users), `Site/VisitorOrdersTest`. `Notifications/*Test` — with and without it; `ResendTest` — by hand, the second press.
 - `PlaceTest`, `BalanceTest` (the column = the formula after each method), `MilestonesTest`, `StatusMoveTest`, `DetailsTest`, `RefundTest`, `RefundReversalTest`, `ManagerOrderTest`, `ItemsEditTest` (variant A, refusals, rollback, dry run), `PerformanceTest` (the budgets of `place()` and `editItems()`), and
   `CartLockTest`, `MilestoneRaceTest` against a real server: `WEBX_TEST_MYSQL_URL=mariadb://user:password@host:3306/db`; `migrate` / `migrate:rollback`.

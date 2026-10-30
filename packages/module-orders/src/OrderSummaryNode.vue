@@ -12,7 +12,8 @@ import type { MilestoneKey } from './types'
  * dates of the milestones — the reason of a cancellation under its date. A refund recorded by
  * mistake is reversed from its plate (decision 98) and stays there struck through, with why.
  * What came in, the top-ups apart, and the balance when it says more than «to pay» (§42.4): a
- * plate «Top-up due» with «Record a top-up», or «Give back».
+ * plate «Top-up due» with «Record a top-up», or «Give back». The lines edited (§42.4): how many
+ * edits and when the last one was; «History» has each of them.
  * Money comes written by the server in the currency of the order; nothing is counted here.
  */
 defineOptions({ name: 'WxOrdersSummary' })
@@ -53,6 +54,8 @@ const count = computed(() => {
 })
 
 const reversible = computed(() => Boolean(order.value?.actions.refund_reverse))
+
+const edits = computed(() => order.value?.items_revision ?? 0)
 
 /** «120.00 + 15.00» once a top-up came; the whole otherwise. */
 const paid = computed(() => {
@@ -109,6 +112,11 @@ const dates = computed(() =>
     <wx-text v-if="count" size="sm" tone="muted" class="wx-orders-summary__count">
       {{ count }}
     </wx-text>
+
+    <p v-if="edits > 0" class="wx-orders-summary__edited" data-test="summary-edited">
+      <wx-text size="sm" tone="muted">{{ t('panel.summary-edited', { count: edits }) }}</wx-text>
+      <wx-date v-if="order.items_changed_at" :value="order.items_changed_at" size="sm" />
+    </p>
 
     <dl class="wx-orders-summary__rows">
       <dt>{{ t('panel.subtotal') }}</dt>
@@ -237,6 +245,14 @@ const dates = computed(() =>
 .wx-orders-summary__count {
   display: block;
   margin-block-end: var(--wx-space-12);
+}
+
+.wx-orders-summary__edited {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--wx-space-4) var(--wx-space-8);
+  margin: 0 0 var(--wx-space-12);
 }
 
 .wx-orders-summary__rows {

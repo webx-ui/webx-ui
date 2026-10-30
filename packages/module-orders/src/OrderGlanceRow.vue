@@ -160,6 +160,14 @@ const source = computed(() =>
             </dd>
           </template>
         </dl>
+        <wx-text
+          v-if="(glance.items_revision ?? 0) > 0"
+          size="sm"
+          tone="muted"
+          data-test="glance-edited"
+        >
+          {{ t('panel.summary-edited', { count: glance.items_revision ?? 0 }) }}
+        </wx-text>
         <span v-if="source" class="wx-orders-glance__source">
           <wx-badge size="sm" variant="outline">{{ source }}</wx-badge>
         </span>

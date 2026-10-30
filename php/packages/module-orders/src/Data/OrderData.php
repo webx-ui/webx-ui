@@ -90,7 +90,7 @@ final readonly class OrderData
             customer: new ContactData($order->customer_first_name, $order->customer_last_name, $order->customer_phone, $order->customer_email),
             recipient: $recipient !== null ? new ContactData($recipient['first_name'], $recipient['last_name'] ?? null, $recipient['phone'] ?? null, null) : null,
             comment: $order->comment,
-            items: array_values($order->items->filter(static fn (OrderItem $item): bool => $item->removed_at === null || $item->qty > 0)->map(static fn (OrderItem $item): ItemData => new ItemData(
+            items: array_values($order->items->filter(static fn (OrderItem $item): bool => $item->shown())->map(static fn (OrderItem $item): ItemData => new ItemData(
                 id: $item->id,
                 parentId: $item->parent_id,
                 type: $item->type,

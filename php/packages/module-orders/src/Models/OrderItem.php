@@ -69,6 +69,16 @@ class OrderItem extends Model
     }
 
     /**
+     * A line the order still shows (§37.4): one an edit took out whole is history only — the
+     * edit's row and its line in the timeline name it. Taken out with units refunded, it stays:
+     * the refunds point at them.
+     */
+    public function shown(): bool
+    {
+        return $this->removed_at === null || $this->qty > 0;
+    }
+
+    /**
      * The name in the language asked for, else the order's, else whichever there is: a product
      * renamed or deleted since does not change what was bought.
      */

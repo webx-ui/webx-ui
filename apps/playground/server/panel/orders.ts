@@ -68,6 +68,12 @@ interface ItemRecord {
   label: string | null
   /** The variant chosen, as the line's label shows it: «Size: M». */
   options?: string | null
+  /** A gift of a rule: an edit may only take it out (§37.4). */
+  gift?: boolean
+  /** Taken out by an edit (§37.4): the line stays for the units returned of it. */
+  removed?: boolean
+  /** The edit the line came with; 0 — placed with the order. */
+  revision?: number
 }
 
 interface HistoryRecord {
@@ -90,6 +96,8 @@ interface HistoryRecord {
   reversed?: { at: string; reason: string | null } | null
   /** A message sent again by hand (decision 99): its event. */
   event?: string
+  /** An edit of the lines (§38.2), as the timeline shows it. */
+  edit?: Record<string, unknown>
 }
 
 interface OrderRecord {
@@ -112,6 +120,9 @@ interface OrderRecord {
   refunded: number
   /** Σ money that came in (§36.1): the payment and the top-ups after it. */
   paid_total: number
+  /** The edits of the lines (§38): how many, and when the last one was. */
+  revision: number
+  changed_at: string | null
   awaiting: boolean
   failed_at: string | null
   marks: Partial<Record<Milestone, { at: string; source: string; reference: string | null }>>
@@ -262,6 +273,8 @@ function order(index: number, fields: Partial<OrderRecord>): OrderRecord {
     benefits: [],
     refunded: 0,
     paid_total: 0,
+    revision: 0,
+    changed_at: null,
     awaiting: false,
     failed_at: null,
     marks: { placed: { at: placed, source: 'checkout', reference: null } },
@@ -299,12 +312,15 @@ const orders: OrderRecord[] = [
     items: [item('b', 3)],
     comment: 'Please call before delivery.',
   }),
-  order(4, { status: 3, items: set() }),
+  order(4, {
+    status: 3,
+    items: [...set(), item('c', 1, { label: 'Gift', price: 0, gift: true })],
+  }),
   order(5, { status: 4, recipient: { first_name: 'Sam', last_name: 'Doe', phone: null } }),
   order(6, { status: 6, delivery: { method: 'courier', summary: 'Courier, tomorrow 10–14' } }),
   order(7, {
     status: 8,
-    items: [item('a', 2), item('c', 1, { label: 'Gift', price: 0 })],
+    items: [item('a', 2), item('c', 1, { label: 'Gift', price: 0, gift: true })],
     adjustments: [{ id: 1, label: 'Autumn sale', amount: -1000 }],
   }),
   order(8, { status: 7, delivery: { method: 'pickup', summary: 'Pickup point' } }),
@@ -594,8 +610,12 @@ const name = (record: OrderRecord) =>
 /** Where the order came from: the source of its first step (§29). */
 const sourceOf = (record: OrderRecord) => record.marks.placed?.source ?? record.history[0]?.source
 
+/** The lines the order shows: one an edit took out whole is history only (§37.4). */
+const shown = (record: OrderRecord) =>
+  record.items.filter((one) => one.parent === null && (!one.removed || one.qty > 0))
+
 function row(record: OrderRecord, locale: string, line: Line) {
-  const roots = record.items.filter((one) => one.parent === null)
+  const roots = shown(record)
 
   return {
     id: record.id,
@@ -614,6 +634,7 @@ function row(record: OrderRecord, locale: string, line: Line) {
     cancelled_at: record.marks.cancelled?.at ?? null,
     refunded: record.refunded > 0,
     balance: balanceLine(record),
+    edited: record.revision > 0,
     delivery: record.delivery?.summary ?? null,
     payment: record.payment?.summary ?? null,
     source: sourceOf(record),
@@ -813,7 +834,7 @@ function summary() {
 
 /** An opened row of the list (decision 94), as `OrderCard::glance()` answers it. */
 function glance(record: OrderRecord) {
-  const roots = record.items.filter((one) => one.parent === null)
+  const roots = shown(record)
   const notes = record.history.filter((one) => one.kind === 'note')
   const last = notes[notes.length - 1]
 
@@ -841,6 +862,7 @@ function glance(record: OrderRecord) {
       ...paidTotals(record),
     },
     paid: Boolean(record.marks.paid),
+    items_revision: record.revision,
     awaiting_payment: record.awaiting && !record.marks.cancelled,
     source: record.marks.placed?.source ?? null,
     customer: { name: name(record), phone: record.phone, email: record.email },
@@ -875,7 +897,7 @@ function glance(record: OrderRecord) {
 
 function lines(record: OrderRecord, parent: number | null): unknown[] {
   return record.items
-    .filter((one) => one.parent === parent)
+    .filter((one) => one.parent === parent && (!one.removed || one.qty > 0))
     .map((one) => ({
       id: one.id,
       name: one.name,
@@ -889,6 +911,10 @@ function lines(record: OrderRecord, parent: number | null): unknown[] {
       total: money(one.price * one.qty - one.discount),
       discounts: [],
       children: lines(record, one.id),
+      generated: Boolean(one.gift),
+      part: one.parent !== null && !one.gift,
+      removed: Boolean(one.removed),
+      revision: one.revision ?? 0,
     }))
 }
 
@@ -913,6 +939,8 @@ function timeline(record: OrderRecord, locale: string, line: Line) {
         amount: one.amount !== undefined ? money(one.amount) : undefined,
         amount_minor: one.kind === 'payment' ? one.amount : undefined,
         reversed: one.kind === 'refund' ? Boolean(one.reversed) : undefined,
+        revision: one.kind === 'items' ? one.edit : undefined,
+        edit: undefined,
         event_label:
           one.kind === 'notification_sent' && one.event
             ? line(
@@ -993,6 +1021,8 @@ function card(record: OrderRecord, locale: string, line: Line) {
         ]),
       ),
       items: lines(record, null),
+      items_revision: record.revision,
+      items_changed_at: record.changed_at,
       adjustments: record.adjustments.map((one) => ({
         ...one,
         source: 'rule#1',
@@ -1020,13 +1050,9 @@ function card(record: OrderRecord, locale: string, line: Line) {
         ...paidTotals(record),
       },
       count: {
-        lines: record.items.filter((one) => one.parent === null).length,
-        units: record.items
-          .filter((one) => one.parent === null)
-          .reduce((sum, one) => sum + one.qty, 0),
-        refunded_units: record.items
-          .filter((one) => one.parent === null)
-          .reduce((sum, one) => sum + one.refunded_qty, 0),
+        lines: shown(record).length,
+        units: shown(record).reduce((sum, one) => sum + one.qty, 0),
+        refunded_units: shown(record).reduce((sum, one) => sum + one.refunded_qty, 0),
       },
       refunds: record.history
         .filter((one) => one.kind === 'refund')
@@ -1098,6 +1124,11 @@ function card(record: OrderRecord, locale: string, line: Line) {
         refund: refundable > 0 || tendersLeft > 0 || unitsLeft > 0,
         refund_reverse: true,
         payment: paid && !cancelled,
+        edit_items: true,
+        edit_items_reason:
+          record.marks.received || cancelled || record.marks.refunded
+            ? line(locale, 'webx-orders', 'panel.items-refusals.state')
+            : null,
         visitor: false,
         visitor_search: false,
         resend: true,
@@ -1321,6 +1352,315 @@ function counted(value: unknown, fail: Fail) {
         payable_formatted: money(sum),
         warnings: [],
       },
+    },
+  }
+}
+
+/* ------------------------------------------------------------------------- edit of lines ----- */
+
+/** `:name` of a dictionary line filled in — the fixture has no translator of its own. */
+const fill = (words: string, values: Record<string, string | number>) =>
+  Object.entries(values).reduce(
+    (all, [key, value]) => all.replaceAll(`:${key}`, String(value)),
+    words,
+  )
+
+/** The totals of §38.1 of an order as it stands, minor units with the string beside. */
+function editTotals(record: OrderRecord) {
+  const { due, over } = balanceOf(record)
+
+  return Object.fromEntries(
+    Object.entries({
+      subtotal: subtotal(record),
+      adjustments_total: adjustments(record),
+      total: total(record),
+      tenders_total: tendered(record),
+      payable: payable(record),
+      balance: due - over,
+    }).flatMap(([key, minor]) => [
+      [key, minor],
+      [`${key}_formatted`, money(minor)],
+    ]),
+  ) as Record<string, number | string>
+}
+
+/**
+ * `Orders::editItems()` of the fixture (§37): the lines placed keep their price and a discount in
+ * proportion, a product added comes at the catalogue's price, a set changes whole, a gift only
+ * goes, a line keeps its units returned. The answer is `Consequences::itemsEdit()`; `apply` writes it.
+ */
+function editPlan(
+  record: OrderRecord,
+  body: Record<string, unknown>,
+  locale: string,
+  line: Line,
+  fail: Fail,
+) {
+  const words = (path: string, values: Record<string, string | number> = {}) =>
+    fill(line(locale, 'webx-orders', path), values)
+  const before = editTotals(record)
+  const qty = (body.qty ?? {}) as Record<string, number>
+  const remove = Array.isArray(body.remove) ? body.remove.map(Number) : []
+  const add = Array.isArray(body.add) ? (body.add as Record<string, unknown>[]) : []
+  const refused = (refusal: string, field: string | null = null) => ({
+    answer: {
+      changes: [],
+      adjustments: [],
+      before,
+      after: before,
+      balance: balanceAnswer(record),
+      warnings: [],
+      refusal,
+      field,
+      message: words(`panel.items-refusals.${refusal}`),
+      revision: null,
+      dry_run: true,
+    },
+    apply: null,
+  })
+
+  if (Number(body.revision ?? -1) !== record.revision) return refused('stale', 'revision')
+  if (record.marks.received || record.marks.cancelled || record.marks.refunded)
+    return refused('state')
+  if (add.length === 0 && remove.length === 0 && Object.keys(qty).length === 0)
+    return refused('nothing')
+
+  const targets = new Map<number, { qty: number; out: boolean; field: string }>()
+
+  for (const [id, to] of Object.entries(qty))
+    targets.set(Number(id), { qty: Number(to), out: Number(to) === 0, field: `qty.${id}` })
+  remove.forEach((id, index) => targets.set(id, { qty: 0, out: true, field: `remove.${index}` }))
+
+  for (const [id, target] of targets) {
+    const one = record.items.find((entry) => entry.id === id)
+
+    if (!one || one.removed) return refused('foreign', target.field)
+    if (one.parent !== null) return refused('child', target.field)
+    if (target.out) target.qty = one.refunded_qty
+    else if (one.gift && target.qty !== one.qty) return refused('generated', target.field)
+    else if (target.qty < one.refunded_qty) return refused('below_refunded', target.field)
+  }
+
+  // The products added, counted as «New order» counts them; a refusal points at `add.N`.
+  let picked: ReturnType<typeof counted>['picked'] = []
+
+  if (add.length > 0) {
+    try {
+      picked = counted(add, fail).picked
+    } catch (error) {
+      const found = (error as { errors?: Record<string, string[]> }).errors ?? {}
+
+      throw fail(
+        422,
+        Object.values(found)[0]?.[0] ?? 'Not accepted.',
+        undefined,
+        Object.fromEntries(
+          Object.entries(found).map(([key, value]) => [key.replace(/^items/, 'add'), value]),
+        ),
+      )
+    }
+  }
+
+  const after: OrderRecord = { ...record, items: record.items.map((one) => ({ ...one })) }
+  const changes: Record<string, unknown>[] = []
+  const nextRevision = record.revision + 1
+
+  for (const one of after.items.filter((entry) => entry.parent === null)) {
+    const target = targets.get(one.id)
+
+    if (!target || (target.qty === one.qty && !target.out)) continue
+
+    const from = { qty: one.qty, total: one.price * one.qty - one.discount }
+    const ratio = one.qty > 0 ? target.qty / one.qty : 0
+
+    one.discount = Math.round(one.discount * ratio)
+    one.qty = target.qty
+    if (target.out) one.removed = true
+
+    for (const part of after.items.filter((entry) => entry.parent === one.id)) {
+      part.qty = target.out ? part.refunded_qty : Math.round(part.qty * ratio)
+    }
+
+    const to = one.price * one.qty - one.discount
+
+    changes.push({
+      op: target.out ? 'remove' : 'qty',
+      item_id: one.id,
+      name: one.name,
+      options_label: one.options ?? null,
+      price: one.price,
+      price_formatted: money(one.price),
+      qty_from: from.qty,
+      qty_to: one.qty,
+      total_from: from.total,
+      total_from_formatted: money(from.total),
+      total_to: to,
+      total_to_formatted: money(to),
+    })
+  }
+
+  for (const { product, size, qty: units } of picked) {
+    const options = size ? `Size: ${size}` : null
+    const same = after.items.find(
+      (one) =>
+        one.parent === null &&
+        !one.removed &&
+        !one.gift &&
+        one.sku === product.sku &&
+        one.price === product.price &&
+        (one.options ?? null) === options,
+    )
+
+    if (same) {
+      const from = same.qty
+
+      same.qty += units
+      changes.push({
+        op: 'qty',
+        item_id: same.id,
+        name: same.name,
+        options_label: options,
+        price: same.price,
+        price_formatted: money(same.price),
+        qty_from: from,
+        qty_to: same.qty,
+        total_from: same.price * from,
+        total_from_formatted: money(same.price * from),
+        total_to: same.price * same.qty,
+        total_to_formatted: money(same.price * same.qty),
+      })
+
+      continue
+    }
+
+    after.items.push({
+      id: ++nextId,
+      parent: null,
+      name: product.name,
+      sku: product.sku,
+      price: product.price,
+      qty: units,
+      refunded_qty: 0,
+      discount: 0,
+      label: null,
+      options,
+      revision: nextRevision,
+    })
+    changes.push({
+      op: 'add',
+      item_id: null,
+      name: product.name,
+      options_label: options,
+      price: product.price,
+      price_formatted: money(product.price),
+      qty_from: 0,
+      qty_to: units,
+      total_from: 0,
+      total_from_formatted: money(0),
+      total_to: product.price * units,
+      total_to_formatted: money(product.price * units),
+    })
+  }
+
+  if (!after.items.some((one) => one.parent === null && !one.removed && one.qty > one.refunded_qty))
+    return refused('empty')
+
+  const balance = balanceAnswer(after)
+  const totals = editTotals(after)
+  const warnings: { code: string; message: string }[] = []
+
+  if (record.marks.paid) {
+    const kind = Number(balance.over) > 0 ? 'over' : Number(balance.due) > 0 ? 'due' : 'even'
+
+    warnings.push({
+      code: 'paid',
+      message: words(`panel.items-warnings.paid-${kind}`, {
+        paid: money(record.paid_total),
+        payable: String(totals.payable_formatted),
+        due: String(balance.due_formatted),
+        over: String(balance.over_formatted),
+      }),
+    })
+  }
+
+  if (subtotal(after) !== subtotal(record)) {
+    for (const one of record.adjustments.filter((entry) => entry.amount < 0)) {
+      warnings.push({
+        code: 'adjustment_kept',
+        message: words('panel.items-warnings.adjustment_kept', {
+          label: one.label,
+          subtotal: money(subtotal(record)),
+        }),
+      })
+    }
+  }
+
+  const answer = {
+    changes,
+    adjustments: [],
+    before,
+    after: totals,
+    balance,
+    warnings,
+    refusal: null,
+    field: null,
+    message: null,
+    revision: null,
+    dry_run: true,
+  }
+
+  return {
+    answer,
+    apply: () => {
+      const at = new Date().toISOString().replace(/\.\d+Z$/, '+00:00')
+
+      changes
+        .filter((change) => change.op === 'add')
+        .forEach((change, index) => {
+          change.item_id =
+            after.items.filter((one) => one.revision === nextRevision)[index]?.id ?? null
+        })
+      record.items = after.items
+      record.revision = nextRevision
+      record.changed_at = at
+      record.history.push({
+        key: `h${record.id}-e${nextRevision}`,
+        kind: 'items',
+        at,
+        source: 'panel',
+        admin: 'Demo admin',
+        note:
+          typeof body.reason === 'string' && body.reason.trim() !== '' ? body.reason.trim() : null,
+        edit: {
+          number: nextRevision,
+          changes: changes.map((change) => ({
+            op: change.op,
+            item_id: change.item_id,
+            name: change.name,
+            options_label: change.options_label,
+            price: change.price_formatted,
+            qty_from: change.qty_from,
+            qty_to: change.qty_to,
+            total_from: change.total_from_formatted,
+            total_to: change.total_to_formatted,
+          })),
+          total_from: String(before.total_formatted),
+          total_to: String(totals.total_formatted),
+          balance:
+            Number(totals.balance) === 0
+              ? null
+              : {
+                  kind: Number(totals.balance) > 0 ? 'due' : 'over',
+                  amount: money(Math.abs(Number(totals.balance))),
+                },
+          message:
+            typeof body.message === 'string' && body.message.trim() !== ''
+              ? body.message.trim()
+              : null,
+        },
+      })
+
+      return { ...answer, revision: nextRevision, dry_run: false }
     },
   }
 }
@@ -1780,6 +2120,31 @@ export function registerOrders(on: On, fail: Fail, line: Line): void {
     })
 
     return { data: card(record, locale, line) }
+  })
+
+  /* «Change the lines» (§42.1): the live totals, then the card with the edit beside it. */
+  on('POST', '/orders/(\\d+)/items/preview', ({ params, body, locale }) => ({
+    data: editPlan(find(params[0]), body, locale, line, fail).answer,
+  }))
+
+  on('PUT', '/orders/(\\d+)/items', ({ params, body, locale }) => {
+    const record = find(params[0])
+
+    if (typeof body.reason !== 'string' || body.reason.trim() === '') {
+      const words = line(locale, 'webx-orders', 'panel.items-reason-required')
+      throw fail(422, words, undefined, { reason: [words] })
+    }
+
+    const plan = editPlan(record, body, locale, line, fail)
+
+    if (!plan.apply) {
+      const field = plan.answer.field ?? 'items'
+      throw fail(422, plan.answer.message, undefined, { [field]: [plan.answer.message] })
+    }
+
+    const edit = plan.apply()
+
+    return { data: { ...card(record, locale, line), edit } }
   })
 
   const eventLabel = (locale: string, event: string) =>

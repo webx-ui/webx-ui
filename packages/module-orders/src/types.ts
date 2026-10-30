@@ -60,6 +60,8 @@ export interface OrderRow extends Record<string, unknown> {
   refunded: boolean
   /** The badge under the total: «Top-up 15.00», «Give back 20.00»; null otherwise. */
   balance: OrderBalanceLine | null
+  /** «Edited» beside the total (§42.4): the lines are not the ones placed any more. */
+  edited?: boolean
   delivery: string | null
   payment: string | null
 }
@@ -132,6 +134,8 @@ export interface OrderGlance {
     balance: OrderBalanceLine | null
   }
   paid: boolean
+  /** How many times the lines were edited (§42.4); 0 — as placed. */
+  items_revision?: number
   awaiting_payment: boolean
   /** Where the order came from when not through the checkout: `quick`, `panel`. */
   source: string | null
@@ -191,6 +195,14 @@ export interface OrderLine {
   total: string
   discounts: { label: string; amount: string }[]
   children: OrderLine[]
+  /** A gift of a rule: the editor of the lines may only take it out (§37.4). */
+  generated?: boolean
+  /** A part of a set: it changes with its set, never apart. */
+  part?: boolean
+  /** Taken out by an edit, still shown for the units returned of it. */
+  removed?: boolean
+  /** The edit the line came with; 0 — placed with the order. */
+  revision?: number
 }
 
 export interface OrderTender {
@@ -234,6 +246,28 @@ export interface TimelineLine {
   /** A message sent again by hand (decision 99): its event, in the panel's words. */
   event?: string
   event_label?: string
+  /** An edit of the lines (§38.2): each line before → after, the total, the balance it left. */
+  revision?: TimelineRevision
+}
+
+/** An edit of the lines as the timeline shows it; the money is written. */
+export interface TimelineRevision {
+  number: number
+  changes: {
+    op: ItemsEditOp
+    item_id: number | null
+    name: string
+    options_label: string | null
+    price: string
+    qty_from: number
+    qty_to: number
+    total_from: string
+    total_to: string
+  }[]
+  total_from: string | null
+  total_to: string | null
+  balance: { kind: 'due' | 'over'; amount: string } | null
+  message?: string | null
 }
 
 /**
@@ -265,6 +299,9 @@ export interface OrderCardData {
   payment_failed_at: string | null
   milestones: Partial<Record<MilestoneKey, MilestoneMark>>
   items: OrderLine[]
+  /** The edits of the lines (§38): how many — the revision an edit is sent against — and the last one. */
+  items_revision?: number
+  items_changed_at?: string | null
   adjustments: { id: number; label: string; source: string; amount: string }[]
   tenders: OrderTender[]
   benefits: { key: string; label: string }[]
@@ -308,6 +345,9 @@ export interface OrderCardData {
     refund_reverse: boolean
     /** Record a top-up of a paid order (§36.3); the first payment is `paid`. */
     payment?: boolean
+    /** «Change the lines» (§42.1), and why it cannot now — null when it can. */
+    edit_items?: boolean
+    edit_items_reason?: string | null
     /** Link and unlink a visitor — only with the visitors installed. */
     visitor: boolean
     /** Finding one needs the right to read the customers as well. */
@@ -418,6 +458,75 @@ export interface NotifyPreview {
 export interface OrderDetail {
   order: OrderCardData
   values: ScreenModel
+  /** After «Change the lines»: what the edit did — the balance decides what is offered next. */
+  edit?: ItemsEditPreview
+}
+
+export type ItemsEditOp = 'add' | 'qty' | 'remove'
+
+/** «Change the lines» as sent (§42.1): against the revision the editor opened. */
+export interface ItemsEditInput {
+  revision: number
+  add: NewOrderLine[]
+  qty: Record<number, number>
+  remove: number[]
+  reason: string
+  message: string
+  notify: boolean
+}
+
+/** The totals of an order before or after an edit, minor units with the string beside. */
+export interface ItemsEditTotals {
+  subtotal: number
+  subtotal_formatted: string
+  adjustments_total: number
+  adjustments_total_formatted: string
+  total: number
+  total_formatted: string
+  tenders_total: number
+  tenders_total_formatted: string
+  payable: number
+  payable_formatted: string
+  balance: number
+  balance_formatted: string
+}
+
+/** What an edit does, from the service's own dry run (§37.1) — `orders_items_edit` too. */
+export interface ItemsEditPreview {
+  changes: {
+    op: ItemsEditOp
+    item_id: number | null
+    name: string
+    options_label: string | null
+    price: number
+    price_formatted: string
+    qty_from: number
+    qty_to: number
+    total_from: number
+    total_from_formatted: string
+    total_to: number
+    total_to_formatted: string
+  }[]
+  adjustments: {
+    adjustment_id: number
+    label: string
+    amount_from: number
+    amount_from_formatted: string
+    amount_to: number
+    amount_to_formatted: string
+  }[]
+  before: ItemsEditTotals
+  after: ItemsEditTotals
+  balance: OrderBalance
+  /** §37.7: each with its code and the words to show; a line's warning names it — `add.N`. */
+  warnings: { code: string; message: string; line?: string }[]
+  refusal: string | null
+  /** Where a refusal points: `qty.<id>`, `remove.<n>`, `revision`. */
+  field: string | null
+  message: string | null
+  /** The number of the edit written; null on a dry run. */
+  revision: number | null
+  dry_run: boolean
 }
 
 /** What a move would do, from the service's own dry run (§11.3). */

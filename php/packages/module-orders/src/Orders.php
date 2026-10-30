@@ -1803,7 +1803,7 @@ final class Orders
 
             foreach ($state->warnings as $warning) {
                 if ($warning->line !== null && isset($index[(string) $warning->line])) {
-                    $warnings[] = ['code' => $warning->code, 'line' => 'add.'.$index[(string) $warning->line]];
+                    $warnings[] = ['code' => $warning->code, 'line' => 'add.'.$index[(string) $warning->line], 'message' => $warning->message];
                 }
             }
 

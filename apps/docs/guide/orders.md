@@ -140,6 +140,39 @@ shows a badge under the total and filters «Payment differs» — waiting for a 
 by the stored `orders.balance` and its index; the figures over the list count the orders waiting
 for a top-up. The revenue is what came in less what went back.
 
+### Changing the lines of a placed order
+
+The buyer calls back: one more of this, not that one at all. `$orders->editItems($order, new
+ItemsEdit(revision: …, add: […], qty: [id => n], remove: [id], reason: …), dryRun: …)` changes the
+lines of an order that is not received, cancelled or given back whole. The lines placed keep the
+price the buyer ordered at and their discounts follow the quantity; a product added comes at
+today's price, without the cart's rules; the discounts on the whole order, the delivery and the
+benefits stay as placed. A set changes whole, a rule's gift may only go, a line keeps the units
+returned of it. A line is never deleted: taken out, it keeps what was returned and is history.
+Each edit is a row of `order_revisions` — every line before and after, the totals, the reason —
+a line `items` of the history and the events `OrderItemsChanging` (in the transaction, a listener
+may refuse) and `OrderItemsChanged` (after it).
+
+In the card, «Change the lines» over «Items» (`orders.manage`) opens the editor: the lines with
+their quantity and «Take out», a product found as on «New order», and the service's own dry run on
+every change (`POST {api}/orders/{id}/items/preview`) — each line before → after, the totals, the
+warnings. A paid order says what the edit does to its payment before the save («Save and recount
+the payment»). The reason is required and only managers see it; «Message to the buyer» and «Tell
+the buyer» go to the letter about the change. The save (`PUT {api}/orders/{id}/items`) is sent
+against `items_revision` the editor opened: an edit saved meanwhile — another tab — is refused,
+and the editor reads the order again.
+
+After the save the balance says what comes next: a paid order that owes more is offered «Record a
+top-up» with the sum owed; one paid over — «Record a refund» with the money over filled in, the
+lines and tenders left empty; tenders over the new total — a refund of them. The link to pay comes
+with the payments module. «History» shows each edit — what was added, taken out and counted again,
+the total before and after, the balance it left, the reason; «Summary» counts the edits, and the
+list marks the order «Edited».
+
+An agent does the same with `orders_items_edit` (`revision` from `orders_get`
+`items_revision`, the reason required), whose `dry_run` answers what the editor shows;
+`orders_history` has every edit in full.
+
 ### Notes for whoever picks the order up next
 
 Under the card's tabs is «Notes»: what one manager left for the next — «called, deliver after six».

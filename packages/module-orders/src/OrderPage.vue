@@ -29,6 +29,7 @@ import { createOrdersApi } from './api'
 import { provideOrderCard } from './card'
 import CancelDialog from './CancelDialog.vue'
 import { NAMESPACE, useOrdersMessages } from './i18n'
+import ItemsDialog from './ItemsDialog.vue'
 import MarkDialog from './MarkDialog.vue'
 import PaymentDialog from './PaymentDialog.vue'
 import NotifyDialog from './NotifyDialog.vue'
@@ -104,7 +105,14 @@ const paymentDialog = createModal<OrderDetail, { order: OrderCardData }>(Payment
 const cancelDialog = createModal<OrderDetail, { orderId: number; number: string | null }>(
   CancelDialog,
 )
-const refundDialog = createModal<OrderDetail, { order: OrderCardData }>(RefundDialog)
+const refundDialog = createModal<
+  OrderDetail,
+  { order: OrderCardData; prefill?: { amount?: number; tenders?: Record<number, number> } }
+>(RefundDialog)
+const itemsDialog = createModal<
+  OrderDetail,
+  { order: OrderCardData; refreshed: (detail: OrderDetail) => void }
+>(ItemsDialog)
 const reverseDialog = createModal<OrderDetail, { orderId: number; refund: OrderRefundEntry }>(
   ReverseRefundDialog,
 )
@@ -191,12 +199,90 @@ async function cancel(): Promise<void> {
   await after(cancelDialog({ orderId: open.id, number: open.number }), t('panel.cancelled-toast'))
 }
 
-async function refund(): Promise<void> {
+async function refund(prefill?: {
+  amount?: number
+  tenders?: Record<number, number>
+}): Promise<void> {
   const open = order.value
 
   if (!open) return
 
-  await after(refundDialog({ order: open }), t('panel.refunded-toast'))
+  await after(refundDialog({ order: open, prefill }), t('panel.refunded-toast'))
+}
+
+/**
+ * «Change the lines» (§42.1). Once saved, the balance says what comes next (§42.3): a paid order
+ * that owes more is offered «Record a top-up» with the sum owed; one paid over — a refund with
+ * the money over filled in (decision 101, question 8); tenders over — a refund of them. The link
+ * to pay comes with the payments module, not here.
+ */
+async function editItems(): Promise<void> {
+  const open = order.value
+
+  if (!open || busy.value) return
+
+  busy.value = true
+  let answer: OrderDetail | undefined
+
+  try {
+    answer = await itemsDialog({ order: open, refreshed: (detail) => take(detail, false) })
+
+    if (!answer) return
+
+    take(answer, false)
+    toast.success(t('panel.items-saved'))
+  } finally {
+    busy.value = false
+  }
+
+  const balance = answer.edit?.balance
+  const now = order.value
+
+  if (!balance || !now) return
+
+  if (balance.due > 0 && balance.paid_total > 0 && now.actions.payment) {
+    const agreed = await confirm({
+      title: t('panel.items-next-topup-title', { amount: balance.due_formatted }),
+      message: t('panel.items-next-topup-text'),
+      confirmText: t('panel.payment-record'),
+      cancelText: t('panel.items-later'),
+    })
+
+    if (agreed) await recordPayment()
+  } else if (balance.over > 0 && now.actions.refund) {
+    const agreed = await confirm({
+      title: t('panel.items-next-over-title', { amount: balance.over_formatted }),
+      message: t('panel.items-next-over-text'),
+      confirmText: t('panel.refund'),
+      cancelText: t('panel.items-later'),
+    })
+
+    if (agreed) await refund({ amount: balance.over })
+  } else if (balance.tenders_over > 0 && now.actions.refund) {
+    const agreed = await confirm({
+      title: t('panel.items-next-tenders-title', { amount: balance.tenders_over_formatted }),
+      message: t('panel.items-next-tenders-text'),
+      confirmText: t('panel.refund'),
+      cancelText: t('panel.items-later'),
+    })
+
+    if (agreed) await refund({ tenders: spread(balance.tenders_over, now) })
+  }
+}
+
+/** What goes back to the tenders, the first ones first, each up to what is left of it. */
+function spread(amount: number, open: OrderCardData): Record<number, number> {
+  const tenders: Record<number, number> = {}
+  let left = amount
+
+  for (const tender of open.tenders) {
+    const part = Math.min(left, tender.left_minor)
+
+    if (part > 0) tenders[tender.id] = part
+    left -= part
+  }
+
+  return tenders
 }
 
 /**
@@ -382,8 +468,9 @@ provideOrderCard({
   changeStatus,
   mark,
   recordPayment,
+  editItems,
   cancel,
-  refund,
+  refund: () => refund(),
   reverseRefund,
   resend,
   note,

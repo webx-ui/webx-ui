@@ -825,6 +825,9 @@ onMounted(async () => {
             >
               {{ balanceBadge(row) }}
             </wx-badge>
+            <wx-badge v-if="row.edited" size="sm" variant="outline" data-test="row-edited">
+              {{ t('panel.edited') }}
+            </wx-badge>
           </div>
         </template>
 
@@ -897,6 +900,9 @@ onMounted(async () => {
                 size="sm"
               >
                 {{ balanceBadge(row) }}
+              </wx-badge>
+              <wx-badge v-if="row.edited" size="sm" variant="outline">
+                {{ t('panel.edited') }}
               </wx-badge>
               <wx-text size="sm" tone="muted">{{ numberOf(row) }}</wx-text>
               <wx-date :value="row.placed_at" compact size="sm" />

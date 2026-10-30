@@ -91,6 +91,7 @@ function card(node: object, data: OrderCardData) {
         changeStatus,
         mark: () => Promise.resolve(),
         recordPayment: () => Promise.resolve(),
+        editItems: () => Promise.resolve(),
         cancel: () => Promise.resolve(),
         refund: () => Promise.resolve(),
         reverseRefund,

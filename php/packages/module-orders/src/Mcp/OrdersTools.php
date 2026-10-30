@@ -25,6 +25,8 @@ use WebxUi\Orders\Contact;
 use WebxUi\Orders\Events\OrderPaid;
 use WebxUi\Orders\Events\OrderReceived;
 use WebxUi\Orders\Http\Controllers\Panel\MassController;
+use WebxUi\Orders\ItemsEdit;
+use WebxUi\Orders\ItemsEditRefused;
 use WebxUi\Orders\ManagerOrder;
 use WebxUi\Orders\Milestone;
 use WebxUi\Orders\Models\Order;
@@ -32,6 +34,7 @@ use WebxUi\Orders\Models\OrderAdjustment;
 use WebxUi\Orders\Models\OrderItem;
 use WebxUi\Orders\Models\OrderMilestone;
 use WebxUi\Orders\Models\OrderRefund;
+use WebxUi\Orders\Models\OrderRevision;
 use WebxUi\Orders\Models\OrderStatus;
 use WebxUi\Orders\Models\OrderTender;
 use WebxUi\Orders\Models\PublicStatus;
@@ -159,9 +162,11 @@ final readonly class OrdersTools
             Tool::read(
                 'history',
                 'The timeline of an order, oldest first — the card\'s tab «History»: moves between statuses, milestones, '
-                .'refunds, notes, changed contacts and blocks, each with when, the source (panel, mcp, api, checkout, '
+                .'refunds, notes, top-ups, edits of the lines (`revision`: each line before → after, the total before and after, the '
+                .'balance after; the reason as `note`), changed contacts and blocks, each with when, the source (panel, mcp, api, checkout, '
                 .'status#<id>) and the administrator\'s name where known. With the notifications module, `notifications` — what '
-                .'its channels sent about the order, newest first, and why a row was not sent; null without it.',
+                .'its channels sent about the order, newest first, and why a row was not sent; null without it. `revisions` — '
+                .'every edit of the lines in full: changes, discounts, totals before and after, reason, message, source.',
                 fn (array $arguments, ?Authenticatable $caller = null): array => $this->history($arguments, $caller),
                 ['properties' => ['order' => $order], 'required' => ['order']],
                 permission: self::READ,
@@ -230,6 +235,38 @@ final readonly class OrdersTools
                     'at' => ['type' => 'string', 'description' => 'When the money came, YYYY-MM-DD; today by default.'],
                     'note' => ['type' => 'string'],
                 ], 'required' => ['order', 'amount']],
+                permission: OrdersModule::MANAGE,
+            ),
+
+            Tool::mutating(
+                'items_edit',
+                'Change the lines of a placed order — the buyer called to add a product, take one out, change how many. '
+                .'`revision` is orders_get `items_revision`: an edit saved since is refused, read the order again. `add` — '
+                .'new lines as orders_create takes them (type, ref, qty, options), at today\'s price and without the cart\'s '
+                .'rules; `qty` — line id → the new qty, top-level lines only (a set changes whole, its parts follow; 0 takes '
+                .'the line out); `remove` — line ids. The lines placed keep their price; their discounts follow the qty; the '
+                .'discounts on the whole order, the delivery and the benefits stay as placed. A line keeps the units refunded '
+                .'of it; a rule\'s gift may only go. `reason` is required and only managers see it; `message` — words for '
+                .'the buyer\'s letter; `notify` (true by default) — send the buyer «order changed». Received, cancelled and '
+                .'refunded orders are not edited. A paid order then owes a top-up or is owed money back: `balance` says '
+                .'which (orders_payment_record, orders_refund). `dry_run` answers what the panel\'s editor shows: each line '
+                .'before → after, the totals before and after, the balance after, the warnings — or the refusal and its field.',
+                fn (array $arguments): array => $this->editItems($arguments),
+                ['properties' => [
+                    'order' => $order,
+                    'revision' => ['type' => 'integer', 'description' => 'orders_get `items_revision` — the lines as you read them.'],
+                    'add' => ['type' => 'array', 'items' => ['type' => 'object', 'properties' => [
+                        'type' => ['type' => 'string', 'description' => 'What is bought: `catalog.product`.'],
+                        'ref' => ['type' => ['integer', 'string']],
+                        'qty' => ['type' => 'integer', 'description' => '1 by default.'],
+                        'options' => ['type' => 'object', 'description' => 'The chosen options, as the product names them.'],
+                    ], 'required' => ['type', 'ref']]],
+                    'qty' => ['type' => 'object', 'description' => 'Line id → the new qty (orders_get `items`).', 'additionalProperties' => ['type' => 'integer']],
+                    'remove' => ['type' => 'array', 'items' => ['type' => 'integer'], 'description' => 'Line ids to take out.'],
+                    'reason' => ['type' => 'string', 'description' => 'Why — for the managers, never shown to the buyer.'],
+                    'message' => ['type' => 'string', 'description' => 'Words for the buyer in the letter about the change.'],
+                    'notify' => $flag('Send the buyer the letter «order changed»; true by default.'),
+                ], 'required' => ['order', 'revision', 'reason']],
                 permission: OrdersModule::MANAGE,
             ),
 
@@ -462,6 +499,9 @@ final readonly class OrdersTools
                 'note' => $mark->note,
             ]])->all(),
             'items' => $this->lines($order, null, $locale, $money),
+            // orders_items_edit takes it back as `revision`; 0 — the lines as placed.
+            'items_revision' => $order->items_revision,
+            'items_changed_at' => $order->items_changed_at?->toAtomString(),
             'adjustments' => $order->adjustments
                 ->filter(static fn (OrderAdjustment $adjustment): bool => $adjustment->item_id === null)
                 ->map(static fn (OrderAdjustment $adjustment): array => [
@@ -537,7 +577,81 @@ final readonly class OrdersTools
                 return $line;
             }, $lines),
             'notifications' => $this->channels->available() ? $this->channels->deliveries($order, $caller) : null,
+            // The edits of the lines with every field of their row (§38.2).
+            'revisions' => $order->revisions->map(static fn (OrderRevision $revision): array => [
+                'number' => $revision->number,
+                'changes' => $revision->changes,
+                'adjustments' => $revision->adjustments,
+                'before' => $revision->before,
+                'after' => $revision->after,
+                'reason' => $revision->reason,
+                'message' => $revision->message,
+                'source' => $revision->source,
+                'admin_id' => $revision->admin_id,
+                'at' => $revision->created_at?->toAtomString(),
+            ])->values()->all(),
         ];
+    }
+
+    /**
+     * An edit of the lines (§37) — the editor's answer, {@see Consequences::itemsEdit()}.
+     *
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function editItems(array $arguments): array
+    {
+        $order = $this->order($arguments['order'] ?? null);
+        $revision = $arguments['revision'] ?? null;
+
+        if (! is_int($revision) || $revision < 0) {
+            throw new ToolFailure('`revision` is orders_get `items_revision`, a whole number.');
+        }
+
+        $qty = [];
+
+        foreach ((array) ($arguments['qty'] ?? []) as $id => $value) {
+            if (! ctype_digit((string) $id) || ! is_int($value) || $value < 0) {
+                throw new ToolFailure('`qty` is line id → a whole number of units, 0 or more.');
+            }
+
+            $qty[(int) $id] = $value;
+        }
+
+        $remove = array_values((array) ($arguments['remove'] ?? []));
+
+        if (array_filter($remove, static fn (mixed $id): bool => ! is_int($id)) !== []) {
+            throw new ToolFailure('`remove` is a list of line ids.');
+        }
+
+        $edit = new ItemsEdit(
+            revision: $revision,
+            add: array_values(array_map(static fn (mixed $line): array => (array) $line, (array) ($arguments['add'] ?? []))),
+            qty: $qty,
+            remove: $remove,
+            reason: isset($arguments['reason']) ? (string) $arguments['reason'] : null,
+            message: isset($arguments['message']) ? (string) $arguments['message'] : null,
+            notify: ($arguments['notify'] ?? true) !== false,
+            source: self::SOURCE,
+        );
+
+        try {
+            $result = $this->attempt(fn () => $this->orders->editItems($order, $edit, $this->dryRun($arguments)));
+        } catch (ItemsEditRefused $refused) {
+            $result = $refused->result;
+        } catch (CartNotOrderable $refused) {
+            throw new ToolFailure("Order {$order->number}: ".CheckoutPreview::notOrderable($refused));
+        } catch (OrderRefused $refused) {
+            throw new ToolFailure("Order {$order->number}: ".$refused->getMessage());
+        }
+
+        $answer = ['number' => $order->number, ...$this->consequences->itemsEdit($result, $order->currency, $this->money)];
+
+        if ($result->refusal !== null && ! $result->dryRun) {
+            throw new ToolFailure("Order {$order->number}: ".$answer['message'].($result->field !== null ? " ({$result->field})" : ''));
+        }
+
+        return $answer;
     }
 
     /**
@@ -1101,7 +1215,8 @@ final readonly class OrdersTools
 
         foreach ($order->items as $item) {
             /** @var OrderItem $item */
-            if ($item->parent_id !== $parent) {
+            // Taken out whole by an edit: orders_history has it, the order no longer does.
+            if ($item->parent_id !== $parent || ! $item->shown()) {
                 continue;
             }
 
@@ -1123,6 +1238,10 @@ final readonly class OrdersTools
                     ->map(static fn (OrderAdjustment $adjustment): array => ['label' => $adjustment->label, ...$money('amount', $adjustment->amount)])
                     ->values()->all(),
                 'children' => $this->lines($order, $item->id, $locale, $money),
+                // What orders_items_edit may do with it: a gift only goes; a set's part is not edited apart.
+                'gift' => $item->source !== null,
+                'revision' => $item->revision,
+                'removed_at' => $item->removed_at?->toAtomString(),
             ];
         }
 
