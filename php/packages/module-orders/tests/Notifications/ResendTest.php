@@ -117,7 +117,8 @@ final class ResendTest extends McpTestCase
 
         // The notifications module's own log marks it too.
         $this->actingAs($this->manager(['notifications.view']), 'cms');
-        $logged = collect($this->getJson('/api/cms/notifications/deliveries')->assertOk()->json('data'))->firstWhere('id', $again->id);
+        $log = $this->getJson('/api/cms/notifications/deliveries')->assertOk()->json('data');
+        $logged = self::pick($log, 'id', $again->id);
         $this->assertSame([true, $manager->name, $letter->id], [$logged['manual'], $logged['manual_by_name'], $logged['resent_from']]);
     }
 
