@@ -192,6 +192,9 @@ const statuses: StatusRecord[] = [
   },
 ]
 
+/** `webx-orders::checkout.errors.phone` — what the server says of a phone it cannot read. */
+const PHONE_WORDS = 'A phone is a + and digits, for example +800 1234 5678.'
+
 const ITEMS = {
   a: { name: 'Item A', sku: 'ITEM-A', price: 4999 },
   b: { name: 'Item B', sku: 'ITEM-B', price: 1250 },
@@ -914,8 +917,8 @@ export function registerOrders(on: On, fail: Fail, line: Line): void {
       throw fail(422, outcome.message, undefined, { status_id: [outcome.message] })
     // A status that cancels is a cancellation, and wants its reason (§9.1).
     if (outcome.milestone?.key === 'cancelled' && !text(body.note))
-      throw fail(422, 'The note field is required.', undefined, {
-        note: ['The note field is required.'],
+      throw fail(422, 'Say why the order is cancelled.', undefined, {
+        note: ['Say why the order is cancelled.'],
       })
 
     move(record, to, text(body.note), outcome)
@@ -959,8 +962,8 @@ export function registerOrders(on: On, fail: Fail, line: Line): void {
     }
 
     if (!reason)
-      throw fail(422, 'The reason field is required.', undefined, {
-        reason: ['The reason field is required.'],
+      throw fail(422, 'Say why the order is cancelled.', undefined, {
+        reason: ['Say why the order is cancelled.'],
       })
     if (!record.marks.cancelled) mark(record, 'cancelled', null, reason)
 
@@ -974,9 +977,16 @@ export function registerOrders(on: On, fail: Fail, line: Line): void {
     const phone = text(values['customer.phone'])
 
     if (has('customer.phone') && phone && !/^\+?[0-9][0-9 ().-]*$/.test(phone)) {
-      throw fail(422, 'The phone format is invalid.', undefined, {
-        'customer.phone': ['The phone format is invalid.'],
+      throw fail(422, PHONE_WORDS, undefined, {
+        'customer.phone': [PHONE_WORDS],
       })
+    }
+
+    const email = has('customer.email') ? text(values['customer.email']) : record.email
+
+    if (!(has('customer.phone') ? phone : record.phone) && !email) {
+      const either = ['Enter a phone or an e-mail.']
+      throw fail(422, either[0]!, undefined, { 'customer.phone': either, 'customer.email': either })
     }
 
     if (has('customer.first_name'))
@@ -1134,8 +1144,8 @@ export function registerOrders(on: On, fail: Fail, line: Line): void {
     }
 
     if (!body.dry_run && to.milestone === 'cancelled' && !text(body.note))
-      throw fail(422, 'The note field is required.', undefined, {
-        note: ['The note field is required.'],
+      throw fail(422, 'Say why the order is cancelled.', undefined, {
+        note: ['Say why the order is cancelled.'],
       })
 
     for (const record of orders.filter((one) => ids.includes(one.id))) {
@@ -1174,8 +1184,8 @@ export function registerOrders(on: On, fail: Fail, line: Line): void {
     const reason = text(body.reason)
 
     if (!reason)
-      throw fail(422, 'The reason field is required.', undefined, {
-        reason: ['The reason field is required.'],
+      throw fail(422, 'Say why the order is cancelled.', undefined, {
+        reason: ['Say why the order is cancelled.'],
       })
 
     const ids = (Array.isArray(body.ids) ? body.ids : []).map(Number)
@@ -1264,12 +1274,15 @@ export function registerOrders(on: On, fail: Fail, line: Line): void {
     const errors: Record<string, string[]> = {}
     const phoneOk = (value: string | null) => value === null || /^\+?[0-9][0-9 ().-]*$/.test(value)
 
-    if (!text(customer.first_name)) errors['customer.first_name'] = ['Enter the first name.']
-    if (!text(customer.phone) && !text(customer.email))
+    // The words of `ContactRules` on the real server: the pair refused under both its fields.
+    if (!text(customer.first_name)) errors['customer.first_name'] = ['Fill in «First name».']
+    if (!text(customer.phone) && !text(customer.email)) {
       errors['customer.phone'] = ['Enter a phone or an e-mail.']
-    if (!phoneOk(text(customer.phone))) errors['customer.phone'] = ['This is not a phone number.']
+      errors['customer.email'] = ['Enter a phone or an e-mail.']
+    }
+    if (!phoneOk(text(customer.phone))) errors['customer.phone'] = [PHONE_WORDS]
     if (wanted && !text(wanted.first_name))
-      errors['recipient.first_name'] = ['Enter the first name.']
+      errors['recipient.first_name'] = ["Fill in «Recipient's first name»."]
     if (Object.keys(errors).length > 0)
       throw fail(422, Object.values(errors)[0]![0]!, undefined, errors)
 
