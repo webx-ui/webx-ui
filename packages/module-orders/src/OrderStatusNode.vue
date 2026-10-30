@@ -9,8 +9,9 @@ import type { BadgeType } from '@webx-ui/core'
 import type { MilestoneKey } from './types'
 
 /**
- * `wx-orders-status` — the strip under the card's head (spec §11.3): the internal status with
- * «Change», what the buyer sees beside it, the milestones the order has. Its public id is
+ * `wx-orders-status` — the strip under the card's head (spec §11.3): the internal status with a
+ * pencil that changes it — the same dialog as «Change status» of the head — what the buyer sees
+ * beside it, the milestones the order has. Its public id is
  * `header-actions`: a neighbour adds its own button here with a patch, and it is drawn at the end
  * of the strip — «Track the parcel» of the delivery, «Check the payment» of the gateway.
  */
@@ -51,15 +52,18 @@ const marks = computed(() =>
           <wx-tooltip v-if="order.status?.deleted" :content="t('panel.status-deleted')">
             <wx-icon class="wx-orders-status__warn" name="warning" size="sm" />
           </wx-tooltip>
-          <wx-button
-            v-if="order.actions.status"
-            size="sm"
-            variant="text"
-            :disabled="card?.busy.value"
-            @click="card?.changeStatus()"
-          >
-            {{ t('panel.status-change') }}
-          </wx-button>
+          <wx-tooltip v-if="order.actions.status" :content="t('panel.status-change')">
+            <wx-button
+              class="wx-orders-status__change"
+              size="sm"
+              variant="text"
+              icon="edit"
+              :aria-label="t('panel.status-change')"
+              :disabled="card?.busy.value"
+              data-test="status-change"
+              @click="card?.changeStatus()"
+            />
+          </wx-tooltip>
         </span>
       </div>
 

@@ -330,6 +330,16 @@ function seedMarks(): void {
   mark(at(7), 'cancelled', 1)
   mark(at(7), 'refunded', 2, 'R-77')
   at(7).refunded = total(at(7))
+  at(7).history.push({
+    key: 'h8-r',
+    kind: 'refund',
+    at: at(7).marks.refunded?.at ?? at(7).placed_at,
+    source: 'panel',
+    admin: 'Demo admin',
+    note: 'Given back to the card by the bank: the buyer found the drill cheaper elsewhere.',
+    reference: 'R-77',
+    amount: total(at(7)),
+  })
   mark(at(8), 'paid', 0)
   mark(at(8), 'received', 2)
   mark(at(10), 'cancelled', 0)
@@ -640,7 +650,18 @@ function card(record: OrderRecord, locale: string, line: Line) {
       statuses: grouped(locale, line),
       awaiting_payment: record.awaiting && !cancelled,
       payment_failed_at: paid ? null : record.failed_at,
-      milestones: record.marks,
+      // The note of a mark lives in its history line here; the card has it on the mark.
+      milestones: Object.fromEntries(
+        Object.entries(record.marks).map(([key, mark]) => [
+          key,
+          {
+            ...mark,
+            note:
+              record.history.find((one) => one.kind === 'milestone' && one.milestone === key)
+                ?.note ?? null,
+          },
+        ]),
+      ),
       items: lines(record, null),
       adjustments: record.adjustments.map((one) => ({
         ...one,
@@ -667,6 +688,24 @@ function card(record: OrderRecord, locale: string, line: Line) {
         refundable: money(refundable),
         refundable_minor: refundable,
       },
+      count: {
+        lines: record.items.filter((one) => one.parent === null).length,
+        units: record.items
+          .filter((one) => one.parent === null)
+          .reduce((sum, one) => sum + one.qty, 0),
+        refunded_units: record.items
+          .filter((one) => one.parent === null)
+          .reduce((sum, one) => sum + one.refunded_qty, 0),
+      },
+      refunds: record.history
+        .filter((one) => one.kind === 'refund')
+        .map((one, index) => ({
+          id: index + 1,
+          at: one.at,
+          amount: money(one.amount ?? 0),
+          reason: one.note,
+          reference: one.reference ?? null,
+        })),
       blocks: [record.delivery, record.payment].flatMap((block, index) =>
         block
           ? [
@@ -707,6 +746,50 @@ function card(record: OrderRecord, locale: string, line: Line) {
 }
 
 /* -------------------------------------------------------------------------------- moves ----- */
+
+/** Where a cancellation takes the order (decision 88): the first active status that cancels. */
+function cancelling(record: OrderRecord): StatusRecord | null {
+  const current = statuses.find((one) => one.id === record.status)
+
+  if (current?.milestone === 'cancelled') return null
+
+  return statuses.find((one) => one.milestone === 'cancelled' && one.active && !one.deleted) ?? null
+}
+
+/** What the cancellation says of its move, as the dialog of a move says one. */
+function cancelStatus(record: OrderRecord, locale: string, line: Line) {
+  const to = cancelling(record)
+
+  if (!to || record.marks.cancelled) return null
+
+  return {
+    id: to.id,
+    name: statusOf(to.id, locale, line)?.name ?? '',
+    ...plan(record, to, locale, line),
+    milestone: null,
+  }
+}
+
+/** The cancellation: the mark with its reason, then the move into the status that cancels. */
+function cancelOrder(record: OrderRecord, reason: string | null): void {
+  const to = cancelling(record)
+
+  mark(record, 'cancelled', null, reason)
+
+  if (to) {
+    record.history.push({
+      key: `h${record.id}-${record.history.length}`,
+      kind: 'status',
+      at: new Date().toISOString(),
+      source: 'panel',
+      admin: 'Demo admin',
+      note: reason,
+      from: record.status,
+      to: to.id,
+    })
+    record.status = to.id
+  }
+}
 
 function plan(record: OrderRecord, to: StatusRecord, locale: string, line: Line) {
   const from = statuses.find((one) => one.id === record.status) as StatusRecord
@@ -957,6 +1040,7 @@ export function registerOrders(on: On, fail: Fail, line: Line): void {
             .filter((one) => one.amount > one.refunded)
             .map((one) => ({ label: one.label, amount: money(one.amount - one.refunded) })),
           outcome: record.marks.cancelled ? 'already_marked' : 'marked',
+          status: cancelStatus(record, locale, line),
         },
       }
     }
@@ -965,7 +1049,7 @@ export function registerOrders(on: On, fail: Fail, line: Line): void {
       throw fail(422, 'Say why the order is cancelled.', undefined, {
         reason: ['Say why the order is cancelled.'],
       })
-    if (!record.marks.cancelled) mark(record, 'cancelled', null, reason)
+    if (!record.marks.cancelled) cancelOrder(record, reason)
 
     return { data: card(record, locale, line) }
   })
@@ -1180,7 +1264,7 @@ export function registerOrders(on: On, fail: Fail, line: Line): void {
     return { data: { ...tally, status: statusOf(to.id, locale, line) } }
   })
 
-  on('POST', '/orders/cancel', ({ body }) => {
+  on('POST', '/orders/cancel', ({ body, locale }) => {
     const reason = text(body.reason)
 
     if (!reason)
@@ -1194,6 +1278,10 @@ export function registerOrders(on: On, fail: Fail, line: Line): void {
       cancelled: 0,
       unchanged: 0,
       paid: 0,
+      moved: 0,
+      public_changed: 0,
+      notifications: 0,
+      status_id: null as number | null,
       refused: [] as unknown[],
       dry_run: Boolean(body.dry_run),
     }
@@ -1209,10 +1297,24 @@ export function registerOrders(on: On, fail: Fail, line: Line): void {
       tally.cancelled++
       tally.paid += record.marks.paid ? 1 : 0
 
-      if (!body.dry_run) mark(record, 'cancelled', null, reason)
+      const status = cancelStatus(record, locale, line)
+
+      if (status) {
+        tally.moved++
+        tally.public_changed += status.public_changed ? 1 : 0
+        tally.notifications += status.channels.length
+        tally.status_id ??= status.id
+      }
+
+      if (!body.dry_run) cancelOrder(record, reason)
     }
 
-    return { data: tally }
+    return {
+      data: {
+        ...tally,
+        status: tally.status_id ? (statusOf(tally.status_id, locale, line) ?? null) : null,
+      },
+    }
   })
 
   /* «New order» (§29.2): the products of a made-up catalogue found by a word, a variant to pick

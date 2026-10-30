@@ -40,10 +40,25 @@ final class Consequences
     }
 
     /**
-     * @return array{was_paid: bool, money_to_refund: int, money_to_refund_text: string|null, tenders: list<array{label: string, amount: string}>, outcome: string}
+     * The status the cancellation moves the order into is said the way a move says it (decision
+     * 88): its name, what the buyer will see, the channels that write — null when it stays.
+     *
+     * @return array{was_paid: bool, money_to_refund: int, money_to_refund_text: string|null, tenders: list<array{label: string, amount: string}>, outcome: string, status: array<string, mixed>|null}
      */
     public function cancel(MilestoneMark $mark, string $currency, Money $money): array
     {
+        $status = null;
+
+        if ($mark->move !== null) {
+            $statuses = new StatusChoices;
+            $locale = app()->getLocale();
+            $status = [
+                'id' => $mark->move->to->id,
+                'name' => $statuses->find($mark->move->to->id, $locale)['name'] ?? $mark->move->to->name,
+                ...$this->move($mark->move, $statuses, $locale),
+            ];
+        }
+
         return [
             'was_paid' => $mark->wasPaid,
             'money_to_refund' => $mark->moneyToRefund,
@@ -53,6 +68,7 @@ final class Consequences
                 'amount' => $money->format($tender->amount, $currency),
             ], $mark->tendersReturned),
             'outcome' => $mark->outcome,
+            'status' => $status,
         ];
     }
 

@@ -19,7 +19,8 @@ import type { CancelConsequences, MassCancelAnswer, OrderDetail } from './types'
 /**
  * The cancellation (spec §9.1) — of one order from its card, or of the selection of the list.
  * The reason is required: it goes into the history, and an agent reading it later has nothing
- * else. Before the button, what the cancellation does from the service's own dry run: a paid
+ * else. Before the button, what the cancellation does from the service's own dry run: the status
+ * the order comes into and what the buyer sees of it (decision 88), a paid
  * order says that no money goes back with it — a refund is recorded after — and which tenders
  * return to their wallets.
  */
@@ -72,6 +73,23 @@ async function preview(): Promise<void> {
   }
 }
 
+/** Where the order goes (decision 88), said as the dialog of a move says it. */
+function moveText(status: NonNullable<CancelConsequences['status']>): string {
+  const parts = [t('panel.cancel-status', { status: status.name })]
+
+  parts.push(
+    status.public_changed
+      ? t('panel.consequence-public', { status: status.public })
+      : t('panel.consequence-quiet'),
+  )
+
+  if (status.channels.length > 0) {
+    parts.push(t('panel.consequence-channels', { channels: status.channels.join(', ') }))
+  }
+
+  return parts.join(' ')
+}
+
 onMounted(() => void preview())
 
 watch(reason, () => (errors.value = {}))
@@ -111,6 +129,12 @@ async function apply(): Promise<void> {
 
       <template v-else-if="single">
         <wx-alert
+          v-if="single.status"
+          type="info"
+          data-test="cancel-status"
+          :description="moveText(single.status)"
+        />
+        <wx-alert
           v-if="single.was_paid && single.money_to_refund_text"
           type="warning"
           :description="t('panel.cancel-paid', { amount: single.money_to_refund_text })"
@@ -127,6 +151,14 @@ async function apply(): Promise<void> {
       </template>
 
       <template v-else-if="batch">
+        <wx-alert
+          v-if="batch.moved > 0 && batch.status"
+          type="info"
+          data-test="cancel-status"
+          :description="
+            t('panel.mass-cancel-moved', { status: batch.status.name, count: batch.moved })
+          "
+        />
         <wx-alert
           v-if="batch.paid > 0"
           type="warning"

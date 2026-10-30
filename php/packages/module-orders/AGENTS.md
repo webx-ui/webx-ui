@@ -29,8 +29,8 @@ grouped into public ones. Dictionary `webx-orders` (`module`, `statuses`, `panel
     (`ValidationException` under `note`, on a dry run too);
   - `patchBlock(order, block, patch, source)`, `note(order, text, source)`, `updateDetails(order, OrderDetails, source)` —
     contacts, recipient, comment, manager note;
-  - `cancel(order, source, reason?, dryRun?)` → `MilestoneMark` with `wasPaid`, `moneyToRefund`, `tendersReturned`: the tenders
-    left marked given back, money not; `panel` and `mcp` must give a reason (`ValidationException`);
+  - `cancel(order, source, reason?, dryRun?)` → `MilestoneMark` (`wasPaid`, `moneyToRefund`, `tendersReturned`, `move`): tenders
+    given back, money not, the order into the first active cancelling status (`move`, null — none); `panel`/`mcp` give a reason;
   - `refund(order, RefundRequest, dryRun?)` → `RefundResult` — money given back outside the site, `manual` only, no gateway.
     `RefundRequest`: `amount`, `tenders` (id → amount), `items` (id → qty), `reference`, `reason`, `source`; the manager splits
     it, each part ≤ what is left (`RefundRefused`: `empty`, `amount`, `tender`, `qty`, with `field`). Money and every tender

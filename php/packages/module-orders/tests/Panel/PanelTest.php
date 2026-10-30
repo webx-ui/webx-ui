@@ -64,7 +64,7 @@ final class PanelTest extends PanelTestCase
         $this->assertSame([], $ids(['paid' => '1']));
 
         $cancelledGroup = PublicStatus::query()->where('code', 'cancelled')->sole();
-        $this->assertSame([], $ids(['public' => (string) $cancelledGroup->id]), 'Cancelling marks the order; its status stays where it was.');
+        $this->assertSame([$cancelled->id], $ids(['public' => (string) $cancelledGroup->id]), 'Cancelling moves the order into the status that cancels (decision 88).');
     }
 
     #[Test]
@@ -191,6 +191,9 @@ final class PanelTest extends PanelTestCase
 
         $preview = $this->postJson($this->api('cancel'), ['ids' => [$open->id, $paid->id], 'reason' => 'Out of stock', 'dry_run' => true])->assertOk()->json('data');
         $this->assertSame([2, 2, 1], [$preview['orders'], $preview['cancelled'], $preview['paid']]);
+        // Both come into «Cancelled», and the buyers see it (decision 88).
+        $this->assertSame([2, 2], [$preview['moved'], $preview['public_changed']]);
+        $this->assertSame('Cancelled', $preview['status']['name']);
         $this->assertNull($open->refresh()->cancelled_at);
 
         $this->postJson($this->api('cancel'), ['ids' => [$open->id, $paid->id], 'reason' => 'Out of stock'])->assertOk();
@@ -210,12 +213,20 @@ final class PanelTest extends PanelTestCase
         $this->assertTrue($preview['was_paid']);
         $this->assertSame(4999, $preview['money_to_refund']);
         $this->assertSame($this->money(4999), $preview['money_to_refund_text']);
+        // The status it comes into, said as the dialog of a move says it (decision 88).
+        $this->assertSame('Cancelled', $preview['status']['name']);
+        $this->assertSame('Cancelled', $preview['status']['public']);
+        $this->assertTrue($preview['status']['public_changed']);
+        $this->assertNull($preview['status']['milestone']);
         $this->assertNull($order->refresh()->cancelled_at);
 
         $this->postJson($this->api($order->id).'/cancel', [])->assertUnprocessable()->assertJsonValidationErrors('reason');
 
         $card = $this->postJson($this->api($order->id).'/cancel', ['reason' => 'Changed their mind'])->assertOk()->json('data.order');
         $this->assertArrayHasKey('cancelled', $card['milestones']);
+        $this->assertSame('Changed their mind', $card['milestones']['cancelled']['note']);
+        $this->assertSame('Cancelled', $card['status']['name']);
+        $this->assertSame('Cancelled', $card['status']['public']['name']);
         $this->assertFalse($card['actions']['cancel']);
         $this->assertFalse($card['actions']['paid']);
     }

@@ -84,6 +84,16 @@ function tone(line: TimelineLine): TimelineItemType {
   return 'default'
 }
 
+/**
+ * The reason of a cancellation and of a refund: said with its label on a plate of its own, not
+ * as one more grey line under the title.
+ */
+function reason(line: TimelineLine): string | null {
+  const cancels = line.kind === 'milestone' && line.milestone?.key === 'cancelled'
+
+  return (cancels || line.kind === 'refund') && line.note ? line.note : null
+}
+
 /** The line under the title: the note, the reference, the units — what the row has. */
 function details(line: TimelineLine): string[] {
   const parts: string[] = []
@@ -94,7 +104,7 @@ function details(line: TimelineLine): string[] {
   }
   if (line.reference) parts.push(t('panel.timeline-reference', { reference: line.reference }))
   // A block's line names the block in its title already; the note is that name.
-  if (line.note && line.kind !== 'block') parts.push(line.note)
+  if (line.note && line.kind !== 'block' && reason(line) === null) parts.push(line.note)
 
   return parts
 }
@@ -123,6 +133,19 @@ function details(line: TimelineLine): string[] {
           >
             {{ part }}
           </wx-text>
+          <p
+            v-if="reason(line)"
+            class="wx-orders-timeline__reason"
+            :class="
+              line.kind === 'refund'
+                ? 'wx-orders-timeline__reason--warning'
+                : 'wx-orders-timeline__reason--danger'
+            "
+            data-test="timeline-reason"
+          >
+            <span class="wx-orders-timeline__label">{{ t('panel.summary-reason') }}</span>
+            {{ reason(line) }}
+          </p>
         </wx-timeline-item>
       </wx-timeline>
     </wx-card>
@@ -195,5 +218,32 @@ function details(line: TimelineLine): string[] {
   display: block;
   overflow-wrap: anywhere;
   white-space: pre-line;
+}
+
+.wx-orders-timeline__reason {
+  margin: var(--wx-space-4) 0 0;
+  padding: var(--wx-space-6) var(--wx-space-10);
+  border-inline-start: 3px solid var(--wx-orders-timeline-edge);
+  border-radius: var(--wx-radius-sm);
+  background: var(--wx-orders-timeline-tint);
+  color: var(--wx-text-default);
+  font-size: var(--wx-font-size-sm);
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.wx-orders-timeline__reason--danger {
+  --wx-orders-timeline-edge: var(--wx-color-danger);
+  --wx-orders-timeline-tint: var(--wx-color-danger-soft);
+}
+
+.wx-orders-timeline__reason--warning {
+  --wx-orders-timeline-edge: var(--wx-color-warning);
+  --wx-orders-timeline-tint: var(--wx-color-warning-soft);
+}
+
+.wx-orders-timeline__label {
+  color: var(--wx-text-muted);
+  font-weight: var(--wx-font-weight-medium);
 }
 </style>

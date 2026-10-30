@@ -148,6 +148,16 @@ final readonly class OrderCard
                 'refundable' => $money(max(0, $refundable)),
                 'refundable_minor' => max(0, $refundable),
             ],
+            // «Lines: 2 · units: 5» of the side card: a set is one line, its parts are not counted.
+            'count' => self::count($order),
+            // The refunds beside «Refunded» of the totals, each with its reason and its reference.
+            'refunds' => $order->refunds->map(static fn (OrderRefund $refund): array => [
+                'id' => $refund->id,
+                'at' => $refund->created_at?->toAtomString(),
+                'amount' => $money($refund->amount),
+                'reason' => $refund->reason,
+                'reference' => $refund->reference,
+            ])->values()->all(),
             'blocks' => $this->blocks($order, $locale),
             'timeline' => $this->timeline($order, $statuses, $locale, $reader, $money),
             // The block «Notifications» under the timeline (§8): null without the module.
@@ -164,6 +174,23 @@ final readonly class OrderCard
                 'visitor' => $manage && VisitorOrders::installed(),
                 'visitor_search' => $manage && VisitorOrders::installed() && $can('users.view'),
             ],
+        ];
+    }
+
+    /**
+     * The lines of the order and their units, the parts of a set not counted apart, and the units
+     * given back.
+     *
+     * @return array{lines: int, units: int, refunded_units: int}
+     */
+    private static function count(Order $order): array
+    {
+        $top = $order->items->whereNull('parent_id');
+
+        return [
+            'lines' => $top->count(),
+            'units' => (int) $top->sum('qty'),
+            'refunded_units' => (int) $top->sum('refunded_qty'),
         ];
     }
 

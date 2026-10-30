@@ -17,6 +17,7 @@ use WebxUi\Notifications\NotificationEvents;
 use WebxUi\Orders\Blocks\OrderBlocks;
 use WebxUi\Orders\Checkout\Checkout;
 use WebxUi\Orders\Checkout\Console\PruneDraftsCommand;
+use WebxUi\Orders\Doctor\OrdersCancelStatusCheck;
 use WebxUi\Orders\Doctor\OrdersNotificationsCheck;
 use WebxUi\Orders\Models\Order;
 use WebxUi\Orders\Models\OrderStatus;
@@ -59,6 +60,7 @@ class OrdersServiceProvider extends ServiceProvider
 
         $this->callAfterResolving(DoctorChecks::class, static function (DoctorChecks $checks): void {
             $checks->register(OrdersNotificationsCheck::class);
+            $checks->register(OrdersCancelStatusCheck::class);
         });
     }
 

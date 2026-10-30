@@ -113,6 +113,7 @@ export const ordersMessages: Record<string, Messages> = {
     'mass-cancel-paid':
       'Paid among them: :count. Cancelling gives no money back: record a refund on each of them.',
     'mass-cancel-unchanged': 'Already cancelled: :count',
+    'mass-cancel-moved': 'Come into «:status»: :count',
     apply: 'Apply',
     dismiss: 'Cancel',
     save: 'Save',
@@ -137,6 +138,7 @@ export const ordersMessages: Record<string, Messages> = {
     'cancel-reason': 'Reason',
     'cancel-reason-help': "Goes into the order's history. The buyer does not see it.",
     'cancel-reason-required': 'Say why the order is cancelled.',
+    'cancel-status': 'The order comes into «:status».',
     'cancel-paid':
       'The order is paid: :amount. Cancelling gives no money back — record a refund after it.',
     'cancel-tenders': 'Goes back to where it came from: :tenders.',
@@ -224,6 +226,10 @@ export const ordersMessages: Record<string, Messages> = {
     'source-command': 'Command',
     'source-status': 'By the status',
     'source-panel-mark': 'Created in the panel',
+    'summary-count': 'Lines: :lines · units: :units',
+    'summary-units-returned': 'returned: :count',
+    'summary-reason': 'Reason:',
+    'summary-reference': 'Operation number:',
     'new-order': 'New order',
     'new-find': 'Find a product by name or article number',
     'new-find-empty': 'Nothing found.',

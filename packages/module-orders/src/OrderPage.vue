@@ -269,6 +269,17 @@ const actions = computed<ScreenAction[]>(() => {
     })
   }
 
+  // The pencil beside the status in the strip opens the same dialog; on a narrow head this one
+  // folds into the `···` with the rest.
+  if (open.actions.status) {
+    list.push({
+      key: 'status',
+      label: t('panel.status-change'),
+      icon: 'edit',
+      run: () => void changeStatus(),
+    })
+  }
+
   if (open.actions.received) {
     list.push({
       key: 'received',

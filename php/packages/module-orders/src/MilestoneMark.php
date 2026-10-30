@@ -13,7 +13,8 @@ use WebxUi\Orders\Data\TenderData;
  * after the manager's own mark knows it changed nothing.
  *
  * `cancel()` adds what the cancellation does (§9.1): whether the order was paid and how much
- * money is left to give back — a cancellation does not give it — and the tenders it gives back.
+ * money is left to give back — a cancellation does not give it — the tenders it gives back, and
+ * the status it moves the order into (decision 88), null when it stays where it is.
  */
 final readonly class MilestoneMark
 {
@@ -39,6 +40,7 @@ final readonly class MilestoneMark
         /** @var list<TenderData> `amount` — what goes back to the wallet now */
         public array $tendersReturned = [],
         public bool $dryRun = false,
+        public ?StatusMove $move = null,
     ) {}
 
     /**
@@ -46,11 +48,11 @@ final readonly class MilestoneMark
      *
      * @param  list<TenderData>  $tendersReturned
      */
-    public function cancelling(bool $wasPaid, int $moneyToRefund, array $tendersReturned, bool $dryRun): self
+    public function cancelling(bool $wasPaid, int $moneyToRefund, array $tendersReturned, bool $dryRun, ?StatusMove $move = null): self
     {
         return new self(
             $this->milestone, $this->outcome, $this->at, $this->source, $this->adminId, $this->reference, $this->note,
-            $wasPaid, $moneyToRefund, $tendersReturned, $dryRun,
+            $wasPaid, $moneyToRefund, $tendersReturned, $dryRun, $move,
         );
     }
 

@@ -149,6 +149,8 @@ final class McpTest extends McpTestCase
         $this->assertSame($panel['was_paid'], $agent['was_paid']);
         $this->assertSame($panel['money_to_refund'], $agent['money_to_refund']);
         $this->assertSame($panel['money_to_refund_text'], $agent['money_to_refund_formatted']);
+        $this->assertSame($panel['status'], $agent['status']);
+        $this->assertSame('Cancelled', $agent['status']['name']);
         $this->agent('orders_cancel', ['order' => $order->number, 'reason' => '  '])->assertHasErrors(['reason']);
 
         $this->ask('orders_cancel', ['order' => $order->number, 'reason' => 'Out of stock']);

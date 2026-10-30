@@ -425,6 +425,9 @@ final class Orders
     /**
      * Cancel the order (§9.1): the milestone «cancelled» with its reason — one the panel and the
      * agent must give — and the tenders left on it marked given back in the same transaction.
+     * The order comes into the first active status that cancels (decision 88), as a move does:
+     * its history line with the reason, its events, the letters of its public status. A site with
+     * no such status keeps the order where it is, and `webx:doctor` says so.
      * Money is not given back: a paid order answers `wasPaid` and how much is left, and the
      * manager records the refund. A cancelled order is silence; one given back whole too.
      *
@@ -1124,6 +1127,8 @@ final class Orders
         $money = $wasPaid ? max(0, $order->payable - $order->refunded_total) : 0;
         $tenders = $this->tendersLeft($order);
 
+        $move = null;
+
         if ($dryRun) {
             $first = OrderMilestone::query()->where('order_id', $order->id)->where('milestone', Milestone::Cancelled->value)->first();
 
@@ -1132,16 +1137,73 @@ final class Orders
                 $order->refunded_at !== null => new MilestoneMark(Milestone::Cancelled, MilestoneMark::REFUNDED, CarbonImmutable::instance($order->refunded_at), $source, $adminId),
                 default => new MilestoneMark(Milestone::Cancelled, MilestoneMark::MARKED, $at, $source, $adminId, null, $reason),
             };
+            $move = $mark->marked() ? $this->cancelMove($order, true) : null;
         } else {
             [$mark, $event] = $this->setMilestone($order, Milestone::Cancelled, $source, $adminId, $at, null, $reason);
 
             if ($event !== null) {
-                $this->events->dispatch($event($this->snapshot($order)));
+                $move = $this->cancelMove($order, false);
+
+                if ($move !== null) {
+                    $order->status_id = $move->to->id;
+                    $order->save();
+
+                    StatusChange::query()->insert([
+                        'order_id' => $order->id,
+                        'kind' => StatusChange::STATUS,
+                        'from_status_id' => $move->from->id,
+                        'to_status_id' => $move->to->id,
+                        'from_public_id' => $move->publicFrom->id,
+                        'to_public_id' => $move->publicTo->id,
+                        'source' => (string) self::cut($source, 64),
+                        'admin_id' => $adminId,
+                        'note' => $reason,
+                        'created_at' => $at,
+                    ]);
+                }
+
+                // The order of §7.2, as a move into that status has it: the status, the public
+                // one, the milestone — one snapshot, after everything.
+                $data = $this->snapshot($order);
+
+                if ($move !== null) {
+                    $this->events->dispatch(new OrderStatusChanged($data, $move->from, $move->to, $move->publicChanged, $reason, $source, $adminId, $at));
+
+                    if ($move->publicChanged) {
+                        $this->events->dispatch(new OrderPublicStatusChanged($data, $move->publicFrom, $move->publicTo, $source, $adminId, $at));
+                    }
+                }
+
+                $this->events->dispatch($event($data));
             }
         }
 
-        // Silence gives nothing back.
-        return $mark->cancelling($wasPaid, $money, $mark->marked() ? $tenders : [], $dryRun);
+        // Silence gives nothing back, and moves nothing.
+        return $mark->cancelling($wasPaid, $money, $mark->marked() ? $tenders : [], $dryRun, $move);
+    }
+
+    /**
+     * Where a cancellation takes the order (decision 88): the first active status that cancels,
+     * unless the order stands in one already — a status deleted since, too — or the site has none.
+     * The milestone is the cancellation's own, under its own source, so the move carries none.
+     */
+    private function cancelMove(Order $order, bool $dryRun): ?StatusMove
+    {
+        $current = OrderStatus::withTrashed()->find($order->status_id);
+
+        if ($current?->sets_milestone === Milestone::Cancelled) {
+            return null;
+        }
+
+        $to = $this->statuses->cancelling();
+
+        if ($to === null) {
+            return null;
+        }
+
+        $move = $this->plan($order, $to, $dryRun);
+
+        return $move->moved && $move->refusal === null ? $move->without() : null;
     }
 
     /** What a refund would record, checked against what is left — the dry run's answer and the refund's plan. */

@@ -171,6 +171,10 @@ export interface OrderCardData {
     refundable: string
     refundable_minor: number
   }
+  /** The lines and their units; a set is one line, its parts are not counted apart. */
+  count: { lines: number; units: number; refunded_units: number }
+  /** The refunds recorded, oldest first, each with its reason and the reference of the operation. */
+  refunds: OrderRefundEntry[]
   blocks: { key: string; summary: string | null; value: Record<string, unknown> }[]
   timeline: TimelineLine[]
   /** The log of the notifications module about the order; null without the module. */
@@ -251,12 +255,22 @@ export interface MoveConsequences {
   message: string | null
 }
 
+export interface OrderRefundEntry {
+  id: number
+  at: string | null
+  amount: string
+  reason: string | null
+  reference: string | null
+}
+
 export interface CancelConsequences {
   was_paid: boolean
   money_to_refund: number
   money_to_refund_text: string | null
   tenders: { label: string; amount: string }[]
   outcome: string
+  /** The status the cancellation moves the order into (decision 88); null — it stays. */
+  status: (MoveConsequences & { id: number; name: string }) | null
 }
 
 export interface RefundInput {
@@ -304,6 +318,12 @@ export interface MassCancelAnswer {
   cancelled: number
   unchanged: number
   paid: number
+  /** How many come into the status that cancels, and what their buyers see of it. */
+  moved: number
+  public_changed: number
+  notifications: number
+  status_id: number | null
+  status: { id: number; name: string } | null
   refused: MassRefusal[]
   dry_run: boolean
 }

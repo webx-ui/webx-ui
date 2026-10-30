@@ -12,6 +12,9 @@ use WebxUi\Orders\Models\OrderStatus;
  * deleted — else the first of the first public group, and for an order that awaits payment the
  * one after it in that group, which is how the set a site starts with has «New» and «Awaiting
  * payment».
+ *
+ * And the status a cancellation comes into (§9.1, decision 88): the first active one that sets
+ * «cancelled», in the same order.
  */
 final class InitialStatuses
 {
@@ -20,6 +23,18 @@ final class InitialStatuses
     public function for(bool $awaitPayment): OrderStatus
     {
         return $this->pick($awaitPayment, $this->active());
+    }
+
+    /** The first active status of a live group that sets «cancelled», or null: the site has none. */
+    public function cancelling(): ?OrderStatus
+    {
+        foreach ($this->active() as $status) {
+            if ($status->sets_milestone === Milestone::Cancelled) {
+                return $status;
+            }
+        }
+
+        return null;
     }
 
     /**

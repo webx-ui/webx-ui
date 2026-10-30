@@ -7,9 +7,10 @@ import { NAMESPACE, useOrdersMessages } from './i18n'
 import type { MilestoneKey } from './types'
 
 /**
- * `wx-orders-summary` — the side card of an order (spec §11.3, the node `summary`): the totals
- * as the buyer was charged, what was given back, and the dates of the milestones. Money comes
- * written by the server in the currency of the order; nothing is counted here.
+ * `wx-orders-summary` — the side card of an order (spec §11.3, the node `summary`): how many
+ * lines and units, the totals as the buyer was charged, what was given back and why, and the
+ * dates of the milestones — the reason of a cancellation under its date. Money comes written by
+ * the server in the currency of the order; nothing is counted here.
  */
 defineOptions({ name: 'WxOrdersSummary' })
 
@@ -24,6 +25,7 @@ const ORDER: MilestoneKey[] = ['placed', 'paid', 'received', 'cancelled', 'refun
 /**
  * Where an order came from, when not through the checkout: «Buy in one click» (§29) — the manager
  * calls back and fills in the delivery and the payment — or taken by a manager in the panel (§29.2).
+ * A line of its own under «Placed»: beside the date there is no room for it.
  */
 const source = computed(() => {
   const placed = order.value?.milestones.placed?.source
@@ -35,17 +37,51 @@ const source = computed(() => {
       : null
 })
 
+const count = computed(() => {
+  const counted = order.value?.count
+
+  if (!counted) return null
+
+  const line = t('panel.summary-count', { lines: counted.lines, units: counted.units })
+
+  return counted.refunded_units > 0
+    ? `${line} · ${t('panel.summary-units-returned', { count: counted.refunded_units })}`
+    : line
+})
+
+/** The refunds that say something: a reason, the number of the operation. */
+const refunds = computed(() =>
+  (order.value?.refunds ?? []).filter((refund) => refund.reason || refund.reference),
+)
+
+/**
+ * The marks with their dates. The reference is the paid and the received one's — a refund's is
+ * under «Refunded» of the totals — and the reason is the cancellation's.
+ */
 const dates = computed(() =>
   ORDER.flatMap((key) => {
     const mark = order.value?.milestones[key]
 
-    return mark ? [{ key, at: mark.at, reference: mark.reference }] : []
+    return mark
+      ? [
+          {
+            key,
+            at: mark.at,
+            reference: key === 'paid' || key === 'received' ? mark.reference : null,
+            reason: key === 'cancelled' ? mark.note : null,
+          },
+        ]
+      : []
   }),
 )
 </script>
 
 <template>
   <div v-if="order" class="wx-orders-summary">
+    <wx-text v-if="count" size="sm" tone="muted" class="wx-orders-summary__count">
+      {{ count }}
+    </wx-text>
+
     <dl class="wx-orders-summary__rows">
       <dt>{{ t('panel.subtotal') }}</dt>
       <dd>{{ order.totals.subtotal }}</dd>
@@ -64,6 +100,24 @@ const dates = computed(() =>
       <template v-if="order.totals.refunded">
         <dt>{{ t('panel.refunded') }}</dt>
         <dd class="is-warning">−{{ order.totals.refunded }}</dd>
+        <dd
+          v-for="refund in refunds"
+          :key="refund.id"
+          class="wx-orders-summary__note wx-orders-summary__note--warning"
+          data-test="refund-note"
+        >
+          <span v-if="order.refunds.length > 1" class="wx-orders-summary__sum">
+            −{{ refund.amount }}
+          </span>
+          <p v-if="refund.reason">
+            <span class="wx-orders-summary__label">{{ t('panel.summary-reason') }}</span>
+            {{ refund.reason }}
+          </p>
+          <p v-if="refund.reference">
+            <span class="wx-orders-summary__label">{{ t('panel.summary-reference') }}</span>
+            {{ refund.reference }}
+          </p>
+        </dd>
       </template>
     </dl>
 
@@ -73,18 +127,23 @@ const dates = computed(() =>
       <template v-for="mark in dates" :key="mark.key">
         <dt>{{ t(`module.milestones.${mark.key}`) }}</dt>
         <dd>
-          <wx-badge
-            v-if="mark.key === 'placed' && source"
-            class="wx-orders-summary__source"
-            size="sm"
-            variant="outline"
-          >
-            {{ source }}
-          </wx-badge>
           <wx-date :value="mark.at" size="sm" />
           <wx-text v-if="mark.reference" size="sm" tone="muted" class="wx-orders-summary__ref">
             {{ mark.reference }}
           </wx-text>
+        </dd>
+        <dd v-if="mark.key === 'placed' && source" class="wx-orders-summary__source">
+          <wx-badge size="sm" variant="outline">{{ source }}</wx-badge>
+        </dd>
+        <dd
+          v-if="mark.reason"
+          class="wx-orders-summary__note wx-orders-summary__note--danger"
+          data-test="cancel-reason"
+        >
+          <p>
+            <span class="wx-orders-summary__label">{{ t('panel.summary-reason') }}</span>
+            {{ mark.reason }}
+          </p>
         </dd>
       </template>
     </dl>
@@ -92,8 +151,9 @@ const dates = computed(() =>
 </template>
 
 <style scoped>
-.wx-orders-summary__source {
-  margin-inline-end: var(--wx-space-8);
+.wx-orders-summary__count {
+  display: block;
+  margin-block-end: var(--wx-space-12);
 }
 
 .wx-orders-summary__rows {
@@ -119,11 +179,57 @@ const dates = computed(() =>
   font-weight: var(--wx-font-weight-semibold);
 }
 
-.wx-orders-summary__rows .is-warning {
+.wx-orders-summary__rows dd.is-warning {
   color: var(--wx-color-warning);
 }
 
 .wx-orders-summary__ref {
   display: block;
+}
+
+/* Lines of their own, across both columns: under the date, not squeezed beside it. */
+.wx-orders-summary__rows .wx-orders-summary__source {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  margin-block-start: calc(var(--wx-space-4) * -1);
+}
+
+/* The reason told apart from the rows: a tinted plate with the colour of the mark at its edge. */
+.wx-orders-summary__rows .wx-orders-summary__note {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-4);
+  min-width: 0;
+  padding: var(--wx-space-8) var(--wx-space-12);
+  border-inline-start: 3px solid var(--wx-orders-summary-edge);
+  border-radius: var(--wx-radius-sm);
+  background: var(--wx-orders-summary-tint);
+  color: var(--wx-text-default);
+  font-size: var(--wx-font-size-sm);
+  text-align: start;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.wx-orders-summary__note--danger {
+  --wx-orders-summary-edge: var(--wx-color-danger);
+  --wx-orders-summary-tint: var(--wx-color-danger-soft);
+}
+
+.wx-orders-summary__note--warning {
+  --wx-orders-summary-edge: var(--wx-color-warning);
+  --wx-orders-summary-tint: var(--wx-color-warning-soft);
+}
+
+.wx-orders-summary__note p {
+  margin: 0;
+}
+
+.wx-orders-summary__label,
+.wx-orders-summary__sum {
+  color: var(--wx-text-muted);
+  font-weight: var(--wx-font-weight-medium);
 }
 </style>

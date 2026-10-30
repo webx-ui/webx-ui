@@ -204,8 +204,10 @@ final readonly class OrdersTools
             Tool::mutating(
                 'cancel',
                 'Cancel an order with its reason: the milestone «cancelled», and the tenders left on it (wallet, gift card) go '
-                .'back. Money is not given back — a paid order answers how much is left to refund, and orders_refund records '
-                .'it. `dry_run` answers whether it was paid, the money left, the tenders that go back.',
+                .'back, and the order comes into the first active status that cancels (`status`: its name, what the buyer '
+                .'sees, the channels that write; null — it stays). Money is not given back — a paid order answers how much '
+                .'is left to refund, and orders_refund records it. `dry_run` answers whether it was paid, the money left, '
+                .'the tenders that go back and the status.',
                 fn (array $arguments): array => $this->cancel($arguments),
                 ['properties' => [
                     'order' => $order,
@@ -671,6 +673,8 @@ final readonly class OrdersTools
                 'label' => $tender->label,
                 ...$this->amount('amount', $tender->amount, $order->currency),
             ], $mark->tendersReturned),
+            // The status it comes into, as orders_move says one (decision 88); null — it stays.
+            'status' => $said['status'],
             'dry_run' => $dryRun,
         ];
     }
