@@ -499,7 +499,7 @@ const columns = computed<TableColumn<OrderRow>[]>(() => {
     { key: 'number', label: t('panel.column-number'), width: 150 },
     { key: 'customer', label: t('panel.column-customer') },
     { key: 'items', label: t('panel.column-items'), width: 200, hideBelow: 1100 },
-    { key: 'total', label: t('panel.column-total'), width: 130, align: 'right' },
+    { key: 'total', label: t('panel.column-total'), width: 150, align: 'right' },
     { key: 'status', label: t('panel.column-status'), width: 190 },
     { key: 'marks', label: t('panel.column-marks'), width: 120, hideBelow: 900 },
     { key: 'blocks', label: t('panel.column-blocks'), width: 180, hideBelow: 1280 },
@@ -953,6 +953,13 @@ onMounted(async () => {
 .wx-orders__money {
   align-items: flex-end;
   font-variant-numeric: tabular-nums;
+}
+
+/* The balance badge keeps its money whole: in a narrow column it wraps rather than cut the sum. */
+.wx-orders__money :deep(.wx-badge),
+.wx-orders__money :deep(.wx-badge__label) {
+  white-space: normal;
+  text-align: right;
 }
 
 .wx-orders__marks {
