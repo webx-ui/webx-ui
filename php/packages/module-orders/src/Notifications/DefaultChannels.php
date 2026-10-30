@@ -19,11 +19,15 @@ use WebxUi\Settings\Settings;
  * - to the buyer on `orders.placed`, «Order accepted» (decision 81);
  * - to the shop on `orders.placed`, «New order», to the first e-mail of the contacts of the site,
  *   taken now; with no contacts the channel is made switched off, and `webx:doctor` says so;
- * - to the buyer on `orders.paid`, «Payment received» (decision 43).
+ * - to the buyer on `orders.paid`, «Payment received» (decision 43);
+ * - to the buyer on `orders.items_changed`, «Order changed», and on `orders.payment_requested`,
+ *   «Payment due» (§40.2, question 4 of §44) — made apart from the first three: a site that set
+ *   those up before the edits came gets these two all the same.
  *
  * Only on a site that has both the notifications module and `module-settings`: the channels of a
  * milestone are kept in the settings of the section, and without them there is nowhere to keep
- * the choice. A site that saved `orders.notify.placed` or `.paid` has decided — nothing is made.
+ * the choice. A site that saved `orders.notify.placed` or `.paid` has decided the first three, one
+ * that saved `.items_changed` or `.payment_requested` the last two — that part is not made.
  */
 final readonly class DefaultChannels
 {
@@ -47,6 +51,15 @@ final readonly class DefaultChannels
 
         $stored = $this->settings->stored() ?? [];
 
+        return [...$this->milestones($stored), ...$this->edits($stored)];
+    }
+
+    /**
+     * @param  array<string, mixed>  $stored
+     * @return list<Channel>
+     */
+    private function milestones(array $stored): array
+    {
         if (array_key_exists(OrderEvents::SETTINGS[OrderEvents::PLACED], $stored) || array_key_exists(OrderEvents::SETTINGS[OrderEvents::PAID], $stored)) {
             return [];
         }
@@ -63,6 +76,31 @@ final readonly class DefaultChannels
         ]);
 
         return [$customer, $admin, $paid];
+    }
+
+    /**
+     * @param  array<string, mixed>  $stored
+     * @return list<Channel>
+     */
+    private function edits(array $stored): array
+    {
+        $changed = OrderEvents::SETTINGS[OrderEvents::ITEMS_CHANGED];
+        $requested = OrderEvents::SETTINGS[OrderEvents::PAYMENT_REQUESTED];
+
+        if (array_key_exists($changed, $stored) || array_key_exists($requested, $stored)) {
+            return [];
+        }
+
+        $buyer = [['variable' => 'customer_email']];
+        $edit = $this->make('items-changed-customer', OrderEvents::ITEMS_CHANGED, OrderTemplates::CUSTOMER, $buyer, true);
+        $payment = $this->make('payment-requested-customer', OrderEvents::PAYMENT_REQUESTED, OrderTemplates::CUSTOMER, $buyer, true);
+
+        $this->container->make(Settings::class)->save([
+            $changed => [$edit->id],
+            $requested => [$payment->id],
+        ]);
+
+        return [$edit, $payment];
     }
 
     /** The first e-mail of the contacts of the site (`contacts.emails`), or none. */

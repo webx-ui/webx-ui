@@ -11,6 +11,8 @@ return [
         'received' => 'Заказ: получен',
         'cancelled' => 'Заказ: отменён',
         'refunded' => 'Заказ: возврат',
+        'items_changed' => 'Заказ: состав изменён',
+        'payment_requested' => 'Заказ: запрос оплаты',
     ],
     'vars' => [
         'number' => 'Номер заказа',
@@ -48,12 +50,25 @@ return [
         'reference' => 'Номер операции',
         'reason' => 'Причина',
         'refund_amount' => 'Сумма возврата',
+        'changes' => 'Что изменилось',
+        'change_qty_from' => 'Количество до',
+        'change_qty_to' => 'Количество сейчас',
+        'change_added' => 'Добавлено',
+        'change_removed' => 'Убрано',
+        'previous_total' => 'Итого до правки',
+        'balance' => 'Баланс',
+        'balance_kind' => 'Баланс: due, over или none',
+        'amount_due' => 'Осталось оплатить',
+        'amount_over' => 'Вернуть покупателю',
+        'message' => 'Сообщение менеджера покупателю',
     ],
     'yes' => 'да',
     'channels' => [
         'placed-customer' => 'Заказ принят — покупателю',
         'placed-admin' => 'Новый заказ — магазину',
         'paid-customer' => 'Оплата получена — покупателю',
+        'items-changed-customer' => 'Заказ изменён — покупателю',
+        'payment-requested-customer' => 'Нужна оплата — покупателю',
     ],
     'letters' => [
         'placed' => [
@@ -88,6 +103,14 @@ return [
             'subject' => 'Возврат по заказу {{number}}',
             'intro' => 'Деньги по вашему заказу возвращены.',
         ],
+        'items_changed' => [
+            'subject' => 'Заказ {{number}} изменён',
+            'intro' => 'Мы изменили состав вашего заказа. Ниже — заказ, каким он стал.',
+        ],
+        'payment_requested' => [
+            'subject' => 'Заказ {{number}}: к оплате {{amount_due}}',
+            'intro' => 'Ваш заказ ждёт оплаты {{amount_due}}. Мы свяжемся с вами и подскажем, как оплатить.',
+        ],
     ],
     'words' => [
         'subtotal' => 'Товары',
@@ -105,5 +128,11 @@ return [
         'refund_amount' => 'Возвращено',
         'open-order' => 'Посмотреть заказ',
         'open-panel' => 'Открыть в панели',
+        'changes' => 'Что изменилось',
+        'added' => 'добавлено',
+        'removed' => 'убрано',
+        'previous_total' => 'Было итого',
+        'amount_due' => 'Осталось оплатить',
+        'amount_over' => 'Мы вернём',
     ],
 ];

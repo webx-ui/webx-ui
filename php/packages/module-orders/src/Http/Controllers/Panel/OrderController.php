@@ -370,10 +370,10 @@ final readonly class OrderController
 
         return ApiResponse::data([
             ...$events,
-            'reason_label' => $events['reason'] !== null ? (string) __('webx-orders::panel.notify-refusals.'.$events['reason']) : null,
+            'reason_label' => $events['reason'] !== null ? NotifyRefused::label($events['reason']) : null,
             'events' => array_map(static fn (array $event): array => [
                 ...$event,
-                'reason_label' => $event['reason'] !== null ? (string) __('webx-orders::panel.notify-refusals.'.$event['reason']) : null,
+                'reason_label' => $event['reason'] !== null ? NotifyRefused::label($event['reason'], $event['key']) : null,
             ], $events['events']),
         ]);
     }

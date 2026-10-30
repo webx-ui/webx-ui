@@ -11,6 +11,8 @@ return [
         'received' => 'Pedido: recibido',
         'cancelled' => 'Pedido: cancelado',
         'refunded' => 'Pedido: reembolsado',
+        'items_changed' => 'Pedido: artículos modificados',
+        'payment_requested' => 'Pedido: pago solicitado',
     ],
     'vars' => [
         'number' => 'Número de pedido',
@@ -48,12 +50,25 @@ return [
         'reference' => 'Referencia de la operación',
         'reason' => 'Motivo',
         'refund_amount' => 'Importe devuelto',
+        'changes' => 'Qué cambió',
+        'change_qty_from' => 'Cantidad antes',
+        'change_qty_to' => 'Cantidad ahora',
+        'change_added' => 'Añadido',
+        'change_removed' => 'Quitado',
+        'previous_total' => 'Total antes del cambio',
+        'balance' => 'Saldo',
+        'balance_kind' => 'Saldo: due, over o none',
+        'amount_due' => 'Pendiente de pago',
+        'amount_over' => 'A devolver al comprador',
+        'message' => 'Mensaje del gestor al comprador',
     ],
     'yes' => 'sí',
     'channels' => [
         'placed-customer' => 'Pedido aceptado — al comprador',
         'placed-admin' => 'Nuevo pedido — a la tienda',
         'paid-customer' => 'Pago recibido — al comprador',
+        'items-changed-customer' => 'Pedido modificado — al comprador',
+        'payment-requested-customer' => 'Pago pendiente — al comprador',
     ],
     'letters' => [
         'placed' => [
@@ -88,6 +103,14 @@ return [
             'subject' => 'Reembolso del pedido {{number}}',
             'intro' => 'Se ha devuelto el dinero de tu pedido.',
         ],
+        'items_changed' => [
+            'subject' => 'Pedido {{number}} modificado',
+            'intro' => 'Hemos modificado los artículos de su pedido. Así queda el pedido ahora.',
+        ],
+        'payment_requested' => [
+            'subject' => 'Pedido {{number}}: {{amount_due}} por pagar',
+            'intro' => 'Su pedido espera un pago de {{amount_due}}. Nos pondremos en contacto con usted para indicarle cómo pagar.',
+        ],
     ],
     'words' => [
         'subtotal' => 'Artículos',
@@ -105,5 +128,11 @@ return [
         'refund_amount' => 'Devuelto',
         'open-order' => 'Ver el pedido',
         'open-panel' => 'Abrir en el panel',
+        'changes' => 'Qué cambió',
+        'added' => 'añadido',
+        'removed' => 'quitado',
+        'previous_total' => 'Total antes',
+        'amount_due' => 'Pendiente de pago',
+        'amount_over' => 'Le devolveremos',
     ],
 ];

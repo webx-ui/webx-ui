@@ -393,6 +393,7 @@ return [
         'no_basis' => 'Não aconteceu à encomenda aquilo de que trata este e-mail.',
         'no_channel' => 'Nenhum canal ativo dos eventos da encomenda escreve ao comprador. Configure um em «Notificações».',
         'foreign' => 'Esta mensagem não é desta encomenda.',
+        'nothing_due' => 'A encomenda não deve nada: não há pagamento a solicitar.',
     ],
     'items-edit' => 'Alterar as linhas',
     'items-edit-title' => 'Linhas da encomenda :number',

@@ -11,6 +11,8 @@ return [
         'received' => 'Bestellung: erhalten',
         'cancelled' => 'Bestellung: storniert',
         'refunded' => 'Bestellung: erstattet',
+        'items_changed' => 'Bestellung: Positionen geändert',
+        'payment_requested' => 'Bestellung: Zahlung angefordert',
     ],
     'vars' => [
         'number' => 'Bestellnummer',
@@ -48,12 +50,25 @@ return [
         'reference' => 'Vorgangsnummer',
         'reason' => 'Grund',
         'refund_amount' => 'Erstatteter Betrag',
+        'changes' => 'Was sich geändert hat',
+        'change_qty_from' => 'Menge vorher',
+        'change_qty_to' => 'Menge jetzt',
+        'change_added' => 'Hinzugefügt',
+        'change_removed' => 'Entfernt',
+        'previous_total' => 'Summe vor der Änderung',
+        'balance' => 'Saldo',
+        'balance_kind' => 'Saldo: due, over oder none',
+        'amount_due' => 'Noch zu zahlen',
+        'amount_over' => 'An den Käufer zurückzuzahlen',
+        'message' => 'Nachricht des Managers an den Käufer',
     ],
     'yes' => 'ja',
     'channels' => [
         'placed-customer' => 'Bestellung angenommen — an den Käufer',
         'placed-admin' => 'Neue Bestellung — an den Shop',
         'paid-customer' => 'Zahlung erhalten — an den Käufer',
+        'items-changed-customer' => 'Bestellung geändert — an den Käufer',
+        'payment-requested-customer' => 'Zahlung fällig — an den Käufer',
     ],
     'letters' => [
         'placed' => [
@@ -88,6 +103,14 @@ return [
             'subject' => 'Erstattung zu Bestellung {{number}}',
             'intro' => 'Das Geld für Ihre Bestellung wurde erstattet.',
         ],
+        'items_changed' => [
+            'subject' => 'Bestellung {{number}} geändert',
+            'intro' => 'Wir haben die Positionen Ihrer Bestellung geändert. So sieht die Bestellung jetzt aus.',
+        ],
+        'payment_requested' => [
+            'subject' => 'Bestellung {{number}}: {{amount_due}} zu zahlen',
+            'intro' => 'Ihre Bestellung wartet auf eine Zahlung von {{amount_due}}. Wir melden uns bei Ihnen, wie Sie bezahlen können.',
+        ],
     ],
     'words' => [
         'subtotal' => 'Waren',
@@ -105,5 +128,11 @@ return [
         'refund_amount' => 'Erstattet',
         'open-order' => 'Bestellung ansehen',
         'open-panel' => 'Im Panel öffnen',
+        'changes' => 'Was sich geändert hat',
+        'added' => 'hinzugefügt',
+        'removed' => 'entfernt',
+        'previous_total' => 'Summe vorher',
+        'amount_due' => 'Noch zu zahlen',
+        'amount_over' => 'Wir erstatten',
     ],
 ];

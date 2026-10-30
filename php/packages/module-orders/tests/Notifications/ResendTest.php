@@ -20,6 +20,7 @@ use WebxUi\Notifications\Models\Channel;
 use WebxUi\Notifications\Models\Delivery;
 use WebxUi\Notifications\NotificationsServiceProvider;
 use WebxUi\Orders\Contact;
+use WebxUi\Orders\Milestone;
 use WebxUi\Orders\Models\Order;
 use WebxUi\Orders\Models\StatusChange;
 use WebxUi\Orders\Notifications\OrderEvents;
@@ -271,6 +272,29 @@ final class ResendTest extends McpTestCase
     /**
      * The letter «Order accepted» of an order, as the default channel to the buyer wrote it, made sent.
      */
+    #[Test]
+    public function payment_requested_answers_the_same_in_the_dialog_and_to_the_agent(): void
+    {
+        $this->signIn();
+        $order = $this->order();
+
+        $dialog = $this->postJson($this->api($order->id.'/notify'), ['event' => OrderEvents::PAYMENT_REQUESTED, 'dry_run' => true])->assertOk()->json('data');
+        $agent = $this->ask('orders_notify', ['order' => $order->number, 'event' => OrderEvents::PAYMENT_REQUESTED, 'dry_run' => true]);
+
+        $this->assertSame($dialog, array_diff_key($agent, ['number' => true]));
+        $this->assertSame(0, Delivery::query()->where('manual', true)->count());
+
+        // Paid in full: greyed in the dialog, refused to the agent — in the same words.
+        $this->app->make(Orders::class)->mark($order, Milestone::Paid, 'panel');
+        $words = __('webx-orders::panel.notify-refusals.nothing_due');
+        $meta = $this->getJson($this->api($order->id.'/notify'))->assertOk()->json('data');
+        $this->assertSame([false, 'no_basis', $words], array_values(array_intersect_key(self::pick($meta['events'], 'key', OrderEvents::PAYMENT_REQUESTED), array_flip(['available', 'reason', 'reason_label']))));
+        $this->postJson($this->api($order->id.'/notify'), ['event' => OrderEvents::PAYMENT_REQUESTED, 'dry_run' => true])
+            ->assertStatus(422)
+            ->assertJsonPath('errors.event.0', $words);
+        $this->agent('orders_notify', ['order' => $order->number, 'event' => OrderEvents::PAYMENT_REQUESTED, 'dry_run' => true])->assertSee($words);
+    }
+
     private function accepted(Order $order): Delivery
     {
         $channels = $this->app->make(OrderSettings::class)->get('orders.notify.placed');

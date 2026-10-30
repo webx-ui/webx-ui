@@ -243,7 +243,10 @@ marked manual, with who asked and the line it repeats. `sendByHand($event, $chan
 sends an event again to its addressee alone, not to the other recipients of the channel;
 `addressed()` says which channels would, and `render()` what each would send. Both refuse the
 same send again within a minute (`Delivery::RESEND_PAUSE`), so a second press sends nothing.
-The card of an order is the consumer as it is (`webx-ui/module-orders`, «Notifications»).
+The card of an order is the consumer as it is (`webx-ui/module-orders`, «Notifications»). An event may
+have no listener at all and live by hand alone: `orders.payment_requested` — «pay for the order» — is
+sent only from that menu, while the order owes; it is declared, has its channels and templates like
+any other.
 
 ## A module that notifies
 

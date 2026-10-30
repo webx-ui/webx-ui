@@ -45,10 +45,10 @@ grouped into public ones. Dictionary `webx-orders` (`module`, `statuses`, `panel
   `Data\OrderData`, `source`, `adminId`, `at`: `OrderPlaced`, `OrderPaid`, `OrderReceived`, `OrderCancelled` (`wasPaid`,
   `tendersReturned`), `OrderRefunded` (`RefundData`, `full`), `OrderRefundReversed` (`reason`, `milestoneRemoved`), `OrderPaymentFailed`, `OrderPaymentReceived`, `OrderItemsChanged` (`RevisionData`, `balance`, `notify`), `OrderStatusChanged`,
   `OrderPublicStatusChanged` (only when the public one changes), `OrderBlockUpdated`, `OrderDetailsChanged` (`fields`, `before`).
-- **Notifications** (§10, with `webx-ui/module-notifications`): seven `orders.*` events (`Notifications\OrderEvents`,
-  `OrderValues`, `OrderTemplates`); channels — `orders.notify.*` for a milestone, `options.notify_channels` of a public status;
-  a move inside a group tells nobody. `migrate` makes the starting set once (`DefaultChannels`): «Order accepted», «Payment
-  received» to `customer_email`, «New order» to the first contacts e-mail. `{{status}}` is `internal`. By hand (§10.3): `Orders::notify()`, `orders_notify`.
+- **Notifications** (§10, §40.2, with `webx-ui/module-notifications`): nine `orders.*` events (`Notifications\OrderEvents`,
+  `OrderValues`, `OrderTemplates`); channels — `orders.notify.*` for a milestone and the edits, `options.notify_channels` of a public status;
+  a move inside a group tells nobody. `migrate` makes the starting set once (`DefaultChannels`, the edits' two apart): «Order accepted», «Payment received», «Order changed» (`items_changed` — only with `ItemsEdit::notify`; `changes`, `previous_total`, `balance*`, `amount_due|over`, `message`, never `reason`), «Payment due» (`payment_requested`, by hand only, while `due > 0`) to `customer_email`,
+  «New order» to the first contacts e-mail. `{{status}}` is `internal`. By hand (§10.3): `Orders::notify()`, `orders_notify`; `NotifyRefused::label()` — the words.
 - **Journal** `orders.order`: what `updateDetails()` and the links changed. **Blocks** `OrderBlocks` —
   `register(new BlockDefinition('delivery'|'payment', module, validate, summary))` in `boot()`.
 - **Config** `webx-orders`: `number` (`prefix`, `start` = 1000, `pad`), `initial_status`, `initial_status_awaiting_payment`
@@ -139,7 +139,7 @@ Routes ask with `cms.can`, tools with `permission:`: reading — any of the firs
 
 - `Panel/*Test` — `BoundariesTest`: the panel never writes an order itself; `PerformanceTest`: the list's budget; `AccessCoverageTest`; `NewOrderTest` (search, live totals, `panel`); `ListGlanceTest` (the default tab, an opened row, the pinned note). `CancelByStatusTest`.
 - `Mcp/McpTest` (parity with the panel, dry runs write nothing), `Mcp/SummaryTest` (the list's figures = `orders_summary`), `Mcp/SummaryDaysTest` (midnight of the site), `Mcp/CheckoutToolsTest` (preview = `place`, masks), `Mcp/PerformanceTest`, `Mcp/AccessCoverageTest`, `Mcp/LinkVisitorTest`, `Mcp/CreateOrderTest`, `Mcp/ItemsEditToolTest` (editor = `orders_items_edit`, `stale`); 32 tools (33 with users, 26 with the checkout off).
-- `Site/OrderPageTest` (the signed page, its budget, nothing without users), `Site/VisitorOrdersTest`. `Notifications/*Test` — with and without it; `ResendTest` — by hand, the second press.
+- `Site/OrderPageTest` (the signed page, its budget, an edit's mark and balance, nothing without users), `Site/VisitorOrdersTest`. `Notifications/*Test` — with and without it, `EditNotificationsTest` — the edits' letters; `ResendTest` — by hand, the second press.
 - `PlaceTest`, `BalanceTest` (the column = the formula after each method), `MilestonesTest`, `StatusMoveTest`, `DetailsTest`, `RefundTest`, `RefundReversalTest`, `ManagerOrderTest`, `ItemsEditTest` (variant A, refusals, rollback, dry run), `PerformanceTest` (the budgets of `place()` and `editItems()`), and
   `CartLockTest`, `MilestoneRaceTest` against a real server: `WEBX_TEST_MYSQL_URL=mariadb://user:password@host:3306/db`; `migrate` / `migrate:rollback`.
 - `Checkout/*Test`: `CheckoutWithoutNeighboursTest`, `PlaceIdempotencyTest`, `PayableChangedTest`, `PerformanceTest` (`GET /checkout`),

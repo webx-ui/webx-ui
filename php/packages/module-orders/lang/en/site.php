@@ -27,6 +27,9 @@ return [
         'customer' => 'Buyer',
         'recipient' => 'Recipient',
         'comment' => 'Comment',
+        'changed' => 'Items changed on :date',
+        'due' => 'Left to pay: :amount',
+        'over' => 'We will give you back :amount',
     ],
     'account' => [
         'menu' => 'My orders',

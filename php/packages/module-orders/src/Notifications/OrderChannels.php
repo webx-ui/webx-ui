@@ -12,6 +12,7 @@ use WebxUi\Notifications\Models\Delivery;
 use WebxUi\Notifications\NotificationEvents;
 use WebxUi\Notifications\Notifications;
 use WebxUi\Notifications\Refusal as NotificationsRefusal;
+use WebxUi\Orders\Balance;
 use WebxUi\Orders\Data\OrderData;
 use WebxUi\Orders\Milestone;
 use WebxUi\Orders\Models\Order;
@@ -48,6 +49,7 @@ final readonly class OrderChannels
         OrderEvents::RECEIVED,
         OrderEvents::CANCELLED,
         OrderEvents::REFUNDED,
+        OrderEvents::PAYMENT_REQUESTED,
     ];
 
     public function __construct(
@@ -157,7 +159,7 @@ final readonly class OrderChannels
      * take it as skipped; without the module, or with no channel, nothing happens.
      *
      * @param  list<int>  $channels
-     * @param  array<string, string>  $extra
+     * @param  array<string, string|list<array<string, string>>>  $extra
      */
     public function send(string $event, array $channels, OrderData $order, array $extra = []): int
     {
@@ -302,7 +304,7 @@ final readonly class OrderChannels
         }
 
         if (! in_array($event, self::BY_HAND, true) || ! $this->basis($order, $event)) {
-            throw new NotifyRefused(NotifyRefused::NO_BASIS);
+            throw new NotifyRefused(NotifyRefused::NO_BASIS, event: $event);
         }
 
         if ($order->customer_email === null || trim($order->customer_email) === '') {
@@ -378,6 +380,8 @@ final readonly class OrderChannels
             OrderEvents::RECEIVED => $order->received_at !== null,
             OrderEvents::CANCELLED => $order->cancelled_at !== null,
             OrderEvents::REFUNDED => $order->refunded_total > 0,
+            // The buyer owes now (§40.2): `due` is 0 once cancelled.
+            OrderEvents::PAYMENT_REQUESTED => Balance::of($order)->due > 0,
             default => false,
         };
     }
@@ -417,6 +421,7 @@ final readonly class OrderChannels
             OrderEvents::CANCELLED => ['reason' => (string) $mark(Milestone::Cancelled->value)?->note],
             OrderEvents::PAYMENT_FAILED => ['reason' => (string) StatusChange::query()->where('order_id', $order->id)->where('kind', StatusChange::PAYMENT_FAILED)->orderByDesc('id')->value('note')],
             OrderEvents::REFUNDED => ['refund_amount' => $this->container->make(OrderValues::class)->format($order->refunded_total, $order->currency)],
+            OrderEvents::PAYMENT_REQUESTED => ['amount_due' => $this->container->make(OrderValues::class)->balance(Balance::of($order))['amount_due']],
             default => [],
         };
     }

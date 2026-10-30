@@ -393,6 +393,7 @@ return [
         'no_basis' => 'Il n’est pas arrivé à la commande ce dont parle cet e-mail.',
         'no_channel' => 'Aucun canal actif des événements de la commande n’écrit à l’acheteur. Configurez-en un dans «Notifications».',
         'foreign' => 'Ce message ne concerne pas cette commande.',
+        'nothing_due' => 'La commande ne doit rien : il n\'y a aucun paiement à demander.',
     ],
     'items-edit' => 'Modifier les lignes',
     'items-edit-title' => 'Lignes de la commande :number',

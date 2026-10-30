@@ -1,15 +1,17 @@
 {{--
     An order as the buyer reads it (spec §13.1) — the signed page and «My orders» print the same:
     the date, the public status with its description, the marks, the scale of the public statuses,
-    the lines, the money, the delivery and the payment as one line each, the contacts. Never the
-    internal status, never the manager's note.
+    the lines, the money, the delivery and the payment as one line each, the contacts. After an edit
+    (§40.1) — «Items changed» with its date and the balance under the money. Never the internal
+    status, never the manager's note, never the reason of an edit.
 
     $order — `WebxUi\Orders\Site\OrderPage::of()`.
 
     Override: <layer>/views/vendor/webx-orders/order/body.blade.php.
     Classes: webx-order, __head, __date, __status (--<code>), __description, __marks, __mark (--<key>),
     __scale, __step (is-done, is-current), __notice, __section, __heading, __items, __item, __image,
-    __name, __options, __parts, __qty, __total, __sums, __sum (is-strong), __facts, __fact.
+    __changed, __name, __options, __parts, __qty, __total, __sums, __sum (is-strong),
+    __balance (--due, --over), __facts, __fact.
 --}}
 <div class="webx-order">
     <div class="webx-order__head">
@@ -43,6 +45,9 @@
 
     <section class="webx-order__section">
         <h2 class="webx-order__heading">{{ __('webx-orders::site.order.items') }}</h2>
+        @if ($order['changed_at'] !== null)
+            <p class="webx-order__changed">{{ __('webx-orders::site.order.changed', ['date' => $order['changed_at']->copy()->locale(app()->getLocale())->isoFormat('LL')]) }}</p>
+        @endif
         <ul class="webx-order__items">
             @foreach ($order['items'] as $item)
                 <li class="webx-order__item">
@@ -83,6 +88,9 @@
             <dt class="is-strong">{{ __('webx-orders::site.order.payable') }}</dt>
             <dd class="is-strong">{{ $order['totals']['payable'] }}</dd>
         </dl>
+        @if ($order['balance'] !== null)
+            <p class="webx-order__balance webx-order__balance--{{ $order['balance']['kind'] }}" role="status">{{ $order['balance']['label'] }}</p>
+        @endif
     </section>
 
     @if ($order['blocks'] !== [])

@@ -27,6 +27,9 @@ return [
         'customer' => 'Kupujący',
         'recipient' => 'Odbiorca',
         'comment' => 'Komentarz',
+        'changed' => 'Pozycje zmienione :date',
+        'due' => 'Pozostało do zapłaty: :amount',
+        'over' => 'Zwrócimy Ci :amount',
     ],
     'account' => [
         'menu' => 'Moje zamówienia',

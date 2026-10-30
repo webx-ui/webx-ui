@@ -393,6 +393,7 @@ return [
         'no_basis' => 'Al pedido no le ha pasado aquello de lo que trata este correo.',
         'no_channel' => 'Ningún canal activo de los eventos del pedido escribe al comprador. Configure uno en «Notificaciones».',
         'foreign' => 'Este mensaje no es de este pedido.',
+        'nothing_due' => 'El pedido no debe nada: no hay ningún pago que solicitar.',
     ],
     'items-edit' => 'Cambiar las líneas',
     'items-edit-title' => 'Líneas del pedido :number',

@@ -158,6 +158,24 @@
                   "props": {
                     "event": "orders.refunded"
                   }
+                },
+                {
+                  "id": "notify-items-changed",
+                  "type": "wx-notifications-channels",
+                  "name": "orders.notify.items_changed",
+                  "label": "trans::webx-orders::notifications.events.items_changed",
+                  "props": {
+                    "event": "orders.items_changed"
+                  }
+                },
+                {
+                  "id": "notify-payment-requested",
+                  "type": "wx-notifications-channels",
+                  "name": "orders.notify.payment_requested",
+                  "label": "trans::webx-orders::notifications.events.payment_requested",
+                  "props": {
+                    "event": "orders.payment_requested"
+                  }
                 }
               ]
             }

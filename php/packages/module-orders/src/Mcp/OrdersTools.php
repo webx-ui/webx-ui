@@ -326,7 +326,8 @@ final readonly class OrdersTools
                 .'module only. `delivery` — the id of a row of orders_history `notifications`: the same message to the same '
                 .'recipient, sent or failed alike, as a new row marked manual. Or `event` — tell the buyer of an event the '
                 .'order has a reason for (placed; public_status — the one it stands in; paid, payment_failed, received, '
-                .'cancelled, refunded once they happened), to the order\'s e-mail now, through the channels of that event that '
+                .'cancelled, refunded once they happened; payment_requested — «pay for the order» / «pay the rest» while the '
+                .'order owes, due > 0 and not cancelled), to the order\'s e-mail now, through the channels of that event that '
                 .'write to the buyer (customer_email). Either is a line of the history with who did it; the same message again '
                 .'within a minute is refused. Do not send unless a person asked. `dry_run` answers what would go — for an '
                 .'event, `previews` with each channel\'s subject and text — or why it is refused.',

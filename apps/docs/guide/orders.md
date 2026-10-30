@@ -341,7 +341,10 @@ and no event.
 - **The order's page** — `/order/{number}` with a signed link, the one the mails carry
   (`{{public_url}}`). It shows the public status and its scale, the lines, the totals, the blocks'
   lines and the contacts; never the internal status or the manager's note. The page is
-  `no-store` and `noindex`, and a wrong signature is `404`.
+  `no-store` and `noindex`, and a wrong signature is `404`. After an edit it says «Items changed
+  on …» over the lines — the ones taken out are gone — and under the money «Left to pay: …» on a
+  paid order that owes more, or «We will give you back …» on one paid over. The reason of an edit
+  and who made it are never there.
 - **«My orders»** — with `webx-ui/module-users`, a section of the visitor's account with the
   orders in work counted on its badge. Another visitor's order is `404`.
 - **Linking a guest's order.** In the card, «Link to a visitor» finds the account (the one with the
@@ -352,9 +355,21 @@ and no event.
 
 With `webx-ui/module-notifications`, the events above are notification events (`orders.placed`,
 `orders.paid`, `orders.public_status`…). A public status keeps its own channels, the milestones'
-channels are in the section's settings, and the site starts with three: «Order accepted» and
-«Payment received» to the buyer, «New order» to the first e-mail of the site's contacts. The card
-of an order shows what was sent about it.
+channels are in the section's settings, and the site starts with five: «Order accepted»,
+«Payment received», «Order changed» and «Payment due» to the buyer, «New order» to the first e-mail
+of the site's contacts. The card of an order shows what was sent about it.
+
+**After an edit.** `orders.items_changed` goes when the edit leaves «Tell the buyer» on (`notify`
+of `ItemsEdit` and `orders_items_edit`, on by default): the lines as they are now, `{{#changes}}`
+— each line added, taken out or counted again with `qty_from` → `qty_to` (`{{#added}}`,
+`{{#removed}}`) — `previous_total` and `total`, the balance (`balance`, `balance_kind`: `due`,
+`over`, `none`; `amount_due` / `amount_over` — the one that applies, empty the other) and the
+manager's `message`. The edit's reason is no variable of it: the letter cannot show it.
+`orders.payment_requested` — «Order 1024: €15.00 to pay» — is sent only by hand, while the order
+owes (`amount_due`); a paid one is greyed in «Send the buyer a letter» with «The order owes
+nothing». Without the payments module the letter has no link to pay — the sum and «we will get in
+touch». A site whose channels were set up before the edits gets these two by a migration, unless
+it chose its own for them.
 
 **The letter never came.** A line of «Notifications» on the tab «History» — sent or failed —
 goes again from its **Send again**: the same message to the same address, as a new line of the

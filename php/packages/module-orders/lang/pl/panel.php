@@ -393,6 +393,7 @@ return [
         'no_basis' => 'Z zamówieniem nie stało się to, czego dotyczy ten list.',
         'no_channel' => 'Żaden włączony kanał zdarzeń zamówienia nie pisze do kupującego. Skonfiguruj go w «Powiadomieniach».',
         'foreign' => 'Ta wiadomość nie dotyczy tego zamówienia.',
+        'nothing_due' => 'Zamówienie nic nie jest winne: nie ma płatności, o którą można prosić.',
     ],
     'items-edit' => 'Zmień pozycje',
     'items-edit-title' => 'Pozycje zamówienia :number',

@@ -393,6 +393,7 @@ return [
         'no_basis' => 'All’ordine non è successo ciò di cui parla questa e-mail.',
         'no_channel' => 'Nessun canale attivo degli eventi dell’ordine scrive all’acquirente. Configurane uno in «Notifiche».',
         'foreign' => 'Questo messaggio non riguarda questo ordine.',
+        'nothing_due' => 'L\'ordine non deve nulla: non c\'è alcun pagamento da richiedere.',
     ],
     'items-edit' => 'Modifica le righe',
     'items-edit-title' => 'Righe dell\'ordine :number',

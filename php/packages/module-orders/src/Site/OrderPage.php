@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use WebxUi\Cache\CacheGroups;
 use WebxUi\Cart\Money;
+use WebxUi\Orders\Balance;
 use WebxUi\Orders\Blocks\OrderBlocks;
 use WebxUi\Orders\Milestone;
 use WebxUi\Orders\Models\Order;
@@ -22,6 +23,11 @@ use WebxUi\Orders\Models\PublicStatus;
  * statuses in their order, the marks «Paid», «Received», «Cancelled», «Refunded», the lines, the
  * money, the delivery and the payment as their owners' one line, the contacts. The internal status
  * and the manager's note never.
+ *
+ * After an edit (§40.1): «Items changed» with the date over the lines, the lines as they are — one
+ * taken out is not there — and a line of the balance under the money when it says more than «to
+ * pay»: what is left to pay on a paid order, what the shop will give back. The edit's reason and
+ * who made it never.
  *
  * Both sets of statuses come from the cache of the group `order-statuses` (§16), dropped when a
  * status is saved; an order costs its own queries and nothing a status more.
@@ -45,7 +51,7 @@ final readonly class OrderPage
     public function of(Order $order, string $locale): array
     {
         $order->loadMissing([
-            'items' => static fn ($items) => $items->orderBy('position')->orderBy('id'),
+            'items' => static fn ($items) => $items->whereNull('removed_at')->orderBy('position')->orderBy('id'),
             'adjustments' => static fn ($adjustments) => $adjustments->whereNull('item_id')->orderBy('id'),
             'tenders',
         ]);
@@ -71,6 +77,7 @@ final readonly class OrderPage
                 $order->refunded_total > 0 ? ['key' => 'refunded', 'label' => __('webx-orders::site.marks.refunded', ['amount' => $money($order->refunded_total)])] : null,
             ])),
             'awaiting_payment' => $order->awaiting_payment && $order->paid_at === null && $order->cancelled_at === null,
+            'changed_at' => $order->items_changed_at,
             'items' => $this->items($order->items, $locale, $money),
             'adjustments' => $order->adjustments->map(static fn (OrderAdjustment $adjustment): array => [
                 'label' => $adjustment->label,
@@ -82,6 +89,7 @@ final readonly class OrderPage
                 'tenders' => $order->tenders_total !== 0 ? $money($order->tenders_total) : null,
                 'payable' => $money($order->payable),
             ],
+            'balance' => $this->balance(Balance::of($order), $money),
             'blocks' => array_values(array_filter(array_map(function (string $key) use ($order, $locale): ?array {
                 $value = $order->getAttribute($key);
                 $line = is_array($value) ? $this->blocks->summary($key, $value, $locale) : null;
@@ -209,6 +217,22 @@ final readonly class OrderPage
         }
 
         return $scale;
+    }
+
+    /**
+     * The balance the buyer is told of (§40.1): left to pay once something was paid — before that
+     * «to pay» says it — and money the shop owes back. Settled, nothing.
+     *
+     * @param  callable(int): string  $money
+     * @return array{kind: string, label: string}|null
+     */
+    private function balance(Balance $balance, callable $money): ?array
+    {
+        return match ($balance->kind()) {
+            'topup' => ['kind' => 'due', 'label' => (string) __('webx-orders::site.order.due', ['amount' => $money($balance->due)])],
+            'over' => ['kind' => 'over', 'label' => (string) __('webx-orders::site.order.over', ['amount' => $money($balance->over)])],
+            default => null,
+        };
     }
 
     /**

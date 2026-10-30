@@ -59,6 +59,8 @@ return [
         'received' => [],
         'cancelled' => [],
         'refunded' => [],
+        'items_changed' => [],
+        'payment_requested' => [],
     ],
 
     /*

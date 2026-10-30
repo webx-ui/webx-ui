@@ -27,6 +27,9 @@ return [
         'customer' => 'Acheteur',
         'recipient' => 'Destinataire',
         'comment' => 'Commentaire',
+        'changed' => 'Articles modifiés le :date',
+        'due' => 'Reste à payer : :amount',
+        'over' => 'Nous vous rembourserons :amount',
     ],
     'account' => [
         'menu' => 'Mes commandes',

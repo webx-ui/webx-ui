@@ -38,6 +38,8 @@ final readonly class OrderSettings
         'orders.notify.received' => 'webx-orders.notify.received',
         'orders.notify.cancelled' => 'webx-orders.notify.cancelled',
         'orders.notify.refunded' => 'webx-orders.notify.refunded',
+        'orders.notify.items_changed' => 'webx-orders.notify.items_changed',
+        'orders.notify.payment_requested' => 'webx-orders.notify.payment_requested',
     ];
 
     /** The tab «Checkout» (§20.3, §23.4, §31.2) and what a key nobody saved reads. */
@@ -57,7 +59,7 @@ final readonly class OrderSettings
         'orders.checkout.quick.message' => null,
     ];
 
-    /** The channels of the milestones' events (§10.1): ids of channels of the notifications module. */
+    /** The channels of the milestones' and the edits' events (§10.1, §40.2): ids of channels of the notifications module. */
     public const array NOTIFY = [
         'orders.notify.placed',
         'orders.notify.paid',
@@ -65,6 +67,8 @@ final readonly class OrderSettings
         'orders.notify.received',
         'orders.notify.cancelled',
         'orders.notify.refunded',
+        'orders.notify.items_changed',
+        'orders.notify.payment_requested',
     ];
 
     public function __construct(

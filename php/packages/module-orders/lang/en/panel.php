@@ -393,6 +393,7 @@ return [
         'no_basis' => 'Nothing has happened to the order that this letter is about.',
         'no_channel' => 'No channel of the order\'s events that is switched on writes to the buyer. Set one up in «Notifications».',
         'foreign' => 'This message is not about this order.',
+        'nothing_due' => 'The order owes nothing: there is no payment to ask for.',
     ],
     'items-edit' => 'Change the lines',
     'items-edit-title' => 'The lines of order :number',

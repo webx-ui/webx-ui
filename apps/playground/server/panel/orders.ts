@@ -1696,6 +1696,11 @@ const buyerChannels: Record<string, { id: number; name: string; subject: string 
     name: 'Payment received — to the buyer',
     subject: 'Order :number is paid',
   },
+  'orders.payment_requested': {
+    id: 105,
+    name: 'Payment due — to the buyer',
+    subject: 'Order :number: :amount to pay',
+  },
 }
 
 const byHand = [
@@ -1706,6 +1711,7 @@ const byHand = [
   'orders.received',
   'orders.cancelled',
   'orders.refunded',
+  'orders.payment_requested',
 ]
 
 const logs = new Map<number, DeliveryRecord[]>()
@@ -1765,6 +1771,8 @@ function basisOf(record: OrderRecord, event: string): boolean {
       return Boolean(record.marks.cancelled)
     case 'orders.refunded':
       return record.refunded > 0
+    case 'orders.payment_requested':
+      return balanceOf(record).due > 0
     default:
       return false
   }
@@ -2146,6 +2154,13 @@ export function registerOrders(on: On, fail: Fail, line: Line): void {
   const said = (locale: string, path: string) =>
     line(locale, path.startsWith('errors.') ? 'webx-notifications' : 'webx-orders', path)
 
+  /** «Nothing happened» says little of a letter that asks for money: «the order owes nothing». */
+  const refusal = (locale: string, reason: string, event?: string) =>
+    said(
+      locale,
+      `panel.notify-refusals.${reason === 'no_basis' && event === 'orders.payment_requested' ? 'nothing_due' : reason}`,
+    )
+
   /** A message sent by hand is a line of the history with who did it (decision 99). */
   function sentLine(record: OrderRecord, event: string, recipients: string[]): void {
     record.history.push({
@@ -2210,7 +2225,7 @@ export function registerOrders(on: On, fail: Fail, line: Line): void {
           basis && channel ? [{ id: channel.id, name: channel.name, provider: 'email' }] : [],
         available: reason === null,
         reason,
-        reason_label: reason ? said(locale, `panel.notify-refusals.${reason}`) : null,
+        reason_label: reason ? refusal(locale, reason, key) : null,
       }
     })
     const reason = record.email ? null : 'no_email'
@@ -2239,7 +2254,7 @@ export function registerOrders(on: On, fail: Fail, line: Line): void {
     const log = logOf(record)
 
     if (reason || !channel || !record.email) {
-      const words = said(locale, `panel.notify-refusals.${reason ?? 'no_channel'}`)
+      const words = refusal(locale, reason ?? 'no_channel', event)
 
       throw fail(422, words, undefined, { event: [words] })
     }
@@ -2267,16 +2282,25 @@ export function registerOrders(on: On, fail: Fail, line: Line): void {
               channel: channel.name,
               provider: 'email',
               recipient: record.email,
-              subject: channel.subject.replace(':number', record.number),
+              subject: channel.subject
+                .replace(':number', record.number)
+                .replace(':amount', money(balanceOf(record).due)),
               body: '',
-              plain: [
-                `Hello, ${record.first_name}!`,
-                `Your order ${record.number} is accepted.`,
-                '',
-                ...items,
-                '',
-                `Total: ${money(payable(record))}`,
-              ].join('\n'),
+              plain: (event === 'orders.payment_requested'
+                ? [
+                    `Hello, ${record.first_name}!`,
+                    `Your order ${record.number} is waiting for a payment of ${money(balanceOf(record).due)}.`,
+                    'We will get in touch with you about how to pay.',
+                  ]
+                : [
+                    `Hello, ${record.first_name}!`,
+                    `Your order ${record.number} is accepted.`,
+                    '',
+                    ...items,
+                    '',
+                    `Total: ${money(payable(record))}`,
+                  ]
+              ).join('\n'),
               html: true,
             },
           ],
@@ -2656,6 +2680,8 @@ const settings: Record<string, unknown> = {
   'orders.notify.received': [],
   'orders.notify.cancelled': [],
   'orders.notify.refunded': [],
+  'orders.notify.items_changed': [],
+  'orders.notify.payment_requested': [],
   // The tab «Checkout» (§31.2) with the defaults a site starts with.
   'orders.checkout.fields.last_name': 'optional',
   'orders.checkout.fields.phone': 'required',

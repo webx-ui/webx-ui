@@ -393,6 +393,7 @@ return [
         'no_basis' => 'Mit der Bestellung ist nicht geschehen, worum es in dieser E-Mail geht.',
         'no_channel' => 'Kein aktivierter Kanal der Bestellereignisse schreibt an den Käufer. Richten Sie einen unter «Benachrichtigungen» ein.',
         'foreign' => 'Diese Nachricht betrifft nicht diese Bestellung.',
+        'nothing_due' => 'Die Bestellung schuldet nichts: Es gibt keine Zahlung anzufordern.',
     ],
     'items-edit' => 'Positionen ändern',
     'items-edit-title' => 'Positionen der Bestellung :number',

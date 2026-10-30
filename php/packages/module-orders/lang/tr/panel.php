@@ -393,6 +393,7 @@ return [
         'no_basis' => 'Siparişte bu e-postanın konusu olan şey olmadı.',
         'no_channel' => 'Siparişin olaylarının açık hiçbir kanalı alıcıya yazmıyor. «Bildirimler» bölümünde bir kanal kurun.',
         'foreign' => 'Bu mesaj bu siparişle ilgili değil.',
+        'nothing_due' => 'Siparişin borcu yok: istenecek bir ödeme yok.',
     ],
     'items-edit' => 'Kalemleri değiştir',
     'items-edit-title' => ':number numaralı siparişin kalemleri',
