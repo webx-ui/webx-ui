@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
  * A line of the order, frozen at placing: the name in the languages of the site, the price and
@@ -33,6 +34,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $total
  * @property bool $shippable
  * @property int $refunded_qty
+ * @property int $revision the edit the line came with (§37.4); 0 — placed with the order
+ * @property Carbon|null $removed_at taken out by an edit: `qty` is what was refunded of it, often 0
  * @property-read Order $order
  * @property-read OrderItem|null $parent
  * @property-read Collection<int, OrderItem> $children
@@ -60,6 +63,8 @@ class OrderItem extends Model
             'total' => 'integer',
             'shippable' => 'boolean',
             'refunded_qty' => 'integer',
+            'revision' => 'integer',
+            'removed_at' => 'datetime',
         ];
     }
 

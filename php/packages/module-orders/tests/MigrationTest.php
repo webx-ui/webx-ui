@@ -29,6 +29,8 @@ final class MigrationTest extends TestCase
         'order_milestones',
         'order_refunds',
         'order_status_changes',
+        // The edits of the lines (§38.1).
+        'order_revisions',
         // The checkout's draft (§21.1), made whether the checkout is on or not.
         'order_checkout_drafts',
     ];
@@ -56,7 +58,7 @@ final class MigrationTest extends TestCase
     public function the_orders_table_has_the_columns_of_the_spec(): void
     {
         $this->assertSame(
-            ['id', 'number', 'idempotency_key', 'user_id', 'cart_id', 'locale', 'currency', 'status_id', 'subtotal', 'adjustments_total', 'total', 'tenders_total', 'payable', 'refunded_total', 'customer_first_name', 'customer_last_name', 'customer_phone', 'customer_phone_key', 'customer_email', 'recipient', 'comment', 'manager_note', 'delivery', 'payment', 'placed_at', 'awaiting_payment', 'payment_failed_at', 'paid_at', 'received_at', 'cancelled_at', 'refunded_at', 'created_at', 'updated_at', 'paid_total', 'balance'],
+            ['id', 'number', 'idempotency_key', 'user_id', 'cart_id', 'locale', 'currency', 'status_id', 'subtotal', 'adjustments_total', 'total', 'tenders_total', 'payable', 'refunded_total', 'customer_first_name', 'customer_last_name', 'customer_phone', 'customer_phone_key', 'customer_email', 'recipient', 'comment', 'manager_note', 'delivery', 'payment', 'placed_at', 'awaiting_payment', 'payment_failed_at', 'paid_at', 'received_at', 'cancelled_at', 'refunded_at', 'created_at', 'updated_at', 'paid_total', 'balance', 'items_revision', 'items_changed_at'],
             Schema::getColumnListing('orders'),
         );
     }
@@ -78,6 +80,9 @@ final class MigrationTest extends TestCase
 
         $history = array_map(static fn (array $index): string => implode(',', $index['columns']), Schema::getIndexes('order_status_changes'));
         $this->assertContains('order_id,id', $history);
+
+        $revisions = array_map(static fn (array $index): string => ($index['unique'] ? 'unique ' : '').implode(',', $index['columns']), Schema::getIndexes('order_revisions'));
+        $this->assertContains('unique order_id,number', $revisions);
     }
 
     #[Test]

@@ -130,6 +130,7 @@ return [
     'reverse-help' => 'Um reembolso não se edita. O registo fica riscado no histórico e deixa de contar; depois registe o correto.',
     'reverse-reason' => 'Porque o registo é um erro',
     'reverse-reason-required' => 'Diga porque o registo do reembolso é anulado.',
+    'items-reason-required' => 'Indique porque é que as linhas do pedido são alteradas.',
     'reverse-outcome' => 'Reembolsado depois: :refunded. Falta reembolsar: :left.',
     'reverse-units' => 'Unidades de novo contadas como não devolvidas: :count',
     'reverse-tenders' => 'O que o registo devolveu aos saldos volta a contar como não devolvido.',

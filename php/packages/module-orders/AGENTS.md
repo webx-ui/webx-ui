@@ -27,8 +27,8 @@ grouped into public ones. Dictionary `webx-orders` (`module`, `statuses`, `panel
     `publicChanged`, `moved`, `milestone`, `notifications`, `refusal`); a refusal (`inactive`, `deleted`, `cancelled`) throws
     `StatusMoveRefused`, a dry run answers it; into a status that sets `cancelled`, `panel` and `mcp` give the reason in `note`
     (`ValidationException` under `note`, on a dry run too);
-  - `patchBlock(order, block, patch, source)`, `note(order, text, source)`, `updateDetails(order, OrderDetails, source)` —
-    contacts, recipient, comment, manager note;
+  - `patchBlock(order, block, patch, source)`, `note(order, text, source)`, `updateDetails(order, OrderDetails, source)` — contacts, recipient, comment, manager note;
+  - **lines** (§37, decision 101 — variant A): `editItems(order, ItemsEdit, dryRun?)` → `ItemsEditResult` (`changes` — `added()`, `changed()`, `removed()`; `before`, `after`, `balance`, `warnings`, `revision`). `ItemsEdit`: `revision` seen, `add` (as `CartService::add()`, a service cart like `placeByManager()`), `qty` (id → qty, 0 takes it out), `remove`, `reason` (`panel`/`mcp`), `message`, `notify`, `source`. The lines placed keep price and their discount in proportion, a line added — the price now, no rules; order discounts, delivery, benefits, milestones stay; a line taken out keeps `qty = refunded_qty` and `removed_at`; a bundle scales whole. `ItemsEditRefused`: `stale`, `nothing`, `empty`, `state` (received, cancelled, refunded), `child`, `generated`, `below_refunded`, `foreign`; a line added — `ValidationException` under `add.N.*`, `CartNotOrderable`. Row `order_revisions`, history line `items` (`revision#N: reason`);
   - `cancel(order, source, reason?, dryRun?)` → `MilestoneMark` (`wasPaid`, `moneyToRefund`, `tendersReturned`, `move`): tenders
     given back, money not, the order into the first active cancelling status (`move`, null — none); `panel`/`mcp` give a reason;
   - `refund(order, RefundRequest, dryRun?)` → `RefundResult` — money given back outside the site, `manual` only, no gateway.
@@ -41,9 +41,9 @@ grouped into public ones. Dictionary `webx-orders` (`module`, `statuses`, `panel
 - **The statuses** `WebxUi\Orders\OrderStatuses` (§5.6): `writePublic`, `removePublic(…, moveTo?)`, `restorePublic`, `write`,
   `remove`, `restore`, `arrange(publics, groups)` — each with `dryRun` → `StatusPlan` (`orders`, `rebound`, `active`);
   `StatusRefused`: `initial`, `last_active`, `public_deleted`, `has_active`. Switching a stage off is held like deleting it.
-- **Events** `Events\OrderPlacing` (in the transaction: spend, reserve, or throw `OrderRefused`); after the commit, with
+- **Events** `Events\OrderPlacing`, `OrderItemsChanging` (`order`, `revision`) (in the transaction: spend, reserve, or throw `OrderRefused`); after the commit, with
   `Data\OrderData`, `source`, `adminId`, `at`: `OrderPlaced`, `OrderPaid`, `OrderReceived`, `OrderCancelled` (`wasPaid`,
-  `tendersReturned`), `OrderRefunded` (`RefundData`, `full`), `OrderRefundReversed` (`reason`, `milestoneRemoved`), `OrderPaymentFailed`, `OrderPaymentReceived`, `OrderStatusChanged`,
+  `tendersReturned`), `OrderRefunded` (`RefundData`, `full`), `OrderRefundReversed` (`reason`, `milestoneRemoved`), `OrderPaymentFailed`, `OrderPaymentReceived`, `OrderItemsChanged` (`RevisionData`, `balance`, `notify`), `OrderStatusChanged`,
   `OrderPublicStatusChanged` (only when the public one changes), `OrderBlockUpdated`, `OrderDetailsChanged` (`fields`, `before`).
 - **Notifications** (§10, with `webx-ui/module-notifications`): seven `orders.*` events (`Notifications\OrderEvents`,
   `OrderValues`, `OrderTemplates`); channels — `orders.notify.*` for a milestone, `options.notify_channels` of a public status;
@@ -57,7 +57,7 @@ grouped into public ones. Dictionary `webx-orders` (`module`, `statuses`, `panel
   `Doctor\OrdersNotificationsCheck`.
 - **Tables**: `orders` (`Models\Order` — money in minor units, names apart, `recipient`, blocks as json, a copy of the
   milestones for the filters); `order_items` (a child's `qty` is absolute), `order_adjustments`, `order_tenders`,
-  `order_benefits`, `order_milestones` (unique per milestone), `order_refunds`, `order_status_changes` (`StatusChange`, the
+  `order_benefits`, `order_milestones` (unique per milestone), `order_refunds`, `order_revisions` (`OrderRevision`, the edits), `order_status_changes` (`StatusChange`, the
   history); `order_public_statuses` (`PublicStatus`), `order_statuses` (`OrderStatus`), soft-deleted.
 - **Enums** `Milestone` (`placed`, `awaiting_payment`, `paid`, `received`, `cancelled`, `refunded`; `settableByStatus()` — the
   middle three) and `StatusColor` (`neutral`, `info`, `success`, `warning`, `danger`, `accent` → `--wx-*` tokens).
@@ -140,7 +140,7 @@ Routes ask with `cms.can`, tools with `permission:`: reading — any of the firs
 - `Panel/*Test` — `BoundariesTest`: the panel never writes an order itself; `PerformanceTest`: the list's budget; `AccessCoverageTest`; `NewOrderTest` (search, live totals, `panel`); `ListGlanceTest` (the default tab, an opened row, the pinned note). `CancelByStatusTest`.
 - `Mcp/McpTest` (parity with the panel, dry runs write nothing), `Mcp/SummaryTest` (the list's figures = `orders_summary`), `Mcp/SummaryDaysTest` (midnight of the site), `Mcp/CheckoutToolsTest` (preview = `place`, masks), `Mcp/PerformanceTest`, `Mcp/AccessCoverageTest`, `Mcp/LinkVisitorTest`, `Mcp/CreateOrderTest`; 31 tools (32 with users, 25 with the checkout off).
 - `Site/OrderPageTest` (the signed page, its budget, nothing without users), `Site/VisitorOrdersTest`. `Notifications/*Test` — with and without it; `ResendTest` — by hand, the second press.
-- `PlaceTest`, `BalanceTest` (the column = the formula after each method), `MilestonesTest`, `StatusMoveTest`, `DetailsTest`, `RefundTest`, `RefundReversalTest`, `ManagerOrderTest`, `PerformanceTest` (the budget of `place()`), and
+- `PlaceTest`, `BalanceTest` (the column = the formula after each method), `MilestonesTest`, `StatusMoveTest`, `DetailsTest`, `RefundTest`, `RefundReversalTest`, `ManagerOrderTest`, `ItemsEditTest` (variant A, refusals, rollback, dry run), `PerformanceTest` (the budgets of `place()` and `editItems()`), and
   `CartLockTest`, `MilestoneRaceTest` against a real server: `WEBX_TEST_MYSQL_URL=mariadb://user:password@host:3306/db`; `migrate` / `migrate:rollback`.
 - `Checkout/*Test`: `CheckoutWithoutNeighboursTest`, `PlaceIdempotencyTest`, `PayableChangedTest`, `PerformanceTest` (`GET /checkout`),
   `PlacePerformanceTest`, `StepOrderTest`, `CheckoutSlotsTest`, `CheckoutViewTest`, `CheckoutSignInTest`, `CheckoutDisabledTest`, `QuickOrderTest`; a slot extends `SlotContractTestCase`.

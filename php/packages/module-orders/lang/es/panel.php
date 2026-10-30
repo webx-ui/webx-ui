@@ -130,6 +130,7 @@ return [
     'reverse-help' => 'Un reembolso no se edita. El registro queda tachado en el historial y deja de contar; después registre el correcto.',
     'reverse-reason' => 'Por qué el registro es un error',
     'reverse-reason-required' => 'Indique por qué se anula el registro del reembolso.',
+    'items-reason-required' => 'Indique por qué se cambian las líneas del pedido.',
     'reverse-outcome' => 'Reembolsado después: :refunded. Queda por reembolsar: :left.',
     'reverse-units' => 'Unidades que vuelven a contar como no devueltas: :count',
     'reverse-tenders' => 'Lo que el registro devolvió a los saldos vuelve a contar como no devuelto.',

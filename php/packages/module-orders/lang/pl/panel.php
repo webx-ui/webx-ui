@@ -130,6 +130,7 @@ return [
     'reverse-help' => 'Zwrotu się nie edytuje. Wpis zostaje w historii przekreślony i przestaje się liczyć; potem wprowadź właściwy.',
     'reverse-reason' => 'Dlaczego wpis jest błędny',
     'reverse-reason-required' => 'Podaj, dlaczego wpis zwrotu jest anulowany.',
+    'items-reason-required' => 'Podaj, dlaczego zmienia się skład zamówienia.',
     'reverse-outcome' => 'Zwrócono po anulowaniu: :refunded. Pozostało do zwrotu: :left.',
     'reverse-units' => 'Sztuk znów liczonych jako niezwrócone: :count',
     'reverse-tenders' => 'To, co wpis zwrócił na salda, znów liczy się jako niezwrócone.',

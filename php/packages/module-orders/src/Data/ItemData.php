@@ -21,5 +21,9 @@ final readonly class ItemData
         public bool $shippable,
         public ?string $source,
         public int $refundedQty,
+        /** The edit the line came with (§37.4); 0 — placed with the order. */
+        public int $revision = 0,
+        /** ISO 8601 — taken out by an edit, the units refunded of it left. */
+        public ?string $removedAt = null,
     ) {}
 }

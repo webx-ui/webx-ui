@@ -33,6 +33,8 @@ use Illuminate\Support\Carbon;
  * @property int $refunded_total
  * @property int $paid_total
  * @property int $balance
+ * @property int $items_revision
+ * @property Carbon|null $items_changed_at
  * @property string $customer_first_name
  * @property string|null $customer_last_name
  * @property string|null $customer_phone
@@ -60,6 +62,7 @@ use Illuminate\Support\Carbon;
  * @property-read Collection<int, OrderMilestone> $milestones
  * @property-read Collection<int, OrderRefund> $refunds
  * @property-read Collection<int, StatusChange> $history
+ * @property-read Collection<int, OrderRevision> $revisions
  */
 class Order extends Model
 {
@@ -81,6 +84,8 @@ class Order extends Model
             'refunded_total' => 'integer',
             'paid_total' => 'integer',
             'balance' => 'integer',
+            'items_revision' => 'integer',
+            'items_changed_at' => 'datetime',
             'recipient' => 'array',
             'delivery' => 'array',
             'payment' => 'array',
@@ -158,5 +163,11 @@ class Order extends Model
     public function history(): HasMany
     {
         return $this->hasMany(StatusChange::class)->orderBy('id');
+    }
+
+    /** @return HasMany<OrderRevision, $this> */
+    public function revisions(): HasMany
+    {
+        return $this->hasMany(OrderRevision::class)->orderBy('number');
     }
 }

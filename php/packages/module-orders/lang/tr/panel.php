@@ -130,6 +130,7 @@ return [
     'reverse-help' => 'İade düzenlenmez. Kayıt geçmişte üstü çizili kalır ve artık sayılmaz; ardından doğrusunu girin.',
     'reverse-reason' => 'Kayıt neden hatalı',
     'reverse-reason-required' => 'İade kaydının neden iptal edildiğini yazın.',
+    'items-reason-required' => 'Sipariş kalemlerinin neden değiştirildiğini yazın.',
     'reverse-outcome' => 'Sonrasında iade edilen: :refunded. İade edilecek kalan: :left.',
     'reverse-units' => 'Yeniden iade edilmemiş sayılan adet: :count',
     'reverse-tenders' => 'Kaydın bakiyelere iade ettiği yeniden iade edilmemiş sayılır.',

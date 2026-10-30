@@ -175,6 +175,7 @@ export const ordersMessages: Record<string, Messages> = {
       'A refund is not edited. The record stays in the history, struck through, and counts no more; then record the right one.',
     'reverse-reason': 'Why the record is a mistake',
     'reverse-reason-required': 'Say why the refund record is reversed.',
+    'items-reason-required': 'Say why the lines of the order are changed.',
     'reverse-outcome': 'Given back after it: :refunded. Left to give back: :left.',
     'reverse-units': 'Units counted as not returned again: :count',
     'reverse-tenders': 'What the record gave back to tenders counts as not given back again.',

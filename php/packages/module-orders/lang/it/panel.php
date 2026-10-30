@@ -130,6 +130,7 @@ return [
     'reverse-help' => 'Un rimborso non si modifica. La registrazione resta barrata nella cronologia e non conta più; poi registra quella giusta.',
     'reverse-reason' => 'Perché la registrazione è sbagliata',
     'reverse-reason-required' => 'Indica perché la registrazione del rimborso viene annullata.',
+    'items-reason-required' => 'Indica perché vengono modificate le righe dell’ordine.',
     'reverse-outcome' => 'Rimborsato dopo: :refunded. Resta da rimborsare: :left.',
     'reverse-units' => 'Unità di nuovo contate come non restituite: :count',
     'reverse-tenders' => 'Ciò che la registrazione ha restituito ai crediti torna a contare come non restituito.',

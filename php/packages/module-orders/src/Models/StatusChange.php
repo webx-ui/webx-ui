@@ -45,6 +45,9 @@ class StatusChange extends Model
 
     public const string BLOCK = 'block';
 
+    /** The lines edited (§38.2); `note` is «revision#<N>: <reason>». */
+    public const string ITEMS = 'items';
+
     public const string VISITOR = 'visitor';
 
     /** Contacts, the recipient, the comment or the manager note changed; `note` lists the fields. */

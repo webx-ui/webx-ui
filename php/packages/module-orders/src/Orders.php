@@ -13,6 +13,7 @@ use Illuminate\Contracts\Config\Repository;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Validation\Factory as Validation;
 use Illuminate\Database\ConnectionInterface;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Validation\ValidationException;
@@ -23,6 +24,7 @@ use WebxUi\Admin\Visitors\Visitors;
 use WebxUi\Cart\CartService;
 use WebxUi\Cart\Contracts\CurrencySource;
 use WebxUi\Cart\Models\Cart;
+use WebxUi\Cart\Money;
 use WebxUi\Cart\Totals\Adjustment;
 use WebxUi\Cart\Totals\Calculator;
 use WebxUi\Cart\Totals\CartState;
@@ -34,11 +36,14 @@ use WebxUi\Orders\Blocks\OrderBlocks;
 use WebxUi\Orders\Data\OrderData;
 use WebxUi\Orders\Data\PublicStatusData;
 use WebxUi\Orders\Data\RefundData;
+use WebxUi\Orders\Data\RevisionData;
 use WebxUi\Orders\Data\StatusData;
 use WebxUi\Orders\Data\TenderData;
 use WebxUi\Orders\Events\OrderBlockUpdated;
 use WebxUi\Orders\Events\OrderCancelled;
 use WebxUi\Orders\Events\OrderDetailsChanged;
+use WebxUi\Orders\Events\OrderItemsChanged;
+use WebxUi\Orders\Events\OrderItemsChanging;
 use WebxUi\Orders\Events\OrderPaid;
 use WebxUi\Orders\Events\OrderPaymentFailed;
 use WebxUi\Orders\Events\OrderPaymentReceived;
@@ -55,6 +60,7 @@ use WebxUi\Orders\Models\OrderBenefit;
 use WebxUi\Orders\Models\OrderItem;
 use WebxUi\Orders\Models\OrderMilestone;
 use WebxUi\Orders\Models\OrderRefund;
+use WebxUi\Orders\Models\OrderRevision;
 use WebxUi\Orders\Models\OrderStatus;
 use WebxUi\Orders\Models\OrderTender;
 use WebxUi\Orders\Models\StatusChange;
@@ -413,6 +419,62 @@ final class Orders
             $this->events->dispatch(new OrderPaymentReceived($this->snapshot($locked), $amount, $reference, $plan->after, $source, $adminId, $at));
 
             return $plan;
+        });
+    }
+
+    /**
+     * §37 — a manager changes the lines of a placed order: the buyer called and wants another
+     * thing, or one of two, or a line is out of stock. The lines that were keep their price and
+     * their discounts in proportion to the qty; a line added comes at the provider's price now,
+     * through a cart of its own as `placeByManager()` makes it (§29.2), without the rules'
+     * discounts; the discounts of the whole order, the delivery and the benefits stay as placed
+     * (decision 101, variant A). A line is never deleted: taken out, it keeps the units refunded
+     * of it. The money is counted again, the balance with it, and the edit is a row of
+     * `order_revisions` and a line of the history; `OrderItemsChanging` may refuse it inside the
+     * transaction, `OrderItemsChanged` goes after the commit.
+     *
+     * The milestones stay (§37.5): a paid order that owes more now owes it by its balance.
+     *
+     * A dry run answers the same — the cart of the lines added is made, counted and rolled back —
+     * with a refusal in the answer, and writes nothing.
+     *
+     * @throws ValidationException no reason from the panel or an agent; a line added the cart refuses, under `add.N.*`
+     * @throws CartNotOrderable a line added that cannot be bought, or one in another currency
+     * @throws ItemsEditRefused
+     * @throws OrderRefused a listener of OrderItemsChanging would not have it
+     */
+    public function editItems(Order $order, ItemsEdit $edit, bool $dryRun = false): ItemsEditResult
+    {
+        $reason = self::text($edit->reason, 500);
+        $message = self::text($edit->message, 1000);
+
+        if (in_array($edit->source, ['panel', 'mcp'], true)) {
+            $this->validation->make(['reason' => $reason], ['reason' => ['required', 'string']], [
+                'reason.required' => (string) __('webx-orders::panel.items-reason-required'),
+            ])->validate();
+        }
+
+        if ($dryRun) {
+            // The cart of the lines added is real for the count, and goes with the rollback.
+            $this->db->beginTransaction();
+
+            try {
+                return $this->itemsPlan(Order::query()->findOrFail($order->id), $edit, true)->result;
+            } finally {
+                $this->db->rollBack();
+            }
+        }
+
+        $adminId = $this->adminId($edit->source);
+
+        return $this->locked($order, function (Order $locked) use ($edit, $reason, $message, $adminId): ItemsEditResult {
+            $plan = $this->itemsPlan($locked, $edit, false);
+
+            if ($plan->result->refusal !== null) {
+                throw new ItemsEditRefused($plan->result);
+            }
+
+            return $this->writeEdit($locked, $edit, $plan, $reason, $message, $adminId);
         });
     }
 
@@ -990,6 +1052,7 @@ final class Orders
             'refunded_total' => 0,
             'paid_total' => 0,
             'balance' => $state->payable,
+            'items_revision' => 0,
             'customer_first_name' => $customer->firstName,
             'customer_last_name' => $customer->lastName,
             'customer_phone' => $customer->phone,
@@ -1078,7 +1141,8 @@ final class Orders
                     continue;
                 }
 
-                $rows[] = $this->itemRow($order, $state, $line, $position, $children ? $ids[(string) $line->parentId] ?? null : null);
+                $adjustments = array_sum(array_map(static fn (Adjustment $adjustment): int => $adjustment->amount, $state->lineAdjustments[(string) $line->key] ?? []));
+                $rows[] = $this->itemRow($order, $line, $position, $children ? $ids[(string) $line->parentId] ?? null : null, $adjustments);
             }
 
             if ($rows === []) {
@@ -1096,14 +1160,10 @@ final class Orders
     }
 
     /** @return array<string, mixed> */
-    private function itemRow(Order $order, CartState $state, ResolvedLine $line, int $position, ?int $parentId): array
+    private function itemRow(Order $order, ResolvedLine $line, int $position, ?int $parentId, int $adjustments): array
     {
         $item = $line->line;
         $price = $line->price ?? 0;
-        $adjustments = array_sum(array_map(
-            static fn (Adjustment $adjustment): int => $adjustment->amount,
-            $state->lineAdjustments[(string) $line->key] ?? [],
-        ));
         $names = array_filter($item->names ?? [], static fn (mixed $name): bool => is_string($name) && $name !== '');
 
         return [
@@ -1624,6 +1684,496 @@ final class Orders
         $this->validation->make(['note' => $note], ['note' => ['required', 'string']], [
             'note.required' => (string) __('webx-orders::panel.cancel-reason-required'),
         ])->validate();
+    }
+
+    /**
+     * What an edit would do, read from the order as it is (§37): the refusal, or the lines and the
+     * money after it — the dry run's answer and the edit's plan. The cart of the lines added is
+     * made here; the caller's transaction takes it back or the edit clears it.
+     *
+     * @throws ValidationException|CartNotOrderable a line added
+     */
+    private function itemsPlan(Order $order, ItemsEdit $edit, bool $dryRun): ItemsPlan
+    {
+        $before = self::totals($order);
+        $refused = static fn (string $refusal, ?string $field = null): ItemsPlan => new ItemsPlan(
+            new ItemsEditResult([], [], $before, $before, Balance::of($order), [], $refusal, $field, null, $dryRun),
+        );
+
+        if ($edit->revision !== $order->items_revision) {
+            return $refused(ItemsEditResult::STALE, 'revision');
+        }
+
+        // Received goods change by a return and a new order; a cancelled or refunded order has
+        // nothing to edit, and an edit would give it a debt back (§37.2).
+        if ($order->received_at !== null || $order->cancelled_at !== null || $order->refunded_at !== null) {
+            return $refused(ItemsEditResult::STATE);
+        }
+
+        if ($edit->isEmpty()) {
+            return $refused(ItemsEditResult::NOTHING);
+        }
+
+        $items = OrderItem::query()->where('order_id', $order->id)->orderBy('position')->orderBy('id')->get();
+        $adjustmentRows = OrderAdjustment::query()->where('order_id', $order->id)->orderBy('id')->get();
+        $children = [];
+        $lineAdjustments = [];
+
+        // A bundle: its children are its parts; a rule's gift under a line is not one of them.
+        $bundled = [];
+
+        foreach ($items as $item) {
+            if ($item->parent_id !== null) {
+                $children[$item->parent_id][] = $item;
+                $bundled[$item->parent_id] = ($bundled[$item->parent_id] ?? false) || $item->source === null;
+            }
+        }
+
+        foreach ($adjustmentRows as $adjustment) {
+            if ($adjustment->item_id !== null) {
+                $lineAdjustments[$adjustment->item_id][] = $adjustment;
+            }
+        }
+
+        // The qty each top-level line comes to, and the field that asked for it.
+        $targets = [];
+        $fields = [];
+        $out = [];
+
+        foreach ($edit->qty as $id => $qty) {
+            $targets[(int) $id] = max(0, (int) $qty);
+            $fields[(int) $id] = "qty.{$id}";
+        }
+
+        foreach (array_values($edit->remove) as $n => $id) {
+            $targets[(int) $id] = 0;
+            $fields[(int) $id] = "remove.{$n}";
+        }
+
+        $byId = $items->keyBy('id');
+
+        foreach ($targets as $id => $qty) {
+            $item = $byId->get($id);
+
+            if (! $item instanceof OrderItem || $item->removed_at !== null) {
+                return $refused(ItemsEditResult::FOREIGN, $fields[$id]);
+            }
+
+            if ($item->parent_id !== null) {
+                return $refused(ItemsEditResult::CHILD, $fields[$id]);
+            }
+
+            // Taken out, a line keeps the units refunded of it: the refunds point at them (§37.4).
+            if ($qty === 0) {
+                $out[$id] = true;
+                $targets[$id] = $item->refunded_qty;
+
+                continue;
+            }
+
+            if ($item->source !== null && $qty !== $item->qty) {
+                return $refused(ItemsEditResult::GENERATED, $fields[$id]);
+            }
+
+            if ($qty < $item->refunded_qty) {
+                return $refused(ItemsEditResult::BELOW_REFUNDED, $fields[$id]);
+            }
+        }
+
+        $lines = [];
+        $warnings = [];
+        $cart = null;
+
+        if ($edit->add !== []) {
+            [$cart, $state, $index] = $this->cartOfEdit($order, $edit->add);
+
+            // The cart's stored lines with their bundles; a rule's gift for the new lines is not
+            // taken, nor any discount of a rule (variant A, §37.3).
+            foreach ($state->lines as $line) {
+                if (! $line->generated() && $line->parentId === null) {
+                    $lines[(string) $line->key] = ['line' => $line, 'children' => []];
+                }
+            }
+
+            foreach ($state->lines as $line) {
+                if (! $line->generated() && $line->parentId !== null && isset($lines[(string) $line->parentId])) {
+                    $lines[(string) $line->parentId]['children'][] = $line;
+                }
+            }
+
+            foreach ($state->warnings as $warning) {
+                if ($warning->line !== null && isset($index[(string) $warning->line])) {
+                    $warnings[] = ['code' => $warning->code, 'line' => 'add.'.$index[(string) $warning->line]];
+                }
+            }
+
+            // The same thing again at the same price is more of the line it is (§37.4); at another
+            // price it is a line of its own — the units ordered before keep theirs.
+            foreach ($lines as $key => $new) {
+                $line = $new['line'];
+                $same = $new['children'] === [] ? $items->first(static fn (OrderItem $item): bool => $item->parent_id === null
+                    && $item->removed_at === null
+                    && $item->source === null
+                    && ! isset($out[$item->id])
+                    && ! ($bundled[$item->id] ?? false)
+                    && $item->type === $line->type
+                    && $item->ref_id === $line->refId
+                    && $item->price === $line->price
+                    && ($item->options ?? []) == ($line->options ?? [])) : null;
+
+                if ($same instanceof OrderItem) {
+                    $targets[$same->id] = ($targets[$same->id] ?? $same->qty) + $line->effectiveQty;
+                    unset($lines[$key]);
+                }
+            }
+        }
+
+        $changes = [];
+        $adjustments = [];
+        $rows = [];
+        $amounts = [];
+        $subtotal = $order->subtotal;
+        $adjustmentsTotal = $order->adjustments_total;
+
+        // A line's discount follows its qty: round(amount × new / old); taken out whole, it is 0.
+        $recount = static function (OrderItem $item, int $to, bool $removed) use ($lineAdjustments, &$rows, &$amounts, &$adjustments, &$subtotal, &$adjustmentsTotal): int {
+            $sum = 0;
+
+            foreach ($lineAdjustments[$item->id] ?? [] as $adjustment) {
+                $amount = $item->qty > 0 ? (int) round($adjustment->amount * $to / $item->qty) : 0;
+                $sum += $amount;
+
+                if ($amount !== $adjustment->amount) {
+                    $amounts[$adjustment->id] = $amount;
+                    $adjustments[] = ['adjustment_id' => $adjustment->id, 'label' => $adjustment->label, 'amount_from' => $adjustment->amount, 'amount_to' => $amount];
+                    $adjustmentsTotal += $amount - $adjustment->amount;
+                }
+            }
+
+            $total = $item->price * $to + $sum;
+            $subtotal += $item->price * ($to - $item->qty);
+            $rows[$item->id] = ['qty' => $to, 'adjustments_total' => $sum, 'total' => $total, 'removed' => $removed];
+
+            return $total;
+        };
+
+        foreach ($items as $item) {
+            if ($item->parent_id !== null || ! array_key_exists($item->id, $targets)) {
+                continue;
+            }
+
+            $to = $targets[$item->id];
+            $removed = isset($out[$item->id]);
+
+            if ($to === $item->qty && ! $removed) {
+                continue;
+            }
+
+            $total = $recount($item, $to, $removed);
+
+            // A bundle changes whole: a child's qty is absolute, so it follows its parent's (§37.4).
+            foreach ($children[$item->id] ?? [] as $child) {
+                // A gift is what the rule gave at placing: it goes with its line and is not counted again.
+                $childTo = match (true) {
+                    $removed => $child->refunded_qty,
+                    $child->source !== null => $child->qty,
+                    default => (int) round($child->qty * $to / $item->qty),
+                };
+
+                if ($childTo < $child->refunded_qty) {
+                    return $refused(ItemsEditResult::BELOW_REFUNDED, $fields[$item->id] ?? "qty.{$item->id}");
+                }
+
+                $recount($child, $childTo, $removed);
+            }
+
+            $changes[] = [
+                'op' => $removed ? 'remove' : 'qty',
+                'item_id' => $item->id,
+                'name' => (string) ($item->name[$order->locale] ?? reset($item->name) ?: ''),
+                'options_label' => $item->options_label,
+                'price' => $item->price,
+                'qty_from' => $item->qty,
+                'qty_to' => $to,
+                'total_from' => $item->total,
+                'total_to' => $total,
+            ];
+        }
+
+        foreach ($lines as $new) {
+            $line = $new['line'];
+            $price = $line->price ?? 0;
+
+            foreach ([$line, ...$new['children']] as $one) {
+                $subtotal += $one->amount();
+            }
+
+            $changes[] = [
+                'op' => 'add',
+                'item_id' => null,
+                'name' => $line->name,
+                'options_label' => $line->line?->optionsLabel,
+                'price' => $price,
+                'qty_from' => 0,
+                'qty_to' => $line->effectiveQty,
+                'total_from' => 0,
+                'total_to' => $price * $line->effectiveQty,
+            ];
+        }
+
+        if ($changes === []) {
+            return $refused(ItemsEditResult::NOTHING);
+        }
+
+        $left = $lines !== [] || $items->contains(static fn (OrderItem $item): bool => $item->parent_id === null
+            && $item->removed_at === null
+            && ! ($rows[$item->id]['removed'] ?? false)
+            && ($rows[$item->id]['qty'] ?? $item->qty) > $item->refunded_qty);
+
+        if (! $left) {
+            return $refused(ItemsEditResult::EMPTY);
+        }
+
+        $after = clone $order;
+        $after->subtotal = $subtotal;
+        $after->adjustments_total = $adjustmentsTotal;
+        $after->total = max(0, $subtotal + $adjustmentsTotal);
+        $after->payable = max(0, $after->total - $order->tenders_total);
+        $after->balance = Balance::stored($after);
+        $balance = Balance::of($after);
+
+        $warnings = [...$this->editWarnings($order, $after, $balance, $items, $rows, $lines, $adjustmentRows), ...$warnings];
+
+        return new ItemsPlan(
+            new ItemsEditResult($changes, $adjustments, $before, self::totals($after), $balance, $warnings, null, null, null, $dryRun),
+            $rows,
+            $amounts,
+            array_values($lines),
+            $cart,
+            ((int) $items->max('position')) + 1,
+        );
+    }
+
+    /**
+     * What the manager should know before saving (§37.7): not refusals, lines of the dialog.
+     *
+     * @param  EloquentCollection<int, OrderItem>  $items
+     * @param  array<int, array{qty: int, adjustments_total: int, total: int, removed: bool}>  $rows
+     * @param  array<string, array{line: ResolvedLine, children: list<ResolvedLine>}>  $lines
+     * @param  EloquentCollection<int, OrderAdjustment>  $adjustments
+     * @return list<array<string, mixed>>
+     */
+    private function editWarnings(Order $order, Order $after, Balance $balance, EloquentCollection $items, array $rows, array $lines, EloquentCollection $adjustments): array
+    {
+        $warnings = [];
+
+        if ($order->paid_at !== null) {
+            $warnings[] = ['code' => ItemsEditResult::WARN_PAID, 'paid' => $order->paid_total, 'payable' => $after->payable, 'due' => $balance->due, 'over' => $balance->over];
+        }
+
+        // A discount of the whole order — a coupon, a rule on the cart — is not counted again.
+        if ($after->subtotal !== $order->subtotal) {
+            foreach ($adjustments as $adjustment) {
+                if ($adjustment->item_id === null && $adjustment->amount < 0) {
+                    $warnings[] = ['code' => ItemsEditResult::WARN_ADJUSTMENT_KEPT, 'adjustment_id' => $adjustment->id, 'label' => $adjustment->label, 'amount' => $adjustment->amount, 'subtotal' => $order->subtotal];
+                }
+            }
+        }
+
+        foreach (OrderBenefit::query()->where('order_id', $order->id)->orderBy('id')->get() as $benefit) {
+            $warnings[] = ['code' => ItemsEditResult::WARN_BENEFIT_KEPT, 'key' => $benefit->key, 'label' => $benefit->label];
+        }
+
+        if ($order->delivery !== null) {
+            $shipped = $items->contains(static fn (OrderItem $item): bool => $item->shippable && ($rows[$item->id]['qty'] ?? $item->qty) > 0)
+                || array_any($lines, static fn (array $new): bool => array_any([$new['line'], ...$new['children']], static fn (ResolvedLine $line): bool => $line->line->shippable ?? true));
+
+            if (! $shipped) {
+                $warnings[] = ['code' => ItemsEditResult::WARN_NOTHING_SHIPPABLE];
+            }
+        }
+
+        if ($balance->tendersOver > 0) {
+            $warnings[] = ['code' => ItemsEditResult::WARN_TENDERS_OVER, 'amount' => $balance->tendersOver];
+        }
+
+        return $warnings;
+    }
+
+    /**
+     * The lines added, in a cart of their own (§29.2): a row of `carts` nobody is given the token
+     * of, counted for an order — the provider's price now, its options, limits and availability.
+     * The cart's refusals point at the edit's field, `add.N.*`.
+     *
+     * @param  list<array<string, mixed>>  $add
+     * @return array{Cart, CartState, array<int|string, int>} the cart, its count, and the index in `add` by the cart line's id
+     *
+     * @throws ValidationException|CartNotOrderable
+     */
+    private function cartOfEdit(Order $order, array $add): array
+    {
+        try {
+            $added = $this->carts->add(null, array_values($add), $order->locale);
+        } catch (ValidationException $refused) {
+            $errors = [];
+
+            foreach ($refused->errors() as $key => $messages) {
+                $errors[str_starts_with($key, 'items') ? 'add'.substr($key, 5) : $key] = $messages;
+            }
+
+            throw ValidationException::withMessages($errors);
+        }
+
+        $state = $this->calculator->calculate($added->cart, $order->locale, Purpose::Order);
+        $this->orderable($added->cart, $state);
+
+        // The site's currency changed since the order was placed: its lines are another money.
+        if ($state->currency !== $order->currency) {
+            throw new CartNotOrderable(CartNotOrderable::CURRENCY, $state);
+        }
+
+        $index = [];
+
+        foreach ($added->added as $n => $id) {
+            $index[(string) $id] ??= $n;
+        }
+
+        return [$added->cart, $state, $index];
+    }
+
+    /** The edit written: the lines, the discounts, the money, the edit's row, the history, the events. */
+    private function writeEdit(Order $locked, ItemsEdit $edit, ItemsPlan $plan, ?string $reason, ?string $message, ?int $adminId): ItemsEditResult
+    {
+        $at = CarbonImmutable::now();
+        $number = $locked->items_revision + 1;
+        $result = $plan->result;
+
+        foreach ($plan->items as $id => $row) {
+            OrderItem::query()->whereKey($id)->update([
+                'qty' => $row['qty'],
+                'adjustments_total' => $row['adjustments_total'],
+                'total' => $row['total'],
+                ...($row['removed'] ? ['removed_at' => $at] : []),
+            ]);
+        }
+
+        foreach ($plan->amounts as $id => $amount) {
+            OrderAdjustment::query()->whereKey($id)->update(['amount' => $amount]);
+        }
+
+        $ids = $this->writeAddedItems($locked, $plan->lines, $number, $plan->position);
+        $added = array_map(static fn (array $new): ?int => $ids[(string) $new['line']->key] ?? null, $plan->lines);
+        $changes = array_map(static function (array $change) use (&$added): array {
+            if ($change['op'] === 'add') {
+                $change['item_id'] = array_shift($added);
+            }
+
+            return $change;
+        }, $result->changes);
+
+        $locked->fill([
+            'subtotal' => $result->after['subtotal'],
+            'adjustments_total' => $result->after['adjustments_total'],
+            'total' => $result->after['total'],
+            'payable' => $result->after['payable'],
+            'items_revision' => $number,
+            'items_changed_at' => $at,
+        ]);
+        $locked->balance = Balance::stored($locked);
+        $locked->save();
+
+        $revision = OrderRevision::query()->create([
+            'order_id' => $locked->id,
+            'number' => $number,
+            'changes' => $changes,
+            'adjustments' => $result->adjustments,
+            'before' => $result->before,
+            'after' => self::totals($locked),
+            'reason' => $reason,
+            'message' => $message,
+            'source' => (string) self::cut($edit->source, 64),
+            'admin_id' => $adminId,
+            'created_at' => $at,
+        ]);
+
+        $this->line($locked, StatusChange::ITEMS, $edit->source, $adminId, $at, self::cut("revision#{$number}".($reason !== null ? ": {$reason}" : ''), 1000));
+        $money = Container::getInstance()->make(Money::class);
+        $this->journal->record($locked, 'updated', [
+            'items_revision' => [(string) ($number - 1), (string) $number],
+            'total' => [$money->format($result->before['total'], $locked->currency), $money->format($locked->total, $locked->currency)],
+        ]);
+
+        // The cart of the lines added goes now; a refusal below brings it back with the rest.
+        if ($plan->cart !== null) {
+            $this->carts->clear($plan->cart);
+        }
+
+        $data = RevisionData::of($revision);
+        $locked->unsetRelations();
+
+        // What must happen with the edit or not at all; a refusal rolls all of it back.
+        $this->events->dispatch(new OrderItemsChanging($locked, $data));
+
+        $balance = Balance::of($locked);
+        $this->events->dispatch(new OrderItemsChanged($this->snapshot($locked), $data, $balance, $edit->notify, $edit->source, $adminId, $at));
+
+        return new ItemsEditResult($changes, $result->adjustments, $result->before, self::totals($locked), $balance, $result->warnings, null, null, $number, false);
+    }
+
+    /**
+     * The lines an edit adds, after the order's own, a query a level as at placing; `revision` says
+     * which edit brought them.
+     *
+     * @param  list<array{line: ResolvedLine, children: list<ResolvedLine>}>  $lines
+     * @return array<string, int> the order line's id by the cart line's key
+     */
+    private function writeAddedItems(Order $order, array $lines, int $revision, int $position): array
+    {
+        $ids = [];
+        $keys = [];
+
+        foreach ([false, true] as $children) {
+            $rows = [];
+
+            foreach ($lines as $new) {
+                foreach ($children ? $new['children'] : [$new['line']] as $line) {
+                    $keys[$position] = (string) $line->key;
+                    $rows[] = [
+                        ...$this->itemRow($order, $line, $position++, $children ? $ids[(string) $line->parentId] ?? null : null, 0),
+                        'revision' => $revision,
+                    ];
+                }
+            }
+
+            if ($rows === []) {
+                continue;
+            }
+
+            OrderItem::query()->insert($rows);
+
+            foreach (OrderItem::query()->where('order_id', $order->id)->where('revision', $revision)->pluck('id', 'position') as $at => $id) {
+                $ids[$keys[(int) $at]] = (int) $id;
+            }
+        }
+
+        return $ids;
+    }
+
+    /**
+     * The money of the order in one row, as an edit keeps it before and after (§38.1).
+     *
+     * @return array{subtotal: int, adjustments_total: int, total: int, tenders_total: int, payable: int, balance: int}
+     */
+    private static function totals(Order $order): array
+    {
+        return [
+            'subtotal' => $order->subtotal,
+            'adjustments_total' => $order->adjustments_total,
+            'total' => $order->total,
+            'tenders_total' => $order->tenders_total,
+            'payable' => $order->payable,
+            'balance' => $order->balance,
+        ];
     }
 
     /** What a payment would record, and the balance before and after it — the dry run's answer and the payment's plan. */

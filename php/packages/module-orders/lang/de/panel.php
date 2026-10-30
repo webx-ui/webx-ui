@@ -130,6 +130,7 @@ return [
     'reverse-help' => 'Eine Rückerstattung wird nicht bearbeitet. Der Eintrag bleibt durchgestrichen im Verlauf und zählt nicht mehr; danach den richtigen erfassen.',
     'reverse-reason' => 'Warum der Eintrag falsch ist',
     'reverse-reason-required' => 'Geben Sie an, warum der Erstattungseintrag storniert wird.',
+    'items-reason-required' => 'Geben Sie an, warum die Positionen der Bestellung geändert werden.',
     'reverse-outcome' => 'Danach erstattet: :refunded. Noch zu erstatten: :left.',
     'reverse-units' => 'Wieder als nicht zurückgegeben gezählte Einheiten: :count',
     'reverse-tenders' => 'Was der Eintrag auf Guthaben erstattet hat, gilt wieder als nicht erstattet.',

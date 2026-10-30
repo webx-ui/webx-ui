@@ -130,6 +130,7 @@ return [
     'reverse-help' => 'Un remboursement ne se modifie pas. L\'enregistrement reste barré dans l\'historique et ne compte plus ; enregistrez ensuite le bon.',
     'reverse-reason' => 'Pourquoi l\'enregistrement est une erreur',
     'reverse-reason-required' => 'Indiquez pourquoi l\'enregistrement du remboursement est annulé.',
+    'items-reason-required' => 'Indiquez pourquoi les lignes de la commande sont modifiées.',
     'reverse-outcome' => 'Remboursé ensuite : :refunded. Reste à rembourser : :left.',
     'reverse-units' => 'Unités de nouveau comptées comme non retournées : :count',
     'reverse-tenders' => 'Ce que l\'enregistrement a rendu aux avoirs compte de nouveau comme non rendu.',
