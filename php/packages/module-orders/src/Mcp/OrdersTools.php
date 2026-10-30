@@ -246,7 +246,7 @@ final readonly class OrdersTools
                 .'rules; `qty` — line id → the new qty, top-level lines only (a set changes whole, its parts follow; 0 takes '
                 .'the line out); `remove` — line ids. The lines placed keep their price; their discounts follow the qty; the '
                 .'discounts on the whole order, the delivery and the benefits stay as placed. A line keeps the units refunded '
-                .'of it; a rule\'s gift may only go. `reason` is required and only managers see it; `message` — words for '
+                .'of it; a rule\'s gift may only go. `reason` (optional) only managers see; `message` — words for '
                 .'the buyer\'s letter; `notify` (true by default) — send the buyer «order changed». Received, cancelled and '
                 .'refunded orders are not edited. A paid order then owes a top-up or is owed money back: `balance` says '
                 .'which (orders_payment_record, orders_refund). `dry_run` answers what the panel\'s editor shows: each line '
@@ -263,10 +263,10 @@ final readonly class OrdersTools
                     ], 'required' => ['type', 'ref']]],
                     'qty' => ['type' => 'object', 'description' => 'Line id → the new qty (orders_get `items`).', 'additionalProperties' => ['type' => 'integer']],
                     'remove' => ['type' => 'array', 'items' => ['type' => 'integer'], 'description' => 'Line ids to take out.'],
-                    'reason' => ['type' => 'string', 'description' => 'Why — for the managers, never shown to the buyer.'],
+                    'reason' => ['type' => 'string', 'description' => 'Why, if there is a reason worth keeping — for the managers, never shown to the buyer.'],
                     'message' => ['type' => 'string', 'description' => 'Words for the buyer in the letter about the change.'],
                     'notify' => $flag('Send the buyer the letter «order changed»; true by default.'),
-                ], 'required' => ['order', 'revision', 'reason']],
+                ], 'required' => ['order', 'revision']],
                 permission: OrdersModule::MANAGE,
             ),
 

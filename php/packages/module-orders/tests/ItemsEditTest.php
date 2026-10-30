@@ -426,25 +426,22 @@ final class ItemsEditTest extends PlaceTestCase
     }
 
     #[Test]
-    public function the_panel_and_an_agent_give_the_reason(): void
+    public function the_reason_is_kept_when_given(): void
     {
         $order = $this->order();
         $itemA = $this->item($order, 1);
+        $notes = fn (): array => StatusChange::query()->where('order_id', $order->id)->where('kind', StatusChange::ITEMS)->orderBy('id')->pluck('note')->all();
 
-        foreach (['panel', 'mcp'] as $source) {
-            foreach ([false, true] as $dryRun) {
-                try {
-                    $this->edit($order, ['qty' => [$itemA->id => 3], 'reason' => '  ', 'source' => $source], $dryRun);
-                    $this->fail("{$source} edited without a reason.");
-                } catch (ValidationException $e) {
-                    $this->assertArrayHasKey('reason', $e->errors());
-                }
-            }
+        // Decision 103: no source has to give one — blank is no reason at all.
+        foreach (['panel', 'mcp', 'api'] as $number => $source) {
+            $this->edit($order, ['qty' => [$itemA->id => 3 + $number], 'reason' => $number === 0 ? '  ' : null, 'source' => $source], true);
+            $this->assertSame($number + 1, $this->edit($order, ['qty' => [$itemA->id => 3 + $number], 'reason' => $number === 0 ? '  ' : null, 'source' => $source])->revision);
         }
 
-        // An integration does without.
-        $this->assertSame(1, $this->edit($order, ['qty' => [$itemA->id => 3], 'reason' => null, 'source' => 'api'])->revision);
-        $this->assertSame('revision#1', StatusChange::query()->where('order_id', $order->id)->where('kind', StatusChange::ITEMS)->value('note'));
+        $this->edit($order, ['qty' => [$itemA->id => 2], 'reason' => '  The buyer called  ', 'source' => 'panel']);
+
+        $this->assertSame(['revision#1', 'revision#2', 'revision#3', 'revision#4: The buyer called'], $notes());
+        $this->assertSame([null, null, null, 'The buyer called'], OrderRevision::query()->where('order_id', $order->id)->orderBy('number')->pluck('reason')->all());
     }
 
     #[Test]

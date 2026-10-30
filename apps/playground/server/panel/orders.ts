@@ -2129,12 +2129,6 @@ export function registerOrders(on: On, fail: Fail, line: Line): void {
 
   on('PUT', '/orders/(\\d+)/items', ({ params, body, locale }) => {
     const record = find(params[0])
-
-    if (typeof body.reason !== 'string' || body.reason.trim() === '') {
-      const words = line(locale, 'webx-orders', 'panel.items-reason-required')
-      throw fail(422, words, undefined, { reason: [words] })
-    }
-
     const plan = editPlan(record, body, locale, line, fail)
 
     if (!plan.apply) {

@@ -15,7 +15,7 @@ final readonly class ItemsEdit
      * @param  list<array<string, mixed>>  $add  each {type, ref, qty?, options?} — as CartService::add()
      * @param  array<int, int>  $qty  item id → the new qty, top-level lines only; 0 takes the line out
      * @param  list<int>  $remove  item ids, top-level lines only
-     * @param  string|null  $reason  why — required from the panel and MCP, never shown to the buyer
+     * @param  string|null  $reason  why — optional from any source (decision 103), never shown to the buyer
      * @param  string|null  $message  words for the buyer in the letter (§40.2)
      * @param  bool  $notify  tell the buyer: `orders.items_changed`
      */

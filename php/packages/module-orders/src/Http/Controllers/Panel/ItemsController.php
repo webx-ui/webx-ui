@@ -41,12 +41,12 @@ final readonly class ItemsController
 
     /**
      * What the edit would do: the lines «before → after», the totals, the balance after it and the
-     * warnings. The reason is asked for on saving: the totals are counted before it is typed.
+     * warnings.
      */
     public function preview(Request $request, int $order): JsonResponse
     {
         $found = self::find($order);
-        $edit = $this->input($request, preview: true);
+        $edit = $this->input($request);
 
         try {
             $result = $this->orders->editItems($found, $edit, dryRun: true);
@@ -65,7 +65,7 @@ final readonly class ItemsController
     public function update(Request $request, int $order): JsonResponse
     {
         $found = self::find($order);
-        $edit = $this->input($request, preview: false);
+        $edit = $this->input($request);
 
         try {
             $result = $this->orders->editItems($found, $edit);
@@ -93,7 +93,7 @@ final readonly class ItemsController
         ]);
     }
 
-    private function input(Request $request, bool $preview): ItemsEdit
+    private function input(Request $request): ItemsEdit
     {
         $validated = $request->validate([
             'revision' => ['required', 'integer', 'min:0'],
@@ -127,8 +127,7 @@ final readonly class ItemsController
             add: array_map(static fn (array $line): array => array_filter($line, static fn (mixed $value): bool => $value !== null), $validated['add'] ?? []),
             qty: $qty,
             remove: array_map(intval(...), $validated['remove'] ?? []),
-            // The totals are counted while the reason is still being typed; the save needs it.
-            reason: OrderController::previewNote($validated['reason'] ?? null, $preview),
+            reason: $validated['reason'] ?? null,
             message: $validated['message'] ?? null,
             notify: (bool) ($validated['notify'] ?? true),
             source: 'panel',

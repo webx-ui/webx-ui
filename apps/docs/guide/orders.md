@@ -157,8 +157,10 @@ In the card, «Change the lines» over «Items» (`orders.manage`) opens the edi
 their quantity and «Take out», a product found as on «New order», and the service's own dry run on
 every change (`POST {api}/orders/{id}/items/preview`) — each line before → after, the totals, the
 warnings. A paid order says what the edit does to its payment before the save («Save and recount
-the payment»). The reason is required and only managers see it; «Message to the buyer» and «Tell
-the buyer» go to the letter about the change. The save (`PUT {api}/orders/{id}/items`) is sent
+the payment»). The reason may be left out and only managers see it; «Message to the buyer» and
+«Tell the buyer» go to the letter about the change. The quantities stand in one column on every
+line; a quantity being typed is counted once the field is left — 0 then takes the line out, an
+emptied field gets its number back. «Save» is greyed only with a reason it says beside it. The save (`PUT {api}/orders/{id}/items`) is sent
 against `items_revision` the editor opened: an edit saved meanwhile — another tab — is refused,
 and the editor reads the order again.
 
@@ -170,7 +172,7 @@ the total before and after, the balance it left, the reason; «Summary» counts 
 list marks the order «Edited».
 
 An agent does the same with `orders_items_edit` (`revision` from `orders_get`
-`items_revision`, the reason required), whose `dry_run` answers what the editor shows;
+`items_revision`, the reason optional), whose `dry_run` answers what the editor shows;
 `orders_history` has every edit in full.
 
 ### Notes for whoever picks the order up next

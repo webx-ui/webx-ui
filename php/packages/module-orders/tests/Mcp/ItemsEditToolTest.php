@@ -87,10 +87,6 @@ final class ItemsEditToolTest extends McpTestCase
         $part = $this->line($order, 3);
         $this->signIn();
 
-        // The reason is asked on saving, not while the totals are counted.
-        $this->putJson($this->api($order->id).'/items', ['revision' => 0, 'remove' => [$part->id]])
-            ->assertUnprocessable()->assertJsonValidationErrors(['reason']);
-
         $data = $this->putJson($this->api($order->id).'/items', [
             'revision' => 0,
             'remove' => [$part->id],
@@ -134,10 +130,16 @@ final class ItemsEditToolTest extends McpTestCase
             ->assertHasErrors(["Order {$order->number}: {$stale} (revision)"]);
         $this->assertSame(1, $order->refresh()->items_revision);
 
-        // The agent's edit is a second one, with the reason required.
-        $this->agent('orders_items_edit', ['order' => $order->number, 'revision' => 1, 'qty' => [(string) $this->line($order, 1)->id => 3]])->assertHasErrors(['reason']);
-        $done = $this->ask('orders_items_edit', ['order' => $order->number, 'revision' => 1, 'qty' => [(string) $this->line($order, 1)->id => 3], 'reason' => 'One more']);
+        // The agent's edit is a second one; the reason may be left out (decision 103).
+        $done = $this->ask('orders_items_edit', ['order' => $order->number, 'revision' => 1, 'qty' => [(string) $this->line($order, 1)->id => 3]]);
         $this->assertSame([2, false], [$done['revision'], $done['dry_run']]);
+        $this->assertNull($order->revisions()->where('number', 2)->value('reason'));
+
+        // A panel edit without one is saved too, and its line in the history carries no reason.
+        $timeline = $this->putJson($this->api($order->id).'/items', ['revision' => 2, 'qty' => [$this->line($order, 1)->id => 2]])->assertOk()->json('data.order.timeline');
+        $lines = array_values(array_filter($timeline, static fn (array $line): bool => ($line['revision']['number'] ?? null) === 3));
+        $this->assertCount(1, $lines);
+        $this->assertNull($lines[0]['note']);
     }
 
     #[Test]

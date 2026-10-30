@@ -438,7 +438,9 @@ final class Orders
      * A dry run answers the same — the cart of the lines added is made, counted and rolled back —
      * with a refusal in the answer, and writes nothing.
      *
-     * @throws ValidationException no reason from the panel or an agent; a line added the cart refuses, under `add.N.*`
+     * The reason is for the managers and may be left out, from any source (decision 103).
+     *
+     * @throws ValidationException a line added the cart refuses, under `add.N.*`
      * @throws CartNotOrderable a line added that cannot be bought, or one in another currency
      * @throws ItemsEditRefused
      * @throws OrderRefused a listener of OrderItemsChanging would not have it
@@ -447,12 +449,6 @@ final class Orders
     {
         $reason = self::text($edit->reason, 500);
         $message = self::text($edit->message, 1000);
-
-        if (in_array($edit->source, ['panel', 'mcp'], true)) {
-            $this->validation->make(['reason' => $reason], ['reason' => ['required', 'string']], [
-                'reason.required' => (string) __('webx-orders::panel.items-reason-required'),
-            ])->validate();
-        }
 
         if ($dryRun) {
             // The cart of the lines added is real for the count, and goes with the rollback.

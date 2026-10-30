@@ -3,6 +3,7 @@ import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import {
   toast,
   useModal,
+  WxAction,
   WxAlert,
   WxAutocomplete,
   WxBadge,
@@ -35,9 +36,13 @@ import type {
  * «Change the lines» (spec §42.1): the lines of the order with their quantity and «Take out», a
  * product found and added as on «New order», and the service's own dry run of the edit made on
  * every change — each line before → after, the totals, the balance after it and the warnings of
- * §37.7. A set is one line with its parent's quantity, a rule's gift may only go. The reason is
- * asked on saving; a paid order says what the edit does to its payment before it is saved
- * (§42.2). An edit saved meanwhile — another tab — loads the order again, the changes kept.
+ * §37.7. A set is one line with its parent's quantity, a rule's gift may only go. The reason may
+ * be left out (decision 103); a paid order says what the edit does to its payment before it is
+ * saved (§42.2). An edit saved meanwhile — another tab — loads the order again, the changes kept.
+ *
+ * A quantity being typed is not an edit yet: the field left empty or at 0 is counted on blur or
+ * Enter — 0 takes the line out, empty brings the last quantity back — so the totals never jump
+ * through a line taken out while the manager types «3» over «2».
  */
 const props = defineProps<{
   order: OrderCardData
@@ -59,16 +64,25 @@ const current = ref<OrderCardData>(props.order)
 
 interface Row {
   line: OrderLine
-  qty: number
+  /** What the field holds: `null` while it is emptied to type another number. */
+  qty: number | null
+  /** The last quantity the line had — what «Bring back» and an emptied field go back to. */
+  kept: number
   out: boolean
+  typing: boolean
 }
 
 interface Added {
   uid: number
   choice: ProductChoice
-  qty: number
+  qty: number | null
+  kept: number
+  typing: boolean
   options: Record<string, string | number | null>
 }
+
+/** A quantity not counted yet: emptied, or a 0 still being typed. */
+const unsettled = (qty: number | null): boolean => qty === null || qty <= 0
 
 /** The lines the order shows, top level: a set's parts go with it. A line taken out with units
  *  returned of it stays in the order, and in the editor, as it is. */
@@ -77,7 +91,7 @@ const rows = ref<Row[]>([])
 function fill(order: OrderCardData): void {
   rows.value = order.items
     .filter((line) => !line.removed)
-    .map((line) => ({ line, qty: line.qty, out: false }))
+    .map((line) => ({ line, qty: line.qty, kept: line.qty, out: false, typing: false }))
 }
 
 fill(current.value)
@@ -103,7 +117,7 @@ function payload(line: Added): NewOrderLine {
   return {
     type: line.choice.type,
     ref: line.choice.ref,
-    qty: line.qty,
+    qty: unsettled(line.qty) ? line.kept : (line.qty as number),
     ...(line.choice.options.length > 0
       ? { options: line.options as Record<string, string | number> }
       : {}),
@@ -117,7 +131,7 @@ const input = computed<ItemsEditInput>(() => {
 
   for (const row of rows.value) {
     if (row.out) remove.push(row.line.id)
-    else if (row.qty !== row.line.qty) qty[row.line.id] = row.qty
+    else if (!unsettled(row.qty) && row.qty !== row.line.qty) qty[row.line.id] = row.qty as number
   }
 
   return {
@@ -139,6 +153,13 @@ const empty = computed(
 )
 
 const waiting = computed(() => added.value.some((line) => !chosen(line)))
+
+/** A quantity field emptied or at 0 and not left yet: nothing is counted until it is. */
+const pending = computed(
+  () =>
+    rows.value.some((row) => !row.out && unsettled(row.qty)) ||
+    added.value.some((line) => unsettled(line.qty)),
+)
 
 /* --- finding a product: the route and the words of «New order» --- */
 
@@ -199,7 +220,8 @@ function add(option: AutocompleteOption): void {
       : undefined
 
   if (same) {
-    same.qty += 1
+    same.qty = (unsettled(same.qty) ? same.kept : (same.qty as number)) + 1
+    same.kept = same.qty
 
     return
   }
@@ -208,6 +230,8 @@ function add(option: AutocompleteOption): void {
     uid: ++uid,
     choice,
     qty: 1,
+    kept: 1,
+    typing: false,
     options: Object.fromEntries(choice.options.map((one) => [one.key, null])),
   })
 }
@@ -269,9 +293,17 @@ watch(
   () => JSON.stringify({ ...input.value, reason: '', message: '', notify: true }),
   () => {
     clearTimeout(timer)
-    timer = setTimeout(() => void count(), 250)
+    // The count of the last settled quantities stays on screen while one is typed.
+    if (!pending.value) timer = setTimeout(() => void count(), 250)
   },
 )
+
+watch(pending, (now) => {
+  if (!now) {
+    clearTimeout(timer)
+    timer = setTimeout(() => void count(), 250)
+  }
+})
 
 onBeforeUnmount(() => clearTimeout(timer))
 
@@ -282,10 +314,11 @@ function changeOf(row: Row) {
 
 /** What the count says of a product added: its line «add» — or the line it joined (§37.4). */
 function addedChange(line: Added) {
+  const qty = unsettled(line.qty) ? line.kept : line.qty
+
   return (
     preview.value?.changes.find(
-      (change) =>
-        change.op === 'add' && change.name === line.choice.name && change.qty_to === line.qty,
+      (change) => change.op === 'add' && change.name === line.choice.name && change.qty_to === qty,
     ) ?? null
   )
 }
@@ -350,11 +383,24 @@ const canSave = computed(
   () =>
     !empty.value &&
     !waiting.value &&
+    !pending.value &&
     !counting.value &&
     !saving.value &&
-    after.value !== null &&
-    reason.value.trim() !== '',
+    after.value !== null,
 )
+
+/** Why «Save» is greyed — a button that does nothing says what it waits for. */
+const blocked = computed<string | null>(() => {
+  if (saving.value || counting.value) return null
+  if (pending.value) return t('panel.items-blocked-qty')
+  if (waiting.value) return t('panel.items-blocked-options')
+  if (empty.value) return t('panel.items-nothing')
+  if (after.value === null && (preview.value !== null || general.value.length > 0)) {
+    return t('panel.items-blocked-refused')
+  }
+
+  return null
+})
 
 async function save(): Promise<void> {
   if (!canSave.value) return
@@ -399,12 +445,33 @@ async function reload(): Promise<void> {
 }
 
 function take(row: Row): void {
+  if (!unsettled(row.qty)) row.kept = row.qty as number
   row.out = true
 }
 
+/** The line as it was before it was taken out — the quantity typed then, not the placed one. */
 function back(row: Row): void {
   row.out = false
-  row.qty = row.line.qty
+  row.qty = row.kept
+}
+
+/** A quantity counted: the stepper's, or a number typed. A 0 typed waits for the field to be left. */
+function changed(row: Row | Added, qty: number | null): void {
+  if (qty !== null && qty > 0) row.kept = qty
+  else if (qty === 0 && !row.typing && 'line' in row) take(row)
+}
+
+/** The field left, or Enter: a 0 takes the line out, an emptied field has its last quantity back. */
+function settle(row: Row | Added): void {
+  void nextTick(() => {
+    if (row.qty === 0 && 'line' in row) take(row)
+    else if (unsettled(row.qty)) row.qty = row.kept
+  })
+}
+
+function focus(row: Row | Added, on: boolean): void {
+  row.typing = on
+  if (!on) settle(row)
 }
 
 /** A set: its parts follow its quantity. */
@@ -418,7 +485,7 @@ const isSet = (line: OrderLine) => line.children.some((child) => child.part !== 
     :width="1040"
   >
     <div class="wx-orders-edit">
-      <wx-text size="sm" tone="muted">{{ t('panel.items-edit-help') }}</wx-text>
+      <wx-alert type="info" :description="t('panel.items-edit-help')" data-test="edit-help" />
 
       <div class="wx-orders-edit__body">
         <div class="wx-orders-edit__lines">
@@ -465,18 +532,7 @@ const isSet = (line: OrderLine) => line.children.some((child) => child.part !== 
                 </wx-text>
               </div>
 
-              <div class="wx-orders-edit__controls">
-                <wx-input-number
-                  v-if="!row.line.generated && !row.out"
-                  v-model="row.qty"
-                  class="wx-orders-edit__qty"
-                  size="sm"
-                  :min="Math.max(1, row.line.refunded_qty)"
-                  :step="1"
-                  controls-position="sides"
-                  :aria-label="t('panel.new-qty')"
-                />
-                <wx-text v-else-if="!row.out" size="sm">× {{ row.line.qty }}</wx-text>
+              <div class="wx-orders-edit__qty-cell">
                 <wx-button
                   v-if="row.out"
                   size="sm"
@@ -487,15 +543,22 @@ const isSet = (line: OrderLine) => line.children.some((child) => child.part !== 
                 >
                   {{ t('panel.items-back') }}
                 </wx-button>
-                <wx-button
-                  v-else
+                <wx-input-number
+                  v-else-if="!row.line.generated"
+                  v-model="row.qty"
+                  class="wx-orders-edit__qty"
                   size="sm"
-                  variant="text"
-                  icon="trash"
-                  :aria-label="t('panel.new-remove')"
-                  data-test="edit-take"
-                  @click="take(row)"
+                  :min="row.line.refunded_qty"
+                  :step="1"
+                  controls-position="sides"
+                  :aria-label="t('panel.new-qty')"
+                  data-test="edit-qty"
+                  @change="changed(row, $event)"
+                  @focus="focus(row, true)"
+                  @blur="focus(row, false)"
+                  @keydown.enter="settle(row)"
                 />
+                <wx-text v-else size="sm">× {{ row.line.qty }}</wx-text>
               </div>
 
               <div class="wx-orders-edit__money">
@@ -504,7 +567,20 @@ const isSet = (line: OrderLine) => line.children.some((child) => child.part !== 
                   <s class="wx-orders-edit__was">{{ changeOf(row)?.total_from_formatted }}</s>
                   {{ changeOf(row)?.total_to_formatted }}
                 </wx-text>
-                <wx-text v-else weight="medium">{{ row.line.total }}</wx-text>
+                <wx-text v-else weight="medium" data-test="edit-line-total">
+                  {{ row.line.total }}
+                </wx-text>
+              </div>
+
+              <div class="wx-orders-edit__remove">
+                <wx-action
+                  type="remove"
+                  size="sm"
+                  :title="t('panel.new-remove')"
+                  :hidden="row.out"
+                  data-test="edit-take"
+                  @click="take(row)"
+                />
               </div>
             </li>
 
@@ -524,12 +600,6 @@ const isSet = (line: OrderLine) => line.children.some((child) => child.part !== 
                 <wx-text v-if="line.choice.sku" size="sm" tone="muted">
                   {{ line.choice.sku }}
                 </wx-text>
-                <wx-text v-if="addedError(line)" size="sm" tone="danger">
-                  {{ addedError(line) }}
-                </wx-text>
-              </div>
-
-              <div class="wx-orders-edit__controls">
                 <span
                   v-for="option in line.choice.options"
                   :key="option.key"
@@ -545,6 +615,12 @@ const isSet = (line: OrderLine) => line.children.some((child) => child.part !== 
                     :aria-label="option.label"
                   />
                 </span>
+                <wx-text v-if="addedError(line)" size="sm" tone="danger">
+                  {{ addedError(line) }}
+                </wx-text>
+              </div>
+
+              <div class="wx-orders-edit__qty-cell">
                 <wx-input-number
                   v-model="line.qty"
                   class="wx-orders-edit__qty"
@@ -553,13 +629,10 @@ const isSet = (line: OrderLine) => line.children.some((child) => child.part !== 
                   :step="1"
                   controls-position="sides"
                   :aria-label="t('panel.new-qty')"
-                />
-                <wx-button
-                  size="sm"
-                  variant="text"
-                  icon="trash"
-                  :aria-label="t('panel.new-remove')"
-                  @click="drop(line)"
+                  @change="changed(line, $event)"
+                  @focus="focus(line, true)"
+                  @blur="focus(line, false)"
+                  @keydown.enter="settle(line)"
                 />
               </div>
 
@@ -568,6 +641,15 @@ const isSet = (line: OrderLine) => line.children.some((child) => child.part !== 
                 <wx-text v-if="addedChange(line)" weight="medium">
                   {{ addedChange(line)?.total_to_formatted }}
                 </wx-text>
+              </div>
+
+              <div class="wx-orders-edit__remove">
+                <wx-action
+                  type="remove"
+                  size="sm"
+                  :title="t('panel.new-remove')"
+                  @click="drop(line)"
+                />
               </div>
             </li>
           </ul>
@@ -658,7 +740,6 @@ const isSet = (line: OrderLine) => line.children.some((child) => child.part !== 
           :label="t('panel.items-reason')"
           :help="t('panel.items-reason-help')"
           :error="errors.reason?.[0]"
-          required
         >
           <wx-textarea v-model="reason" :rows="2" :maxlength="500" data-test="edit-reason" />
         </wx-form-item>
@@ -680,18 +761,29 @@ const isSet = (line: OrderLine) => line.children.some((child) => child.part !== 
     </div>
 
     <template #footer>
-      <wx-space size="sm" wrap>
-        <wx-button variant="outline" @click="dismiss()">{{ t('panel.dismiss') }}</wx-button>
-        <wx-button
-          type="primary"
-          :loading="saving"
-          :disabled="!canSave"
-          data-test="edit-save"
-          @click="save"
+      <div class="wx-orders-edit__foot">
+        <wx-text
+          v-if="blocked"
+          size="sm"
+          tone="muted"
+          class="wx-orders-edit__blocked"
+          data-test="edit-blocked"
         >
-          {{ t(paid ? 'panel.items-save-paid' : 'panel.items-save') }}
-        </wx-button>
-      </wx-space>
+          {{ blocked }}
+        </wx-text>
+        <wx-space size="sm" wrap>
+          <wx-button variant="outline" @click="dismiss()">{{ t('panel.dismiss') }}</wx-button>
+          <wx-button
+            type="primary"
+            :loading="saving"
+            :disabled="!canSave"
+            data-test="edit-save"
+            @click="save"
+          >
+            {{ t(paid ? 'panel.items-save-paid' : 'panel.items-save') }}
+          </wx-button>
+        </wx-space>
+      </div>
     </template>
   </wx-dialog>
 </template>
@@ -723,20 +815,29 @@ const isSet = (line: OrderLine) => line.children.some((child) => child.part !== 
   min-width: 0;
 }
 
+/*
+ * One grid for the whole list, each line a subgrid of it: the quantity, the money and the
+ * remove button stand in the same column on every line, whatever the name or the price beside
+ * them is. Narrow, the name takes the first row of a line and the three go under it.
+ */
 .wx-orders-edit__list {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   margin: 0;
   padding: 0;
   list-style: none;
+  column-gap: var(--wx-space-12);
 }
 
 .wx-orders-edit__line {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
   grid-template-areas:
-    'what money'
-    'controls controls';
-  align-items: start;
-  gap: var(--wx-space-8) var(--wx-space-12);
+    'what what what'
+    'qty money remove';
+  align-items: center;
+  row-gap: var(--wx-space-8);
   padding-block: var(--wx-space-10);
   border-top: 1px solid var(--wx-border-muted);
 }
@@ -747,16 +848,33 @@ const isSet = (line: OrderLine) => line.children.some((child) => child.part !== 
 }
 
 @container (min-width: 560px) {
-  .wx-orders-edit__line {
-    grid-template-columns: minmax(0, 1fr) auto auto;
-    grid-template-areas: 'what controls money';
+  .wx-orders-edit__list {
+    grid-template-columns: minmax(0, 1fr) auto auto auto;
   }
+
+  .wx-orders-edit__line {
+    grid-template-areas: 'what qty money remove';
+  }
+}
+
+.wx-orders-edit__qty-cell {
+  display: flex;
+  grid-area: qty;
+  align-items: center;
+  min-width: 0;
+}
+
+.wx-orders-edit__remove {
+  display: flex;
+  grid-area: remove;
+  justify-content: flex-end;
 }
 
 .wx-orders-edit__what {
   display: flex;
   grid-area: what;
   flex-direction: column;
+  align-self: start;
   gap: var(--wx-space-2);
   min-width: 0;
 }
@@ -778,18 +896,12 @@ const isSet = (line: OrderLine) => line.children.some((child) => child.part !== 
   text-decoration: line-through;
 }
 
-.wx-orders-edit__controls {
-  display: flex;
-  flex-wrap: wrap;
-  grid-area: controls;
-  align-items: center;
-  gap: var(--wx-space-8);
-}
-
 .wx-orders-edit__option {
   display: inline-flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--wx-space-6);
+  margin-top: var(--wx-space-4);
 }
 
 .wx-orders-edit__select {
@@ -797,7 +909,7 @@ const isSet = (line: OrderLine) => line.children.some((child) => child.part !== 
 }
 
 .wx-orders-edit__qty {
-  width: 120px;
+  width: 128px;
 }
 
 .wx-orders-edit__money {
@@ -861,6 +973,21 @@ const isSet = (line: OrderLine) => line.children.some((child) => child.part !== 
 .wx-orders-edit__rows .is-strong {
   color: var(--wx-text-default);
   font-weight: var(--wx-font-weight-semibold);
+}
+
+.wx-orders-edit__foot {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--wx-space-8) var(--wx-space-12);
+  min-width: 0;
+}
+
+.wx-orders-edit__blocked {
+  flex: 1 1 16em;
+  min-width: 0;
 }
 
 .wx-orders-edit__words {
