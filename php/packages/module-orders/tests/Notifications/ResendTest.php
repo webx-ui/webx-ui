@@ -136,6 +136,14 @@ final class ResendTest extends McpTestCase
         $this->assertSame(1, StatusChange::query()->where('order_id', $order->id)->where('kind', StatusChange::NOTIFICATION_SENT)->count());
         Bus::assertDispatchedTimes(Deliver::class, 2);
 
+        // The row the first press made takes the top of the log: a press on it is the same letter again.
+        $again = Delivery::query()->where('resent_from', $letter->id)->sole();
+        $again->forceFill(['status' => Delivery::SENT])->save();
+        $this->postJson($this->api($order->id.'/deliveries/'.$again->id.'/resend'))->assertStatus(422);
+        // And so is the event sent to the buyer by hand.
+        $this->postJson($this->api($order->id.'/notify'), ['event' => OrderEvents::PLACED])->assertStatus(422);
+        $this->assertSame(1, Delivery::query()->where('manual', true)->count());
+
         // A minute later it is a decision of its own, not a slip of the finger.
         Carbon::setTestNow(Carbon::now()->addSeconds(Delivery::RESEND_PAUSE + 1));
         $this->postJson($url)->assertOk();

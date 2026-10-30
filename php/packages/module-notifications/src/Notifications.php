@@ -171,9 +171,10 @@ final class Notifications
      * same recipient with the same values, marked manual, with who asked and the row it repeats.
      * The template is the channel's as it is now; the job and its attempts are a send's.
      *
-     * The original row is locked while its last repeat is looked for, so two presses at once — or
-     * one within `Delivery::RESEND_PAUSE` seconds of the other — send one message. A dry run checks
-     * the same and answers the row unsaved.
+     * The channel is locked while the same message sent by hand lately is looked for — this row's
+     * repeat, the repeat of that repeat, the event sent to the same recipient — so two presses at
+     * once, or one within `Delivery::RESEND_PAUSE` seconds of the other, send one message. A dry
+     * run checks the same and answers the row unsaved.
      *
      * @throws Refusal a test or a skipped row, a channel deleted or switched off, a repeat a moment ago
      */
@@ -186,9 +187,11 @@ final class Notifications
                 throw new Refusal((string) __('webx-notifications::errors.not-resendable', ['id' => $delivery->id]));
             }
 
-            $channel = $this->sending(Channel::query()->find($original->channel_id), $original->channel_name);
+            // The channel's row is the lock: two presses — on this row, or on the row the first one
+            // made, which takes its place at the top of a log — wait for each other.
+            $channel = $this->sending(Channel::query()->lockForUpdate()->find($original->channel_id), $original->channel_name);
 
-            if (Delivery::query()->where('resent_from', $original->id)->where('created_at', '>=', Carbon::now()->subSeconds(Delivery::RESEND_PAUSE))->exists()) {
+            if ($this->sentByHand($original->event, $original->subject_type, $original->subject_id, [(int) $channel->id], $original->recipient)) {
                 throw new Refusal((string) __('webx-notifications::errors.resent-recently'));
             }
 
@@ -247,17 +250,7 @@ final class Notifications
                 throw new Refusal((string) __('webx-notifications::errors.nobody-addressed'));
             }
 
-            $recent = Delivery::query()
-                ->where('manual', true)
-                ->whereNull('resent_from')
-                ->where('event', $event)
-                ->where('subject_type', $subject->getMorphClass())
-                ->where('subject_id', $subject->getKey())
-                ->whereIn('channel_id', array_map(static fn (Channel $channel): int => (int) $channel->id, $found))
-                ->where('created_at', '>=', Carbon::now()->subSeconds(Delivery::RESEND_PAUSE))
-                ->exists();
-
-            if ($recent) {
+            if ($this->sentByHand($event, $subject->getMorphClass(), $subject->getKey(), array_map(static fn (Channel $channel): int => (int) $channel->id, $found))) {
                 throw new Refusal((string) __('webx-notifications::errors.resent-recently'));
             }
 
@@ -352,6 +345,26 @@ final class Notifications
             'html' => $message->html,
             'truncated' => $message->truncated,
         ];
+    }
+
+    /**
+     * Whether the same message went by hand a moment ago (§8.6): the event about the record through
+     * these channels — to this recipient, when one is named — within `Delivery::RESEND_PAUSE`.
+     * A repeat of a row and a send of the event count alike: both are «the letter again».
+     *
+     * @param  list<int>  $channels
+     */
+    private function sentByHand(string $event, ?string $subjectType, int|string|null $subjectId, array $channels, ?string $recipient = null): bool
+    {
+        return Delivery::query()
+            ->where('manual', true)
+            ->where('event', $event)
+            ->where('subject_type', $subjectType)
+            ->where('subject_id', $subjectId)
+            ->whereIn('channel_id', $channels)
+            ->when($recipient !== null, static fn (Builder $query) => $query->where('recipient', $recipient))
+            ->where('created_at', '>=', Carbon::now()->subSeconds(Delivery::RESEND_PAUSE))
+            ->exists();
     }
 
     /** The channel a row goes through by hand, or the refusal that says why nothing would go. */
