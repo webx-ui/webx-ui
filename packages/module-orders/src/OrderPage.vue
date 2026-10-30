@@ -31,10 +31,11 @@ import CancelDialog from './CancelDialog.vue'
 import { NAMESPACE, useOrdersMessages } from './i18n'
 import MarkDialog from './MarkDialog.vue'
 import RefundDialog from './RefundDialog.vue'
+import ReverseRefundDialog from './ReverseRefundDialog.vue'
 import StatusDialog from './StatusDialog.vue'
 import VisitorDialog from './VisitorDialog.vue'
 import { toneOf } from './tones'
-import type { OrderCardData, OrderDetail, PublicStatusGroup } from './types'
+import type { OrderCardData, OrderDetail, OrderRefundEntry, PublicStatusGroup } from './types'
 
 /**
  * One order (spec §11.3): the head with the number, the date and the actions; `orders.show`
@@ -101,6 +102,9 @@ const cancelDialog = createModal<OrderDetail, { orderId: number; number: string 
   CancelDialog,
 )
 const refundDialog = createModal<OrderDetail, { order: OrderCardData }>(RefundDialog)
+const reverseDialog = createModal<OrderDetail, { orderId: number; refund: OrderRefundEntry }>(
+  ReverseRefundDialog,
+)
 const visitorDialog = createModal<OrderDetail, { order: OrderCardData; email: string | null }>(
   VisitorDialog,
 )
@@ -181,6 +185,41 @@ async function refund(): Promise<void> {
   if (!open) return
 
   await after(refundDialog({ order: open }), t('panel.refunded-toast'))
+}
+
+/**
+ * A refund record made by mistake is reversed, never edited (decision 98); the right one is then
+ * recorded as any refund, so the dialog of a refund is offered at once.
+ */
+async function reverseRefund(refundId: number): Promise<void> {
+  const open = order.value
+  const record = open?.refunds.find((one) => one.id === refundId)
+
+  if (!open || !record || busy.value) return
+
+  busy.value = true
+
+  try {
+    const answer = await reverseDialog({ orderId: open.id, refund: record })
+
+    if (!answer) return
+
+    take(answer, false)
+    toast.success(t('panel.reversed-toast'))
+  } finally {
+    busy.value = false
+  }
+
+  if (!order.value?.actions.refund) return
+
+  const again = await confirm({
+    title: t('panel.reverse-next-title'),
+    message: t('panel.reverse-next-text'),
+    confirmText: t('panel.reverse-next-confirm'),
+    cancelText: t('panel.dismiss'),
+  })
+
+  if (again) await refund()
 }
 
 async function linkVisitor(): Promise<void> {
@@ -275,6 +314,7 @@ provideOrderCard({
   mark,
   cancel,
   refund,
+  reverseRefund,
   note,
   pin,
   linkVisitor,

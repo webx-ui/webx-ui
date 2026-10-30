@@ -9,6 +9,7 @@ use WebxUi\Cart\Money;
 use WebxUi\Notifications\Models\Channel;
 use WebxUi\Orders\Milestone;
 use WebxUi\Orders\MilestoneMark;
+use WebxUi\Orders\RefundReversal;
 use WebxUi\Orders\StatusMove;
 
 /**
@@ -69,6 +70,33 @@ final class Consequences
             ], $mark->tendersReturned),
             'outcome' => $mark->outcome,
             'status' => $status,
+        ];
+    }
+
+    /**
+     * What reversing a refund record does (decision 98) — the same answer for the dialog and for
+     * `orders_refund_reverse`: what comes off the order, what is left to give back after it, and
+     * whether «refunded» comes off. Money in minor units with the string beside it.
+     *
+     * @return array<string, mixed>
+     */
+    public function reversal(RefundReversal $reversal, string $currency, Money $money): array
+    {
+        $amount = static fn (string $key, int $minor): array => [$key => $minor, $key.'_formatted' => $money->format($minor, $currency)];
+
+        return [
+            'refund_id' => $reversal->refundId,
+            ...$amount('amount', $reversal->amount),
+            'tenders' => $reversal->tenders,
+            'units' => array_sum($reversal->items),
+            ...$amount('refunded_total', $reversal->refundedTotal),
+            ...$amount('money_left', $reversal->moneyLeft),
+            'tenders_left' => $reversal->tendersLeft,
+            'items_left' => $reversal->itemsLeft,
+            'milestone_removed' => $reversal->milestoneRemoved === null ? null : self::milestone($reversal->milestoneRemoved),
+            'refusal' => $reversal->refusal,
+            'message' => $reversal->refusal === null ? null : (string) __('webx-orders::panel.reverse-refusals.'.$reversal->refusal),
+            'dry_run' => $reversal->dryRun,
         ];
     }
 

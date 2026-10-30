@@ -24,6 +24,10 @@ use Illuminate\Support\Carbon;
  * @property string $source
  * @property int|null $admin_id
  * @property Carbon|null $created_at
+ * @property Carbon|null $reversed_at a mistaken record reversed (decision 98): it stays, and counts for nothing
+ * @property string|null $reversed_source
+ * @property int|null $reversed_by
+ * @property string|null $reversal_reason
  */
 class OrderRefund extends Model
 {
@@ -44,7 +48,14 @@ class OrderRefund extends Model
             'tenders' => 'array',
             'items' => 'array',
             'admin_id' => 'integer',
+            'reversed_at' => 'datetime',
+            'reversed_by' => 'integer',
         ];
+    }
+
+    public function reversed(): bool
+    {
+        return $this->reversed_at !== null;
     }
 
     /** @return BelongsTo<Order, $this> */

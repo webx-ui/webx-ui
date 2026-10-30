@@ -25,6 +25,7 @@ use WebxUi\Orders\Panel\StatusChoices;
 use WebxUi\Orders\RefundRefused;
 use WebxUi\Orders\RefundRequest;
 use WebxUi\Orders\RefundResult;
+use WebxUi\Orders\RefundReversalRefused;
 use WebxUi\Orders\Refusal;
 use WebxUi\Orders\StatusMoveRefused;
 
@@ -285,6 +286,37 @@ final readonly class OrderController
         } catch (RefundRefused $refused) {
             throw ValidationException::withMessages([
                 (string) ($refused->result->field ?? 'amount') => $this->refundRefusal($refused->result, $currency),
+            ]);
+        }
+
+        return $this->describe($request, $found);
+    }
+
+    /**
+     * Reverse a refund recorded by mistake (decision 98): the reason is required, and the dialog
+     * asks what it does before one is typed — a dry run keeps nothing, so it is asked with a stand-in.
+     * A refusal — another order's record, one reversed already — comes back under `refund`.
+     */
+    public function reverseRefund(Request $request, int $order, int $refund): JsonResponse
+    {
+        $validated = $request->validate([
+            'reason' => ['nullable', 'string', 'max:500'],
+            'dry_run' => ['nullable', 'boolean'],
+        ]);
+
+        $found = self::find($order);
+        $dryRun = (bool) ($validated['dry_run'] ?? false);
+        $reason = self::previewNote($validated['reason'] ?? null, $dryRun);
+
+        if ($dryRun) {
+            return ApiResponse::data($this->consequences->reversal($this->orders->reverseRefund($found, $refund, $reason, 'panel', true), $found->currency, $this->money));
+        }
+
+        try {
+            $this->orders->reverseRefund($found, $refund, $reason, 'panel');
+        } catch (RefundReversalRefused $refused) {
+            throw ValidationException::withMessages([
+                'refund' => (string) __('webx-orders::panel.reverse-refusals.'.$refused->reason),
             ]);
         }
 

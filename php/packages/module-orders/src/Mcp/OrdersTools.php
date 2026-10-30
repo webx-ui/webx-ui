@@ -47,6 +47,8 @@ use WebxUi\Orders\Panel\StatusChoices;
 use WebxUi\Orders\RefundRefused;
 use WebxUi\Orders\RefundRequest;
 use WebxUi\Orders\RefundResult;
+use WebxUi\Orders\RefundReversal;
+use WebxUi\Orders\RefundReversalRefused;
 use WebxUi\Orders\Refusal;
 use WebxUi\Orders\Site\VisitorOrders;
 use WebxUi\Orders\StatusMoveRefused;
@@ -234,6 +236,22 @@ final readonly class OrdersTools
                     'reference' => ['type' => 'string'],
                     'reason' => ['type' => 'string'],
                 ], 'required' => ['order']],
+                permission: OrdersModule::REFUND,
+            ),
+
+            Tool::mutating(
+                'refund_reverse',
+                'Reverse a refund recorded by mistake — a refund is never edited. The record stays in the history, struck '
+                .'through with the reason; what it gave back (money, tenders, units) counts no more, and when the order is no '
+                .'longer given back whole the milestone «refunded» comes off. Then record the right one with orders_refund. '
+                .'`refund` is the id from orders_get. `dry_run` answers what comes off, what is left after it and whether '
+                .'the milestone comes off, or why it is refused.',
+                fn (array $arguments): array => $this->reverseRefund($arguments),
+                ['properties' => [
+                    'order' => $order,
+                    'refund' => ['type' => 'integer', 'description' => 'The id of the refund record, from orders_get `refunds`.'],
+                    'reason' => ['type' => 'string', 'description' => 'Why the record was a mistake — it goes into the history.'],
+                ], 'required' => ['order', 'refund', 'reason']],
                 permission: OrdersModule::REFUND,
             ),
 
@@ -436,6 +454,13 @@ final readonly class OrdersTools
                 'reason' => $refund->reason,
                 'source' => $refund->source,
                 'at' => $refund->created_at?->toAtomString(),
+                // Reversed by mistake (decision 98): it counts no more, and says when and why.
+                'reversed' => $refund->reversed() ? [
+                    'at' => $refund->reversed_at?->toAtomString(),
+                    'source' => $refund->reversed_source,
+                    'admin_id' => $refund->reversed_by,
+                    'reason' => $refund->reversal_reason,
+                ] : null,
             ])->values()->all(),
         ];
     }
@@ -453,7 +478,7 @@ final readonly class OrdersTools
             'number' => $order->number,
             // A refund's money as every amount here is: an integer and the string beside it.
             'timeline' => array_map(static function (array $line): array {
-                if ($line['kind'] === 'refund') {
+                if (in_array($line['kind'], ['refund', 'refund_reversed'], true) && array_key_exists('amount_minor', $line)) {
                     $line['amount_formatted'] = $line['amount'];
                     $line['amount'] = $line['amount_minor'];
                     unset($line['amount_minor']);
@@ -670,6 +695,31 @@ final readonly class OrdersTools
         }
 
         return ['number' => $order->number, ...$this->refundAnswer($result, $order->currency), 'refund_id' => $result->refundId];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function reverseRefund(array $arguments): array
+    {
+        $order = $this->order($arguments['order'] ?? null);
+        $dryRun = $this->dryRun($arguments);
+        $refund = $arguments['refund'] ?? null;
+
+        if (! is_int($refund) && ! (is_string($refund) && ctype_digit($refund))) {
+            throw new ToolFailure('`refund` is the id of a refund record; orders_get lists them under `refunds`.');
+        }
+
+        $reason = isset($arguments['reason']) ? (string) $arguments['reason'] : null;
+
+        try {
+            $reversal = $this->attempt(fn (): RefundReversal => $this->orders->reverseRefund($order, (int) $refund, $reason, self::SOURCE, $dryRun));
+        } catch (RefundReversalRefused $refused) {
+            throw new ToolFailure("Order {$order->number}: ".__('webx-orders::panel.reverse-refusals.'.$refused->reason));
+        }
+
+        return ['number' => $order->number, ...$this->consequences->reversal($reversal, $order->currency, $this->money)];
     }
 
     /**

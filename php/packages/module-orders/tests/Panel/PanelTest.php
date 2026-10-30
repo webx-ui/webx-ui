@@ -79,7 +79,7 @@ final class PanelTest extends PanelTestCase
         $this->assertSame('Item A', $card['order']['items'][0]['name']);
         $this->assertSame(2, $card['order']['items'][0]['qty']);
         $this->assertSame($this->money(9998), $card['order']['totals']['total']);
-        $this->assertSame(['status' => false, 'paid' => false, 'received' => false, 'cancel' => false, 'details' => false, 'note' => false, 'refund' => false, 'visitor' => false, 'visitor_search' => false], $card['order']['actions']);
+        $this->assertSame(['status' => false, 'paid' => false, 'received' => false, 'cancel' => false, 'details' => false, 'note' => false, 'refund' => false, 'refund_reverse' => false, 'visitor' => false, 'visitor_search' => false], $card['order']['actions']);
         $this->assertSame('Alex', $card['values']['customer.first_name']);
         $this->assertSame('alex@example.test', $card['values']['customer.email']);
         $this->assertSame(['milestone', 'status'], array_column($card['order']['timeline'], 'kind'));
@@ -89,7 +89,7 @@ final class PanelTest extends PanelTestCase
         $this->signIn();
         $actions = $this->getJson($this->api($order->id))->json('data.order.actions');
         // No linking to a visitor without the visitors module (§13.3).
-        $this->assertSame(['status' => true, 'paid' => true, 'received' => true, 'cancel' => true, 'details' => true, 'note' => true, 'refund' => true, 'visitor' => false, 'visitor_search' => false], $actions);
+        $this->assertSame(['status' => true, 'paid' => true, 'received' => true, 'cancel' => true, 'details' => true, 'note' => true, 'refund' => true, 'refund_reverse' => true, 'visitor' => false, 'visitor_search' => false], $actions);
 
         $this->getJson($this->api(999999))->assertNotFound();
     }

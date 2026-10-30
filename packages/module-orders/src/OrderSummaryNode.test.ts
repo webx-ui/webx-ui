@@ -65,6 +65,7 @@ function order(patch: Partial<OrderCardData> = {}): OrderCardData {
       details: true,
       note: true,
       refund: false,
+      refund_reverse: false,
       visitor: false,
       visitor_search: false,
     },
@@ -76,6 +77,7 @@ function card(node: object, data: OrderCardData) {
   const i18n = createI18n()
   const admin = { apiPath: '/api/cms', http: {}, i18n } as unknown as AdminContext
   const changeStatus = vi.fn(() => Promise.resolve())
+  const reverseRefund = vi.fn((_id: number) => Promise.resolve())
 
   const Host = defineComponent({
     setup() {
@@ -86,6 +88,7 @@ function card(node: object, data: OrderCardData) {
         mark: () => Promise.resolve(),
         cancel: () => Promise.resolve(),
         refund: () => Promise.resolve(),
+        reverseRefund,
         note: () => Promise.resolve(true),
         pin: () => Promise.resolve(true),
         linkVisitor: () => Promise.resolve(),
@@ -100,7 +103,7 @@ function card(node: object, data: OrderCardData) {
     global: { provide: { [adminKey as symbol]: admin, [i18nKey as symbol]: i18n } },
   })
 
-  return { wrapper, changeStatus }
+  return { wrapper, changeStatus, reverseRefund }
 }
 
 describe('WxOrdersSummary', () => {
@@ -131,7 +134,14 @@ describe('WxOrdersSummary', () => {
         count: { lines: 2, units: 5, refunded_units: 1 },
         totals: { ...order().totals, refunded: '$10.00' },
         refunds: [
-          { id: 1, at: null, amount: '$10.00', reason: 'Broken in the box', reference: 'TR-1' },
+          {
+            id: 1,
+            at: null,
+            amount: '$10.00',
+            reason: 'Broken in the box',
+            reference: 'TR-1',
+            reversed: null,
+          },
         ],
       }),
     )
@@ -145,6 +155,63 @@ describe('WxOrdersSummary', () => {
     expect(note.text()).toContain('Operation number: TR-1')
     // One refund: its amount is the row's already.
     expect(note.find('.wx-orders-summary__sum').exists()).toBe(false)
+    // Without the right to give money back, no record is reversed from here.
+    expect(note.find('[data-test="refund-reverse"]').exists()).toBe(false)
+  })
+
+  it('reverses a record from its plate, and a reversed one stays struck through with why', async () => {
+    const { wrapper, reverseRefund } = card(
+      OrderSummaryNode,
+      order({
+        totals: { ...order().totals, refunded: '$10.00' },
+        refunds: [
+          {
+            id: 1,
+            at: null,
+            amount: '$50.00',
+            reason: 'Broken in the box',
+            reference: null,
+            reversed: { at: null, reason: 'Typed the whole order' },
+          },
+          { id: 2, at: null, amount: '$10.00', reason: null, reference: null, reversed: null },
+        ],
+        actions: { ...order().actions, refund_reverse: true },
+      }),
+    )
+
+    const [wrong, right] = wrapper.findAll('[data-test="refund-note"]')
+    expect(wrong?.classes()).toContain('is-reversed')
+    expect(wrong?.find('s').text()).toBe('−$50.00')
+    expect(wrong?.find('[data-test="refund-reversed"]').text()).toBe(
+      'Reversed: Typed the whole order',
+    )
+    expect(wrong?.find('[data-test="refund-reverse"]').exists()).toBe(false)
+
+    // A record with nothing to say is still on the plate: the reader may reverse it.
+    expect(right?.text()).toContain('−$10.00')
+    await right?.find('[data-test="refund-reverse"]').trigger('click')
+    expect(reverseRefund).toHaveBeenCalledWith(2)
+  })
+
+  it('keeps the row «Given back» while every record is reversed', () => {
+    const { wrapper } = card(
+      OrderSummaryNode,
+      order({
+        refunds: [
+          {
+            id: 1,
+            at: null,
+            amount: '$50.00',
+            reason: null,
+            reference: null,
+            reversed: { at: null, reason: 'Wrong order' },
+          },
+        ],
+      }),
+    )
+
+    expect(wrapper.text()).toContain('Given back')
+    expect(wrapper.find('[data-test="refund-reversed"]').exists()).toBe(true)
   })
 })
 

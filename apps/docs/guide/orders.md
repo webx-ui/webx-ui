@@ -31,8 +31,8 @@ settings, which show a trial number before saving.
 An order has two kinds of state, and they answer different questions.
 
 **Milestones** are facts: the order _was_ placed, paid, received, cancelled, refunded. The list is
-closed (`WebxUi\Orders\Milestone`), each one is set once and never taken back, and each has its
-event.
+closed (`WebxUi\Orders\Milestone`), each one is set once and never taken back — but `refunded`,
+which a reversed refund record takes off (below) — and each has its event.
 
 | Milestone          | Who sets it                                        | Event            |
 | ------------------ | -------------------------------------------------- | ---------------- |
@@ -92,11 +92,11 @@ Why so strict:
 - **The history writes itself.** Each method writes its line — who, from where, when — so the
   card's timeline is complete whoever made the change.
 - **The events fire after the commit.** A listener never sees an order that was rolled back.
-- **A dry run answers the same.** `moveTo()`, `cancel()`, `refund()` and the visitor's link take
+- **A dry run answers the same.** `moveTo()`, `cancel()`, `refund()`, `reverseRefund()` and the visitor's link take
   `dryRun: true` and return what would happen — the milestone, the notifications, the refusal —
   without writing. The panel's dialogs and the agent's `dry_run` are this answer.
 
-A refusal is an exception with the reason in words: `StatusMoveRefused`, `RefundRefused`,
+A refusal is an exception with the reason in words: `StatusMoveRefused`, `RefundRefused`, `RefundReversalRefused`,
 `OrderCancelledAlready`, `MilestoneRefused`, `BlockRefused`.
 
 ### Cancelling and giving money back
@@ -108,6 +108,11 @@ A refusal is an exception with the reason in words: `StatusMoveRefused`, `Refund
   amount, each tender and each line's qty against what is left of them. Once the money and every
   tender are back, the order gets `refunded`, once. The order's own lines and totals stay as
   they were; the refunds lie beside them.
+- A refund recorded by mistake is never edited: `reverseRefund()` reverses it with a reason. The
+  record stays in the history, struck through; what it gave back — money, tenders, units — comes
+  off the order, and when the order is no longer given back whole `refunded` comes off too. The
+  right one is then recorded as any refund; the panel offers it as soon as the record is reversed.
+  `OrderRefundReversed` tells the wallet to take its tenders back.
 
 ### Notes for whoever picks the order up next
 
@@ -197,6 +202,7 @@ takes it by `$event->order->id`.
 | `OrderReceived`            | milestone `received`                        |
 | `OrderCancelled`           | milestone `cancelled`                       |
 | `OrderRefunded`            | a refund is recorded; `full` on the last    |
+| `OrderRefundReversed`      | a mistaken refund record is reversed        |
 | `OrderStatusChanged`       | the internal status changed                 |
 | `OrderPublicStatusChanged` | the public status changed                   |
 | `OrderBlockUpdated`        | a block was written (below)                 |
@@ -295,7 +301,7 @@ Without the package the orders work the same and send nothing; `php artisan webx
 
 The `orders_*` tools read and work orders the way the panel does: `orders_list`, `orders_get`,
 `orders_history`, `orders_summary`, `orders_set_status` (one order or a batch by numbers),
-`orders_mark`, `orders_cancel`, `orders_refund`, `orders_update`, `orders_note`,
+`orders_mark`, `orders_cancel`, `orders_refund`, `orders_refund_reverse`, `orders_update`, `orders_note`,
 `orders_link_visitor`, the statuses and the settings. Every write takes `dry_run` and answers what
 the panel's dialog would show. `orders://catalog` lists the statuses and what each one sets.
 

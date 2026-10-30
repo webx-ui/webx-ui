@@ -10,12 +10,14 @@ use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Orders\Events\OrderCancelled;
 use WebxUi\Orders\Events\OrderPaid;
+use WebxUi\Orders\Events\OrderRefundReversed;
 use WebxUi\Orders\Events\OrderStatusChanged;
 use WebxUi\Orders\Milestone;
 use WebxUi\Orders\Models\Order;
 use WebxUi\Orders\Models\OrderStatus;
 use WebxUi\Orders\Models\PublicStatus;
 use WebxUi\Orders\Orders;
+use WebxUi\Orders\RefundRequest;
 
 /**
  * The orders for an agent (spec §12): every tool a thin wrapper of `Orders` and `OrderStatuses`,
@@ -27,7 +29,7 @@ final class McpTest extends McpTestCase
     /** The tools of §12 but `orders_link_visitor`, which comes with the visitors, and of §32. */
     private const array TOOLS = [
         'orders_list', 'orders_get', 'orders_history', 'orders_summary', 'orders_set_status', 'orders_mark',
-        'orders_cancel', 'orders_refund', 'orders_update', 'orders_create', 'orders_note',
+        'orders_cancel', 'orders_refund', 'orders_refund_reverse', 'orders_update', 'orders_create', 'orders_note',
         'orders_statuses_list', 'orders_statuses_save', 'orders_statuses_delete', 'orders_statuses_restore', 'orders_statuses_reorder',
         'orders_public_statuses_save', 'orders_public_statuses_delete', 'orders_public_statuses_restore', 'orders_public_statuses_reorder',
         'orders_settings_get', 'orders_settings_set',
@@ -166,6 +168,56 @@ final class McpTest extends McpTestCase
         $this->assertTrue($full['full']);
         $this->assertSame(4999, $full['money_left']);
         $this->assertNotNull($order->refresh()->refunded_at);
+    }
+
+    #[Test]
+    public function a_refund_reversed_answers_what_the_dialog_does(): void
+    {
+        $order = $this->order();
+        $orders = $this->app->make(Orders::class);
+        $orders->mark($order, Milestone::Paid, 'api');
+        $refund = $orders->refund($order, new RefundRequest(4999, source: 'api'));
+        $other = $this->order();
+        $orders->mark($other, Milestone::Paid, 'api');
+        $theirs = $orders->refund($other, new RefundRequest(1000, source: 'api'));
+        $this->signIn();
+        $this->listenFor(OrderRefundReversed::class);
+        $reverse = fn (int $id): string => $this->api($order->id)."/refunds/{$id}/reverse";
+
+        $panel = $this->postJson($reverse((int) $refund->refundId), ['dry_run' => true])->assertOk()->json('data');
+        $agent = $this->writesNothing(fn (): array => $this->ask('orders_refund_reverse', ['order' => $order->number, 'refund' => $refund->refundId, 'reason' => 'Wrong order', 'dry_run' => true]));
+        unset($agent['number']);
+        $this->assertSame($panel, $agent);
+        $this->assertSame(['refunded', 4999, 0], [$agent['milestone_removed']['key'], $agent['money_left'], $agent['refunded_total']]);
+
+        // Another order's record: the same refusal in the same words.
+        $foreign = $this->postJson($reverse((int) $theirs->refundId), ['dry_run' => true])->assertOk()->json('data');
+        $this->assertSame('foreign', $foreign['refusal']);
+        $this->assertSame($foreign['message'], $this->ask('orders_refund_reverse', ['order' => $order->number, 'refund' => $theirs->refundId, 'reason' => 'x', 'dry_run' => true])['message']);
+        $this->postJson($reverse((int) $theirs->refundId), ['reason' => 'x'])->assertUnprocessable()->assertJsonValidationErrors(['refund' => $foreign['message']]);
+        $this->agent('orders_refund_reverse', ['order' => $order->number, 'refund' => $theirs->refundId, 'reason' => 'x'])->assertHasErrors(["Order {$order->number}: {$foreign['message']}"]);
+        $this->agent('orders_refund_reverse', ['order' => $order->number, 'refund' => $refund->refundId, 'reason' => ' '])->assertHasErrors(['reason']);
+        $this->postJson($reverse((int) $refund->refundId), ['reason' => ''])->assertUnprocessable()->assertJsonValidationErrors(['reason']);
+
+        $done = $this->ask('orders_refund_reverse', ['order' => $order->number, 'refund' => $refund->refundId, 'reason' => 'Wrong order']);
+        $this->assertFalse($done['dry_run']);
+        $this->assertSame(1, $this->times(OrderRefundReversed::class));
+
+        // Reversed already: the panel refuses as the agent does.
+        $this->postJson($reverse((int) $refund->refundId), ['reason' => 'Again'])->assertUnprocessable()->assertJsonValidationErrors(['refund']);
+        $this->agent('orders_refund_reverse', ['order' => $order->number, 'refund' => $refund->refundId, 'reason' => 'Again'])->assertHasErrors(['reversed already']);
+
+        // orders_get and orders_history show the record struck through, and why.
+        $got = $this->ask('orders_get', ['order' => $order->number]);
+        $this->assertSame(['mcp', 'Wrong order'], [$got['refunds'][0]['reversed']['source'], $got['refunds'][0]['reversed']['reason']]);
+        $this->assertSame(0, $got['totals']['refunded_total']);
+        $timeline = $this->ask('orders_history', ['order' => $order->number])['timeline'];
+        $kinds = array_column($timeline, 'kind');
+        $this->assertContains('refund_reversed', $kinds);
+        $this->assertContains('milestone_removed', $kinds);
+        $line = $timeline[array_search('refund_reversed', $kinds, true)];
+        $this->assertSame([4999, $this->money(4999), 'Wrong order', $refund->refundId], [$line['amount'], $line['amount_formatted'], $line['note'], $line['refund_id']]);
+        $this->assertTrue($timeline[array_search('refund', $kinds, true)]['reversed']);
     }
 
     #[Test]

@@ -200,13 +200,18 @@ final readonly class OrderCard
             ],
             // «Lines: 2 · units: 5» of the side card: a set is one line, its parts are not counted.
             'count' => self::count($order),
-            // The refunds beside «Refunded» of the totals, each with its reason and its reference.
+            // The refunds beside «Refunded» of the totals, each with its reason and its reference;
+            // one reversed by mistake stays, struck through, with why (decision 98).
             'refunds' => $order->refunds->map(static fn (OrderRefund $refund): array => [
                 'id' => $refund->id,
                 'at' => $refund->created_at?->toAtomString(),
                 'amount' => $money($refund->amount),
                 'reason' => $refund->reason,
                 'reference' => $refund->reference,
+                'reversed' => $refund->reversed() ? [
+                    'at' => $refund->reversed_at?->toAtomString(),
+                    'reason' => $refund->reversal_reason,
+                ] : null,
             ])->values()->all(),
             'blocks' => $this->blocks($order, $locale),
             'timeline' => $this->timeline($order, $statuses, $locale, $people, $money),
@@ -224,6 +229,8 @@ final readonly class OrderCard
                 'details' => $manage,
                 'note' => $manage,
                 'refund' => $can('orders.refund') && ($refundable > 0 || $tendersLeft > 0 || $unitsLeft > 0),
+                // Reverse a refund record made by mistake (decision 98), each one not reversed yet.
+                'refund_reverse' => $can('orders.refund'),
                 // Linking to a visitor (§13.3): only with the visitors installed; finding one is
                 // reading the customers too.
                 'visitor' => $manage && VisitorOrders::installed(),
@@ -464,6 +471,20 @@ final readonly class OrderCard
                 $line['note'] = $match[2];
             }
 
+            // «refund#12: why» — the record's money from the record itself, the reason as a note.
+            if ($change->kind === StatusChange::REFUND_REVERSED && $change->note !== null && preg_match('/^refund#(\d+)(?:: (.*))?$/s', $change->note, $match) === 1) {
+                $reversed = $order->refunds->firstWhere('id', (int) $match[1]);
+                $line['refund_id'] = (int) $match[1];
+                $line['amount'] = $reversed instanceof OrderRefund ? $money($reversed->amount) : null;
+                $line['amount_minor'] = $reversed instanceof OrderRefund ? $reversed->amount : null;
+                $line['note'] = ($match[2] ?? '') !== '' ? $match[2] : null;
+            }
+
+            if ($change->kind === StatusChange::MILESTONE_REMOVED && $change->note !== null && ($taken = Milestone::tryFrom($change->note)) !== null) {
+                $line['milestone'] = Consequences::milestone($taken);
+                $line['note'] = null;
+            }
+
             if ($change->kind === StatusChange::DETAILS && $change->note !== null) {
                 $line['note'] = implode(', ', array_map(
                     static fn (string $field): string => (string) __('webx-orders::module.fields.'.$field),
@@ -499,6 +520,9 @@ final readonly class OrderCard
                 'units' => array_sum(array_map(static fn (array $item): int => (int) $item['qty'], $refund->items)),
                 'reference' => $refund->reference,
                 'note' => $refund->reason,
+                'refund_id' => $refund->id,
+                // Reversed later by mistake (decision 98): its own line says when and why.
+                'reversed' => $refund->reversed(),
             ];
         }
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { WxBadge, WxDivider, WxText } from '@webx-ui/core'
+import { WxBadge, WxButton, WxDivider, WxText } from '@webx-ui/core'
 import { useTranslate, WxDate } from '@webx-ui/module-admin'
 import { useOrderCard } from './card'
 import { NAMESPACE, useOrdersMessages } from './i18n'
@@ -9,8 +9,9 @@ import type { MilestoneKey } from './types'
 /**
  * `wx-orders-summary` — the side card of an order (spec §11.3, the node `summary`): how many
  * lines and units, the totals as the buyer was charged, what was given back and why, and the
- * dates of the milestones — the reason of a cancellation under its date. Money comes written by
- * the server in the currency of the order; nothing is counted here.
+ * dates of the milestones — the reason of a cancellation under its date. A refund recorded by
+ * mistake is reversed from its plate (decision 98) and stays there struck through, with why.
+ * Money comes written by the server in the currency of the order; nothing is counted here.
  */
 defineOptions({ name: 'WxOrdersSummary' })
 
@@ -49,9 +50,21 @@ const count = computed(() => {
     : line
 })
 
-/** The refunds that say something: a reason, the number of the operation. */
+const reversible = computed(() => Boolean(order.value?.actions.refund_reverse))
+
+/**
+ * The refunds that say something — a reason, the number of the operation, a reversal — or that
+ * the reader may reverse.
+ */
 const refunds = computed(() =>
-  (order.value?.refunds ?? []).filter((refund) => refund.reason || refund.reference),
+  (order.value?.refunds ?? []).filter(
+    (refund) => refund.reason || refund.reference || refund.reversed || reversible.value,
+  ),
+)
+
+/** The amount on the plate when the row's total does not say it: more than one, or reversed. */
+const amounts = computed(
+  () => (order.value?.refunds.length ?? 0) > 1 || refunds.value.some((one) => one.reversed),
 )
 
 /**
@@ -97,26 +110,49 @@ const dates = computed(() =>
         <dt class="is-strong">{{ t('panel.payable') }}</dt>
         <dd class="is-strong">{{ order.totals.payable }}</dd>
       </template>
-      <template v-if="order.totals.refunded">
+      <template v-if="order.totals.refunded || order.refunds.length > 0">
         <dt>{{ t('panel.refunded') }}</dt>
-        <dd class="is-warning">−{{ order.totals.refunded }}</dd>
+        <dd :class="{ 'is-warning': order.totals.refunded }">
+          {{ order.totals.refunded ? `−${order.totals.refunded}` : '—' }}
+        </dd>
         <dd
           v-for="refund in refunds"
           :key="refund.id"
-          class="wx-orders-summary__note wx-orders-summary__note--warning"
+          class="wx-orders-summary__note"
+          :class="
+            refund.reversed
+              ? 'wx-orders-summary__note--muted is-reversed'
+              : 'wx-orders-summary__note--warning'
+          "
           data-test="refund-note"
         >
-          <span v-if="order.refunds.length > 1" class="wx-orders-summary__sum">
-            −{{ refund.amount }}
+          <span v-if="amounts" class="wx-orders-summary__sum">
+            <s v-if="refund.reversed">−{{ refund.amount }}</s>
+            <template v-else>−{{ refund.amount }}</template>
           </span>
-          <p v-if="refund.reason">
+          <p v-if="refund.reason" class="wx-orders-summary__struck">
             <span class="wx-orders-summary__label">{{ t('panel.summary-reason') }}</span>
             {{ refund.reason }}
           </p>
-          <p v-if="refund.reference">
+          <p v-if="refund.reference" class="wx-orders-summary__struck">
             <span class="wx-orders-summary__label">{{ t('panel.summary-reference') }}</span>
             {{ refund.reference }}
           </p>
+          <p v-if="refund.reversed" data-test="refund-reversed">
+            <span class="wx-orders-summary__label">{{ t('panel.summary-reversed') }}</span>
+            {{ refund.reversed.reason }}
+          </p>
+          <wx-button
+            v-else-if="reversible"
+            class="wx-orders-summary__reverse"
+            size="sm"
+            variant="text"
+            :disabled="card?.busy.value"
+            data-test="refund-reverse"
+            @click="card?.reverseRefund(refund.id)"
+          >
+            {{ t('panel.refund-reverse') }}
+          </wx-button>
         </dd>
       </template>
     </dl>
@@ -221,6 +257,21 @@ const dates = computed(() =>
 .wx-orders-summary__note--warning {
   --wx-orders-summary-edge: var(--wx-color-warning);
   --wx-orders-summary-tint: var(--wx-color-warning-soft);
+}
+
+/* A record reversed by mistake: no longer money given back — grey, its words struck through. */
+.wx-orders-summary__note--muted {
+  --wx-orders-summary-edge: var(--wx-border-strong);
+  --wx-orders-summary-tint: var(--wx-bg-subtle);
+}
+
+.wx-orders-summary__note.is-reversed .wx-orders-summary__struck {
+  color: var(--wx-text-muted);
+  text-decoration: line-through;
+}
+
+.wx-orders-summary__reverse {
+  align-self: flex-start;
 }
 
 .wx-orders-summary__note p {

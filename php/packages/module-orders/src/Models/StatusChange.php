@@ -44,6 +44,12 @@ class StatusChange extends Model
     /** Contacts, the recipient, the comment or the manager note changed; `note` lists the fields. */
     public const string DETAILS = 'details';
 
+    /** A refund record reversed (decision 98); `note` is «refund#<id>: <reason>». */
+    public const string REFUND_REVERSED = 'refund_reversed';
+
+    /** A milestone taken back — only «refunded», by a reversal; `note` is the milestone. */
+    public const string MILESTONE_REMOVED = 'milestone_removed';
+
     protected $table = 'order_status_changes';
 
     public const UPDATED_AT = null;

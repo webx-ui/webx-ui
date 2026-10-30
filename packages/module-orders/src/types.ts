@@ -197,6 +197,10 @@ export interface TimelineLine {
   reference?: string | null
   amount?: string
   units?: number
+  /** A refund's line and a reversal's: the record it is about (decision 98). */
+  refund_id?: number
+  /** A refund's line: the record was reversed later, by mistake. */
+  reversed?: boolean
 }
 
 /**
@@ -262,6 +266,8 @@ export interface OrderCardData {
     /** Write a note (`orders.manage`); reading them is the card's. */
     note: boolean
     refund: boolean
+    /** Reverse a refund record made by mistake (decision 98), each one not reversed yet. */
+    refund_reverse: boolean
     /** Link and unlink a visitor — only with the visitors installed. */
     visitor: boolean
     /** Finding one needs the right to read the customers as well. */
@@ -337,6 +343,27 @@ export interface OrderRefundEntry {
   amount: string
   reason: string | null
   reference: string | null
+  /** Reversed by mistake (decision 98): it stays, struck through, and counts no more. */
+  reversed: { at: string | null; reason: string | null } | null
+}
+
+/** What reversing a refund record does, from the service's own dry run (decision 98). */
+export interface RefundReversalPreview {
+  refund_id: number
+  amount: number
+  amount_formatted: string
+  tenders: Record<number, number>
+  units: number
+  refunded_total: number
+  refunded_total_formatted: string
+  money_left: number
+  money_left_formatted: string
+  tenders_left: Record<number, number>
+  items_left: Record<number, number>
+  milestone_removed: { key: MilestoneKey; label: string } | null
+  refusal: string | null
+  message: string | null
+  dry_run: boolean
 }
 
 export interface CancelConsequences {

@@ -46,6 +46,7 @@ use WebxUi\Orders\Events\OrderPlacing;
 use WebxUi\Orders\Events\OrderPublicStatusChanged;
 use WebxUi\Orders\Events\OrderReceived;
 use WebxUi\Orders\Events\OrderRefunded;
+use WebxUi\Orders\Events\OrderRefundReversed;
 use WebxUi\Orders\Events\OrderStatusChanged;
 use WebxUi\Orders\Models\Order;
 use WebxUi\Orders\Models\OrderAdjustment;
@@ -518,6 +519,78 @@ final class Orders
             $this->events->dispatch(new OrderRefunded($this->snapshot($locked), RefundData::of($refund), $plan->full, $request->source, $adminId, $at));
 
             return $plan->recorded($refund->id);
+        });
+    }
+
+    /**
+     * Reverse a refund recorded by mistake (decision 98, §9.5): a refund is never edited. The row
+     * stays with when, who and why it was reversed, and what it gave back comes off the order —
+     * `refunded_total`, the `refunded_amount` of its tenders, the `refunded_qty` of its lines. The
+     * tenders a cancellation gave back are not the record's and stay given back. When the order is
+     * no longer given back whole, «refunded» comes off — the one milestone that ever does, and
+     * only here — with its line in the history; a new full refund sets it again. The right one is
+     * then recorded as any refund.
+     *
+     * A dry run answers what is left after it and whether the milestone comes off, and a refusal
+     * in the answer; it writes nothing.
+     *
+     * @throws ValidationException no reason from the panel or an agent
+     * @throws RefundReversalRefused another order's record, or one reversed already
+     */
+    public function reverseRefund(Order $order, int $refundId, ?string $reason, string $source, bool $dryRun = false): RefundReversal
+    {
+        $reason = self::text($reason, 500);
+
+        if (in_array($source, ['panel', 'mcp'], true)) {
+            $this->validation->make(['reason' => $reason], ['reason' => ['required', 'string']], [
+                'reason.required' => (string) __('webx-orders::panel.reverse-reason-required'),
+            ])->validate();
+        }
+
+        if ($dryRun) {
+            return $this->reversalPlan(Order::query()->findOrFail($order->id), $refundId, true);
+        }
+
+        $adminId = $this->adminId($source);
+
+        return $this->locked($order, function (Order $locked) use ($refundId, $reason, $source, $adminId): RefundReversal {
+            $plan = $this->reversalPlan($locked, $refundId, false);
+
+            if ($plan->refusal !== null) {
+                throw new RefundReversalRefused($plan);
+            }
+
+            $at = CarbonImmutable::now();
+            $refund = OrderRefund::query()->whereKey($refundId)->firstOrFail();
+            $refund->forceFill([
+                'reversed_at' => $at,
+                'reversed_source' => self::cut($source, 64),
+                'reversed_by' => $adminId,
+                'reversal_reason' => $reason,
+            ])->save();
+
+            foreach ($plan->tenders as $id => $amount) {
+                OrderTender::query()->whereKey($id)->decrement('refunded_amount', $amount);
+            }
+
+            foreach ($plan->items as $id => $qty) {
+                OrderItem::query()->whereKey($id)->decrement('refunded_qty', $qty);
+            }
+
+            $locked->refunded_total = $plan->refundedTotal;
+            $this->line($locked, StatusChange::REFUND_REVERSED, $source, $adminId, $at, "refund#{$refund->id}".($reason !== null ? ": {$reason}" : ''));
+
+            if ($plan->milestoneRemoved !== null) {
+                OrderMilestone::query()->where('order_id', $locked->id)->where('milestone', $plan->milestoneRemoved->value)->delete();
+                $locked->setAttribute($plan->milestoneRemoved->column(), null);
+                $this->line($locked, StatusChange::MILESTONE_REMOVED, $source, $adminId, $at, $plan->milestoneRemoved->value);
+            }
+
+            $locked->save();
+
+            $this->events->dispatch(new OrderRefundReversed($this->snapshot($locked), RefundData::of($refund), $reason, $plan->milestoneRemoved !== null, $source, $adminId, $at));
+
+            return $plan;
         });
     }
 
@@ -1265,6 +1338,60 @@ final class Orders
             $full && $order->refunded_at === null ? Milestone::Refunded : null,
             $refusal,
             $field,
+            null,
+            $dryRun,
+        );
+    }
+
+    /** What a reversal would take off, and what is left after it — the dry run's answer and the reversal's plan. */
+    private function reversalPlan(Order $order, int $refundId, bool $dryRun): RefundReversal
+    {
+        $refund = OrderRefund::query()->where('order_id', $order->id)->whereKey($refundId)->first();
+
+        if (! $refund instanceof OrderRefund) {
+            return RefundReversal::refused($refundId, RefundReversal::FOREIGN, $dryRun);
+        }
+
+        if ($refund->reversed()) {
+            return RefundReversal::refused($refundId, RefundReversal::REVERSED, $dryRun);
+        }
+
+        $tenders = [];
+        $items = [];
+
+        foreach ($refund->tenders as $one) {
+            $tenders[(int) $one['tender_id']] = ($tenders[(int) $one['tender_id']] ?? 0) + (int) $one['amount'];
+        }
+
+        foreach ($refund->items as $one) {
+            $items[(int) $one['item_id']] = ($items[(int) $one['item_id']] ?? 0) + (int) $one['qty'];
+        }
+
+        $tendersLeft = [];
+        $itemsLeft = [];
+
+        foreach (OrderTender::query()->where('order_id', $order->id)->orderBy('id')->get(['id', 'amount', 'refunded_amount']) as $tender) {
+            $tendersLeft[$tender->id] = $tender->amount - $tender->refunded_amount + ($tenders[$tender->id] ?? 0);
+        }
+
+        foreach (OrderItem::query()->where('order_id', $order->id)->orderBy('position')->orderBy('id')->get(['id', 'qty', 'refunded_qty']) as $item) {
+            $itemsLeft[$item->id] = $item->qty - $item->refunded_qty + ($items[$item->id] ?? 0);
+        }
+
+        $refundedTotal = max(0, $order->refunded_total - $refund->amount);
+        // Given back whole after it as well — a record of units alone — keeps the milestone (§9.2).
+        $whole = $refundedTotal >= $order->payable && array_all($tendersLeft, static fn (int $left): bool => $left === 0);
+
+        return new RefundReversal(
+            $refund->id,
+            $refund->amount,
+            $tenders,
+            $items,
+            max(0, $order->payable - $refundedTotal),
+            $tendersLeft,
+            $itemsLeft,
+            $refundedTotal,
+            $order->refunded_at !== null && ! $whole ? Milestone::Refunded : null,
             null,
             $dryRun,
         );

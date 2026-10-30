@@ -19,6 +19,7 @@ import type {
   PublicStatusInput,
   RefundInput,
   RefundPreview,
+  RefundReversalPreview,
   StageInput,
   StatusArrangement,
   StatusBoardData,
@@ -82,6 +83,9 @@ export interface OrdersApi {
   saveDetails(id: number, values: ScreenModel): Promise<OrderDetail>
   previewRefund(id: number, input: RefundInput): Promise<RefundPreview>
   refund(id: number, input: RefundInput): Promise<OrderDetail>
+  /** What reversing a refund record does (decision 98) — nothing is written. */
+  previewReverse(id: number, refundId: number): Promise<RefundReversalPreview>
+  reverseRefund(id: number, refundId: number, reason: string): Promise<OrderDetail>
   massStatus(
     ids: number[],
     statusId: number,
@@ -174,6 +178,16 @@ export function createOrdersApi(admin: AdminContext): OrdersApi {
     refund: (id, input) =>
       admin.http
         .post<{ data: OrderDetail }>(`${base}/${id}/refunds`, refundBody(input, false))
+        .then(data),
+    previewReverse: (id, refundId) =>
+      admin.http
+        .post<{ data: RefundReversalPreview }>(`${base}/${id}/refunds/${refundId}/reverse`, {
+          dry_run: true,
+        })
+        .then(data),
+    reverseRefund: (id, refundId, reason) =>
+      admin.http
+        .post<{ data: OrderDetail }>(`${base}/${id}/refunds/${refundId}/reverse`, { reason })
         .then(data),
     massStatus: (ids, statusId, note, dryRun) =>
       admin.http

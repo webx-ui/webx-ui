@@ -83,6 +83,11 @@ interface HistoryRecord {
   reference?: string | null
   amount?: number
   units?: number
+  /** A refund's record (decision 98): its id, what it gave back, and its reversal. */
+  refund_id?: number
+  tenders?: [number, number][]
+  items?: [number, number][]
+  reversed?: { at: string; reason: string | null } | null
 }
 
 interface OrderRecord {
@@ -361,6 +366,9 @@ function seedMarks(): void {
     note: 'Given back to the card by the bank: the buyer found the drill cheaper elsewhere.',
     reference: 'R-77',
     amount: total(at(7)),
+    refund_id: 1,
+    tenders: [],
+    items: [],
   })
   mark(at(8), 'paid', 0)
   mark(at(8), 'received', 2)
@@ -380,7 +388,52 @@ function seedMarks(): void {
   const returned = at(11).items[1] as ItemRecord
   returned.refunded_qty = 1
   at(11).refunded = returned.price
+  const wrongAt = day(0, 11)
+  at(11).history.push(
+    {
+      key: 'h12-r1',
+      kind: 'refund',
+      at: wrongAt,
+      source: 'panel',
+      admin: 'Demo admin',
+      note: 'The second line came back broken.',
+      reference: 'R-112',
+      amount: total(at(11)),
+      units: 1,
+      refund_id: 2,
+      tenders: [],
+      items: [[returned.id, 1]],
+      reversed: { at: day(0, 12), reason: 'Typed the whole order instead of one line.' },
+    },
+    {
+      key: 'h12-rr',
+      kind: 'refund_reversed',
+      at: day(0, 12),
+      source: 'panel',
+      admin: 'Demo admin',
+      note: 'Typed the whole order instead of one line.',
+      amount: total(at(11)),
+      refund_id: 2,
+    },
+    {
+      key: 'h12-r2',
+      kind: 'refund',
+      at: day(0, 13),
+      source: 'panel',
+      admin: 'Demo admin',
+      note: 'The second line came back broken.',
+      reference: 'R-113',
+      amount: returned.price,
+      units: 1,
+      refund_id: 3,
+      tenders: [],
+      items: [[returned.id, 1]],
+    },
+  )
 }
+
+let refunds = 3
+const nextRefund = () => ++refunds
 
 const subtotal = (record: OrderRecord) =>
   record.items.reduce((sum, line) => sum + line.price * line.qty - line.discount, 0)
@@ -753,6 +806,14 @@ function timeline(record: OrderRecord, locale: string, line: Line) {
             ? (to?.public?.name ?? null)
             : null,
         amount: one.amount !== undefined ? money(one.amount) : undefined,
+        reversed: one.kind === 'refund' ? Boolean(one.reversed) : undefined,
+        milestone:
+          one.kind === 'milestone_removed' && one.milestone
+            ? {
+                key: one.milestone,
+                label: line(locale, 'webx-orders', `module.milestones.${one.milestone}`),
+              }
+            : undefined,
       }
     })
   const marks = Object.entries(record.marks).map(([key, mark]) => ({
@@ -855,11 +916,12 @@ function card(record: OrderRecord, locale: string, line: Line) {
       refunds: record.history
         .filter((one) => one.kind === 'refund')
         .map((one, index) => ({
-          id: index + 1,
+          id: one.refund_id ?? index + 1,
           at: one.at,
           amount: money(one.amount ?? 0),
           reason: one.note,
           reference: one.reference ?? null,
+          reversed: one.reversed ?? null,
         })),
       blocks: [record.delivery, record.payment].flatMap((block, index) =>
         block
@@ -895,6 +957,7 @@ function card(record: OrderRecord, locale: string, line: Line) {
         details: true,
         note: true,
         refund: refundable > 0 || tendersLeft > 0 || unitsLeft > 0,
+        refund_reverse: true,
         visitor: false,
         visitor_search: false,
       },
@@ -1397,8 +1460,119 @@ export function registerOrders(on: On, fail: Fail, line: Line): void {
       reference: text(body.reference),
       amount,
       units: items.reduce((sum, [, qty]) => sum + qty, 0),
+      refund_id: nextRefund(),
+      tenders: tenders.filter(([, value]) => value > 0),
+      items: items.filter(([, qty]) => qty > 0),
     })
     if (full && !record.marks.refunded) mark(record, 'refunded', text(body.reference), null)
+
+    return { data: card(record, locale, line) }
+  })
+
+  on('POST', '/orders/(\\d+)/refunds/(\\d+)/reverse', ({ params, body, locale }) => {
+    const record = find(params[0])
+    const refund = record.history.find(
+      (one) => one.kind === 'refund' && one.refund_id === Number(params[1]),
+    )
+    const reason = body.dry_run ? (text(body.reason) ?? '…') : text(body.reason)
+
+    if (!reason) {
+      const said = line(locale, 'webx-orders', 'panel.reverse-reason-required')
+
+      throw fail(422, said, undefined, { reason: [said] })
+    }
+
+    const refusal = !refund ? 'foreign' : refund.reversed ? 'reversed' : null
+    const amount = refusal ? 0 : (refund?.amount ?? 0)
+    const tenders = refusal ? [] : (refund?.tenders ?? [])
+    const items = refusal ? [] : (refund?.items ?? [])
+    const refundedTotal = Math.max(0, record.refunded - amount)
+    const tendersLeft = Object.fromEntries(
+      record.tenders.map((one) => [
+        one.id,
+        one.amount -
+          one.refunded +
+          tenders.filter(([id]) => id === one.id).reduce((sum, [, value]) => sum + value, 0),
+      ]),
+    )
+    const whole =
+      refundedTotal >= payable(record) && Object.values(tendersLeft).every((left) => left === 0)
+    const removed = !refusal && Boolean(record.marks.refunded) && !whole
+    const message = refusal
+      ? line(locale, 'webx-orders', `panel.reverse-refusals.${refusal}`)
+      : null
+
+    if (body.dry_run) {
+      return {
+        data: {
+          refund_id: Number(params[1]),
+          amount,
+          amount_formatted: money(amount),
+          tenders: Object.fromEntries(tenders),
+          units: items.reduce((sum, [, qty]) => sum + qty, 0),
+          refunded_total: refusal ? 0 : refundedTotal,
+          refunded_total_formatted: money(refusal ? 0 : refundedTotal),
+          money_left: refusal ? 0 : Math.max(0, payable(record) - refundedTotal),
+          money_left_formatted: money(refusal ? 0 : Math.max(0, payable(record) - refundedTotal)),
+          tenders_left: refusal ? {} : tendersLeft,
+          items_left: refusal
+            ? {}
+            : Object.fromEntries(
+                record.items.map((one) => [
+                  one.id,
+                  one.qty -
+                    one.refunded_qty +
+                    items.filter(([id]) => id === one.id).reduce((sum, [, qty]) => sum + qty, 0),
+                ]),
+              ),
+          milestone_removed: removed
+            ? { key: 'refunded', label: line(locale, 'webx-orders', 'module.milestones.refunded') }
+            : null,
+          refusal,
+          message,
+          dry_run: true,
+        },
+      }
+    }
+
+    if (refusal || !refund) throw fail(422, message ?? '', undefined, { refund: [message ?? ''] })
+
+    const now = new Date().toISOString()
+
+    refund.reversed = { at: now, reason }
+    record.refunded = refundedTotal
+    for (const [id, value] of tenders) {
+      const tender = record.tenders.find((one) => one.id === id)
+
+      if (tender) tender.refunded -= value
+    }
+    for (const [id, qty] of items) {
+      const one = record.items.find((each) => each.id === id)
+
+      if (one) one.refunded_qty -= qty
+    }
+    record.history.push({
+      key: `h${record.id}-rr${record.history.length}`,
+      kind: 'refund_reversed',
+      at: now,
+      source: 'panel',
+      admin: 'Demo admin',
+      note: reason,
+      amount,
+      refund_id: refund.refund_id,
+    })
+    if (removed) {
+      delete record.marks.refunded
+      record.history.push({
+        key: `h${record.id}-mr${record.history.length}`,
+        kind: 'milestone_removed',
+        at: now,
+        source: 'panel',
+        admin: 'Demo admin',
+        note: null,
+        milestone: 'refunded',
+      })
+    }
 
     return { data: card(record, locale, line) }
   })

@@ -10,6 +10,8 @@ namespace WebxUi\Orders;
  *
  * A closed list, in the order of the card's timeline. Each is set once and never taken back
  * (decision 24): a mistaken payment is mended by a refund or a cancellation, not by unmarking.
+ * The one exception is «refunded»: a refund record reversed by mistake takes it off when the
+ * order is no longer given back whole (decision 98).
  */
 enum Milestone: string
 {

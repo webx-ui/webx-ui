@@ -41,6 +41,7 @@ function card(data: OrderCardData, kept = true) {
         mark: () => Promise.resolve(),
         cancel: () => Promise.resolve(),
         refund: () => Promise.resolve(),
+        reverseRefund: () => Promise.resolve(),
         note,
         pin,
         linkVisitor: () => Promise.resolve(),

@@ -79,4 +79,8 @@ Route::prefix((string) config('webx-admin.api_path').'/orders')
             ->middleware('cms.can:'.OrdersModule::REFUND)
             ->whereNumber('order')
             ->name('refund');
+        Route::post('{order}/refunds/{refund}/reverse', [OrderController::class, 'reverseRefund'])
+            ->middleware('cms.can:'.OrdersModule::REFUND)
+            ->whereNumber(['order', 'refund'])
+            ->name('refund.reverse');
     });
