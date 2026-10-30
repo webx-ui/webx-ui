@@ -1,5 +1,0 @@
----
-'@webx-ui/php': minor
----
-
-Orders (`module-orders`, stage 5 of webx-ui#89): cancelling and money given back outside the site. `Orders::cancel()` sets `cancelled` with its reason — required from the panel and an agent — and marks the tenders left on the order given back in the same transaction; its `MilestoneMark` says whether the order was paid, how much money is left to give back (a cancellation does not) and which tenders go back to the wallet, and a dry run answers the same writing nothing. `Orders::refund(RefundRequest)` records a `manual` refund in `order_refunds` — money, each tender and the units of each line as the manager splits them, each kept to what is left of it (`RefundRefused`: `empty`, `amount`, `tender`, `qty`) — without calling any gateway, and dispatches `OrderRefunded` (`RefundData`, `full`). When the money and every tender are back, by refunds or the tenders by a cancellation, the order gets the milestone `refunded`, once; a tender a cancellation gave back cannot be refunded again, and the lines and totals of the order never change. `RefundResult` (also on a dry run) shows what is left and whether the refund would be full.

@@ -1,5 +1,0 @@
----
-'@webx-ui/php': minor
----
-
-module-orders: the MCP tools of the orders (spec §12). `orders_list`, `orders_get`, `orders_history`, `orders_summary` read — money in minor units with `*_formatted`, the buyer's contacts behind `orders.view`; `orders_set_status` moves one order or up to 200 by `numbers`, `orders_mark`, `orders_cancel`, `orders_refund` (behind `orders.refund`), `orders_update` and `orders_note` work an order; `orders_statuses_*`, `orders_public_statuses_*` and `orders_settings_get|set` are the screens of the statuses and the settings, behind `orders.statuses`. Every tool is a call of `Orders` or `OrderStatuses` with the source `mcp`, and its `dry_run` is the panel dialog's answer word for word — the selection's preview included, now one `StatusBatch` for both. Resource `orders://catalog`: milestones with who sets them and their events, the palette, both levels of the statuses, the blocks, the settings. Both initial statuses are now read with one query. The package requires `webx-ui/mcp`.

@@ -27,21 +27,21 @@
         "illuminate/contracts": "^13.0",
         "illuminate/database": "^13.0",
         "illuminate/support": "^13.0",
-        "webx-ui/cache": "^0.89.0",
-        "webx-ui/compositions": "^0.89.0",
-        "webx-ui/localization": "^0.89.0",
-        "webx-ui/mcp": "^0.89.0",
-        "webx-ui/module-admin": "^0.89.0",
-        "webx-ui/module-cart": "^0.89.0",
-        "webx-ui/widgets": "^0.89.0"
+        "webx-ui/cache": "^0.90.0",
+        "webx-ui/compositions": "^0.90.0",
+        "webx-ui/localization": "^0.90.0",
+        "webx-ui/mcp": "^0.90.0",
+        "webx-ui/module-admin": "^0.90.0",
+        "webx-ui/module-cart": "^0.90.0",
+        "webx-ui/widgets": "^0.90.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
         "phpunit/phpunit": "^12.0 || ^13.0",
-        "webx-ui/module-auth": "^0.89.0",
-        "webx-ui/module-notifications": "^0.89.0",
-        "webx-ui/module-settings": "^0.89.0",
-        "webx-ui/module-users": "^0.89.0"
+        "webx-ui/module-auth": "^0.90.0",
+        "webx-ui/module-notifications": "^0.90.0",
+        "webx-ui/module-settings": "^0.90.0",
+        "webx-ui/module-users": "^0.90.0"
     },
     "suggest": {
         "webx-ui/module-notifications": "Letters and messages on the order's events and on entering a public status; without it there are none, and webx:doctor says so.",
@@ -67,7 +67,7 @@
         "webx": {
             "module": "orders",
             "npm": {
-                "@webx-ui/module-orders": "^0.1.0"
+                "@webx-ui/module-orders": "^0.2.0"
             },
             "panel": {
                 "import": "import { orders } from '@webx-ui/module-orders'",
