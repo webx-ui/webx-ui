@@ -93,7 +93,7 @@ describe('WxOrdersNotes', () => {
     await flushPromises()
 
     expect(note).toHaveBeenCalledWith('Reserved until Friday.')
-    expect(wrapper.find('.wx-notes__new textarea').element.value).toBe('')
+    expect(wrapper.find<HTMLTextAreaElement>('.wx-notes__new textarea').element.value).toBe('')
   })
 
   it('keeps what was typed when the note was not kept', async () => {
@@ -103,7 +103,9 @@ describe('WxOrdersNotes', () => {
     await wrapper.find('.wx-notes__new .wx-button').trigger('click')
     await flushPromises()
 
-    expect(wrapper.find('.wx-notes__new textarea').element.value).toBe('Reserved until Friday.')
+    expect(wrapper.find<HTMLTextAreaElement>('.wx-notes__new textarea').element.value).toBe(
+      'Reserved until Friday.',
+    )
   })
 
   it('lets a reader without `orders.manage` read the notes, with no box', () => {

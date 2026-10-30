@@ -65,7 +65,7 @@ describe('WxNotesList', () => {
     await wrapper.find('.wx-notes__new .wx-button').trigger('click')
 
     expect(wrapper.emitted('add')).toEqual([['Called, will pay tomorrow.']])
-    expect(wrapper.find('.wx-notes__new textarea').element.value).toBe(
+    expect(wrapper.find<HTMLTextAreaElement>('.wx-notes__new textarea').element.value).toBe(
       '  Called, will pay tomorrow.  ',
     )
   })
