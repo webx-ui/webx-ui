@@ -269,7 +269,7 @@ final class BalanceTest extends PlaceTestCase
 
         // Paid, one unit given back without an edit: still settled, not «awaiting a top-up».
         $this->orders()->refund($paid, new RefundRequest(1000, source: 'api'));
-        $this->assertSame(['paid' => 9998, 'balance' => 0, 'due' => 0, 'over' => 0], $this->balanceOf($paid));
+        $this->assertSame(['paid' => 9998, 'balance' => 0, 'due' => 0, 'over' => 0], $this->balanceOf($paid->refresh()));
         $this->assertNull($this->orders()->balance($paid->refresh())->kind());
         $this->assertSame([], $awaiting());
         $this->assertSame(0, $this->app->make(OrdersSummary::class)->describe('en')['awaiting_topup']);
