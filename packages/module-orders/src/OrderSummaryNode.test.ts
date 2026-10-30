@@ -77,7 +77,7 @@ function card(node: object, data: OrderCardData) {
   const i18n = createI18n()
   const admin = { apiPath: '/api/cms', http: {}, i18n } as unknown as AdminContext
   const changeStatus = vi.fn(() => Promise.resolve())
-  const reverseRefund = vi.fn((_id: number) => Promise.resolve())
+  const reverseRefund = vi.fn<(id: number) => Promise<void>>(() => Promise.resolve())
 
   const Host = defineComponent({
     setup() {
