@@ -1,16 +1,18 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { WxSkeleton, WxText } from '@webx-ui/core'
+import { computed, useTemplateRef } from 'vue'
+import { WxBadge, WxSkeleton, WxText, useElementWidth } from '@webx-ui/core'
 import { useTranslate, WxDate } from '@webx-ui/module-admin'
+import ContactLink from './ContactLink.vue'
 import { NAMESPACE, useOrdersMessages } from './i18n'
 import { authorOf } from './sources'
 import type { MilestoneKey, OrderGlance } from './types'
 
 /**
  * An opened row of «Orders» (decision 94): what the order holds and who it is for, without going
- * into it — the lines, the buyer and the recipient, the buyer's comment, the pinned note first and
- * the latest of the feed, the lines of the blocks, the milestones with when. It draws what it is
- * given; the list asks the server once a row and keeps the answer for the page.
+ * into it — the lines and under them the totals as the card's «Summary» has them, the buyer and
+ * the recipient with their phones and e-mails to call or write, the buyer's comment, the pinned
+ * note first and the latest of the feed, the lines of the blocks, the milestones with when. It
+ * draws what it is given; the list asks the server once a row and keeps the answer for the page.
  */
 defineOptions({ name: 'WxOrdersGlance' })
 
@@ -24,6 +26,17 @@ const props = defineProps<{
 useOrdersMessages()
 
 const t = useTranslate(NAMESPACE)
+
+/*
+ * The columns by the width of the row, measured — not a container query: an element made a
+ * size container inside a table cell is where a browser may size the cell before the content
+ * settles, and the last line of the lines was seen cut in half.
+ */
+const root = useTemplateRef<HTMLElement>('root')
+const width = useElementWidth(root)
+const columns = computed(() =>
+  width.value === 0 || width.value > 900 ? 4 : width.value > 480 ? 2 : 1,
+)
 
 const ORDER: MilestoneKey[] = [
   'placed',
@@ -47,15 +60,36 @@ const blocks = computed(() =>
 )
 
 const lastNote = computed(() => props.glance?.last_note ?? null)
+
+const count = computed(() => {
+  const counted = props.glance?.count
+
+  if (!counted) return ''
+
+  const line = t('panel.summary-count', { lines: counted.lines, units: counted.units })
+
+  return counted.refunded_units > 0
+    ? `${line} · ${t('panel.summary-units-returned', { count: counted.refunded_units })}`
+    : line
+})
+
+/** The mark under the totals, as the card's «Summary» puts it under «Placed». */
+const source = computed(() =>
+  props.glance?.source === 'quick'
+    ? t('panel.source-quick')
+    : props.glance?.source === 'panel'
+      ? t('panel.source-panel-mark')
+      : null,
+)
 </script>
 
 <template>
-  <div class="wx-orders-glance">
+  <div ref="root" class="wx-orders-glance">
     <wx-text v-if="failed" size="sm" tone="muted">{{ t('panel.glance-failed') }}</wx-text>
 
     <wx-skeleton v-else-if="!glance" :rows="3" />
 
-    <div v-else class="wx-orders-glance__grid">
+    <div v-else class="wx-orders-glance__grid" :class="`is-${columns}`">
       <section class="wx-orders-glance__part">
         <h4 class="wx-orders-glance__title">{{ t('panel.glance-items') }}</h4>
         <ul class="wx-orders-glance__items">
@@ -68,26 +102,56 @@ const lastNote = computed(() => props.glance?.last_note ?? null)
             <span class="wx-orders-glance__sum">{{ item.total }}</span>
           </li>
         </ul>
-        <span class="wx-orders-glance__muted">
-          {{ t('panel.summary-count', { lines: glance.count.lines, units: glance.count.units }) }}
+        <span class="wx-orders-glance__muted">{{ count }}</span>
+
+        <dl class="wx-orders-glance__totals" data-test="glance-totals">
+          <dt>{{ t('panel.subtotal') }}</dt>
+          <dd>{{ glance.totals.subtotal }}</dd>
+          <template v-if="glance.totals.adjustments">
+            <dt>{{ t('panel.adjustments') }}</dt>
+            <dd>{{ glance.totals.adjustments }}</dd>
+          </template>
+          <dt class="is-strong">{{ t('panel.total') }}</dt>
+          <dd class="is-strong">{{ glance.totals.total }}</dd>
+          <template v-if="glance.totals.tenders">
+            <dt>{{ t('panel.tenders') }}</dt>
+            <dd>−{{ glance.totals.tenders }}</dd>
+            <dt class="is-strong">{{ t('panel.payable') }}</dt>
+            <dd class="is-strong">{{ glance.totals.payable }}</dd>
+          </template>
+          <template v-if="glance.paid">
+            <dt>{{ t('module.milestones.paid') }}</dt>
+            <dd class="is-success">{{ glance.totals.payable }}</dd>
+          </template>
+          <template v-else-if="glance.awaiting_payment">
+            <dt>{{ t('module.milestones.awaiting_payment') }}</dt>
+            <dd class="is-warning">{{ glance.totals.payable }}</dd>
+          </template>
+          <template v-if="glance.totals.refunded">
+            <dt>{{ t('panel.refunded') }}</dt>
+            <dd class="is-warning">−{{ glance.totals.refunded }}</dd>
+          </template>
+        </dl>
+        <span v-if="source" class="wx-orders-glance__source">
+          <wx-badge size="sm" variant="outline">{{ source }}</wx-badge>
         </span>
       </section>
 
       <section class="wx-orders-glance__part">
         <h4 class="wx-orders-glance__title">{{ t('panel.glance-contacts') }}</h4>
         <span>{{ glance.customer.name }}</span>
-        <span v-if="glance.customer.phone" class="wx-orders-glance__muted">
-          {{ glance.customer.phone }}
+        <span v-if="glance.customer.phone" class="wx-orders-glance__contact">
+          <contact-link kind="phone" :value="glance.customer.phone" />
         </span>
-        <span v-if="glance.customer.email" class="wx-orders-glance__muted">
-          {{ glance.customer.email }}
+        <span v-if="glance.customer.email" class="wx-orders-glance__contact">
+          <contact-link kind="email" :value="glance.customer.email" />
         </span>
         <template v-if="glance.recipient">
           <span class="wx-orders-glance__gap">
             {{ t('panel.glance-recipient', { name: glance.recipient.name }) }}
           </span>
-          <span v-if="glance.recipient.phone" class="wx-orders-glance__muted">
-            {{ glance.recipient.phone }}
+          <span v-if="glance.recipient.phone" class="wx-orders-glance__contact">
+            <contact-link kind="phone" :value="glance.recipient.phone" />
           </span>
         </template>
       </section>
@@ -137,26 +201,24 @@ const lastNote = computed(() => props.glance?.last_note ?? null)
 <style scoped>
 .wx-orders-glance {
   min-width: 0;
-  container-type: inline-size;
 }
 
 .wx-orders-glance__grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) repeat(3, minmax(0, 1fr));
   gap: var(--wx-space-16) var(--wx-space-24);
   min-width: 0;
 }
 
-@container (max-width: 900px) {
-  .wx-orders-glance__grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+.wx-orders-glance__grid.is-4 {
+  grid-template-columns: minmax(0, 1.4fr) repeat(3, minmax(0, 1fr));
 }
 
-@container (max-width: 480px) {
-  .wx-orders-glance__grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
+.wx-orders-glance__grid.is-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.wx-orders-glance__grid.is-1 {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .wx-orders-glance__part {
@@ -165,6 +227,7 @@ const lastNote = computed(() => props.glance?.last_note ?? null)
   gap: var(--wx-space-4);
   min-width: 0;
   font-size: var(--wx-font-size-sm);
+  line-height: var(--wx-font-line-height-normal);
   overflow-wrap: anywhere;
 }
 
@@ -223,6 +286,50 @@ const lastNote = computed(() => props.glance?.last_note ?? null)
 .wx-orders-glance__text {
   margin: 0;
   white-space: pre-wrap;
+}
+
+/* The totals of the card's «Summary», a receipt under the lines it adds up. */
+.wx-orders-glance__totals {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--wx-space-2) var(--wx-space-16);
+  margin: var(--wx-space-4) 0 0;
+  padding-block-start: var(--wx-space-8);
+  border-block-start: 1px solid var(--wx-border-default);
+}
+
+.wx-orders-glance__totals dt {
+  min-width: 0;
+  color: var(--wx-text-muted);
+}
+
+.wx-orders-glance__totals dd {
+  margin: 0;
+  text-align: end;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.wx-orders-glance__totals .is-strong {
+  color: var(--wx-text-strong);
+  font-weight: var(--wx-font-weight-semibold);
+}
+
+.wx-orders-glance__totals dd.is-success {
+  color: var(--wx-color-success);
+}
+
+.wx-orders-glance__totals dd.is-warning {
+  color: var(--wx-color-warning);
+}
+
+.wx-orders-glance__source {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.wx-orders-glance__contact {
+  min-width: 0;
 }
 
 .wx-orders-glance__pinned,

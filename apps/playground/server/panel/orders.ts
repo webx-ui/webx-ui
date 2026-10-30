@@ -588,9 +588,15 @@ function list(query: URLSearchParams, locale: string, line: Line) {
 
 /** The figures over the list (decision 93), counted as `OrdersSummary` counts them. */
 function summary() {
-  const now = Date.now()
-  const placedSince = (days: number) =>
-    orders.filter((record) => Date.parse(record.placed_at) >= now - days * 86_400_000)
+  // Calendar days with today counted in (decision 95): 1 is today from midnight.
+  const midnight = new Date()
+  midnight.setHours(0, 0, 0, 0)
+  const placedSince = (days: number) => {
+    const from = new Date(midnight)
+    from.setDate(from.getDate() - (days - 1))
+
+    return orders.filter((record) => Date.parse(record.placed_at) >= from.getTime())
+  }
   const revenueOf = (record: OrderRecord) => payable(record) - record.refunded
   const periods = [1, 7, 30].map((days) => {
     const placed = placedSince(days)
@@ -668,6 +674,17 @@ function glance(record: OrderRecord) {
       units: roots.reduce((sum, one) => sum + one.qty, 0),
       refunded_units: roots.reduce((sum, one) => sum + one.refunded_qty, 0),
     },
+    totals: {
+      subtotal: money(subtotal(record)),
+      adjustments: record.adjustments.length > 0 ? money(adjustments(record)) : null,
+      total: money(total(record)),
+      tenders: record.tenders.length > 0 ? money(tendered(record)) : null,
+      payable: money(payable(record)),
+      refunded: record.refunded > 0 ? money(record.refunded) : null,
+    },
+    paid: Boolean(record.marks.paid),
+    awaiting_payment: record.awaiting && !record.marks.cancelled,
+    source: record.marks.placed?.source ?? null,
     customer: { name: name(record), phone: record.phone, email: record.email },
     recipient: record.recipient
       ? {

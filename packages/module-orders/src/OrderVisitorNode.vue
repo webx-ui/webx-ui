@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { WxButton, WxSpace, WxText } from '@webx-ui/core'
 import { useTranslate } from '@webx-ui/module-admin'
 import { useOrderCard } from './card'
+import ContactLink from './ContactLink.vue'
 import { NAMESPACE, useOrdersMessages } from './i18n'
 
 /**
@@ -30,8 +31,8 @@ const canUnlink = computed(() => order.value?.actions.visitor ?? false)
         <span class="wx-orders-visitor__name">
           {{ visitor.name ?? t('panel.visitor-gone', { id: visitor.id }) }}
         </span>
-        <wx-text v-if="visitor.email" size="sm" tone="muted" class="wx-orders-visitor__email">
-          {{ visitor.email }}
+        <wx-text v-if="visitor.email" size="sm" class="wx-orders-visitor__email">
+          <contact-link kind="email" :value="visitor.email" />
         </wx-text>
       </template>
       <wx-text v-else tone="muted">{{ t('panel.visitor-guest') }}</wx-text>

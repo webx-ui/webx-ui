@@ -136,17 +136,23 @@ in the address wins. The server decides by the counts it sends anyway (`view=aut
 `view`), so it is one request and no tab is shown before it says which.
 
 Over the list stand the figures: orders, revenue (paid less given back), the average paid order
-and what awaits payment now, for the last 24 hours, 7 or 30 days, with a bar a day for the last
-thirty under them. Money stays per currency. The count is `GET {api}/orders/summary` — the class
+and what awaits payment now, for today, 7 or 30 days, with a bar a day for the last thirty under
+them. The days are the site's calendar days in its timezone: «Today» starts at midnight, and 7 is
+today and the six days before it. Money stays per currency. The count is `GET {api}/orders/summary` — the class
 `Panel\OrdersSummary` that answers the agent's `orders_summary` too — asked apart, so the rows
 never wait for it; folded or not, and the period, are remembered for the manager in the browser.
 
-A row opens to what the order holds without going into it: the lines with their quantity and sum,
-the buyer and the recipient, the buyer's comment, the pinned note first and the latest of the feed,
+A row opens to what the order holds without going into it: the lines with their quantity and sum
+and, under them, the totals as the card's «Summary» has them (what was paid or awaits payment,
+what was given back, where the order came from), the buyer and the recipient, the buyer's comment, the pinned note first and the latest of the feed,
 the lines of delivery and payment, the milestones with when. It is `GET {api}/orders/{id}/glance`
 on opening, kept for the page — the list itself stays as light as it was. On a narrow list (cards)
 a row does not open: the card is one tap from the order, and an opened card would push the next
 one a screen away.
+
+Phones and e-mails in the orders are links — `tel:` with the digits only, `mailto:` — in the
+opened row, the buyer's cell, the narrow list's card and the card's visitor. Clicking one calls or
+writes and does not open the order.
 
 ### An order taken by phone
 

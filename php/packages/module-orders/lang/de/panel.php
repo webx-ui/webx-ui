@@ -195,7 +195,7 @@ return [
     'stats-hide' => 'Zahlen ausblenden',
     'stats-show' => 'Zahlen einblenden',
     'stats-period' => 'Zeitraum',
-    'stats-period-1' => '24 Stunden',
+    'stats-period-1' => 'Heute',
     'stats-period-7' => '7 Tage',
     'stats-period-30' => '30 Tage',
     'stats-orders' => 'Bestellungen',

@@ -8,9 +8,10 @@ import type { OrdersSummaryData } from './types'
 
 /**
  * The figures over «Orders» (decision 93): orders, revenue, the average order and what awaits
- * payment, for the last 24 hours, 7 or 30 days, and a line of orders by day under them. The count
- * is the agent's `orders_summary` — one class on the server — and it is asked apart from the rows,
- * which never wait for it. Money stays per currency: a shop selling in two never sees them added.
+ * payment, for today, 7 or 30 calendar days of the site (decision 95), and a line of orders by day
+ * under them. The count is the agent's `orders_summary` — one class on the server — and it is
+ * asked apart from the rows, which never wait for it. Money stays per currency: a shop selling in
+ * two never sees them added.
  *
  * Folded or not, and the period, are remembered for the manager in this browser.
  */

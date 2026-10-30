@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Orders\Panel;
 
+use Closure;
 use Illuminate\Container\Container;
 use WebxUi\Admin\Support\Authors;
 use WebxUi\Admin\Visitors\Visitors;
@@ -72,9 +73,10 @@ final readonly class OrderCard
 
     /**
      * What an opened row of the list shows (§11.2) without going into the order: the lines in
-     * short, the buyer and the recipient, the buyer's comment, the pinned note and the latest of
-     * the feed, the lines of the blocks, the milestones with when. One order and three relations
-     * whatever it holds — the authors of the notes in one more.
+     * short and the totals as the card's «Summary» has them — from the order's own columns, not a
+     * relation more — the buyer and the recipient, the buyer's comment, the pinned note and the
+     * latest of the feed, the lines of the blocks, the milestones with when. One order and three
+     * relations whatever it holds — the authors of the notes in one more.
      *
      * @return array<string, mixed>
      */
@@ -84,6 +86,7 @@ final readonly class OrderCard
         $money = fn (int $minor): string => $this->money->format($minor, $order->currency);
         $notes = self::notes($order, Authors::people($reader, $order->history->pluck('admin_id')->all()));
         $recipient = $order->recipient;
+        $marks = $this->milestones($order);
 
         return [
             'id' => $order->id,
@@ -95,6 +98,11 @@ final readonly class OrderCard
                 'total' => $money($item->total),
             ])->values()->all(),
             'count' => self::count($order),
+            'totals' => self::totals($order, $money),
+            'paid' => $order->paid_at !== null,
+            'awaiting_payment' => $order->awaiting_payment && $order->cancelled_at === null,
+            // Where it came from, as the card's «Summary» marks it under «Placed»: `quick`, `panel`.
+            'source' => $marks['placed']['source'] ?? null,
             'customer' => [
                 'name' => $order->customerName(),
                 'phone' => $order->customer_phone,
@@ -108,7 +116,7 @@ final readonly class OrderCard
             'manager_note' => $order->manager_note,
             'last_note' => $notes === [] ? null : $notes[array_key_last($notes)],
             'blocks' => array_map(static fn (array $block): array => ['key' => $block['key'], 'summary' => $block['summary']], $this->blocks($order, $locale)),
-            'milestones' => array_map(static fn (array $mark): string => $mark['at'], $this->milestones($order)),
+            'milestones' => array_map(static fn (array $mark): string => $mark['at'], $marks),
         ];
     }
 
@@ -186,12 +194,7 @@ final readonly class OrderCard
                 'label' => $benefit->label,
             ])->values()->all(),
             'totals' => [
-                'subtotal' => $money($order->subtotal),
-                'adjustments' => $order->adjustments_total !== 0 ? $money($order->adjustments_total) : null,
-                'total' => $money($order->total),
-                'tenders' => $order->tenders_total !== 0 ? $money($order->tenders_total) : null,
-                'payable' => $money($order->payable),
-                'refunded' => $order->refunded_total > 0 ? $money($order->refunded_total) : null,
+                ...self::totals($order, $money),
                 'refundable' => $money(max(0, $refundable)),
                 'refundable_minor' => max(0, $refundable),
             ],
@@ -300,6 +303,25 @@ final readonly class OrderCard
         $visitor = Container::getInstance()->make(Visitors::class)->find($order->user_id);
 
         return ['id' => $order->user_id, 'name' => $visitor?->name(), 'email' => $visitor?->email];
+    }
+
+    /**
+     * The totals as the buyer was charged, written in the order's currency; what is not there —
+     * no discount, no tender, nothing given back — is null.
+     *
+     * @param  Closure(int): string  $money
+     * @return array{subtotal: string, adjustments: string|null, total: string, tenders: string|null, payable: string, refunded: string|null}
+     */
+    private static function totals(Order $order, Closure $money): array
+    {
+        return [
+            'subtotal' => $money($order->subtotal),
+            'adjustments' => $order->adjustments_total !== 0 ? $money($order->adjustments_total) : null,
+            'total' => $money($order->total),
+            'tenders' => $order->tenders_total !== 0 ? $money($order->tenders_total) : null,
+            'payable' => $money($order->payable),
+            'refunded' => $order->refunded_total > 0 ? $money($order->refunded_total) : null,
+        ];
     }
 
     /**

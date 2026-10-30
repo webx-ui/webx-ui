@@ -195,7 +195,7 @@ return [
     'stats-hide' => 'Згорнути зведення',
     'stats-show' => 'Розгорнути зведення',
     'stats-period' => 'Період',
-    'stats-period-1' => '24 години',
+    'stats-period-1' => 'Сьогодні',
     'stats-period-7' => '7 днів',
     'stats-period-30' => '30 днів',
     'stats-orders' => 'Замовлення',

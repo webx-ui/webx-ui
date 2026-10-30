@@ -195,7 +195,7 @@ return [
     'stats-hide' => 'Zwiń podsumowanie',
     'stats-show' => 'Rozwiń podsumowanie',
     'stats-period' => 'Okres',
-    'stats-period-1' => '24 godziny',
+    'stats-period-1' => 'Dziś',
     'stats-period-7' => '7 dni',
     'stats-period-30' => '30 dni',
     'stats-orders' => 'Zamówienia',

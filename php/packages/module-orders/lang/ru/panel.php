@@ -195,7 +195,7 @@ return [
     'stats-hide' => 'Свернуть сводку',
     'stats-show' => 'Развернуть сводку',
     'stats-period' => 'Период',
-    'stats-period-1' => '24 часа',
+    'stats-period-1' => 'Сегодня',
     'stats-period-7' => '7 дней',
     'stats-period-30' => '30 дней',
     'stats-orders' => 'Заказы',

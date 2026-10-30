@@ -195,7 +195,7 @@ return [
     'stats-hide' => 'Hide the figures',
     'stats-show' => 'Show the figures',
     'stats-period' => 'Period',
-    'stats-period-1' => '24 hours',
+    'stats-period-1' => 'Today',
     'stats-period-7' => '7 days',
     'stats-period-30' => '30 days',
     'stats-orders' => 'Orders',

@@ -19,7 +19,11 @@ use WebxUi\Orders\OrderStatuses;
  */
 final readonly class OrdersSummary
 {
-    /** The periods, in days back from now. */
+    /**
+     * The periods, in calendar days of the site with today counted in (decision 95): 1 is today
+     * from midnight, 7 is today and the six before it — not the last 24 hours, so «Today» on the
+     * panel means what a manager means by it.
+     */
     public const array PERIODS = [1, 7, 30];
 
     /** How many days the line of orders by day covers. */
@@ -88,20 +92,20 @@ final readonly class OrdersSummary
     }
 
     /**
-     * For the last 1, 7 and 30 days, by currency: orders placed, paid, the revenue — what was paid
+     * For today, the last 7 and the last 30 calendar days, by currency: orders placed, paid, the revenue — what was paid
      * less what was given back — and the average of a paid order.
      *
      * @return list<array{days: int, by_currency: list<array<string, mixed>>}>
      */
     private function periods(): array
     {
-        $now = Carbon::now();
+        $today = self::today();
         $select = ['currency'];
         $bindings = [];
         $since = [];
 
         foreach (self::PERIODS as $days) {
-            $since[$days] = $from = $now->copy()->subDays($days);
+            $since[$days] = $from = $today->copy()->subDays($days - 1);
             $select[] = "sum(case when placed_at >= ? then 1 else 0 end) as placed_{$days}";
             $select[] = "sum(case when placed_at >= ? and paid_at is not null then 1 else 0 end) as paid_{$days}";
             $select[] = "sum(case when placed_at >= ? and paid_at is not null then payable - refunded_total else 0 end) as revenue_{$days}";
@@ -147,7 +151,7 @@ final readonly class OrdersSummary
      */
     private function daily(): array
     {
-        $today = Carbon::now()->startOfDay();
+        $today = self::today();
         $first = $today->copy()->subDays(self::DAYS - 1);
         $counts = Order::query()->toBase()
             ->selectRaw('date(placed_at) as day, count(*) as orders')
@@ -165,6 +169,19 @@ final readonly class OrdersSummary
         }
 
         return $days;
+    }
+
+    /**
+     * Midnight of today in the site's zone — the one the panel prints its dates in — told in the
+     * zone the moments are stored in, which the bindings are compared against as they are.
+     */
+    private static function today(): Carbon
+    {
+        $zone = config('app.timezone');
+
+        return Carbon::now(is_string($zone) && $zone !== '' ? $zone : 'UTC')
+            ->startOfDay()
+            ->setTimezone(date_default_timezone_get());
     }
 
     /**

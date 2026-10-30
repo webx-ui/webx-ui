@@ -161,7 +161,8 @@ final readonly class OrdersTools
                 'summary',
                 'The orders at a glance: how many stand in each public status and in each internal one, how many await '
                 .'payment, how many have a failed payment, how many are paid while still standing in a status new orders '
-                .'come into («paid, the status waits»), and for the last 1, 7 and 30 days, by currency: orders placed, paid, '
+                .'come into («paid, the status waits»), and for calendar days in the site\'s timezone — `days` 1 is today from '
+                .'midnight, 7 and 30 are today and the 6 or 29 days before it — by currency: orders placed, paid, '
                 .'and the revenue — what was paid less what was given back — with the average of a paid order; what awaits '
                 .'payment now by currency (`awaiting_by_currency`: orders and the sum); `daily` — orders placed each of the last '
                 .'30 days, today last. The panel\'s figures over the list are this same count.',

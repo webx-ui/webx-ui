@@ -1939,7 +1939,13 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
   transform: rotate(90deg);
 }
 
+/*
+ * Not a column's value, so not cut at the cell's edge like one: the body below keeps to the
+ * visible width by itself, and a browser that sizes the cell a line short — seen with an opened
+ * order — must not take the last line's lower half with it.
+ */
 .wx-table__expansion {
+  overflow: visible;
   background: var(--wx-bg-subtle);
 }
 

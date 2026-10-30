@@ -195,7 +195,7 @@ return [
     'stats-hide' => 'Özeti gizle',
     'stats-show' => 'Özeti göster',
     'stats-period' => 'Dönem',
-    'stats-period-1' => '24 saat',
+    'stats-period-1' => 'Bugün',
     'stats-period-7' => '7 gün',
     'stats-period-30' => '30 gün',
     'stats-orders' => 'Siparişler',

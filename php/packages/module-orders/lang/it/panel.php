@@ -195,7 +195,7 @@ return [
     'stats-hide' => 'Nascondi i numeri',
     'stats-show' => 'Mostra i numeri',
     'stats-period' => 'Periodo',
-    'stats-period-1' => '24 ore',
+    'stats-period-1' => 'Oggi',
     'stats-period-7' => '7 giorni',
     'stats-period-30' => '30 giorni',
     'stats-orders' => 'Ordini',

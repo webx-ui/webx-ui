@@ -95,6 +95,19 @@ export interface OrderGlance {
   id: number
   items: { id: number; name: string; options: string | null; qty: number; total: string }[]
   count: { lines: number; units: number; refunded_units: number }
+  /** The totals as the card's «Summary» has them; what is not there is null. */
+  totals: {
+    subtotal: string
+    adjustments: string | null
+    total: string
+    tenders: string | null
+    payable: string
+    refunded: string | null
+  }
+  paid: boolean
+  awaiting_payment: boolean
+  /** Where the order came from when not through the checkout: `quick`, `panel`. */
+  source: string | null
   customer: { name: string; phone: string | null; email: string | null }
   recipient: { name: string; phone: string | null } | null
   comment: string | null

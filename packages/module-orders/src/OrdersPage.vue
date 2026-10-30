@@ -35,6 +35,7 @@ import {
 } from '@webx-ui/module-admin'
 import { createOrdersApi } from './api'
 import CancelDialog from './CancelDialog.vue'
+import ContactLink from './ContactLink.vue'
 import OrderGlanceRow from './OrderGlanceRow.vue'
 import OrdersStats from './OrdersStats.vue'
 import { NAMESPACE, useOrdersMessages } from './i18n'
@@ -212,6 +213,14 @@ const visitorOptions = computed(() => [
 
 /** Where an order may come from; a source of the site's own code is still found by the address. */
 const SOURCES = ['checkout', 'quick', 'panel', 'api', 'mcp'] as const
+
+/** The contact a row shows under the buyer: the phone, or the e-mail where there is none. */
+function contactOf(row: OrderRow): { kind: 'phone' | 'email'; value: string } | null {
+  if (row.customer.phone) return { kind: 'phone', value: row.customer.phone }
+  if (row.customer.email) return { kind: 'email', value: row.customer.email }
+
+  return null
+}
 
 /* An order that did not come through the checkout says so beside the buyer: a one-click order and
  * one a manager took by phone (§29.1, §29.2) both wait for delivery and payment to be filled in. */
@@ -753,8 +762,8 @@ onMounted(async () => {
                 {{ sourceMark(row.source) }}
               </wx-badge>
             </span>
-            <span class="wx-orders__text wx-orders__muted">
-              {{ row.customer.phone ?? row.customer.email ?? '' }}
+            <span v-if="contactOf(row)" class="wx-orders__text wx-orders__muted">
+              <contact-link v-bind="contactOf(row)!" />
             </span>
           </div>
         </template>
@@ -837,6 +846,10 @@ onMounted(async () => {
               <wx-text size="sm" weight="medium">{{ row.total }}</wx-text>
               <wx-text size="sm" tone="muted">{{ numberOf(row) }}</wx-text>
               <wx-date :value="row.placed_at" compact size="sm" />
+              <!-- A phone in the hand calls the buyer from here; the rest of the card opens the order. -->
+              <wx-text v-if="contactOf(row)" size="sm" class="wx-orders__text">
+                <contact-link v-bind="contactOf(row)!" />
+              </wx-text>
             </template>
           </wx-entity-card>
         </template>
