@@ -1,5 +1,29 @@
 # @webx-ui/core
 
+## 0.46.0
+
+### Minor Changes
+
+- aabc44b: Toasts leave on their own: a report (default, success, info) after 5 s, a warning or an error after 8 s; the pointer over the toasts or focus in them pauses the count, the × stays. `duration` sets a time of its own, the new `persistent: true` (or `duration: 0`) keeps a toast until it is dismissed — the media library's «copy the address by hand» does. `toast.danger` no longer stays by default.
+
+  The asterisk of a required field comes from the field's rules across the panel. A screen node gets `required` (schema, renderer → `WxFormItem`); the server sets it when it hands a screen out, for a bare `required` among the rules of the field's type and the rules a module tells with `Screens::rules()` (`Screens\Required::among()`); conditional rules (`required_without`, `required_if`) give none. `orders.show` and `users.form` tell theirs. A 422 toast says the first refusal without Laravel's untranslated «(and N more errors)».
+
+  module-orders: the contacts of an order are refused in the module's words with human names of the fields in the panel's language — panel, MCP and checkout alike (`ContactRules`); «Enter a phone or an e-mail.» under the phone and the e-mail and a hint under the pair on «New order» and in the card, the asterisk only at the buyer's first name; the cancel reason refused in words too.
+
+### Patch Changes
+
+- aabc44b: «Orders» opened without a tab is on «New» while it holds any order and on «All» otherwise: the list asks `view=auto` and the answer says which (`view`), by the counts it sends anyway — one request, and no tab is lit before it is known. A tab in the address wins and stays there, «All» included.
+
+  Over the list stand the figures: orders and how many are paid, revenue (paid less given back), the average paid order and what awaits payment now, for today, 7 or 30 days — calendar days in the site's timezone, «Today» from midnight, the same in `orders_summary` — money per currency, with a bar a day for the last thirty under them. They come from `GET {api}/orders/summary` — `Panel\OrdersSummary`, the class that now answers the agent's `orders_summary` too, which gains `awaiting_by_currency`, the average of each period and `daily` — asked apart, so the rows never wait. The block folds; folded or not and the period are remembered for the manager.
+
+  A row of the list opens (`WxTable`'s expandable rows) to the lines with the totals of the card's «Summary» under them (paid or awaiting, given back, where the order came from), the buyer and the recipient, the buyer's comment, the pinned note and the latest one, the delivery and payment lines and the milestones — `GET {api}/orders/{id}/glance` on opening, kept for the page. Phones and e-mails across the orders are `tel:` and `mailto:` links that do not open the order when clicked; on a narrow list a card does not open and a tap goes to the order.
+
+  The manager note left the tab «Buyer» and is pinned over the card's «Notes»: a captioned plate changed in place, emptied to unpin; saved through `details` as before, it is the card's `order.manager_note` and no longer one of the screen's `values`. `orders_update` is unchanged.
+
+  `WxTable`'s opened row no longer clips what it holds at the cell's edge. `WxListScreen` takes a `before` slot — what is read under the head and over the views. `useDates()` gains `day()`, a calendar day without a clock.
+
+- aabc44b: `WxPopover` is no taller than the window has room for: a long panel — the filters of a list — scrolls inside its body, with the title and the footer staying in place, instead of running off the screen.
+
 ## 0.45.3
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "@webx-ui/module-orders",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Orders for the WebX UI admin panel: the orders placed on the site, their statuses and milestones, and the settings of the checkout.",
   "license": "MIT",
   "type": "module",
