@@ -359,6 +359,7 @@ channels are in the section's settings, and the site starts with five: «Order a
 «Payment received», «Order changed» and «Payment due» to the buyer, «New order» to the first e-mail
 of the site's contacts. The card of an order shows what was sent about it.
 
+::: v-pre
 **After an edit.** `orders.items_changed` goes when the edit leaves «Tell the buyer» on (`notify`
 of `ItemsEdit` and `orders_items_edit`, on by default): the lines as they are now, `{{#changes}}`
 — each line added, taken out or counted again with `qty_from` → `qty_to` (`{{#added}}`,
@@ -370,6 +371,7 @@ owes (`amount_due`); a paid one is greyed in «Send the buyer a letter» with «
 nothing». Without the payments module the letter has no link to pay — the sum and «we will get in
 touch». A site whose channels were set up before the edits gets these two by a migration, unless
 it chose its own for them.
+:::
 
 **The letter never came.** A line of «Notifications» on the tab «History» — sent or failed —
 goes again from its **Send again**: the same message to the same address, as a new line of the
