@@ -463,7 +463,7 @@ export const ordersMessages: Record<string, Messages> = {
     'items-set-help': 'A set changes whole: its parts follow.',
     'items-keeps-refunded': 'Units returned stay in the order: :count',
     'items-removed': 'Taken out',
-    'items-back': 'Bring back',
+    'items-back': 'Bring the line back',
     'items-added': 'New',
     'items-after': 'After the edit',
     'items-nothing': 'Change a quantity, take a line out or add a product.',

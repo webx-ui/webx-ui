@@ -403,7 +403,7 @@ return [
     'items-set-help' => 'Set bütün olarak değişir: parçaları onu izler.',
     'items-keeps-refunded' => 'Siparişte kalan iade edilmiş adet: :count',
     'items-removed' => 'Çıkarıldı',
-    'items-back' => 'Geri al',
+    'items-back' => 'Satırı geri al',
     'items-added' => 'Yeni',
     'items-after' => 'Değişiklikten sonra',
     'items-nothing' => 'Bir miktarı değiştirin, bir kalemi çıkarın veya bir ürün ekleyin.',

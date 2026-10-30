@@ -403,7 +403,7 @@ return [
     'items-set-help' => 'Um conjunto muda inteiro: as suas partes seguem-no.',
     'items-keeps-refunded' => 'Unidades devolvidas que ficam na encomenda: :count',
     'items-removed' => 'Retirada',
-    'items-back' => 'Repor',
+    'items-back' => 'Repor a linha',
     'items-added' => 'Nova',
     'items-after' => 'Depois da alteração',
     'items-nothing' => 'Altere uma quantidade, retire uma linha ou adicione um produto.',

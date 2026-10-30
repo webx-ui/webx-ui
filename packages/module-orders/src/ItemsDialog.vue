@@ -66,7 +66,7 @@ interface Row {
   line: OrderLine
   /** What the field holds: `null` while it is emptied to type another number. */
   qty: number | null
-  /** The last quantity the line had — what «Bring back» and an emptied field go back to. */
+  /** The last quantity the line had — what «Bring the line back» and an emptied field go back to. */
   kept: number
   out: boolean
   typing: boolean
@@ -104,6 +104,8 @@ const note = ref('')
 const notify = ref(true)
 
 const preview = ref<ItemsEditPreview | null>(null)
+/** The edit the count on screen was made of: an answer may come after the lines changed again. */
+const previewOf = ref('')
 const counting = ref(false)
 const countError = ref('')
 const errors = ref<Record<string, string[]>>({})
@@ -153,6 +155,14 @@ const empty = computed(
 )
 
 const waiting = computed(() => added.value.some((line) => !chosen(line)))
+
+/** The lines of the edit alone — what the count depends on. */
+const edit = computed(() =>
+  JSON.stringify({ ...input.value, reason: '', message: '', notify: true }),
+)
+
+/** The count on screen is of the lines as they are now, not of an edit left a moment ago. */
+const fresh = computed(() => preview.value !== null && previewOf.value === edit.value)
 
 /** A quantity field emptied or at 0 and not left yet: nothing is counted until it is. */
 const pending = computed(
@@ -261,6 +271,8 @@ async function count(): Promise<void> {
 
   counting.value = true
 
+  const sent = edit.value
+
   try {
     const answer = await api.previewItems(current.value.id, input.value)
 
@@ -273,6 +285,7 @@ async function count(): Promise<void> {
 
     if (mine === counted) {
       preview.value = answer
+      previewOf.value = sent
       errors.value = {}
       countError.value = ''
     }
@@ -289,14 +302,11 @@ async function count(): Promise<void> {
   }
 }
 
-watch(
-  () => JSON.stringify({ ...input.value, reason: '', message: '', notify: true }),
-  () => {
-    clearTimeout(timer)
-    // The count of the last settled quantities stays on screen while one is typed.
-    if (!pending.value) timer = setTimeout(() => void count(), 250)
-  },
-)
+watch(edit, () => {
+  clearTimeout(timer)
+  // The count of the last settled quantities stays on screen while one is typed.
+  if (!pending.value) timer = setTimeout(() => void count(), 250)
+})
 
 watch(pending, (now) => {
   if (!now) {
@@ -307,9 +317,22 @@ watch(pending, (now) => {
 
 onBeforeUnmount(() => clearTimeout(timer))
 
-/** What the count says of a line of the order: «before → after» once it changes. */
+/**
+ * What the count says of a line of the order: «before → after» once it changes. A count of an
+ * edit left a moment ago — its answer came after a line was taken out, brought back or set to
+ * another number — is shown for a line only where it still says what the line is now: a line
+ * taken out comes to its refunded units, never to the quantity it had in the count before.
+ */
 function changeOf(row: Row) {
-  return preview.value?.changes.find((change) => change.item_id === row.line.id) ?? null
+  const change = preview.value?.changes.find((one) => one.item_id === row.line.id) ?? null
+
+  if (change === null || fresh.value) return change
+
+  const agrees = row.out
+    ? change.op === 'remove'
+    : change.op !== 'remove' && change.qty_to === row.qty
+
+  return agrees ? change : null
 }
 
 /** What the count says of a product added: its line «add» — or the line it joined (§37.4). */
@@ -386,6 +409,7 @@ const canSave = computed(
     !pending.value &&
     !counting.value &&
     !saving.value &&
+    fresh.value &&
     after.value !== null,
 )
 
@@ -444,8 +468,10 @@ async function reload(): Promise<void> {
   }
 }
 
+/** Taken out, the line shows the quantity it had, greyed: the column keeps its stepper. */
 function take(row: Row): void {
   if (!unsettled(row.qty)) row.kept = row.qty as number
+  row.qty = row.kept
   row.out = true
 }
 
@@ -533,21 +559,12 @@ const isSet = (line: OrderLine) => line.children.some((child) => child.part !== 
               </div>
 
               <div class="wx-orders-edit__qty-cell">
-                <wx-button
-                  v-if="row.out"
-                  size="sm"
-                  variant="text"
-                  icon="rotate-left"
-                  data-test="edit-back"
-                  @click="back(row)"
-                >
-                  {{ t('panel.items-back') }}
-                </wx-button>
                 <wx-input-number
-                  v-else-if="!row.line.generated"
+                  v-if="!row.line.generated"
                   v-model="row.qty"
                   class="wx-orders-edit__qty"
                   size="sm"
+                  :disabled="row.out"
                   :min="row.line.refunded_qty"
                   :step="1"
                   controls-position="sides"
@@ -567,17 +584,31 @@ const isSet = (line: OrderLine) => line.children.some((child) => child.part !== 
                   <s class="wx-orders-edit__was">{{ changeOf(row)?.total_from_formatted }}</s>
                   {{ changeOf(row)?.total_to_formatted }}
                 </wx-text>
+                <wx-text v-else-if="row.out" weight="medium" data-test="edit-line-total">
+                  <s class="wx-orders-edit__was">{{ row.line.total }}</s>
+                </wx-text>
                 <wx-text v-else weight="medium" data-test="edit-line-total">
                   {{ row.line.total }}
                 </wx-text>
               </div>
 
               <div class="wx-orders-edit__remove">
+                <!-- Brought back where it was taken out: the same button, not a danger. -->
                 <wx-action
+                  v-if="row.out"
+                  type="restore"
+                  icon="rotate-left"
+                  tone="neutral"
+                  size="sm"
+                  :title="t('panel.items-back')"
+                  data-test="edit-back"
+                  @click="back(row)"
+                />
+                <wx-action
+                  v-else
                   type="remove"
                   size="sm"
                   :title="t('panel.new-remove')"
-                  :hidden="row.out"
                   data-test="edit-take"
                   @click="take(row)"
                 />
@@ -683,7 +714,12 @@ const isSet = (line: OrderLine) => line.children.some((child) => child.part !== 
 
           <wx-text v-if="empty" size="sm" tone="muted">{{ t('panel.items-nothing') }}</wx-text>
 
-          <dl v-else-if="after" class="wx-orders-edit__rows" data-test="edit-totals">
+          <dl
+            v-else-if="after"
+            class="wx-orders-edit__rows"
+            :class="{ 'is-stale': !fresh }"
+            data-test="edit-totals"
+          >
             <dt>{{ t('panel.subtotal') }}</dt>
             <dd>
               <s v-if="after.before.subtotal !== after.after.subtotal" class="wx-orders-edit__was">
@@ -968,6 +1004,11 @@ const isSet = (line: OrderLine) => line.children.some((child) => child.part !== 
   margin: 0;
   text-align: end;
   white-space: nowrap;
+}
+
+/* A count of an edit left a moment ago, until the count of this one comes. */
+.wx-orders-edit__rows.is-stale {
+  opacity: 0.6;
 }
 
 .wx-orders-edit__rows .is-strong {

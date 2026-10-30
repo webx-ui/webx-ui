@@ -403,7 +403,7 @@ return [
     'items-set-help' => 'Un lote cambia entero: sus partes lo siguen.',
     'items-keeps-refunded' => 'Unidades devueltas que se quedan en el pedido: :count',
     'items-removed' => 'Quitada',
-    'items-back' => 'Recuperar',
+    'items-back' => 'Recuperar la línea',
     'items-added' => 'Nueva',
     'items-after' => 'Después del cambio',
     'items-nothing' => 'Cambie una cantidad, quite una línea o añada un producto.',

@@ -403,7 +403,7 @@ return [
     'items-set-help' => 'Un set cambia intero: le sue parti lo seguono.',
     'items-keeps-refunded' => 'Unità rese che restano nell\'ordine: :count',
     'items-removed' => 'Tolta',
-    'items-back' => 'Rimetti',
+    'items-back' => 'Rimetti la riga',
     'items-added' => 'Nuova',
     'items-after' => 'Dopo la modifica',
     'items-nothing' => 'Cambia una quantità, togli una riga o aggiungi un prodotto.',

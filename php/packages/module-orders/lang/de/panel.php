@@ -403,7 +403,7 @@ return [
     'items-set-help' => 'Ein Set ändert sich als Ganzes: Seine Teile folgen.',
     'items-keeps-refunded' => 'Zurückgegebene Einheiten bleiben in der Bestellung: :count',
     'items-removed' => 'Entfernt',
-    'items-back' => 'Zurückholen',
+    'items-back' => 'Position zurückholen',
     'items-added' => 'Neu',
     'items-after' => 'Nach der Änderung',
     'items-nothing' => 'Ändern Sie eine Menge, entfernen Sie eine Position oder fügen Sie ein Produkt hinzu.',

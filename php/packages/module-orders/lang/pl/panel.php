@@ -403,7 +403,7 @@ return [
     'items-set-help' => 'Zestaw zmienia się w całości: jego części idą za nim.',
     'items-keeps-refunded' => 'Zwrócone sztuki zostają w zamówieniu: :count',
     'items-removed' => 'Usunięta',
-    'items-back' => 'Przywróć',
+    'items-back' => 'Przywróć pozycję',
     'items-added' => 'Nowa',
     'items-after' => 'Po zmianie',
     'items-nothing' => 'Zmień ilość, usuń pozycję lub dodaj produkt.',
