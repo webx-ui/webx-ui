@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * The balance of an order (spec §36.1): the money that came in, and the stored copy of `due − over`
- * ({@see \WebxUi\Orders\Balance::stored()}) for the filter «payment differs» and its index. An order
+ * (as `WebxUi\Orders\Balance::stored()` counts it) for the filter «payment differs» and its index. An order
  * marked paid before it was paid in full — nothing else could pay it; the rest got nothing yet.
  */
 return new class extends Migration

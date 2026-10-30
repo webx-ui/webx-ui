@@ -191,13 +191,15 @@ export const ordersMessages: Record<string, Messages> = {
     'balance-over': 'Give back',
     'payment-record': 'Record a top-up',
     'payment-title': 'Record a top-up for order :number',
-    'payment-help': 'Money that came for a paid order after its lines changed — at the till or by a transfer. The mark «Paid» stays as it is; the balance goes down.',
+    'payment-help':
+      'Money that came for a paid order after its lines changed — at the till or by a transfer. The mark «Paid» stays as it is; the balance goes down.',
     'payment-amount': 'Amount',
     'payment-due': 'Owed: :amount',
     'payment-at': 'When the money came',
     'payment-at-help': 'Today, when left empty.',
     'payment-after-due': 'After it the buyer still owes :amount.',
-    'payment-after-over': 'After it the order is paid over by :amount — that is money to give back.',
+    'payment-after-over':
+      'After it the order is paid over by :amount — that is money to give back.',
     'payment-after-settled': 'After it the order is paid in full.',
     'payment-confirm': 'Record the top-up',
     'payment-toast': 'The top-up is recorded.',

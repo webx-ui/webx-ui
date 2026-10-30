@@ -19,6 +19,7 @@ use WebxUi\Orders\Models\OrderRefund;
 use WebxUi\Orders\Models\OrderTender;
 use WebxUi\Orders\Models\StatusChange;
 use WebxUi\Orders\Notifications\OrderChannels;
+use WebxUi\Orders\Orders;
 use WebxUi\Orders\Site\VisitorOrders;
 
 /**
@@ -360,7 +361,7 @@ final readonly class OrderCard
     }
 
     /**
-     * The money, the reference and the note of a history line `payment` ({@see \WebxUi\Orders\Orders::paymentNote()}).
+     * The money, the reference and the note of a history line `payment` ({@see Orders::paymentNote()}).
      *
      * @return array{amount: int, reference: string|null, note: string|null}
      */

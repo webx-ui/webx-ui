@@ -144,7 +144,11 @@ const source = computed(() =>
           <template v-if="glance.totals.balance">
             <dt class="is-strong">
               {{
-                t(glance.totals.balance.kind === 'over' ? 'panel.balance-over' : 'panel.balance-topup')
+                t(
+                  glance.totals.balance.kind === 'over'
+                    ? 'panel.balance-over'
+                    : 'panel.balance-topup',
+                )
               }}
             </dt>
             <dd

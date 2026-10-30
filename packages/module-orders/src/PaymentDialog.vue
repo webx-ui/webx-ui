@@ -17,7 +17,13 @@ import {
 import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
 import { createOrdersApi } from './api'
 import { NAMESPACE, useOrdersMessages } from './i18n'
-import type { OrderBalance, OrderCardData, OrderDetail, PaymentInput, PaymentPreview } from './types'
+import type {
+  OrderBalance,
+  OrderCardData,
+  OrderDetail,
+  PaymentInput,
+  PaymentPreview,
+} from './types'
 
 /**
  * «Record a top-up» (spec §36.3, §42.3): money that came in for an order that is paid already —
@@ -39,7 +45,8 @@ const message = useErrorText()
 /** A minor amount in the currency's own units, as the field takes it: 1500 → «15.00». */
 const major = (minor: number) => (minor / 10 ** props.order.exponent).toFixed(props.order.exponent)
 
-const due = props.order.totals.balance?.kind === 'topup' ? props.order.totals.balance.amount_minor : 0
+const due =
+  props.order.totals.balance?.kind === 'topup' ? props.order.totals.balance.amount_minor : 0
 
 const input = reactive<PaymentInput>({
   amount: due > 0 ? major(due) : '',
@@ -147,7 +154,9 @@ const day = (value: DatePickerModelValue): string | null =>
 
       <wx-form-item
         :label="t('panel.payment-amount')"
-        :help="due > 0 ? t('panel.payment-due', { amount: order.totals.balance?.amount }) : undefined"
+        :help="
+          due > 0 ? t('panel.payment-due', { amount: order.totals.balance?.amount }) : undefined
+        "
         :error="errorOf('amount')"
       >
         <wx-input
