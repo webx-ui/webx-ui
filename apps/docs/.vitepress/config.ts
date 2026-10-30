@@ -40,6 +40,7 @@ export default defineConfig({
             { text: 'Dialogs from code', link: '/guide/modals' },
             { text: 'Building a screen', link: '/guide/building-a-screen' },
             { text: 'Lists', link: '/guide/lists' },
+            { text: 'Notes on a record', link: '/guide/notes' },
             { text: 'Screens', link: '/guide/screens' },
             { text: 'Extending', link: '/guide/extending' },
             { text: 'Permissions', link: '/guide/permissions' },

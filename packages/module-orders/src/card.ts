@@ -3,7 +3,7 @@ import type { OrderCardData } from './types'
 
 /**
  * What the open card shares with the node types on it (`wx-orders-status`, `wx-orders-items`,
- * `wx-orders-timeline`, `wx-orders-summary`): the order as the server last answered, and what
+ * `wx-orders-timeline`, `wx-orders-summary`, `wx-orders-notes`): the order as the server last answered, and what
  * its actions do — the node draws, the page asks the server.
  */
 export interface OrderCardContext {
@@ -11,8 +11,20 @@ export interface OrderCardContext {
   busy: Ref<boolean>
   changeStatus(): Promise<void>
   mark(milestone: 'paid' | 'received'): Promise<void>
+  /** Record a top-up of a paid order (§36.3), the amount owed offered. */
+  recordPayment(): Promise<void>
+  /** «Change the lines» (§42.1), then what the balance asks for next (§42.3). */
+  editItems(): Promise<void>
   cancel(): Promise<void>
   refund(): Promise<void>
+  /** Reverse a refund record made by mistake (decision 98), then offer the right one. */
+  reverseRefund(refundId: number): Promise<void>
+  /** Send a row of «Notifications» again by hand (decision 99), once it is confirmed. */
+  resend(deliveryId: number): Promise<void>
+  /** Keep a note for whoever picks the order up next; true once it is kept. */
+  note(body: string): Promise<boolean>
+  /** Pin the standing note over the feed, or unpin it with null (decision 91); true once kept. */
+  pin(text: string | null): Promise<boolean>
   /** Link the order to a visitor, or to another one (§13.3). */
   linkVisitor(): Promise<void>
   unlinkVisitor(): Promise<void>

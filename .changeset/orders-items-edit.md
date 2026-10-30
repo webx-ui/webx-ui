@@ -1,0 +1,6 @@
+---
+'@webx-ui/module-orders': minor
+'@webx-ui/php': minor
+---
+
+A manager may change the lines of a placed order (spec §37–§39, decision 101 — variant A): `Orders::editItems(order, ItemsEdit, dryRun)` adds lines, changes the qty of the top-level ones and takes them out, against the revision the manager saw. The lines placed keep their price and their discounts in proportion to the qty; a line added comes at the provider's price now, through a cart of its own as a manager's new order does, without the rules' discounts; the discounts of the whole order, the delivery, the benefits and the milestones stay. A line is never deleted: taken out, it keeps the units refunded of it. A bundle changes whole. The money and the balance are counted again in the same transaction; the edit is a row of the new `order_revisions` («before — after»), a history line `items` and two events — `OrderItemsChanging` inside the transaction (a listener may refuse it) and `OrderItemsChanged` after the commit. A received, cancelled or refunded order is not edited (`ItemsEditRefused`: `state`), nor a line of a bundle, a rule's gift counted again, or fewer units than were refunded; the panel and an agent give the reason. A dry run answers the same and writes nothing. A migration adds `orders.items_revision`, `items_changed_at`, `order_items.revision`, `removed_at` and the table.

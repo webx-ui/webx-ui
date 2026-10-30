@@ -7,10 +7,13 @@ namespace WebxUi\Orders\Mcp;
 use WebxUi\Mcp\McpResource;
 use WebxUi\Orders\Blocks\OrderBlocks;
 use WebxUi\Orders\Events\OrderCancelled;
+use WebxUi\Orders\Events\OrderItemsChanged;
+use WebxUi\Orders\Events\OrderItemsChanging;
 use WebxUi\Orders\Events\OrderPaid;
 use WebxUi\Orders\Events\OrderPlaced;
 use WebxUi\Orders\Events\OrderReceived;
 use WebxUi\Orders\Events\OrderRefunded;
+use WebxUi\Orders\ItemsEditResult;
 use WebxUi\Orders\Milestone;
 use WebxUi\Orders\Notifications\OrderChannels;
 use WebxUi\Orders\Notifications\OrderEvents;
@@ -97,6 +100,18 @@ final readonly class OrdersResources
             'notifications' => $this->notifications($locale),
             'settings' => $this->settings->describe(),
             'sources' => ['panel', 'mcp', 'api', 'checkout', 'status#<id> — a milestone a status set'],
+            // orders_items_edit (§37): why an edit is refused, and what its dry run warns of.
+            'items_edit' => [
+                'refusals' => array_map(static fn (string $code): array => [
+                    'code' => $code,
+                    'message' => (string) __('webx-orders::panel.items-refusals.'.$code, [], $locale),
+                ], ItemsEditResult::REFUSALS),
+                'warnings' => [
+                    ItemsEditResult::WARN_PAID, ItemsEditResult::WARN_ADJUSTMENT_KEPT, ItemsEditResult::WARN_BENEFIT_KEPT,
+                    ItemsEditResult::WARN_NOTHING_SHIPPABLE, ItemsEditResult::WARN_TENDERS_OVER, 'line.* — the cart\'s, for a line added',
+                ],
+                'events' => [OrderItemsChanging::class, OrderItemsChanged::class],
+            ],
         ];
     }
 

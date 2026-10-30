@@ -65,13 +65,16 @@ final readonly class StatusBatch
 
     /**
      * @param  list<Order>  $orders
-     * @return array{orders: int, cancelled: int, unchanged: int, paid: int, refused: list<array{id: int, number: string|null, reason: string, message: string}>, dry_run: bool}
+     *                               `moved` — how many come into the status that cancels (decision 88), `public_changed` and
+     *                               `notifications` — what the buyers see of it, as a batch of moves counts them; `status_id` — that
+     *                               status, null when none moves.
+     * @return array{orders: int, cancelled: int, unchanged: int, paid: int, moved: int, public_changed: int, notifications: int, status_id: int|null, refused: list<array{id: int, number: string|null, reason: string, message: string}>, dry_run: bool}
      */
     public function cancel(array $orders, string $source, string $reason, bool $dryRun): array
     {
         // A cancellation is not refused — a cancelled order is silence — so `refused` stays empty;
         // the key keeps the answer the shape of the move's.
-        $tally = ['orders' => 0, 'cancelled' => 0, 'unchanged' => 0, 'paid' => 0, 'refused' => []];
+        $tally = ['orders' => 0, 'cancelled' => 0, 'unchanged' => 0, 'paid' => 0, 'moved' => 0, 'public_changed' => 0, 'notifications' => 0, 'status_id' => null, 'refused' => []];
 
         foreach ($orders as $order) {
             $tally['orders']++;
@@ -81,6 +84,13 @@ final readonly class StatusBatch
 
             if ($mark->marked() && $mark->wasPaid) {
                 $tally['paid']++;
+            }
+
+            if ($mark->move !== null) {
+                $tally['moved']++;
+                $tally['status_id'] ??= $mark->move->to->id;
+                $tally['public_changed'] += $mark->move->publicChanged ? 1 : 0;
+                $tally['notifications'] += count($mark->move->notifications);
             }
         }
 

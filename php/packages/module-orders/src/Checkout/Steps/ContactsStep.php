@@ -16,6 +16,7 @@ use WebxUi\Orders\Checkout\CheckoutSettings;
 use WebxUi\Orders\Checkout\Models\CheckoutDraft;
 use WebxUi\Orders\Checkout\PlaceOrderBuilder;
 use WebxUi\Orders\Contact;
+use WebxUi\Orders\ContactRules;
 use WebxUi\Orders\Site\VisitorOrders;
 use WebxUi\Users\Urls;
 
@@ -92,7 +93,7 @@ final readonly class ContactsStep implements NamesErrors, Step
     public function save(CheckoutContext $context, array $input, CheckoutDraft $draft): void
     {
         $data = $this->data($input);
-        $this->validation->make($data, $this->rules($data), $this->messages())->validate();
+        $this->validation->make($data, $this->rules($data), [...ContactRules::messages(), ...$this->messages()], ContactRules::attributes())->validate();
 
         $draft->customer = $data['customer'];
         $draft->recipient = $data['recipient'];
@@ -104,7 +105,9 @@ final readonly class ContactsStep implements NamesErrors, Step
             'customer' => $this->customer($context),
             'recipient' => $this->settings->recipient() ? $this->recipient($context) : null,
         ];
-        $validator = $this->validation->make($data, $this->rules($data), $this->messages());
+        // The module's words for what the checkout does not say itself: a field too long, the e-mail
+        // of a pair. Its own sentences go over them.
+        $validator = $this->validation->make($data, $this->rules($data), [...ContactRules::messages(), ...$this->messages()], ContactRules::attributes());
 
         if (! $validator->fails()) {
             return [];

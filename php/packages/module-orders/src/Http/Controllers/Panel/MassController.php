@@ -58,12 +58,17 @@ final readonly class MassController
             'dry_run' => ['nullable', 'boolean'],
         ]);
 
-        return ApiResponse::data($this->batch->cancel(
+        $tally = $this->batch->cancel(
             $this->find($validated['ids']),
             'panel',
             (string) $validated['reason'],
             (bool) ($validated['dry_run'] ?? false),
-        ));
+        );
+
+        // The status the cancelled come into (decision 88), named as the move's answer names it.
+        $status = $tally['status_id'] !== null ? (new StatusChoices)->find($tally['status_id'], app()->getLocale()) : null;
+
+        return ApiResponse::data([...$tally, 'status' => $status]);
     }
 
     /**

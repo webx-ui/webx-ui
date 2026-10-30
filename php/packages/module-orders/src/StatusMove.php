@@ -40,4 +40,10 @@ final readonly class StatusMove
         public ?string $refusal = null,
         public bool $dryRun = false,
     ) {}
+
+    /** The same move without its milestone: a cancellation sets that one itself (decision 88). */
+    public function without(): self
+    {
+        return new self($this->from, $this->to, $this->publicFrom, $this->publicTo, $this->publicChanged, $this->moved, null, $this->notifications, $this->refusal, $this->dryRun);
+    }
 }

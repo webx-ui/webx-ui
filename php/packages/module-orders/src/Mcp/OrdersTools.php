@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace WebxUi\Orders\Mcp;
 
+use Carbon\CarbonImmutable;
 use Closure;
 use Illuminate\Container\Container;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Validation\Factory as Validation;
 use Illuminate\Events\Dispatcher as EventDispatcher;
-use Illuminate\Support\Carbon;
 use WebxUi\Admin\Visitors\Visitors;
 use WebxUi\Cart\Money;
 use WebxUi\Localization\Locales;
@@ -18,12 +18,15 @@ use WebxUi\Mcp\Arguments;
 use WebxUi\Mcp\Exceptions\ToolFailure;
 use WebxUi\Mcp\Rehearsal;
 use WebxUi\Mcp\Tool;
+use WebxUi\Orders\Balance;
 use WebxUi\Orders\CartNotOrderable;
 use WebxUi\Orders\Checkout\CheckoutPreview;
 use WebxUi\Orders\Contact;
 use WebxUi\Orders\Events\OrderPaid;
 use WebxUi\Orders\Events\OrderReceived;
 use WebxUi\Orders\Http\Controllers\Panel\MassController;
+use WebxUi\Orders\ItemsEdit;
+use WebxUi\Orders\ItemsEditRefused;
 use WebxUi\Orders\ManagerOrder;
 use WebxUi\Orders\Milestone;
 use WebxUi\Orders\Models\Order;
@@ -31,23 +34,29 @@ use WebxUi\Orders\Models\OrderAdjustment;
 use WebxUi\Orders\Models\OrderItem;
 use WebxUi\Orders\Models\OrderMilestone;
 use WebxUi\Orders\Models\OrderRefund;
+use WebxUi\Orders\Models\OrderRevision;
 use WebxUi\Orders\Models\OrderStatus;
 use WebxUi\Orders\Models\OrderTender;
 use WebxUi\Orders\Models\PublicStatus;
 use WebxUi\Orders\Notifications\OrderChannels;
+use WebxUi\Orders\NotifyRefused;
 use WebxUi\Orders\OrderDetails;
 use WebxUi\Orders\OrderRefused;
 use WebxUi\Orders\Orders;
-use WebxUi\Orders\OrderStatuses;
 use WebxUi\Orders\Panel\Consequences;
 use WebxUi\Orders\Panel\OrderCard;
 use WebxUi\Orders\Panel\OrderList;
 use WebxUi\Orders\Panel\OrdersModule;
+use WebxUi\Orders\Panel\OrdersSummary;
 use WebxUi\Orders\Panel\StatusBatch;
 use WebxUi\Orders\Panel\StatusChoices;
+use WebxUi\Orders\PaymentRecord;
+use WebxUi\Orders\PaymentRefused;
 use WebxUi\Orders\RefundRefused;
 use WebxUi\Orders\RefundRequest;
 use WebxUi\Orders\RefundResult;
+use WebxUi\Orders\RefundReversal;
+use WebxUi\Orders\RefundReversalRefused;
 use WebxUi\Orders\Refusal;
 use WebxUi\Orders\Site\VisitorOrders;
 use WebxUi\Orders\StatusMoveRefused;
@@ -80,7 +89,6 @@ final readonly class OrdersTools
 
     public function __construct(
         private Orders $orders,
-        private OrderStatuses $statuses,
         private OrderList $list,
         private OrderCard $card,
         private Consequences $consequences,
@@ -89,6 +97,7 @@ final readonly class OrdersTools
         private Validation $validation,
         private Dispatcher $events,
         private OrderChannels $channels,
+        private OrdersSummary $summary,
     ) {}
 
     /**
@@ -108,7 +117,8 @@ final readonly class OrdersTools
                 'Orders, newest first, twenty a page: number, when placed, the buyer (name, phone, e-mail — personal data, '
                 .'which orders.view opens), the first line and how many more, total and payable in minor units with '
                 .'`*_formatted`, the internal status with its public one, the milestones and the flags «awaiting payment» '
-                .'and «payment failed», the delivery and payment lines. `counts` — how many each view holds under the same '
+                .'and «payment failed», the delivery and payment lines, `balance` (> 0 owed, < 0 to give back) and `balance_kind` '
+                .'(topup — paid and owing more, unpaid, over, null — settled). `counts` — how many each view holds under the same '
                 .'filters. Filters as in the panel; `search` finds a number, a phone in any spelling, an e-mail, a name in '
                 .'either order.',
                 fn (array $arguments): array => $this->list($arguments),
@@ -123,6 +133,7 @@ final readonly class OrdersTools
                     'refunded' => $flag('With a refund recorded or without.'),
                     'awaiting' => $flag('Awaiting payment (and not cancelled) or not.'),
                     'failed' => $flag('A payment try failed or not.'),
+                    'balance' => ['type' => 'string', 'enum' => OrderList::BALANCES, 'description' => 'Payment differs: due — paid and still owing a top-up (after an edit); over — paid more than it costs, money to give back.'],
                     'visitor' => ['type' => 'string', 'enum' => ['guest', 'visitor'], 'description' => 'Placed by a guest or by a signed-in visitor.'],
                     'delivery' => ['type' => 'string', 'description' => 'The delivery method as the block keeps it.'],
                     'payment' => ['type' => 'string', 'description' => 'The payment method as the block keeps it.'],
@@ -141,7 +152,8 @@ final readonly class OrdersTools
                 'One order in full: the buyer and the recipient (personal data), the lines as a tree (a set\'s parts under it) '
                 .'with their discounts and what was given back of them, the adjustments, tenders and benefits, the totals, the '
                 .'delivery and payment blocks, the internal and public status, every milestone with when, by whom and its '
-                .'reference, and the refunds. Money in minor units with `*_formatted`.',
+                .'reference, and the refunds. `balance`: what came in (`paid_total`), what went back, what is still `due` '
+                .'or `over` (to give back), `tenders_over`, and `kind` (topup, unpaid, over, null). Money in minor units with `*_formatted`.',
                 fn (array $arguments): array => $this->get($arguments),
                 ['properties' => ['order' => $order], 'required' => ['order']],
                 permission: self::READ,
@@ -150,9 +162,11 @@ final readonly class OrdersTools
             Tool::read(
                 'history',
                 'The timeline of an order, oldest first — the card\'s tab «History»: moves between statuses, milestones, '
-                .'refunds, notes, changed contacts and blocks, each with when, the source (panel, mcp, api, checkout, '
+                .'refunds, notes, top-ups, edits of the lines (`revision`: each line before → after, the total before and after, the '
+                .'balance after; the reason as `note`), changed contacts and blocks, each with when, the source (panel, mcp, api, checkout, '
                 .'status#<id>) and the administrator\'s name where known. With the notifications module, `notifications` — what '
-                .'its channels sent about the order, newest first, and why a row was not sent; null without it.',
+                .'its channels sent about the order, newest first, and why a row was not sent; null without it. `revisions` — '
+                .'every edit of the lines in full: changes, discounts, totals before and after, reason, message, source.',
                 fn (array $arguments, ?Authenticatable $caller = null): array => $this->history($arguments, $caller),
                 ['properties' => ['order' => $order], 'required' => ['order']],
                 permission: self::READ,
@@ -162,8 +176,13 @@ final readonly class OrdersTools
                 'summary',
                 'The orders at a glance: how many stand in each public status and in each internal one, how many await '
                 .'payment, how many have a failed payment, how many are paid while still standing in a status new orders '
-                .'come into («paid, the status waits»), and for the last 1, 7 and 30 days, by currency: orders placed, paid, '
-                .'and the revenue — what was paid less what was given back.',
+                .'come into («paid, the status waits»), and for calendar days in the site\'s timezone — `days` 1 is today from '
+                .'midnight, 7 and 30 are today and the 6 or 29 days before it — by currency: orders placed, paid, '
+                .'and the revenue — what was paid less what was given back — with the average of a paid order; what awaits '
+                .'payment now by currency (`awaiting_by_currency`: orders and the sum); paid orders still owing a top-up after an '
+                .'edit (`awaiting_topup`, and `topup_by_currency`: orders and the sum); the revenue counts the money that came in, '
+                .'top-ups too; `daily` — orders placed each of the last '
+                .'30 days, today last. The panel\'s figures over the list are this same count.',
                 fn (): array => $this->summary(),
                 permission: self::READ,
             ),
@@ -202,10 +221,62 @@ final readonly class OrdersTools
             ),
 
             Tool::mutating(
+                'payment_record',
+                'Record money that came in for an order that is paid already — a top-up after its lines were changed, by a '
+                .'bank transfer or at the desk. `amount` in minor units, the operation\'s `reference`, the day (`at`, '
+                .'YYYY-MM-DD; today by default), a `note`. The milestone «paid» stays one; the balance goes down, and more than is '
+                .'due shows as money to give back. An order not paid yet is refused — its first payment is orders_mark; a '
+                .'cancelled one too. `dry_run` answers the balance before and after it, or why it is refused.',
+                fn (array $arguments): array => $this->payment($arguments),
+                ['properties' => [
+                    'order' => $order,
+                    'amount' => ['type' => 'integer', 'description' => 'Money in, minor units; orders_get `balance.due` is what is owed.'],
+                    'reference' => ['type' => 'string', 'description' => 'The bank\'s or the ledger\'s number of it.'],
+                    'at' => ['type' => 'string', 'description' => 'When the money came, YYYY-MM-DD; today by default.'],
+                    'note' => ['type' => 'string'],
+                ], 'required' => ['order', 'amount']],
+                permission: OrdersModule::MANAGE,
+            ),
+
+            Tool::mutating(
+                'items_edit',
+                'Change the lines of a placed order — the buyer called to add a product, take one out, change how many. '
+                .'`revision` is orders_get `items_revision`: an edit saved since is refused, read the order again. `add` — '
+                .'new lines as orders_create takes them (type, ref, qty, options), at today\'s price and without the cart\'s '
+                .'rules; `qty` — line id → the new qty, top-level lines only (a set changes whole, its parts follow; 0 takes '
+                .'the line out); `remove` — line ids. The lines placed keep their price; their discounts follow the qty; the '
+                .'discounts on the whole order, the delivery and the benefits stay as placed. A line keeps the units refunded '
+                .'of it; a rule\'s gift may only go. `reason` (optional) only managers see; `message` — words for '
+                .'the buyer\'s letter; `notify` (true by default) — send the buyer «order changed». Received, cancelled and '
+                .'refunded orders are not edited. A paid order then owes a top-up or is owed money back: `balance` says '
+                .'which (orders_payment_record, orders_refund). `dry_run` answers what the panel\'s editor shows: each line '
+                .'before → after, the totals before and after, the balance after, the warnings — or the refusal and its field.',
+                fn (array $arguments): array => $this->editItems($arguments),
+                ['properties' => [
+                    'order' => $order,
+                    'revision' => ['type' => 'integer', 'description' => 'orders_get `items_revision` — the lines as you read them.'],
+                    'add' => ['type' => 'array', 'items' => ['type' => 'object', 'properties' => [
+                        'type' => ['type' => 'string', 'description' => 'What is bought: `catalog.product`.'],
+                        'ref' => ['type' => ['integer', 'string']],
+                        'qty' => ['type' => 'integer', 'description' => '1 by default.'],
+                        'options' => ['type' => 'object', 'description' => 'The chosen options, as the product names them.'],
+                    ], 'required' => ['type', 'ref']]],
+                    'qty' => ['type' => 'object', 'description' => 'Line id → the new qty (orders_get `items`).', 'additionalProperties' => ['type' => 'integer']],
+                    'remove' => ['type' => 'array', 'items' => ['type' => 'integer'], 'description' => 'Line ids to take out.'],
+                    'reason' => ['type' => 'string', 'description' => 'Why, if there is a reason worth keeping — for the managers, never shown to the buyer.'],
+                    'message' => ['type' => 'string', 'description' => 'Words for the buyer in the letter about the change.'],
+                    'notify' => $flag('Send the buyer the letter «order changed»; true by default.'),
+                ], 'required' => ['order', 'revision']],
+                permission: OrdersModule::MANAGE,
+            ),
+
+            Tool::mutating(
                 'cancel',
                 'Cancel an order with its reason: the milestone «cancelled», and the tenders left on it (wallet, gift card) go '
-                .'back. Money is not given back — a paid order answers how much is left to refund, and orders_refund records '
-                .'it. `dry_run` answers whether it was paid, the money left, the tenders that go back.',
+                .'back, and the order comes into the first active status that cancels (`status`: its name, what the buyer '
+                .'sees, the channels that write; null — it stays). Money is not given back — a paid order answers how much '
+                .'is left to refund, and orders_refund records it. `dry_run` answers whether it was paid, the money left, '
+                .'the tenders that go back and the status.',
                 fn (array $arguments): array => $this->cancel($arguments),
                 ['properties' => [
                     'order' => $order,
@@ -231,6 +302,42 @@ final readonly class OrdersTools
                     'reason' => ['type' => 'string'],
                 ], 'required' => ['order']],
                 permission: OrdersModule::REFUND,
+            ),
+
+            Tool::mutating(
+                'refund_reverse',
+                'Reverse a refund recorded by mistake — a refund is never edited. The record stays in the history, struck '
+                .'through with the reason; what it gave back (money, tenders, units) counts no more, and when the order is no '
+                .'longer given back whole the milestone «refunded» comes off. Then record the right one with orders_refund. '
+                .'`refund` is the id from orders_get. `dry_run` answers what comes off, what is left after it and whether '
+                .'the milestone comes off, or why it is refused.',
+                fn (array $arguments): array => $this->reverseRefund($arguments),
+                ['properties' => [
+                    'order' => $order,
+                    'refund' => ['type' => 'integer', 'description' => 'The id of the refund record, from orders_get `refunds`.'],
+                    'reason' => ['type' => 'string', 'description' => 'Why the record was a mistake — it goes into the history.'],
+                ], 'required' => ['order', 'refund', 'reason']],
+                permission: OrdersModule::REFUND,
+            ),
+
+            Tool::mutating(
+                'notify',
+                'Send a message about an order again by hand — «the buyer says the letter never came». With the notifications '
+                .'module only. `delivery` — the id of a row of orders_history `notifications`: the same message to the same '
+                .'recipient, sent or failed alike, as a new row marked manual. Or `event` — tell the buyer of an event the '
+                .'order has a reason for (placed; public_status — the one it stands in; paid, payment_failed, received, '
+                .'cancelled, refunded once they happened; payment_requested — «pay for the order» / «pay the rest» while the '
+                .'order owes, due > 0 and not cancelled), to the order\'s e-mail now, through the channels of that event that '
+                .'write to the buyer (customer_email). Either is a line of the history with who did it; the same message again '
+                .'within a minute is refused. Do not send unless a person asked. `dry_run` answers what would go — for an '
+                .'event, `previews` with each channel\'s subject and text — or why it is refused.',
+                fn (array $arguments): array => $this->notify($arguments),
+                ['properties' => [
+                    'order' => $order,
+                    'delivery' => ['type' => 'integer', 'description' => 'The id of a row of the order\'s log, from orders_history `notifications`.'],
+                    'event' => ['type' => 'string', 'enum' => OrderChannels::BY_HAND, 'description' => 'The event to tell the buyer of again.'],
+                ], 'required' => ['order']],
+                permission: OrdersModule::MANAGE,
             ),
 
             Tool::mutating(
@@ -393,6 +500,9 @@ final readonly class OrdersTools
                 'note' => $mark->note,
             ]])->all(),
             'items' => $this->lines($order, null, $locale, $money),
+            // orders_items_edit takes it back as `revision`; 0 — the lines as placed.
+            'items_revision' => $order->items_revision,
+            'items_changed_at' => $order->items_changed_at?->toAtomString(),
             'adjustments' => $order->adjustments
                 ->filter(static fn (OrderAdjustment $adjustment): bool => $adjustment->item_id === null)
                 ->map(static fn (OrderAdjustment $adjustment): array => [
@@ -416,8 +526,9 @@ final readonly class OrdersTools
                 ...$money('tenders_total', $order->tenders_total),
                 ...$money('payable', $order->payable),
                 ...$money('refunded_total', $order->refunded_total),
-                ...$money('refundable', max(0, $order->payable - $order->refunded_total)),
+                ...$money('refundable', Balance::refundable($order)),
             ],
+            'balance' => Consequences::balance(Balance::of($order), $this->money),
             'blocks' => [
                 'delivery' => $order->delivery === null ? null : ['summary' => $this->list->summary('delivery', $order->delivery, $locale), 'value' => $order->delivery],
                 'payment' => $order->payment === null ? null : ['summary' => $this->list->summary('payment', $order->payment, $locale), 'value' => $order->payment],
@@ -432,6 +543,13 @@ final readonly class OrdersTools
                 'reason' => $refund->reason,
                 'source' => $refund->source,
                 'at' => $refund->created_at?->toAtomString(),
+                // Reversed by mistake (decision 98): it counts no more, and says when and why.
+                'reversed' => $refund->reversed() ? [
+                    'at' => $refund->reversed_at?->toAtomString(),
+                    'source' => $refund->reversed_source,
+                    'admin_id' => $refund->reversed_by,
+                    'reason' => $refund->reversal_reason,
+                ] : null,
             ])->values()->all(),
         ];
     }
@@ -449,7 +567,7 @@ final readonly class OrdersTools
             'number' => $order->number,
             // A refund's money as every amount here is: an integer and the string beside it.
             'timeline' => array_map(static function (array $line): array {
-                if ($line['kind'] === 'refund') {
+                if (in_array($line['kind'], ['refund', 'refund_reversed', 'payment'], true) && array_key_exists('amount_minor', $line)) {
                     $line['amount_formatted'] = $line['amount'];
                     $line['amount'] = $line['amount_minor'];
                     unset($line['amount_minor']);
@@ -459,87 +577,92 @@ final readonly class OrdersTools
 
                 return $line;
             }, $lines),
-            'notifications' => $this->channels->available() ? $this->channels->deliveries($order) : null,
+            'notifications' => $this->channels->available() ? $this->channels->deliveries($order, $caller) : null,
+            // The edits of the lines with every field of their row (§38.2).
+            'revisions' => $order->revisions->map(static fn (OrderRevision $revision): array => [
+                'number' => $revision->number,
+                'changes' => $revision->changes,
+                'adjustments' => $revision->adjustments,
+                'before' => $revision->before,
+                'after' => $revision->after,
+                'reason' => $revision->reason,
+                'message' => $revision->message,
+                'source' => $revision->source,
+                'admin_id' => $revision->admin_id,
+                'at' => $revision->created_at?->toAtomString(),
+            ])->values()->all(),
         ];
     }
 
     /**
-     * Counted by `GROUP BY` and conditional sums over the indexed columns — no order is loaded.
+     * An edit of the lines (§37) — the editor's answer, {@see Consequences::itemsEdit()}.
+     *
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function editItems(array $arguments): array
+    {
+        $order = $this->order($arguments['order'] ?? null);
+        $revision = $arguments['revision'] ?? null;
+
+        if (! is_int($revision) || $revision < 0) {
+            throw new ToolFailure('`revision` is orders_get `items_revision`, a whole number.');
+        }
+
+        $qty = [];
+
+        foreach ((array) ($arguments['qty'] ?? []) as $id => $value) {
+            if (! ctype_digit((string) $id) || ! is_int($value) || $value < 0) {
+                throw new ToolFailure('`qty` is line id → a whole number of units, 0 or more.');
+            }
+
+            $qty[(int) $id] = $value;
+        }
+
+        $remove = array_values((array) ($arguments['remove'] ?? []));
+
+        if (array_filter($remove, static fn (mixed $id): bool => ! is_int($id)) !== []) {
+            throw new ToolFailure('`remove` is a list of line ids.');
+        }
+
+        $edit = new ItemsEdit(
+            revision: $revision,
+            add: array_values(array_map(static fn (mixed $line): array => (array) $line, (array) ($arguments['add'] ?? []))),
+            qty: $qty,
+            remove: $remove,
+            reason: isset($arguments['reason']) ? (string) $arguments['reason'] : null,
+            message: isset($arguments['message']) ? (string) $arguments['message'] : null,
+            notify: ($arguments['notify'] ?? true) !== false,
+            source: self::SOURCE,
+        );
+
+        try {
+            $result = $this->attempt(fn () => $this->orders->editItems($order, $edit, $this->dryRun($arguments)));
+        } catch (ItemsEditRefused $refused) {
+            $result = $refused->result;
+        } catch (CartNotOrderable $refused) {
+            throw new ToolFailure("Order {$order->number}: ".CheckoutPreview::notOrderable($refused));
+        } catch (OrderRefused $refused) {
+            throw new ToolFailure("Order {$order->number}: ".$refused->getMessage());
+        }
+
+        $answer = ['number' => $order->number, ...$this->consequences->itemsEdit($result, $order->currency, $this->money)];
+
+        if ($result->refusal !== null && ! $result->dryRun) {
+            throw new ToolFailure("Order {$order->number}: ".$answer['message'].($result->field !== null ? " ({$result->field})" : ''));
+        }
+
+        return $answer;
+    }
+
+    /**
+     * The count the panel's figures over the list show too — {@see OrdersSummary}.
      *
      * @return array<string, mixed>
      */
     private function summary(): array
     {
-        $locale = app()->getLocale();
-        $counts = $this->statuses->counts();
-        $initial = $this->statuses->initial();
-        $public = [];
-        $internal = [];
-
-        foreach ((new StatusChoices)->grouped($locale) as $group) {
-            $inGroup = 0;
-
-            foreach ($group['statuses'] as $status) {
-                $orders = $counts[$status['id']] ?? 0;
-                $inGroup += $orders;
-
-                if ($orders > 0 || ! $status['deleted']) {
-                    $internal[] = ['id' => $status['id'], 'name' => $status['name'], 'public' => $group['code'], 'deleted' => $status['deleted'], 'orders' => $orders];
-                }
-            }
-
-            $public[] = ['code' => $group['code'], 'name' => $group['name'], 'deleted' => $group['deleted'], 'orders' => $inGroup];
-        }
-
-        $waiting = $initial === [] ? '0 = 1' : 'status_id in ('.implode(',', array_fill(0, count($initial), '?')).')';
-        $flags = Order::query()->toBase()->selectRaw(
-            'sum(case when awaiting_payment = ? and cancelled_at is null then 1 else 0 end) as awaiting,'
-            .' sum(case when awaiting_payment = ? and cancelled_at is null and payment_failed_at is not null then 1 else 0 end) as failed,'
-            ." sum(case when paid_at is not null and cancelled_at is null and {$waiting} then 1 else 0 end) as paid_waiting",
-            [true, true, ...$initial],
-        )->first();
-
-        $now = Carbon::now();
-        $since = [1 => $now->copy()->subDay(), 7 => $now->copy()->subDays(7), 30 => $now->copy()->subDays(30)];
-        $select = ['currency'];
-        $bindings = [];
-
-        foreach ($since as $days => $from) {
-            $select[] = "sum(case when placed_at >= ? then 1 else 0 end) as placed_{$days}";
-            $select[] = "sum(case when placed_at >= ? and paid_at is not null then 1 else 0 end) as paid_{$days}";
-            $select[] = "sum(case when placed_at >= ? and paid_at is not null then payable - refunded_total else 0 end) as revenue_{$days}";
-            array_push($bindings, $from, $from, $from);
-        }
-
-        $rows = Order::query()->toBase()
-            ->selectRaw(implode(', ', $select), $bindings)
-            ->where('placed_at', '>=', $since[30])
-            ->groupBy('currency')
-            ->orderBy('currency')
-            ->get();
-
-        $periods = [];
-
-        foreach (array_keys($since) as $days) {
-            $periods[] = [
-                'days' => $days,
-                'by_currency' => $rows->map(fn (object $row): array => [
-                    'currency' => (string) $row->currency,
-                    'placed' => (int) $row->{"placed_{$days}"},
-                    'paid' => (int) $row->{"paid_{$days}"},
-                    ...$this->amount('revenue', (int) $row->{"revenue_{$days}"}, (string) $row->currency),
-                ])->values()->all(),
-            ];
-        }
-
-        return [
-            'public' => $public,
-            'internal' => $internal,
-            'awaiting_payment' => (int) ($flags->awaiting ?? 0),
-            'payment_failed' => (int) ($flags->failed ?? 0),
-            'paid_status_waits' => (int) ($flags->paid_waiting ?? 0),
-            'periods' => $periods,
-        ];
+        return $this->summary->describe(app()->getLocale());
     }
 
     /**
@@ -645,6 +768,63 @@ final readonly class OrdersTools
     }
 
     /**
+     * A top-up (§36.3) — the dialog's answer, {@see Consequences::payment()}.
+     *
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function payment(array $arguments): array
+    {
+        $order = $this->order($arguments['order'] ?? null);
+        $amount = $arguments['amount'] ?? null;
+
+        if (! is_int($amount) || $amount < 1) {
+            throw new ToolFailure('`amount` is a whole number of minor units, above zero.');
+        }
+
+        $at = null;
+
+        if (isset($arguments['at'])) {
+            $day = (string) $arguments['at'];
+
+            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $day) !== 1) {
+                throw new ToolFailure('`at` is a day, YYYY-MM-DD.');
+            }
+
+            $at = CarbonImmutable::parse($day)->setTimeFrom(CarbonImmutable::now());
+        }
+
+        $record = fn (bool $dryRun): PaymentRecord => $this->orders->recordPayment(
+            $order,
+            $amount,
+            self::SOURCE,
+            isset($arguments['reference']) ? (string) $arguments['reference'] : null,
+            $at,
+            isset($arguments['note']) ? (string) $arguments['note'] : null,
+            $dryRun,
+        );
+
+        try {
+            $result = $record($this->dryRun($arguments));
+        } catch (PaymentRefused $refused) {
+            throw new ToolFailure($this->paymentRefusal($order, $refused->reason));
+        }
+
+        $answer = ['number' => $order->number, ...$this->consequences->payment($result, $this->money)];
+
+        if ($result->refusal !== null) {
+            $answer['message'] = $this->paymentRefusal($order, $result->refusal);
+        }
+
+        return $answer;
+    }
+
+    private function paymentRefusal(Order $order, string $reason): string
+    {
+        return $this->refusal($order, $reason).($reason === PaymentRecord::NOT_PAID ? ' Use orders_mark with «paid» for its first payment.' : '');
+    }
+
+    /**
      * @param  array<string, mixed>  $arguments
      * @return array<string, mixed>
      */
@@ -671,6 +851,8 @@ final readonly class OrdersTools
                 'label' => $tender->label,
                 ...$this->amount('amount', $tender->amount, $order->currency),
             ], $mark->tendersReturned),
+            // The status it comes into, as orders_move says one (decision 88); null — it stays.
+            'status' => $said['status'],
             'dry_run' => $dryRun,
         ];
     }
@@ -733,6 +915,58 @@ final readonly class OrdersTools
         }
 
         return ['number' => $order->number, ...$this->refundAnswer($result, $order->currency), 'refund_id' => $result->refundId];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function reverseRefund(array $arguments): array
+    {
+        $order = $this->order($arguments['order'] ?? null);
+        $dryRun = $this->dryRun($arguments);
+        $refund = $arguments['refund'] ?? null;
+
+        if (! is_int($refund) && ! (is_string($refund) && ctype_digit($refund))) {
+            throw new ToolFailure('`refund` is the id of a refund record; orders_get lists them under `refunds`.');
+        }
+
+        $reason = isset($arguments['reason']) ? (string) $arguments['reason'] : null;
+
+        try {
+            $reversal = $this->attempt(fn (): RefundReversal => $this->orders->reverseRefund($order, (int) $refund, $reason, self::SOURCE, $dryRun));
+        } catch (RefundReversalRefused $refused) {
+            throw new ToolFailure("Order {$order->number}: ".__('webx-orders::panel.reverse-refusals.'.$refused->reason));
+        }
+
+        return ['number' => $order->number, ...$this->consequences->reversal($reversal, $order->currency, $this->money)];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function notify(array $arguments): array
+    {
+        $order = $this->order($arguments['order'] ?? null);
+        $delivery = $arguments['delivery'] ?? null;
+        $event = $arguments['event'] ?? null;
+
+        if (($delivery === null) === ($event === null)) {
+            throw new ToolFailure('Send `delivery` (a row of orders_history `notifications`) or `event`, one of them.');
+        }
+
+        if ($delivery !== null && ! is_int($delivery) && ! (is_string($delivery) && ctype_digit($delivery))) {
+            throw new ToolFailure('`delivery` is the id of a row of orders_history `notifications`.');
+        }
+
+        try {
+            $result = $this->orders->notify($order, $delivery !== null ? ['delivery' => (int) $delivery] : ['event' => (string) $event], self::SOURCE, $this->dryRun($arguments));
+        } catch (NotifyRefused $refused) {
+            throw new ToolFailure("Order {$order->number}: ".$refused->said());
+        }
+
+        return ['number' => $order->number, ...$result->toArray()];
     }
 
     /**
@@ -963,6 +1197,8 @@ final readonly class OrdersTools
             'received_at' => $row['received_at'],
             'cancelled_at' => $row['cancelled_at'],
             'refunded' => $row['refunded'],
+            ...$this->amount('balance', $order->balance, $order->currency),
+            'balance_kind' => Balance::of($order)->kind(),
             'delivery' => $row['delivery'],
             'payment' => $row['payment'],
         ];
@@ -980,7 +1216,8 @@ final readonly class OrdersTools
 
         foreach ($order->items as $item) {
             /** @var OrderItem $item */
-            if ($item->parent_id !== $parent) {
+            // Taken out whole by an edit: orders_history has it, the order no longer does.
+            if ($item->parent_id !== $parent || ! $item->shown()) {
                 continue;
             }
 
@@ -1002,6 +1239,10 @@ final readonly class OrdersTools
                     ->map(static fn (OrderAdjustment $adjustment): array => ['label' => $adjustment->label, ...$money('amount', $adjustment->amount)])
                     ->values()->all(),
                 'children' => $this->lines($order, $item->id, $locale, $money),
+                // What orders_items_edit may do with it: a gift only goes; a set's part is not edited apart.
+                'gift' => $item->source !== null,
+                'revision' => $item->revision,
+                'removed_at' => $item->removed_at?->toAtomString(),
             ];
         }
 

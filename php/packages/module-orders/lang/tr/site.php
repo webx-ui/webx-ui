@@ -27,6 +27,9 @@ return [
         'customer' => 'Alıcı',
         'recipient' => 'Teslim alan',
         'comment' => 'Yorum',
+        'changed' => 'Ürünler değişti: :date',
+        'due' => 'Kalan ödeme: :amount',
+        'over' => 'Size :amount iade edeceğiz',
     ],
     'account' => [
         'menu' => 'Siparişlerim',

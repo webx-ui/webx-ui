@@ -33,6 +33,9 @@ final class ScreenRegistry
     /** @var array<string, true> Screens whose defaults were checked against the types. */
     private array $checked = [];
 
+    /** @var array<string, list<array<string, mixed>|Closure(): array<string, mixed>>> */
+    private array $rules = [];
+
     /**
      * @param  string|array<int|string, mixed>  $screen  A path to a JSON file, or the decoded
      *                                                   description: the root list, or the
@@ -92,6 +95,51 @@ final class ScreenRegistry
         /** @var list<array<string, mixed>> $ops */
         $this->patches[$name][] = $ops;
         unset($this->built[$name], $this->checked[$name]);
+    }
+
+    /**
+     * The rules the module checks a screen's fields by on its own write path — what an order's
+     * contacts are held to by `Orders`, not by the field's type. Keyed by field name, Laravel's
+     * rules as they are; told so the panel can mark what is always required ({@see render()}).
+     * Nothing is validated by them here: the module that wrote them does that.
+     *
+     * A closure is asked each time the screen is drawn, for rules that depend on settings.
+     *
+     * @param  array<string, mixed>|(Closure(): array<string, mixed>)  $rules
+     */
+    public function rules(string $name, array|Closure $rules): void
+    {
+        $this->rules[$name][] = $rules;
+    }
+
+    /**
+     * Every rule a field of the screen answers to: its type's first, then the module's.
+     *
+     * @param  Node  $node
+     * @return list<mixed>
+     */
+    public function fieldRules(string $name, array $node): array
+    {
+        $field = $node['name'] ?? null;
+
+        if (! is_string($field)) {
+            return [];
+        }
+
+        $container = Container::getInstance();
+        $type = $container->bound(FieldTypes::class) ? $container->make(FieldTypes::class)->get((string) ($node['type'] ?? '')) : null;
+        $rules = $type?->rules($node) ?? [];
+
+        foreach ($this->rules[$name] ?? [] as $set) {
+            $set = $set instanceof Closure ? $set() : $set;
+            $own = $set[$field] ?? [];
+
+            foreach (is_string($own) ? explode('|', $own) : (is_array($own) ? $own : [$own]) as $rule) {
+                $rules[] = $rule;
+            }
+        }
+
+        return array_values($rules);
     }
 
     public function has(string $name): bool
@@ -156,13 +204,17 @@ final class ScreenRegistry
      * What one administrator gets to see: nodes without their permission cut out, and every
      * `trans::` string turned into words in their language.
      *
+     * A field its rules always require is drawn with `required: true` — the asterisk at its label
+     * ({@see Required}). A description may say so itself for a field its project checks; it is
+     * never taken away here.
+     *
      * @param  (callable(string): bool)|null  $can  Without it every node with a `can` is cut out.
      * @param  (callable(string): string)|null  $translate  Without it the keys stay as they are.
      * @return list<Node>
      */
     public function render(string $name, ?callable $can = null, ?callable $translate = null): array
     {
-        $root = Tree::filter($this->tree($name), $can ?? static fn (string $permission): bool => false);
+        $root = $this->required($name, Tree::filter($this->tree($name), $can ?? static fn (string $permission): bool => false));
 
         if ($translate !== null) {
             /** @var list<Node> $root */
@@ -180,6 +232,31 @@ final class ScreenRegistry
     public function fields(string $name): array
     {
         return Tree::fields($this->tree($name));
+    }
+
+    /**
+     * @param  list<Node>  $nodes
+     * @return list<Node>
+     */
+    private function required(string $name, array $nodes): array
+    {
+        foreach ($nodes as $index => $node) {
+            // A named node owns what is under it, as in {@see Tree::fields()}: the fields of a
+            // repeater's row are its keys, not the screen's.
+            if (isset($node['name']) && is_string($node['name']) && $node['name'] !== '') {
+                if (($node['required'] ?? false) !== true && Required::among($this->fieldRules($name, $node))) {
+                    $nodes[$index]['required'] = true;
+                }
+
+                continue;
+            }
+
+            if (isset($node['children']) && is_array($node['children'])) {
+                $nodes[$index]['children'] = $this->required($name, Tree::children($node));
+            }
+        }
+
+        return $nodes;
     }
 
     /**

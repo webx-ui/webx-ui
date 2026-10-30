@@ -7,8 +7,10 @@ namespace WebxUi\Orders\Notifications;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\Carbon;
 use WebxUi\Cart\Money;
+use WebxUi\Orders\Balance;
 use WebxUi\Orders\Data\ItemData;
 use WebxUi\Orders\Data\OrderData;
+use WebxUi\Orders\Data\RevisionData;
 use WebxUi\Orders\Models\PublicStatus;
 use WebxUi\Orders\Panel\OrderList;
 use WebxUi\Orders\Site\OrderLinks;
@@ -32,7 +34,7 @@ final readonly class OrderValues
     ) {}
 
     /**
-     * @param  array<string, string>  $extra  the values of one event: `reason`, `reference`, `refund_amount`
+     * @param  array<string, string|list<array<string, string>>>  $extra  the values of one event: `reason`, `reference`, `refund_amount`, the edit's
      * @return array<string, string|list<array<string, string>>>
      */
     public function of(OrderData $order, array $extra = []): array
@@ -80,6 +82,55 @@ final readonly class OrderValues
             'public_status_description' => (string) $public?->getTranslation('description', $locale),
             'status' => $order->status->name,
             ...$extra,
+        ];
+    }
+
+    /**
+     * The values of `orders.items_changed` (§40.2): what came and went, the total it was, the
+     * balance after and the manager's words to the buyer. Never the edit's `reason` — that one is
+     * the shop's, like the manager's note.
+     *
+     * @return array{changes: list<array<string, string>>, previous_total: string, balance: string, balance_kind: string, amount_due: string, amount_over: string, message: string}
+     */
+    public function edit(RevisionData $revision, Balance $balance, string $locale): array
+    {
+        $yes = (string) trans('webx-orders::notifications.yes', [], $locale);
+
+        return [
+            'changes' => array_map(static fn (array $change): array => [
+                'name' => $change['name'],
+                'options' => (string) $change['options_label'],
+                'qty_from' => (string) $change['qty_from'],
+                'qty_to' => (string) $change['qty_to'],
+                // Sections for a template: `{{#added}}` and `{{#removed}}` tell a line that came or went.
+                'added' => $change['op'] === 'add' ? $yes : '',
+                'removed' => $change['op'] === 'remove' ? $yes : '',
+            ], $revision->changes),
+            'previous_total' => $this->money->format($revision->before['total'], $balance->currency),
+            ...$this->balance($balance),
+            'message' => (string) $revision->message,
+        ];
+    }
+
+    /**
+     * The balance in words a template can branch on (§36.1): `balance` is the money either way,
+     * `amount_due` / `amount_over` the one that applies and empty the other.
+     *
+     * @return array{balance: string, balance_kind: string, amount_due: string, amount_over: string}
+     */
+    public function balance(Balance $balance): array
+    {
+        $format = fn (int $minor): string => $minor > 0 ? $this->money->format($minor, $balance->currency) : '';
+
+        return [
+            'balance' => $this->money->format(max($balance->due, $balance->over), $balance->currency),
+            'balance_kind' => match (true) {
+                $balance->due > 0 => 'due',
+                $balance->over > 0 => 'over',
+                default => 'none',
+            },
+            'amount_due' => $format($balance->due),
+            'amount_over' => $format($balance->over),
         ];
     }
 

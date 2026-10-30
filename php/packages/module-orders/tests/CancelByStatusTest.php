@@ -77,9 +77,11 @@ final class CancelByStatusTest extends PlaceTestCase
         $orders->moveTo($byApi, $this->cancelling(), 'api');
         $this->assertNotNull($byApi->refresh()->cancelled_at);
 
-        // Cancelled already: the move sets nothing, so it asks for nothing.
+        // Cancelled already, and taken out of «Cancelled» by hand: the way back sets nothing, so
+        // it asks for nothing.
         $cancelled = $this->place($this->cart());
         $orders->cancel($cancelled, 'panel', 'Duplicate');
+        $orders->moveTo($cancelled, OrderStatus::query()->orderBy('id')->firstOrFail(), 'panel');
         $move = $orders->moveTo($cancelled, $this->cancelling(), 'panel');
         $this->assertTrue($move->moved);
         $this->assertNull($move->milestone);

@@ -11,6 +11,8 @@ return [
         'received' => 'Encomenda: recebida',
         'cancelled' => 'Encomenda: cancelada',
         'refunded' => 'Encomenda: reembolsada',
+        'items_changed' => 'Encomenda: artigos alterados',
+        'payment_requested' => 'Encomenda: pagamento solicitado',
     ],
     'vars' => [
         'number' => 'Número da encomenda',
@@ -48,12 +50,25 @@ return [
         'reference' => 'Referência da operação',
         'reason' => 'Motivo',
         'refund_amount' => 'Valor devolvido',
+        'changes' => 'O que mudou',
+        'change_qty_from' => 'Quantidade antes',
+        'change_qty_to' => 'Quantidade agora',
+        'change_added' => 'Adicionado',
+        'change_removed' => 'Removido',
+        'previous_total' => 'Total antes da alteração',
+        'balance' => 'Saldo',
+        'balance_kind' => 'Saldo: due, over ou none',
+        'amount_due' => 'Falta pagar',
+        'amount_over' => 'A devolver ao comprador',
+        'message' => 'Mensagem do gestor ao comprador',
     ],
     'yes' => 'sim',
     'channels' => [
         'placed-customer' => 'Encomenda aceite — para o comprador',
         'placed-admin' => 'Nova encomenda — para a loja',
         'paid-customer' => 'Pagamento recebido — para o comprador',
+        'items-changed-customer' => 'Encomenda alterada — ao comprador',
+        'payment-requested-customer' => 'Pagamento pendente — ao comprador',
     ],
     'letters' => [
         'placed' => [
@@ -88,6 +103,14 @@ return [
             'subject' => 'Reembolso da encomenda {{number}}',
             'intro' => 'O dinheiro da sua encomenda foi devolvido.',
         ],
+        'items_changed' => [
+            'subject' => 'Encomenda {{number}} alterada',
+            'intro' => 'Alterámos os artigos da sua encomenda. Esta é a encomenda como está agora.',
+        ],
+        'payment_requested' => [
+            'subject' => 'Encomenda {{number}}: {{amount_due}} a pagar',
+            'intro' => 'A sua encomenda aguarda um pagamento de {{amount_due}}. Entraremos em contacto para indicar como pagar.',
+        ],
     ],
     'words' => [
         'subtotal' => 'Artigos',
@@ -105,5 +128,11 @@ return [
         'refund_amount' => 'Devolvido',
         'open-order' => 'Ver a encomenda',
         'open-panel' => 'Abrir no painel',
+        'changes' => 'O que mudou',
+        'added' => 'adicionado',
+        'removed' => 'removido',
+        'previous_total' => 'Total antes',
+        'amount_due' => 'Falta pagar',
+        'amount_over' => 'Vamos devolver',
     ],
 ];

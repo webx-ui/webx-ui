@@ -17,6 +17,7 @@ use WebxUi\Notifications\NotificationEvents;
 use WebxUi\Orders\Blocks\OrderBlocks;
 use WebxUi\Orders\Checkout\Checkout;
 use WebxUi\Orders\Checkout\Console\PruneDraftsCommand;
+use WebxUi\Orders\Doctor\OrdersCancelStatusCheck;
 use WebxUi\Orders\Doctor\OrdersNotificationsCheck;
 use WebxUi\Orders\Models\Order;
 use WebxUi\Orders\Models\OrderStatus;
@@ -59,6 +60,7 @@ class OrdersServiceProvider extends ServiceProvider
 
         $this->callAfterResolving(DoctorChecks::class, static function (DoctorChecks $checks): void {
             $checks->register(OrdersNotificationsCheck::class);
+            $checks->register(OrdersCancelStatusCheck::class);
         });
     }
 
@@ -98,6 +100,9 @@ class OrdersServiceProvider extends ServiceProvider
         // The card of an order (§11.3): neighbours add their tabs to it with a patch of `tabs`.
         $screens = $this->app->make(ScreenRegistry::class);
         $screens->register(OrdersModule::SCREEN, __DIR__.'/../resources/screens/show.json');
+        // Its fields are checked by `Orders`, not by their types: told, so the always required
+        // ones carry an asterisk.
+        $screens->rules(OrdersModule::SCREEN, ContactRules::screen());
         // The settings of the section (§11.4): the choice of the initial statuses is made of the
         // statuses as they are when the tree is built.
         $screens->register(SettingsScreen::NAME, __DIR__.'/../resources/screens/settings.json');

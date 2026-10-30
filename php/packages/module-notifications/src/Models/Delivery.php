@@ -32,6 +32,9 @@ use WebxUi\Notifications\Notifications;
  * @property string|null $error
  * @property int $attempts
  * @property bool $is_test
+ * @property bool $manual
+ * @property int|null $manual_by
+ * @property int|null $resent_from
  * @property bool $truncated
  * @property list<string>|null $unknown_variables
  * @property array<string, string|list<array<string, string>>>|null $variables
@@ -53,6 +56,9 @@ class Delivery extends Model
     /** A queued row older than this is stuck: no worker has taken it (§13). */
     public const STUCK_MINUTES = 15;
 
+    /** A message sent by hand is not sent by hand again so soon: a second press of the button (§8.6). */
+    public const RESEND_PAUSE = 60;
+
     public const UPDATED_AT = null;
 
     protected $table = 'notifications_deliveries';
@@ -64,6 +70,7 @@ class Delivery extends Model
     protected $attributes = [
         'attempts' => 0,
         'is_test' => false,
+        'manual' => false,
         'truncated' => false,
     ];
 
@@ -73,6 +80,9 @@ class Delivery extends Model
         'subject_id' => 'integer',
         'attempts' => 'integer',
         'is_test' => 'boolean',
+        'manual' => 'boolean',
+        'manual_by' => 'integer',
+        'resent_from' => 'integer',
         'truncated' => 'boolean',
         'unknown_variables' => 'array',
         'variables' => 'array',
@@ -92,6 +102,18 @@ class Delivery extends Model
     {
         return $this->status === self::FAILED
             || ($this->status === self::QUEUED && $this->created_at !== null && $this->created_at->lt(Carbon::now()->subMinutes(self::STUCK_MINUTES)));
+    }
+
+    /**
+     * Whether a person may send it again by hand (§8.6): it went, or failed, or got stuck — to
+     * somebody, through a channel. A skipped row had nobody to go to; a test has no event.
+     */
+    public function resendable(): bool
+    {
+        return ! $this->is_test
+            && $this->channel_id !== null
+            && $this->recipient !== ''
+            && ($this->status === self::SENT || $this->retryable());
     }
 
     /**

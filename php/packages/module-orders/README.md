@@ -17,7 +17,7 @@ contacts and a comment.
 
 **Milestones** are fixed facts the system and the neighbours rely on — `WebxUi\Orders\Milestone`:
 placed, awaiting payment, paid, received, cancelled, refunded. Each is set once and never taken
-back.
+back — but «refunded», which a reversed refund record takes off.
 
 **Statuses** are the shop's own stages, in two levels: internal ones the staff work in («Being
 packed»), each inside one public group the buyer sees («In progress»). A site starts with a default
@@ -93,6 +93,10 @@ is left. A refund only records what the manager gave back — a bank, a till, th
 part is kept to what is left. When the money and every tender are back, the order gets the
 milestone «refunded» and `OrderRefunded` comes with `full = true`. Both take `dryRun: true`.
 
+A refund recorded by mistake is never edited: `reverseRefund($order, $refundId, $reason, "api")`
+reverses it. The record stays in the history, what it gave back comes off the order, and when the
+order is no longer given back whole «refunded» comes off with it; then the right one is recorded.
+
 ## In the panel
 
 «Orders» lists what was placed, with four views — new, awaiting payment, payment failed, all — a
@@ -131,7 +135,7 @@ order needs a reason, given as the note.
 
 The same through the panel's MCP server: `orders_list`, `orders_get`, `orders_history` and
 `orders_summary` read; `orders_set_status` (one order, or up to 200 by `numbers`),
-`orders_mark`, `orders_cancel`, `orders_refund`, `orders_update` and `orders_note` work an
+`orders_mark`, `orders_cancel`, `orders_refund`, `orders_refund_reverse`, `orders_update` and `orders_note` work an
 order; `orders_statuses_*`, `orders_public_statuses_*` and `orders_settings_get|set` are the two
 screens. Each is a call of `Orders` or `OrderStatuses` with the source `mcp`, behind the
 permission the panel asks for, and `dry_run: true` answers what the panel's dialog shows — the

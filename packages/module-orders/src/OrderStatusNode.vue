@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { WxBadge, WxButton, WxCard, WxIcon, WxText, WxTooltip } from '@webx-ui/core'
+import { WxBadge, WxCard, WxIcon, WxText, WxTooltip } from '@webx-ui/core'
 import { useDates, useTranslate } from '@webx-ui/module-admin'
 import { useOrderCard } from './card'
 import { NAMESPACE, useOrdersMessages } from './i18n'
@@ -9,8 +9,9 @@ import type { BadgeType } from '@webx-ui/core'
 import type { MilestoneKey } from './types'
 
 /**
- * `wx-orders-status` — the strip under the card's head (spec §11.3): the internal status with
- * «Change», what the buyer sees beside it, the milestones the order has. Its public id is
+ * `wx-orders-status` — the strip under the card's head (spec §11.3): the internal status with a
+ * pencil that changes it — the same dialog as «Change status» of the head — what the buyer sees
+ * beside it, the milestones the order has. Its public id is
  * `header-actions`: a neighbour adds its own button here with a patch, and it is drawn at the end
  * of the strip — «Track the parcel» of the delivery, «Check the payment» of the gateway.
  */
@@ -51,15 +52,20 @@ const marks = computed(() =>
           <wx-tooltip v-if="order.status?.deleted" :content="t('panel.status-deleted')">
             <wx-icon class="wx-orders-status__warn" name="warning" size="sm" />
           </wx-tooltip>
-          <wx-button
-            v-if="order.actions.status"
-            size="sm"
-            variant="text"
-            :disabled="card?.busy.value"
-            @click="card?.changeStatus()"
-          >
-            {{ t('panel.status-change') }}
-          </wx-button>
+          <wx-tooltip v-if="order.actions.status" :content="t('panel.status-change')">
+            <!-- A bare icon in the colour of a link, not a button: beside the badge a button's grey
+                 plate read as a second badge. The head keeps the button with the word. -->
+            <button
+              type="button"
+              class="wx-orders-status__change"
+              :aria-label="t('panel.status-change')"
+              :disabled="card?.busy.value"
+              data-test="status-change"
+              @click="card?.changeStatus()"
+            >
+              <wx-icon name="edit" size="sm" />
+            </button>
+          </wx-tooltip>
         </span>
       </div>
 
@@ -118,6 +124,39 @@ const marks = computed(() =>
   display: flex;
   align-items: center;
   min-height: 32px;
+}
+
+.wx-orders-status__change {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* The target stays a finger's size although only the icon is drawn. */
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--wx-radius-sm);
+  background: none;
+  color: var(--wx-text-link);
+  cursor: pointer;
+  transition:
+    color var(--wx-duration-fast) var(--wx-easing-standard),
+    background-color var(--wx-duration-fast) var(--wx-easing-standard);
+}
+
+.wx-orders-status__change:hover:not(:disabled) {
+  color: var(--wx-color-primary-hover);
+  background: var(--wx-color-primary-soft);
+}
+
+.wx-orders-status__change:focus-visible {
+  outline: none;
+  box-shadow: var(--wx-ring-focus);
+}
+
+.wx-orders-status__change:disabled {
+  color: var(--wx-color-primary-disabled);
+  cursor: not-allowed;
 }
 
 .wx-orders-status__warn {

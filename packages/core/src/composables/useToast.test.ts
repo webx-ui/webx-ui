@@ -34,11 +34,24 @@ describe('useToast', () => {
     expect(toastQueue().map((item) => item.type)).toEqual(['success', 'warning', 'info'])
   })
 
-  it('keeps an error until it is dismissed', () => {
+  it('gives a report five seconds and a warning or an error eight', () => {
+    toast('Note')
+    toast.success('Done')
+    toast.info('For your information')
+    toast.warning('Careful')
     toast.danger('Broken')
 
-    // An error that vanishes on its own is an error nobody read.
-    expect(toastQueue()[0].duration).toBe(0)
+    expect(toastQueue().map((item) => item.duration)).toEqual([5000, 5000, 5000, 8000, 8000])
+  })
+
+  it('keeps a persistent toast until it is dismissed', () => {
+    toast.danger('Copy this by hand', { persistent: true })
+    toast.info('Same', { duration: 0 })
+
+    expect(toastQueue().map((item) => [item.duration, item.persistent])).toEqual([
+      [0, true],
+      [0, true],
+    ])
   })
 
   it('lets a caller override what the shorthand chose', () => {

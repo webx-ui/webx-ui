@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { WxBadge, WxCard, WxEmpty, WxIcon, WxText } from '@webx-ui/core'
+import { WxBadge, WxButton, WxCard, WxEmpty, WxIcon, WxText } from '@webx-ui/core'
 import { useTranslate } from '@webx-ui/module-admin'
 import { useOrderCard } from './card'
 import { NAMESPACE, useOrdersMessages } from './i18n'
@@ -11,6 +11,9 @@ import type { OrderLine } from './types'
  * with its parts under it, each line's discounts beside it; then what applies to the order as a
  * whole — its discounts and charges, the tenders, the privileges as marks. A block whose owner
  * has no tab of its own on this card is here too, its line and the block itself folded.
+ *
+ * Over the lines, «Change the lines» (§42.1) for whoever works the order — greyed with why once
+ * the order is past editing (§37.2) — and a line added by an edit is marked so.
  */
 defineOptions({ name: 'WxOrdersItems' })
 
@@ -36,10 +39,29 @@ const lines = computed(() => {
 })
 
 const json = (value: unknown) => JSON.stringify(value, null, 2)
+
+const editable = computed(() => Boolean(order.value?.actions.edit_items))
+const editReason = computed(() => order.value?.actions.edit_items_reason ?? null)
 </script>
 
 <template>
   <div v-if="order" class="wx-orders-items">
+    <div v-if="editable" class="wx-orders-items__bar">
+      <wx-text v-if="editReason" size="sm" tone="muted" class="wx-orders-items__why">
+        {{ editReason }}
+      </wx-text>
+      <wx-button
+        size="sm"
+        variant="outline"
+        icon="edit"
+        :disabled="Boolean(editReason) || card?.busy.value"
+        data-test="edit-items"
+        @click="card?.editItems()"
+      >
+        {{ t('panel.items-edit') }}
+      </wx-button>
+    </div>
+
     <wx-card class="wx-orders-items__lines">
       <wx-empty v-if="lines.length === 0" :title="t('panel.items-empty')" size="sm" />
 
@@ -55,6 +77,25 @@ const json = (value: unknown) => JSON.stringify(value, null, 2)
               <wx-icon v-if="depth > 0" name="chevron-right" size="sm" />
               <wx-text weight="medium">{{ line.name }}</wx-text>
               <wx-badge v-if="line.label" size="sm" variant="soft">{{ line.label }}</wx-badge>
+              <wx-badge
+                v-if="line.generated && !line.label && depth === 0"
+                size="sm"
+                type="success"
+                variant="soft"
+              >
+                {{ t('panel.items-gift') }}
+              </wx-badge>
+              <wx-badge
+                v-if="(line.revision ?? 0) > 0 && depth === 0"
+                size="sm"
+                type="primary"
+                variant="soft"
+              >
+                {{ t('panel.items-added') }}
+              </wx-badge>
+              <wx-badge v-if="line.removed" size="sm" type="danger" variant="soft">
+                {{ t('panel.items-removed') }}
+              </wx-badge>
             </span>
             <wx-text v-if="line.sku || line.options" size="sm" tone="muted">
               {{ [line.sku, line.options].filter(Boolean).join(' · ') }}
@@ -121,6 +162,25 @@ const json = (value: unknown) => JSON.stringify(value, null, 2)
   display: flex;
   flex-direction: column;
   gap: var(--wx-gap, var(--wx-space-16));
+}
+
+.wx-orders-items__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--wx-space-8) var(--wx-space-12);
+}
+
+.wx-orders-items__bar > :last-child {
+  flex: none;
+  margin-inline-start: auto;
+}
+
+.wx-orders-items__why {
+  flex: 1 1 240px;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .wx-orders-items__list {

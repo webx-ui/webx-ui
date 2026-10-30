@@ -23,8 +23,16 @@ import type { OrderCardData, OrderDetail, OrderLine, RefundInput, RefundPreview 
  * the ledger. Nothing is split for the manager (decision 26): the money, each tender and each
  * line's units are typed in, and the dialog shows what is left of each and, from the service's
  * own dry run, whether this refund gives the order back whole. No gateway is called from here.
+ *
+ * After an edit of the lines left money or tenders to give back (§42.3), the balance names the
+ * sum: it comes filled in — the money, or the tenders — and the lines stay empty (decision 101,
+ * question 8: the one exception to decision 26).
  */
-const props = defineProps<{ order: OrderCardData }>()
+const props = defineProps<{
+  order: OrderCardData
+  /** Minor units the balance says are over: the money, and each tender by its id. */
+  prefill?: { amount?: number; tenders?: Record<number, number> }
+}>()
 
 const { resolve, dismiss, open } = useModal<OrderDetail>()
 
@@ -43,6 +51,14 @@ const input = reactive<RefundInput>({
   reason: '',
 })
 const preview = ref<RefundPreview | null>(null)
+
+const major = (minor: number) => (minor / 10 ** props.order.exponent).toFixed(props.order.exponent)
+
+if (props.prefill?.amount) input.amount = major(props.prefill.amount)
+
+for (const [id, minor] of Object.entries(props.prefill?.tenders ?? {})) {
+  if (minor > 0) input.tenders[Number(id)] = major(minor)
+}
 const applying = ref(false)
 const errors = ref<Record<string, string[]>>({})
 
@@ -62,9 +78,6 @@ const lines = computed(() => {
 })
 
 const tenders = computed(() => props.order.tenders.filter((tender) => tender.left_minor > 0))
-
-/** A minor amount in the currency's own units, as the field takes it: 4999 → «49.99». */
-const major = (minor: number) => (minor / 10 ** props.order.exponent).toFixed(props.order.exponent)
 
 const empty = computed(
   () =>
@@ -106,6 +119,7 @@ watch(
       }
     }, 300)
   },
+  { immediate: Boolean(props.prefill) },
 )
 
 onBeforeUnmount(() => clearTimeout(timer))

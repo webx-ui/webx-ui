@@ -1,6 +1,8 @@
 import type { AdminContext } from '@webx-ui/module-admin'
 import type { ScreenModel } from '@webx-ui/schema'
 import type {
+  BuyerEvents,
+  NotifyPreview,
   CancelConsequences,
   MassCancelAnswer,
   MassStatusAnswer,
@@ -9,14 +11,21 @@ import type {
   NewOrderMeta,
   NewOrderPreview,
   OrderDetail,
+  OrderGlance,
   OrderQuery,
   OrdersMeta,
   OrdersPage,
   OrdersSettings,
+  OrdersSummaryData,
+  PaymentInput,
+  ItemsEditInput,
+  ItemsEditPreview,
+  PaymentPreview,
   ProductChoice,
   PublicStatusInput,
   RefundInput,
   RefundPreview,
+  RefundReversalPreview,
   StageInput,
   StatusArrangement,
   StatusBoardData,
@@ -58,9 +67,37 @@ function refundBody(input: RefundInput, dryRun: boolean) {
   }
 }
 
+/** A top-up as the server reads it: an empty day is today, empty words are none. */
+function paymentBody(input: PaymentInput, dryRun: boolean) {
+  return {
+    amount: input.amount,
+    reference: input.reference || null,
+    at: input.at || null,
+    note: input.note || null,
+    dry_run: dryRun,
+  }
+}
+
+/** An edit of the lines as the server reads it; the reason is asked for only on saving. */
+function itemsBody(input: ItemsEditInput) {
+  return {
+    revision: input.revision,
+    add: input.add,
+    qty: input.qty,
+    remove: input.remove,
+    reason: input.reason || null,
+    message: input.message || null,
+    notify: input.notify,
+  }
+}
+
 export interface OrdersApi {
   list(query?: OrderQuery): Promise<OrdersPage>
   meta(): Promise<OrdersMeta>
+  /** The figures over the list, asked apart so that the rows never wait for them. */
+  summary(): Promise<OrdersSummaryData>
+  /** What an opened row shows. */
+  glance(id: number): Promise<OrderGlance>
   get(id: number): Promise<OrderDetail>
   /** The line of consequences under the choice of a status — nothing is written. */
   previewStatus(id: number, statusId: number): Promise<MoveConsequences>
@@ -71,11 +108,27 @@ export interface OrdersApi {
     reference: string,
     note: string,
   ): Promise<OrderDetail>
+  /** A top-up of a paid order (§36.3): the balance after it, then the card. */
+  previewPayment(id: number, input: PaymentInput): Promise<PaymentPreview>
+  recordPayment(id: number, input: PaymentInput): Promise<OrderDetail>
+  /** «Change the lines» (§42.1): the live totals, then the card with the edit beside it. */
+  previewItems(id: number, input: ItemsEditInput): Promise<ItemsEditPreview>
+  saveItems(id: number, input: ItemsEditInput): Promise<OrderDetail>
   previewCancel(id: number): Promise<CancelConsequences>
   cancel(id: number, reason: string): Promise<OrderDetail>
   saveDetails(id: number, values: ScreenModel): Promise<OrderDetail>
   previewRefund(id: number, input: RefundInput): Promise<RefundPreview>
   refund(id: number, input: RefundInput): Promise<OrderDetail>
+  /** What reversing a refund record does (decision 98) — nothing is written. */
+  previewReverse(id: number, refundId: number): Promise<RefundReversalPreview>
+  reverseRefund(id: number, refundId: number, reason: string): Promise<OrderDetail>
+  /** A row of the order's «Notifications» sent again by hand (decision 99). */
+  resend(id: number, deliveryId: number): Promise<OrderDetail>
+  /** What «Send the buyer a letter» chooses from. */
+  buyerEvents(id: number): Promise<BuyerEvents>
+  /** Each channel's letter as it would go — nothing is sent. */
+  previewNotify(id: number, event: string): Promise<NotifyPreview>
+  notify(id: number, event: string): Promise<OrderDetail>
   massStatus(
     ids: number[],
     statusId: number,
@@ -106,6 +159,8 @@ export interface OrdersApi {
   link(id: number, userId: number): Promise<OrderDetail>
   previewUnlink(id: number): Promise<VisitorLinkPreview>
   unlink(id: number): Promise<OrderDetail>
+  /** A note in the order's history (decision 90); the answer is the card with it. */
+  note(id: number, body: string): Promise<OrderDetail>
   /** «New order» (§29.2): the languages an order may be in. */
   newMeta(): Promise<NewOrderMeta>
   /** Products for a line, found by a word through whichever module sells them. */
@@ -126,6 +181,8 @@ export function createOrdersApi(admin: AdminContext): OrdersApi {
       return admin.http.get<OrdersPage>(search.size > 0 ? `${base}?${search}` : base)
     },
     meta: () => admin.http.get<{ data: OrdersMeta }>(`${base}/meta`).then(data),
+    summary: () => admin.http.get<{ data: OrdersSummaryData }>(`${base}/summary`).then(data),
+    glance: (id) => admin.http.get<{ data: OrderGlance }>(`${base}/${id}/glance`).then(data),
     get: (id) => admin.http.get<{ data: OrderDetail }>(`${base}/${id}`).then(data),
     previewStatus: (id, statusId) =>
       admin.http
@@ -149,6 +206,20 @@ export function createOrdersApi(admin: AdminContext): OrdersApi {
           note: note || null,
         })
         .then(data),
+    previewPayment: (id, input) =>
+      admin.http
+        .post<{ data: PaymentPreview }>(`${base}/${id}/payments`, paymentBody(input, true))
+        .then(data),
+    recordPayment: (id, input) =>
+      admin.http
+        .post<{ data: OrderDetail }>(`${base}/${id}/payments`, paymentBody(input, false))
+        .then(data),
+    previewItems: (id, input) =>
+      admin.http
+        .post<{ data: ItemsEditPreview }>(`${base}/${id}/items/preview`, itemsBody(input))
+        .then(data),
+    saveItems: (id, input) =>
+      admin.http.put<{ data: OrderDetail }>(`${base}/${id}/items`, itemsBody(input)).then(data),
     previewCancel: (id) =>
       admin.http
         .post<{ data: CancelConsequences }>(`${base}/${id}/cancel`, { dry_run: true })
@@ -165,6 +236,27 @@ export function createOrdersApi(admin: AdminContext): OrdersApi {
       admin.http
         .post<{ data: OrderDetail }>(`${base}/${id}/refunds`, refundBody(input, false))
         .then(data),
+    previewReverse: (id, refundId) =>
+      admin.http
+        .post<{ data: RefundReversalPreview }>(`${base}/${id}/refunds/${refundId}/reverse`, {
+          dry_run: true,
+        })
+        .then(data),
+    reverseRefund: (id, refundId, reason) =>
+      admin.http
+        .post<{ data: OrderDetail }>(`${base}/${id}/refunds/${refundId}/reverse`, { reason })
+        .then(data),
+    resend: (id, deliveryId) =>
+      admin.http
+        .post<{ data: OrderDetail }>(`${base}/${id}/deliveries/${deliveryId}/resend`, {})
+        .then(data),
+    buyerEvents: (id) => admin.http.get<{ data: BuyerEvents }>(`${base}/${id}/notify`).then(data),
+    previewNotify: (id, event) =>
+      admin.http
+        .post<{ data: NotifyPreview }>(`${base}/${id}/notify`, { event, dry_run: true })
+        .then(data),
+    notify: (id, event) =>
+      admin.http.post<{ data: OrderDetail }>(`${base}/${id}/notify`, { event }).then(data),
     massStatus: (ids, statusId, note, dryRun) =>
       admin.http
         .post<{ data: MassStatusAnswer }>(`${base}/status`, {
@@ -256,6 +348,8 @@ export function createOrdersApi(admin: AdminContext): OrdersApi {
         .delete<{ data: VisitorLinkPreview }>(`${base}/${id}/visitor`, { query: { dry_run: 1 } })
         .then(data),
     unlink: (id) => admin.http.delete<{ data: OrderDetail }>(`${base}/${id}/visitor`).then(data),
+    note: (id, body) =>
+      admin.http.post<{ data: OrderDetail }>(`${base}/${id}/notes`, { body }).then(data),
     newMeta: () => admin.http.get<{ data: NewOrderMeta }>(`${base}/new`).then(data),
     findProducts: (search, locale) =>
       admin.http

@@ -9,6 +9,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Screens\Tree;
 use WebxUi\Admin\Testing\CountsQueries;
 use WebxUi\Users\Account\DeletionWarnings;
 use WebxUi\Users\Mail\EmailChanged;
@@ -157,6 +158,11 @@ final class PanelTest extends PanelTestCase
         $this->assertStringContainsString('"field-club-card"', $encoded, 'the field of the site is on the card');
         $this->assertStringNotContainsString('project-fields-empty', $encoded);
         $this->assertStringContainsString('"wholesale"', $encoded, 'the groups to tick');
+        // The address is always required (`UserForm::rules()`), the names are not.
+        $this->assertSame([true, false], [
+            Tree::find($screen['root'], 'email')['required'] ?? false,
+            Tree::find($screen['root'], 'first-name')['required'] ?? false,
+        ]);
 
         $answer = $this->putJson($this->api($anna->id), ['values' => [
             'first_name' => 'Anna',

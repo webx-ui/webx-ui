@@ -64,7 +64,7 @@ final class PanelTest extends PanelTestCase
         $this->assertSame([], $ids(['paid' => '1']));
 
         $cancelledGroup = PublicStatus::query()->where('code', 'cancelled')->sole();
-        $this->assertSame([], $ids(['public' => (string) $cancelledGroup->id]), 'Cancelling marks the order; its status stays where it was.');
+        $this->assertSame([$cancelled->id], $ids(['public' => (string) $cancelledGroup->id]), 'Cancelling moves the order into the status that cancels (decision 88).');
     }
 
     #[Test]
@@ -79,7 +79,7 @@ final class PanelTest extends PanelTestCase
         $this->assertSame('Item A', $card['order']['items'][0]['name']);
         $this->assertSame(2, $card['order']['items'][0]['qty']);
         $this->assertSame($this->money(9998), $card['order']['totals']['total']);
-        $this->assertSame(['status' => false, 'paid' => false, 'received' => false, 'cancel' => false, 'details' => false, 'refund' => false, 'visitor' => false, 'visitor_search' => false], $card['order']['actions']);
+        $this->assertSame(['status' => false, 'paid' => false, 'received' => false, 'cancel' => false, 'details' => false, 'note' => false, 'refund' => false, 'payment' => false, 'edit_items' => false, 'edit_items_reason' => null, 'refund_reverse' => false, 'visitor' => false, 'visitor_search' => false, 'resend' => false, 'notify' => false, 'notify_reason' => null], $card['order']['actions']);
         $this->assertSame('Alex', $card['values']['customer.first_name']);
         $this->assertSame('alex@example.test', $card['values']['customer.email']);
         $this->assertSame(['milestone', 'status'], array_column($card['order']['timeline'], 'kind'));
@@ -88,8 +88,8 @@ final class PanelTest extends PanelTestCase
 
         $this->signIn();
         $actions = $this->getJson($this->api($order->id))->json('data.order.actions');
-        // No linking to a visitor without the visitors module (§13.3).
-        $this->assertSame(['status' => true, 'paid' => true, 'received' => true, 'cancel' => true, 'details' => true, 'refund' => true, 'visitor' => false, 'visitor_search' => false], $actions);
+        // No linking to a visitor without the visitors module (§13.3), no message by hand without the notifications.
+        $this->assertSame(['status' => true, 'paid' => true, 'received' => true, 'cancel' => true, 'details' => true, 'note' => true, 'refund' => true, 'payment' => false, 'edit_items' => true, 'edit_items_reason' => null, 'refund_reverse' => true, 'visitor' => false, 'visitor_search' => false, 'resend' => false, 'notify' => false, 'notify_reason' => null], $actions);
 
         $this->getJson($this->api(999999))->assertNotFound();
     }
@@ -191,6 +191,9 @@ final class PanelTest extends PanelTestCase
 
         $preview = $this->postJson($this->api('cancel'), ['ids' => [$open->id, $paid->id], 'reason' => 'Out of stock', 'dry_run' => true])->assertOk()->json('data');
         $this->assertSame([2, 2, 1], [$preview['orders'], $preview['cancelled'], $preview['paid']]);
+        // Both come into «Cancelled», and the buyers see it (decision 88).
+        $this->assertSame([2, 2], [$preview['moved'], $preview['public_changed']]);
+        $this->assertSame('Cancelled', $preview['status']['name']);
         $this->assertNull($open->refresh()->cancelled_at);
 
         $this->postJson($this->api('cancel'), ['ids' => [$open->id, $paid->id], 'reason' => 'Out of stock'])->assertOk();
@@ -210,12 +213,20 @@ final class PanelTest extends PanelTestCase
         $this->assertTrue($preview['was_paid']);
         $this->assertSame(4999, $preview['money_to_refund']);
         $this->assertSame($this->money(4999), $preview['money_to_refund_text']);
+        // The status it comes into, said as the dialog of a move says it (decision 88).
+        $this->assertSame('Cancelled', $preview['status']['name']);
+        $this->assertSame('Cancelled', $preview['status']['public']);
+        $this->assertTrue($preview['status']['public_changed']);
+        $this->assertNull($preview['status']['milestone']);
         $this->assertNull($order->refresh()->cancelled_at);
 
         $this->postJson($this->api($order->id).'/cancel', [])->assertUnprocessable()->assertJsonValidationErrors('reason');
 
         $card = $this->postJson($this->api($order->id).'/cancel', ['reason' => 'Changed their mind'])->assertOk()->json('data.order');
         $this->assertArrayHasKey('cancelled', $card['milestones']);
+        $this->assertSame('Changed their mind', $card['milestones']['cancelled']['note']);
+        $this->assertSame('Cancelled', $card['status']['name']);
+        $this->assertSame('Cancelled', $card['status']['public']['name']);
         $this->assertFalse($card['actions']['cancel']);
         $this->assertFalse($card['actions']['paid']);
     }
@@ -261,7 +272,9 @@ final class PanelTest extends PanelTestCase
         $this->assertSame('Alexa', $values['customer.first_name']);
         $this->assertSame('alex@example.test', $values['customer.email']);
         $this->assertSame('Sam', $values['recipient.first_name']);
-        $this->assertSame('VIP', $values['manager_note']);
+        // The note is pinned over the feed now (decision 91): the card's, not the screen's values.
+        $this->assertArrayNotHasKey('manager_note', $values);
+        $this->assertSame('VIP', $order->refresh()->manager_note);
 
         // Emptied whole, the recipient is gone: the buyer takes the order.
         $this->putJson($this->api($order->id).'/details', ['values' => ['recipient.first_name' => '', 'recipient.last_name' => '', 'recipient.phone' => '']])->assertOk();

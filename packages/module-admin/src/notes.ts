@@ -22,6 +22,19 @@ export interface EntityNote {
   updated_at: string | null
 }
 
+/**
+ * A note as `WxNotesList` draws it, wherever it is kept: the panel's own table (`EntityNote`)
+ * or the history of an order, whose notes never change.
+ */
+export interface NoteEntry {
+  id: number | string
+  body: string
+  author: NoteAuthor | null
+  /** Whether the reader wrote it — what lets them change it where notes change at all. */
+  is_mine?: boolean
+  created_at: string | null
+}
+
 export interface NotesApi {
   list(): Promise<EntityNote[]>
   add(body: string): Promise<EntityNote>

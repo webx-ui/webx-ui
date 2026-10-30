@@ -32,11 +32,16 @@ final class AccessCoverageTest extends PanelTestCase
         $this->postJson($this->api($order->id).'/status', ['status_id' => 1, 'dry_run' => true])->assertForbidden();
         $this->postJson($this->api('status'), ['ids' => [$order->id], 'status_id' => 1, 'dry_run' => true])->assertForbidden();
         $this->putJson($this->api($order->id).'/details', ['values' => []])->assertForbidden();
+        $this->postJson($this->api($order->id).'/notes', ['body' => 'Called'])->assertForbidden();
+        // An edit of the lines is the manager's who takes the order by phone (decision 101).
+        $this->postJson($this->api($order->id).'/items/preview', ['revision' => 0])->assertForbidden();
+        $this->putJson($this->api($order->id).'/items', ['revision' => 0, 'reason' => 'x'])->assertForbidden();
         $this->postJson($this->api($order->id).'/refunds', ['amount' => '1', 'dry_run' => true])->assertForbidden();
 
         // Money given back is a permission of its own, and it reads the card it writes on.
         $this->signIn(['orders.refund']);
         $this->getJson($this->api($order->id))->assertOk();
         $this->postJson($this->api($order->id).'/cancel', ['reason' => 'x'])->assertForbidden();
+        $this->postJson($this->api($order->id).'/notes', ['body' => 'Called'])->assertForbidden();
     }
 }

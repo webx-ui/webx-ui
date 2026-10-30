@@ -11,6 +11,8 @@ return [
         'received' => 'Sipariş: teslim alındı',
         'cancelled' => 'Sipariş: iptal edildi',
         'refunded' => 'Sipariş: iade edildi',
+        'items_changed' => 'Sipariş: ürünler değişti',
+        'payment_requested' => 'Sipariş: ödeme istendi',
     ],
     'vars' => [
         'number' => 'Sipariş numarası',
@@ -48,12 +50,25 @@ return [
         'reference' => 'İşlem numarası',
         'reason' => 'Neden',
         'refund_amount' => 'İade tutarı',
+        'changes' => 'Ne değişti',
+        'change_qty_from' => 'Önceki adet',
+        'change_qty_to' => 'Şimdiki adet',
+        'change_added' => 'Eklendi',
+        'change_removed' => 'Çıkarıldı',
+        'previous_total' => 'Değişiklikten önceki toplam',
+        'balance' => 'Bakiye',
+        'balance_kind' => 'Bakiye: due, over veya none',
+        'amount_due' => 'Kalan ödeme',
+        'amount_over' => 'Alıcıya iade edilecek',
+        'message' => 'Yöneticinin alıcıya mesajı',
     ],
     'yes' => 'evet',
     'channels' => [
         'placed-customer' => 'Sipariş alındı — alıcıya',
         'placed-admin' => 'Yeni sipariş — mağazaya',
         'paid-customer' => 'Ödeme alındı — alıcıya',
+        'items-changed-customer' => 'Sipariş değişti — alıcıya',
+        'payment-requested-customer' => 'Ödeme bekleniyor — alıcıya',
     ],
     'letters' => [
         'placed' => [
@@ -88,6 +103,14 @@ return [
             'subject' => '{{number}} numaralı sipariş için iade',
             'intro' => 'Siparişinizin parası iade edildi.',
         ],
+        'items_changed' => [
+            'subject' => 'Sipariş {{number}} değişti',
+            'intro' => 'Siparişinizdeki ürünleri değiştirdik. Siparişin şimdiki hali aşağıda.',
+        ],
+        'payment_requested' => [
+            'subject' => 'Sipariş {{number}}: ödenecek {{amount_due}}',
+            'intro' => 'Siparişiniz {{amount_due}} tutarında bir ödeme bekliyor. Nasıl ödeyeceğinizi bildirmek için sizinle iletişime geçeceğiz.',
+        ],
     ],
     'words' => [
         'subtotal' => 'Ürünler',
@@ -105,5 +128,11 @@ return [
         'refund_amount' => 'İade edilen',
         'open-order' => 'Siparişi görüntüle',
         'open-panel' => 'Panelde aç',
+        'changes' => 'Ne değişti',
+        'added' => 'eklendi',
+        'removed' => 'çıkarıldı',
+        'previous_total' => 'Önceki toplam',
+        'amount_due' => 'Kalan ödeme',
+        'amount_over' => 'İade edeceğiz',
     ],
 ];

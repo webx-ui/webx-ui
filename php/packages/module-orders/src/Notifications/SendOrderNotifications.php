@@ -8,6 +8,7 @@ use Closure;
 use Illuminate\Contracts\Events\Dispatcher;
 use WebxUi\Orders\Data\OrderData;
 use WebxUi\Orders\Events\OrderCancelled;
+use WebxUi\Orders\Events\OrderItemsChanged;
 use WebxUi\Orders\Events\OrderPaid;
 use WebxUi\Orders\Events\OrderPaymentFailed;
 use WebxUi\Orders\Events\OrderPlaced;
@@ -63,6 +64,7 @@ final class SendOrderNotifications
         $events->listen(OrderReceived::class, [self::class, 'received']);
         $events->listen(OrderCancelled::class, [self::class, 'cancelled']);
         $events->listen(OrderRefunded::class, [self::class, 'refunded']);
+        $events->listen(OrderItemsChanged::class, [self::class, 'itemsChanged']);
     }
 
     public function placed(OrderPlaced $event): void
@@ -112,7 +114,20 @@ final class SendOrderNotifications
     }
 
     /**
-     * @param  array<string, string>  $extra
+     * The lines were edited (§40.2): the buyer hears of it only when the manager left «Tell the
+     * buyer» on — the dialog's flag, the agent's `notify`.
+     */
+    public function itemsChanged(OrderItemsChanged $event): void
+    {
+        if (! $event->notify || self::$quiet || ! $this->channels->available()) {
+            return;
+        }
+
+        $this->milestone(OrderEvents::ITEMS_CHANGED, $event->order, app(OrderValues::class)->edit($event->revision, $event->balance, $event->order->locale));
+    }
+
+    /**
+     * @param  array<string, string|list<array<string, string>>>  $extra
      */
     private function milestone(string $key, OrderData $order, array $extra = []): void
     {

@@ -77,6 +77,11 @@ defineSlots<{
    * into the `···` on a phone; what is written here stays drawn at every width.
    */
   actions?: () => unknown
+  /**
+   * What is read before the rows and not filtered with them — the figures over «Orders». Under
+   * the head, over the views: a tab switches the rows, not this.
+   */
+  before?: () => unknown
 }>()
 
 const view = defineModel<TabValue | undefined>('view', { default: undefined })
@@ -99,6 +104,8 @@ const view = defineModel<TabValue | undefined>('view', { default: undefined })
     >
       <template v-if="$slots.actions" #extra><slot name="actions" /></template>
     </wx-screen-head>
+
+    <slot name="before" />
 
     <!--
       `items` rather than a tab each with its own panel: switching a view must not take the

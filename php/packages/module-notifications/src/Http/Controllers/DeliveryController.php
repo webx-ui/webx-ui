@@ -11,6 +11,7 @@ use Illuminate\Validation\ValidationException;
 use Throwable;
 use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Admin\Mail\MailRoutes;
+use WebxUi\Admin\Support\Authors;
 use WebxUi\Notifications\Models\Delivery;
 use WebxUi\Notifications\NotificationEvents;
 use WebxUi\Notifications\Notifications;
@@ -59,10 +60,12 @@ final class DeliveryController
         }
 
         $page = $query->paginate(min(100, max(1, (int) $request->query('per_page', '25'))));
+        // Who sent a row by hand (§8.6), in one query for the page.
+        $names = Authors::names($request->user(), array_map(static fn (Delivery $delivery): ?int => $delivery->manual_by, $page->items()));
 
         return new JsonResponse([
             ...$page->toArray(),
-            'data' => array_map(fn (Delivery $delivery): array => $this->row($delivery), $page->items()),
+            'data' => array_map(fn (Delivery $delivery): array => $this->row($delivery, $names), $page->items()),
             'environment' => app()->environment(),
         ]);
     }
@@ -79,9 +82,10 @@ final class DeliveryController
     }
 
     /**
+     * @param  array<int, string>  $names  the administrators who sent rows by hand, by id
      * @return array<string, mixed>
      */
-    public function row(Delivery $delivery): array
+    public function row(Delivery $delivery, array $names = []): array
     {
         $event = $this->events->find($delivery->event);
 
@@ -106,6 +110,11 @@ final class DeliveryController
             'error' => $delivery->error,
             'attempts' => $delivery->attempts,
             'is_test' => $delivery->is_test,
+            // Sent by hand (§8.6): who asked, and the row it repeats.
+            'manual' => $delivery->manual,
+            'manual_by' => $delivery->manual_by,
+            'manual_by_name' => $delivery->manual_by !== null ? ($names[$delivery->manual_by] ?? null) : null,
+            'resent_from' => $delivery->resent_from,
             'truncated' => $delivery->truncated,
             'unknown_variables' => $delivery->unknown_variables ?? [],
             'variables' => $delivery->variables ?? [],

@@ -11,6 +11,8 @@ return [
         'received' => 'Order: received',
         'cancelled' => 'Order: cancelled',
         'refunded' => 'Order: refunded',
+        'items_changed' => 'Order: items changed',
+        'payment_requested' => 'Order: payment requested',
     ],
     'vars' => [
         'number' => 'Order number',
@@ -48,12 +50,25 @@ return [
         'reference' => 'Operation reference',
         'reason' => 'Reason',
         'refund_amount' => 'Amount given back',
+        'changes' => 'What changed',
+        'change_qty_from' => 'Quantity before',
+        'change_qty_to' => 'Quantity now',
+        'change_added' => 'Added',
+        'change_removed' => 'Removed',
+        'previous_total' => 'Total before the change',
+        'balance' => 'Balance',
+        'balance_kind' => 'Balance: due, over or none',
+        'amount_due' => 'Left to pay',
+        'amount_over' => 'To give back to the buyer',
+        'message' => 'The manager\'s message to the buyer',
     ],
     'yes' => 'yes',
     'channels' => [
         'placed-customer' => 'Order accepted — to the buyer',
         'placed-admin' => 'New order — to the shop',
         'paid-customer' => 'Payment received — to the buyer',
+        'items-changed-customer' => 'Order changed — to the buyer',
+        'payment-requested-customer' => 'Payment due — to the buyer',
     ],
     'letters' => [
         'placed' => [
@@ -88,6 +103,14 @@ return [
             'subject' => 'Refund for order {{number}}',
             'intro' => 'Money for your order has been given back.',
         ],
+        'items_changed' => [
+            'subject' => 'Order {{number}} changed',
+            'intro' => 'We have changed the items of your order. Here is the order as it is now.',
+        ],
+        'payment_requested' => [
+            'subject' => 'Order {{number}}: {{amount_due}} to pay',
+            'intro' => 'Your order is waiting for a payment of {{amount_due}}. We will get in touch with you about how to pay.',
+        ],
     ],
     'words' => [
         'subtotal' => 'Items',
@@ -105,5 +128,11 @@ return [
         'refund_amount' => 'Given back',
         'open-order' => 'View the order',
         'open-panel' => 'Open in the panel',
+        'changes' => 'What changed',
+        'added' => 'added',
+        'removed' => 'removed',
+        'previous_total' => 'Total before',
+        'amount_due' => 'Left to pay',
+        'amount_over' => 'We will give back',
     ],
 ];

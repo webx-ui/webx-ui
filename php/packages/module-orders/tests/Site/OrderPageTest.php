@@ -9,8 +9,11 @@ use Illuminate\Support\Facades\Route;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Testing\CountsQueries;
+use WebxUi\Cart\Money;
+use WebxUi\Orders\ItemsEdit;
 use WebxUi\Orders\Milestone;
 use WebxUi\Orders\Models\Order;
+use WebxUi\Orders\Models\OrderItem;
 use WebxUi\Orders\OrderDetails;
 use WebxUi\Orders\Orders;
 use WebxUi\Orders\Site\OrderLinks;
@@ -78,6 +81,39 @@ final class OrderPageTest extends PlaceTestCase
             ->assertSee('Paid')
             ->assertSee('Cancelled')
             ->assertDontSee('Out of stock');
+    }
+
+    #[Test]
+    public function an_edited_order_says_when_and_what_is_left_to_pay_or_comes_back(): void
+    {
+        $orders = $this->app->make(Orders::class);
+        $order = $this->place($this->cart([['type' => 'test.product', 'ref' => 1], ['type' => 'test.product', 'ref' => 3]]));
+
+        // Untouched and not paid: no mark, and «to pay» says it all.
+        $this->get($this->link($order))->assertOk()
+            ->assertDontSee('Items changed')
+            ->assertDontSee('Left to pay');
+
+        $orders->mark($order, Milestone::Paid, 'panel');
+        [$a, $c] = OrderItem::query()->where('order_id', $order->id)->orderBy('id')->get()->all();
+
+        // Up: one more Item A, Part C taken out (§40.1).
+        $orders->editItems($order->refresh(), new ItemsEdit(revision: 0, qty: [$a->id => 2], remove: [$c->id], reason: 'Warehouse mix-up', message: 'One more, as you asked.'));
+
+        $this->get($this->link($order))->assertOk()
+            ->assertSee('Items changed on '.$order->refresh()->items_changed_at?->locale('en')->isoFormat('LL'))
+            ->assertSee('Left to pay: '.$this->app->make(Money::class)->format(4299, 'EUR'))
+            ->assertSee('Item A')
+            ->assertDontSee('Part C')
+            ->assertDontSee('Warehouse mix-up')
+            ->assertDontSee('One more, as you asked.');
+
+        // Down below what was paid: the shop owes the buyer.
+        $orders->editItems($order->refresh(), new ItemsEdit(revision: 1, qty: [$a->id => 1]));
+
+        $this->get($this->link($order))->assertOk()
+            ->assertSee('We will give you back '.$this->app->make(Money::class)->format(700, 'EUR'))
+            ->assertDontSee('Left to pay');
     }
 
     #[Test]

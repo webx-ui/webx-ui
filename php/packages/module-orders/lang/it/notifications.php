@@ -11,6 +11,8 @@ return [
         'received' => 'Ordine: ricevuto',
         'cancelled' => 'Ordine: annullato',
         'refunded' => 'Ordine: rimborsato',
+        'items_changed' => 'Ordine: articoli modificati',
+        'payment_requested' => 'Ordine: pagamento richiesto',
     ],
     'vars' => [
         'number' => 'Numero d\'ordine',
@@ -48,12 +50,25 @@ return [
         'reference' => 'Riferimento dell\'operazione',
         'reason' => 'Motivo',
         'refund_amount' => 'Importo rimborsato',
+        'changes' => 'Cosa è cambiato',
+        'change_qty_from' => 'Quantità prima',
+        'change_qty_to' => 'Quantità ora',
+        'change_added' => 'Aggiunto',
+        'change_removed' => 'Rimosso',
+        'previous_total' => 'Totale prima della modifica',
+        'balance' => 'Saldo',
+        'balance_kind' => 'Saldo: due, over o none',
+        'amount_due' => 'Da pagare ancora',
+        'amount_over' => 'Da restituire all\'acquirente',
+        'message' => 'Messaggio del gestore all\'acquirente',
     ],
     'yes' => 'sì',
     'channels' => [
         'placed-customer' => 'Ordine accettato — all\'acquirente',
         'placed-admin' => 'Nuovo ordine — al negozio',
         'paid-customer' => 'Pagamento ricevuto — all\'acquirente',
+        'items-changed-customer' => 'Ordine modificato — all\'acquirente',
+        'payment-requested-customer' => 'Pagamento dovuto — all\'acquirente',
     ],
     'letters' => [
         'placed' => [
@@ -88,6 +103,14 @@ return [
             'subject' => 'Rimborso dell\'ordine {{number}}',
             'intro' => 'Il denaro del tuo ordine è stato rimborsato.',
         ],
+        'items_changed' => [
+            'subject' => 'Ordine {{number}} modificato',
+            'intro' => 'Abbiamo modificato gli articoli del tuo ordine. Ecco l\'ordine com\'è adesso.',
+        ],
+        'payment_requested' => [
+            'subject' => 'Ordine {{number}}: {{amount_due}} da pagare',
+            'intro' => 'Il tuo ordine attende un pagamento di {{amount_due}}. Ti contatteremo per indicarti come pagare.',
+        ],
     ],
     'words' => [
         'subtotal' => 'Articoli',
@@ -105,5 +128,11 @@ return [
         'refund_amount' => 'Rimborsato',
         'open-order' => 'Vedi l\'ordine',
         'open-panel' => 'Apri nel pannello',
+        'changes' => 'Cosa è cambiato',
+        'added' => 'aggiunto',
+        'removed' => 'rimosso',
+        'previous_total' => 'Totale prima',
+        'amount_due' => 'Da pagare ancora',
+        'amount_over' => 'Ti restituiremo',
     ],
 ];

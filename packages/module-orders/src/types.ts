@@ -24,6 +24,19 @@ export interface PublicStatusGroup {
   statuses: OrderStatus[]
 }
 
+/**
+ * The balance line of an order that says more than «to pay» (§36, §42.4): `topup` — paid and
+ * owing more after an edit, `over` — paid more than it costs, money to give back.
+ */
+export interface OrderBalanceLine {
+  kind: 'topup' | 'over'
+  amount: string
+  amount_minor: number
+}
+
+/** The filter «Payment differs» (§42.4): `due` — waiting for a top-up, `over` — to give back. */
+export type OrderBalanceFilter = 'due' | 'over'
+
 /** The tabs over the list (§11.2). */
 export type OrdersView = 'new' | 'awaiting' | 'failed' | 'all'
 
@@ -45,6 +58,10 @@ export interface OrderRow extends Record<string, unknown> {
   received_at: string | null
   cancelled_at: string | null
   refunded: boolean
+  /** The badge under the total: «Top-up 15.00», «Give back 20.00»; null otherwise. */
+  balance: OrderBalanceLine | null
+  /** «Edited» beside the total (§42.4): the lines are not the ones placed any more. */
+  edited?: boolean
   delivery: string | null
   payment: string | null
 }
@@ -58,6 +75,77 @@ export interface OrdersPage {
   from: number | null
   to: number | null
   counts: Record<OrdersView, number>
+  /** The tab the rows are of; the one chosen when the list was asked with `view: 'auto'`. */
+  view?: OrdersView
+}
+
+/** One currency's figures of a period: placed, paid, the revenue and the average of a paid order. */
+export interface SummaryPeriodMoney {
+  currency: string
+  placed: number
+  paid: number
+  revenue: number
+  revenue_formatted: string
+  average: number
+  average_formatted: string
+}
+
+/** The figures over the list — the agent's `orders_summary`, the same count (§11.2, §12). */
+export interface OrdersSummaryData {
+  awaiting_payment: number
+  payment_failed: number
+  paid_status_waits: number
+  /** What waits for payment now, whenever it was ordered. */
+  awaiting_by_currency: {
+    currency: string
+    orders: number
+    amount: number
+    amount_formatted: string
+  }[]
+  /** Paid orders still owing a top-up after an edit (§36). */
+  awaiting_topup: number
+  topup_by_currency: {
+    currency: string
+    orders: number
+    amount: number
+    amount_formatted: string
+  }[]
+  periods: { days: number; by_currency: SummaryPeriodMoney[] }[]
+  /** Orders placed each of the last thirty days, today last. */
+  daily: { date: string; orders: number }[]
+}
+
+/** An opened row of the list: what the order holds and who it is for, without the card. */
+export interface OrderGlance {
+  id: number
+  items: { id: number; name: string; options: string | null; qty: number; total: string }[]
+  count: { lines: number; units: number; refunded_units: number }
+  /** The totals as the card's «Summary» has them; what is not there is null. */
+  totals: {
+    subtotal: string
+    adjustments: string | null
+    total: string
+    tenders: string | null
+    payable: string
+    refunded: string | null
+    paid: string | null
+    paid_first: string | null
+    paid_topups: string | null
+    balance: OrderBalanceLine | null
+  }
+  paid: boolean
+  /** How many times the lines were edited (§42.4); 0 — as placed. */
+  items_revision?: number
+  awaiting_payment: boolean
+  /** Where the order came from when not through the checkout: `quick`, `panel`. */
+  source: string | null
+  customer: { name: string; phone: string | null; email: string | null }
+  recipient: { name: string; phone: string | null } | null
+  comment: string | null
+  manager_note: string | null
+  last_note: OrderNote | null
+  blocks: { key: string; summary: string | null }[]
+  milestones: Partial<Record<MilestoneKey, string>>
 }
 
 export interface OrdersMeta {
@@ -69,7 +157,8 @@ export interface OrdersMeta {
 }
 
 export interface OrderQuery {
-  view?: OrdersView
+  /** `auto` — «New» while it holds any order, otherwise «All» (decision 92). */
+  view?: OrdersView | 'auto'
   search?: string
   status?: string
   public?: string
@@ -79,6 +168,7 @@ export interface OrderQuery {
   refunded?: boolean
   awaiting?: boolean
   failed?: boolean
+  balance?: OrderBalanceFilter
   visitor?: 'guest' | 'visitor'
   /** One visitor's orders — the tab «Orders» of the visitor's card. */
   user?: number
@@ -105,6 +195,14 @@ export interface OrderLine {
   total: string
   discounts: { label: string; amount: string }[]
   children: OrderLine[]
+  /** A gift of a rule: the editor of the lines may only take it out (§37.4). */
+  generated?: boolean
+  /** A part of a set: it changes with its set, never apart. */
+  part?: boolean
+  /** Taken out by an edit, still shown for the units returned of it. */
+  removed?: boolean
+  /** The edit the line came with; 0 — placed with the order. */
+  revision?: number
 }
 
 export interface OrderTender {
@@ -138,7 +236,50 @@ export interface TimelineLine {
   milestone?: { key: MilestoneKey; label: string }
   reference?: string | null
   amount?: string
+  /** A top-up's money in minor units (§36.3), and a refund's. */
+  amount_minor?: number
   units?: number
+  /** A refund's line and a reversal's: the record it is about (decision 98). */
+  refund_id?: number
+  /** A refund's line: the record was reversed later, by mistake. */
+  reversed?: boolean
+  /** A message sent again by hand (decision 99): its event, in the panel's words. */
+  event?: string
+  event_label?: string
+  /** An edit of the lines (§38.2): each line before → after, the total, the balance it left. */
+  revision?: TimelineRevision
+}
+
+/** An edit of the lines as the timeline shows it; the money is written. */
+export interface TimelineRevision {
+  number: number
+  changes: {
+    op: ItemsEditOp
+    item_id: number | null
+    name: string
+    options_label: string | null
+    price: string
+    qty_from: number
+    qty_to: number
+    total_from: string
+    total_to: string
+  }[]
+  total_from: string | null
+  total_to: string | null
+  balance: { kind: 'due' | 'over'; amount: string } | null
+  message?: string | null
+}
+
+/**
+ * A note of the order (decision 90): a line of its history of the kind `note`, which never
+ * changes. `author` is the administrator where one is known; otherwise `source` names who.
+ */
+export interface OrderNote {
+  id: number
+  body: string
+  source: string
+  author: { id: number; name: string; avatar: string | null } | null
+  created_at: string | null
 }
 
 export interface OrderCardData {
@@ -158,6 +299,9 @@ export interface OrderCardData {
   payment_failed_at: string | null
   milestones: Partial<Record<MilestoneKey, MilestoneMark>>
   items: OrderLine[]
+  /** The edits of the lines (§38): how many — the revision an edit is sent against — and the last one. */
+  items_revision?: number
+  items_changed_at?: string | null
   adjustments: { id: number; label: string; source: string; amount: string }[]
   tenders: OrderTender[]
   benefits: { key: string; label: string }[]
@@ -170,9 +314,22 @@ export interface OrderCardData {
     refunded: string | null
     refundable: string
     refundable_minor: number
+    /** What came in (§36): the whole, and with top-ups — the first payment and the top-ups apart. */
+    paid: string | null
+    paid_first: string | null
+    paid_topups: string | null
+    balance: OrderBalanceLine | null
   }
+  /** The lines and their units; a set is one line, its parts are not counted apart. */
+  count: { lines: number; units: number; refunded_units: number }
+  /** The refunds recorded, oldest first, each with its reason and the reference of the operation. */
+  refunds: OrderRefundEntry[]
   blocks: { key: string; summary: string | null; value: Record<string, unknown> }[]
   timeline: TimelineLine[]
+  /** The note pinned over the feed «Notes» (decision 91); null — none. */
+  manager_note: string | null
+  /** The feed «Notes» under the tabs, oldest first. */
+  notes: OrderNote[]
   /** The log of the notifications module about the order; null without the module. */
   notifications: OrderDelivery[] | null
   actions: {
@@ -181,11 +338,25 @@ export interface OrderCardData {
     received: boolean
     cancel: boolean
     details: boolean
+    /** Write a note (`orders.manage`); reading them is the card's. */
+    note: boolean
     refund: boolean
+    /** Reverse a refund record made by mistake (decision 98), each one not reversed yet. */
+    refund_reverse: boolean
+    /** Record a top-up of a paid order (§36.3); the first payment is `paid`. */
+    payment?: boolean
+    /** «Change the lines» (§42.1), and why it cannot now — null when it can. */
+    edit_items?: boolean
+    edit_items_reason?: string | null
     /** Link and unlink a visitor — only with the visitors installed. */
     visitor: boolean
     /** Finding one needs the right to read the customers as well. */
     visitor_search: boolean
+    /** Send a row of «Notifications» again (decision 99) — only with the notifications module. */
+    resend?: boolean
+    /** «Send the buyer a letter», and why it cannot be sent now — null when it can. */
+    notify?: boolean
+    notify_reason?: string | null
   }
 }
 
@@ -219,6 +390,8 @@ export interface VisitorLinkPreview {
 export interface OrderDelivery {
   id: number
   event: string
+  /** The event in the panel's words; null for an event not of the orders. */
+  event_label?: string | null
   channel_id: number | null
   channel: string
   provider: string
@@ -233,11 +406,127 @@ export interface OrderDelivery {
   error: string | null
   created_at: string | null
   sent_at: string | null
+  /** «Send again» (decision 99): a row that went, failed or got stuck, to somebody. */
+  resendable?: boolean
+  /** Sent by hand, and the administrator who did — null when unknown. */
+  manual?: boolean
+  manual_by?: string | null
+}
+
+/** One event «Send the buyer a letter» offers (decision 99), and why it cannot be sent. */
+export interface BuyerEvent {
+  key: string
+  label: string
+  /** The order has a reason for it: it was placed, paid, cancelled… */
+  basis: boolean
+  /** Its channels that write to the buyer's e-mail. */
+  channels: { id: number; name: string; provider: string }[]
+  available: boolean
+  reason: string | null
+  reason_label: string | null
+}
+
+export interface BuyerEvents {
+  email: string | null
+  reason: string | null
+  reason_label: string | null
+  events: BuyerEvent[]
+}
+
+/** What a letter by hand would send (a dry run): each channel's message. */
+export interface NotifyPreview {
+  event: string
+  dry_run: boolean
+  deliveries: {
+    id: number | null
+    channel: string
+    provider: string
+    recipient: string
+    status: string
+  }[]
+  previews: {
+    channel: string
+    provider: string
+    recipient: string
+    subject: string | null
+    body: string
+    plain: string
+    html: boolean
+  }[]
 }
 
 export interface OrderDetail {
   order: OrderCardData
   values: ScreenModel
+  /** After «Change the lines»: what the edit did — the balance decides what is offered next. */
+  edit?: ItemsEditPreview
+}
+
+export type ItemsEditOp = 'add' | 'qty' | 'remove'
+
+/** «Change the lines» as sent (§42.1): against the revision the editor opened. */
+export interface ItemsEditInput {
+  revision: number
+  add: NewOrderLine[]
+  qty: Record<number, number>
+  remove: number[]
+  reason: string
+  message: string
+  notify: boolean
+}
+
+/** The totals of an order before or after an edit, minor units with the string beside. */
+export interface ItemsEditTotals {
+  subtotal: number
+  subtotal_formatted: string
+  adjustments_total: number
+  adjustments_total_formatted: string
+  total: number
+  total_formatted: string
+  tenders_total: number
+  tenders_total_formatted: string
+  payable: number
+  payable_formatted: string
+  balance: number
+  balance_formatted: string
+}
+
+/** What an edit does, from the service's own dry run (§37.1) — `orders_items_edit` too. */
+export interface ItemsEditPreview {
+  changes: {
+    op: ItemsEditOp
+    item_id: number | null
+    name: string
+    options_label: string | null
+    price: number
+    price_formatted: string
+    qty_from: number
+    qty_to: number
+    total_from: number
+    total_from_formatted: string
+    total_to: number
+    total_to_formatted: string
+  }[]
+  adjustments: {
+    adjustment_id: number
+    label: string
+    amount_from: number
+    amount_from_formatted: string
+    amount_to: number
+    amount_to_formatted: string
+  }[]
+  before: ItemsEditTotals
+  after: ItemsEditTotals
+  balance: OrderBalance
+  /** §37.7: each with its code and the words to show; a line's warning names it — `add.N`. */
+  warnings: { code: string; message: string; line?: string }[]
+  refusal: string | null
+  /** Where a refusal points: `qty.<id>`, `remove.<n>`, `revision`. */
+  field: string | null
+  message: string | null
+  /** The number of the edit written; null on a dry run. */
+  revision: number | null
+  dry_run: boolean
 }
 
 /** What a move would do, from the service's own dry run (§11.3). */
@@ -251,12 +540,81 @@ export interface MoveConsequences {
   message: string | null
 }
 
+export interface OrderRefundEntry {
+  id: number
+  at: string | null
+  amount: string
+  reason: string | null
+  reference: string | null
+  /** Reversed by mistake (decision 98): it stays, struck through, and counts no more. */
+  reversed: { at: string | null; reason: string | null } | null
+}
+
+/** The balance as the service counts it (§36.3), money in minor units with the string beside. */
+export interface OrderBalance {
+  kind: 'topup' | 'unpaid' | 'over' | null
+  paid_total: number
+  paid_total_formatted: string
+  refunded_total: number
+  refunded_total_formatted: string
+  due: number
+  due_formatted: string
+  over: number
+  over_formatted: string
+  tenders_over: number
+  tenders_over_formatted: string
+  balance: number
+}
+
+/** «Record a top-up» as typed: the amount in the currency's own units, the day YYYY-MM-DD. */
+export interface PaymentInput {
+  amount: string
+  reference: string
+  at: string | null
+  note: string
+}
+
+/** What a top-up does, from the service's own dry run (§36.3) — `orders_payment_record` too. */
+export interface PaymentPreview {
+  amount: number
+  amount_formatted: string
+  reference: string | null
+  note: string | null
+  at: string
+  before: OrderBalance
+  after: OrderBalance
+  refusal: string | null
+  message: string | null
+  dry_run: boolean
+}
+
+/** What reversing a refund record does, from the service's own dry run (decision 98). */
+export interface RefundReversalPreview {
+  refund_id: number
+  amount: number
+  amount_formatted: string
+  tenders: Record<number, number>
+  units: number
+  refunded_total: number
+  refunded_total_formatted: string
+  money_left: number
+  money_left_formatted: string
+  tenders_left: Record<number, number>
+  items_left: Record<number, number>
+  milestone_removed: { key: MilestoneKey; label: string } | null
+  refusal: string | null
+  message: string | null
+  dry_run: boolean
+}
+
 export interface CancelConsequences {
   was_paid: boolean
   money_to_refund: number
   money_to_refund_text: string | null
   tenders: { label: string; amount: string }[]
   outcome: string
+  /** The status the cancellation moves the order into (decision 88); null — it stays. */
+  status: (MoveConsequences & { id: number; name: string }) | null
 }
 
 export interface RefundInput {
@@ -304,6 +662,12 @@ export interface MassCancelAnswer {
   cancelled: number
   unchanged: number
   paid: number
+  /** How many come into the status that cancels, and what their buyers see of it. */
+  moved: number
+  public_changed: number
+  notifications: number
+  status_id: number | null
+  status: { id: number; name: string } | null
   refused: MassRefusal[]
   dry_run: boolean
 }

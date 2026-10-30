@@ -51,9 +51,18 @@ final readonly class OrderData
         public StatusData $status,
         public PublicStatusData $publicStatus,
         public array $milestones,
+        /** Money that came in (§36.1): the payment and any top-up after an edit. */
+        public int $paidTotal = 0,
+        /** `owed − paidTotal + refundedTotal`: > 0 the buyer owes, < 0 the shop does. */
+        public int $balance = 0,
+        /** The edit the lines are at (§37.1); 0 — as placed. */
+        public int $itemsRevision = 0,
     ) {}
 
-    /** From the model with its lines, money, milestones and status loaded — or loaded here. */
+    /**
+     * From the model with its lines, money, milestones and status loaded — or loaded here. A line
+     * an edit took out whole is not in it (§39); one with units refunded stays, with `removedAt`.
+     */
     public static function of(Order $order): self
     {
         $order->loadMissing(['items', 'adjustments', 'tenders', 'benefits', 'milestones', 'status.publicStatus']);
@@ -81,7 +90,7 @@ final readonly class OrderData
             customer: new ContactData($order->customer_first_name, $order->customer_last_name, $order->customer_phone, $order->customer_email),
             recipient: $recipient !== null ? new ContactData($recipient['first_name'], $recipient['last_name'] ?? null, $recipient['phone'] ?? null, null) : null,
             comment: $order->comment,
-            items: array_values($order->items->map(static fn (OrderItem $item): ItemData => new ItemData(
+            items: array_values($order->items->filter(static fn (OrderItem $item): bool => $item->shown())->map(static fn (OrderItem $item): ItemData => new ItemData(
                 id: $item->id,
                 parentId: $item->parent_id,
                 type: $item->type,
@@ -95,6 +104,8 @@ final readonly class OrderData
                 shippable: $item->shippable,
                 source: $item->source,
                 refundedQty: $item->refunded_qty,
+                revision: $item->revision,
+                removedAt: $item->removed_at?->toIso8601String(),
             ))->all()),
             adjustments: array_values($order->adjustments->map(static fn (OrderAdjustment $adjustment): AdjustmentData => new AdjustmentData(
                 id: $adjustment->id,
@@ -118,6 +129,9 @@ final readonly class OrderData
             status: StatusData::of($order->status, $locale),
             publicStatus: PublicStatusData::of($order->status->publicStatus, $locale),
             milestones: $milestones,
+            paidTotal: $order->paid_total,
+            balance: $order->balance,
+            itemsRevision: $order->items_revision,
         );
     }
 }

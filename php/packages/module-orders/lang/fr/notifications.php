@@ -11,6 +11,8 @@ return [
         'received' => 'Commande : reçue',
         'cancelled' => 'Commande : annulée',
         'refunded' => 'Commande : remboursée',
+        'items_changed' => 'Commande : articles modifiés',
+        'payment_requested' => 'Commande : paiement demandé',
     ],
     'vars' => [
         'number' => 'Numéro de commande',
@@ -48,12 +50,25 @@ return [
         'reference' => 'Référence de l\'opération',
         'reason' => 'Motif',
         'refund_amount' => 'Montant remboursé',
+        'changes' => 'Ce qui a changé',
+        'change_qty_from' => 'Quantité avant',
+        'change_qty_to' => 'Quantité maintenant',
+        'change_added' => 'Ajouté',
+        'change_removed' => 'Retiré',
+        'previous_total' => 'Total avant la modification',
+        'balance' => 'Solde',
+        'balance_kind' => 'Solde : due, over ou none',
+        'amount_due' => 'Reste à payer',
+        'amount_over' => 'À rembourser à l\'acheteur',
+        'message' => 'Message du gestionnaire à l\'acheteur',
     ],
     'yes' => 'oui',
     'channels' => [
         'placed-customer' => 'Commande acceptée — à l\'acheteur',
         'placed-admin' => 'Nouvelle commande — à la boutique',
         'paid-customer' => 'Paiement reçu — à l\'acheteur',
+        'items-changed-customer' => 'Commande modifiée — à l\'acheteur',
+        'payment-requested-customer' => 'Paiement dû — à l\'acheteur',
     ],
     'letters' => [
         'placed' => [
@@ -88,6 +103,14 @@ return [
             'subject' => 'Remboursement de la commande {{number}}',
             'intro' => 'L\'argent de votre commande a été remboursé.',
         ],
+        'items_changed' => [
+            'subject' => 'Commande {{number}} modifiée',
+            'intro' => 'Nous avons modifié les articles de votre commande. Voici la commande telle qu\'elle est maintenant.',
+        ],
+        'payment_requested' => [
+            'subject' => 'Commande {{number}} : {{amount_due}} à payer',
+            'intro' => 'Votre commande attend un paiement de {{amount_due}}. Nous vous contacterons pour vous indiquer comment payer.',
+        ],
     ],
     'words' => [
         'subtotal' => 'Articles',
@@ -105,5 +128,11 @@ return [
         'refund_amount' => 'Remboursé',
         'open-order' => 'Voir la commande',
         'open-panel' => 'Ouvrir dans le panneau',
+        'changes' => 'Ce qui a changé',
+        'added' => 'ajouté',
+        'removed' => 'retiré',
+        'previous_total' => 'Total avant',
+        'amount_due' => 'Reste à payer',
+        'amount_over' => 'Nous vous rembourserons',
     ],
 ];

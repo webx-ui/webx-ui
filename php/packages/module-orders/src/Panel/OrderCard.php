@@ -4,19 +4,23 @@ declare(strict_types=1);
 
 namespace WebxUi\Orders\Panel;
 
+use Closure;
 use Illuminate\Container\Container;
 use WebxUi\Admin\Support\Authors;
 use WebxUi\Admin\Visitors\Visitors;
 use WebxUi\Cart\Money;
+use WebxUi\Orders\Balance;
 use WebxUi\Orders\Milestone;
 use WebxUi\Orders\Models\Order;
 use WebxUi\Orders\Models\OrderAdjustment;
 use WebxUi\Orders\Models\OrderItem;
 use WebxUi\Orders\Models\OrderMilestone;
 use WebxUi\Orders\Models\OrderRefund;
+use WebxUi\Orders\Models\OrderRevision;
 use WebxUi\Orders\Models\OrderTender;
 use WebxUi\Orders\Models\StatusChange;
 use WebxUi\Orders\Notifications\OrderChannels;
+use WebxUi\Orders\Orders;
 use WebxUi\Orders\Site\VisitorOrders;
 
 /**
@@ -49,9 +53,13 @@ final readonly class OrderCard
      */
     public function describe(Order $order, StatusChoices $statuses, string $locale, callable $can, mixed $reader): array
     {
-        $order->loadMissing(['items', 'adjustments', 'tenders', 'benefits', 'milestones', 'refunds', 'history']);
+        $order->loadMissing(['items', 'adjustments', 'tenders', 'benefits', 'milestones', 'refunds', 'history', 'revisions']);
 
-        return ['order' => $this->order($order, $statuses, $locale, $can, $reader), 'values' => self::values($order)];
+        // The pinned note is the block «Notes»'s, saved on its own: the screen's save never sends it back.
+        $values = self::values($order);
+        unset($values['manager_note']);
+
+        return ['order' => $this->order($order, $statuses, $locale, $can, $reader), 'values' => $values];
     }
 
     /**
@@ -61,9 +69,60 @@ final readonly class OrderCard
      */
     public function history(Order $order, StatusChoices $statuses, string $locale, mixed $reader): array
     {
-        $order->loadMissing(['milestones', 'refunds', 'history']);
+        $order->loadMissing(['milestones', 'refunds', 'history', 'revisions']);
 
-        return $this->timeline($order, $statuses, $locale, $reader, fn (int $minor): string => $this->money->format($minor, $order->currency));
+        return $this->timeline($order, $statuses, $locale, self::people($order, $reader), fn (int $minor): string => $this->money->format($minor, $order->currency));
+    }
+
+    /**
+     * What an opened row of the list shows (§11.2) without going into the order: the lines in
+     * short and the totals as the card's «Summary» has them — from the order's own columns, not a
+     * relation more — the buyer and the recipient, the buyer's comment, the pinned note and the
+     * latest of the feed, the lines of the blocks, the milestones with when. One order and three
+     * relations whatever it holds — the authors of the notes in one more.
+     *
+     * @return array<string, mixed>
+     */
+    public function glance(Order $order, string $locale, mixed $reader): array
+    {
+        $order->loadMissing(['items', 'milestones', 'history']);
+        $money = fn (int $minor): string => $this->money->format($minor, $order->currency);
+        $notes = self::notes($order, Authors::people($reader, $order->history->pluck('admin_id')->all()));
+        $recipient = $order->recipient;
+        $marks = $this->milestones($order);
+
+        return [
+            'id' => $order->id,
+            'items' => $order->items->whereNull('parent_id')->filter(static fn (OrderItem $item): bool => $item->shown())->map(static fn (OrderItem $item): array => [
+                'id' => $item->id,
+                'name' => $item->nameIn($locale),
+                'options' => $item->options_label,
+                'qty' => $item->qty,
+                'total' => $money($item->total),
+            ])->values()->all(),
+            'count' => self::count($order),
+            'totals' => self::totals($order, $money),
+            'paid' => $order->paid_at !== null,
+            // «Lines changed» in the totals (§42.4): a column of the order, no query more.
+            'items_revision' => $order->items_revision,
+            'awaiting_payment' => $order->awaiting_payment && $order->cancelled_at === null,
+            // Where it came from, as the card's «Summary» marks it under «Placed»: `quick`, `panel`.
+            'source' => $marks['placed']['source'] ?? null,
+            'customer' => [
+                'name' => $order->customerName(),
+                'phone' => $order->customer_phone,
+                'email' => $order->customer_email,
+            ],
+            'recipient' => is_array($recipient) && $recipient !== [] ? [
+                'name' => trim(((string) ($recipient['first_name'] ?? '')).' '.((string) ($recipient['last_name'] ?? ''))),
+                'phone' => $recipient['phone'] ?? null,
+            ] : null,
+            'comment' => $order->comment,
+            'manager_note' => $order->manager_note,
+            'last_note' => $notes === [] ? null : $notes[array_key_last($notes)],
+            'blocks' => array_map(static fn (array $block): array => ['key' => $block['key'], 'summary' => $block['summary']], $this->blocks($order, $locale)),
+            'milestones' => array_map(static fn (array $mark): string => $mark['at'], $marks),
+        ];
     }
 
     /**
@@ -96,10 +155,15 @@ final readonly class OrderCard
         $money = fn (int $minor): string => $this->money->format($minor, $currency);
         $paid = $order->paid_at !== null;
         $cancelled = $order->cancelled_at !== null;
-        $refundable = $order->payable - $order->refunded_total;
+        $refundable = Balance::refundable($order);
         $tendersLeft = $order->tenders->sum(static fn (OrderTender $tender): int => $tender->amount - $tender->refunded_amount);
         $unitsLeft = $order->items->sum(static fn (OrderItem $item): int => $item->qty - $item->refunded_qty);
         $manage = $can('orders.manage');
+        $people = self::people($order, $reader);
+        // Messages sent again by hand (decision 99): only with the notifications module; «Send the
+        // buyer a letter» says why it cannot when no channel writes to the buyer or there is no e-mail.
+        $notifying = $manage && $this->channels->available();
+        $notifyReason = $notifying ? $this->channels->buyerEvents($order)['reason'] : null;
 
         return [
             'id' => $order->id,
@@ -117,6 +181,9 @@ final readonly class OrderCard
             'payment_failed_at' => $paid ? null : $order->payment_failed_at?->toAtomString(),
             'milestones' => $this->milestones($order),
             'items' => $this->items($order, $locale, $money),
+            // The edits of the lines (§38): how many, and when the last one was.
+            'items_revision' => $order->items_revision,
+            'items_changed_at' => $order->items_changed_at?->toAtomString(),
             'adjustments' => $order->adjustments
                 ->filter(static fn (OrderAdjustment $adjustment): bool => $adjustment->item_id === null)
                 ->map(static fn (OrderAdjustment $adjustment): array => [
@@ -139,31 +206,113 @@ final readonly class OrderCard
                 'label' => $benefit->label,
             ])->values()->all(),
             'totals' => [
-                'subtotal' => $money($order->subtotal),
-                'adjustments' => $order->adjustments_total !== 0 ? $money($order->adjustments_total) : null,
-                'total' => $money($order->total),
-                'tenders' => $order->tenders_total !== 0 ? $money($order->tenders_total) : null,
-                'payable' => $money($order->payable),
-                'refunded' => $order->refunded_total > 0 ? $money($order->refunded_total) : null,
+                ...self::totals($order, $money),
                 'refundable' => $money(max(0, $refundable)),
                 'refundable_minor' => max(0, $refundable),
             ],
+            // «Lines: 2 · units: 5» of the side card: a set is one line, its parts are not counted.
+            'count' => self::count($order),
+            // The refunds beside «Refunded» of the totals, each with its reason and its reference;
+            // one reversed by mistake stays, struck through, with why (decision 98).
+            'refunds' => $order->refunds->map(static fn (OrderRefund $refund): array => [
+                'id' => $refund->id,
+                'at' => $refund->created_at?->toAtomString(),
+                'amount' => $money($refund->amount),
+                'reason' => $refund->reason,
+                'reference' => $refund->reference,
+                'reversed' => $refund->reversed() ? [
+                    'at' => $refund->reversed_at?->toAtomString(),
+                    'reason' => $refund->reversal_reason,
+                ] : null,
+            ])->values()->all(),
             'blocks' => $this->blocks($order, $locale),
-            'timeline' => $this->timeline($order, $statuses, $locale, $reader, $money),
+            'timeline' => $this->timeline($order, $statuses, $locale, $people, $money),
+            // The note pinned over the feed (decision 91): one standing line, changed in place.
+            'manager_note' => $order->manager_note,
+            // The feed «Notes» under the tabs (decision 90): the history's notes, oldest first.
+            'notes' => self::notes($order, $people),
             // The block «Notifications» under the timeline (§8): null without the module.
-            'notifications' => $this->channels->available() ? $this->channels->deliveries($order) : null,
+            'notifications' => $this->channels->available() ? $this->channels->deliveries($order, $reader) : null,
             'actions' => [
                 'status' => $manage,
                 'paid' => $manage && ! $paid && ! $cancelled,
                 'received' => $manage && $order->received_at === null && ! $cancelled,
                 'cancel' => $manage && ! $cancelled && $order->refunded_at === null,
                 'details' => $manage,
+                'note' => $manage,
                 'refund' => $can('orders.refund') && ($refundable > 0 || $tendersLeft > 0 || $unitsLeft > 0),
+                // A top-up of a paid order (§36.3): the first payment is «Mark as paid».
+                'payment' => $manage && $paid && ! $cancelled,
+                // «Change the lines» (§42.1): whoever works the order; greyed with why once the
+                // order is past editing (§37.2).
+                'edit_items' => $manage,
+                'edit_items_reason' => $manage ? self::editRefusal($order) : null,
+                // Reverse a refund record made by mistake (decision 98), each one not reversed yet.
+                'refund_reverse' => $can('orders.refund'),
                 // Linking to a visitor (§13.3): only with the visitors installed; finding one is
                 // reading the customers too.
                 'visitor' => $manage && VisitorOrders::installed(),
                 'visitor_search' => $manage && VisitorOrders::installed() && $can('users.view'),
+                'resend' => $notifying,
+                'notify' => $notifying,
+                'notify_reason' => $notifyReason !== null ? (string) __('webx-orders::panel.notify-refusals.'.$notifyReason) : null,
             ],
+        ];
+    }
+
+    /**
+     * The notes of the order (decision 90): the lines of its history of the kind `note` — a
+     * manager's from the panel, an agent's `orders_note`, a module's «the parcel came back». A
+     * line of the history never changes, so neither does a note. The author is the administrator
+     * with their photograph where one is known; otherwise only the source, which the panel names.
+     *
+     * @param  array<int, array{name: string, avatar: string|null}>  $people
+     * @return list<array{id: int, body: string, source: string, author: array{id: int, name: string, avatar: string|null}|null, created_at: string|null}>
+     */
+    private static function notes(Order $order, array $people): array
+    {
+        $notes = $order->history->filter(static fn (StatusChange $change): bool => $change->kind === StatusChange::NOTE);
+
+        return $notes->map(static fn (StatusChange $change): array => [
+            'id' => $change->id,
+            'body' => (string) $change->note,
+            'source' => $change->source,
+            'author' => $change->admin_id !== null && isset($people[$change->admin_id])
+                ? ['id' => $change->admin_id, ...$people[$change->admin_id]]
+                : null,
+            'created_at' => $change->created_at?->toAtomString(),
+        ])->values()->all();
+    }
+
+    /**
+     * The administrators who wrote anything on the order — its history, its milestones, its
+     * refunds — with their photographs, in one query for the timeline and the notes together.
+     *
+     * @return array<int, array{name: string, avatar: string|null}>
+     */
+    private static function people(Order $order, mixed $reader): array
+    {
+        return Authors::people($reader, [
+            ...$order->history->pluck('admin_id')->all(),
+            ...$order->milestones->pluck('admin_id')->all(),
+            ...$order->refunds->pluck('admin_id')->all(),
+        ]);
+    }
+
+    /**
+     * The lines of the order and their units, the parts of a set not counted apart, and the units
+     * given back.
+     *
+     * @return array{lines: int, units: int, refunded_units: int}
+     */
+    private static function count(Order $order): array
+    {
+        $top = $order->items->whereNull('parent_id')->filter(static fn (OrderItem $item): bool => $item->shown());
+
+        return [
+            'lines' => $top->count(),
+            'units' => (int) $top->sum('qty'),
+            'refunded_units' => (int) $top->sum('refunded_qty'),
         ];
     }
 
@@ -182,6 +331,106 @@ final readonly class OrderCard
         $visitor = Container::getInstance()->make(Visitors::class)->find($order->user_id);
 
         return ['id' => $order->user_id, 'name' => $visitor?->name(), 'email' => $visitor?->email];
+    }
+
+    /**
+     * The totals as the buyer was charged, written in the order's currency; what is not there —
+     * no discount, no tender, nothing given back — is null.
+     *
+     * «Paid» is what came in (§42.4): the first payment and the top-ups after it, read off the
+     * history lines `payment` when the history is loaded. The balance line is there only when
+     * it says something beyond «to pay»: `topup` — paid and owes more, `over` — money to give back.
+     *
+     * @param  Closure(int): string  $money
+     * @return array<string, mixed>
+     */
+    private static function totals(Order $order, Closure $money): array
+    {
+        $balance = Balance::of($order);
+        $kind = $balance->kind();
+        $topups = $order->relationLoaded('history')
+            ? (int) $order->history->sum(static fn (StatusChange $change): int => $change->kind === StatusChange::PAYMENT ? self::paymentLine($change->note)['amount'] : 0)
+            : 0;
+
+        return [
+            'subtotal' => $money($order->subtotal),
+            'adjustments' => $order->adjustments_total !== 0 ? $money($order->adjustments_total) : null,
+            'total' => $money($order->total),
+            'tenders' => $order->tenders_total !== 0 ? $money($order->tenders_total) : null,
+            'payable' => $money($order->payable),
+            'refunded' => $order->refunded_total > 0 ? $money($order->refunded_total) : null,
+            'paid' => $order->paid_total > 0 ? $money($order->paid_total) : null,
+            'paid_first' => $topups > 0 && $order->paid_total > $topups ? $money($order->paid_total - $topups) : null,
+            'paid_topups' => $topups > 0 ? $money($topups) : null,
+            'balance' => in_array($kind, ['topup', 'over'], true) ? [
+                'kind' => $kind,
+                'amount' => $money($kind === 'over' ? $balance->over : $balance->due),
+                'amount_minor' => $kind === 'over' ? $balance->over : $balance->due,
+            ] : null,
+        ];
+    }
+
+    /**
+     * Why the lines of the order may not be edited (§37.2), in the panel's words; null — they may.
+     */
+    public static function editRefusal(Order $order): ?string
+    {
+        return $order->received_at !== null || $order->cancelled_at !== null || $order->refunded_at !== null
+            ? (string) __('webx-orders::panel.items-refusals.state')
+            : null;
+    }
+
+    /**
+     * An edit of the lines as the timeline shows it (§38.2): each line «before → after» with its
+     * money, the total before and after, and the balance it left.
+     *
+     * @param  callable(int): string  $money
+     * @return array<string, mixed>
+     */
+    private static function revision(?OrderRevision $revision, int $number, callable $money): array
+    {
+        if (! $revision instanceof OrderRevision) {
+            return ['number' => $number, 'changes' => [], 'total_from' => null, 'total_to' => null, 'balance' => null];
+        }
+
+        $balance = (int) ($revision->after['balance'] ?? 0);
+
+        return [
+            'number' => $number,
+            'changes' => array_map(static fn (array $change): array => [
+                'op' => $change['op'],
+                'item_id' => $change['item_id'],
+                'name' => $change['name'],
+                'options_label' => $change['options_label'],
+                'price' => $money((int) $change['price']),
+                'qty_from' => (int) $change['qty_from'],
+                'qty_to' => (int) $change['qty_to'],
+                'total_from' => $money((int) $change['total_from']),
+                'total_to' => $money((int) $change['total_to']),
+            ], $revision->changes),
+            'total_from' => $money((int) ($revision->before['total'] ?? 0)),
+            'total_to' => $money((int) ($revision->after['total'] ?? 0)),
+            'balance' => $balance === 0 ? null : ['kind' => $balance > 0 ? 'due' : 'over', 'amount' => $money(abs($balance))],
+            'message' => $revision->message,
+        ];
+    }
+
+    /**
+     * The money, the reference and the note of a history line `payment` ({@see Orders::paymentNote()}).
+     *
+     * @return array{amount: int, reference: string|null, note: string|null}
+     */
+    public static function paymentLine(?string $line): array
+    {
+        if ($line === null || preg_match('/^(\d+)(?: \[([^\]]*)\])?(?:: (.*))?$/s', $line, $match) !== 1) {
+            return ['amount' => 0, 'reference' => null, 'note' => $line];
+        }
+
+        return [
+            'amount' => (int) $match[1],
+            'reference' => ($match[2] ?? '') !== '' ? $match[2] : null,
+            'note' => ($match[3] ?? '') !== '' ? $match[3] : null,
+        ];
     }
 
     /**
@@ -218,7 +467,9 @@ final readonly class OrderCard
         $lines = [];
 
         foreach ($order->items->whereNull('parent_id') as $item) {
-            $lines[] = $this->line($order, $item, $locale, $money);
+            if ($item->shown()) {
+                $lines[] = $this->line($order, $item, $locale, $money);
+            }
         }
 
         return $lines;
@@ -259,6 +510,12 @@ final readonly class OrderCard
             'total' => $money($item->total),
             'discounts' => $discounts,
             'children' => $children,
+            // What the editor of the lines may do with it (§42.1): a rule's gift only goes, a set
+            // changes by its parent, its parts are not edited apart.
+            'generated' => $item->source !== null,
+            'part' => $item->parent_id !== null && $item->source === null,
+            'removed' => $item->removed_at !== null,
+            'revision' => $item->revision,
         ];
     }
 
@@ -286,16 +543,13 @@ final readonly class OrderCard
      * the milestones; the refunds. The author is the administrator's name where one is known,
      * otherwise the source as the panel names it.
      *
+     * @param  array<int, array{name: string, avatar: string|null}>  $people
      * @param  callable(int): string  $money
      * @return list<array<string, mixed>>
      */
-    private function timeline(Order $order, StatusChoices $statuses, string $locale, mixed $reader, callable $money): array
+    private function timeline(Order $order, StatusChoices $statuses, string $locale, array $people, callable $money): array
     {
-        $names = Authors::names($reader, [
-            ...$order->history->pluck('admin_id')->all(),
-            ...$order->milestones->pluck('admin_id')->all(),
-            ...$order->refunds->pluck('admin_id')->all(),
-        ]);
+        $names = array_map(static fn (array $person): string => $person['name'], $people);
         $who = static fn (?int $adminId, string $source): array => [
             'source' => $source,
             'admin' => $adminId !== null ? ($names[$adminId] ?? null) : null,
@@ -325,6 +579,43 @@ final readonly class OrderCard
             if ($change->kind === StatusChange::VISITOR && $change->note !== null && preg_match('/^(linked|unlinked): (.*)$/s', $change->note, $match) === 1) {
                 $line['kind'] = 'visitor-'.$match[1];
                 $line['note'] = $match[2];
+            }
+
+            // «refund#12: why» — the record's money from the record itself, the reason as a note.
+            if ($change->kind === StatusChange::REFUND_REVERSED && $change->note !== null && preg_match('/^refund#(\d+)(?:: (.*))?$/s', $change->note, $match) === 1) {
+                $reversed = $order->refunds->firstWhere('id', (int) $match[1]);
+                $line['refund_id'] = (int) $match[1];
+                $line['amount'] = $reversed instanceof OrderRefund ? $money($reversed->amount) : null;
+                $line['amount_minor'] = $reversed instanceof OrderRefund ? $reversed->amount : null;
+                $line['note'] = ($match[2] ?? '') !== '' ? $match[2] : null;
+            }
+
+            // «orders.placed: buyer@example.com» — the event in the panel's words, the addresses as they went.
+            if ($change->kind === StatusChange::NOTIFICATION_SENT && $change->note !== null && preg_match('/^([a-z_.]+): (.*)$/s', $change->note, $match) === 1) {
+                $line['event'] = $match[1];
+                $line['event_label'] = str_starts_with($match[1], 'orders.') ? (string) __('webx-orders::notifications.events.'.substr($match[1], strlen('orders.'))) : $match[1];
+                $line['note'] = $match[2] !== '' ? $match[2] : null;
+            }
+
+            // «1500 [bank-77]: by card» — a top-up's money, its reference and its note (§36.3).
+            if ($change->kind === StatusChange::PAYMENT) {
+                $payment = self::paymentLine($change->note);
+                $line['amount'] = $money($payment['amount']);
+                $line['amount_minor'] = $payment['amount'];
+                $line['reference'] = $payment['reference'];
+                $line['note'] = $payment['note'];
+            }
+
+            // «revision#2: why» — the edit itself from its row (§38.2): what was added, changed and
+            // taken out, the total before and after, the balance after; the reason as a note.
+            if ($change->kind === StatusChange::ITEMS && $change->note !== null && preg_match('/^revision#(\d+)(?:: (.*))?$/s', $change->note, $match) === 1) {
+                $line['note'] = ($match[2] ?? '') !== '' ? $match[2] : null;
+                $line['revision'] = self::revision($order->revisions->firstWhere('number', (int) $match[1]), (int) $match[1], $money);
+            }
+
+            if ($change->kind === StatusChange::MILESTONE_REMOVED && $change->note !== null && ($taken = Milestone::tryFrom($change->note)) !== null) {
+                $line['milestone'] = Consequences::milestone($taken);
+                $line['note'] = null;
             }
 
             if ($change->kind === StatusChange::DETAILS && $change->note !== null) {
@@ -362,6 +653,9 @@ final readonly class OrderCard
                 'units' => array_sum(array_map(static fn (array $item): int => (int) $item['qty'], $refund->items)),
                 'reference' => $refund->reference,
                 'note' => $refund->reason,
+                'refund_id' => $refund->id,
+                // Reversed later by mistake (decision 98): its own line says when and why.
+                'reversed' => $refund->reversed(),
             ];
         }
 

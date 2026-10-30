@@ -27,6 +27,12 @@ export interface Dates {
   exact(value: DateLike): string
   /** The machine value for `<time datetime>`. Empty when there is no date. */
   iso(value: DateLike): string
+  /**
+   * A calendar day and not a moment — `2026-10-30` of a chart, a period: the day and a short month
+   * this year, digits for older; no clock, today included. A bare `YYYY-MM-DD` is that day where the
+   * reader is, not midnight in Greenwich.
+   */
+  day(value: DateLike): string
 }
 
 /**
@@ -117,6 +123,18 @@ export function createDates(i18n: I18n): Dates {
       if (daysApart(at, now) === 0) return time(at)
 
       return at.getFullYear() === now.getFullYear()
+        ? format('compact', { day: 'numeric', month: 'short' }, at)
+        : format('compact-earlier', { dateStyle: 'short' }, at)
+    },
+    day(value) {
+      const bare = typeof value === 'string' ? /^(\d{4})-(\d{2})-(\d{2})$/.exec(value) : null
+      const at = bare
+        ? new Date(Number(bare[1]), Number(bare[2]) - 1, Number(bare[3]))
+        : toDate(value)
+
+      if (at === null) return ''
+
+      return at.getFullYear() === new Date().getFullYear()
         ? format('compact', { day: 'numeric', month: 'short' }, at)
         : format('compact-earlier', { dateStyle: 'short' }, at)
     },

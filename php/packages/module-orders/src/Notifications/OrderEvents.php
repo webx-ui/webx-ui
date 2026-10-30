@@ -8,7 +8,7 @@ use WebxUi\Notifications\Events\EventDefinition;
 use WebxUi\Notifications\Events\Variable;
 
 /**
- * What a channel of `webx-ui/module-notifications` is told about an order (spec §10): seven
+ * What a channel of `webx-ui/module-notifications` is told about an order (spec §10, §40.2): nine
  * events, one set of values, and the default templates of each.
  *
  * Only ever touched when the notifications module is installed: the provider declares the events
@@ -34,6 +34,12 @@ final class OrderEvents
 
     public const string REFUNDED = 'orders.refunded';
 
+    /** The lines were edited and the manager chose to tell the buyer (§40.2). */
+    public const string ITEMS_CHANGED = 'orders.items_changed';
+
+    /** Only by hand: «pay for the order» / «pay the rest» while the buyer owes (§40.2). */
+    public const string PAYMENT_REQUESTED = 'orders.payment_requested';
+
     /** The events of the milestones and the setting each keeps its channels in. */
     public const array SETTINGS = [
         self::PLACED => 'orders.notify.placed',
@@ -42,6 +48,8 @@ final class OrderEvents
         self::RECEIVED => 'orders.notify.received',
         self::CANCELLED => 'orders.notify.cancelled',
         self::REFUNDED => 'orders.notify.refunded',
+        self::ITEMS_CHANGED => 'orders.notify.items_changed',
+        self::PAYMENT_REQUESTED => 'orders.notify.payment_requested',
     ];
 
     /** Beyond the values every event has (§10.2). */
@@ -53,6 +61,9 @@ final class OrderEvents
         self::RECEIVED => ['reference'],
         self::CANCELLED => ['reason'],
         self::REFUNDED => ['refund_amount'],
+        // Never the edit's `reason`: the buyer is told the manager's `message` alone (§40.1).
+        self::ITEMS_CHANGED => ['changes', 'previous_total', 'balance', 'balance_kind', 'amount_due', 'amount_over', 'message'],
+        self::PAYMENT_REQUESTED => ['amount_due'],
     ];
 
     /** Who the default template of an event writes to: the buyer, or the shop. */
@@ -64,6 +75,8 @@ final class OrderEvents
         self::RECEIVED => OrderTemplates::CUSTOMER,
         self::CANCELLED => OrderTemplates::CUSTOMER,
         self::REFUNDED => OrderTemplates::CUSTOMER,
+        self::ITEMS_CHANGED => OrderTemplates::CUSTOMER,
+        self::PAYMENT_REQUESTED => OrderTemplates::CUSTOMER,
     ];
 
     /**
@@ -155,8 +168,34 @@ final class OrderEvents
 
     private static function extra(string $name): Variable
     {
-        $examples = ['reference' => 'TX-0001', 'reason' => 'The buyer changed their mind', 'refund_amount' => '€20.00'];
+        $vars = 'webx-orders::notifications.vars.';
 
-        return new Variable($name, 'webx-orders::notifications.vars.'.$name, example: $examples[$name]);
+        if ($name === 'changes') {
+            return new Variable('changes', $vars.'changes', example: [
+                ['name' => 'Item A', 'options' => 'Red, M', 'qty_from' => '2', 'qty_to' => '3', 'added' => '', 'removed' => ''],
+                ['name' => 'Item C', 'options' => '', 'qty_from' => '0', 'qty_to' => '1', 'added' => 'yes', 'removed' => ''],
+            ], fields: [
+                'name' => $vars.'item_name',
+                'options' => $vars.'item_options',
+                'qty_from' => $vars.'change_qty_from',
+                'qty_to' => $vars.'change_qty_to',
+                'added' => $vars.'change_added',
+                'removed' => $vars.'change_removed',
+            ]);
+        }
+
+        $examples = [
+            'reference' => 'TX-0001',
+            'reason' => 'The buyer changed their mind',
+            'refund_amount' => '€20.00',
+            'previous_total' => '€95.00',
+            'balance' => '€15.00',
+            'balance_kind' => 'due',
+            'message' => 'We added the charger you asked for on the phone.',
+            'amount_due' => '€15.00',
+            'amount_over' => '',
+        ];
+
+        return new Variable($name, $vars.$name, example: $examples[$name]);
     }
 }

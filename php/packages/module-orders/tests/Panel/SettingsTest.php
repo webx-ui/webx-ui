@@ -56,6 +56,8 @@ final class SettingsTest extends PanelTestCase
                 'orders.notify.received' => [],
                 'orders.notify.cancelled' => [],
                 'orders.notify.refunded' => [],
+                'orders.notify.items_changed' => [],
+                'orders.notify.payment_requested' => [],
                 // The tab «Checkout» (§31.2), nothing saved: the defaults.
                 'orders.checkout.fields.last_name' => 'optional',
                 'orders.checkout.fields.phone' => 'required',

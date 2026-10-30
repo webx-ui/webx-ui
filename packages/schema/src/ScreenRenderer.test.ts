@@ -167,6 +167,25 @@ describe('WxScreenRenderer', () => {
     expect(wrapper.text()).toContain('Hidden is 404')
   })
 
+  it('draws the asterisk at a field the server marked required, and at no other', () => {
+    const wrapper = mount(WxScreenRenderer, {
+      props: {
+        root: [
+          { id: 'first', type: 'wx-input', name: 'first', label: 'First name', required: true },
+          { id: 'last', type: 'wx-input', name: 'last', label: 'Last name' },
+        ],
+        modelValue: {},
+      },
+      attachTo: document.body,
+    })
+
+    const items = wrapper.findAll('.wx-form-item')
+    expect(items[0]!.classes()).toContain('is-required')
+    expect(items[0]!.find('.wx-form-item__required').exists()).toBe(true)
+    expect(items[1]!.find('.wx-form-item__required').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
   it('shows server errors under the field they name', () => {
     const wrapper = mountScreen({ errors: { name: ['Taken'] } })
 

@@ -140,6 +140,13 @@ defineExpose({ close })
   width: max-content;
   min-width: 200px;
   max-width: min(90vw, 360px);
+  /*
+   * No taller than the room left between the trigger and the edge of the window, which
+   * Reka measures for the side the panel actually opened on. A long panel — the filters
+   * of a list — scrolls inside its body instead of running off the screen with nothing
+   * to reach the fields below; the gap keeps the shadow off the very edge.
+   */
+  max-height: calc(var(--reka-popover-content-available-height, 100vh) - var(--wx-space-8));
   padding: var(--wx-space-14) var(--wx-space-16);
   background: var(--wx-bg-surface);
   border: 1px solid var(--wx-border-default);
@@ -159,6 +166,7 @@ defineExpose({ close })
 
 .wx-popover__header {
   display: flex;
+  flex: none;
   align-items: flex-start;
   gap: var(--wx-space-8);
 }
@@ -209,11 +217,23 @@ defineExpose({ close })
   display: flex;
   flex-direction: column;
   gap: var(--wx-space-10);
+  flex: 1 1 auto;
   min-width: 0;
+  min-height: 0;
+  /*
+   * The title and the footer stay put, only the body scrolls — and the page under it does
+   * not take over once the body reaches its end. A scrolling box clips what it holds, focus
+   * rings included, so the body reaches into the panel padding by the width of a ring.
+   */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  margin: calc(-1 * var(--wx-space-4));
+  padding: var(--wx-space-4);
 }
 
 .wx-popover__footer {
   display: flex;
+  flex: none;
   align-items: center;
   justify-content: flex-end;
   gap: var(--wx-space-8);

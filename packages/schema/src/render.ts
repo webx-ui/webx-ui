@@ -159,6 +159,7 @@ export function renderNode(node: ScreenNode, context: RenderContext): VNode | nu
         key: node.id,
         name,
         label: own ? undefined : label,
+        required: node.required === true,
         help: words(node.help, translate),
         wide: typeof entry.wide === 'function' ? entry.wide(node) : entry.wide,
       },

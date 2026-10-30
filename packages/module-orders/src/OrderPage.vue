@@ -29,12 +29,16 @@ import { createOrdersApi } from './api'
 import { provideOrderCard } from './card'
 import CancelDialog from './CancelDialog.vue'
 import { NAMESPACE, useOrdersMessages } from './i18n'
+import ItemsDialog from './ItemsDialog.vue'
 import MarkDialog from './MarkDialog.vue'
+import PaymentDialog from './PaymentDialog.vue'
+import NotifyDialog from './NotifyDialog.vue'
 import RefundDialog from './RefundDialog.vue'
+import ReverseRefundDialog from './ReverseRefundDialog.vue'
 import StatusDialog from './StatusDialog.vue'
 import VisitorDialog from './VisitorDialog.vue'
 import { toneOf } from './tones'
-import type { OrderCardData, OrderDetail, PublicStatusGroup } from './types'
+import type { OrderCardData, OrderDetail, OrderRefundEntry, PublicStatusGroup } from './types'
 
 /**
  * One order (spec §11.3): the head with the number, the date and the actions; `orders.show`
@@ -97,10 +101,22 @@ const statusDialog = createModal<
 const markDialog = createModal<OrderDetail, { orderId: number; milestone: 'paid' | 'received' }>(
   MarkDialog,
 )
+const paymentDialog = createModal<OrderDetail, { order: OrderCardData }>(PaymentDialog)
 const cancelDialog = createModal<OrderDetail, { orderId: number; number: string | null }>(
   CancelDialog,
 )
-const refundDialog = createModal<OrderDetail, { order: OrderCardData }>(RefundDialog)
+const refundDialog = createModal<
+  OrderDetail,
+  { order: OrderCardData; prefill?: { amount?: number; tenders?: Record<number, number> } }
+>(RefundDialog)
+const itemsDialog = createModal<
+  OrderDetail,
+  { order: OrderCardData; refreshed: (detail: OrderDetail) => void }
+>(ItemsDialog)
+const reverseDialog = createModal<OrderDetail, { orderId: number; refund: OrderRefundEntry }>(
+  ReverseRefundDialog,
+)
+const notifyDialog = createModal<OrderDetail, { orderId: number }>(NotifyDialog)
 const visitorDialog = createModal<OrderDetail, { order: OrderCardData; email: string | null }>(
   VisitorDialog,
 )
@@ -167,6 +183,14 @@ async function mark(milestone: 'paid' | 'received'): Promise<void> {
   )
 }
 
+async function recordPayment(): Promise<void> {
+  const open = order.value
+
+  if (!open) return
+
+  await after(paymentDialog({ order: open }), t('panel.payment-toast'))
+}
+
 async function cancel(): Promise<void> {
   const open = order.value
 
@@ -175,12 +199,182 @@ async function cancel(): Promise<void> {
   await after(cancelDialog({ orderId: open.id, number: open.number }), t('panel.cancelled-toast'))
 }
 
-async function refund(): Promise<void> {
+async function refund(prefill?: {
+  amount?: number
+  tenders?: Record<number, number>
+}): Promise<void> {
   const open = order.value
 
   if (!open) return
 
-  await after(refundDialog({ order: open }), t('panel.refunded-toast'))
+  await after(refundDialog({ order: open, prefill }), t('panel.refunded-toast'))
+}
+
+/**
+ * «Change the lines» (§42.1). Once saved, the balance says what comes next (§42.3): a paid order
+ * that owes more is offered «Record a top-up» with the sum owed; one paid over — a refund with
+ * the money over filled in (decision 101, question 8); tenders over — a refund of them. The link
+ * to pay comes with the payments module, not here.
+ */
+async function editItems(): Promise<void> {
+  const open = order.value
+
+  if (!open || busy.value) return
+
+  busy.value = true
+  let answer: OrderDetail | undefined
+
+  try {
+    answer = await itemsDialog({ order: open, refreshed: (detail) => take(detail, false) })
+
+    if (!answer) return
+
+    take(answer, false)
+    toast.success(t('panel.items-saved'))
+  } finally {
+    busy.value = false
+  }
+
+  const balance = answer.edit?.balance
+  const now = order.value
+
+  if (!balance || !now) return
+
+  if (balance.due > 0 && balance.paid_total > 0 && now.actions.payment) {
+    const agreed = await confirm({
+      title: t('panel.items-next-topup-title', { amount: balance.due_formatted }),
+      message: t('panel.items-next-topup-text'),
+      confirmText: t('panel.payment-record'),
+      cancelText: t('panel.items-later'),
+    })
+
+    if (agreed) await recordPayment()
+  } else if (balance.over > 0 && now.actions.refund) {
+    const agreed = await confirm({
+      title: t('panel.items-next-over-title', { amount: balance.over_formatted }),
+      message: t('panel.items-next-over-text'),
+      confirmText: t('panel.refund'),
+      cancelText: t('panel.items-later'),
+    })
+
+    if (agreed) await refund({ amount: balance.over })
+  } else if (balance.tenders_over > 0 && now.actions.refund) {
+    const agreed = await confirm({
+      title: t('panel.items-next-tenders-title', { amount: balance.tenders_over_formatted }),
+      message: t('panel.items-next-tenders-text'),
+      confirmText: t('panel.refund'),
+      cancelText: t('panel.items-later'),
+    })
+
+    if (agreed) await refund({ tenders: spread(balance.tenders_over, now) })
+  }
+}
+
+/** What goes back to the tenders, the first ones first, each up to what is left of it. */
+function spread(amount: number, open: OrderCardData): Record<number, number> {
+  const tenders: Record<number, number> = {}
+  let left = amount
+
+  for (const tender of open.tenders) {
+    const part = Math.min(left, tender.left_minor)
+
+    if (part > 0) tenders[tender.id] = part
+    left -= part
+  }
+
+  return tenders
+}
+
+/**
+ * A refund record made by mistake is reversed, never edited (decision 98); the right one is then
+ * recorded as any refund, so the dialog of a refund is offered at once.
+ */
+async function reverseRefund(refundId: number): Promise<void> {
+  const open = order.value
+  const record = open?.refunds.find((one) => one.id === refundId)
+
+  if (!open || !record || busy.value) return
+
+  busy.value = true
+
+  try {
+    const answer = await reverseDialog({ orderId: open.id, refund: record })
+
+    if (!answer) return
+
+    take(answer, false)
+    toast.success(t('panel.reversed-toast'))
+  } finally {
+    busy.value = false
+  }
+
+  if (!order.value?.actions.refund) return
+
+  const again = await confirm({
+    title: t('panel.reverse-next-title'),
+    message: t('panel.reverse-next-text'),
+    confirmText: t('panel.reverse-next-confirm'),
+    cancelText: t('panel.dismiss'),
+  })
+
+  if (again) await refund()
+}
+
+/**
+ * «Send again» on a row of «Notifications» (decision 99): the same message to the same recipient,
+ * asked first with whom and what. A second press within a minute is refused by the server.
+ */
+async function resend(deliveryId: number): Promise<void> {
+  const open = order.value
+  const row = open?.notifications?.find((one) => one.id === deliveryId)
+
+  if (!open || !row || busy.value) return
+
+  const what = row.event_label ?? row.channel
+  const agreed = await confirm({
+    title: t('panel.resend-title', { event: what }),
+    message: t('panel.resend-text', { recipient: row.recipient, channel: row.channel }),
+    confirmText: t('panel.resend-confirm'),
+    cancelText: t('panel.dismiss'),
+  })
+
+  if (!agreed) return
+
+  busy.value = true
+
+  try {
+    take(await api.resend(open.id, deliveryId), false)
+    toast.success(t('panel.resent-toast'))
+  } catch (error) {
+    const body = (error as { body?: { errors?: Record<string, string[]> } }).body
+
+    toast.danger(body?.errors?.delivery?.[0] ?? message(error))
+  } finally {
+    busy.value = false
+  }
+}
+
+/** «Send the buyer a letter» (decision 99): the dialog shows the letter before it goes. */
+async function notify(): Promise<void> {
+  const open = order.value
+
+  if (!open) return
+
+  busy.value = true
+
+  try {
+    const answer = await notifyDialog({ orderId: open.id })
+
+    if (answer) {
+      take(answer, false)
+      // The address it went to is the saved one, not what may be typed in the contacts now.
+      toast.success(
+        t('panel.notify-sent', { email: String(answer.values['customer.email'] ?? '') }),
+      )
+    }
+  } finally {
+    busy.value = false
+  }
 }
 
 async function linkVisitor(): Promise<void> {
@@ -226,7 +420,64 @@ async function unlinkVisitor(): Promise<void> {
   }
 }
 
-provideOrderCard({ order, busy, changeStatus, mark, cancel, refund, linkVisitor, unlinkVisitor })
+/**
+ * A note goes in at once, beside the contacts' save bar and not through it: it is a line of the
+ * history, not a field of the order, and what is being typed in the contacts stays.
+ */
+async function note(body: string): Promise<boolean> {
+  const open = order.value
+
+  if (!open) return false
+
+  try {
+    take(await api.note(open.id, body), false)
+
+    return true
+  } catch (error) {
+    toast.danger(message(error))
+
+    return false
+  }
+}
+
+/**
+ * The pinned note is saved on its own, as a note is: it is the block «Notes»'s, not a field of the
+ * screen's save bar, and what is being typed in the contacts stays. The write is the contacts' own
+ * (`details`), so the journal and the history keep it as before.
+ */
+async function pin(text: string | null): Promise<boolean> {
+  const open = order.value
+
+  if (!open) return false
+
+  try {
+    take(await api.saveDetails(open.id, { manager_note: text }), false)
+    toast.success(t(text === null ? 'panel.pin-removed' : 'panel.pin-saved'))
+
+    return true
+  } catch (error) {
+    toast.danger(message(error))
+
+    return false
+  }
+}
+
+provideOrderCard({
+  order,
+  busy,
+  changeStatus,
+  mark,
+  recordPayment,
+  editItems,
+  cancel,
+  refund: () => refund(),
+  reverseRefund,
+  resend,
+  note,
+  pin,
+  linkVisitor,
+  unlinkVisitor,
+})
 
 async function save(): Promise<void> {
   const open = order.value
@@ -269,6 +520,17 @@ const actions = computed<ScreenAction[]>(() => {
     })
   }
 
+  // The pencil beside the status in the strip opens the same dialog; on a narrow head this one
+  // folds into the `···` with the rest.
+  if (open.actions.status) {
+    list.push({
+      key: 'status',
+      label: t('panel.status-change'),
+      icon: 'edit',
+      run: () => void changeStatus(),
+    })
+  }
+
   if (open.actions.received) {
     list.push({
       key: 'received',
@@ -286,6 +548,19 @@ const actions = computed<ScreenAction[]>(() => {
       icon: 'arrow-left',
       menu: true,
       run: () => void refund(),
+    })
+  }
+
+  // A letter to the buyer again (decision 99): greyed with why when no channel writes to the buyer.
+  if (open.actions.notify) {
+    list.push({
+      key: 'notify',
+      label: t('panel.notify-buyer'),
+      icon: 'mail',
+      menu: true,
+      disabled: Boolean(open.actions.notify_reason),
+      hint: open.actions.notify_reason ?? undefined,
+      run: () => void notify(),
     })
   }
 

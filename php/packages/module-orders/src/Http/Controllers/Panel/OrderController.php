@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Orders\Http\Controllers\Panel;
 
+use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -15,15 +16,20 @@ use WebxUi\Cart\Money;
 use WebxUi\Orders\Contact;
 use WebxUi\Orders\Milestone;
 use WebxUi\Orders\Models\Order;
+use WebxUi\Orders\Notifications\OrderChannels;
+use WebxUi\Orders\NotifyRefused;
 use WebxUi\Orders\OrderDetails;
 use WebxUi\Orders\Orders;
 use WebxUi\Orders\Panel\Consequences;
 use WebxUi\Orders\Panel\OrderCard;
 use WebxUi\Orders\Panel\OrderList;
+use WebxUi\Orders\Panel\OrdersSummary;
 use WebxUi\Orders\Panel\StatusChoices;
+use WebxUi\Orders\PaymentRecord;
 use WebxUi\Orders\RefundRefused;
 use WebxUi\Orders\RefundRequest;
 use WebxUi\Orders\RefundResult;
+use WebxUi\Orders\RefundReversalRefused;
 use WebxUi\Orders\Refusal;
 use WebxUi\Orders\StatusMoveRefused;
 
@@ -47,19 +53,47 @@ final readonly class OrderController
         private Money $money,
     ) {}
 
+    /**
+     * A page of the list with how many each tab holds. `view=auto` is the list opened without a
+     * tab (decision 92): «New» while it holds any order, otherwise «All» — told by the same counts,
+     * so it is still one answer, and `view` says which tab it is.
+     */
     public function index(Request $request): JsonResponse
     {
-        $validated = $request->validate(OrderList::rules());
+        $validated = $request->validate([...OrderList::rules(), 'view' => ['nullable', Rule::in([...OrderList::VIEWS, 'auto'])]]);
 
         $locale = app()->getLocale();
         $statuses = new StatusChoices;
-        $page = $this->list->page($validated, (int) ($validated['per_page'] ?? 25), (int) ($validated['page'] ?? 1));
+        $counts = $this->list->counts($validated);
+        $view = (string) ($validated['view'] ?? 'all');
+
+        if ($view === 'auto') {
+            $view = $counts['new'] > 0 ? 'new' : 'all';
+        }
+
+        $page = $this->list->page([...$validated, 'view' => $view], (int) ($validated['per_page'] ?? 25), (int) ($validated['page'] ?? 1));
 
         return new JsonResponse([
             ...$page->toArray(),
             'data' => array_map(fn (Order $order): array => $this->list->row($order, $statuses, $locale), $page->items()),
-            'counts' => $this->list->counts($validated),
+            'counts' => $counts,
+            'view' => $view,
         ]);
+    }
+
+    /**
+     * The figures over the list (§11.2): the same count as the agent's `orders_summary`, asked
+     * apart so that the rows never wait for it.
+     */
+    public function summary(OrdersSummary $summary): JsonResponse
+    {
+        return ApiResponse::data($summary->describe(app()->getLocale()));
+    }
+
+    /** An opened row of the list: what the order holds and who it is for, without the card. */
+    public function glance(Request $request, int $order): JsonResponse
+    {
+        return ApiResponse::data($this->card->glance(self::find($order), app()->getLocale(), $request->user()));
     }
 
     /**
@@ -132,6 +166,55 @@ final readonly class OrderController
             reference: $validated['reference'] ?? null,
             note: $validated['note'] ?? null,
         ), 'milestone');
+
+        return $this->describe($request, $found);
+    }
+
+    /**
+     * «Record a top-up» (§36.3, §42.3): money that came in for a paid order, typed in the
+     * currency's own units, with the operation's number, the day and a note. `dry_run` answers the
+     * balance after it; a refusal — the order is not paid yet, or cancelled — comes back under `amount`.
+     */
+    public function payment(Request $request, int $order): JsonResponse
+    {
+        $validated = $request->validate([
+            'amount' => ['required', 'numeric', 'gt:0'],
+            'reference' => ['nullable', 'string', 'max:190'],
+            'at' => ['nullable', 'date_format:Y-m-d'],
+            'note' => ['nullable', 'string', 'max:500'],
+            'dry_run' => ['nullable', 'boolean'],
+        ]);
+
+        $found = self::find($order);
+        $amount = $this->money->toMinor((string) $validated['amount'], $found->currency);
+        // A day alone is that day at this hour: the history keeps the order the lines were written in.
+        $at = isset($validated['at']) ? CarbonImmutable::parse((string) $validated['at'])->setTimeFrom(CarbonImmutable::now()) : null;
+        $record = fn (bool $dryRun): PaymentRecord => $this->orders->recordPayment(
+            $found, $amount, 'panel', $validated['reference'] ?? null, $at, $validated['note'] ?? null, $dryRun,
+        );
+
+        if ((bool) ($validated['dry_run'] ?? false)) {
+            return ApiResponse::data($this->consequences->payment($record(true), $this->money));
+        }
+
+        $this->refusing(fn () => $record(false), 'amount');
+
+        return $this->describe($request, $found);
+    }
+
+    /**
+     * A note for whoever picks the order up next (decision 90): a line of its history of the kind
+     * `note`, written as `Orders::note()` writes a module's — the author the administrator. It never
+     * changes afterwards; the answer is the card, with the note in its feed and its history.
+     */
+    public function note(Request $request, int $order): JsonResponse
+    {
+        $validated = $request->validate([
+            'body' => ['required', 'string', 'max:1000'],
+        ]);
+
+        $found = self::find($order);
+        $this->orders->note($found, (string) $validated['body'], 'panel');
 
         return $this->describe($request, $found);
     }
@@ -243,6 +326,95 @@ final readonly class OrderController
         }
 
         return $this->describe($request, $found);
+    }
+
+    /**
+     * Reverse a refund recorded by mistake (decision 98): the reason is required, and the dialog
+     * asks what it does before one is typed — a dry run keeps nothing, so it is asked with a stand-in.
+     * A refusal — another order's record, one reversed already — comes back under `refund`.
+     */
+    public function reverseRefund(Request $request, int $order, int $refund): JsonResponse
+    {
+        $validated = $request->validate([
+            'reason' => ['nullable', 'string', 'max:500'],
+            'dry_run' => ['nullable', 'boolean'],
+        ]);
+
+        $found = self::find($order);
+        $dryRun = (bool) ($validated['dry_run'] ?? false);
+        $reason = self::previewNote($validated['reason'] ?? null, $dryRun);
+
+        if ($dryRun) {
+            return ApiResponse::data($this->consequences->reversal($this->orders->reverseRefund($found, $refund, $reason, 'panel', true), $found->currency, $this->money));
+        }
+
+        try {
+            $this->orders->reverseRefund($found, $refund, $reason, 'panel');
+        } catch (RefundReversalRefused $refused) {
+            throw ValidationException::withMessages([
+                'refund' => (string) __('webx-orders::panel.reverse-refusals.'.$refused->reason),
+            ]);
+        }
+
+        return $this->describe($request, $found);
+    }
+
+    /**
+     * What «Send the buyer a letter» chooses from (decision 99): the events the order has a reason
+     * for, the channels of each that write to the buyer, the e-mail it goes to — and why not.
+     */
+    public function notifyMeta(OrderChannels $channels, int $order): JsonResponse
+    {
+        $found = self::find($order);
+        $events = $channels->buyerEvents($found);
+
+        return ApiResponse::data([
+            ...$events,
+            'reason_label' => $events['reason'] !== null ? NotifyRefused::label($events['reason']) : null,
+            'events' => array_map(static fn (array $event): array => [
+                ...$event,
+                'reason_label' => $event['reason'] !== null ? NotifyRefused::label($event['reason'], $event['key']) : null,
+            ], $events['events']),
+        ]);
+    }
+
+    /**
+     * Tell the buyer of an event again by hand (decision 99). `dry_run` answers each channel's
+     * message as it would go; the real send answers the card, with its line in the history.
+     */
+    public function notify(Request $request, int $order): JsonResponse
+    {
+        $validated = $request->validate([
+            'event' => ['required', 'string', 'max:64'],
+            'dry_run' => ['nullable', 'boolean'],
+        ]);
+
+        return $this->sending($request, self::find($order), ['event' => (string) $validated['event']], (bool) ($validated['dry_run'] ?? false), 'event');
+    }
+
+    /**
+     * Send a row of the order's log again (decision 99): the same message to the same recipient,
+     * a new row marked manual. A second press within a minute is refused under `delivery`.
+     */
+    public function resend(Request $request, int $order, int $delivery): JsonResponse
+    {
+        $validated = $request->validate(['dry_run' => ['nullable', 'boolean']]);
+
+        return $this->sending($request, self::find($order), ['delivery' => $delivery], (bool) ($validated['dry_run'] ?? false), 'delivery');
+    }
+
+    /**
+     * @param  array{delivery?: int, event?: string}  $what
+     */
+    private function sending(Request $request, Order $order, array $what, bool $dryRun, string $field): JsonResponse
+    {
+        try {
+            $result = $this->orders->notify($order, $what, 'panel', $dryRun);
+        } catch (NotifyRefused $refused) {
+            throw ValidationException::withMessages([$field => $refused->said()]);
+        }
+
+        return $dryRun ? ApiResponse::data($result->toArray()) : $this->describe($request, $order);
     }
 
     private function describe(Request $request, Order $order): JsonResponse

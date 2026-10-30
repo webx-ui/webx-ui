@@ -35,12 +35,17 @@ import {
 } from '@webx-ui/module-admin'
 import { createOrdersApi } from './api'
 import CancelDialog from './CancelDialog.vue'
+import ContactLink from './ContactLink.vue'
+import OrderGlanceRow from './OrderGlanceRow.vue'
+import OrdersStats from './OrdersStats.vue'
 import { NAMESPACE, useOrdersMessages } from './i18n'
 import StatusDialog from './StatusDialog.vue'
 import { toneOf } from './tones'
 import type {
   MassCancelAnswer,
   MassStatusAnswer,
+  OrderBalanceFilter,
+  OrderGlance,
   OrderQuery,
   OrderRow,
   OrdersMeta,
@@ -55,6 +60,11 @@ import type {
  * over it — new, awaiting payment, payment failed, all — and the filters behind the funnel; all
  * of it in the address, so coming back from a card lands where the list was left. The selection
  * moves to a status or cancels, each with a preview of what it does before it does it.
+ *
+ * Opened without a tab, the list is on «New» while it holds any order and on «All» otherwise
+ * (decision 92) — the server decides by the counts it sends anyway, so it is one request and no
+ * tab is shown before the answer says which. Over the list stand the figures (decision 93); a row
+ * opens to what the order holds and who it is for (decision 94).
  */
 defineOptions({ name: 'WxOrdersPage' })
 
@@ -127,9 +137,23 @@ const flag = (key: string): boolean | null =>
   route.query[key] === '1' ? true : route.query[key] === '0' ? false : null
 
 const VIEWS: OrdersView[] = ['new', 'awaiting', 'failed', 'all']
-const view = ref<OrdersView>(
-  VIEWS.includes(text('view') as OrdersView) ? (text('view') as OrdersView) : 'all',
-)
+const addressed = VIEWS.includes(text('view') as OrdersView) ? (text('view') as OrdersView) : null
+/** The open tab; null until the server's first answer says which one, for a list opened without. */
+const view = ref<OrdersView | null>(addressed)
+/** A tab in the address or chosen since is kept there; the one the server chose is not. */
+const explicit = ref(addressed !== null)
+
+/*
+ * The tabs are told nothing until the tab is known: given no value, the strip would open its first
+ * tab by itself and show «New» for a moment on a list that turns out to be «All». A write before
+ * then is that strip's, not the reader's, and is not taken.
+ */
+const tab = computed<OrdersView | ''>({
+  get: () => view.value ?? '',
+  set: (value) => {
+    if (view.value !== null && value !== '') view.value = value
+  },
+})
 const search = ref(String(route.query.q ?? ''))
 const pageNumber = ref(Number(route.query.page ?? 1) || 1)
 const status = ref<string | null>(text('status'))
@@ -138,6 +162,10 @@ const paid = ref<boolean | null>(flag('paid'))
 const received = ref<boolean | null>(flag('received'))
 const cancelled = ref<boolean | null>(flag('cancelled'))
 const refunded = ref<boolean | null>(flag('refunded'))
+/** «Payment differs» (§42.4): waiting for a top-up, or paid over. */
+const balance = ref<OrderBalanceFilter | null>(
+  ((value) => (value === 'due' || value === 'over' ? value : null))(text('balance')),
+)
 const visitor = ref<string | null>(text('visitor'))
 const delivery = ref<string | null>(text('delivery'))
 const payment = ref<string | null>(text('payment'))
@@ -183,6 +211,19 @@ const publicOptions = computed(() =>
   })),
 )
 
+const balanceOptions = computed(() => [
+  { value: 'due', label: t('panel.balance-filter-due') },
+  { value: 'over', label: t('panel.balance-filter-over') },
+])
+
+/** The badge under the total: «Top-up 15.00», «Give back 20.00». */
+const balanceBadge = (row: OrderRow): string | null =>
+  row.balance
+    ? t(row.balance.kind === 'over' ? 'panel.badge-over' : 'panel.badge-topup', {
+        amount: row.balance.amount,
+      })
+    : null
+
 const visitorOptions = computed(() => [
   { value: 'guest', label: t('panel.guest') },
   { value: 'visitor', label: t('panel.visitor') },
@@ -190,6 +231,14 @@ const visitorOptions = computed(() => [
 
 /** Where an order may come from; a source of the site's own code is still found by the address. */
 const SOURCES = ['checkout', 'quick', 'panel', 'api', 'mcp'] as const
+
+/** The contact a row shows under the buyer: the phone, or the e-mail where there is none. */
+function contactOf(row: OrderRow): { kind: 'phone' | 'email'; value: string } | null {
+  if (row.customer.phone) return { kind: 'phone', value: row.customer.phone }
+  if (row.customer.email) return { kind: 'email', value: row.customer.email }
+
+  return null
+}
 
 /* An order that did not come through the checkout says so beside the buyer: a one-click order and
  * one a manager took by phone (§29.1, §29.2) both wait for delivery and payment to be filled in. */
@@ -265,6 +314,14 @@ const applied = computed<AppliedFilter[]>(() => {
     }
   }
 
+  if (balance.value !== null) {
+    chip(
+      'balance',
+      `${t('panel.filter-balance')}: ${labelOf(balanceOptions.value, balance.value)}`,
+      () => (balance.value = null),
+    )
+  }
+
   if (visitor.value !== null) {
     chip('visitor', labelOf(visitorOptions.value, visitor.value), () => (visitor.value = null))
   }
@@ -303,6 +360,7 @@ function clearFilters(): void {
   received.value = null
   cancelled.value = null
   refunded.value = null
+  balance.value = null
   visitor.value = null
   delivery.value = null
   payment.value = null
@@ -313,7 +371,7 @@ function clearFilters(): void {
 
 function query(state?: TableState): OrderQuery {
   return {
-    view: view.value === 'all' ? undefined : view.value,
+    view: view.value === null ? 'auto' : view.value === 'all' ? undefined : view.value,
     search: state?.search ?? search.value,
     status: status.value ?? undefined,
     public: publicStatus.value ?? undefined,
@@ -321,6 +379,7 @@ function query(state?: TableState): OrderQuery {
     received: received.value ?? undefined,
     cancelled: cancelled.value ?? undefined,
     refunded: refunded.value ?? undefined,
+    balance: balance.value ?? undefined,
     visitor: (visitor.value as OrderQuery['visitor']) ?? undefined,
     delivery: delivery.value ?? undefined,
     payment: payment.value ?? undefined,
@@ -343,7 +402,11 @@ async function load(state?: TableState): Promise<void> {
   try {
     const answer = await api.list(query(state))
 
-    if (mine === asked) page.value = answer
+    if (mine === asked) {
+      page.value = answer
+      // The tab the server chose for a list opened without one.
+      if (view.value === null) view.value = answer.view ?? 'all'
+    }
   } catch (error) {
     toast.danger(message(error))
   } finally {
@@ -355,7 +418,7 @@ function remember(): void {
   const wanted: LocationQueryRaw = {}
   const q = query()
 
-  if (q.view) wanted.view = q.view
+  if (explicit.value && view.value !== null) wanted.view = view.value
   if (q.search) wanted.q = q.search
   if (q.page && q.page > 1) wanted.page = String(q.page)
   if (q.sort && q.sort !== '-placed_at') wanted.sort = q.sort
@@ -363,6 +426,7 @@ function remember(): void {
   for (const key of [
     'status',
     'public',
+    'balance',
     'visitor',
     'delivery',
     'payment',
@@ -385,15 +449,26 @@ function onState(state: TableState): void {
   void load(state)
 }
 
+/* The tab the server chose comes with its rows already; a tab chosen since is a new question. */
+watch(view, (_, before) => {
+  if (before === null) return
+
+  explicit.value = true
+  pageNumber.value = 1
+  selected.value = []
+  remember()
+  void load()
+})
+
 watch(
   [
-    view,
     status,
     publicStatus,
     paid,
     received,
     cancelled,
     refunded,
+    balance,
     visitor,
     delivery,
     payment,
@@ -424,7 +499,7 @@ const columns = computed<TableColumn<OrderRow>[]>(() => {
     { key: 'number', label: t('panel.column-number'), width: 150 },
     { key: 'customer', label: t('panel.column-customer') },
     { key: 'items', label: t('panel.column-items'), width: 200, hideBelow: 1100 },
-    { key: 'total', label: t('panel.column-total'), width: 130, align: 'right' },
+    { key: 'total', label: t('panel.column-total'), width: 150, align: 'right' },
     { key: 'status', label: t('panel.column-status'), width: 190 },
     { key: 'marks', label: t('panel.column-marks'), width: 120, hideBelow: 900 },
     { key: 'blocks', label: t('panel.column-blocks'), width: 180, hideBelow: 1280 },
@@ -464,6 +539,40 @@ function actionsFor(row: OrderRow): RowAction[] {
   return actions
 }
 
+/*
+ * An opened row asks the server once and keeps the answer for the page: the list itself stays as
+ * light as it was, and a manager who opens three rows of twenty-five pays for three. After a mass
+ * change the answers are stale, so they go.
+ */
+const expanded = ref<(string | number)[]>([])
+const glances = ref<Record<number, OrderGlance | 'failed'>>({})
+
+async function glanceAt(id: number): Promise<void> {
+  if (glances.value[id] !== undefined) return
+
+  try {
+    const answer = await api.glance(id)
+    glances.value = { ...glances.value, [id]: answer }
+  } catch {
+    glances.value = { ...glances.value, [id]: 'failed' }
+  }
+}
+
+function onExpand(keys: (string | number)[]): void {
+  for (const key of keys) void glanceAt(Number(key))
+}
+
+function glanceOf(row: OrderRow): OrderGlance | null {
+  const answer = glances.value[row.id]
+
+  return answer === undefined || answer === 'failed' ? null : answer
+}
+
+function forget(): void {
+  glances.value = {}
+  expanded.value = []
+}
+
 const ids = computed(() => selected.value.map((key) => Number(key)))
 
 async function moveSelected(chosen = ids.value): Promise<void> {
@@ -475,6 +584,7 @@ async function moveSelected(chosen = ids.value): Promise<void> {
   if (answer.refused.length > 0)
     toast.warning(t('panel.mass-refused', { count: answer.refused.length }))
   selected.value = []
+  forget()
   void load()
 }
 
@@ -487,11 +597,12 @@ async function cancelSelected(): Promise<void> {
   if (answer.refused.length > 0)
     toast.warning(t('panel.mass-refused', { count: answer.refused.length }))
   selected.value = []
+  forget()
   void load()
 }
 
 const emptyText = computed(() =>
-  applied.value.length > 0 || search.value || view.value !== 'all'
+  applied.value.length > 0 || search.value || (view.value !== null && view.value !== 'all')
     ? t('panel.nothing-found')
     : t('module.empty'),
 )
@@ -510,11 +621,17 @@ onMounted(async () => {
 
 <template>
   <div ref="root" class="wx-orders">
-    <wx-list-screen v-model:view="view" :title="title" :views="views" :actions="headActions">
+    <wx-list-screen v-model:view="tab" :title="title" :views="views" :actions="headActions">
+      <template #before>
+        <orders-stats />
+      </template>
+
       <wx-table
         v-model:search="search"
         v-model:page="pageNumber"
         v-model:selected="selected"
+        v-model:expanded="expanded"
+        :expandable="!asCards"
         :loading-text="panel('filters.loading')"
         :data="page"
         :columns="columns"
@@ -536,7 +653,12 @@ onMounted(async () => {
         :aria-label="title"
         @row-click="open"
         @state-change="onState"
+        @expand-change="onExpand"
       >
+        <template #expanded="{ row }">
+          <order-glance-row :glance="glanceOf(row)" :failed="glances[row.id] === 'failed'" />
+        </template>
+
         <template v-if="selected.length > 0" #actions>
           <div class="wx-orders__mass">
             <wx-text size="sm" weight="medium">
@@ -587,6 +709,15 @@ onMounted(async () => {
               clearable
               size="sm"
               @update:model-value="filter.set"
+            />
+          </wx-form-item>
+          <wx-form-item :label="t('panel.filter-balance')">
+            <wx-select
+              v-model="balance"
+              :options="balanceOptions"
+              :placeholder="t('panel.any')"
+              clearable
+              size="sm"
             />
           </wx-form-item>
           <wx-form-item v-if="meta.visitors" :label="t('panel.filter-visitor')">
@@ -670,8 +801,8 @@ onMounted(async () => {
                 {{ sourceMark(row.source) }}
               </wx-badge>
             </span>
-            <span class="wx-orders__text wx-orders__muted">
-              {{ row.customer.phone ?? row.customer.email ?? '' }}
+            <span v-if="contactOf(row)" class="wx-orders__text wx-orders__muted">
+              <contact-link v-bind="contactOf(row)!" />
             </span>
           </div>
         </template>
@@ -686,6 +817,17 @@ onMounted(async () => {
             <span v-if="row.payable !== row.total" class="wx-orders__text wx-orders__muted">
               {{ t('panel.payable-short', { amount: row.payable }) }}
             </span>
+            <wx-badge
+              v-if="balanceBadge(row)"
+              :type="row.balance?.kind === 'over' ? 'danger' : 'warning'"
+              size="sm"
+              data-test="row-balance"
+            >
+              {{ balanceBadge(row) }}
+            </wx-badge>
+            <wx-badge v-if="row.edited" size="sm" variant="outline" data-test="row-edited">
+              {{ t('panel.edited') }}
+            </wx-badge>
           </div>
         </template>
 
@@ -752,8 +894,22 @@ onMounted(async () => {
                 {{ sourceMark(row.source) }}
               </wx-badge>
               <wx-text size="sm" weight="medium">{{ row.total }}</wx-text>
+              <wx-badge
+                v-if="balanceBadge(row)"
+                :type="row.balance?.kind === 'over' ? 'danger' : 'warning'"
+                size="sm"
+              >
+                {{ balanceBadge(row) }}
+              </wx-badge>
+              <wx-badge v-if="row.edited" size="sm" variant="outline">
+                {{ t('panel.edited') }}
+              </wx-badge>
               <wx-text size="sm" tone="muted">{{ numberOf(row) }}</wx-text>
               <wx-date :value="row.placed_at" compact size="sm" />
+              <!-- A phone in the hand calls the buyer from here; the rest of the card opens the order. -->
+              <wx-text v-if="contactOf(row)" size="sm" class="wx-orders__text">
+                <contact-link v-bind="contactOf(row)!" />
+              </wx-text>
             </template>
           </wx-entity-card>
         </template>
@@ -803,6 +959,13 @@ onMounted(async () => {
 .wx-orders__money {
   align-items: flex-end;
   font-variant-numeric: tabular-nums;
+}
+
+/* The balance badge keeps its money whole: in a narrow column it wraps rather than cut the sum. */
+.wx-orders__money :deep(.wx-badge),
+.wx-orders__money :deep(.wx-badge__label) {
+  white-space: normal;
+  text-align: right;
 }
 
 .wx-orders__marks {

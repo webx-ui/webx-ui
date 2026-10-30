@@ -1,10 +1,19 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { WxBadge, WxCard, WxEmpty, WxText, WxTimeline, WxTimelineItem } from '@webx-ui/core'
+import {
+  WxBadge,
+  WxButton,
+  WxCard,
+  WxEmpty,
+  WxText,
+  WxTimeline,
+  WxTimelineItem,
+} from '@webx-ui/core'
 import { useDates, useTranslate } from '@webx-ui/module-admin'
 import type { TimelineItemType } from '@webx-ui/core'
 import { useOrderCard } from './card'
 import { NAMESPACE, useOrdersMessages } from './i18n'
+import { authorOf } from './sources'
 import { toneOf } from './tones'
 import type { OrderDelivery, TimelineLine } from './types'
 
@@ -12,10 +21,13 @@ import type { OrderDelivery, TimelineLine } from './types'
  * `wx-orders-timeline` — «History» of the card (spec §8): one timeline out of the moves, the
  * notes and the rest of the history, the milestones and the refunds, oldest first, as the server
  * merged them. Who did it is the administrator's name where one is known; otherwise the source in
- * the panel's words — «Site API», «Agent» — or as the module that wrote it named itself.
+ * the panel's words — «Site API», «Agent» — or as the module that wrote it named itself. A refund
+ * recorded by mistake is reversed from its line (decision 98); its reversal is a line of its own.
  *
  * Under it, with the notifications module there, «Notifications»: what its channels sent about
- * the order, newest first, in that module's own words — and why a row was not sent.
+ * the order, newest first, in that module's own words — and why a row was not sent. A row that
+ * went, failed or got stuck is sent again from here (decision 99); one sent by hand says so and
+ * by whom.
  */
 defineOptions({ name: 'WxOrdersTimeline' })
 
@@ -26,6 +38,8 @@ const dates = useDates()
 const card = useOrderCard()
 const lines = computed(() => card?.order.value?.timeline ?? [])
 const deliveries = computed(() => card?.order.value?.notifications ?? null)
+const reversible = computed(() => Boolean(card?.order.value?.actions.refund_reverse))
+const resending = computed(() => Boolean(card?.order.value?.actions.resend))
 
 function deliveryTone(row: OrderDelivery): 'danger' | 'success' | 'warning' | 'default' {
   if (row.status === 'failed') return 'danger'
@@ -37,19 +51,8 @@ function deliveryTone(row: OrderDelivery): 'danger' | 'success' | 'warning' | 'd
   return 'default'
 }
 
-/** The sources the panel has a word for; a gateway's or a carrier's own name stays as it is. */
-const KNOWN = ['panel', 'api', 'mcp', 'checkout', 'quick', 'command']
-
 function who(line: TimelineLine): string {
-  if (line.source === 'mcp') {
-    return line.admin ? t('panel.source-mcp-admin', { name: line.admin }) : t('panel.source-mcp')
-  }
-
-  if (line.admin) return line.admin
-  if (line.source.startsWith('status#')) return t('panel.source-status')
-  if (KNOWN.includes(line.source)) return t(`panel.source-${line.source}`)
-
-  return line.source
+  return authorOf(t, line.source, line.admin)
 }
 
 function title(line: TimelineLine): string {
@@ -62,8 +65,18 @@ function title(line: TimelineLine): string {
       return t('panel.timeline-milestone', { milestone: line.milestone?.label ?? '' })
     case 'refund':
       return t('panel.timeline-refund', { amount: line.amount ?? '' })
+    case 'refund_reversed':
+      return t('panel.timeline-refund_reversed', { amount: line.amount ?? '' })
+    case 'payment':
+      return t('panel.timeline-payment', { amount: line.amount ?? '' })
+    case 'notification_sent':
+      return t('panel.timeline-notification_sent', { event: line.event_label ?? line.event ?? '' })
+    case 'milestone_removed':
+      return t('panel.timeline-milestone_removed', { milestone: line.milestone?.label ?? '' })
     case 'block':
       return t('panel.timeline-block', { block: line.note ?? '' })
+    case 'items':
+      return t('panel.timeline-items', { number: line.revision?.number ?? '' })
     default:
       return t(`panel.timeline-${line.kind}`)
   }
@@ -72,7 +85,10 @@ function title(line: TimelineLine): string {
 function tone(line: TimelineLine): TimelineItemType {
   if (line.kind === 'status') return toneOf(line.to_color)
   if (line.kind === 'payment_failed') return 'danger'
-  if (line.kind === 'refund') return 'warning'
+  if (line.kind === 'payment') return 'success'
+  if (line.kind === 'items') return 'primary'
+  if (line.kind === 'refund') return line.reversed ? 'default' : 'warning'
+  if (line.kind === 'refund_reversed' || line.kind === 'milestone_removed') return 'warning'
   if (line.kind === 'milestone') {
     return line.milestone?.key === 'cancelled'
       ? 'danger'
@@ -84,17 +100,71 @@ function tone(line: TimelineLine): TimelineItemType {
   return 'default'
 }
 
+/**
+ * The reason of a cancellation and of a refund: said with its label on a plate of its own, not
+ * as one more grey line under the title.
+ */
+function reason(line: TimelineLine): string | null {
+  const cancels = line.kind === 'milestone' && line.milestone?.key === 'cancelled'
+
+  return (cancels ||
+    line.kind === 'refund' ||
+    line.kind === 'refund_reversed' ||
+    line.kind === 'items') &&
+    line.note
+    ? line.note
+    : null
+}
+
+/**
+ * An edit of the lines (§38.2) in lines: what was added, taken out and counted again, the total
+ * before and after, the balance it left, the words for the buyer.
+ */
+function edited(revision: NonNullable<TimelineLine['revision']>): string[] {
+  const parts = revision.changes.map((change) => {
+    const name = change.options_label ? `${change.name} (${change.options_label})` : change.name
+
+    if (change.op === 'add') return t('panel.timeline-items-add', { name, qty: change.qty_to })
+    if (change.op === 'remove') return t('panel.timeline-items-remove', { name })
+
+    return t('panel.timeline-items-qty', { name, from: change.qty_from, to: change.qty_to })
+  })
+
+  if (revision.total_from && revision.total_to) {
+    parts.push(
+      t('panel.timeline-items-total', { from: revision.total_from, to: revision.total_to }),
+    )
+  }
+
+  if (revision.balance) {
+    parts.push(
+      t(
+        revision.balance.kind === 'due' ? 'panel.timeline-items-due' : 'panel.timeline-items-over',
+        {
+          amount: revision.balance.amount,
+        },
+      ),
+    )
+  }
+
+  if (revision.message) parts.push(t('panel.timeline-items-message', { message: revision.message }))
+
+  return parts
+}
+
 /** The line under the title: the note, the reference, the units — what the row has. */
 function details(line: TimelineLine): string[] {
   const parts: string[] = []
 
   if (line.public) parts.push(t('panel.timeline-public', { status: line.public }))
+  if (line.kind === 'refund' && line.reversed) parts.push(t('panel.timeline-refund-reversed'))
   if (line.kind === 'refund' && line.units) {
     parts.push(t('panel.timeline-refund-units', { count: line.units }))
   }
   if (line.reference) parts.push(t('panel.timeline-reference', { reference: line.reference }))
+  if (line.revision) parts.push(...edited(line.revision))
   // A block's line names the block in its title already; the note is that name.
-  if (line.note && line.kind !== 'block') parts.push(line.note)
+  if (line.note && line.kind !== 'block' && reason(line) === null) parts.push(line.note)
 
   return parts
 }
@@ -123,6 +193,32 @@ function details(line: TimelineLine): string[] {
           >
             {{ part }}
           </wx-text>
+          <p
+            v-if="reason(line)"
+            class="wx-orders-timeline__reason"
+            :class="
+              (line.kind === 'refund' && line.reversed) || line.kind === 'items'
+                ? 'wx-orders-timeline__reason--muted'
+                : line.kind === 'refund' || line.kind === 'refund_reversed'
+                  ? 'wx-orders-timeline__reason--warning'
+                  : 'wx-orders-timeline__reason--danger'
+            "
+            data-test="timeline-reason"
+          >
+            <span class="wx-orders-timeline__label">{{ t('panel.summary-reason') }}</span>
+            {{ reason(line) }}
+          </p>
+          <wx-button
+            v-if="line.kind === 'refund' && !line.reversed && line.refund_id && reversible"
+            class="wx-orders-timeline__action"
+            size="sm"
+            variant="text"
+            :disabled="card?.busy.value"
+            data-test="timeline-reverse"
+            @click="card?.reverseRefund(line.refund_id)"
+          >
+            {{ t('panel.refund-reverse') }}
+          </wx-button>
         </wx-timeline-item>
       </wx-timeline>
     </wx-card>
@@ -137,7 +233,8 @@ function details(line: TimelineLine): string[] {
       <ul v-else class="wx-orders-deliveries__list">
         <li v-for="row in deliveries" :key="row.id" class="wx-orders-deliveries__row">
           <div class="wx-orders-deliveries__text">
-            <wx-text size="sm">{{ row.channel }}</wx-text>
+            <wx-text size="sm">{{ row.event_label ?? row.channel }}</wx-text>
+            <wx-text v-if="row.event_label" size="sm" tone="muted">{{ row.channel }}</wx-text>
             <wx-text v-if="row.recipient !== ''" size="sm" tone="muted">
               {{ row.recipient }}
             </wx-text>
@@ -153,7 +250,28 @@ function details(line: TimelineLine): string[] {
               {{ row.error ?? row.reason_label }}
             </wx-text>
           </div>
-          <wx-badge :type="deliveryTone(row)">{{ row.status_label }}</wx-badge>
+          <div class="wx-orders-deliveries__side">
+            <span class="wx-orders-deliveries__badges">
+              <wx-badge
+                v-if="row.manual"
+                :title="row.manual_by ? t('panel.manual-by', { name: row.manual_by }) : undefined"
+                data-test="delivery-manual"
+              >
+                {{ t('panel.manual-mark') }}
+              </wx-badge>
+              <wx-badge :type="deliveryTone(row)">{{ row.status_label }}</wx-badge>
+            </span>
+            <wx-button
+              v-if="resending && row.resendable"
+              size="sm"
+              variant="text"
+              :disabled="card?.busy.value"
+              data-test="delivery-resend"
+              @click="card?.resend(row.id)"
+            >
+              {{ t('panel.resend') }}
+            </wx-button>
+          </div>
         </li>
       </ul>
     </wx-card>
@@ -178,22 +296,80 @@ function details(line: TimelineLine): string[] {
   list-style: none;
 }
 
+/* On a narrow card the status and «Send again» go under the text rather than squeeze it. */
 .wx-orders-deliveries__row {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--wx-space-12);
+  gap: var(--wx-space-8) var(--wx-space-12);
 }
 
 .wx-orders-deliveries__text {
   display: flex;
+  flex: 1 1 12rem;
   flex-direction: column;
   min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* The status over «Send again», both at the end of the row. */
+.wx-orders-deliveries__side {
+  display: flex;
+  flex: 0 1 auto;
+  margin-inline-start: auto;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--wx-space-4);
+}
+
+.wx-orders-deliveries__badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--wx-space-4);
 }
 
 .wx-orders-timeline__part {
   display: block;
   overflow-wrap: anywhere;
   white-space: pre-line;
+}
+
+.wx-orders-timeline__reason {
+  margin: var(--wx-space-4) 0 0;
+  padding: var(--wx-space-6) var(--wx-space-10);
+  border-inline-start: 3px solid var(--wx-orders-timeline-edge);
+  border-radius: var(--wx-radius-sm);
+  background: var(--wx-orders-timeline-tint);
+  color: var(--wx-text-default);
+  font-size: var(--wx-font-size-sm);
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.wx-orders-timeline__reason--danger {
+  --wx-orders-timeline-edge: var(--wx-color-danger);
+  --wx-orders-timeline-tint: var(--wx-color-danger-soft);
+}
+
+.wx-orders-timeline__reason--warning {
+  --wx-orders-timeline-edge: var(--wx-color-warning);
+  --wx-orders-timeline-tint: var(--wx-color-warning-soft);
+}
+
+.wx-orders-timeline__action {
+  margin-block-start: var(--wx-space-4);
+}
+
+/* The reason of a record reversed later: it no longer stands for money given back. */
+.wx-orders-timeline__reason--muted {
+  --wx-orders-timeline-edge: var(--wx-border-strong);
+  --wx-orders-timeline-tint: var(--wx-bg-subtle);
+}
+
+.wx-orders-timeline__label {
+  color: var(--wx-text-muted);
+  font-weight: var(--wx-font-weight-medium);
 }
 </style>

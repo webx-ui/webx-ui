@@ -15,10 +15,17 @@ export interface ToastOptions {
   description?: string
   type?: ToastType
   /**
-   * How long it stays, in milliseconds. `0` keeps it until it is dismissed, which is
-   * what an error the reader has to act on wants.
+   * How long it stays, in milliseconds, while the reader is not pointing at it or tabbed
+   * into it — hovering or focusing it pauses the count. By type when left out: a report
+   * (default, success, info) 5 s, a warning or an error 8 s — the second kind is read
+   * twice. `0` is the same as `persistent`.
    */
   duration?: number
+  /**
+   * Stays until it is dismissed. For a toast the reader has to do something with: a text
+   * to copy by hand, an action they may reach for only once they have read it.
+   */
+  persistent?: boolean
   /** Adds a ×. On by default for anything that does not leave on its own. */
   closable?: boolean
   /** Glyph to draw instead of the one the type picks; `false` drops it. */
@@ -49,6 +56,15 @@ export interface ToastHandle {
 const queue = reactive<ToastRecord[]>([])
 
 let nextId = 0
+
+/** How long each type stays when the caller did not say. */
+export const TOAST_DURATION: Record<ToastType, number> = {
+  default: 5000,
+  success: 5000,
+  info: 5000,
+  warning: 8000,
+  danger: 8000,
+}
 
 /*
  * How long a toast is given to leave before its record is dropped. It is a timer
@@ -84,12 +100,15 @@ export function clearToasts() {
 
 function raise(options: ToastOptions): ToastHandle {
   const id = (nextId += 1)
+  const type = options.type ?? 'default'
+  const persistent = options.persistent === true || options.duration === 0
 
   queue.push({
-    type: 'default',
-    duration: 5000,
     closable: true,
     ...options,
+    type,
+    duration: persistent ? 0 : (options.duration ?? TOAST_DURATION[type]),
+    persistent,
     id,
     open: true,
   })
@@ -117,9 +136,7 @@ const api = ((message: string | ToastOptions, options: ToastOptions = {}) =>
 
 api.success = (message, options = {}) => raise(normalise(message, { type: 'success', ...options }))
 api.warning = (message, options = {}) => raise(normalise(message, { type: 'warning', ...options }))
-api.danger = (message, options = {}) =>
-  /* An error that vanishes on its own is an error nobody read. */
-  raise(normalise(message, { type: 'danger', duration: 0, ...options }))
+api.danger = (message, options = {}) => raise(normalise(message, { type: 'danger', ...options }))
 api.info = (message, options = {}) => raise(normalise(message, { type: 'info', ...options }))
 api.dismiss = dismissToast
 api.clear = clearToasts

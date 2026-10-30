@@ -22,6 +22,9 @@ inside the table, because it belongs to the rows rather than to the screen.
 yourself — five sections each answering "where does the heading go" gave five answers once, and the
 cost is not the extra markup, it is that nobody knows where to look.
 
+What is read before the rows and is not filtered with them — the figures over «Orders» — goes in
+the `before` slot: under the head, over the views. A tab switches the rows, not that.
+
 ## The head
 
 The line above the card — the section's name, the one action it exists for, and the way out when

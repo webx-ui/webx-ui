@@ -50,6 +50,7 @@ final class OrderTemplates
             '{{#discount}}'.self::row($say('discount'), '{{discount}}', $muted).'{{/discount}}',
             '{{#tenders}}'.self::row($say('tenders'), '{{tenders}}', $muted).'{{/tenders}}',
             self::row('<strong>'.$say('payable').'</strong>', '<strong>{{payable}}</strong>', $muted),
+            ...self::balanceRows($event, $say, $muted),
         ];
 
         $details = [
@@ -76,6 +77,7 @@ final class OrderTemplates
         $intro = e(self::word("letters.{$letter}.intro", $locale));
         $totals = implode("\n", $rows);
         $more = implode("\n", $details);
+        $lead = self::lead($event, $say, $muted, $line);
 
         $template = <<<HTML
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
@@ -88,6 +90,7 @@ final class OrderTemplates
               <tr>
                 <td style="padding:0 0 16px 0;">{$intro}</td>
               </tr>
+            {$lead}
               <tr>
                 <td>
                   <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
@@ -151,6 +154,7 @@ final class OrderTemplates
             '{{/items}}',
             '<b>'.$say('payable').': {{payable}}</b>',
             ...self::plainExtras($event, $say),
+            ...self::plainEdit($event, $say),
             '',
             $manager ? '<a href="{{order_url}}">'.$say('open-panel').'</a>' : '{{#public_url}}<a href="{{public_url}}">'.$say('open-order').'</a>{{/public_url}}',
             '',
@@ -185,6 +189,7 @@ final class OrderTemplates
                 '{{/items}}',
                 $say('payable').': {{payable}}',
                 ...self::plainExtras($event, $say),
+                ...self::plainEdit($event, $say),
                 '',
                 $manager ? $say('open-panel').': {{order_url}}' : '{{#public_url}}'.$say('open-order').': {{public_url}}{{/public_url}}',
                 '',
@@ -238,8 +243,83 @@ final class OrderTemplates
             OrderEvents::PAID, OrderEvents::RECEIVED => ['reference'],
             OrderEvents::PAYMENT_FAILED, OrderEvents::CANCELLED => ['reason'],
             OrderEvents::REFUNDED => ['refund_amount'],
+            OrderEvents::PAYMENT_REQUESTED => ['amount_due'],
             default => [],
         };
+    }
+
+    /**
+     * Above the lines of «order changed» (§40.2): the manager's words to the buyer, and what came
+     * and went — the lines below are the order as it is now.
+     *
+     * @param  callable(string): string  $say
+     */
+    private static function lead(string $event, callable $say, string $muted, string $line): string
+    {
+        if ($event !== OrderEvents::ITEMS_CHANGED) {
+            return '';
+        }
+
+        $changes = $say('changes');
+        $added = $say('added');
+        $removed = $say('removed');
+
+        return <<<HTML
+              {{#message}}
+              <tr>
+                <td style="padding:0 0 16px 0;"><p style="margin:0;padding:12px 16px;border-left:3px solid {$line};white-space:pre-line;">{{message}}</p></td>
+              </tr>
+              {{/message}}
+              <tr>
+                <td style="padding:0 0 16px 0;">
+                  <p style="margin:0 0 6px 0;font-weight:600;">{$changes}</p>
+                  {{#changes}}
+                  <p style="margin:0 0 4px 0;">{{name}}{{#options}} <span style="color:{$muted};">({{options}})</span>{{/options}}: {{#added}}{$added}, × {{qty_to}}{{/added}}{{#removed}}{$removed}{{/removed}}{{^added}}{{^removed}}{{qty_from}} → {{qty_to}}{{/removed}}{{/added}}</p>
+                  {{/changes}}
+                </td>
+              </tr>
+            HTML;
+    }
+
+    /**
+     * The total it was and the balance after an edit (§40.2): «to pay extra» or «we will give back».
+     *
+     * @param  callable(string): string  $say
+     * @return list<string>
+     */
+    private static function balanceRows(string $event, callable $say, string $muted): array
+    {
+        if ($event !== OrderEvents::ITEMS_CHANGED) {
+            return [];
+        }
+
+        return [
+            self::row($say('previous_total'), '{{previous_total}}', $muted),
+            '{{#amount_due}}'.self::row('<strong>'.$say('amount_due').'</strong>', '<strong>{{amount_due}}</strong>', $muted).'{{/amount_due}}',
+            '{{#amount_over}}'.self::row('<strong>'.$say('amount_over').'</strong>', '<strong>{{amount_over}}</strong>', $muted).'{{/amount_over}}',
+        ];
+    }
+
+    /**
+     * The same in a plain message: the words, the total it was, the balance.
+     *
+     * @param  callable(string): string  $say
+     * @return list<string>
+     */
+    private static function plainEdit(string $event, callable $say): array
+    {
+        if ($event !== OrderEvents::ITEMS_CHANGED) {
+            return [];
+        }
+
+        return [
+            $say('previous_total').': {{previous_total}}',
+            '{{#amount_due}}'.$say('amount_due').': {{amount_due}}{{/amount_due}}',
+            '{{#amount_over}}'.$say('amount_over').': {{amount_over}}{{/amount_over}}',
+            '{{#message}}',
+            '{{message}}',
+            '{{/message}}',
+        ];
     }
 
     private static function row(string $label, string $value, string $muted): string

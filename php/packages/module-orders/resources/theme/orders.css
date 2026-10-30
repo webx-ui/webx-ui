@@ -265,6 +265,31 @@
   font-weight: 600;
 }
 
+/* After an edit (§40.1): the date over the lines, and what is left to pay or to give back. */
+.webx-order__changed {
+  margin: 0;
+  color: var(--site-color-text-muted);
+}
+
+.webx-order__balance {
+  margin: 0;
+  padding: var(--site-space-3) var(--site-space-4);
+  border: 1px solid var(--site-color-border);
+  border-inline-start-width: 4px;
+  border-radius: var(--site-radius-sm);
+  background: var(--site-color-surface-muted);
+  font-weight: 600;
+}
+
+/* Something for the buyer to do — the site's accent; money coming back — good news. */
+.webx-order__balance--due {
+  border-inline-start-color: var(--site-color-accent);
+}
+
+.webx-order__balance--over {
+  border-inline-start-color: var(--site-color-success);
+}
+
 .webx-order__facts {
   display: grid;
   gap: var(--site-space-3);

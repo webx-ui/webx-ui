@@ -27,6 +27,9 @@ return [
         'customer' => 'Comprador',
         'recipient' => 'Destinatario',
         'comment' => 'Comentario',
+        'changed' => 'Artículos modificados el :date',
+        'due' => 'Pendiente de pago: :amount',
+        'over' => 'Le devolveremos :amount',
     ],
     'account' => [
         'menu' => 'Mis pedidos',

@@ -18,7 +18,7 @@ here: that is `webx-ui/module-auth`; languages are `webx-ui/localization`; the M
 - **Modules** — `ModuleRegistry`: a module (`AbstractModule`, `id()` required) is registered from a
   provider and lands in the manifest with its title, icon, order, group and permissions. Two modules with one id are refused.
 - **Screens** — `ScreenRegistry` behind the `Screens` facade; field types in `FieldTypes`
-  (`wx-input`, `wx-link`, `wx-repeater`, `wx-relations`, …), which check and cast what a screen saves.
+  (`wx-input`, `wx-link`, `wx-repeater`, `wx-relations`, …), which check and cast what a screen saves; `Screens::rules()` tells the rules a module checks a screen by: a bare `required` gives the asterisk.
 - **Drafts and versions** — traits `HasDraft` (the `$table->draft()` macro: `draft`, `published_at`) and `HasVersions` (table `cms_versions`; `publish()` writes a version,
   `restoreVersion()` puts one back into the draft). `HasExtra` stores fields a patch adds in `extra`.
 - **History** — table `cms_history`, trait `RecordsHistory`, facade `History`, types in `HistoryTypes`. With `webx-ui/mcp`: MCP tools `history_get`, `history_runs`, resource

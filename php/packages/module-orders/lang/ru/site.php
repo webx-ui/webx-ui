@@ -27,6 +27,9 @@ return [
         'customer' => 'Покупатель',
         'recipient' => 'Получатель',
         'comment' => 'Комментарий',
+        'changed' => 'Состав изменён :date',
+        'due' => 'Осталось оплатить: :amount',
+        'over' => 'Мы вернём вам :amount',
     ],
     'account' => [
         'menu' => 'Мои заказы',

@@ -27,6 +27,9 @@ return [
         'customer' => 'Comprador',
         'recipient' => 'Destinatário',
         'comment' => 'Comentário',
+        'changed' => 'Artigos alterados em :date',
+        'due' => 'Falta pagar: :amount',
+        'over' => 'Vamos devolver-lhe :amount',
     ],
     'account' => [
         'menu' => 'As minhas encomendas',

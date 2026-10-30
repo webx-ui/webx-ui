@@ -18,7 +18,7 @@ of the panel and the MCP tools `notifications_*` edit channels; the panel and it
   trap took (`log`, `array`, a sandbox) is `sent` with `trap`; `mail` and `warnings` in the panel, `notifications_channel_get`, `_test`, `_deliveries`.
 - **Registries** `Providers` (`telegram`, `email`) and `NotificationEvents`.
 - **API for consumers** `Notifications::send()`; the job `Jobs\Deliver` — three attempts, after
-  the response when the queue is `sync`; `Notifications::test()`, `retry()`, `deliveriesFor()`.
+  the response when the queue is `sync`; `Notifications::test()`, `retry()`, `resend()` and `sendByHand()` (by hand, §8.6), `deliveriesFor()`.
 - **Panel screen** `notifications.channel`, API under `/api/cms/notifications`.
 - **MCP** tools `notifications_channels_list`, `_channel_get`, `_channel_create`, `_channel_update`,
   `_channel_delete`, `_channel_copy`, `_default_template`, `_preview`, `_test`, `_find_chats`,

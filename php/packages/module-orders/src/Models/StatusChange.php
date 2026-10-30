@@ -37,12 +37,30 @@ class StatusChange extends Model
 
     public const string PAYMENT_AWAITING_STOPPED = 'payment_awaiting_stopped';
 
+    /** The order awaits payment again (§36.3): its method became one that awaits it. */
+    public const string PAYMENT_AWAITING = 'payment_awaiting';
+
+    /** Money in for an order paid already — a top-up (§36.3); `note` is «<minor>[ [reference]][: note]». */
+    public const string PAYMENT = 'payment';
+
     public const string BLOCK = 'block';
+
+    /** The lines edited (§38.2); `note` is «revision#<N>: <reason>». */
+    public const string ITEMS = 'items';
 
     public const string VISITOR = 'visitor';
 
     /** Contacts, the recipient, the comment or the manager note changed; `note` lists the fields. */
     public const string DETAILS = 'details';
+
+    /** A refund record reversed (decision 98); `note` is «refund#<id>: <reason>». */
+    public const string REFUND_REVERSED = 'refund_reversed';
+
+    /** A milestone taken back — only «refunded», by a reversal; `note` is the milestone. */
+    public const string MILESTONE_REMOVED = 'milestone_removed';
+
+    /** A message sent again by hand (decision 99); `note` is «<event>: <recipients>». */
+    public const string NOTIFICATION_SENT = 'notification_sent';
 
     protected $table = 'order_status_changes';
 

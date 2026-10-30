@@ -136,7 +136,7 @@ final class NotificationsTest extends PlaceTestCase
     }
 
     #[Test]
-    public function a_site_starts_with_three_channels_and_the_shop_one_is_off_without_contacts(): void
+    public function a_site_starts_with_five_channels_and_the_shop_one_is_off_without_contacts(): void
     {
         $settings = $this->app->make(OrderSettings::class);
         $placed = $settings->get('orders.notify.placed');
@@ -158,6 +158,16 @@ final class NotificationsTest extends PlaceTestCase
 
         $this->assertSame([OrderEvents::PAID, true], [$payment->event, $payment->enabled]);
         $this->assertSame([['variable' => 'customer_email']], $payment->recipientList());
+
+        // The edits' two (§40.2, question 4 of §44): to the buyer, on.
+        foreach ([OrderEvents::ITEMS_CHANGED => 'Order {{number}} changed', OrderEvents::PAYMENT_REQUESTED => 'Order {{number}}: {{amount_due}} to pay'] as $event => $subject) {
+            $ids = $settings->get(OrderEvents::SETTINGS[$event]);
+            $this->assertCount(1, $ids, $event);
+            $channel = Channel::query()->findOrFail($ids[0]);
+
+            $this->assertSame([$event, true, [['variable' => 'customer_email']]], [$channel->event, $channel->enabled, $channel->recipientList()]);
+            $this->assertSame($subject, $channel->subjectIn('en'));
+        }
 
         // Made once: a second run over a site that has them makes nothing.
         $this->assertSame([], $this->app->make(DefaultChannels::class)->install());
@@ -385,7 +395,7 @@ final class NotificationsTest extends PlaceTestCase
         $settings->clear(OrderSettings::NOTIFY);
         $settings->save(['contacts.emails' => [['email' => $email]]]);
 
-        $this->assertCount(3, $this->app->make(DefaultChannels::class)->install());
+        $this->assertCount(5, $this->app->make(DefaultChannels::class)->install());
     }
 
     /**

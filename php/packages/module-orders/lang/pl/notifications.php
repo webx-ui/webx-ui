@@ -11,6 +11,8 @@ return [
         'received' => 'Zamówienie: odebrane',
         'cancelled' => 'Zamówienie: anulowane',
         'refunded' => 'Zamówienie: zwrot',
+        'items_changed' => 'Zamówienie: zmieniono pozycje',
+        'payment_requested' => 'Zamówienie: prośba o płatność',
     ],
     'vars' => [
         'number' => 'Numer zamówienia',
@@ -48,12 +50,25 @@ return [
         'reference' => 'Numer operacji',
         'reason' => 'Powód',
         'refund_amount' => 'Kwota zwrotu',
+        'changes' => 'Co się zmieniło',
+        'change_qty_from' => 'Ilość przed',
+        'change_qty_to' => 'Ilość teraz',
+        'change_added' => 'Dodano',
+        'change_removed' => 'Usunięto',
+        'previous_total' => 'Suma przed zmianą',
+        'balance' => 'Saldo',
+        'balance_kind' => 'Saldo: due, over lub none',
+        'amount_due' => 'Pozostało do zapłaty',
+        'amount_over' => 'Do zwrotu kupującemu',
+        'message' => 'Wiadomość menedżera do kupującego',
     ],
     'yes' => 'tak',
     'channels' => [
         'placed-customer' => 'Zamówienie przyjęte — do kupującego',
         'placed-admin' => 'Nowe zamówienie — do sklepu',
         'paid-customer' => 'Płatność otrzymana — do kupującego',
+        'items-changed-customer' => 'Zamówienie zmienione — do kupującego',
+        'payment-requested-customer' => 'Wymagana płatność — do kupującego',
     ],
     'letters' => [
         'placed' => [
@@ -88,6 +103,14 @@ return [
             'subject' => 'Zwrot za zamówienie {{number}}',
             'intro' => 'Pieniądze za Twoje zamówienie zostały zwrócone.',
         ],
+        'items_changed' => [
+            'subject' => 'Zamówienie {{number}} zmienione',
+            'intro' => 'Zmieniliśmy pozycje Twojego zamówienia. Poniżej zamówienie w obecnej postaci.',
+        ],
+        'payment_requested' => [
+            'subject' => 'Zamówienie {{number}}: {{amount_due}} do zapłaty',
+            'intro' => 'Twoje zamówienie czeka na płatność {{amount_due}}. Skontaktujemy się z Tobą i podpowiemy, jak zapłacić.',
+        ],
     ],
     'words' => [
         'subtotal' => 'Towary',
@@ -105,5 +128,11 @@ return [
         'refund_amount' => 'Zwrócono',
         'open-order' => 'Zobacz zamówienie',
         'open-panel' => 'Otwórz w panelu',
+        'changes' => 'Co się zmieniło',
+        'added' => 'dodano',
+        'removed' => 'usunięto',
+        'previous_total' => 'Suma przed',
+        'amount_due' => 'Pozostało do zapłaty',
+        'amount_over' => 'Zwrócimy',
     ],
 ];

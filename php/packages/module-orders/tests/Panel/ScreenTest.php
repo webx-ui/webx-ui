@@ -27,9 +27,32 @@ final class ScreenTest extends PanelTestCase
 
         $fields = $this->app->make(ScreenRegistry::class)->fields('orders.show');
         $this->assertSame(
-            ['customer.first_name', 'customer.last_name', 'customer.phone', 'customer.email', 'recipient.first_name', 'recipient.last_name', 'recipient.phone', 'comment', 'manager_note'],
+            ['customer.first_name', 'customer.last_name', 'customer.phone', 'customer.email', 'recipient.first_name', 'recipient.last_name', 'recipient.phone', 'comment'],
             array_map(static fn (array $node): string => (string) $node['name'], $fields),
         );
+    }
+
+    #[Test]
+    public function only_the_first_name_of_the_buyer_carries_an_asterisk(): void
+    {
+        $this->signIn(['orders.view']);
+        $root = $this->getJson('/api/cms/screens/orders.show')->assertOk()->json('data.root');
+        $flags = [];
+
+        foreach (['buyer-first-name', 'buyer-last-name', 'buyer-phone', 'buyer-email', 'recipient-first-name', 'recipient-phone'] as $id) {
+            $flags[$id] = self::find($root, $id)['required'] ?? false;
+        }
+
+        // A phone or an e-mail — either, so neither; a recipient emptied whole is the buyer.
+        $this->assertSame([
+            'buyer-first-name' => true,
+            'buyer-last-name' => false,
+            'buyer-phone' => false,
+            'buyer-email' => false,
+            'recipient-first-name' => false,
+            'recipient-phone' => false,
+        ], $flags);
+        $this->assertNotNull(self::find($root, 'buyer-contacts-hint'));
     }
 
     #[Test]

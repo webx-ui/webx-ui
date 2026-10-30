@@ -21,7 +21,7 @@ export function errorText(error: unknown, t: Translate, fallback?: string): stri
   // The one the panel wrote itself. `fallback` under it for the rare 422 with nothing in it —
   // a refusal with only field errors, where the form is already showing them.
   if (status === 422) {
-    return bodyMessage(error) ?? fallback ?? t('errors.unknown')
+    return validationMessage(error) ?? fallback ?? t('errors.unknown')
   }
 
   if (status === 401) return t('errors.signed-out')
@@ -60,6 +60,29 @@ function statusOf(error: unknown): number | null {
   const status = (error as { status?: unknown } | null)?.status
 
   return typeof status === 'number' ? status : null
+}
+
+/**
+ * A failed form says its first refusal, and only that. Laravel sums the rest up after it —
+ * «Enter a phone or an e-mail. (and 1 more error)» — in a line of its own that no module
+ * translates, so a toast in Russian ended in English. The fields show every refusal anyway.
+ */
+function validationMessage(error: unknown): string | null {
+  const message = bodyMessage(error)
+  const errors = (error as { errors?: unknown } | null)?.errors
+  const first =
+    errors !== null && typeof errors === 'object'
+      ? Object.values(errors as Record<string, unknown>).find(
+          (messages): messages is string[] =>
+            Array.isArray(messages) && typeof messages[0] === 'string',
+        )?.[0]
+      : undefined
+
+  if (message !== null && first !== undefined && message.startsWith(first)) {
+    return /^\s*\(.*\)\s*$/.test(message.slice(first.length)) ? first : message
+  }
+
+  return message
 }
 
 function bodyMessage(error: unknown): string | null {
