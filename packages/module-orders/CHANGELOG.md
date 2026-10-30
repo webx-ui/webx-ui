@@ -1,5 +1,73 @@
 # @webx-ui/module-orders
 
+## 0.3.0
+
+### Minor Changes
+
+- aabc44b: An order keeps its balance (spec §36, decision 102): the money that came in (`orders.paid_total`) and the stored `balance` — what is still due less what is over — written by every method of `Orders` that moves one of its terms, in the same update. A refund never makes an order owe. `Orders::balance()` answers it as `Balance`; `mark(paid)` takes the amount a gateway got; `recordPayment()` records a top-up of a paid order — a history line `payment` and `OrderPaymentReceived`, never a second «paid»; `awaitPayment()` is the pair of `stopAwaitingPayment()`. A refund may give back what came in when that is more than the order costs, and the revenue counts the money that came in. A migration adds the columns and the index `(balance, placed_at)` and fills them for the orders there are.
+
+  The panel shows «Paid» and the balance in the card's «Summary» and in an opened row, a badge under the total and the filter «Payment differs» in the list, the orders waiting for a top-up over it, and «Record a top-up» on the card. MCP `orders_payment_record` answers what the dialog does; `orders_get`, `orders_list` and `orders_summary` carry the balance.
+
+- aabc44b: Orders: «Change the lines» in the card — an editor with the product search of «New order» and the
+  service's own dry run on every change (each line before → after, the totals, the balance, the
+  warnings), an optional reason, «Message to the buyer» and «Tell the buyer». A paid order says what
+  the edit does to its payment before the save; after it a top-up or a refund with the sum over is
+  offered. An edit saved meanwhile in another tab reads the order again. «History» shows each edit,
+  «Summary» counts them, the list marks the order «Edited». MCP `orders_items_edit` (its dry run is
+  the editor's answer), `orders_history` with every edit, `orders_get` with `items_revision`.
+  `orders.manage`. The quantities stand in one column (a subgrid), the remove button ends the line, a
+  quantity being typed is counted once the field is left, and a greyed «Save» says what it waits for.
+  The reason of an edit is optional from every source (decision 103).
+- aabc44b: A manager may change the lines of a placed order (spec §37–§39, decision 101 — variant A): `Orders::editItems(order, ItemsEdit, dryRun)` adds lines, changes the qty of the top-level ones and takes them out, against the revision the manager saw. The lines placed keep their price and their discounts in proportion to the qty; a line added comes at the provider's price now, through a cart of its own as a manager's new order does, without the rules' discounts; the discounts of the whole order, the delivery, the benefits and the milestones stay. A line is never deleted: taken out, it keeps the units refunded of it. A bundle changes whole. The money and the balance are counted again in the same transaction; the edit is a row of the new `order_revisions` («before — after»), a history line `items` and two events — `OrderItemsChanging` inside the transaction (a listener may refuse it) and `OrderItemsChanged` after the commit. A received, cancelled or refunded order is not edited (`ItemsEditRefused`: `state`), nor a line of a bundle, a rule's gift counted again, or fewer units than were refunded; the panel and an agent give the reason. A dry run answers the same and writes nothing. A migration adds `orders.items_revision`, `items_changed_at`, `order_items.revision`, `removed_at` and the table.
+- aabc44b: «Orders» opened without a tab is on «New» while it holds any order and on «All» otherwise: the list asks `view=auto` and the answer says which (`view`), by the counts it sends anyway — one request, and no tab is lit before it is known. A tab in the address wins and stays there, «All» included.
+
+  Over the list stand the figures: orders and how many are paid, revenue (paid less given back), the average paid order and what awaits payment now, for today, 7 or 30 days — calendar days in the site's timezone, «Today» from midnight, the same in `orders_summary` — money per currency, with a bar a day for the last thirty under them. They come from `GET {api}/orders/summary` — `Panel\OrdersSummary`, the class that now answers the agent's `orders_summary` too, which gains `awaiting_by_currency`, the average of each period and `daily` — asked apart, so the rows never wait. The block folds; folded or not and the period are remembered for the manager.
+
+  A row of the list opens (`WxTable`'s expandable rows) to the lines with the totals of the card's «Summary» under them (paid or awaiting, given back, where the order came from), the buyer and the recipient, the buyer's comment, the pinned note and the latest one, the delivery and payment lines and the milestones — `GET {api}/orders/{id}/glance` on opening, kept for the page. Phones and e-mails across the orders are `tel:` and `mailto:` links that do not open the order when clicked; on a narrow list a card does not open and a tap goes to the order.
+
+  The manager note left the tab «Buyer» and is pinned over the card's «Notes»: a captioned plate changed in place, emptied to unpin; saved through `details` as before, it is the card's `order.manager_note` and no longer one of the screen's `values`. `orders_update` is unchanged.
+
+  `WxTable`'s opened row no longer clips what it holds at the cell's edge. `WxListScreen` takes a `before` slot — what is read under the head and over the views. `useDates()` gains `day()`, a calendar day without a clock.
+
+- aabc44b: The notes of a record have one look across the panel: `WxNotesList` (`@webx-ui/module-admin`) draws the feed — the author with the time, the empty state, the box and «Add a note» — and asks no server anything: the notes come in a prop, a new one goes out as `add`, the box is `v-model:draft`. `WxNotes` keeps the notes in `cms_notes` as before and now draws them through it; the inbox looks and works as it did. New type `NoteEntry`.
+
+  The card of an order has «Notes» under its tabs (node `order-notes`, type `wx-orders-notes`): the lines of the order's history of the kind `note` — a manager's from the panel, an agent's `orders_note`, a module's `Orders::note()` — each with its author, and the box for whoever holds `orders.manage`. `POST {api}/orders/{id}/notes` writes one through `Orders::note()` and answers the card; the card carries `order.notes` and `actions.note`. A note never changes once written. The pencil beside the status is a bare icon in the colour of a link, with a tint of the accent on hover and a visible focus.
+
+- aabc44b: A message about an order is sent again by hand (decision 99): «the buyer says the letter never came». A line of «Notifications» on the tab «History» — sent or failed — has **Send again**: the same message to the same address, asked first with the letter's name and the addressee, as a new row of the log marked «Sent by hand» with who sent it. **Send the buyer a letter** in the `···` of the card picks an event the order has a reason for (placed, the public status it stands in, paid, payment failed, received, cancelled, refunded), shows each channel's letter from a dry run and sends it to the order's e-mail as it is now — only through the channels of the event that write to the buyer; with no such channel, or no e-mail, the action is greyed with why. Each send is a history line `notification_sent` with its author; the same send again within a minute is refused, so a second press sends nothing. It is `orders.manage`, and there is nothing of it without `webx-ui/module-notifications`. `Orders::notify()` and MCP `orders_notify` (with `dry_run`) do the same.
+
+  `webx-ui/module-notifications`: `Notifications::resend()` sends a row of the log again — one that went too, unlike `retry()` — as a new row; `sendByHand()` sends an event again to its addressee alone; `addressed()`, `writesTo()` and `render()` tell a consumer which channels would send and what. A new migration adds `manual`, `manual_by` and `resent_from` to `notifications_deliveries`; the log of the section marks such rows «Sent by hand» with who sent them.
+
+- aabc44b: A refund recorded by mistake is reversed, never edited (decision 98): `Orders::reverseRefund()` marks the record reversed — when, from where, who and why — and keeps it in the history, takes what it gave back off the order (`refunded_total`, the tenders' `refunded_amount`, the lines' `refunded_qty`; the tenders a cancellation gave back stay), and takes the milestone «refunded» off when the order is no longer given back whole, with a history line. `OrderRefundReversed` goes after the commit; another order's record and one reversed already are refused (`RefundReversalRefused`), and a dry run answers what is left after it and whether the milestone comes off. A new migration adds the columns of the reversal to `order_refunds`.
+
+  The panel reverses a record from its plate in the totals and from its line in «History» (`orders.refund`): the dialog asks for the reason and shows the service's dry run, then offers to record the right refund. A reversed record stays struck through with its reason and no longer counts in «Given back». MCP `orders_refund_reverse` answers what the dialog does; `orders_get` and `orders_history` show the reversal.
+
+### Patch Changes
+
+- aabc44b: A cancellation moves the order into the first active status that cancels: `Orders::cancel()` writes the move in the same transaction — a history line with the reason, `OrderStatusChanged` and `OrderPublicStatusChanged` before `OrderCancelled`, the letters of the public status — so the buyer sees the order cancelled rather than «Accepted». `MilestoneMark::$move` is that move (null when the order stays); the panel's dry run, `orders_cancel` and the mass cancellation name the status. A site with no such status keeps the order where it stands, and `webx:doctor` says so (`Orders: cancellation`).
+
+  The card of an order: the totals count the lines and the units (the units given back too), the source of the order is a line of its own under «Placed», the reason of a cancellation and of each refund — with its reference — stand on a plate with a label in the totals and in «History». The status is changed with a pencil beside it and with «Change status» in the head beside «Mark as paid».
+
+- aabc44b: Orders: the buyer hears of an edit. `orders.items_changed` — «Order changed» with what came and
+  went, the total before, the balance and the manager's message (never the reason) — goes when the
+  edit's «Tell the buyer» is on; `orders.payment_requested` — «Order N: X to pay» — is sent by hand
+  while the order owes, greyed with «The order owes nothing» once it does not. Both have a channel to
+  the buyer in the starting set, made by a migration on sites set up before. The buyer's page of the
+  order says «Items changed on …», hides the lines taken out and shows «Left to pay» or «We will give
+  you back» under the money.
+- aabc44b: Toasts leave on their own: a report (default, success, info) after 5 s, a warning or an error after 8 s; the pointer over the toasts or focus in them pauses the count, the × stays. `duration` sets a time of its own, the new `persistent: true` (or `duration: 0`) keeps a toast until it is dismissed — the media library's «copy the address by hand» does. `toast.danger` no longer stays by default.
+
+  The asterisk of a required field comes from the field's rules across the panel. A screen node gets `required` (schema, renderer → `WxFormItem`); the server sets it when it hands a screen out, for a bare `required` among the rules of the field's type and the rules a module tells with `Screens::rules()` (`Screens\Required::among()`); conditional rules (`required_without`, `required_if`) give none. `orders.show` and `users.form` tell theirs. A 422 toast says the first refusal without Laravel's untranslated «(and N more errors)».
+
+  module-orders: the contacts of an order are refused in the module's words with human names of the fields in the panel's language — panel, MCP and checkout alike (`ContactRules`); «Enter a phone or an e-mail.» under the phone and the e-mail and a hint under the pair on «New order» and in the card, the asterisk only at the buyer's first name; the cancel reason refused in words too.
+
+- Updated dependencies [aabc44b]
+- Updated dependencies [aabc44b]
+- Updated dependencies [aabc44b]
+- Updated dependencies [aabc44b]
+  - @webx-ui/core@0.46.0
+  - @webx-ui/module-admin@0.34.0
+  - @webx-ui/schema@0.10.0
+
 ## 0.2.0
 
 ### Minor Changes

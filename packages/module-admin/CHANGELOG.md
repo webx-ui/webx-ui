@@ -1,5 +1,37 @@
 # @webx-ui/admin
 
+## 0.34.0
+
+### Minor Changes
+
+- aabc44b: «Orders» opened without a tab is on «New» while it holds any order and on «All» otherwise: the list asks `view=auto` and the answer says which (`view`), by the counts it sends anyway — one request, and no tab is lit before it is known. A tab in the address wins and stays there, «All» included.
+
+  Over the list stand the figures: orders and how many are paid, revenue (paid less given back), the average paid order and what awaits payment now, for today, 7 or 30 days — calendar days in the site's timezone, «Today» from midnight, the same in `orders_summary` — money per currency, with a bar a day for the last thirty under them. They come from `GET {api}/orders/summary` — `Panel\OrdersSummary`, the class that now answers the agent's `orders_summary` too, which gains `awaiting_by_currency`, the average of each period and `daily` — asked apart, so the rows never wait. The block folds; folded or not and the period are remembered for the manager.
+
+  A row of the list opens (`WxTable`'s expandable rows) to the lines with the totals of the card's «Summary» under them (paid or awaiting, given back, where the order came from), the buyer and the recipient, the buyer's comment, the pinned note and the latest one, the delivery and payment lines and the milestones — `GET {api}/orders/{id}/glance` on opening, kept for the page. Phones and e-mails across the orders are `tel:` and `mailto:` links that do not open the order when clicked; on a narrow list a card does not open and a tap goes to the order.
+
+  The manager note left the tab «Buyer» and is pinned over the card's «Notes»: a captioned plate changed in place, emptied to unpin; saved through `details` as before, it is the card's `order.manager_note` and no longer one of the screen's `values`. `orders_update` is unchanged.
+
+  `WxTable`'s opened row no longer clips what it holds at the cell's edge. `WxListScreen` takes a `before` slot — what is read under the head and over the views. `useDates()` gains `day()`, a calendar day without a clock.
+
+- aabc44b: The notes of a record have one look across the panel: `WxNotesList` (`@webx-ui/module-admin`) draws the feed — the author with the time, the empty state, the box and «Add a note» — and asks no server anything: the notes come in a prop, a new one goes out as `add`, the box is `v-model:draft`. `WxNotes` keeps the notes in `cms_notes` as before and now draws them through it; the inbox looks and works as it did. New type `NoteEntry`.
+
+  The card of an order has «Notes» under its tabs (node `order-notes`, type `wx-orders-notes`): the lines of the order's history of the kind `note` — a manager's from the panel, an agent's `orders_note`, a module's `Orders::note()` — each with its author, and the box for whoever holds `orders.manage`. `POST {api}/orders/{id}/notes` writes one through `Orders::note()` and answers the card; the card carries `order.notes` and `actions.note`. A note never changes once written. The pencil beside the status is a bare icon in the colour of a link, with a tint of the accent on hover and a visible focus.
+
+### Patch Changes
+
+- aabc44b: Toasts leave on their own: a report (default, success, info) after 5 s, a warning or an error after 8 s; the pointer over the toasts or focus in them pauses the count, the × stays. `duration` sets a time of its own, the new `persistent: true` (or `duration: 0`) keeps a toast until it is dismissed — the media library's «copy the address by hand» does. `toast.danger` no longer stays by default.
+
+  The asterisk of a required field comes from the field's rules across the panel. A screen node gets `required` (schema, renderer → `WxFormItem`); the server sets it when it hands a screen out, for a bare `required` among the rules of the field's type and the rules a module tells with `Screens::rules()` (`Screens\Required::among()`); conditional rules (`required_without`, `required_if`) give none. `orders.show` and `users.form` tell theirs. A 422 toast says the first refusal without Laravel's untranslated «(and N more errors)».
+
+  module-orders: the contacts of an order are refused in the module's words with human names of the fields in the panel's language — panel, MCP and checkout alike (`ContactRules`); «Enter a phone or an e-mail.» under the phone and the e-mail and a hint under the pair on «New order» and in the card, the asterisk only at the buyer's first name; the cancel reason refused in words too.
+
+- Updated dependencies [aabc44b]
+- Updated dependencies [aabc44b]
+- Updated dependencies [aabc44b]
+  - @webx-ui/core@0.46.0
+  - @webx-ui/schema@0.10.0
+
 ## 0.33.1
 
 ### Patch Changes
