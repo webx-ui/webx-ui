@@ -295,13 +295,24 @@ channels are in the section's settings, and the site starts with three: «Order 
 «Payment received» to the buyer, «New order» to the first e-mail of the site's contacts. The card
 of an order shows what was sent about it.
 
+**The letter never came.** A line of «Notifications» on the tab «History» — sent or failed —
+goes again from its **Send again**: the same message to the same address, as a new line of the
+log marked «Sent by hand» with who sent it. **Send the buyer a letter** in the `···` of the card
+picks an event the order has a reason for — placed, the public status it stands in, paid,
+cancelled… — shows the letter, and sends it to the order's e-mail as it is now, only through the
+channels of that event that write to the buyer: the managers on the same channel are not written
+to again. Each send is a line of the history with its author; the same send again within a minute
+is refused, so a second press sends nothing. It is `orders.manage`, and from code
+`Orders::notify($order, ['event' => 'orders.placed'], 'panel')` or `['delivery' => $id]`.
+
 Without the package the orders work the same and send nothing; `php artisan webx:doctor` says so.
 
 ## For agents
 
 The `orders_*` tools read and work orders the way the panel does: `orders_list`, `orders_get`,
 `orders_history`, `orders_summary`, `orders_set_status` (one order or a batch by numbers),
-`orders_mark`, `orders_cancel`, `orders_refund`, `orders_refund_reverse`, `orders_update`, `orders_note`,
+`orders_mark`, `orders_cancel`, `orders_refund`, `orders_refund_reverse`, `orders_notify` (a message again by hand),
+`orders_update`, `orders_note`,
 `orders_link_visitor`, the statuses and the settings. Every write takes `dry_run` and answers what
 the panel's dialog would show. `orders://catalog` lists the statuses and what each one sets.
 

@@ -170,6 +170,8 @@ export const notificationsMessages: Record<string, Messages> = {
     'all-channels': 'Any channel',
     'with-tests': 'Tests too',
     'test-mark': 'Test',
+    'manual-mark': 'Sent by hand',
+    'manual-by': 'Sent by hand: :name',
     'cut-mark': 'Cut',
     'log-empty': 'Nothing sent yet.',
     retry: 'Send again',

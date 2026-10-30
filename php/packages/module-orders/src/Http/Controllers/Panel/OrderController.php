@@ -15,6 +15,8 @@ use WebxUi\Cart\Money;
 use WebxUi\Orders\Contact;
 use WebxUi\Orders\Milestone;
 use WebxUi\Orders\Models\Order;
+use WebxUi\Orders\Notifications\OrderChannels;
+use WebxUi\Orders\NotifyRefused;
 use WebxUi\Orders\OrderDetails;
 use WebxUi\Orders\Orders;
 use WebxUi\Orders\Panel\Consequences;
@@ -321,6 +323,64 @@ final readonly class OrderController
         }
 
         return $this->describe($request, $found);
+    }
+
+    /**
+     * What «Send the buyer a letter» chooses from (decision 99): the events the order has a reason
+     * for, the channels of each that write to the buyer, the e-mail it goes to — and why not.
+     */
+    public function notifyMeta(OrderChannels $channels, int $order): JsonResponse
+    {
+        $found = self::find($order);
+        $events = $channels->buyerEvents($found);
+
+        return ApiResponse::data([
+            ...$events,
+            'reason_label' => $events['reason'] !== null ? (string) __('webx-orders::panel.notify-refusals.'.$events['reason']) : null,
+            'events' => array_map(static fn (array $event): array => [
+                ...$event,
+                'reason_label' => $event['reason'] !== null ? (string) __('webx-orders::panel.notify-refusals.'.$event['reason']) : null,
+            ], $events['events']),
+        ]);
+    }
+
+    /**
+     * Tell the buyer of an event again by hand (decision 99). `dry_run` answers each channel's
+     * message as it would go; the real send answers the card, with its line in the history.
+     */
+    public function notify(Request $request, int $order): JsonResponse
+    {
+        $validated = $request->validate([
+            'event' => ['required', 'string', 'max:64'],
+            'dry_run' => ['nullable', 'boolean'],
+        ]);
+
+        return $this->sending($request, self::find($order), ['event' => (string) $validated['event']], (bool) ($validated['dry_run'] ?? false), 'event');
+    }
+
+    /**
+     * Send a row of the order's log again (decision 99): the same message to the same recipient,
+     * a new row marked manual. A second press within a minute is refused under `delivery`.
+     */
+    public function resend(Request $request, int $order, int $delivery): JsonResponse
+    {
+        $validated = $request->validate(['dry_run' => ['nullable', 'boolean']]);
+
+        return $this->sending($request, self::find($order), ['delivery' => $delivery], (bool) ($validated['dry_run'] ?? false), 'delivery');
+    }
+
+    /**
+     * @param  array{delivery?: int, event?: string}  $what
+     */
+    private function sending(Request $request, Order $order, array $what, bool $dryRun, string $field): JsonResponse
+    {
+        try {
+            $result = $this->orders->notify($order, $what, 'panel', $dryRun);
+        } catch (NotifyRefused $refused) {
+            throw ValidationException::withMessages([$field => $refused->said()]);
+        }
+
+        return $dryRun ? ApiResponse::data($result->toArray()) : $this->describe($request, $order);
     }
 
     private function describe(Request $request, Order $order): JsonResponse

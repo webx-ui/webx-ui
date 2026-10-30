@@ -201,6 +201,9 @@ export interface TimelineLine {
   refund_id?: number
   /** A refund's line: the record was reversed later, by mistake. */
   reversed?: boolean
+  /** A message sent again by hand (decision 99): its event, in the panel's words. */
+  event?: string
+  event_label?: string
 }
 
 /**
@@ -272,6 +275,11 @@ export interface OrderCardData {
     visitor: boolean
     /** Finding one needs the right to read the customers as well. */
     visitor_search: boolean
+    /** Send a row of «Notifications» again (decision 99) — only with the notifications module. */
+    resend?: boolean
+    /** «Send the buyer a letter», and why it cannot be sent now — null when it can. */
+    notify?: boolean
+    notify_reason?: string | null
   }
 }
 
@@ -305,6 +313,8 @@ export interface VisitorLinkPreview {
 export interface OrderDelivery {
   id: number
   event: string
+  /** The event in the panel's words; null for an event not of the orders. */
+  event_label?: string | null
   channel_id: number | null
   channel: string
   provider: string
@@ -319,6 +329,53 @@ export interface OrderDelivery {
   error: string | null
   created_at: string | null
   sent_at: string | null
+  /** «Send again» (decision 99): a row that went, failed or got stuck, to somebody. */
+  resendable?: boolean
+  /** Sent by hand, and the administrator who did — null when unknown. */
+  manual?: boolean
+  manual_by?: string | null
+}
+
+/** One event «Send the buyer a letter» offers (decision 99), and why it cannot be sent. */
+export interface BuyerEvent {
+  key: string
+  label: string
+  /** The order has a reason for it: it was placed, paid, cancelled… */
+  basis: boolean
+  /** Its channels that write to the buyer's e-mail. */
+  channels: { id: number; name: string; provider: string }[]
+  available: boolean
+  reason: string | null
+  reason_label: string | null
+}
+
+export interface BuyerEvents {
+  email: string | null
+  reason: string | null
+  reason_label: string | null
+  events: BuyerEvent[]
+}
+
+/** What a letter by hand would send (a dry run): each channel's message. */
+export interface NotifyPreview {
+  event: string
+  dry_run: boolean
+  deliveries: {
+    id: number | null
+    channel: string
+    provider: string
+    recipient: string
+    status: string
+  }[]
+  previews: {
+    channel: string
+    provider: string
+    recipient: string
+    subject: string | null
+    body: string
+    plain: string
+    html: boolean
+  }[]
 }
 
 export interface OrderDetail {

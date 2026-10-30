@@ -48,7 +48,7 @@ grouped into public ones. Dictionary `webx-orders` (`module`, `statuses`, `panel
 - **Notifications** (§10, with `webx-ui/module-notifications`): seven `orders.*` events (`Notifications\OrderEvents`,
   `OrderValues`, `OrderTemplates`); channels — `orders.notify.*` for a milestone, `options.notify_channels` of a public status;
   a move inside a group tells nobody. `migrate` makes the starting set once (`DefaultChannels`): «Order accepted», «Payment
-  received» to `customer_email`, «New order» to the first contacts e-mail. `{{status}}` is `internal`.
+  received» to `customer_email`, «New order» to the first contacts e-mail. `{{status}}` is `internal`. By hand (§10.3): `Orders::notify()`, `orders_notify`.
 - **Journal** `orders.order`: what `updateDetails()` and the links changed. **Blocks** `OrderBlocks` —
   `register(new BlockDefinition('delivery'|'payment', module, validate, summary))` in `boot()`.
 - **Config** `webx-orders`: `number` (`prefix`, `start` = 1000, `pad`), `initial_status`, `initial_status_awaiting_payment`
@@ -76,7 +76,7 @@ grouped into public ones. Dictionary `webx-orders` (`module`, `statuses`, `panel
   `tabs`, `order-notes` (notes = history lines `note`, `Orders::note()`; over them the pinned `manager_note`, saved by `details`), `summary`, `customer`; fields `customer.*`, `recipient.*`, `comment`. Role `orders` («Order manager»).
   `statuses` and `settings` — under `orders.statuses` (`settings` also `orders.checkout.settings`). The selection: `Panel\StatusBatch`.
 - **MCP** (§12, `Mcp\OrdersTools`, `Mcp\StatusTools` on `OrdersModule`): `orders_list|get|history|summary`, `orders_set_status`
-  (`order` or `numbers` ≤ 200), `orders_mark|cancel|refund|refund_reverse|update|create|note`, `orders_statuses_list|save|delete|restore|reorder`,
+  (`order` or `numbers` ≤ 200), `orders_mark|cancel|refund|refund_reverse|notify|update|create|note`, `orders_statuses_list|save|delete|restore|reorder`,
   `orders_public_statuses_save|delete|restore|reorder`, `orders_settings_get|set`; resource `orders://catalog`. Source `mcp`;
   money in minor units with `*_formatted`; a dry run is the panel dialog's answer (`Consequences`, `StatusBoard`,
   `StatusBatch`), rolled back where the service has none.
@@ -105,13 +105,13 @@ grouped into public ones. Dictionary `webx-orders` (`module`, `statuses`, `panel
 
 ### Permissions
 
-| Permission                 | Opens                                                                                                 |
-| -------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `orders.view`              | the list, the card and the history of orders                                                          |
-| `orders.manage`            | statuses, marks, cancelling, contacts, notes, the visitor, a new order («New order», `orders_create`) |
-| `orders.refund`            | recording money given back                                                                            |
-| `orders.statuses`          | the screens of statuses and the settings of the section                                               |
-| `orders.checkout.settings` | the tab «Checkout», `orders_checkout_settings_set`                                                    |
+| Permission                 | Opens                                                                                                                         |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `orders.view`              | the list, the card and the history of orders                                                                                  |
+| `orders.manage`            | statuses, marks, cancelling, contacts, notes, the visitor, a new order (`orders_create`), a message by hand (`orders_notify`) |
+| `orders.refund`            | recording money given back                                                                                                    |
+| `orders.statuses`          | the screens of statuses and the settings of the section                                                                       |
+| `orders.checkout.settings` | the tab «Checkout», `orders_checkout_settings_set`                                                                            |
 
 Routes ask with `cms.can`, tools with `permission:`: reading — any of the first three; writing as the table says. Finding a visitor to link (`{id}/visitors`) wants `users.view` as well.
 
@@ -138,8 +138,8 @@ Routes ask with `cms.can`, tools with `permission:`: reading — any of the firs
 ## Check your work
 
 - `Panel/*Test` — `BoundariesTest`: the panel never writes an order itself; `PerformanceTest`: the list's budget; `AccessCoverageTest`; `NewOrderTest` (search, live totals, `panel`); `ListGlanceTest` (the default tab, an opened row, the pinned note). `CancelByStatusTest`.
-- `Mcp/McpTest` (parity with the panel, dry runs write nothing), `Mcp/SummaryTest` (the list's figures = `orders_summary`), `Mcp/SummaryDaysTest` (midnight of the site), `Mcp/CheckoutToolsTest` (preview = `place`, masks), `Mcp/PerformanceTest`, `Mcp/AccessCoverageTest`, `Mcp/LinkVisitorTest`, `Mcp/CreateOrderTest`; 29 tools (30 with users, 23 with the checkout off).
-- `Site/OrderPageTest` (the signed page, its budget, nothing without users), `Site/VisitorOrdersTest`. `Notifications/*Test` — with and without it.
+- `Mcp/McpTest` (parity with the panel, dry runs write nothing), `Mcp/SummaryTest` (the list's figures = `orders_summary`), `Mcp/SummaryDaysTest` (midnight of the site), `Mcp/CheckoutToolsTest` (preview = `place`, masks), `Mcp/PerformanceTest`, `Mcp/AccessCoverageTest`, `Mcp/LinkVisitorTest`, `Mcp/CreateOrderTest`; 30 tools (31 with users, 24 with the checkout off).
+- `Site/OrderPageTest` (the signed page, its budget, nothing without users), `Site/VisitorOrdersTest`. `Notifications/*Test` — with and without it; `ResendTest` — by hand, the second press.
 - `PlaceTest`, `MilestonesTest`, `StatusMoveTest`, `DetailsTest`, `RefundTest`, `RefundReversalTest`, `ManagerOrderTest`, `PerformanceTest` (the budget of `place()`), and
   `CartLockTest`, `MilestoneRaceTest` against a real server: `WEBX_TEST_MYSQL_URL=mariadb://user:password@host:3306/db`; `migrate` / `migrate:rollback`.
 - `Checkout/*Test`: `CheckoutWithoutNeighboursTest`, `PlaceIdempotencyTest`, `PayableChangedTest`, `PerformanceTest` (`GET /checkout`),

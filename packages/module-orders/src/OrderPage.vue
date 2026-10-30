@@ -30,6 +30,7 @@ import { provideOrderCard } from './card'
 import CancelDialog from './CancelDialog.vue'
 import { NAMESPACE, useOrdersMessages } from './i18n'
 import MarkDialog from './MarkDialog.vue'
+import NotifyDialog from './NotifyDialog.vue'
 import RefundDialog from './RefundDialog.vue'
 import ReverseRefundDialog from './ReverseRefundDialog.vue'
 import StatusDialog from './StatusDialog.vue'
@@ -105,6 +106,7 @@ const refundDialog = createModal<OrderDetail, { order: OrderCardData }>(RefundDi
 const reverseDialog = createModal<OrderDetail, { orderId: number; refund: OrderRefundEntry }>(
   ReverseRefundDialog,
 )
+const notifyDialog = createModal<OrderDetail, { orderId: number }>(NotifyDialog)
 const visitorDialog = createModal<OrderDetail, { order: OrderCardData; email: string | null }>(
   VisitorDialog,
 )
@@ -222,6 +224,63 @@ async function reverseRefund(refundId: number): Promise<void> {
   if (again) await refund()
 }
 
+/**
+ * «Send again» on a row of «Notifications» (decision 99): the same message to the same recipient,
+ * asked first with whom and what. A second press within a minute is refused by the server.
+ */
+async function resend(deliveryId: number): Promise<void> {
+  const open = order.value
+  const row = open?.notifications?.find((one) => one.id === deliveryId)
+
+  if (!open || !row || busy.value) return
+
+  const what = row.event_label ?? row.channel
+  const agreed = await confirm({
+    title: t('panel.resend-title', { event: what }),
+    message: t('panel.resend-text', { recipient: row.recipient, channel: row.channel }),
+    confirmText: t('panel.resend-confirm'),
+    cancelText: t('panel.dismiss'),
+  })
+
+  if (!agreed) return
+
+  busy.value = true
+
+  try {
+    take(await api.resend(open.id, deliveryId), false)
+    toast.success(t('panel.resent-toast'))
+  } catch (error) {
+    const body = (error as { body?: { errors?: Record<string, string[]> } }).body
+
+    toast.danger(body?.errors?.delivery?.[0] ?? message(error))
+  } finally {
+    busy.value = false
+  }
+}
+
+/** «Send the buyer a letter» (decision 99): the dialog shows the letter before it goes. */
+async function notify(): Promise<void> {
+  const open = order.value
+
+  if (!open) return
+
+  busy.value = true
+
+  try {
+    const answer = await notifyDialog({ orderId: open.id })
+
+    if (answer) {
+      take(answer, false)
+      // The address it went to is the saved one, not what may be typed in the contacts now.
+      toast.success(
+        t('panel.notify-sent', { email: String(answer.values['customer.email'] ?? '') }),
+      )
+    }
+  } finally {
+    busy.value = false
+  }
+}
+
 async function linkVisitor(): Promise<void> {
   const open = order.value
 
@@ -315,6 +374,7 @@ provideOrderCard({
   cancel,
   refund,
   reverseRefund,
+  resend,
   note,
   pin,
   linkVisitor,
@@ -390,6 +450,19 @@ const actions = computed<ScreenAction[]>(() => {
       icon: 'arrow-left',
       menu: true,
       run: () => void refund(),
+    })
+  }
+
+  // A letter to the buyer again (decision 99): greyed with why when no channel writes to the buyer.
+  if (open.actions.notify) {
+    list.push({
+      key: 'notify',
+      label: t('panel.notify-buyer'),
+      icon: 'mail',
+      menu: true,
+      disabled: Boolean(open.actions.notify_reason),
+      hint: open.actions.notify_reason ?? undefined,
+      run: () => void notify(),
     })
   }
 

@@ -15,6 +15,8 @@ export interface OrderCardContext {
   refund(): Promise<void>
   /** Reverse a refund record made by mistake (decision 98), then offer the right one. */
   reverseRefund(refundId: number): Promise<void>
+  /** Send a row of «Notifications» again by hand (decision 99), once it is confirmed. */
+  resend(deliveryId: number): Promise<void>
   /** Keep a note for whoever picks the order up next; true once it is kept. */
   note(body: string): Promise<boolean>
   /** Pin the standing note over the feed, or unpin it with null (decision 91); true once kept. */

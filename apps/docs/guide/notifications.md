@@ -229,11 +229,21 @@ row of `notifications_deliveries`.
 **Log** is every line: when, which channel, to whom, the status — sent, queued, failed, skipped with
 its reason — and how many attempts. A failed line opens to its error, in the provider's words and
 with the token masked, and **Send again** queues it with the same values. Tests are in it too,
-marked. Lines older than 90 days go every night (`webx:notifications:prune`,
+marked, and so are the lines a person sent by hand from a record's card — «Sent by hand», with who. Lines older than 90 days go every night (`webx:notifications:prune`,
 `WEBX_NOTIFICATIONS_LOG_DAYS`, 0 keeps them).
 
 The site's environment is said above the list: notifications are sent on a copy of the site too, so
 a stage keeps its channels switched off or points them at a test bot.
+
+### By hand
+
+«The letter never came» is a consumer's button, and two calls are behind it. `resend($delivery, $adminId)`
+sends a line again — one that went, too, unlike `retry()` — as a new line with the same values,
+marked manual, with who asked and the line it repeats. `sendByHand($event, $channels, 'customer_email', $values, $subject, $locale, $adminId)`
+sends an event again to its addressee alone, not to the other recipients of the channel;
+`addressed()` says which channels would, and `render()` what each would send. Both refuse the
+same send again within a minute (`Delivery::RESEND_PAUSE`), so a second press sends nothing.
+The card of an order is the consumer as it is (`webx-ui/module-orders`, «Notifications»).
 
 ## A module that notifies
 

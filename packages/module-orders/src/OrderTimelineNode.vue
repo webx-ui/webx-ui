@@ -25,7 +25,9 @@ import type { OrderDelivery, TimelineLine } from './types'
  * recorded by mistake is reversed from its line (decision 98); its reversal is a line of its own.
  *
  * Under it, with the notifications module there, «Notifications»: what its channels sent about
- * the order, newest first, in that module's own words — and why a row was not sent.
+ * the order, newest first, in that module's own words — and why a row was not sent. A row that
+ * went, failed or got stuck is sent again from here (decision 99); one sent by hand says so and
+ * by whom.
  */
 defineOptions({ name: 'WxOrdersTimeline' })
 
@@ -37,6 +39,7 @@ const card = useOrderCard()
 const lines = computed(() => card?.order.value?.timeline ?? [])
 const deliveries = computed(() => card?.order.value?.notifications ?? null)
 const reversible = computed(() => Boolean(card?.order.value?.actions.refund_reverse))
+const resending = computed(() => Boolean(card?.order.value?.actions.resend))
 
 function deliveryTone(row: OrderDelivery): 'danger' | 'success' | 'warning' | 'default' {
   if (row.status === 'failed') return 'danger'
@@ -64,6 +67,8 @@ function title(line: TimelineLine): string {
       return t('panel.timeline-refund', { amount: line.amount ?? '' })
     case 'refund_reversed':
       return t('panel.timeline-refund_reversed', { amount: line.amount ?? '' })
+    case 'notification_sent':
+      return t('panel.timeline-notification_sent', { event: line.event_label ?? line.event ?? '' })
     case 'milestone_removed':
       return t('panel.timeline-milestone_removed', { milestone: line.milestone?.label ?? '' })
     case 'block':
@@ -181,7 +186,8 @@ function details(line: TimelineLine): string[] {
       <ul v-else class="wx-orders-deliveries__list">
         <li v-for="row in deliveries" :key="row.id" class="wx-orders-deliveries__row">
           <div class="wx-orders-deliveries__text">
-            <wx-text size="sm">{{ row.channel }}</wx-text>
+            <wx-text size="sm">{{ row.event_label ?? row.channel }}</wx-text>
+            <wx-text v-if="row.event_label" size="sm" tone="muted">{{ row.channel }}</wx-text>
             <wx-text v-if="row.recipient !== ''" size="sm" tone="muted">
               {{ row.recipient }}
             </wx-text>
@@ -197,7 +203,28 @@ function details(line: TimelineLine): string[] {
               {{ row.error ?? row.reason_label }}
             </wx-text>
           </div>
-          <wx-badge :type="deliveryTone(row)">{{ row.status_label }}</wx-badge>
+          <div class="wx-orders-deliveries__side">
+            <span class="wx-orders-deliveries__badges">
+              <wx-badge
+                v-if="row.manual"
+                :title="row.manual_by ? t('panel.manual-by', { name: row.manual_by }) : undefined"
+                data-test="delivery-manual"
+              >
+                {{ t('panel.manual-mark') }}
+              </wx-badge>
+              <wx-badge :type="deliveryTone(row)">{{ row.status_label }}</wx-badge>
+            </span>
+            <wx-button
+              v-if="resending && row.resendable"
+              size="sm"
+              variant="text"
+              :disabled="card?.busy.value"
+              data-test="delivery-resend"
+              @click="card?.resend(row.id)"
+            >
+              {{ t('panel.resend') }}
+            </wx-button>
+          </div>
         </li>
       </ul>
     </wx-card>
@@ -233,6 +260,22 @@ function details(line: TimelineLine): string[] {
   display: flex;
   flex-direction: column;
   min-width: 0;
+}
+
+/* The status over «Send again», both at the end of the row. */
+.wx-orders-deliveries__side {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--wx-space-4);
+}
+
+.wx-orders-deliveries__badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--wx-space-4);
 }
 
 .wx-orders-timeline__part {

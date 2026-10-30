@@ -88,6 +88,8 @@ interface HistoryRecord {
   tenders?: [number, number][]
   items?: [number, number][]
   reversed?: { at: string; reason: string | null } | null
+  /** A message sent again by hand (decision 99): its event. */
+  event?: string
 }
 
 interface OrderRecord {
@@ -807,6 +809,14 @@ function timeline(record: OrderRecord, locale: string, line: Line) {
             : null,
         amount: one.amount !== undefined ? money(one.amount) : undefined,
         reversed: one.kind === 'refund' ? Boolean(one.reversed) : undefined,
+        event_label:
+          one.kind === 'notification_sent' && one.event
+            ? line(
+                locale,
+                'webx-orders',
+                `notifications.events.${one.event.replace('orders.', '')}`,
+              )
+            : undefined,
         milestone:
           one.kind === 'milestone_removed' && one.milestone
             ? {
@@ -947,8 +957,32 @@ function card(record: OrderRecord, locale: string, line: Line) {
           author: one.admin ? { id: 1, name: one.admin, avatar: null } : null,
           created_at: one.at,
         })),
-      // Nothing was really sent in the playground: the block says so.
-      notifications: [],
+      // Nothing really goes out of the playground; the log is what the module would have written.
+      notifications: logOf(record).map((one) => ({
+        id: one.id,
+        event: one.event,
+        event_label: line(
+          locale,
+          'webx-orders',
+          `notifications.events.${one.event.replace('orders.', '')}`,
+        ),
+        channel_id: one.channel_id,
+        channel: one.channel,
+        provider: 'email',
+        recipient: one.recipient,
+        recipient_label: null,
+        status: one.status,
+        trap: null,
+        status_label: line(locale, 'webx-notifications', `module.statuses.${one.status}`),
+        reason: null,
+        reason_label: null,
+        error: one.status === 'failed' ? 'Connection refused by the mail server.' : null,
+        created_at: one.created_at,
+        sent_at: one.status === 'sent' ? one.created_at : null,
+        resendable: true,
+        manual: one.manual,
+        manual_by: one.manual_by,
+      })),
       actions: {
         status: true,
         paid: !paid && !cancelled,
@@ -960,6 +994,11 @@ function card(record: OrderRecord, locale: string, line: Line) {
         refund_reverse: true,
         visitor: false,
         visitor_search: false,
+        resend: true,
+        notify: true,
+        notify_reason: record.email
+          ? null
+          : line(locale, 'webx-orders', 'panel.notify-refusals.no_email'),
       },
     },
     values: {
@@ -1178,6 +1217,116 @@ function counted(value: unknown, fail: Fail) {
 }
 
 /* ------------------------------------------------------------------------------- routes ----- */
+
+/**
+ * The log of «Notifications» of an order (decision 99), as the notifications module would have
+ * it: the letter «Order accepted» to the buyer when there is an e-mail, the managers' «New order».
+ * Nothing really goes out of the playground; a row sent again by hand is a row of its own.
+ */
+interface DeliveryRecord {
+  id: number
+  event: string
+  channel_id: number
+  channel: string
+  recipient: string
+  status: 'sent' | 'failed'
+  created_at: string
+  manual: boolean
+  manual_by: string | null
+}
+
+/** The channels of the fixture that write to the buyer, by event; the others have none. */
+const buyerChannels: Record<string, { id: number; name: string; subject: string }> = {
+  'orders.placed': {
+    id: 101,
+    name: 'Order accepted — to the buyer',
+    subject: 'Order :number accepted',
+  },
+  'orders.paid': {
+    id: 102,
+    name: 'Payment received — to the buyer',
+    subject: 'Order :number is paid',
+  },
+}
+
+const byHand = [
+  'orders.placed',
+  'orders.public_status',
+  'orders.paid',
+  'orders.payment_failed',
+  'orders.received',
+  'orders.cancelled',
+  'orders.refunded',
+]
+
+const logs = new Map<number, DeliveryRecord[]>()
+let nextDelivery = 500
+
+function logOf(record: OrderRecord): DeliveryRecord[] {
+  let log = logs.get(record.id)
+
+  if (!log) {
+    log = [
+      {
+        id: nextDelivery++,
+        event: 'orders.placed',
+        channel_id: 103,
+        channel: 'New order — to the shop',
+        recipient: 'shop@example.com',
+        status: 'sent',
+        created_at: record.placed_at,
+        manual: false,
+        manual_by: null,
+      },
+    ]
+
+    if (record.email) {
+      log.push({
+        id: nextDelivery++,
+        event: 'orders.placed',
+        channel_id: 101,
+        channel: buyerChannels['orders.placed']!.name,
+        recipient: record.email,
+        // One letter the mail server would not take, to have a failed row to send again.
+        status: record.id % 2 === 0 ? 'failed' : 'sent',
+        created_at: record.placed_at,
+        manual: false,
+        manual_by: null,
+      })
+    }
+
+    logs.set(record.id, log)
+  }
+
+  return log
+}
+
+function basisOf(record: OrderRecord, event: string): boolean {
+  switch (event) {
+    case 'orders.placed':
+    case 'orders.public_status':
+      return true
+    case 'orders.paid':
+      return Boolean(record.marks.paid)
+    case 'orders.payment_failed':
+      return Boolean(record.failed_at) && !record.marks.paid
+    case 'orders.received':
+      return Boolean(record.marks.received)
+    case 'orders.cancelled':
+      return Boolean(record.marks.cancelled)
+    case 'orders.refunded':
+      return record.refunded > 0
+    default:
+      return false
+  }
+}
+
+/** Sent by hand a moment ago: a second press of the button is refused, as the server does. */
+function recently(log: DeliveryRecord[], test: (one: DeliveryRecord) => boolean): boolean {
+  return log.some(
+    (one) => one.manual && test(one) && Date.now() - Date.parse(one.created_at) < 60_000,
+  )
+}
 
 export function registerOrders(on: On, fail: Fail, line: Line): void {
   const find = (id: string) => {
@@ -1467,6 +1616,171 @@ export function registerOrders(on: On, fail: Fail, line: Line): void {
       items: items.filter(([, qty]) => qty > 0).map(([id, qty]): [number, number] => [id, qty]),
     })
     if (full && !record.marks.refunded) mark(record, 'refunded', text(body.reference), null)
+
+    return { data: card(record, locale, line) }
+  })
+
+  const eventLabel = (locale: string, event: string) =>
+    line(locale, 'webx-orders', `notifications.events.${event.replace('orders.', '')}`)
+  const said = (locale: string, path: string) =>
+    line(locale, path.startsWith('errors.') ? 'webx-notifications' : 'webx-orders', path)
+
+  /** A message sent by hand is a line of the history with who did it (decision 99). */
+  function sentLine(record: OrderRecord, event: string, recipients: string[]): void {
+    record.history.push({
+      key: `h${record.id}-${record.history.length + 1}`,
+      kind: 'notification_sent',
+      at: new Date().toISOString(),
+      source: 'panel',
+      admin: 'Demo admin',
+      note: recipients.join(', '),
+      event,
+    })
+  }
+
+  on('POST', '/orders/(\\d+)/deliveries/(\\d+)/resend', ({ params, locale }) => {
+    const record = find(params[0])
+    const log = logOf(record)
+    const row = log.find((one) => one.id === Number(params[1]))
+
+    if (!row) {
+      const words = said(locale, 'panel.notify-refusals.foreign')
+
+      throw fail(422, words, undefined, { delivery: [words] })
+    }
+
+    if (recently(log, (one) => one.recipient === row.recipient && one.event === row.event)) {
+      const words = said(locale, 'errors.resent-recently')
+
+      throw fail(422, words, undefined, { delivery: [words] })
+    }
+
+    log.unshift({
+      ...row,
+      id: nextDelivery++,
+      status: 'sent',
+      created_at: new Date().toISOString(),
+      manual: true,
+      manual_by: 'Demo admin',
+    })
+    sentLine(record, row.event, [row.recipient])
+
+    return { data: card(record, locale, line) }
+  })
+
+  on('GET', '/orders/(\\d+)/notify', ({ params, locale }) => {
+    const record = find(params[0])
+    const events = byHand.map((key) => {
+      const basis = basisOf(record, key)
+      const channel = buyerChannels[key]
+      const reason = !basis
+        ? 'no_basis'
+        : !channel
+          ? 'no_channel'
+          : !record.email
+            ? 'no_email'
+            : null
+
+      return {
+        key,
+        label: eventLabel(locale, key),
+        basis,
+        channels:
+          basis && channel ? [{ id: channel.id, name: channel.name, provider: 'email' }] : [],
+        available: reason === null,
+        reason,
+        reason_label: reason ? said(locale, `panel.notify-refusals.${reason}`) : null,
+      }
+    })
+    const reason = record.email ? null : 'no_email'
+
+    return {
+      data: {
+        email: record.email,
+        reason,
+        reason_label: reason ? said(locale, `panel.notify-refusals.${reason}`) : null,
+        events,
+      },
+    }
+  })
+
+  on('POST', '/orders/(\\d+)/notify', ({ params, body, locale }) => {
+    const record = find(params[0])
+    const event = String(body.event ?? '')
+    const channel = buyerChannels[event]
+    const reason = !basisOf(record, event)
+      ? 'no_basis'
+      : !channel
+        ? 'no_channel'
+        : !record.email
+          ? 'no_email'
+          : null
+    const log = logOf(record)
+
+    if (reason || !channel || !record.email) {
+      const words = said(locale, `panel.notify-refusals.${reason ?? 'no_channel'}`)
+
+      throw fail(422, words, undefined, { event: [words] })
+    }
+
+    if (body.dry_run) {
+      const items = record.items
+        .filter((one) => one.parent === null)
+        .map((one) => `${one.name} × ${one.qty} — ${money(one.price * one.qty - one.discount)}`)
+
+      return {
+        data: {
+          event,
+          dry_run: true,
+          deliveries: [
+            {
+              id: null,
+              channel: channel.name,
+              provider: 'email',
+              recipient: record.email,
+              status: 'queued',
+            },
+          ],
+          previews: [
+            {
+              channel: channel.name,
+              provider: 'email',
+              recipient: record.email,
+              subject: channel.subject.replace(':number', record.number),
+              body: '',
+              plain: [
+                `Hello, ${record.first_name}!`,
+                `Your order ${record.number} is accepted.`,
+                '',
+                ...items,
+                '',
+                `Total: ${money(payable(record))}`,
+              ].join('\n'),
+              html: true,
+            },
+          ],
+        },
+      }
+    }
+
+    if (recently(log, (one) => one.event === event && one.channel_id === channel.id)) {
+      const words = said(locale, 'errors.resent-recently')
+
+      throw fail(422, words, undefined, { event: [words] })
+    }
+
+    log.unshift({
+      id: nextDelivery++,
+      event,
+      channel_id: channel.id,
+      channel: channel.name,
+      recipient: record.email,
+      status: 'sent',
+      created_at: new Date().toISOString(),
+      manual: true,
+      manual_by: 'Demo admin',
+    })
+    sentLine(record, event, [record.email])
 
     return { data: card(record, locale, line) }
   })

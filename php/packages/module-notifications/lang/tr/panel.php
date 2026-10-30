@@ -125,6 +125,8 @@ return [
     'all-channels' => 'Herhangi bir kanal',
     'with-tests' => 'Testler de',
     'test-mark' => 'Test',
+    'manual-mark' => 'Elle',
+    'manual-by' => 'Elle: :name',
     'cut-mark' => 'Kısaltıldı',
     'log-empty' => 'Henüz bir şey gönderilmedi.',
     'retry' => 'Yeniden gönder',

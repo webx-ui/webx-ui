@@ -50,6 +50,9 @@ class StatusChange extends Model
     /** A milestone taken back — only «refunded», by a reversal; `note` is the milestone. */
     public const string MILESTONE_REMOVED = 'milestone_removed';
 
+    /** A message sent again by hand (decision 99); `note` is «<event>: <recipients>». */
+    public const string NOTIFICATION_SENT = 'notification_sent';
+
     protected $table = 'order_status_changes';
 
     public const UPDATED_AT = null;

@@ -49,6 +49,10 @@ Route::prefix((string) config('webx-admin.api_path').'/orders')
             Route::post('{order}/cancel', [OrderController::class, 'cancel'])->whereNumber('order')->name('cancel');
             Route::post('{order}/notes', [OrderController::class, 'note'])->whereNumber('order')->name('note');
             Route::put('{order}/details', [OrderController::class, 'details'])->whereNumber('order')->name('details');
+            // A message sent again by hand (decision 99): only with the notifications module, refused otherwise.
+            Route::get('{order}/notify', [OrderController::class, 'notifyMeta'])->whereNumber('order')->name('notify.meta');
+            Route::post('{order}/notify', [OrderController::class, 'notify'])->whereNumber('order')->name('notify');
+            Route::post('{order}/deliveries/{delivery}/resend', [OrderController::class, 'resend'])->whereNumber(['order', 'delivery'])->name('resend');
 
             if (VisitorOrders::installed()) {
                 Route::get('{order}/visitors', [VisitorController::class, 'search'])->middleware('cms.can:users.view')->whereNumber('order')->name('visitor.search');

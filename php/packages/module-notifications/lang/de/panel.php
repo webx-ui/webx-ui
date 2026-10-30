@@ -125,6 +125,8 @@ return [
     'all-channels' => 'Jeder Kanal',
     'with-tests' => 'Auch Tests',
     'test-mark' => 'Test',
+    'manual-mark' => 'Manuell',
+    'manual-by' => 'Manuell: :name',
     'cut-mark' => 'Gekürzt',
     'log-empty' => 'Noch nichts gesendet.',
     'retry' => 'Erneut senden',

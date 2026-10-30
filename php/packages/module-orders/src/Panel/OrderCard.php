@@ -155,6 +155,10 @@ final readonly class OrderCard
         $unitsLeft = $order->items->sum(static fn (OrderItem $item): int => $item->qty - $item->refunded_qty);
         $manage = $can('orders.manage');
         $people = self::people($order, $reader);
+        // Messages sent again by hand (decision 99): only with the notifications module; «Send the
+        // buyer a letter» says why it cannot when no channel writes to the buyer or there is no e-mail.
+        $notifying = $manage && $this->channels->available();
+        $notifyReason = $notifying ? $this->channels->buyerEvents($order)['reason'] : null;
 
         return [
             'id' => $order->id,
@@ -220,7 +224,7 @@ final readonly class OrderCard
             // The feed «Notes» under the tabs (decision 90): the history's notes, oldest first.
             'notes' => self::notes($order, $people),
             // The block «Notifications» under the timeline (§8): null without the module.
-            'notifications' => $this->channels->available() ? $this->channels->deliveries($order) : null,
+            'notifications' => $this->channels->available() ? $this->channels->deliveries($order, $reader) : null,
             'actions' => [
                 'status' => $manage,
                 'paid' => $manage && ! $paid && ! $cancelled,
@@ -235,6 +239,9 @@ final readonly class OrderCard
                 // reading the customers too.
                 'visitor' => $manage && VisitorOrders::installed(),
                 'visitor_search' => $manage && VisitorOrders::installed() && $can('users.view'),
+                'resend' => $notifying,
+                'notify' => $notifying,
+                'notify_reason' => $notifyReason !== null ? (string) __('webx-orders::panel.notify-refusals.'.$notifyReason) : null,
             ],
         ];
     }
@@ -478,6 +485,13 @@ final readonly class OrderCard
                 $line['amount'] = $reversed instanceof OrderRefund ? $money($reversed->amount) : null;
                 $line['amount_minor'] = $reversed instanceof OrderRefund ? $reversed->amount : null;
                 $line['note'] = ($match[2] ?? '') !== '' ? $match[2] : null;
+            }
+
+            // «orders.placed: buyer@example.com» — the event in the panel's words, the addresses as they went.
+            if ($change->kind === StatusChange::NOTIFICATION_SENT && $change->note !== null && preg_match('/^([a-z_.]+): (.*)$/s', $change->note, $match) === 1) {
+                $line['event'] = $match[1];
+                $line['event_label'] = str_starts_with($match[1], 'orders.') ? (string) __('webx-orders::notifications.events.'.substr($match[1], strlen('orders.'))) : $match[1];
+                $line['note'] = $match[2] !== '' ? $match[2] : null;
             }
 
             if ($change->kind === StatusChange::MILESTONE_REMOVED && $change->note !== null && ($taken = Milestone::tryFrom($change->note)) !== null) {

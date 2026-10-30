@@ -29,7 +29,7 @@ final class McpTest extends McpTestCase
     /** The tools of §12 but `orders_link_visitor`, which comes with the visitors, and of §32. */
     private const array TOOLS = [
         'orders_list', 'orders_get', 'orders_history', 'orders_summary', 'orders_set_status', 'orders_mark',
-        'orders_cancel', 'orders_refund', 'orders_refund_reverse', 'orders_update', 'orders_create', 'orders_note',
+        'orders_cancel', 'orders_refund', 'orders_refund_reverse', 'orders_notify', 'orders_update', 'orders_create', 'orders_note',
         'orders_statuses_list', 'orders_statuses_save', 'orders_statuses_delete', 'orders_statuses_restore', 'orders_statuses_reorder',
         'orders_public_statuses_save', 'orders_public_statuses_delete', 'orders_public_statuses_restore', 'orders_public_statuses_reorder',
         'orders_settings_get', 'orders_settings_set',

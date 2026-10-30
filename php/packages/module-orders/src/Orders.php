@@ -57,6 +57,7 @@ use WebxUi\Orders\Models\OrderRefund;
 use WebxUi\Orders\Models\OrderStatus;
 use WebxUi\Orders\Models\OrderTender;
 use WebxUi\Orders\Models\StatusChange;
+use WebxUi\Orders\Notifications\OrderChannels;
 
 /**
  * The one door to an order (spec §5.3, decision 18). The panel, the agent's tools, the checkout
@@ -591,6 +592,41 @@ final class Orders
             $this->events->dispatch(new OrderRefundReversed($this->snapshot($locked), RefundData::of($refund), $reason, $plan->milestoneRemoved !== null, $source, $adminId, $at));
 
             return $plan;
+        });
+    }
+
+    /**
+     * Send a message about the order again by hand (decision 99): «the buyer says the letter never
+     * came». A row of the order's log goes again — the same message to the same recipient, a new
+     * row of the log marked manual with the administrator — or, with `$event`, the buyer is told
+     * of an event the order has a reason for, to its e-mail now, through the event's channels that
+     * write to the buyer. Either is a line of the history, `notification_sent`, with who did it.
+     *
+     * The order is locked while it is sent, and the notifications module refuses the same message
+     * again within a minute: a second press sends nothing. A dry run answers what would go — for
+     * an event, each channel's message — and writes nothing.
+     *
+     * @param  array{delivery?: int, event?: string}  $what
+     *
+     * @throws NotifyRefused no notifications module, no e-mail, no reason, no channel, another order's row, a repeat
+     */
+    public function notify(Order $order, array $what, string $source, bool $dryRun = false): NotifyResult
+    {
+        $channels = Container::getInstance()->make(OrderChannels::class);
+        $adminId = $this->adminId($source);
+        $send = static fn (Order $one): NotifyResult => isset($what['delivery'])
+            ? $channels->resend($one, (int) $what['delivery'], $adminId, $dryRun)
+            : $channels->notifyBuyer($one, (string) ($what['event'] ?? ''), $adminId, $dryRun);
+
+        if ($dryRun) {
+            return $send(Order::query()->findOrFail($order->id));
+        }
+
+        return $this->locked($order, function (Order $locked) use ($send, $source, $adminId): NotifyResult {
+            $result = $send($locked);
+            $this->line($locked, StatusChange::NOTIFICATION_SENT, $source, $adminId, CarbonImmutable::now(), self::cut($result->event.': '.implode(', ', $result->recipients()), 1000));
+
+            return $result;
         });
     }
 

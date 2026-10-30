@@ -6,13 +6,21 @@ namespace WebxUi\Orders\Notifications;
 
 use Illuminate\Contracts\Container\Container;
 use WebxUi\Admin\Mail\MailRoutes;
+use WebxUi\Admin\Support\Authors;
 use WebxUi\Notifications\Models\Channel;
 use WebxUi\Notifications\Models\Delivery;
 use WebxUi\Notifications\NotificationEvents;
 use WebxUi\Notifications\Notifications;
+use WebxUi\Notifications\Refusal as NotificationsRefusal;
 use WebxUi\Orders\Data\OrderData;
+use WebxUi\Orders\Milestone;
 use WebxUi\Orders\Models\Order;
+use WebxUi\Orders\Models\OrderMilestone;
+use WebxUi\Orders\Models\OrderStatus;
 use WebxUi\Orders\Models\PublicStatus;
+use WebxUi\Orders\Models\StatusChange;
+use WebxUi\Orders\NotifyRefused;
+use WebxUi\Orders\NotifyResult;
 use WebxUi\Orders\OrderSettings;
 
 /**
@@ -27,6 +35,20 @@ use WebxUi\Orders\OrderSettings;
 final readonly class OrderChannels
 {
     public const string OPTION = 'notify_channels';
+
+    /** The addressee a message by hand goes to (decision 99): the order's e-mail, the buyer. */
+    public const string ADDRESSEE = 'customer_email';
+
+    /** The events the buyer may be told about again by hand, in the order of the card's dialog. */
+    public const array BY_HAND = [
+        OrderEvents::PLACED,
+        OrderEvents::PUBLIC_STATUS,
+        OrderEvents::PAID,
+        OrderEvents::PAYMENT_FAILED,
+        OrderEvents::RECEIVED,
+        OrderEvents::CANCELLED,
+        OrderEvents::REFUNDED,
+    ];
 
     public function __construct(
         private Container $container,
@@ -158,22 +180,29 @@ final readonly class OrderChannels
 
     /**
      * The log of the channels about one order, newest first — the card's block «Notifications».
+     * A row sent by hand (decision 99) names who sent it, in one query for the log.
      *
      * @return list<array<string, mixed>>
      */
-    public function deliveries(Order $order): array
+    public function deliveries(Order $order, mixed $reader = null): array
     {
         if (! $this->available() || ! $order->exists) {
             return [];
         }
 
-        return $this->container->make(Notifications::class)->deliveriesFor($order)
+        $rows = $this->container->make(Notifications::class)->deliveriesFor($order)
             ->where('is_test', false)
             ->limit(100)
-            ->get()
+            ->get();
+        $names = Authors::names($reader, $rows->pluck('manual_by')->all());
+
+        return $rows
             ->map(static fn (Delivery $row): array => [
                 'id' => (int) $row->id,
                 'event' => $row->event,
+                'event_label' => in_array($row->event, OrderEvents::keys(), true)
+                    ? (string) __('webx-orders::notifications.events.'.substr($row->event, strlen('orders.')))
+                    : null,
                 'channel_id' => $row->channel_id,
                 'channel' => $row->channel_name,
                 'provider' => $row->provider,
@@ -190,9 +219,225 @@ final readonly class OrderChannels
                 'error' => $row->error,
                 'created_at' => $row->created_at?->toAtomString(),
                 'sent_at' => $row->sent_at?->toAtomString(),
+                // «Send again» (decision 99): a row that went, failed or got stuck, to somebody.
+                'resendable' => $row->resendable(),
+                'manual' => $row->manual,
+                'manual_by' => $row->manual_by !== null ? ($names[$row->manual_by] ?? null) : null,
             ])
             ->values()
             ->all();
+    }
+
+    /**
+     * The events the buyer may be told about again by hand (decision 99), each with whether the
+     * order gives it a reason now — it was placed; it stands in a public status; it was paid, its
+     * payment failed, it was received, cancelled, given back — and the channels of it that write
+     * to the buyer's e-mail. «Send the buyer a letter» of the card offers these.
+     *
+     * @return array{email: string|null, reason: string|null, events: list<array{key: string, label: string, basis: bool, channels: list<array{id: int, name: string, provider: string}>, available: bool, reason: string|null}>}
+     */
+    public function buyerEvents(Order $order): array
+    {
+        $email = $order->customer_email !== null && trim($order->customer_email) !== '' ? $order->customer_email : null;
+        $available = $this->available();
+        $ids = [];
+
+        foreach (self::BY_HAND as $key) {
+            $ids[$key] = $available && $this->basis($order, $key) ? $this->channelsOf($order, $key) : null;
+        }
+
+        // Every event's channels in one query; which of them write to the buyer is told per event.
+        $all = $available ? Channel::query()->whereKey(array_merge(...array_values(array_filter($ids))) ?: [0])->orderBy('id')->get() : collect();
+        $events = [];
+
+        foreach (self::BY_HAND as $key) {
+            $basis = $this->basis($order, $key);
+            $channels = $ids[$key] === null ? [] : $all
+                ->filter(fn (Channel $channel): bool => in_array((int) $channel->id, $ids[$key], true) && $this->notifications()->writesTo($channel, $key, self::ADDRESSEE))
+                ->map(static fn (Channel $channel): array => ['id' => (int) $channel->id, 'name' => $channel->name, 'provider' => $channel->provider])
+                ->values()
+                ->all();
+            $reason = match (true) {
+                ! $basis => NotifyRefused::NO_BASIS,
+                $channels === [] => NotifyRefused::NO_CHANNEL,
+                $email === null => NotifyRefused::NO_EMAIL,
+                default => null,
+            };
+
+            $events[] = [
+                'key' => $key,
+                'label' => (string) __('webx-orders::notifications.events.'.substr($key, strlen('orders.'))),
+                'basis' => $basis,
+                'channels' => $channels,
+                'available' => $reason === null,
+                'reason' => $reason,
+            ];
+        }
+
+        $any = array_filter($events, static fn (array $event): bool => $event['channels'] !== []) !== [];
+
+        return [
+            'email' => $email,
+            'reason' => match (true) {
+                ! $this->available() => NotifyRefused::UNAVAILABLE,
+                ! $any => NotifyRefused::NO_CHANNEL,
+                $email === null => NotifyRefused::NO_EMAIL,
+                default => null,
+            },
+            'events' => $events,
+        ];
+    }
+
+    /**
+     * Tell the buyer of an event again (decision 99): its channels that write to the buyer, to the
+     * order's e-mail as it is now, with the order's values now and the event's own — the reference
+     * of the payment, the reason of the cancellation. A dry run answers each channel's message.
+     *
+     * @throws NotifyRefused
+     */
+    public function notifyBuyer(Order $order, string $event, ?int $by, bool $dryRun): NotifyResult
+    {
+        if (! $this->available()) {
+            throw new NotifyRefused(NotifyRefused::UNAVAILABLE);
+        }
+
+        if (! in_array($event, self::BY_HAND, true) || ! $this->basis($order, $event)) {
+            throw new NotifyRefused(NotifyRefused::NO_BASIS);
+        }
+
+        if ($order->customer_email === null || trim($order->customer_email) === '') {
+            throw new NotifyRefused(NotifyRefused::NO_EMAIL);
+        }
+
+        $notifications = $this->notifications();
+        $channels = $notifications->addressed($this->channelsOf($order, $event), $event, self::ADDRESSEE);
+
+        if ($channels === []) {
+            throw new NotifyRefused(NotifyRefused::NO_CHANNEL);
+        }
+
+        $values = $this->container->make(OrderValues::class)->of(OrderData::of(Order::query()->findOrFail($order->id)), $this->extra($order, $event));
+
+        try {
+            $rows = $notifications->sendByHand($event, array_map(static fn (Channel $channel): int => (int) $channel->id, $channels), self::ADDRESSEE, $values, $order, $order->locale, $by, $dryRun);
+        } catch (NotificationsRefusal $refusal) {
+            throw new NotifyRefused(NotifyRefused::REFUSED, $refusal->getMessage());
+        }
+
+        $previews = [];
+
+        if ($dryRun) {
+            foreach ($channels as $channel) {
+                $previews[] = [
+                    'channel' => $channel->name,
+                    'provider' => $channel->provider,
+                    'recipient' => (string) $values['customer_email'],
+                    ...$notifications->render($channel, $values, $order->locale),
+                ];
+            }
+        }
+
+        return new NotifyResult($event, $dryRun, array_map(self::row(...), $rows), $previews);
+    }
+
+    /**
+     * Send a row of the order's log again (decision 99): the same message to the same recipient,
+     * a new row marked manual. Only a row about this order.
+     *
+     * @throws NotifyRefused
+     */
+    public function resend(Order $order, int $delivery, ?int $by, bool $dryRun): NotifyResult
+    {
+        if (! $this->available()) {
+            throw new NotifyRefused(NotifyRefused::UNAVAILABLE);
+        }
+
+        $row = Delivery::query()->whereKey($delivery)->where('subject_type', $order->getMorphClass())->where('subject_id', $order->getKey())->first();
+
+        if (! $row instanceof Delivery) {
+            throw new NotifyRefused(NotifyRefused::FOREIGN);
+        }
+
+        try {
+            $sent = $this->notifications()->resend($row, $by, $dryRun);
+        } catch (NotificationsRefusal $refusal) {
+            throw new NotifyRefused(NotifyRefused::REFUSED, $refusal->getMessage());
+        }
+
+        return new NotifyResult($row->event, $dryRun, [self::row($sent)], resentFrom: (int) $row->id);
+    }
+
+    /** Whether the order gives an event a reason to be told of now. */
+    private function basis(Order $order, string $event): bool
+    {
+        return match ($event) {
+            OrderEvents::PLACED => true,
+            OrderEvents::PUBLIC_STATUS => $this->publicOf($order) !== null,
+            OrderEvents::PAID => $order->paid_at !== null,
+            OrderEvents::PAYMENT_FAILED => $order->payment_failed_at !== null && $order->paid_at === null,
+            OrderEvents::RECEIVED => $order->received_at !== null,
+            OrderEvents::CANCELLED => $order->cancelled_at !== null,
+            OrderEvents::REFUNDED => $order->refunded_total > 0,
+            default => false,
+        };
+    }
+
+    /**
+     * The channels of an event of this order: the setting of a milestone's, the current public
+     * status's for `orders.public_status`.
+     *
+     * @return list<int>
+     */
+    private function channelsOf(Order $order, string $event): array
+    {
+        return $event === OrderEvents::PUBLIC_STATUS ? self::ofPublic($this->publicOf($order)) : $this->forEvent($event);
+    }
+
+    private function publicOf(Order $order): ?PublicStatus
+    {
+        $status = OrderStatus::withTrashed()->find($order->status_id);
+        $public = $status instanceof OrderStatus ? PublicStatus::withTrashed()->find($status->public_status_id) : null;
+
+        return $public instanceof PublicStatus && ! $public->trashed() ? $public : null;
+    }
+
+    /**
+     * The values of one event beyond the order's (§10.2), as the event brought them: the mark's
+     * reference and note, the latest failure, what was given back.
+     *
+     * @return array<string, string>
+     */
+    private function extra(Order $order, string $event): array
+    {
+        $mark = static fn (string $milestone): ?OrderMilestone => OrderMilestone::query()->where('order_id', $order->id)->where('milestone', $milestone)->first();
+
+        return match ($event) {
+            OrderEvents::PAID => ['reference' => (string) $mark(Milestone::Paid->value)?->reference],
+            OrderEvents::RECEIVED => ['reference' => (string) $mark(Milestone::Received->value)?->reference],
+            OrderEvents::CANCELLED => ['reason' => (string) $mark(Milestone::Cancelled->value)?->note],
+            OrderEvents::PAYMENT_FAILED => ['reason' => (string) StatusChange::query()->where('order_id', $order->id)->where('kind', StatusChange::PAYMENT_FAILED)->orderByDesc('id')->value('note')],
+            OrderEvents::REFUNDED => ['refund_amount' => $this->container->make(OrderValues::class)->format($order->refunded_total, $order->currency)],
+            default => [],
+        };
+    }
+
+    /**
+     * @return array{id: int|null, channel: string, provider: string, recipient: string, status: string}
+     */
+    private static function row(Delivery $row): array
+    {
+        return [
+            'id' => $row->exists ? (int) $row->id : null,
+            'channel' => $row->channel_name,
+            'provider' => $row->provider,
+            'recipient' => $row->recipient,
+            'status' => $row->status,
+        ];
+    }
+
+    private function notifications(): Notifications
+    {
+        return $this->container->make(Notifications::class);
     }
 
     /**

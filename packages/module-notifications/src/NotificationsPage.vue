@@ -547,6 +547,15 @@ const actions = computed<ScreenAction[]>(() =>
             t(`module.statuses.${row.status}`)
           }}</wx-badge>
           <wx-badge v-if="row.is_test">{{ t('panel.test-mark') }}</wx-badge>
+          <!-- Sent by hand from a record's card (§8.6): who asked is in the hint. -->
+          <wx-badge
+            v-if="row.manual"
+            :title="
+              row.manual_by_name ? t('panel.manual-by', { name: row.manual_by_name }) : undefined
+            "
+          >
+            {{ t('panel.manual-mark') }}
+          </wx-badge>
         </span>
       </template>
 

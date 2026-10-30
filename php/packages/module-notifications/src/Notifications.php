@@ -17,6 +17,7 @@ use WebxUi\Notifications\Models\Channel;
 use WebxUi\Notifications\Models\Delivery;
 use WebxUi\Notifications\Sending\Deliverer;
 use WebxUi\Notifications\Sending\Recipient;
+use WebxUi\Notifications\Sending\Renderer;
 
 /**
  * What a consumer calls (§8.1): an event happened, these are its values, send it to these
@@ -42,6 +43,7 @@ final class Notifications
         private readonly NotificationEvents $events,
         private readonly Deliverer $deliverer,
         private readonly Config $config,
+        private readonly Renderer $renderer,
     ) {}
 
     /**
@@ -164,6 +166,205 @@ final class Notifications
     }
 
     /**
+     * Send a row of the log again by hand (§8.6): «the buyer says the letter never came». Unlike
+     * `retry()` it takes a row that went too, and leaves that row as it is: a new one goes to the
+     * same recipient with the same values, marked manual, with who asked and the row it repeats.
+     * The template is the channel's as it is now; the job and its attempts are a send's.
+     *
+     * The original row is locked while its last repeat is looked for, so two presses at once — or
+     * one within `Delivery::RESEND_PAUSE` seconds of the other — send one message. A dry run checks
+     * the same and answers the row unsaved.
+     *
+     * @throws Refusal a test or a skipped row, a channel deleted or switched off, a repeat a moment ago
+     */
+    public function resend(Delivery $delivery, ?int $by = null, bool $dryRun = false): Delivery
+    {
+        return Delivery::query()->getConnection()->transaction(function () use ($delivery, $by, $dryRun): Delivery {
+            $original = Delivery::query()->whereKey($delivery->id)->lockForUpdate()->first();
+
+            if (! $original instanceof Delivery || ! $original->resendable()) {
+                throw new Refusal((string) __('webx-notifications::errors.not-resendable', ['id' => $delivery->id]));
+            }
+
+            $channel = $this->sending(Channel::query()->find($original->channel_id), $original->channel_name);
+
+            if (Delivery::query()->where('resent_from', $original->id)->where('created_at', '>=', Carbon::now()->subSeconds(Delivery::RESEND_PAUSE))->exists()) {
+                throw new Refusal((string) __('webx-notifications::errors.resent-recently'));
+            }
+
+            $row = new Delivery([
+                'channel_id' => $channel->id,
+                'channel_name' => mb_substr($channel->name, 0, 160),
+                'provider' => $channel->provider,
+                'event' => $original->event,
+                'subject_type' => $original->subject_type,
+                'subject_id' => $original->subject_id,
+                'locale' => $original->locale,
+                'recipient' => $original->recipient,
+                'recipient_label' => $original->recipient_label,
+                'status' => Delivery::QUEUED,
+                'variables' => $original->variables,
+                'manual' => true,
+                'manual_by' => $by,
+                'resent_from' => $original->id,
+                'created_at' => Carbon::now(),
+            ]);
+
+            if ($dryRun) {
+                return $row;
+            }
+
+            $row->save();
+            $this->dispatch(new Deliver((int) $channel->id, [(int) $row->id]));
+
+            return $row;
+        });
+    }
+
+    /**
+     * Send an event by hand to its addressee alone (§8.6): through the channels given, only to
+     * their recipients that are the event's addressee `$variable` — the buyer's e-mail, not the
+     * managers who share the channel — with the values as they are now. Every row is marked
+     * manual, with who asked. Channels that would not send ({@see addressed()}) are left out.
+     *
+     * The channels are locked while the last such send about the record is looked for: a second
+     * press within `Delivery::RESEND_PAUSE` seconds is refused. A dry run answers the rows unsaved.
+     *
+     * @param  iterable<int|string>  $channels
+     * @param  array<string, mixed>  $variables
+     * @return list<Delivery>
+     *
+     * @throws Refusal no channel writes to the addressee, or the same was sent a moment ago
+     */
+    public function sendByHand(string $event, iterable $channels, string $variable, array $variables, Model $subject, ?string $locale = null, ?int $by = null, bool $dryRun = false): array
+    {
+        $values = self::values($variables);
+
+        return Delivery::query()->getConnection()->transaction(function () use ($event, $channels, $variable, $values, $subject, $locale, $by, $dryRun): array {
+            $found = $this->addressed($channels, $event, $variable, lock: true);
+
+            if ($found === []) {
+                throw new Refusal((string) __('webx-notifications::errors.nobody-addressed'));
+            }
+
+            $recent = Delivery::query()
+                ->where('manual', true)
+                ->whereNull('resent_from')
+                ->where('event', $event)
+                ->where('subject_type', $subject->getMorphClass())
+                ->where('subject_id', $subject->getKey())
+                ->whereIn('channel_id', array_map(static fn (Channel $channel): int => (int) $channel->id, $found))
+                ->where('created_at', '>=', Carbon::now()->subSeconds(Delivery::RESEND_PAUSE))
+                ->exists();
+
+            if ($recent) {
+                throw new Refusal((string) __('webx-notifications::errors.resent-recently'));
+            }
+
+            $rows = [];
+
+            foreach ($found as $channel) {
+                $provider = $this->providers->find($channel->provider);
+                $only = array_values(array_filter($channel->recipientList(), static fn (array $one): bool => ($one['variable'] ?? null) === $variable));
+                $waiting = [];
+
+                foreach ($provider?->resolve($only, $values) ?? [] as $recipient) {
+                    $row = $this->row($channel, $event, $values, $subject, $locale, $recipient, save: false);
+                    $row->forceFill(['manual' => true, 'manual_by' => $by]);
+
+                    if (! $dryRun) {
+                        $row->save();
+
+                        if ($row->status === Delivery::QUEUED) {
+                            $waiting[] = (int) $row->id;
+                        }
+                    }
+
+                    $rows[] = $row;
+                }
+
+                if ($waiting !== []) {
+                    $this->dispatch(new Deliver((int) $channel->id, $waiting));
+                }
+            }
+
+            return $rows;
+        });
+    }
+
+    /**
+     * The channels among these that would send an event to its addressee `$variable` now: there,
+     * switched on, of this event or of any, their provider installed, with that addressee among
+     * the recipients — what a consumer asks before it offers «send it by hand».
+     *
+     * @param  iterable<int|string>  $channels
+     * @return list<Channel>
+     */
+    public function addressed(iterable $channels, string $event, string $variable, bool $lock = false): array
+    {
+        $ids = [];
+
+        foreach ($channels as $id) {
+            if (is_numeric($id) && (int) $id > 0) {
+                $ids[(int) $id] = true;
+            }
+        }
+
+        if ($ids === []) {
+            return [];
+        }
+
+        $query = Channel::query()->whereKey(array_keys($ids))->where('enabled', true)->orderBy('id');
+
+        if ($lock) {
+            $query->lockForUpdate();
+        }
+
+        return array_values($query->get()->filter(fn (Channel $channel): bool => $this->writesTo($channel, $event, $variable))->all());
+    }
+
+    /** Whether a channel sends an event to its addressee `$variable` now — {@see addressed()}, for a channel at hand. */
+    public function writesTo(Channel $channel, string $event, string $variable): bool
+    {
+        return $channel->enabled
+            && ! $channel->trashed()
+            && ($channel->event === null || $channel->event === $event)
+            && $this->providers->has($channel->provider)
+            && array_filter($channel->recipientList(), static fn (array $one): bool => ($one['variable'] ?? null) === $variable) !== [];
+    }
+
+    /**
+     * A channel's message for these values, as it would go now — what «send it by hand» shows
+     * before it sends: the subject, the body as the provider gets it, its plain text.
+     *
+     * @param  array<string, mixed>  $variables
+     * @return array{subject: string|null, body: string, plain: string, html: bool, truncated: bool}
+     */
+    public function render(Channel $channel, array $variables, ?string $locale = null): array
+    {
+        $provider = $this->providers->find($channel->provider) ?? throw new Refusal((string) __('webx-notifications::errors.resend-channel-off', ['channel' => $channel->name]));
+        $message = $this->renderer->render($channel, $provider, self::values($variables), $locale, $this->eventOf($channel))['message'];
+
+        return [
+            'subject' => $message->subject,
+            'body' => $message->body,
+            'plain' => $message->plain,
+            'html' => $message->html,
+            'truncated' => $message->truncated,
+        ];
+    }
+
+    /** The channel a row goes through by hand, or the refusal that says why nothing would go. */
+    private function sending(?Channel $channel, string $name): Channel
+    {
+        if ($channel === null || ! $channel->enabled || ! $this->providers->has($channel->provider)) {
+            throw new Refusal((string) __('webx-notifications::errors.resend-channel-off', ['channel' => $channel->name ?? $name]));
+        }
+
+        return $channel;
+    }
+
+    /**
      * The log of what was sent about a record — a submission's notifications, say.
      *
      * @return Builder<Delivery>
@@ -261,7 +462,7 @@ final class Notifications
     /**
      * @param  array<string, string|list<array<string, string>>>  $values
      */
-    private function row(Channel $channel, string $event, array $values, ?Model $subject, ?string $locale, Recipient $recipient): Delivery
+    private function row(Channel $channel, string $event, array $values, ?Model $subject, ?string $locale, Recipient $recipient, bool $save = true): Delivery
     {
         $row = new Delivery([
             'channel_id' => $channel->exists ? $channel->id : null,
@@ -279,7 +480,9 @@ final class Notifications
             'created_at' => Carbon::now(),
         ]);
 
-        $row->save();
+        if ($save) {
+            $row->save();
+        }
 
         return $row;
     }

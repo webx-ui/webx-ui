@@ -183,6 +183,11 @@ export interface DeliveryRow {
   error: string | null
   attempts: number
   is_test: boolean
+  /** Sent by hand (§8.6): who asked, and the row it repeats. */
+  manual?: boolean
+  manual_by?: number | null
+  manual_by_name?: string | null
+  resent_from?: number | null
   truncated: boolean
   unknown_variables: string[]
   variables: Record<string, unknown>

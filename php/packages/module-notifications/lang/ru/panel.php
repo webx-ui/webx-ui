@@ -125,6 +125,8 @@ return [
     'all-channels' => 'Любой канал',
     'with-tests' => 'С тестами',
     'test-mark' => 'Тест',
+    'manual-mark' => 'Вручную',
+    'manual-by' => 'Вручную: :name',
     'cut-mark' => 'Обрезано',
     'log-empty' => 'Пока ничего не отправлено.',
     'retry' => 'Отправить ещё раз',

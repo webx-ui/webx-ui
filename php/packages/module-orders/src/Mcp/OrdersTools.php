@@ -34,6 +34,7 @@ use WebxUi\Orders\Models\OrderStatus;
 use WebxUi\Orders\Models\OrderTender;
 use WebxUi\Orders\Models\PublicStatus;
 use WebxUi\Orders\Notifications\OrderChannels;
+use WebxUi\Orders\NotifyRefused;
 use WebxUi\Orders\OrderDetails;
 use WebxUi\Orders\OrderRefused;
 use WebxUi\Orders\Orders;
@@ -253,6 +254,25 @@ final readonly class OrdersTools
                     'reason' => ['type' => 'string', 'description' => 'Why the record was a mistake — it goes into the history.'],
                 ], 'required' => ['order', 'refund', 'reason']],
                 permission: OrdersModule::REFUND,
+            ),
+
+            Tool::mutating(
+                'notify',
+                'Send a message about an order again by hand — «the buyer says the letter never came». With the notifications '
+                .'module only. `delivery` — the id of a row of orders_history `notifications`: the same message to the same '
+                .'recipient, sent or failed alike, as a new row marked manual. Or `event` — tell the buyer of an event the '
+                .'order has a reason for (placed; public_status — the one it stands in; paid, payment_failed, received, '
+                .'cancelled, refunded once they happened), to the order\'s e-mail now, through the channels of that event that '
+                .'write to the buyer (customer_email). Either is a line of the history with who did it; the same message again '
+                .'within a minute is refused. Do not send unless a person asked. `dry_run` answers what would go — for an '
+                .'event, `previews` with each channel\'s subject and text — or why it is refused.',
+                fn (array $arguments): array => $this->notify($arguments),
+                ['properties' => [
+                    'order' => $order,
+                    'delivery' => ['type' => 'integer', 'description' => 'The id of a row of the order\'s log, from orders_history `notifications`.'],
+                    'event' => ['type' => 'string', 'enum' => OrderChannels::BY_HAND, 'description' => 'The event to tell the buyer of again.'],
+                ], 'required' => ['order']],
+                permission: OrdersModule::MANAGE,
             ),
 
             Tool::mutating(
@@ -488,7 +508,7 @@ final readonly class OrdersTools
 
                 return $line;
             }, $lines),
-            'notifications' => $this->channels->available() ? $this->channels->deliveries($order) : null,
+            'notifications' => $this->channels->available() ? $this->channels->deliveries($order, $caller) : null,
         ];
     }
 
@@ -720,6 +740,33 @@ final readonly class OrdersTools
         }
 
         return ['number' => $order->number, ...$this->consequences->reversal($reversal, $order->currency, $this->money)];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function notify(array $arguments): array
+    {
+        $order = $this->order($arguments['order'] ?? null);
+        $delivery = $arguments['delivery'] ?? null;
+        $event = $arguments['event'] ?? null;
+
+        if (($delivery === null) === ($event === null)) {
+            throw new ToolFailure('Send `delivery` (a row of orders_history `notifications`) or `event`, one of them.');
+        }
+
+        if ($delivery !== null && ! is_int($delivery) && ! (is_string($delivery) && ctype_digit($delivery))) {
+            throw new ToolFailure('`delivery` is the id of a row of orders_history `notifications`.');
+        }
+
+        try {
+            $result = $this->orders->notify($order, $delivery !== null ? ['delivery' => (int) $delivery] : ['event' => (string) $event], self::SOURCE, $this->dryRun($arguments));
+        } catch (NotifyRefused $refused) {
+            throw new ToolFailure("Order {$order->number}: ".$refused->said());
+        }
+
+        return ['number' => $order->number, ...$result->toArray()];
     }
 
     /**

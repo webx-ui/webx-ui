@@ -1,6 +1,8 @@
 import type { AdminContext } from '@webx-ui/module-admin'
 import type { ScreenModel } from '@webx-ui/schema'
 import type {
+  BuyerEvents,
+  NotifyPreview,
   CancelConsequences,
   MassCancelAnswer,
   MassStatusAnswer,
@@ -86,6 +88,13 @@ export interface OrdersApi {
   /** What reversing a refund record does (decision 98) — nothing is written. */
   previewReverse(id: number, refundId: number): Promise<RefundReversalPreview>
   reverseRefund(id: number, refundId: number, reason: string): Promise<OrderDetail>
+  /** A row of the order's «Notifications» sent again by hand (decision 99). */
+  resend(id: number, deliveryId: number): Promise<OrderDetail>
+  /** What «Send the buyer a letter» chooses from. */
+  buyerEvents(id: number): Promise<BuyerEvents>
+  /** Each channel's letter as it would go — nothing is sent. */
+  previewNotify(id: number, event: string): Promise<NotifyPreview>
+  notify(id: number, event: string): Promise<OrderDetail>
   massStatus(
     ids: number[],
     statusId: number,
@@ -189,6 +198,17 @@ export function createOrdersApi(admin: AdminContext): OrdersApi {
       admin.http
         .post<{ data: OrderDetail }>(`${base}/${id}/refunds/${refundId}/reverse`, { reason })
         .then(data),
+    resend: (id, deliveryId) =>
+      admin.http
+        .post<{ data: OrderDetail }>(`${base}/${id}/deliveries/${deliveryId}/resend`, {})
+        .then(data),
+    buyerEvents: (id) => admin.http.get<{ data: BuyerEvents }>(`${base}/${id}/notify`).then(data),
+    previewNotify: (id, event) =>
+      admin.http
+        .post<{ data: NotifyPreview }>(`${base}/${id}/notify`, { event, dry_run: true })
+        .then(data),
+    notify: (id, event) =>
+      admin.http.post<{ data: OrderDetail }>(`${base}/${id}/notify`, { event }).then(data),
     massStatus: (ids, statusId, note, dryRun) =>
       admin.http
         .post<{ data: MassStatusAnswer }>(`${base}/status`, {
