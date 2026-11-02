@@ -16,13 +16,18 @@ use WebxUi\Delivery\Sync\Synchronizer;
 use WebxUi\Delivery\Sync\Trigger;
 
 /**
- * A page of 500 towns and of 500 points through the base's writing (§12): the number of queries
- * does not grow with the page or its place in the run, and the carrier is asked one reading request
- * a page.
+ * A page of 500 towns, of 500 points and of 2 000 streets through the base's writing (§12): the
+ * number of queries does not grow with the page or its place in the run; the carrier is asked one
+ * reading request a page of towns or points, and at most the budget of a pull for the streets.
  */
 final class PerformanceTest extends TestCase
 {
     private const int TOWNS = 1000;
+
+    /** Towns with streets, and how many each has (§6.4). */
+    private const int STREETS_TOWNS = 20;
+
+    private const int STREETS = 400;
 
     private const array AREAS = ['Полтавська', 'Київська', 'Львівська', 'Одеська', 'Харківська', 'Волинська'];
 
@@ -37,6 +42,10 @@ final class PerformanceTest extends TestCase
             $limit = (int) ($request['methodProperties']['Limit'] ?? 500);
             $entries = [];
             $points = $request['calledMethod'] === 'getWarehouses';
+
+            if ($request['calledMethod'] === 'getStreet') {
+                return Http::response(self::streets((string) $request['methodProperties']['CityRef'], $page, $limit));
+            }
 
             for ($n = ($page - 1) * $limit; $n < min($page * $limit, self::TOWNS); $n++) {
                 $entries[] = $points ? self::point($n) : self::town($n);
@@ -97,6 +106,30 @@ final class PerformanceTest extends TestCase
     }
 
     /**
+     * The streets of a town: 400 in each of the first 20 towns with a courier — 8 000, four pages
+     * of the base of five towns each — none in the other 480.
+     *
+     * @return array<string, mixed>
+     */
+    private static function streets(string $town, int $page, int $limit): array
+    {
+        $n = (int) substr($town, -12);
+        $count = $n < self::STREETS_TOWNS * 2 ? self::STREETS : 0;
+        $entries = [];
+
+        for ($i = ($page - 1) * $limit; $i < min($page * $limit, $count); $i++) {
+            $entries[] = [
+                'Description' => "Прикладна {$i}",
+                'Ref' => sprintf('00000000-0000-4000-b%03d-%012d', $n, $i),
+                'StreetsTypeRef' => $i % 4 === 0 ? 'Lane' : 'Street',
+                'StreetsType' => $i % 4 === 0 ? 'пров.' : 'вул.',
+            ];
+        }
+
+        return self::answer($entries, total: $count);
+    }
+
+    /**
      * The queries of every page of one pass of a directory.
      *
      * @return list<int>
@@ -116,7 +149,10 @@ final class PerformanceTest extends TestCase
         } while ($more);
 
         $this->assertSame(RunStatus::Succeeded, $run->refresh()->status, (string) $run->error);
-        $this->assertSame([3, self::TOWNS], [$run->pages, $run->seen]);
+
+        if ($directory !== Directory::Streets) {
+            $this->assertSame([3, self::TOWNS], [$run->pages, $run->seen]);
+        }
 
         return $costs;
     }
@@ -158,5 +194,36 @@ final class PerformanceTest extends TestCase
         // One reading request a page: three of the towns, two passes of three of the points.
         Http::assertSentCount(9);
         $this->assertSame(['getCities', 'getWarehouses'], array_values(array_unique(array_column($this->journalEntries(), 'method'))));
+    }
+
+    #[Test]
+    public function a_page_of_2000_streets_costs_the_same_few_queries_and_at_most_its_budget_of_requests(): void
+    {
+        $this->pass();
+        $sent = count(Http::recorded());
+
+        DB::flushQueryLog();
+        $costs = $this->pass(Directory::Streets);
+        $this->assertSame(self::STREETS_TOWNS * self::STREETS, DB::table('delivery_streets')->count());
+
+        // Four pages of 2 000, then the towns without streets 20 a pull, and the end with the
+        // removals, the count of streets of each town, and the journal.
+        [$first, $second, $third, $fourth] = $costs;
+        $this->assertSame([$first, $first, $first], [$second, $third, $fourth], json_encode($costs, JSON_THROW_ON_ERROR));
+        // The base's ≤ 4 (§17 of the delivery spec) and the satellite's two reads: the stored key
+        // and the next towns by their ids (§12).
+        $this->assertLessThanOrEqual(4 + 2, $first, 'a page of 2 000 streets');
+
+        // A page of streets: five towns of 400, one request each — the empty page that ends a town
+        // is not asked, its 400 are fewer than the limit of 500.
+        $asked = Http::recorded()->slice($sent)->values();
+
+        foreach ($asked as [$request]) {
+            $this->assertSame('getStreet', $request['calledMethod']);
+            $this->assertSame('', $request['methodProperties']['FindByString']);
+        }
+
+        $this->assertCount(4 * 5 + 480, $asked);
+        $this->assertCount(4 + intdiv(480, 20) + 1, $costs);
     }
 }

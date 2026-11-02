@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Delivery\NovaPoshta;
 
+use WebxUi\Delivery\CarrierLocalities;
 use WebxUi\Delivery\ConnectionResult;
 use WebxUi\Delivery\Contracts\Carrier;
 use WebxUi\Delivery\Contracts\SyncsDirectories;
@@ -12,6 +13,7 @@ use WebxUi\Delivery\NovaPoshta\Api\Client;
 use WebxUi\Delivery\NovaPoshta\Api\Pace;
 use WebxUi\Delivery\NovaPoshta\Directories\Localities;
 use WebxUi\Delivery\NovaPoshta\Directories\Points;
+use WebxUi\Delivery\NovaPoshta\Directories\Streets;
 use WebxUi\Delivery\Sync\CarrierUnavailable;
 use WebxUi\Delivery\Sync\Directory;
 use WebxUi\Delivery\Sync\DirectorySchedule;
@@ -30,7 +32,8 @@ use WebxUi\Localization\Locales;
  * Its directories (§6) are pulled with the key stored in the panel, one request a page, paced by
  * {@see Pace}: the towns from `getCities` — the carrier leads Ukraine (decision 8), so the base
  * creates the shared towns and regions from them; then the points from `getWarehouses`, the whole
- * network page by page (§6.3). Streets come with stage 6.
+ * network page by page (§6.3); weekly, the streets of every town with a courier from `getStreet`,
+ * town by town (§6.4) — the one directory a page of which is many requests.
  */
 final class NovaPoshtaCarrier implements Carrier, SyncsDirectories
 {
@@ -45,12 +48,23 @@ final class NovaPoshtaCarrier implements Carrier, SyncsDirectories
     /** Nightly, towns first; the base pulls the points after the towns succeed (§6.1). */
     public const string NIGHTLY = '10 2 * * *';
 
+    /** Streets once a week, the night from Sunday to Monday: the longest pass, ~3 hours (§6.4). */
+    public const string WEEKLY = '30 0 * * 0';
+
+    /** Streets a page of the base: rows are narrow (§6.1). */
+    public const int STREETS_PAGE_SIZE = 2000;
+
+    /** Towns read from the base at a time for the walk of the streets (§6.4). */
+    public const int TOWNS_AT_A_TIME = 200;
+
     public function __construct(
         private readonly Client $client,
         private readonly AccountKey $key,
         private readonly Pace $pace,
         private readonly Locales $locales,
         private readonly int $pageSize = self::PAGE_SIZE,
+        private readonly CarrierLocalities $towns = new CarrierLocalities,
+        private readonly StreetsPass $streets = new StreetsPass,
     ) {}
 
     public function key(): string
@@ -145,21 +159,21 @@ final class NovaPoshtaCarrier implements Carrier, SyncsDirectories
         return [
             new DirectorySchedule(Directory::Localities, self::NIGHTLY, $this->pageSize),
             new DirectorySchedule(Directory::Points, self::NIGHTLY, $this->pageSize),
+            new DirectorySchedule(Directory::Streets, $this->streets->cron, self::STREETS_PAGE_SIZE),
         ];
     }
 
     /**
-     * A page of a directory. The cursor is the number of the last page pulled (§6.2, §6.3): '3'
-     * asks for page 4; the list ends on a page that is empty or shorter than the limit. Points are
-     * the whole network without `CityRef` — a 303 to a ready file is followed by the client.
+     * A page of a directory. For towns and points the cursor is the number of the last page pulled
+     * (§6.2, §6.3): '3' asks for page 4; the list ends on a page that is empty or shorter than the
+     * limit. Points are the whole network without `CityRef` — a 303 to a ready file is followed by
+     * the client. Streets go town by town, a page of them many requests ({@see Streets()}).
      */
     public function pull(Directory $directory, ?string $cursor): Page
     {
-        if ($directory === Directory::Streets) {
-            throw CarrierUnavailable::badResponse("Nova Poshta keeps no {$directory->value} directory yet.");
-        }
+        $streets = $directory === Directory::Streets;
 
-        if ($cursor !== null && preg_match('/^\d{1,6}$/', $cursor) !== 1) {
+        if ($cursor !== null && preg_match($streets ? self::STREETS_CURSOR : '/^\d{1,6}$/', $cursor) !== 1) {
             throw CarrierUnavailable::badResponse("The cursor «{$cursor}» is not a page of Nova Poshta.");
         }
 
@@ -168,6 +182,10 @@ final class NovaPoshtaCarrier implements Carrier, SyncsDirectories
         if ($key === null) {
             // Nothing goes to the carrier without a key: the run fails with «the key was refused».
             throw CarrierUnavailable::keyRejected('No API key of Nova Poshta is stored.');
+        }
+
+        if ($streets) {
+            return $this->streets($key, $cursor);
         }
 
         $number = $cursor === null ? 1 : (int) $cursor + 1;
@@ -184,6 +202,102 @@ final class NovaPoshtaCarrier implements Carrier, SyncsDirectories
         }
 
         return new Page((new Localities($this->locales->codes()))->records($entries), $next);
+    }
+
+    /** «<town>:<pages>»: the carrier's town and how many of its pages are pulled, 0 — all of them. */
+    private const string STREETS_CURSOR = '/^([^:\s]{1,64}):(\d{1,5})$/';
+
+    /**
+     * A page of the streets (§6.4): the towns with a courier from the base, by their ids in order,
+     * and `getStreet` of each with an empty search — all its streets, page by page of `Limit`; a
+     * town ends on a page shorter than that. One pull goes on across towns until it has a page of
+     * the base, or has made {@see StreetsPass::$requests} requests, or has run
+     * {@see StreetsPass::$seconds} — so the base repeating a failed page repeats that much and no
+     * more, and a pull never outlasts a slice of the queue's job.
+     *
+     * The cursor is the last town begun and how many of its pages are in: «<town>:3» goes on with
+     * its page 4, «<town>:0» with the town after it. The pass ends when no town is left. A sample
+     * ({@see StreetsPass::$sample}) walks only that many first towns — the pass on somebody
+     * else's key, which must not spend its limits on 10 000 towns.
+     */
+    private function streets(string $key, ?string $cursor): Page
+    {
+        $town = null;
+        $page = 1;
+        $after = null;
+
+        if ($cursor !== null) {
+            preg_match(self::STREETS_CURSOR, $cursor, $match);
+            $after = $match[1];
+
+            if ((int) $match[2] > 0) {
+                $town = $match[1];
+                $page = (int) $match[2] + 1;
+            }
+        }
+
+        $queue = [];
+        $records = [];
+        $requests = 0;
+        $started = microtime(true);
+        $next = $cursor;
+        $limit = max(1, $this->streets->requests);
+
+        while ($requests < $limit && count($records) < self::STREETS_PAGE_SIZE) {
+            if ($requests > 0 && microtime(true) - $started >= $this->streets->seconds) {
+                break;
+            }
+
+            if ($town === null) {
+                $queue = $queue === [] ? $this->townsAfter($after) : $queue;
+
+                if ($queue === []) {
+                    return new Page($records, null);
+                }
+
+                $town = array_shift($queue);
+                $page = 1;
+            }
+
+            $this->pace->wait();
+            $answer = $this->client->call($key, 'Address', 'getStreet', [
+                'CityRef' => $town,
+                'FindByString' => '',
+                'Page' => $page,
+                'Limit' => $this->pageSize,
+            ]);
+            $requests++;
+            $entries = $answer->records();
+            array_push($records, ...Streets::records($town, $entries));
+
+            if (count($entries) < $this->pageSize) {
+                $next = $town.':0';
+                $after = $town;
+                $town = null;
+            } else {
+                $next = $town.':'.$page;
+                $page++;
+            }
+        }
+
+        return new Page($records, $next);
+    }
+
+    /**
+     * The next towns with a courier after the given one, by the carrier's ids: one query to the
+     * base for up to {@see TOWNS_AT_A_TIME}. A sample is the first towns of the whole list.
+     *
+     * @return list<string>
+     */
+    private function townsAfter(?string $after): array
+    {
+        if ($this->streets->sample === null) {
+            return $this->towns->externalIds(self::KEY, $after, self::TOWNS_AT_A_TIME, 'courier');
+        }
+
+        $sample = $this->towns->externalIds(self::KEY, null, max(1, $this->streets->sample), 'courier');
+
+        return array_values(array_filter($sample, static fn (string $id): bool => $after === null || strcmp($id, $after) > 0));
     }
 
     public function client(): Client

@@ -33,5 +33,25 @@ return [
     */
     'sync' => [
         'requests_per_minute' => (int) env('NOVAPOSHTA_REQUESTS_PER_MINUTE', 60),
+
+        /*
+        | The streets (§6.4): one pull of a page asks `getStreet` at most `max_requests_per_pull`
+        | times and starts no request after `pull_seconds` — a failed page is repeated whole.
+        */
+        'max_requests_per_pull' => (int) env('NOVAPOSHTA_MAX_REQUESTS_PER_PULL', 20),
+        'pull_seconds' => (float) env('NOVAPOSHTA_PULL_SECONDS', 20),
+
+        /*
+        | When the streets run: a cron, or `manual` — by hand only. Weekly by default; a read-only
+        | key (somebody else's account) runs them by hand only, unless said otherwise.
+        */
+        'streets_cron' => env('NOVAPOSHTA_STREETS_CRON', (bool) env('NOVAPOSHTA_READ_ONLY', false) ? 'manual' : '30 0 * * 0'),
+
+        /*
+        | Walk the streets of only this many first towns with a courier, not of all ~10 000 —
+        | ~10 500 requests. null — every town. A read-only key walks 20 unless said otherwise:
+        | a pass on somebody else's account must not spend its limits.
+        */
+        'streets_sample' => env('NOVAPOSHTA_STREETS_SAMPLE', (bool) env('NOVAPOSHTA_READ_ONLY', false) ? 20 : null),
     ],
 ];

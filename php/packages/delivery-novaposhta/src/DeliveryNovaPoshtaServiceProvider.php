@@ -51,6 +51,19 @@ class DeliveryNovaPoshtaServiceProvider extends ServiceProvider
             return new Pace((int) $this->app->make('config')->get('webx-delivery-novaposhta.sync.requests_per_minute', 60));
         });
 
+        $this->app->singleton(StreetsPass::class, function (): StreetsPass {
+            $config = $this->app->make('config');
+            $cron = $config->get('webx-delivery-novaposhta.sync.streets_cron');
+            $sample = $config->get('webx-delivery-novaposhta.sync.streets_sample');
+
+            return new StreetsPass(
+                cron: is_string($cron) && trim($cron) !== '' ? trim($cron) : NovaPoshtaCarrier::WEEKLY,
+                requests: max(1, (int) $config->get('webx-delivery-novaposhta.sync.max_requests_per_pull', 20)),
+                seconds: (float) $config->get('webx-delivery-novaposhta.sync.pull_seconds', 20),
+                sample: is_numeric($sample) && (int) $sample > 0 ? (int) $sample : null,
+            );
+        });
+
         $this->app->singleton(NovaPoshtaCarrier::class);
     }
 

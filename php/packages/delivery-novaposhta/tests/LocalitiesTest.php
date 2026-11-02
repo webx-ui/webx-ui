@@ -193,16 +193,13 @@ final class LocalitiesTest extends TestCase
     }
 
     #[Test]
-    public function the_directories_are_the_towns_then_the_points_nightly_by_pages_of_500(): void
+    public function the_directories_are_the_towns_and_the_points_nightly_then_the_streets_weekly(): void
     {
         $directories = $this->carrier()->directories();
 
-        $this->assertSame([Directory::Localities, Directory::Points], array_map(static fn ($schedule) => $schedule->directory, $directories));
-
-        foreach ($directories as $schedule) {
-            $this->assertSame('10 2 * * *', $schedule->cron);
-            $this->assertSame(500, $schedule->pageSize);
-        }
+        $this->assertSame([Directory::Localities, Directory::Points, Directory::Streets], array_map(static fn ($schedule) => $schedule->directory, $directories));
+        $this->assertSame(['10 2 * * *', '10 2 * * *', '30 0 * * 0'], array_map(static fn ($schedule) => $schedule->cron, $directories));
+        $this->assertSame([500, 500, 2000], array_map(static fn ($schedule) => $schedule->pageSize, $directories));
     }
 
     #[Test]
@@ -234,11 +231,11 @@ final class LocalitiesTest extends TestCase
     }
 
     #[Test]
-    public function a_cursor_that_is_not_a_page_and_a_directory_not_kept_yet_send_nothing(): void
+    public function a_cursor_that_is_not_a_page_sends_nothing(): void
     {
         Http::fake();
 
-        foreach ([[Directory::Localities, 'L7'], [Directory::Points, 'P1'], [Directory::Streets, null]] as [$directory, $cursor]) {
+        foreach ([[Directory::Localities, 'L7'], [Directory::Points, 'P1'], [Directory::Streets, '7']] as [$directory, $cursor]) {
             try {
                 $this->carrier()->pull($directory, $cursor);
                 $this->fail("{$directory->value} at «{$cursor}» was expected to fail.");

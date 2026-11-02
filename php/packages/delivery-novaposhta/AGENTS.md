@@ -24,6 +24,12 @@ npm package of its own.
   counted in the run's warnings. A locker `ForResidentsOfEntrance` is kept with the base's
   restriction `residents`: said beside it, listed after the others. The base fills a town's
   missing coordinates from its points.
+- **Streets**, weekly (`30 0 * * 0`), pages of 2 000: `getStreet` with an empty search for every
+  town with a courier the base keeps (`CarrierLocalities::externalIds`, 200 at a time), page by
+  page of 500 (`Directories\Streets`). The cursor is `<town>:<pages>`, `0` once a town is done.
+  A pull stops at 2 000 streets, `max_requests_per_pull` requests or `pull_seconds`. Types the
+  base has no kind for are `other` with the carrier's word in brackets: «Шевченка (бульвар)».
+  A read-only key walks a sample of 20 towns and runs the streets by hand only.
 - **Migration**: three methods, `novaposhta-branch`, `novaposhta-locker` and `novaposhta-courier`.
   They start switched off, without a price, for `UA` only. A second run adds nothing.
 - **Client** `Api\Client::call($key, $model, $method, $properties)`. It posts to the one address
@@ -58,6 +64,9 @@ None of its own. The carrier's settings, key and «Test the connection» are beh
 | A longer wait for the API                 | `NOVAPOSHTA_TIMEOUT` (seconds, 10 by default)                      |
 | The journal elsewhere, or none            | `NOVAPOSHTA_JOURNAL` (a path; empty turns it off)                  |
 | Another address (a proxy, a test server)  | `NOVAPOSHTA_API_URL`                                               |
+| Streets on another day, or by hand only   | `NOVAPOSHTA_STREETS_CRON` (a cron or `manual`)                     |
+| The streets of only the first N towns     | `NOVAPOSHTA_STREETS_SAMPLE` (`0` — every town)                     |
+| A smaller or larger pull of streets       | `NOVAPOSHTA_MAX_REQUESTS_PER_PULL`, `NOVAPOSHTA_PULL_SECONDS`      |
 | Other words                               | `php artisan vendor:publish --tag=webx-delivery-novaposhta-lang`   |
 | The config in the site                    | `php artisan vendor:publish --tag=webx-delivery-novaposhta-config` |
 | A method with a price the shop charges    | give the method a price in «Delivery → Methods»; the type keeps it |
@@ -78,6 +87,8 @@ None of its own. The carrier's settings, key and «Test the connection» are beh
   development copy with a client's key must never create a waybill, a recipient or an address.
 - Do not log a request or an answer body. They carry the key, names and phones.
 - Do not switch the methods on before the carrier is set up and its directories are synced.
+- Do not run the full pass of the streets on a key of somebody else's account: ~10 500
+  requests. Read-only keeps it to a sample; do not lift it there.
 
 ## Check your work
 
