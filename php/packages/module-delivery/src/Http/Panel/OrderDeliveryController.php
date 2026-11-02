@@ -56,7 +56,8 @@ final class OrderDeliveryController
 
             $this->shipments->create($model, $changes, 'panel');
         } catch (WaybillRefused $refusal) {
-            throw ValidationException::withMessages(['waybill' => [$refusal->getMessage()]]);
+            // A refusal about one field marks that field of the dialog; the rest stands above it.
+            throw ValidationException::withMessages([$refusal->field ?? 'waybill' => [$refusal->getMessage()]]);
         }
 
         return ApiResponse::data($this->card($request, $model->refresh()), 201);

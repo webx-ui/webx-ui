@@ -9,14 +9,28 @@ npm package of its own.
 ## What it owns
 
 - **Carrier** `novaposhta` (`NovaPoshtaCarrier`) in the base's `Carriers`, country `UA`. It has one
-  secret, `api_key`, and these settings: `payment_method` (`Cash` / `NonCash`), `cargo_type`
-  (`Parcel` / `Cargo` / `Documents`), `weight` (kg), `description`. «Test the connection» reads
-  the account's senders (`Counterparty.getCounterparties`). Its mark is
-  `resources/icons/novaposhta.svg`, served as a `data:` URL.
+  secret, `api_key`, and these settings: `sender` → `contact` from the account, `sender_city` →
+  `sender_point` (a branch only) from the base's directories — the base's `ProvidesSettingOptions`
+  (`Sending\SenderOptions`; reading methods only, a `Ref` typed as the query answers that one) —
+  then `payment_method` (`Cash` / `NonCash`), `cargo_type` (`Parcel` / `Cargo` / `Documents`),
+  `weight` (kg), `description` and a locker's seat `locker_width` / `_height` / `_length` (cm, up
+  to 40 × 30 × 60). «Test the connection» reads the account's senders
+  (`Counterparty.getCounterparties`). Its mark is `resources/icons/novaposhta.svg`, a `data:` URL.
 - **Types**: `novaposhta.branch` (point, kind `branch`), `novaposhta.locker` (point, kind
   `locker`) and `novaposhta.courier` (address). Each is a `LabelledMethodType`. The price is «by
   the carrier's rates» and the API is never asked; a method given a price of its own is charged
   that price.
+- **Waybill** (`CreatesWaybills`, `DescribesWaybill`, `Waybills\Waybills`): the dialog's fields are
+  `weight`, `seats` (not a locker), `cargo_type` (a locker: `Parcel` / `Documents`), the locker's
+  seat, `description`, `date` (empty — today, up to three months ahead); `supportsCod()` is false,
+  `label()` is null. Checked before any request: names in Ukrainian letters
+  (`Waybills\RecipientName`), a phone `380…` (`Waybills\Phone`), the sender's four settings, the
+  carrier's town, the point or the street — each refusal names its field (`WaybillRefused::field()`).
+  Then the contact's phone (read), `Counterparty.save` (a recipient, `ContactPerson.save` if no
+  contact came), `Address.save` for a courier, `InternetDocument.save` — `WarehouseWarehouse` or
+  `WarehouseDoors`, `PayerType` from the snapshot. `cancelWaybill()` is `InternetDocument.delete`
+  by `meta.ref`. The carrier's refusal: its text and codes, frequent ones in the dictionary's words
+  (`Waybills\CarrierErrors`). A read-only key refuses before a single request.
 - **Directories** (`SyncsDirectories`), nightly, pages of 500, paced by `Api\Pace`: towns from
   `getCities` (`Directories\Localities`; the carrier leads `UA`), then the whole network of
   points from `getWarehouses` (`Directories\Points`). `Branch` and `Store` are `branch`,
@@ -89,6 +103,8 @@ None of its own. The carrier's settings, key and «Test the connection» are beh
 - Do not switch the methods on before the carrier is set up and its directories are synced.
 - Do not run the full pass of the streets on a key of somebody else's account: ~10 500
   requests. Read-only keeps it to a sample; do not lift it there.
+- Do not test a waybill on a real key. The writing answers are `*.documented-*.json`, written
+  after the documentation with made-up data; keep them so.
 
 ## Check your work
 
@@ -96,6 +112,7 @@ None of its own. The carrier's settings, key and «Test the connection» are beh
 - «Delivery → Carriers» in the panel shows Nova Poshta with its key, settings and «Test the
   connection». «Delivery → Methods» shows the three methods, switched off.
 - The journal lists every call. With read only on it has no writing method with `ok`.
+- The playground's `/panel/orders/10` and `/11` make a waybill of a branch and a locker on fixtures.
 
 ## Read more
 

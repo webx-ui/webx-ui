@@ -1,0 +1,22 @@
+{
+  "_source": "After the carrier's documentation, not recorded: writing methods are never called on a client's key (decision 19). Made-up data.",
+  "success": true,
+  "data": [
+    {
+      "Ref": "00000000-0000-4000-8000-000000000104",
+      "Description": "Контакт А",
+      "LastName": "Прізвище А",
+      "FirstName": "Імʼя А",
+      "MiddleName": "",
+      "Phones": "+800 1234 5678",
+      "Email": ""
+    }
+  ],
+  "errors": [],
+  "warnings": [],
+  "info": [],
+  "messageCodes": [],
+  "errorCodes": [],
+  "warningCodes": [],
+  "infoCodes": []
+}

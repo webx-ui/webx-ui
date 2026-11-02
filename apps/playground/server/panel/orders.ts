@@ -324,7 +324,12 @@ const orders: OrderRecord[] = [
     adjustments: [{ id: 1, label: 'Autumn sale', amount: -1000 }],
   }),
   order(8, { status: 7, delivery: { method: 'pickup', summary: 'Pickup point' } }),
-  order(9, { status: 5, tenders: [{ id: 1, label: 'Wallet', amount: 1500, refunded: 0 }] }),
+  order(9, {
+    status: 5,
+    tenders: [{ id: 1, label: 'Wallet', amount: 1500, refunded: 0 }],
+    // Nova Poshta's branch (the tab «Delivery»): a recipient the carrier takes, in Ukrainian letters.
+    recipient: { first_name: 'Олена', last_name: 'Приклад', phone: '+800 1234 5678' },
+  }),
   order(10, { status: 8 }),
   order(11, { status: 7, items: [item('a'), item('b', 2)] }),
 ]

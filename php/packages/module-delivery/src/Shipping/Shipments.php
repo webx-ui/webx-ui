@@ -213,7 +213,7 @@ final class Shipments
 
             if ($value === null || $value === '') {
                 if (($field['required'] ?? false) === true) {
-                    throw new WaybillRefused(self::word('field_required', $locale, ['field' => $label]));
+                    throw WaybillRefused::field('extra.'.$name, self::word('field_required', $locale, ['field' => $label]));
                 }
 
                 $extra[$name] = null;
@@ -223,7 +223,7 @@ final class Shipments
 
             if (($field['type'] ?? null) === 'number') {
                 if (! is_numeric($value)) {
-                    throw new WaybillRefused(self::word('field_number', $locale, ['field' => $label]));
+                    throw WaybillRefused::field('extra.'.$name, self::word('field_number', $locale, ['field' => $label]));
                 }
 
                 $value = $value + 0;
@@ -261,7 +261,7 @@ final class Shipments
         $request = $this->request($order, $changes);
 
         if (trim($request->recipientFirstName) === '') {
-            throw new WaybillRefused(self::word('no_name', $order->locale));
+            throw WaybillRefused::field('recipient_first_name', self::word('no_name', $order->locale));
         }
         $type = $this->waybills($order);
         $locale = $order->locale;

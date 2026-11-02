@@ -33,6 +33,16 @@ type Fail = (
 type Line = (locale: string, namespace: string, path: string) => string
 
 type Localized = Record<string, string>
+/* A field of a carrier's settings or of its waybill, as `Field` of the base draws it. */
+type SettingField = {
+  name: string
+  type: string
+  label: Localized
+  options?: string | { value: string; label: string }[]
+  depends?: string[]
+  search?: boolean
+  [key: string]: unknown
+}
 
 interface Country {
   code: string
@@ -1084,14 +1094,38 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
           queue: state.bindings.filter((one) => one.status === 'pending').length,
         }
 
-  /* `NovaPoshtaCarrier::settings()`: fixed selects and plain fields, named in its dictionary. */
-  const novaposhtaFields = (locale: string) => {
+  /* `NovaPoshtaCarrier::settings()`: the sender's chain from «its account» and the directories,
+     fixed selects, plain fields and the seat of a parcel locker, named in its dictionary. */
+  const novaposhtaFields = (locale: string): SettingField[] => {
     const label = (path: string) =>
       Object.fromEntries(['en', 'uk', 'ru'].map((one) => [one, novaposhta(one, path)]))
     const options = (group: string, values: string[]) =>
       values.map((value) => ({ value, label: novaposhta(locale, `settings.${group}.${value}`) }))
 
     return [
+      { name: 'sender', type: 'select', options: 'carrier', label: label('settings.sender') },
+      {
+        name: 'contact',
+        type: 'select',
+        options: 'carrier',
+        depends: ['sender'],
+        label: label('settings.contact'),
+      },
+      {
+        name: 'sender_city',
+        type: 'select',
+        options: 'carrier',
+        search: true,
+        label: label('settings.sender_city'),
+      },
+      {
+        name: 'sender_point',
+        type: 'select',
+        options: 'carrier',
+        depends: ['sender_city'],
+        search: true,
+        label: label('settings.sender_point'),
+      },
       {
         name: 'payment_method',
         type: 'select',
@@ -1116,14 +1150,29 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
         label: label('settings.weight'),
       },
       { name: 'description', type: 'text', label: label('settings.description') },
+      ...LOCKER_SIZE.map(([name, max]) => ({
+        name,
+        type: 'number',
+        min: 1,
+        max,
+        step: 1,
+        precision: 0,
+        label: label(`settings.${name}`),
+      })),
     ]
   }
+  /* `Waybills::LOCKER_SIZE`: what a parcel locker of the carrier takes, cm. */
+  const LOCKER_SIZE: [string, number][] = [
+    ['locker_width', 40],
+    ['locker_height', 30],
+    ['locker_length', 60],
+  ]
 
   /* The settings of carrier A take the sender from «its account» (`ProvidesSettingOptions`): the
      options as `FakeCarrier::settingOptions()` gives them — two senders and their contacts, its
      towns searched by name, the branches of the town of sending. A key typed as `options-down`
      plays a carrier that does not answer: the list fails, the label of the chosen value stays. */
-  const carrierFields = [
+  const carrierFields: SettingField[] = [
     {
       name: 'sender',
       type: 'select',
@@ -1174,7 +1223,44 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
       },
     }
   type Choice = { value: string; label: string; hint: string | null }
-  const optionsOf = (field: string, values: Record<string, unknown>, q: string | null) => {
+  /* The account and the directories of Nova Poshta as `SenderOptions` reads them — made up:
+     one sender and its contact persons, three towns, the branches of each. */
+  const NOVA_TOWNS = ['Місто А', 'Місто Б', 'Місто В']
+  const novaOptions = (field: string, values: Record<string, unknown>, q: string | null) => {
+    const found = (value: string, label: string) =>
+      q === null || value === q || label.toLowerCase().includes(q.toLowerCase())
+    const list: Choice[] = []
+
+    if (field === 'sender')
+      list.push({ value: 'np-sender-a', label: 'ФОП Відправник А', hint: '00000000' })
+    else if (field === 'contact' && values.sender === 'np-sender-a') {
+      list.push({ value: 'np-contact-a', label: 'Імʼя А Прізвище А', hint: '+800 1234 5678' })
+      list.push({ value: 'np-contact-b', label: 'Імʼя Б Прізвище Б', hint: '+800 1234 5678' })
+    } else if (field === 'sender_city') {
+      NOVA_TOWNS.forEach((name, index) => {
+        if (found(`np-town-${index}`, name))
+          list.push({ value: `np-town-${index}`, label: `${name}, Область А`, hint: null })
+      })
+    } else if (field === 'sender_point') {
+      const town = String(values.sender_city ?? '')
+
+      for (let number = 1; number <= 3 && town.startsWith('np-town-'); number++) {
+        const value = `${town}-branch-${number}`
+        const label = `Відділення №${number}`
+        if (found(value, label)) list.push({ value, label, hint: `вул. Прикладна, ${number}` })
+      }
+    }
+
+    return list
+  }
+  const optionsOf = (
+    field: string,
+    values: Record<string, unknown>,
+    q: string | null,
+    carrier = 'carrier-a',
+  ) => {
+    if (carrier === NOVAPOSHTA) return novaOptions(field, values, q)
+
     const found = (value: string, label: string) =>
       q === null || value === q || label.toLowerCase().includes(q.toLowerCase())
     const list: Choice[] = []
@@ -1210,18 +1296,28 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
 
     return list.slice(0, 50)
   }
-  const fieldTitle = (name: string, locale: string) => {
-    const field = carrierFields.find((one) => one.name === name)
+  const fieldsOf = (carrier: string, locale: string) =>
+    carrier === NOVAPOSHTA ? novaposhtaFields(locale) : carrierFields
+  const fieldTitle = (name: string, locale: string, carrier = 'carrier-a') => {
+    const field = fieldsOf(carrier, locale).find((one) => one.name === name)
 
-    return (field?.label as Localized | undefined)?.[locale] ?? field?.label.en ?? name
+    return field?.label[locale] ?? field?.label.en ?? name
   }
   /* Why the options of a field cannot be asked now: `SettingOptions::options()` on the server. */
-  const optionsRefusal = (field: string, values: Record<string, unknown>, locale: string) => {
-    const definition = carrierFields.find((one) => one.name === field && one.options === 'carrier')
+  const optionsRefusal = (
+    field: string,
+    values: Record<string, unknown>,
+    locale: string,
+    carrier = 'carrier-a',
+  ) => {
+    const definition = fieldsOf(carrier, locale).find(
+      (one) => one.name === field && one.options === 'carrier',
+    )
+    const keys = known(carrier).credentials
 
     if (!definition) return fail(404, said(locale, 'options.no-field', { field }) ?? field)
-    if (!state.carrier.credentials.api_key) return fail(422, words(locale, 'options.no-key'))
-    if (state.carrier.credentials.api_key === 'options-down') {
+    if (!keys.api_key) return fail(422, words(locale, 'options.no-key'))
+    if (keys.api_key === 'options-down') {
       return fail(
         422,
         said(locale, 'options.unavailable', {
@@ -1236,7 +1332,8 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
       if (value === null || value === undefined || value === '')
         return fail(
           422,
-          said(locale, 'options.choose-first', { field: fieldTitle(parent, locale) }) ?? parent,
+          said(locale, 'options.choose-first', { field: fieldTitle(parent, locale, carrier) }) ??
+            parent,
         )
     }
 
@@ -1297,13 +1394,18 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
         if (match) values[match[1]!] = value
       }
 
-      const refusal = optionsRefusal(params[1]!, values, locale)
+      const refusal = optionsRefusal(params[1]!, values, locale, params[0]!)
       if (refusal) throw refusal
 
-      const definition = carrierFields.find((one) => one.name === params[1])
+      const definition = fieldsOf(params[0]!, locale).find((one) => one.name === params[1])
 
       return {
-        data: optionsOf(params[1]!, values, definition?.search ? query.get('q') || null : null),
+        data: optionsOf(
+          params[1]!,
+          values,
+          definition?.search ? query.get('q') || null : null,
+          params[0]!,
+        ),
       }
     },
   )
@@ -1334,7 +1436,9 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
           after[field.name] = (body.settings as Record<string, unknown>)[field.name]
       }
 
-      for (const field of nova ? [] : carrierFields.filter((each) => each.options === 'carrier')) {
+      for (const field of fieldsOf(params[0]!, locale).filter(
+        (each) => each.options === 'carrier',
+      )) {
         const value = after[field.name]
 
         if (value === null || value === undefined || value === '') {
@@ -1350,15 +1454,18 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
 
         if (!moved && labels[field.name]) continue
 
-        const refusal = optionsRefusal(field.name, after, locale)
+        const refusal = optionsRefusal(field.name, after, locale, params[0]!)
         if (refusal) {
           errors[`settings.${field.name}`] = [refusal.message]
           continue
         }
 
-        const match = optionsOf(field.name, after, field.search ? String(value) : null).find(
-          (each) => each.value === String(value),
-        )
+        const match = optionsOf(
+          field.name,
+          after,
+          field.search ? String(value) : null,
+          params[0]!,
+        ).find((each) => each.value === String(value))
 
         if (!match) errors[`settings.${field.name}`] = [words(locale, 'options.choose-from-list')]
         else labels[field.name] = match.label
@@ -1367,7 +1474,7 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
       if (Object.keys(errors).length > 0)
         throw fail(422, Object.values(errors)[0]![0]!, undefined, errors)
 
-      one.settings = nova ? after : { ...after, _labels: labels }
+      one.settings = { ...after, _labels: labels }
     }
 
     return { data: carrierDetail(params[0]!, locale) }
@@ -1896,8 +2003,9 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
   /* -------------------------------------------------------------- the order's tab ----- */
 
   /* The tab «Delivery» of an order's card (§11, §14.2): order 7 goes by carrier A's courier,
-     order 9 is picked up at the shop's own store — no waybill — and every other one goes to a
-     branch of carrier A at a fixed price. The parcels live here; «Refresh tracking» moves a
+     order 9 is picked up at the shop's own store — no waybill —, orders 10 and 11 go to a branch
+     and a parcel locker of Nova Poshta, and every other one goes to a branch of carrier A at a
+     fixed price. The parcels live here; «Refresh tracking» moves a
      parcel one status on, as a carrier would tell it. */
   type Parcel = {
     id: number
@@ -1913,84 +2021,118 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
   const PATH = ['created', 'in_transit', 'at_point', 'received']
   const statusWord = (locale: string, status: string) =>
     line(locale, 'webx-delivery', `delivery.shipments.statuses.${status}`)
-  const orderView = (order: number) =>
-    order === 9
-      ? {
-          method: 'Pick up at a store',
-          method_key: 'store-pickup',
-          carrier: 'store',
-          carrier_title: carrierTitle('store'),
-          locality: 'Town A, Region A',
-          point: { title: 'Store A', number: '1', address: '1 Example street', schedule: null },
-          address: null,
-          note: null,
-          price: 'Free',
-          was: null,
-          estimate: null,
-          paid_by_store: false,
-          payer: 'sender' as const,
-          waybill: null,
-        }
-      : order === 7
+  /* `delivery-novaposhta`: order 10 to a branch, its recipient in Ukrainian letters; order 11
+     to a parcel locker, the buyer's name in Latin ones — the carrier's dialog marks it. */
+  const NOVA_ORDERS: Record<number, 'branch' | 'locker'> = { 10: 'branch', 11: 'locker' }
+  const novaView = (kind: 'branch' | 'locker') => ({
+    method: kind === 'branch' ? 'Nova Poshta branch' : 'Nova Poshta parcel locker',
+    method_key: `novaposhta-${kind}`,
+    carrier: NOVAPOSHTA,
+    carrier_title: 'Nova Poshta',
+    locality: 'Місто А, Область А',
+    point:
+      kind === 'branch'
         ? {
-            method: 'Carrier A courier',
-            method_key: 'carrier-a-courier',
-            carrier: 'carrier-a',
-            carrier_title: 'Carrier A',
-            locality: 'Town B, Region B',
-            point: null,
-            address: 'Elm 3, 5, 12',
-            note: 'Ring twice',
-            price: 'By carrier rates',
+            title: 'Відділення №1',
+            number: '1',
+            address: 'вул. Прикладна, 1',
+            schedule: 'Mon–Fri 09:00–19:00',
+          }
+        : {
+            title: 'Поштомат №42040',
+            number: '42040',
+            address: 'вул. Прикладна, 2',
+            schedule: 'Every day 00:00–24:00',
+          },
+    address: null,
+    note: null,
+    price: 'By carrier rates',
+    was: null,
+    estimate: null,
+    paid_by_store: false,
+    payer: 'recipient' as const,
+    waybill: null,
+  })
+  const orderView = (order: number) =>
+    NOVA_ORDERS[order]
+      ? novaView(NOVA_ORDERS[order])
+      : order === 9
+        ? {
+            method: 'Pick up at a store',
+            method_key: 'store-pickup',
+            carrier: 'store',
+            carrier_title: carrierTitle('store'),
+            locality: 'Town A, Region A',
+            point: { title: 'Store A', number: '1', address: '1 Example street', schedule: null },
+            address: null,
+            note: null,
+            price: 'Free',
             was: null,
-            estimate: '70,00 €',
+            estimate: null,
             paid_by_store: false,
-            payer: 'recipient' as const,
+            payer: 'sender' as const,
             waybill: null,
           }
-        : order === 8
+        : order === 7
           ? {
-              method: 'Carrier A locker',
-              method_key: 'carrier-a-locker',
+              method: 'Carrier A courier',
+              method_key: 'carrier-a-courier',
               carrier: 'carrier-a',
               carrier_title: 'Carrier A',
-              locality: 'Town A, Region A',
-              point: {
-                title: 'Locker 9',
-                number: '9',
-                address: '9 Example street',
-                schedule: 'Every day 00:00–24:00',
-              },
-              address: null,
-              note: null,
+              locality: 'Town B, Region B',
+              point: null,
+              address: 'Elm 3, 5, 12',
+              note: 'Ring twice',
               price: 'By carrier rates',
               was: null,
-              estimate: null,
+              estimate: '70,00 €',
               paid_by_store: false,
               payer: 'recipient' as const,
               waybill: null,
             }
-          : {
-              method: 'Carrier A branch',
-              method_key: 'carrier-a-branch',
-              carrier: 'carrier-a',
-              carrier_title: 'Carrier A',
-              locality: 'Town A, Region A',
-              point: {
-                title: 'Branch 12',
-                number: '12',
-                address: '12 Example street',
-                schedule: 'Mon–Fri 09:00–18:00',
-              },
-              address: null,
-              note: null,
-              price: 'Free',
-              was: '9,00 €',
-              estimate: null,
-              paid_by_store: true,
-              payer: 'sender' as const,
-              waybill: null,
-            }
+          : order === 8
+            ? {
+                method: 'Carrier A locker',
+                method_key: 'carrier-a-locker',
+                carrier: 'carrier-a',
+                carrier_title: 'Carrier A',
+                locality: 'Town A, Region A',
+                point: {
+                  title: 'Locker 9',
+                  number: '9',
+                  address: '9 Example street',
+                  schedule: 'Every day 00:00–24:00',
+                },
+                address: null,
+                note: null,
+                price: 'By carrier rates',
+                was: null,
+                estimate: null,
+                paid_by_store: false,
+                payer: 'recipient' as const,
+                waybill: null,
+              }
+            : {
+                method: 'Carrier A branch',
+                method_key: 'carrier-a-branch',
+                carrier: 'carrier-a',
+                carrier_title: 'Carrier A',
+                locality: 'Town A, Region A',
+                point: {
+                  title: 'Branch 12',
+                  number: '12',
+                  address: '12 Example street',
+                  schedule: 'Mon–Fri 09:00–18:00',
+                },
+                address: null,
+                note: null,
+                price: 'Free',
+                was: '9,00 €',
+                estimate: null,
+                paid_by_store: true,
+                payer: 'sender' as const,
+                waybill: null,
+              }
   const waybillFields = [
     {
       name: 'weight',
@@ -2008,8 +2150,113 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
       label: { en: 'What is inside', ru: 'Что внутри' },
     },
   ]
-  const draftOf = (order: number) => {
+  /* `NovaPoshtaType::waybillFields()`: no cash on delivery; a locker takes one seat of its sizes. */
+  const novaWaybillFields = (kind: 'branch' | 'locker', locale: string): SettingField[] => {
+    const label = (path: string) =>
+      Object.fromEntries(['en', 'uk', 'ru'].map((one) => [one, novaposhta(one, path)]))
+    const locker = kind === 'locker'
+    const cargo = locker ? ['Parcel', 'Documents'] : ['Parcel', 'Cargo', 'Documents']
+
+    return [
+      {
+        name: 'weight',
+        type: 'number',
+        required: true,
+        default: 0.5,
+        min: 0.1,
+        step: 0.1,
+        precision: 1,
+        label: label('waybill.weight'),
+      },
+      ...(locker
+        ? []
+        : [
+            {
+              name: 'seats',
+              type: 'number',
+              required: true,
+              default: 1,
+              min: 1,
+              step: 1,
+              precision: 0,
+              label: label('waybill.seats'),
+            },
+          ]),
+      {
+        name: 'cargo_type',
+        type: 'select',
+        required: true,
+        default: 'Parcel',
+        label: label('waybill.cargo_type'),
+        options: cargo.map((value) => ({
+          value,
+          label: novaposhta(locale, `settings.cargo_types.${value}`),
+        })),
+      },
+      ...(locker
+        ? LOCKER_SIZE.map(([name, max]) => ({
+            name,
+            type: 'number',
+            required: true,
+            // The carrier's settings give the seat by default.
+            default: { locker_width: 30, locker_height: 20, locker_length: 40 }[name] ?? null,
+            min: 1,
+            max,
+            step: 1,
+            precision: 0,
+            label: label(`waybill.${name.slice(7)}`),
+          }))
+        : []),
+      {
+        name: 'description',
+        type: 'text',
+        required: true,
+        default: novaposhta('uk', 'settings.description_default'),
+        label: label('waybill.description'),
+      },
+      { name: 'date', type: 'text', label: label('waybill.date') },
+    ]
+  }
+  /* `RecipientName::valid()`: Ukrainian letters, an apostrophe, a hyphen, a space inside. */
+  const UKRAINIAN =
+    /^[А-ЩЬЮЯҐЄІЇа-щьюяґєії]+(?:['’ʼ\- ][А-ЩЬЮЯҐЄІЇа-щьюяґєії]+|[А-ЩЬЮЯҐЄІЇа-щьюяґєії])*$/u
+  const draftOf = (order: number, locale = 'en') => {
     const view = orderView(order)
+    const nova = NOVA_ORDERS[order]
+
+    if (nova)
+      return {
+        order_id: order,
+        order_number: `WX-${1000 + order}`,
+        carrier: NOVAPOSHTA,
+        type: `novaposhta.${nova}`,
+        method: view.method_key,
+        recipient:
+          nova === 'branch'
+            ? {
+                first_name: 'Олена',
+                last_name: 'Приклад',
+                name: 'Олена Приклад',
+                phone: '+800 1234 5678',
+                email: null,
+              }
+            : {
+                first_name: 'Buyer',
+                last_name: 'K',
+                name: 'Buyer K',
+                phone: '+800 1234 5678',
+                email: null,
+              },
+        sender: state.novaposhta.settings,
+        lines: [{ name: 'Item A', sku: 'A-1', qty: 1, price: 4999 }],
+        declared_value: 4999,
+        currency: 'EUR',
+        payer: view.payer,
+        cod: null,
+        carrier_locality: 'np-town-0',
+        extra: {},
+        form: { fields: novaWaybillFields(nova, locale), cod: false },
+      }
 
     return {
       order_id: order,
@@ -2051,7 +2298,7 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
         delivery: { ...view, waybill: active?.number ?? null },
         waybills: !own,
         can_ship: true,
-        draft: own || active ? null : draftOf(order),
+        draft: own || active ? null : draftOf(order, locale),
         active: active?.id ?? null,
         shipments: mine.map((one) => ({
           id: one.id,
@@ -2095,7 +2342,33 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
       throw refuse('waybill', line(locale, 'webx-delivery', 'delivery.shipments.no_cod'))
     }
 
-    if (input.dry_run) return { data: { request: { ...draftOf(order), ...input } } }
+    // `Waybills::draft()` of Nova Poshta: no cash on delivery, the names in Ukrainian letters,
+    // a locker's seat within its sizes — refused before a request, the field marked.
+    const nova = NOVA_ORDERS[order]
+
+    if (nova) {
+      const np = (path: string) => novaposhta(locale, path)
+      const extra = (input.extra ?? {}) as Record<string, unknown>
+
+      if (input.cod !== undefined && input.cod !== null)
+        throw refuse('waybill', np('errors.no_cod'))
+
+      for (const field of ['recipient_first_name', 'recipient_last_name']) {
+        const name = String(input[field] ?? '').trim()
+
+        if (name === '') throw refuse(field, np('errors.name_empty'))
+        if (!UKRAINIAN.test(name)) throw refuse(field, np('errors.name_letters'))
+      }
+
+      for (const [name, max] of nova === 'locker' ? LOCKER_SIZE : []) {
+        const value = Number(extra[name])
+
+        if (!(value > 0)) throw refuse(`extra.${name}`, np('errors.size'))
+        if (value > max) throw refuse(`extra.${name}`, np('errors.locker_size'))
+      }
+    }
+
+    if (input.dry_run) return { data: { request: { ...draftOf(order, locale), ...input } } }
 
     if (parcels.some((one) => one.order === order && one.status !== 'cancelled')) {
       throw refuse('waybill', line(locale, 'webx-delivery', 'delivery.shipments.made_already'))
@@ -2105,7 +2378,9 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
     parcels.push({
       id: parcelSeq,
       order,
-      number: `A-${String(parcelSeq).padStart(4, '0')}`,
+      number: NOVA_ORDERS[order]
+        ? `2045000000${String(parcelSeq).padStart(4, '0')}`
+        : `A-${String(parcelSeq).padStart(4, '0')}`,
       payer: orderView(order).payer,
       status: 'created',
       final: false,

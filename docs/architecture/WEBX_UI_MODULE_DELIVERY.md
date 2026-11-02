@@ -1526,7 +1526,9 @@ next_check_at <= now()` по индексу, пачками по 100 на слу
   (`number`, `shipment_id`, `payer`) в блок через `Orders::patchBlock()` (строка истории),
   `ShipmentCreated`; **одна действующая накладная на заказ** — вторая только после отмены;
   `cancel()` — `cancelWaybill()` службы, статус `cancelled`, строка истории; `label()`. Служба не
-  ответила — `WaybillRefused` словами `SyncFailure`, ничего не записано. Свои способы магазина
+  ответила — `WaybillRefused` словами `SyncFailure`, ничего не записано. Отказ про одно поле
+  диалога несёт имя поля (`WaybillRefused::field()`: `recipient_first_name`, `recipient_phone`,
+  `extra.<поле>`) — панель подсвечивает это поле, MCP получает тот же текст. Свои способы магазина
   накладных не делают.
 - **Трекинг** — `Shipments::track()`: без аргумента — всё, что `final = false AND
 next_check_at <= now`, по типу пачками по 100 (`chunkById`); со списком — «Обновить трекинг».

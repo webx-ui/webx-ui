@@ -55,13 +55,13 @@ final class CarrierTest extends TestCase
 
         $this->assertSame(['api_key'], array_column($carrier->credentials(), 'name'));
         $this->assertSame('secret', $carrier->credentials()[0]['type']);
-        $this->assertSame(['payment_method', 'cargo_type', 'weight', 'description'], array_column($carrier->settings(), 'name'));
+        $this->assertSame(['sender', 'contact', 'sender_city', 'sender_point', 'payment_method', 'cargo_type', 'weight', 'description', 'locker_width', 'locker_height', 'locker_length'], array_column($carrier->settings(), 'name'));
 
         foreach ([...$carrier->settings(), ...$carrier->credentials()] as $field) {
             $this->assertSame(NovaPoshtaCarrier::LOCALES, array_keys($field['label']));
         }
 
-        $cargo = $carrier->settings()[1];
+        $cargo = $carrier->settings()[5];
         $this->assertSame(['Parcel', 'Cargo', 'Documents'], array_column($cargo['options'], 'value'));
     }
 

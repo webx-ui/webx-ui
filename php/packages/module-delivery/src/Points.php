@@ -35,6 +35,35 @@ final class Points
         return $point === null ? null : PointRef::of($point);
     }
 
+    /** A carrier's point by the carrier's own id — removed or not — or null. */
+    public function refOf(string $carrier, string $externalId): ?PointRef
+    {
+        $point = DeliveryPoint::query()->where('carrier', $carrier)->where('external_id', $externalId)->first();
+
+        return $point === null ? null : PointRef::of($point);
+    }
+
+    /**
+     * The carrier's own ids of these points, one query: point id → the carrier's id; a point of
+     * the shop's own, without one, is left out.
+     *
+     * @param  list<int>  $ids
+     * @return array<int, string>
+     */
+    public function externalIds(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        return DeliveryPoint::query()
+            ->whereKey($ids)
+            ->whereNotNull('external_id')
+            ->pluck('external_id', 'id')
+            ->map(static fn (mixed $id): string => (string) $id)
+            ->all();
+    }
+
     /**
      * A page of the points of a carrier's kind in a locality: two queries with a query or after
      * the first page (the rows and their count), none or one for the first page without one.

@@ -7,6 +7,7 @@ namespace WebxUi\Delivery\NovaPoshta;
 use WebxUi\Delivery\CarrierLocalities;
 use WebxUi\Delivery\ConnectionResult;
 use WebxUi\Delivery\Contracts\Carrier;
+use WebxUi\Delivery\Contracts\ProvidesSettingOptions;
 use WebxUi\Delivery\Contracts\SyncsDirectories;
 use WebxUi\Delivery\NovaPoshta\Api\AccountKey;
 use WebxUi\Delivery\NovaPoshta\Api\Client;
@@ -14,6 +15,8 @@ use WebxUi\Delivery\NovaPoshta\Api\Pace;
 use WebxUi\Delivery\NovaPoshta\Directories\Localities;
 use WebxUi\Delivery\NovaPoshta\Directories\Points;
 use WebxUi\Delivery\NovaPoshta\Directories\Streets;
+use WebxUi\Delivery\NovaPoshta\Sending\SenderOptions;
+use WebxUi\Delivery\NovaPoshta\Waybills\Waybills;
 use WebxUi\Delivery\Sync\CarrierUnavailable;
 use WebxUi\Delivery\Sync\Directory;
 use WebxUi\Delivery\Sync\DirectorySchedule;
@@ -25,9 +28,9 @@ use WebxUi\Localization\Locales;
  * Nova Poshta (`novaposhta`), the national carrier of Ukraine (§4): its key, the settings of the
  * sender and of a waybill, the check of the connection and its mark.
  *
- * The settings here are the ones typed or chosen from a fixed list. The sender, its contact
- * person and the branch of sending come from the carrier's account and directories through the
- * base's `ProvidesSettingOptions` together with the waybill (§4.3, §5; stage 7 of §17).
+ * The sender and its contact person come from the carrier's account, the town and the branch of
+ * sending from the directories the base keeps — the base's `ProvidesSettingOptions` (§4.3, §5,
+ * {@see SenderOptions}); the rest is typed or chosen from a fixed list.
  *
  * Its directories (§6) are pulled with the key stored in the panel, one request a page, paced by
  * {@see Pace}: the towns from `getCities` — the carrier leads Ukraine (decision 8), so the base
@@ -35,7 +38,7 @@ use WebxUi\Localization\Locales;
  * network page by page (§6.3); weekly, the streets of every town with a courier from `getStreet`,
  * town by town (§6.4) — the one directory a page of which is many requests.
  */
-final class NovaPoshtaCarrier implements Carrier, SyncsDirectories
+final class NovaPoshtaCarrier implements Carrier, ProvidesSettingOptions, SyncsDirectories
 {
     public const string KEY = 'novaposhta';
 
@@ -93,6 +96,10 @@ final class NovaPoshtaCarrier implements Carrier, SyncsDirectories
     public function settings(): array
     {
         return [
+            ['name' => 'sender', 'type' => 'select', 'options' => 'carrier', 'label' => self::words('settings.sender')],
+            ['name' => 'contact', 'type' => 'select', 'options' => 'carrier', 'depends' => ['sender'], 'label' => self::words('settings.contact')],
+            ['name' => 'sender_city', 'type' => 'select', 'options' => 'carrier', 'search' => true, 'label' => self::words('settings.sender_city')],
+            ['name' => 'sender_point', 'type' => 'select', 'options' => 'carrier', 'depends' => ['sender_city'], 'search' => true, 'label' => self::words('settings.sender_point')],
             [
                 'name' => 'payment_method',
                 'type' => 'select',
@@ -122,7 +129,32 @@ final class NovaPoshtaCarrier implements Carrier, SyncsDirectories
                 'default' => self::word('settings.description_default', 'uk'),
                 'label' => self::words('settings.description'),
             ],
+            // The seat of a parcel locker by default (decision 17): the locker takes up to these.
+            ...array_map(static fn (string $name, int $most): array => [
+                'name' => $name,
+                'type' => 'number',
+                'min' => 1,
+                'max' => $most,
+                'step' => 1,
+                'precision' => 0,
+                'label' => self::words('settings.'.$name),
+            ], array_keys(Waybills::LOCKER_SIZE), Waybills::LOCKER_SIZE),
         ];
+    }
+
+    /**
+     * The sender and its contact person from the account (reading only), the town and the branch
+     * of sending from the base's directories (§4.3).
+     */
+    public function settingOptions(string $field, array $values, array $credentials, ?string $query = null): array
+    {
+        $key = is_string($credentials['api_key'] ?? null) ? trim($credentials['api_key']) : '';
+
+        if ($key === '' && in_array($field, ['sender', 'contact'], true)) {
+            throw CarrierUnavailable::keyRejected('No API key of Nova Poshta is given.');
+        }
+
+        return app(SenderOptions::class)->options($field, $values, $key, $query, app()->getLocale());
     }
 
     public function credentials(): array

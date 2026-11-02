@@ -90,15 +90,15 @@ final class WaybillFormTest extends ShippingTestCase
 
         $this->postJson("/api/cms/delivery/orders/{$order->id}/waybill", ['extra' => ['weight' => '']])
             ->assertStatus(422)
-            ->assertJsonValidationErrors(['waybill' => 'Fill in: Weight, kg']);
+            ->assertJsonValidationErrors(['extra.weight' => 'Fill in: Weight, kg']);
         $this->postJson("/api/cms/delivery/orders/{$order->id}/waybill", ['extra' => ['weight' => 'heavy']])
             ->assertStatus(422)
-            ->assertJsonValidationErrors(['waybill' => 'Weight, kg must be a number.']);
+            ->assertJsonValidationErrors(['extra.weight' => 'Weight, kg must be a number.']);
         // Blank in the dialog is «as the order says»; an order with no first name has nothing to send.
         $order->forceFill(['customer_first_name' => ''])->save();
         $this->postJson("/api/cms/delivery/orders/{$order->id}/waybill", ['recipient_first_name' => ' '])
             ->assertStatus(422)
-            ->assertJsonValidationErrors(['waybill' => 'The recipient\'s first name is empty.']);
+            ->assertJsonValidationErrors(['recipient_first_name' => 'The recipient\'s first name is empty.']);
         $this->assertSame(0, DeliveryShipment::query()->count());
     }
 

@@ -57,4 +57,46 @@ final class CarrierLocalities
 
         return $id === null ? null : (string) $id;
     }
+
+    /**
+     * The shared locality a carrier's id stands on, or null — not bound, removed or unknown.
+     */
+    public function localityId(string $carrier, string $externalId): ?int
+    {
+        $id = DB::table('delivery_carrier_localities')
+            ->where('carrier', $carrier)
+            ->where('external_id', $externalId)
+            ->whereNull('removed_at')
+            ->value('locality_id');
+
+        return $id === null ? null : (int) $id;
+    }
+
+    /**
+     * The carrier's ids of these shared localities, one query: locality id → the carrier's id.
+     * A locality the carrier does not reach is left out; of two records on one, the first.
+     *
+     * @param  list<int>  $localities
+     * @return array<int, string>
+     */
+    public function forLocalities(string $carrier, array $localities): array
+    {
+        if ($localities === []) {
+            return [];
+        }
+
+        $ids = [];
+
+        DB::table('delivery_carrier_localities')
+            ->where('carrier', $carrier)
+            ->whereIn('locality_id', $localities)
+            ->whereNull('removed_at')
+            ->orderBy('id')
+            ->get(['locality_id', 'external_id'])
+            ->each(static function (object $row) use (&$ids): void {
+                $ids[(int) $row->locality_id] ??= (string) $row->external_id;
+            });
+
+        return $ids;
+    }
 }

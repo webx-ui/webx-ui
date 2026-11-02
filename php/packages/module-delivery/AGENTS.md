@@ -33,9 +33,9 @@ binding) and `webx-ui/widgets`. `webx-ui/module-orders` gets the step as its che
   `DeliveryAdjustments` (priority 1000) puts `fixed(N > 0)` into the chain; `Delivery::cost()` — the
   line «Delivery cost». `shipping.paid_by_store` is in the cart's `BenefitKeys`.
 - **`Delivery`** — `needed(CartState)`, `context($cart, $locality)`, `snapshot(Selection, Quote)` → `DeliverySnapshot` (§11.1: the order's block, every language copied, `payer` sender|recipient).
-- **`PopularLocalities`** — `ids()`, `suggestions($country, $locale)`, `set($ids)`, `add()`, `remove()`. **`CarrierLocalities`** — a satellite reads its towns: `externalIds()`, `externalId()`.
+- **`PopularLocalities`** — `ids()`, `suggestions($country, $locale)`, `set($ids)`, `add()`, `remove()`. **`CarrierLocalities`** — a satellite reads its towns: `externalIds()`, `externalId()`, `localityId()`, `forLocalities()`; **`Points`** — `refOf()`, `externalIds()` by the carrier's ids.
 - **Parcels** (`Shipping\Shipments`, only with `module-orders`): a type implements
-  `Contracts\CreatesWaybills` / `TracksShipments`; `request()` (first and last name apart, `carrierLocality`), `create()` (number into the block,
+  `Contracts\CreatesWaybills` / `TracksShipments`; `request()` (first and last name apart, `carrierLocality`), `create()` (`WaybillRefused::field()` marks a field of the dialog; number into the block,
   `Events\ShipmentCreated`), `cancel()`, `track()` — «received» → the order's milestone, once.
 - **Directory sync** in `WebxUi\Delivery\Sync`: a carrier implements `Contracts\SyncsDirectories`
   (`directories()`, `pull($directory, $cursor)` → a `Page` of locality, point or street records);
