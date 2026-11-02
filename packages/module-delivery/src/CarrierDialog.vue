@@ -153,8 +153,9 @@ async function ask(field: CarrierField, q?: string, fresh = false): Promise<void
     })
 
     choices.value = { ...choices.value, [field.name]: list }
-    const { [field.name]: _gone, ...rest } = failures.value
-    failures.value = rest
+    failures.value = Object.fromEntries(
+      Object.entries(failures.value).filter(([name]) => name !== field.name),
+    )
   } catch (error) {
     failures.value = { ...failures.value, [field.name]: message(error) }
   } finally {
@@ -278,7 +279,10 @@ async function save(clear: string[] = []): Promise<void> {
   errors.value = {}
 
   try {
-    const { [LABELS]: _labels, ...values } = settings.value
+    // The labels are the server's to write: it takes them from the carrier's list.
+    const values = Object.fromEntries(
+      Object.entries(settings.value).filter(([name]) => name !== LABELS),
+    )
 
     detail.value = await api.saveCarrier(props.carrier, {
       settings: values,
