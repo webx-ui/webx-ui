@@ -1,0 +1,11 @@
+{
+  "success": false,
+  "data": [],
+  "errors": ["API key expired"],
+  "warnings": [],
+  "info": [],
+  "messageCodes": [],
+  "errorCodes": ["20000201204"],
+  "warningCodes": [],
+  "infoCodes": []
+}

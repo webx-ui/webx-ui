@@ -53,8 +53,56 @@ final class Client
      */
     public function call(string $apiKey, string $model, string $method, array $properties = []): ApiResponse
     {
+        $page = self::page($properties);
+        $started = hrtime(true);
+        $response = $this->send($apiKey, $model, $method, $properties, $page, $started);
+
+        return $this->read($response, $model, $method, $page, $started);
+    }
+
+    /**
+     * Calls one method and hands back the carrier's body as it came, without reading it — for
+     * recording answers (`webx:novaposhta:record`, §13.1). The same guards as {@see call()}:
+     * read only, known methods, the journal, the key nowhere but the request.
+     *
+     * @param  array<string, mixed>  $properties
+     * @return array{status: int, redirected: bool, body: mixed}
+     *
+     * @throws WriteRefused
+     * @throws CarrierUnavailable no answer at all
+     */
+    public function raw(string $apiKey, string $model, string $method, array $properties = []): array
+    {
+        $page = self::page($properties);
+        $started = hrtime(true);
+        $response = $this->send($apiKey, $model, $method, $properties, $page, $started);
+        $body = json_decode($response->body(), true);
+        $outcome = match (true) {
+            ! $response->successful() => 'no_answer',
+            ! is_array($body) || ! array_key_exists('success', $body) => 'bad_response',
+            $body['success'] !== true => 'error',
+            default => 'ok',
+        };
+
+        $this->journal->record($model, $method, $outcome, $page, self::ms($started));
+        // A fake answer has no transfer stats, hence no effective address.
+        $uri = $response->effectiveUri();
+
+        return [
+            'status' => $response->status(),
+            'redirected' => $uri !== null && (string) $uri !== $this->url,
+            'body' => $body,
+        ];
+    }
+
+    /**
+     * The guards and the request itself.
+     *
+     * @param  array<string, mixed>  $properties
+     */
+    private function send(string $apiKey, string $model, string $method, array $properties, ?int $page, int &$started): Response
+    {
         $name = Methods::name($model, $method);
-        $page = isset($properties['Page']) && is_numeric($properties['Page']) ? (int) $properties['Page'] : null;
 
         if (! Methods::reads($model, $method) && ! Methods::writes($model, $method)) {
             $this->journal->record($model, $method, 'refused', $page);
@@ -77,7 +125,7 @@ final class Client
         $started = hrtime(true);
 
         try {
-            $response = $this->http
+            return $this->http
                 ->timeout($this->timeout)
                 ->connectTimeout(min(5, $this->timeout))
                 ->acceptJson()
@@ -87,14 +135,34 @@ final class Client
                     'modelName' => $model,
                     'calledMethod' => $method,
                     // An empty list would go as [] — the carrier expects an object.
-                    'methodProperties' => $properties === [] ? (object) [] : $properties,
+                    'methodProperties' => $properties === [] ? (object) [] : self::wire($properties),
                 ]);
         } catch (ConnectionException) {
             // The exception's own text is dropped: nothing of the request may reach the log.
             throw $this->fail($model, $method, $page, $started, 'no_answer', new CarrierUnavailable("Nova Poshta: no answer to {$name}."));
         }
+    }
 
-        return $this->read($response, $model, $method, $page, $started);
+    /**
+     * Numbers go as strings: the carrier refuses `"Page": 1` with «Page is invalid format» and
+     * takes `"Page": "1"` (checked on the key, stage 3).
+     *
+     * @param  array<mixed>  $properties
+     * @return array<mixed>
+     */
+    private static function wire(array $properties): array
+    {
+        return array_map(static fn (mixed $value): mixed => match (true) {
+            is_array($value) => self::wire($value),
+            is_int($value), is_float($value) => (string) $value,
+            default => $value,
+        }, $properties);
+    }
+
+    /** @param  array<string, mixed>  $properties */
+    private static function page(array $properties): ?int
+    {
+        return isset($properties['Page']) && is_numeric($properties['Page']) ? (int) $properties['Page'] : null;
     }
 
     private function read(Response $response, string $model, string $method, ?int $page, int $started): ApiResponse
@@ -156,8 +224,8 @@ final class Client
     }
 
     /**
-     * Whether the carrier refused the key rather than the request. Not confirmed by the
-     * documentation — neither the code nor the text; checked on the key (stage 3, §3.4).
+     * Whether the carrier refused the key rather than the request. Checked on stage 3: a key the
+     * carrier does not know gets «API key expired» (code 20000201204) with HTTP 200.
      *
      * @param  list<string>  $errors
      */

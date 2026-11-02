@@ -10,6 +10,7 @@ use WebxUi\Delivery\Carriers;
 use WebxUi\Delivery\MethodTypes;
 use WebxUi\Delivery\NovaPoshta\Api\Client;
 use WebxUi\Delivery\NovaPoshta\Api\Journal;
+use WebxUi\Delivery\NovaPoshta\Recording\RecordCommand;
 use WebxUi\Delivery\NovaPoshta\Types\BranchType;
 use WebxUi\Delivery\NovaPoshta\Types\CourierType;
 use WebxUi\Delivery\NovaPoshta\Types\LockerType;
@@ -62,6 +63,8 @@ class DeliveryNovaPoshtaServiceProvider extends ServiceProvider
         });
 
         if ($this->app->runningInConsole()) {
+            $this->commands([RecordCommand::class]);
+
             $this->publishes([
                 __DIR__.'/../config/webx-delivery-novaposhta.php' => config_path('webx-delivery-novaposhta.php'),
             ], 'webx-delivery-novaposhta-config');

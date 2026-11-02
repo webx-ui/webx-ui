@@ -62,7 +62,7 @@ final class ClientTest extends TestCase
             && $request['apiKey'] === self::KEY
             && $request['modelName'] === 'Address'
             && $request['calledMethod'] === 'getCities'
-            && $request['methodProperties'] === ['Page' => 2, 'Limit' => 500]);
+            && $request['methodProperties'] === ['Page' => '2', 'Limit' => '500']);
 
         $entry = $this->journalEntries()[0];
         $this->assertSame(['Address', 'getCities', 2, 'ok'], [$entry['model'], $entry['method'], $entry['page'], $entry['outcome']]);

@@ -1,0 +1,30 @@
+{
+  "success": true,
+  "data": [
+    {
+      "Description": "Відправник А",
+      "Ref": "00000000-0000-4000-8000-000000000001",
+      "City": "00000000-0000-4000-8000-000000000002",
+      "Counterparty": "00000000-0000-4000-8000-000000000003",
+      "FirstName": "",
+      "LastName": "",
+      "MiddleName": "",
+      "CounterpartyFullName": "Приклад",
+      "OwnershipFormRef": "00000000-0000-4000-8000-000000000004",
+      "OwnershipFormDescription": "ФОП",
+      "EDRPOU": "00000000",
+      "CounterpartyType": "Organization",
+      "TrustedCounterpartyType": "",
+      "CityDescription": ""
+    }
+  ],
+  "errors": [],
+  "warnings": [],
+  "info": {
+    "totalCount": 1
+  },
+  "messageCodes": [],
+  "errorCodes": [],
+  "warningCodes": [],
+  "infoCodes": []
+}

@@ -1,0 +1,32 @@
+{
+  "success": true,
+  "data": [
+    {
+      "Description": "Контакт А",
+      "Phones": "+800 1234 5678",
+      "Email": "",
+      "Ref": "00000000-0000-4000-8000-000000000001",
+      "LastName": "Прізвище А",
+      "FirstName": "Імʼя А",
+      "MiddleName": "По батькові А"
+    },
+    {
+      "Description": "Контакт А",
+      "Phones": "+800 1234 5678",
+      "Email": "sender@example.com",
+      "Ref": "00000000-0000-4000-8000-000000000002",
+      "LastName": "Прізвище А",
+      "FirstName": "Імʼя А",
+      "MiddleName": "По батькові А"
+    }
+  ],
+  "errors": [],
+  "warnings": [],
+  "info": {
+    "totalCount": 1
+  },
+  "messageCodes": [],
+  "errorCodes": [],
+  "warningCodes": [],
+  "infoCodes": []
+}

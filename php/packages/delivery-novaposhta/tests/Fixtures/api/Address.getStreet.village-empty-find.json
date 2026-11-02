@@ -1,0 +1,80 @@
+{
+  "success": true,
+  "data": [
+    {
+      "Description": "Березовий",
+      "Ref": "652aa64d-6cd3-11ea-a970-b8830365ade4",
+      "StreetsTypeRef": "Lane",
+      "StreetsType": "пров."
+    },
+    {
+      "Description": "Білоуська",
+      "Ref": "7c5639af-3b90-11ea-b89e-0025b501a04b",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "Гоголя",
+      "Ref": "4a1a11e8-3e9f-11ea-b89e-0025b501a04b",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "Космонавтів",
+      "Ref": "728227d1-584e-11ed-a361-48df37b92096",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "Лугова",
+      "Ref": "269533d9-5567-11ef-99eb-48df37b91f4a",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "Миру",
+      "Ref": "0951ae3f-a598-11ea-a970-b8830365ade4",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "Пристанційна",
+      "Ref": "7edf793f-3f4e-11ef-99eb-48df37b91f4a",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "Степна",
+      "Ref": "8ff9b84a-aaf6-11ea-a970-b8830365ade4",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "Степова",
+      "Ref": "e4a30b44-98fc-11ee-a361-48df37b92096",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "Центральна",
+      "Ref": "67ce3a6b-53b3-11ea-b89e-0025b501a04b",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "Шкільна",
+      "Ref": "3a34c2bb-dd32-11ee-a361-48df37b92096",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    }
+  ],
+  "errors": [],
+  "warnings": [],
+  "info": {
+    "totalCount": 11
+  },
+  "messageCodes": [],
+  "errorCodes": [],
+  "warningCodes": [],
+  "infoCodes": []
+}

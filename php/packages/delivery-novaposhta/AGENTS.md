@@ -28,6 +28,13 @@ npm package of its own.
   neither list is refused always.
 - **Journal** `Api\Journal`: one JSON line per call (time, model, method, page, outcome, ms) in
   `storage/logs/novaposhta-calls.log`. It never holds the key or any data.
+- **Numbers as strings**: the client sends every number of `methodProperties` as a string. The
+  carrier refuses `"Page": 1` with «Page is invalid format».
+- **Recorded answers** in `tests/Fixtures/api/<Model>.<method>.<case>.json`, made by
+  `php artisan webx:novaposhta:record` (not in production). It records reading methods only and
+  only with `read_only` on. The key comes from `NOVAPOSHTA_KEY` and goes to no file or output.
+  `Recording\Scrubber` replaces phones and e-mails everywhere, and every string of the account's
+  answers. `FixturesAreScrubbedTest` checks every file.
 - **Words**: `webx-delivery-novaposhta::novaposhta.*` in 10 languages. The name is «Nova Poshta»
   in Latin script and Cyrillic on `uk` and `ru`.
 
@@ -50,8 +57,12 @@ None of its own. The carrier's settings, key and «Test the connection» are beh
 
 ## Do not
 
-- Do not put the API key in `.env`, config, a fixture, a log or a test. It lives only in
-  `delivery_carriers.credentials`, which the base encrypts. Tests use `test-key` on `Http::fake()`.
+- Do not put the API key in config, a fixture, a log or a test. It lives in
+  `delivery_carriers.credentials`, which the base encrypts. The only exception is `NOVAPOSHTA_KEY`
+  in the `.env` of a development copy, for the recording command. Tests use `test-key` on
+  `Http::fake()`.
+- Do not record a writing method or tracking of numbers nobody gave you. Do not commit an answer
+  of the account that skipped `Recording\Scrubber`.
 - Do not call the API with `Http::` directly. Go through `Api\Client`, which keeps the read-only
   guard, the journal, and the key out of logs.
 - Do not add a method to `Api\Client` calls without listing it in `Api\Methods::READ` or
