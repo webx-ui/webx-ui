@@ -8,6 +8,7 @@
         "mustache/mustache": "^3.2",
         "webx-ui/cache": "*",
         "webx-ui/compositions": "*",
+        "webx-ui/delivery-novaposhta": "*",
         "webx-ui/geography": "*",
         "webx-ui/localization": "*",
         "webx-ui/mcp": "*",
@@ -70,6 +71,7 @@
                 "versions": {
                     "webx-ui/cache": "0.91.0",
                     "webx-ui/compositions": "0.91.0",
+                    "webx-ui/delivery-novaposhta": "0.91.0",
                     "webx-ui/geography": "0.91.0",
                     "webx-ui/localization": "0.91.0",
                     "webx-ui/mcp": "0.91.0",
@@ -138,6 +140,7 @@
             "WebxUi\\CatalogLandings\\Tests\\": "packages/module-catalog-landings/tests/",
             "WebxUi\\CatalogProperties\\Tests\\": "packages/module-catalog-properties/tests/",
             "WebxUi\\CatalogStock\\Tests\\": "packages/module-catalog-stock/tests/",
+            "WebxUi\\Delivery\\NovaPoshta\\Tests\\": "packages/delivery-novaposhta/tests/",
             "WebxUi\\Delivery\\Tests\\": "packages/module-delivery/tests/",
             "WebxUi\\Events\\Tests\\": "packages/module-events/tests/",
             "WebxUi\\Faq\\Tests\\": "packages/module-faq/tests/",

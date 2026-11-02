@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { Reply } from './reply'
 
 /**
@@ -158,7 +159,22 @@ const TYPES = [
   { key: 'store.courier', carrier: 'store', asks: 'address', kinds: [] },
   { key: 'carrier-a.branch', carrier: 'carrier-a', asks: 'point', kinds: ['branch', 'locker'] },
   { key: 'carrier-a.door', carrier: 'carrier-a', asks: 'address', kinds: [] },
+  /* `webx-ui/delivery-novaposhta`: three types named by its own dictionary (`LabelledMethodType`). */
+  { key: 'novaposhta.branch', carrier: 'novaposhta', asks: 'point', kinds: ['branch'] },
+  { key: 'novaposhta.locker', carrier: 'novaposhta', asks: 'point', kinds: ['locker'] },
+  { key: 'novaposhta.courier', carrier: 'novaposhta', asks: 'address', kinds: [] },
 ]
+
+/** The carrier of a real satellite next to carrier A: its words are its package's dictionary. */
+const NOVAPOSHTA = 'novaposhta'
+const NOVAPOSHTA_KINDS = ['branch', 'locker', 'courier'] as const
+/* Its mark from the package's assets, as `NovaPoshtaCarrier::icon()` gives it: a data URL. */
+const NOVAPOSHTA_ICON = `data:image/svg+xml;base64,${readFileSync(
+  new URL(
+    '../../../../php/packages/delivery-novaposhta/resources/icons/novaposhta.svg',
+    import.meta.url,
+  ),
+).toString('base64')}`
 
 const KINDS = ['city', 'town', 'township', 'village', 'settlement', 'other']
 
@@ -286,6 +302,21 @@ const state = {
       position: 2,
       localities: [],
     },
+    // As the migration of `delivery-novaposhta` adds them: switched off, by the carrier's rates, `UA`.
+    ...NOVAPOSHTA_KINDS.map((kind, index) => ({
+      id: 4 + index,
+      key: `novaposhta-${kind}`,
+      type: `novaposhta.${kind}`,
+      titles: {},
+      descriptions: {},
+      price: null,
+      point_kind: kind === 'courier' ? null : kind,
+      countries: ['UA'],
+      honours_paid_by_store: true,
+      enabled: false,
+      position: 3 + index,
+      localities: [],
+    })),
   ] as Method[],
   points: [
     {
@@ -435,6 +466,18 @@ const state = {
       },
     } as Record<string, unknown>,
     credentials: { api_key: 'demo-secret-key' } as Record<string, string>,
+  },
+  /* Nova Poshta as just installed: off, no key, the settings at their defaults. Its sender comes
+     with the waybill (§4.3 of its spec), its directories with stages 4–6 — none of them here yet. */
+  novaposhta: {
+    enabled: false,
+    settings: {
+      payment_method: 'Cash',
+      cargo_type: 'Parcel',
+      weight: 0.5,
+      description: 'Товари',
+    } as Record<string, unknown>,
+    credentials: {} as Record<string, string>,
   },
   runs: [
     {
@@ -592,11 +635,34 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
   }
   const refuse = (field: string, text: string) => fail(422, text, undefined, { [field]: [text] })
 
+  /* Nova Poshta's own words: `webx-delivery-novaposhta::novaposhta.*`, read from its package. */
+  const novaposhta = (locale: string, path: string) =>
+    line(locale, 'webx-delivery-novaposhta', `novaposhta.${path}`)
+
+  // The migration fills the titles of its methods in the site's languages.
+  for (const one of state.methods) {
+    const kind = one.type.startsWith(`${NOVAPOSHTA}.`) ? one.type.split('.')[1] : null
+
+    if (kind && Object.keys(one.titles).length === 0) {
+      for (const locale of ['en', 'uk', 'ru']) {
+        one.titles[locale] = novaposhta(locale, `types.${kind}.title`)
+        one.descriptions[locale] = novaposhta(locale, `types.${kind}.description`)
+      }
+    }
+  }
+
   /* The shop is the dictionary's word (`StoreCarrier::title()`); «Carrier A» names itself. */
   const carrierTitle = (carrier: string, locale = 'en') =>
-    carrier === 'store' ? line(locale, 'webx-delivery', 'delivery.carriers.store') : 'Carrier A'
+    carrier === 'store'
+      ? line(locale, 'webx-delivery', 'delivery.carriers.store')
+      : carrier === NOVAPOSHTA
+        ? novaposhta(locale, 'carrier.title')
+        : 'Carrier A'
   /* `MethodForm::typeTitle()`: words, never the key — the kind after the dot, or what it asks. */
   const typeTitle = (type: string, locale: string) => {
+    if (type.startsWith(`${NOVAPOSHTA}.`))
+      return novaposhta(locale, `types.${type.split('.')[1]}.title`)
+
     const known = TYPES.find((one) => one.key === type)
     const own = said(locale, `types.${type.replace('.', '-')}`)
 
@@ -611,6 +677,9 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
     )
   }
   const typeDescription = (type: string, locale: string) => {
+    if (type.startsWith(`${NOVAPOSHTA}.`))
+      return novaposhta(locale, `types.${type.split('.')[1]}.description`)
+
     const known = TYPES.find((one) => one.key === type)
 
     return (
@@ -989,17 +1058,66 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
     }
   }
 
-  const carrierRow = () => ({
-    key: 'carrier-a',
-    title: 'Carrier A',
-    icon: null,
-    enabled: state.carrier.enabled,
-    countries: ['XX'],
-    syncs: true,
-    directories: ['localities', 'points', 'streets'].map(directory),
-    missing: [] as string[],
-    queue: state.bindings.filter((one) => one.status === 'pending').length,
-  })
+  const carrierRow = (key = 'carrier-a', locale = 'en') =>
+    key === NOVAPOSHTA
+      ? {
+          key: NOVAPOSHTA,
+          title: carrierTitle(NOVAPOSHTA, locale),
+          icon: NOVAPOSHTA_ICON,
+          enabled: state.novaposhta.enabled,
+          countries: ['UA'],
+          // Its directories come with stages 4–6 of its spec: no `SyncsDirectories` yet.
+          syncs: false,
+          directories: [] as ReturnType<typeof directory>[],
+          missing: [] as string[],
+          queue: 0,
+        }
+      : {
+          key: 'carrier-a',
+          title: 'Carrier A',
+          icon: null,
+          enabled: state.carrier.enabled,
+          countries: ['XX'],
+          syncs: true,
+          directories: ['localities', 'points', 'streets'].map(directory),
+          missing: [] as string[],
+          queue: state.bindings.filter((one) => one.status === 'pending').length,
+        }
+
+  /* `NovaPoshtaCarrier::settings()`: fixed selects and plain fields, named in its dictionary. */
+  const novaposhtaFields = (locale: string) => {
+    const label = (path: string) =>
+      Object.fromEntries(['en', 'uk', 'ru'].map((one) => [one, novaposhta(one, path)]))
+    const options = (group: string, values: string[]) =>
+      values.map((value) => ({ value, label: novaposhta(locale, `settings.${group}.${value}`) }))
+
+    return [
+      {
+        name: 'payment_method',
+        type: 'select',
+        default: 'Cash',
+        label: label('settings.payment_method'),
+        options: options('payment_methods', ['Cash', 'NonCash']),
+      },
+      {
+        name: 'cargo_type',
+        type: 'select',
+        default: 'Parcel',
+        label: label('settings.cargo_type'),
+        options: options('cargo_types', ['Parcel', 'Cargo', 'Documents']),
+      },
+      {
+        name: 'weight',
+        type: 'number',
+        default: 0.5,
+        min: 0.1,
+        step: 0.1,
+        precision: 1,
+        label: label('settings.weight'),
+      },
+      { name: 'description', type: 'text', label: label('settings.description') },
+    ]
+  }
 
   /* The settings of carrier A take the sender from «its account» (`ProvidesSettingOptions`): the
      options as `FakeCarrier::settingOptions()` gives them — two senders and their contacts, its
@@ -1125,35 +1243,47 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
     return null
   }
 
-  const carrierDetail = () => ({
-    ...carrierRow(),
-    settings: {
-      fields: carrierFields,
-      values: state.carrier.settings,
-      missing: {},
-    },
-    // The key itself never leaves the server: only whether it is set (§13.2).
-    credentials: [
-      {
-        name: 'api_key',
-        type: 'secret',
-        label: { ru: 'Ключ API', en: 'API key' },
-        set: Boolean(state.carrier.credentials.api_key),
-      },
-    ],
-    runs: state.runs,
-  })
+  const carrierDetail = (key = 'carrier-a', locale = 'en') => {
+    const one = known(key)
+    const nova = key === NOVAPOSHTA
 
-  const known = (carrier: string) => {
-    if (carrier !== 'carrier-a') throw fail(404, 'No such carrier.')
+    return {
+      ...carrierRow(key, locale),
+      settings: {
+        fields: nova ? novaposhtaFields(locale) : carrierFields,
+        values: one.settings,
+        missing: {},
+      },
+      // The key itself never leaves the server: only whether it is set (§13.2).
+      credentials: [
+        {
+          name: 'api_key',
+          type: 'secret',
+          label: nova
+            ? Object.fromEntries(
+                ['en', 'uk', 'ru'].map((each) => [each, novaposhta(each, 'credentials.api_key')]),
+              )
+            : { ru: 'Ключ API', en: 'API key' },
+          set: Boolean(one.credentials.api_key),
+        },
+      ],
+      runs: nova ? [] : state.runs,
+    }
   }
 
-  on('GET', '/delivery/carriers', () => ({ data: [carrierRow()] }))
-  on(
-    'GET',
-    '/delivery/carriers/([a-z0-9-]+)',
-    ({ params }) => (known(params[0]!), { data: carrierDetail() }),
-  )
+  const known = (carrier: string) => {
+    if (carrier === NOVAPOSHTA) return state.novaposhta
+    if (carrier !== 'carrier-a') throw fail(404, 'No such carrier.')
+
+    return state.carrier
+  }
+
+  on('GET', '/delivery/carriers', ({ locale }) => ({
+    data: [carrierRow('carrier-a', locale), carrierRow(NOVAPOSHTA, locale)],
+  }))
+  on('GET', '/delivery/carriers/([a-z0-9-]+)', ({ params, locale }) => ({
+    data: carrierDetail(params[0]!, locale),
+  }))
 
   on(
     'GET',
@@ -1179,32 +1309,32 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
   )
 
   on('PUT', '/delivery/carriers/([a-z0-9-]+)', ({ params, body, locale }) => {
-    known(params[0]!)
+    const one = known(params[0]!)
+    const nova = params[0] === NOVAPOSHTA
 
-    if ('enabled' in body) state.carrier.enabled = Boolean(body.enabled)
+    if ('enabled' in body) one.enabled = Boolean(body.enabled)
 
     for (const [name, value] of Object.entries(
       (body.credentials ?? {}) as Record<string, string>,
     )) {
-      if (typeof value === 'string' && value.trim() !== '')
-        state.carrier.credentials[name] = value.trim()
+      if (typeof value === 'string' && value.trim() !== '') one.credentials[name] = value.trim()
     }
 
-    for (const name of (body.clear ?? []) as string[]) delete state.carrier.credentials[name]
+    for (const name of (body.clear ?? []) as string[]) delete one.credentials[name]
 
     if (body.settings && typeof body.settings === 'object') {
       // As `SettingOptions::check()`: a value from the account only if the account has it.
-      const before = state.carrier.settings
+      const before = one.settings
       const after: Record<string, unknown> = { ...before }
       const labels = { ...((before._labels as Record<string, string> | undefined) ?? {}) }
       const errors: Record<string, string[]> = {}
 
-      for (const field of carrierFields) {
+      for (const field of nova ? novaposhtaFields(locale) : carrierFields) {
         if (field.name in (body.settings as Record<string, unknown>))
           after[field.name] = (body.settings as Record<string, unknown>)[field.name]
       }
 
-      for (const field of carrierFields.filter((one) => one.options === 'carrier')) {
+      for (const field of nova ? [] : carrierFields.filter((each) => each.options === 'carrier')) {
         const value = after[field.name]
 
         if (value === null || value === undefined || value === '') {
@@ -1227,7 +1357,7 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
         }
 
         const match = optionsOf(field.name, after, field.search ? String(value) : null).find(
-          (one) => one.value === String(value),
+          (each) => each.value === String(value),
         )
 
         if (!match) errors[`settings.${field.name}`] = [words(locale, 'options.choose-from-list')]
@@ -1237,26 +1367,35 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
       if (Object.keys(errors).length > 0)
         throw fail(422, Object.values(errors)[0]![0]!, undefined, errors)
 
-      state.carrier.settings = { ...after, _labels: labels }
+      one.settings = nova ? after : { ...after, _labels: labels }
     }
 
-    return { data: carrierDetail() }
+    return { data: carrierDetail(params[0]!, locale) }
   })
 
-  on('POST', '/delivery/carriers/([a-z0-9-]+)/test', ({ params }) => {
-    known(params[0]!)
+  on('POST', '/delivery/carriers/([a-z0-9-]+)/test', ({ params, locale }) => {
+    const one = known(params[0]!)
+
+    // Nova Poshta answers in its words, as `NovaPoshtaCarrier::testConnection()` does: here the
+    // account always has two senders — the fixtures never reach the carrier.
+    if (params[0] === NOVAPOSHTA)
+      return new Reply(200, {
+        data: one.credentials.api_key
+          ? { ok: true, message: novaposhta(locale, 'connection.ok').replace(':count', '2') }
+          : { ok: false, message: novaposhta(locale, 'connection.no_key') },
+      })
 
     return new Reply(200, {
-      data: state.carrier.credentials.api_key
+      data: one.credentials.api_key
         ? { ok: true, message: null }
         : { ok: false, message: 'The API key is not set.' },
     })
   })
 
   on('POST', '/delivery/carriers/([a-z0-9-]+)/sync/([a-z]+)', ({ params, locale }) => {
-    known(params[0]!)
+    const one = known(params[0]!)
 
-    if (!state.carrier.enabled) throw refuse('carrier', words(locale, 'errors.carrier_off'))
+    if (!one.enabled) throw refuse('carrier', words(locale, 'errors.carrier_off'))
 
     const queued = params[1] === 'localities' ? ['localities', 'points', 'streets'] : [params[1]!]
 

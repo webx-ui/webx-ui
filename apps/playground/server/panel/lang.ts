@@ -16,6 +16,7 @@ import { fileURLToPath } from 'node:url'
  */
 
 const NAMESPACES: Record<string, string> = {
+  'delivery-novaposhta': 'webx-delivery-novaposhta',
   'module-admin': 'webx-admin',
   'module-auth': 'webx-auth',
   'module-audit': 'webx-audit',
