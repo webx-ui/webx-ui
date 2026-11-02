@@ -10,6 +10,8 @@ parameters:
         - packages/cache/tests
         - packages/compositions/src
         - packages/compositions/tests
+        - packages/geography/src
+        - packages/geography/tests
         - packages/localization/src
         - packages/localization/tests
         - packages/mcp/src

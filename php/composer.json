@@ -8,6 +8,7 @@
         "mustache/mustache": "^3.2",
         "webx-ui/cache": "*",
         "webx-ui/compositions": "*",
+        "webx-ui/geography": "*",
         "webx-ui/localization": "*",
         "webx-ui/mcp": "*",
         "webx-ui/module-admin": "*",
@@ -68,6 +69,7 @@
                 "versions": {
                     "webx-ui/cache": "0.91.0",
                     "webx-ui/compositions": "0.91.0",
+                    "webx-ui/geography": "0.91.0",
                     "webx-ui/localization": "0.91.0",
                     "webx-ui/mcp": "0.91.0",
                     "webx-ui/module-admin": "0.91.0",
@@ -136,6 +138,7 @@
             "WebxUi\\CatalogStock\\Tests\\": "packages/module-catalog-stock/tests/",
             "WebxUi\\Events\\Tests\\": "packages/module-events/tests/",
             "WebxUi\\Faq\\Tests\\": "packages/module-faq/tests/",
+            "WebxUi\\Geography\\Tests\\": "packages/geography/tests/",
             "WebxUi\\Inbox\\Tests\\": "packages/module-inbox/tests/",
             "WebxUi\\Localization\\Tests\\": "packages/localization/tests/",
             "WebxUi\\Mcp\\Tests\\": "packages/mcp/tests/",
