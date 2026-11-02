@@ -2,6 +2,7 @@ import type { AdminModule } from '@webx-ui/module-admin'
 import CountryField from './fields/CountryField.vue'
 import LocalitiesField from './fields/LocalitiesField.vue'
 import LocalityField from './fields/LocalityField.vue'
+import PointKindField from './fields/PointKindField.vue'
 import RegionField from './fields/RegionField.vue'
 import ScheduleField from './fields/ScheduleField.vue'
 
@@ -20,7 +21,8 @@ export interface DeliveryOptions {
  * whose server half is not installed never appears: the entry is built from the manifest.
  *
  * The fields only this section's screens have — a locality, the courier's localities, a region
- * of the country, a country of the site, the opening hours — come with the first module.
+ * of the country, a country of the site, the opening hours, the kind of points — come with the
+ * first module.
  */
 export function delivery(options: DeliveryOptions = {}): AdminModule[] {
   const path = options.path ?? '/delivery'
@@ -45,6 +47,7 @@ export function delivery(options: DeliveryOptions = {}): AdminModule[] {
         'wx-delivery-region': { component: RegionField, kind: 'field', nested: true },
         'wx-delivery-country': { component: CountryField, kind: 'field' },
         'wx-delivery-schedule': { component: ScheduleField, kind: 'field', wide: true },
+        'wx-delivery-point-kind': { component: PointKindField, kind: 'field' },
       },
     },
     section('delivery-points', 'points', 'webx.delivery.points', () => import('./PointsPage.vue')),

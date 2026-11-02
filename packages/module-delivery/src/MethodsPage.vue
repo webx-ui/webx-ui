@@ -9,12 +9,15 @@ import {
   WxCard,
   WxDialog,
   WxEmpty,
-  WxIcon,
+  WxFormItem,
   WxListDetail,
+  WxRadio,
+  WxRadioGroup,
   WxSkeleton,
   WxSortableList,
+  WxSpace,
 } from '@webx-ui/core'
-import { useAdmin, useErrorText, WxListScreen } from '@webx-ui/module-admin'
+import { useAdmin, useErrorText, WxListScreen, type ScreenAction } from '@webx-ui/module-admin'
 import { createDeliveryApi } from './api'
 import { useDeliveryWords } from './i18n'
 import MethodPane from './MethodPane.vue'
@@ -39,6 +42,7 @@ const rows = ref<MethodRow[]>([])
 const types = ref<MethodType[]>([])
 const loading = ref(true)
 const choosing = ref(false)
+const picked = ref<string | null>(null)
 
 const canManage = computed(() => context.can('delivery.manage'))
 
@@ -111,9 +115,36 @@ function close(): void {
   void router.replace({ query })
 }
 
-function start(type: MethodType): void {
+/* «Add a method» asks the type first: the form after it depends on it. */
+function startChoosing(): void {
+  picked.value = types.value[0]?.key ?? null
+  choosing.value = true
+}
+
+function start(): void {
+  if (picked.value === null) return
+
   choosing.value = false
-  choose(`new:${type.key}`)
+  choose(`new:${picked.value}`)
+}
+
+/* The section's one action, in the head like every list's — a word, no icon (§18.3). */
+const actions = computed<ScreenAction[]>(() =>
+  canManage.value
+    ? [{ key: 'new', label: t('method.new'), primary: true, run: () => startChoosing() }]
+    : [],
+)
+
+/*
+ * The carrier under the method's name, unless the type's name already says it: a type named by
+ * the panel reads «Carrier A branch», and «Carrier A branch · Carrier A» says it twice.
+ */
+function line(row: MethodRow): string {
+  const carrier = row.carrier !== 'store' ? (row.carrier_title ?? '') : ''
+
+  return carrier === '' || row.type_title.includes(carrier)
+    ? row.type_title
+    : `${row.type_title} · ${carrier}`
 }
 
 function created(method: MethodRow): void {
@@ -144,21 +175,10 @@ const paneKey = computed(() => String(route.query.method ?? ''))
 </script>
 
 <template>
-  <wx-list-screen :title="title" :card="false">
+  <wx-list-screen :title="title" :actions="actions" :card="false">
     <wx-card class="wx-delivery-methods" padding="none">
       <wx-list-detail v-model:open="open" :list-width="380" :detail-min="460" :detail-label="title">
         <template #list>
-          <button
-            v-if="canManage"
-            type="button"
-            class="wx-delivery-new"
-            data-test="new-method"
-            @click="choosing = true"
-          >
-            <wx-icon name="plus" size="sm" />
-            {{ t('method.new') }}
-          </button>
-
           <wx-skeleton
             v-if="loading && rows.length === 0"
             class="wx-delivery-methods__ghost"
@@ -191,12 +211,7 @@ const paneKey = computed(() => String(route.query.method ?? ''))
                   @click="choose(String(item.id))"
                 >
                   <span class="wx-delivery-method__title">{{ item.title }}</span>
-                  <span class="wx-delivery-method__line">
-                    {{ item.type_title }}
-                    <template v-if="item.carrier !== 'store' && item.carrier_title">
-                      · {{ item.carrier_title }}</template
-                    >
-                  </span>
+                  <span class="wx-delivery-method__line">{{ line(item) }}</span>
                   <span class="wx-delivery-method__facts">
                     <span class="wx-delivery-method__price">{{
                       item.price_text ?? t('method.free')
@@ -243,22 +258,45 @@ const paneKey = computed(() => String(route.query.method ?? ''))
       </wx-list-detail>
     </wx-card>
 
-    <wx-dialog v-model:open="choosing" :title="t('method.choose-type')" :width="480">
+    <!--
+      A list of choices and not a wall of buttons: one name and one line of what it is per type,
+      under the carrier it belongs to — the shape «New block» asks its kind in (module-blocks).
+    -->
+    <wx-dialog v-model:open="choosing" :title="t('method.choose-type')" :width="520">
       <div class="wx-delivery-types">
-        <section v-for="group in grouped" :key="group.key" class="wx-delivery-types__group">
-          <h4 class="wx-delivery-types__carrier">{{ group.title }}</h4>
-          <wx-button
-            v-for="type in group.types"
-            :key="type.key"
-            variant="outline"
-            class="wx-delivery-types__type"
-            :data-test="`type-${type.key}`"
-            @click="start(type)"
-          >
-            {{ type.title }}
-          </wx-button>
-        </section>
+        <wx-form-item v-for="group in grouped" :key="group.key" :label="group.title">
+          <wx-radio-group v-model="picked" class="wx-delivery-types__list">
+            <wx-radio
+              v-for="type in group.types"
+              :key="type.key"
+              :value="type.key"
+              :data-test="`type-${type.key}`"
+              @dblclick="start"
+            >
+              <span class="wx-delivery-types__title">{{ type.title }}</span>
+              <span v-if="type.description" class="wx-delivery-types__help">{{
+                type.description
+              }}</span>
+            </wx-radio>
+          </wx-radio-group>
+        </wx-form-item>
       </div>
+
+      <template #footer>
+        <wx-space size="sm">
+          <wx-button variant="outline" @click="choosing = false">{{
+            t('common.cancel')
+          }}</wx-button>
+          <wx-button
+            type="primary"
+            :disabled="picked === null"
+            data-test="type-start"
+            @click="start"
+          >
+            {{ t('common.add') }}
+          </wx-button>
+        </wx-space>
+      </template>
     </wx-dialog>
   </wx-list-screen>
 </template>
@@ -273,26 +311,6 @@ const paneKey = computed(() => String(route.query.method ?? ''))
 </style>
 
 <style scoped>
-.wx-delivery-new {
-  display: flex;
-  align-items: center;
-  gap: var(--wx-space-8);
-  width: calc(100% - 2 * var(--wx-space-8));
-  margin: var(--wx-space-8) var(--wx-space-8) var(--wx-space-4);
-  padding: var(--wx-space-8);
-  border: 1px dashed var(--wx-border-default);
-  border-radius: var(--wx-radius-sm);
-  background: none;
-  font: inherit;
-  color: var(--wx-color-primary);
-  text-align: start;
-  cursor: pointer;
-}
-
-.wx-delivery-new:hover {
-  background: var(--wx-bg-subtle);
-}
-
 .wx-delivery-methods__ghost {
   padding: var(--wx-space-12);
 }
@@ -365,23 +383,26 @@ const paneKey = computed(() => String(route.query.method ?? ''))
 .wx-delivery-types {
   display: flex;
   flex-direction: column;
-  gap: var(--wx-space-16);
+  gap: var(--wx-space-12);
 }
 
-.wx-delivery-types__group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wx-space-8);
+.wx-delivery-types__list {
+  gap: var(--wx-space-10);
 }
 
-.wx-delivery-types__carrier {
-  margin: 0;
-  color: var(--wx-text-muted);
-  font-size: var(--wx-font-size-sm);
+/* The circle beside the name, not beside the middle of name and line. */
+.wx-delivery-types__list :deep(.wx-radio) {
+  align-items: flex-start;
+}
+
+.wx-delivery-types__title {
+  display: block;
   font-weight: var(--wx-font-weight-medium);
 }
 
-.wx-delivery-types__type {
-  justify-content: flex-start;
+.wx-delivery-types__help {
+  display: block;
+  color: var(--wx-text-muted);
+  font-size: var(--wx-font-size-sm);
 }
 </style>

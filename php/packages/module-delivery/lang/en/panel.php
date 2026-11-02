@@ -29,10 +29,29 @@ return [
         'order-failed' => 'The order was not saved.',
         'empty-search' => 'Nothing matches the search.',
         'drag' => 'Drag a row by its handle to change the order.',
+        'edit' => 'Edit',
     ],
     'types' => [
         'store-pickup' => 'Pick-up at the shop\'s points',
         'store-courier' => 'The shop\'s courier',
+        'kinds' => [
+            'branch' => ':carrier branch',
+            'locker' => ':carrier locker',
+            'courier' => ':carrier courier',
+            'door' => ':carrier courier',
+        ],
+        'asks' => [
+            'point' => 'Pick-up with :carrier',
+            'address' => 'Delivery by :carrier',
+            'nothing' => ':carrier',
+        ],
+        'help' => [
+            'store-pickup' => 'The buyer collects the order at one of your own points: a store or a pick-up point.',
+            'store-courier' => 'Your own courier brings the order to the buyer\'s address, in the localities you choose.',
+            'point' => 'The buyer chooses one of the carrier\'s branches or lockers.',
+            'address' => 'The carrier brings the order to the buyer\'s address.',
+            'nothing' => 'The buyer is asked for nothing but the locality.',
+        ],
     ],
     'method' => [
         'card' => 'Method',
@@ -42,7 +61,7 @@ return [
         'price' => 'Price',
         'price-help' => 'Empty or 0 — free.',
         'point-kind' => 'Kind of points',
-        'point-kind-help' => 'The points the buyer chooses from.',
+        'point-kind-help' => 'Which of your points this method offers: the checkout lists only the points of this kind.',
         'localities' => 'Localities',
         'localities-help' => 'Where the courier goes. Empty — nowhere: the method is not offered.',
         'countries' => 'Countries',
@@ -69,6 +88,8 @@ return [
         'kind-key-help' => 'Latin letters, digits and dashes: parcel-shop.',
         'kind-name' => 'Name',
         'kind-created' => 'The kind is added.',
+        'new-kind-help' => 'A kind groups your own points, like «Store» or «Pick-up point». Name a new one — say «Parcel shop» — to offer those points under a method of their own.',
+        'point-kind-carrier-help' => 'The carrier\'s points this method offers: its branches or its lockers.',
     ],
     'point' => [
         'card' => 'Point',
@@ -94,6 +115,7 @@ return [
         'deleted' => 'The point is deleted.',
         'title' => 'Point',
         'today' => 'Today',
+        'intro' => 'Places where buyers collect orders themselves: your stores and pick-up points. The checkout offers them under the pick-up methods of the same kind. Carriers\' branches come from the carriers and are not kept here.',
     ],
     'schedule' => [
         'days' => [
@@ -178,6 +200,13 @@ return [
         'empty' => 'No countries yet.',
         'empty-help' => 'Switch on the countries the shop delivers to.',
         'localities-tab' => 'Localities',
+        'leader-help' => 'The leading carrier creates the country\'s shared localities; the other carriers bind their records to them. «The first to sync» — whichever carrier syncs the country first becomes its leader.',
+        'remove' => 'Remove',
+        'remove-title' => 'Remove «:name»?',
+        'remove-text' => 'The country has no regions or localities: it is deleted.',
+        'remove-held' => 'The country has regions or localities, and points and orders may refer to them. It will be switched off instead: the checkout stops offering it, the records stay.',
+        'removed' => 'The country is removed.',
+        'deactivated' => 'The country is in use, so it is switched off.',
     ],
     'region' => [
         'title' => 'Regions',
@@ -185,13 +214,16 @@ return [
         'name' => 'Name',
         'code' => 'Code',
         'code-help' => 'ISO 3166-2 without the country, if there is one.',
-        'rename' => 'Rename',
         'delete-title' => 'Delete «:name»?',
         'delete-text' => 'Only an empty region can be deleted.',
         'deleted' => 'The region is deleted.',
         'saved' => 'The region is saved.',
         'empty' => 'The country has no regions.',
         'country-first' => 'Choose a country first.',
+        'edit' => 'Edit',
+        'new-title' => 'New region',
+        'edit-title' => 'Region',
+        'delete-held' => 'The region has localities: move them to another region or delete them first.',
     ],
     'carrier' => [
         'empty' => 'No carriers are installed.',
@@ -249,10 +281,11 @@ return [
         'added' => 'Added.',
         'removed' => 'Removed.',
         'already' => 'Already in the list.',
+        'remove-title' => 'Remove «:name» from the popular towns?',
     ],
     'binding' => [
         'empty' => 'The queue is empty.',
-        'empty-help' => 'Every record of the carriers is bound to a locality.',
+        'empty-help' => 'Every record the carriers sent is bound to a locality. New ones appear here after a carrier\'s sync, when it cannot match them itself.',
         'carrier' => 'Carrier',
         'reason' => 'Reason',
         'reasons' => [
@@ -275,6 +308,7 @@ return [
         'km' => ':distance km',
         'any-carrier' => 'Any carrier',
         'any-reason' => 'Any reason',
+        'intro' => 'Records a carrier sent that it could not match to the shared geography itself. «Bind» attaches a record to an existing locality, «Make a shared locality» creates a new one from it, «Do not bind» sets it aside — the carrier\'s points there are not offered. The queue fills only while a carrier is connected and syncs its localities.',
     ],
     'errors' => [
         'unknown_carrier' => 'There is no such carrier.',

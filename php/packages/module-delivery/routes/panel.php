@@ -61,6 +61,7 @@ Route::prefix((string) config('webx-admin.api_path'))
                 Route::post('geography/countries', [GeographyController::class, 'enableCountry'])->name('countries.enable');
                 Route::put('geography/countries/order', [GeographyController::class, 'orderCountries'])->name('countries.order');
                 Route::delete('geography/countries/{code}', [GeographyController::class, 'disableCountry'])->where('code', '[A-Za-z]+')->name('countries.disable');
+                Route::post('geography/countries/{code}/remove', [GeographyController::class, 'removeCountry'])->where('code', '[A-Za-z]+')->name('countries.remove');
                 Route::put('geography/countries/{code}/leader', [GeographyController::class, 'lead'])->where('code', '[A-Za-z]+')->name('countries.leader');
 
                 Route::post('geography/regions', [GeographyController::class, 'storeRegion'])->name('regions.store');

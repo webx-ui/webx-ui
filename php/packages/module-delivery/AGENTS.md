@@ -22,8 +22,9 @@ its slot «delivery»; orders work without it. Words — `webx-delivery`.
   a site); `delivery_selections` (the buyer's choice of a cart, `cart_id` PK cascade — written only
   by `PUT /api/delivery/selection`).
 - **Contracts** `WebxUi\Delivery\Contracts\MethodType` (key `<carrier>.<kind>`, `asks()`,
-  `pointKinds()`, `countries()`, `available()`, `quote()`, `validate()`) and `Carrier`;
-  `AbstractMethodType` — the method's price and the default check of a point or an address.
+  `pointKinds()`, `countries()`, `available()`, `quote()`, `validate()`), `Carrier`, optional
+  `LabelledMethodType` (`title()`, `description()`; without it the panel names a type from its kind
+  or `asks()` and the carrier, never by key); `AbstractMethodType` — the price and default checks.
 - **Registries** (singletons): `Carriers` (`store` built in), `MethodTypes` (`store.pickup`,
   `store.courier` built in). A repeated or malformed key, a type of an unknown carrier — an exception.
 - **`Methods::forLocality(DeliveryContext)`** — the offered `MethodOption`s in the panel's order
@@ -69,7 +70,7 @@ its slot «delivery»; orders work without it. Words — `webx-delivery`.
   answers 409 with `similar`), popular towns, binding queue (`Panel\BindingQueue`, by rows or by
   filter). Described screens `delivery.method-form`, `delivery.point-form`,
   `delivery.locality-form`; field types `wx-delivery-locality`, `-localities`, `-region`,
-  `-country`, `-schedule`. The npm half — `@webx-ui/module-delivery`.
+  `-country`, `-schedule`, `-point-kind`. The npm half — `@webx-ui/module-delivery`.
 
 ### Permissions
 

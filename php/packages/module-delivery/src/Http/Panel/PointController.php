@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Delivery\Http\Panel;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use WebxUi\Admin\Contracts\HasPermissions;
@@ -12,6 +13,7 @@ use WebxUi\Delivery\Carriers;
 use WebxUi\Delivery\Models\DeliveryPoint;
 use WebxUi\Delivery\Panel\PointForm;
 use WebxUi\Delivery\PointKinds;
+use WebxUi\Geography\Models\GeoLocality;
 use WebxUi\Geography\Normalizer;
 use WebxUi\Localization\Locales;
 
@@ -52,6 +54,8 @@ final class PointController
             $query->where('search', 'like', '%'.addcslashes($key, '%_\\').'%');
         }
 
+        $this->sort($query, (string) $request->query('sort', ''));
+
         $page = $query->orderBy('id')->paginate(min(100, max(10, (int) $request->query('per_page', 25))));
         $kinds = $this->kinds;
         $page->setCollection($page->getCollection()->map(
@@ -62,6 +66,30 @@ final class PointController
             ...$page->toArray(),
             'filters' => ['kinds' => $this->form->kindOptions($locale)],
         ]);
+    }
+
+    /**
+     * The order the table asks for: `title`, `kind`, `locality` or `active`, a minus for the other
+     * way round. By name is by `search`, which starts with the name for the shop's points (they
+     * have no number) and is already normalised; by locality is by the town's own key.
+     *
+     * @param  Builder<DeliveryPoint>  $query
+     */
+    private function sort(Builder $query, string $sort): void
+    {
+        $desc = str_starts_with($sort, '-');
+        $direction = $desc ? 'desc' : 'asc';
+
+        match ($desc ? substr($sort, 1) : $sort) {
+            'title' => $query->orderBy('search', $direction),
+            'kind' => $query->orderBy('kind', $direction),
+            'active' => $query->orderBy('active', $direction),
+            'locality' => $query->orderBy(
+                GeoLocality::query()->select('name_key')->whereColumn('geo_localities.id', 'delivery_points.locality_id'),
+                $direction,
+            ),
+            default => null,
+        };
     }
 
     public function show(DeliveryPoint $point): JsonResponse

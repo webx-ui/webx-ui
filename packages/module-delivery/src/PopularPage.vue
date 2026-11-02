@@ -7,6 +7,7 @@ import {
   WxButton,
   WxCard,
   WxEmpty,
+  WxPopconfirm,
   WxSkeleton,
   WxSortableList,
 } from '@webx-ui/core'
@@ -127,14 +128,26 @@ async function reorder(): Promise<void> {
             </span>
           </template>
 
+          <!-- Asked first, in the popover every list of the panel asks in (Catalog → properties). -->
           <template v-if="canManage" #actions="{ item }">
-            <wx-button
-              size="sm"
-              variant="text"
-              icon="close"
-              :aria-label="t('popular.remove')"
-              @click="remove(item)"
-            />
+            <wx-popconfirm
+              :title="t('popular.remove-title', { name: item.name })"
+              :confirm-text="t('popular.remove')"
+              :cancel-text="t('common.cancel')"
+              confirm-type="danger"
+              align="end"
+              @confirm="remove(item)"
+            >
+              <template #trigger>
+                <wx-button
+                  size="sm"
+                  variant="text"
+                  icon="close"
+                  :aria-label="t('popular.remove')"
+                  data-test="popular-remove"
+                />
+              </template>
+            </wx-popconfirm>
           </template>
         </wx-sortable-list>
 

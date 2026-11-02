@@ -29,10 +29,29 @@ return [
         'order-failed' => 'A ordem não foi guardada.',
         'empty-search' => 'Nada corresponde à pesquisa.',
         'drag' => 'Arraste uma linha pela alça para mudar a ordem.',
+        'edit' => 'Editar',
     ],
     'types' => [
         'store-pickup' => 'Recolha nos pontos da loja',
         'store-courier' => 'Estafeta da loja',
+        'kinds' => [
+            'branch' => 'Balcão :carrier',
+            'locker' => 'Cacifo :carrier',
+            'courier' => 'Estafeta :carrier',
+            'door' => 'Estafeta :carrier',
+        ],
+        'asks' => [
+            'point' => 'Levantamento em :carrier',
+            'address' => 'Entrega por :carrier',
+            'nothing' => ':carrier',
+        ],
+        'help' => [
+            'store-pickup' => 'O comprador levanta a encomenda num dos seus pontos: uma loja ou um ponto de levantamento.',
+            'store-courier' => 'O seu estafeta leva a encomenda à morada do comprador, nas localidades escolhidas.',
+            'point' => 'O comprador escolhe um balcão ou cacifo da transportadora.',
+            'address' => 'A transportadora leva a encomenda à morada do comprador.',
+            'nothing' => 'Ao comprador só se pede a localidade.',
+        ],
     ],
     'method' => [
         'card' => 'Método',
@@ -42,7 +61,7 @@ return [
         'price' => 'Preço',
         'price-help' => 'Vazio ou 0 — grátis.',
         'point-kind' => 'Tipo de pontos',
-        'point-kind-help' => 'Os pontos entre os quais o comprador escolhe.',
+        'point-kind-help' => 'Que pontos seus este método oferece: na encomenda só aparecem os pontos deste tipo.',
         'localities' => 'Localidades',
         'localities-help' => 'Para onde vai o estafeta. Vazio — para lado nenhum: o método não é oferecido.',
         'countries' => 'Países',
@@ -69,6 +88,8 @@ return [
         'kind-key-help' => 'Letras latinas, dígitos e hífenes: parcel-shop.',
         'kind-name' => 'Nome',
         'kind-created' => 'O tipo foi adicionado.',
+        'new-kind-help' => 'Um tipo agrupa os seus pontos, como «Loja» ou «Ponto de levantamento». Crie um novo — por exemplo «Ponto parceiro» — para oferecer esses pontos com um método próprio.',
+        'point-kind-carrier-help' => 'Que pontos da transportadora o método oferece: os balcões ou os cacifos.',
     ],
     'point' => [
         'card' => 'Ponto',
@@ -94,6 +115,7 @@ return [
         'deleted' => 'O ponto foi eliminado.',
         'title' => 'Ponto',
         'today' => 'Hoje',
+        'intro' => 'Os locais onde o comprador levanta a encomenda ele mesmo: as suas lojas e pontos de levantamento. A encomenda oferece-os nos métodos de levantamento do mesmo tipo. Os balcões das transportadoras vêm das próprias transportadoras e não se gerem aqui.',
     ],
     'schedule' => [
         'days' => [
@@ -178,6 +200,13 @@ return [
         'empty' => 'Ainda não há países.',
         'empty-help' => 'Ative os países para onde a loja entrega.',
         'localities-tab' => 'Localidades',
+        'leader-help' => 'A transportadora principal cria as localidades comuns do país; as outras vinculam a elas os seus registos. «A primeira a sincronizar» — torna-se principal a transportadora que sincronizar o país primeiro.',
+        'remove' => 'Remover',
+        'remove-title' => 'Remover «:name»?',
+        'remove-text' => 'O país não tem regiões nem localidades: é eliminado.',
+        'remove-held' => 'O país tem regiões ou localidades, a que pontos e encomendas podem remeter. Por isso só será desativado: a encomenda deixa de o oferecer, os registos ficam.',
+        'removed' => 'O país foi removido.',
+        'deactivated' => 'O país está em uso, por isso foi desativado.',
     ],
     'region' => [
         'title' => 'Regiões',
@@ -185,13 +214,16 @@ return [
         'name' => 'Nome',
         'code' => 'Código',
         'code-help' => 'ISO 3166-2 sem o país, se existir.',
-        'rename' => 'Mudar o nome',
         'delete-title' => 'Eliminar «:name»?',
         'delete-text' => 'Só se pode eliminar uma região vazia.',
         'deleted' => 'A região foi eliminada.',
         'saved' => 'A região foi guardada.',
         'empty' => 'O país não tem regiões.',
         'country-first' => 'Escolha primeiro um país.',
+        'edit' => 'Editar',
+        'new-title' => 'Nova região',
+        'edit-title' => 'Região',
+        'delete-held' => 'A região tem localidades: mova-as para outra região ou elimine-as primeiro.',
     ],
     'carrier' => [
         'empty' => 'Nenhuma transportadora instalada.',
@@ -249,10 +281,11 @@ return [
         'added' => 'Adicionada.',
         'removed' => 'Removida.',
         'already' => 'Já está na lista.',
+        'remove-title' => 'Remover «:name» das cidades populares?',
     ],
     'binding' => [
         'empty' => 'A fila está vazia.',
-        'empty-help' => 'Todos os registos das transportadoras estão vinculados a uma localidade.',
+        'empty-help' => 'Todos os registos das transportadoras estão vinculados a localidades. Os novos aparecem aqui após uma sincronização, se a transportadora não os conseguir vincular ela mesma.',
         'carrier' => 'Transportadora',
         'reason' => 'Motivo',
         'reasons' => [
@@ -275,6 +308,7 @@ return [
         'km' => ':distance km',
         'any-carrier' => 'Qualquer transportadora',
         'any-reason' => 'Qualquer motivo',
+        'intro' => 'Registos que uma transportadora enviou sem conseguir vinculá-los ela mesma à geografia comum. «Vincular» liga um registo a uma localidade existente, «Criar uma localidade comum» cria uma nova a partir dele, «Não vincular» põe-no de lado — os pontos da transportadora aí não são oferecidos. A fila só se enche enquanto uma transportadora está ligada e sincroniza as suas localidades.',
     ],
     'errors' => [
         'unknown_carrier' => 'Essa transportadora não existe.',

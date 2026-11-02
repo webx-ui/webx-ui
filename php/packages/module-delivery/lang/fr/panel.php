@@ -29,10 +29,29 @@ return [
         'order-failed' => 'L\'ordre n\'a pas été enregistré.',
         'empty-search' => 'Aucun résultat pour la recherche.',
         'drag' => 'Faites glisser une ligne par sa poignée pour changer l\'ordre.',
+        'edit' => 'Modifier',
     ],
     'types' => [
         'store-pickup' => 'Retrait aux points de la boutique',
         'store-courier' => 'Coursier de la boutique',
+        'kinds' => [
+            'branch' => 'Agence :carrier',
+            'locker' => 'Consigne :carrier',
+            'courier' => 'Coursier :carrier',
+            'door' => 'Coursier :carrier',
+        ],
+        'asks' => [
+            'point' => 'Retrait chez :carrier',
+            'address' => 'Livraison par :carrier',
+            'nothing' => ':carrier',
+        ],
+        'help' => [
+            'store-pickup' => 'L\'acheteur retire la commande dans l\'un de vos points : un magasin ou un point de retrait.',
+            'store-courier' => 'Votre coursier apporte la commande à l\'adresse de l\'acheteur, dans les localités choisies.',
+            'point' => 'L\'acheteur choisit une agence ou une consigne du transporteur.',
+            'address' => 'Le transporteur apporte la commande à l\'adresse de l\'acheteur.',
+            'nothing' => 'On ne demande à l\'acheteur que la localité.',
+        ],
     ],
     'method' => [
         'card' => 'Mode',
@@ -42,7 +61,7 @@ return [
         'price' => 'Prix',
         'price-help' => 'Vide ou 0 — gratuit.',
         'point-kind' => 'Type de points',
-        'point-kind-help' => 'Les points parmi lesquels l\'acheteur choisit.',
+        'point-kind-help' => 'Lesquels de vos points ce mode propose : la commande n\'affiche que les points de ce type.',
         'localities' => 'Localités',
         'localities-help' => 'Où va le coursier. Vide — nulle part : le mode n\'est pas proposé.',
         'countries' => 'Pays',
@@ -69,6 +88,8 @@ return [
         'kind-key-help' => 'Lettres latines, chiffres et tirets : parcel-shop.',
         'kind-name' => 'Nom',
         'kind-created' => 'Le type est ajouté.',
+        'new-kind-help' => 'Un type regroupe vos propres points, comme «Magasin» ou «Point de retrait». Créez-en un nouveau — par exemple «Relais partenaire» — pour proposer ces points avec un mode à part.',
+        'point-kind-carrier-help' => 'Les points du transporteur que ce mode propose : ses agences ou ses consignes.',
     ],
     'point' => [
         'card' => 'Point',
@@ -94,6 +115,7 @@ return [
         'deleted' => 'Le point est supprimé.',
         'title' => 'Point',
         'today' => 'Aujourd\'hui',
+        'intro' => 'Les lieux où l\'acheteur retire lui-même sa commande : vos magasins et points de retrait. La commande les propose sous les modes de retrait du même type. Les agences des transporteurs viennent des transporteurs eux-mêmes et ne se gèrent pas ici.',
     ],
     'schedule' => [
         'days' => [
@@ -178,6 +200,13 @@ return [
         'empty' => 'Aucun pays pour l\'instant.',
         'empty-help' => 'Activez les pays où la boutique livre.',
         'localities-tab' => 'Localités',
+        'leader-help' => 'Le transporteur principal crée les localités communes du pays ; les autres transporteurs y associent leurs fiches. «Le premier à se synchroniser» — devient principal le transporteur qui synchronise le pays en premier.',
+        'remove' => 'Retirer',
+        'remove-title' => 'Retirer «:name» ?',
+        'remove-text' => 'Le pays n\'a ni régions ni localités : il est supprimé.',
+        'remove-held' => 'Le pays a des régions ou des localités, auxquelles des points et des commandes peuvent renvoyer. Il sera donc seulement désactivé : la commande ne le proposera plus, les fiches restent.',
+        'removed' => 'Le pays est retiré.',
+        'deactivated' => 'Le pays est utilisé, il est donc désactivé.',
     ],
     'region' => [
         'title' => 'Régions',
@@ -185,13 +214,16 @@ return [
         'name' => 'Nom',
         'code' => 'Code',
         'code-help' => 'ISO 3166-2 sans le pays, s\'il existe.',
-        'rename' => 'Renommer',
         'delete-title' => 'Supprimer «:name» ?',
         'delete-text' => 'Seule une région vide peut être supprimée.',
         'deleted' => 'La région est supprimée.',
         'saved' => 'La région est enregistrée.',
         'empty' => 'Le pays n\'a aucune région.',
         'country-first' => 'Choisissez d\'abord un pays.',
+        'edit' => 'Modifier',
+        'new-title' => 'Nouvelle région',
+        'edit-title' => 'Région',
+        'delete-held' => 'La région a des localités : déplacez-les vers une autre région ou supprimez-les d\'abord.',
     ],
     'carrier' => [
         'empty' => 'Aucun transporteur n\'est installé.',
@@ -249,10 +281,11 @@ return [
         'added' => 'Ajouté.',
         'removed' => 'Retiré.',
         'already' => 'Déjà dans la liste.',
+        'remove-title' => 'Retirer «:name» des villes populaires ?',
     ],
     'binding' => [
         'empty' => 'La file est vide.',
-        'empty-help' => 'Chaque enregistrement des transporteurs est associé à une localité.',
+        'empty-help' => 'Toutes les fiches des transporteurs sont associées à des localités. Les nouvelles apparaîtront ici après une synchronisation, si le transporteur ne peut pas les associer lui-même.',
         'carrier' => 'Transporteur',
         'reason' => 'Motif',
         'reasons' => [
@@ -275,6 +308,7 @@ return [
         'km' => ':distance km',
         'any-carrier' => 'Tout transporteur',
         'any-reason' => 'Tout motif',
+        'intro' => 'Les fiches qu\'un transporteur a envoyées sans pouvoir les associer lui-même à la géographie commune. «Associer» relie une fiche à une localité existante, «Créer une localité commune» en crée une nouvelle à partir d\'elle, «Ne pas associer» la met de côté — les points du transporteur n\'y sont pas proposés. La file ne se remplit que lorsqu\'un transporteur est connecté et synchronise ses localités.',
     ],
     'errors' => [
         'unknown_carrier' => 'Ce transporteur n\'existe pas.',

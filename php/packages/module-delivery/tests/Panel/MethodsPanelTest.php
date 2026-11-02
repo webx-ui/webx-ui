@@ -5,8 +5,14 @@ declare(strict_types=1);
 namespace WebxUi\Delivery\Tests\Panel;
 
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Delivery\AbstractMethodType;
+use WebxUi\Delivery\Asks;
+use WebxUi\Delivery\Carriers;
+use WebxUi\Delivery\Contracts\LabelledMethodType;
+use WebxUi\Delivery\MethodTypes;
 use WebxUi\Delivery\Models\DeliveryMethod;
 use WebxUi\Delivery\Models\DeliveryPoint;
+use WebxUi\Delivery\Testing\FakeCarrier;
 use WebxUi\Delivery\Types\StoreCourier;
 use WebxUi\Delivery\Types\StorePickup;
 
@@ -127,5 +133,96 @@ final class MethodsPanelTest extends PanelTestCase
         $point = $this->point($this->town('Town A'), 'branch', ['carrier' => 'carrier-a']);
 
         $this->getJson($this->api('points/'.$point->id))->assertNotFound();
+    }
+
+    #[Test]
+    public function a_carriers_type_is_named_in_words_and_says_its_kind_itself(): void
+    {
+        $this->signIn();
+        $this->app->make(Carriers::class)->register(new FakeCarrier);
+        $types = $this->app->make(MethodTypes::class);
+        $types->register(new class extends AbstractMethodType
+        {
+            public function key(): string
+            {
+                return 'carrier-a.branch';
+            }
+
+            public function asks(): Asks
+            {
+                return Asks::Point;
+            }
+
+            public function pointKinds(): array
+            {
+                return ['branch'];
+            }
+        });
+        $types->register(new class extends AbstractMethodType implements LabelledMethodType
+        {
+            public function key(): string
+            {
+                return 'carrier-a.express';
+            }
+
+            public function asks(): Asks
+            {
+                return Asks::Address;
+            }
+
+            public function title(string $locale): string
+            {
+                return 'Express to the door';
+            }
+
+            public function description(string $locale): string
+            {
+                return 'Within two hours.';
+            }
+        });
+
+        $answer = $this->getJson($this->api('methods'))->assertOk();
+        $named = array_column($answer->json('data.types'), null, 'key');
+
+        // Never the key: the kind after the dot with the carrier, or what the type says itself.
+        $this->assertSame('Carrier A branch', $named['carrier-a.branch']['title']);
+        $this->assertSame("The buyer chooses one of the carrier's branches or lockers.", $named['carrier-a.branch']['description']);
+        $this->assertSame('Express to the door', $named['carrier-a.express']['title']);
+        $this->assertSame('Within two hours.', $named['carrier-a.express']['description']);
+        $this->assertNotSame('store.pickup', $named['store.pickup']['title']);
+
+        // One kind: the form does not ask, and a kind of the shop's own sent anyway is not taken.
+        $this->postJson($this->api('methods'), ['type' => 'carrier-a.branch', 'values' => [
+            'titles' => ['en' => 'Branch'],
+            'point_kind' => 'store',
+        ]])->assertCreated()
+            ->assertJsonPath('data.method.type_title', 'Carrier A branch')
+            ->assertJsonPath('data.values.point_kind', 'branch')
+            ->assertJsonPath('data.hidden', ['point_kind', 'localities']);
+    }
+
+    #[Test]
+    public function the_points_are_sorted_by_the_column_asked(): void
+    {
+        $this->signIn();
+        $b = $this->town('Town B');
+        $a = $this->town('Town A');
+
+        foreach ([['Store C', $a], ['Store A', $b], ['Store B', $a]] as [$title, $town]) {
+            $this->postJson($this->api('points'), ['values' => [
+                'kind' => 'store',
+                'titles' => ['en' => $title],
+                'address' => ['en' => '1 Example street'],
+                'locality_id' => $town->id,
+                'active' => true,
+            ]])->assertCreated();
+        }
+
+        $this->getJson($this->api('points?sort=title'))->assertOk()
+            ->assertJsonPath('data.*.title', ['Store A', 'Store B', 'Store C']);
+        $this->getJson($this->api('points?sort=-title'))->assertOk()
+            ->assertJsonPath('data.*.title', ['Store C', 'Store B', 'Store A']);
+        $this->getJson($this->api('points?sort=locality'))->assertOk()
+            ->assertJsonPath('data.2.title', 'Store A');
     }
 }

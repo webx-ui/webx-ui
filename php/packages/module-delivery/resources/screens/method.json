@@ -35,11 +35,11 @@
         },
         {
           "id": "point_kind",
-          "type": "wx-select",
+          "type": "wx-delivery-point-kind",
           "name": "point_kind",
           "label": "trans::webx-delivery::panel.method.point-kind",
           "help": "trans::webx-delivery::panel.method.point-kind-help",
-          "props": { "options": [], "clearable": true }
+          "props": { "options": [] }
         },
         {
           "id": "localities",

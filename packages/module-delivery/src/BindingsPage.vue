@@ -8,10 +8,12 @@ import {
   WxButton,
   WxCheckbox,
   WxDialog,
+  WxEmpty,
   WxFormItem,
   WxSelect,
   WxSpace,
   WxTable,
+  WxText,
   type RowKey,
   type TableColumn,
   type TableState,
@@ -146,6 +148,11 @@ function distance(km: number | null): string {
 
 <template>
   <wx-list-screen :title="title">
+    <!-- What the queue is and what its three buttons do, before anyone presses one: a heading's subtitle is one line and cuts this short. -->
+    <template #before>
+      <wx-text class="wx-delivery-intro" tone="muted" size="sm">{{ t('binding.intro') }}</wx-text>
+    </template>
+
     <div v-if="canManage" class="wx-delivery-bindings__bar">
       <span class="wx-delivery-bindings__count">
         {{ t('binding.selected', { count: selected.length }) }}
@@ -191,6 +198,11 @@ function distance(km: number | null): string {
       :filters-count="(carrier ? 1 : 0) + (reason ? 1 : 0)"
       @state-change="load"
     >
+      <!-- Empty is the good state, and it says when the queue fills at all. -->
+      <template #empty>
+        <wx-empty :title="t('binding.empty')" :description="t('binding.empty-help')" />
+      </template>
+
       <template #filters>
         <wx-form-item :label="t('binding.carrier')">
           <wx-select v-model="carrier" :options="carrierOptions" size="sm" />
@@ -247,6 +259,12 @@ function distance(km: number | null): string {
 </template>
 
 <style scoped>
+/* A paragraph and not a line: read once, it has to fit without running the whole width. */
+.wx-delivery-intro {
+  display: block;
+  max-width: 760px;
+}
+
 .wx-delivery-bindings__bar {
   display: flex;
   flex-wrap: wrap;

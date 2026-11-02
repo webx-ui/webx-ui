@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Geography;
 
-/** What removing a locality did (decision 42). */
+/** What removing a locality or a country did (decision 42). */
 enum Removal: string
 {
     /** Nothing held it: the row is gone. */

@@ -71,7 +71,11 @@ final class GeographyController
                 ->map(static fn (string $name, string $code): array => ['code' => $code, 'name' => $name])
                 ->values()
                 ->all(),
-            'carriers' => array_values(array_filter($carriers->keys(), static fn (string $key): bool => $key !== Carriers::STORE)),
+            // The carriers that may lead, by their titles: the select is read, the key is stored.
+            'carriers' => array_values(array_map(
+                static fn (string $key): array => ['value' => $key, 'label' => $carriers->get($key)->title($locale)],
+                array_filter($carriers->keys(), static fn (string $key): bool => $key !== Carriers::STORE),
+            )),
         ]);
     }
 
@@ -91,6 +95,17 @@ final class GeographyController
         $this->attempt('code', fn () => $this->editor->disableCountry($code));
 
         return ApiResponse::noContent();
+    }
+
+    /**
+     * Take a country out of the site (decision 42): gone when nothing is in it, switched off when
+     * regions or localities are — points, selections and orders name those, and keep them.
+     */
+    public function removeCountry(string $code): JsonResponse
+    {
+        $removal = $this->attempt('code', fn () => $this->editor->removeCountry($code));
+
+        return ApiResponse::data(['removal' => $removal->value]);
     }
 
     /** The order of the country choice in the checkout: the codes as dragged. */
@@ -188,7 +203,7 @@ final class GeographyController
      * The localities, a page at a time: by country, region, source and a prefix of any of their
      * names. Switched-off ones are listed too — this is where they are switched back on.
      */
-    public function localities(Request $request): JsonResponse
+    public function localities(Request $request, Carriers $carriers): JsonResponse
     {
         $locale = $this->locales->current();
         $country = strtoupper((string) $request->query('country', ''));
@@ -235,8 +250,10 @@ final class GeographyController
             ->get(['carrier', 'external_id', 'status', 'locality_id'])
             ->groupBy('locality_id');
 
+        $title = static fn (string $key): string => $carriers->has($key) ? $carriers->get($key)->title($locale) : $key;
+
         $page->setCollection($page->getCollection()->map(
-            static fn (GeoLocality $locality): array => LocalityRows::row($locality, $locale, $bindings->get($locality->id) ?? collect()),
+            static fn (GeoLocality $locality): array => LocalityRows::row($locality, $locale, $bindings->get($locality->id) ?? collect(), $title),
         ));
 
         return new JsonResponse($page);

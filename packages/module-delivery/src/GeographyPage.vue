@@ -8,35 +8,42 @@ import {
   WxButton,
   WxEmpty,
   WxFormItem,
-  WxInput,
   WxSelect,
   WxSkeleton,
   WxSortableList,
   WxSwitch,
   WxTable,
+  WxText,
+  createModal,
   type TabItem,
   type TabValue,
   type TableColumn,
+  type TableSort,
   type TableState,
 } from '@webx-ui/core'
 import {
+  rowMenuWidth,
   useAdmin,
-  useDefaultLocale,
   useErrorText,
   WxListScreen,
+  WxRowMenu,
+  type RowAction,
   type ScreenAction,
 } from '@webx-ui/module-admin'
 import { createDeliveryApi } from './api'
 import { useDeliveryWords } from './i18n'
 import LocalityDialog from './LocalityDialog.vue'
-import type { Countries, LocalityRow, Page, RegionRow } from './types'
+import RegionDialog from './RegionDialog.vue'
+import type { Countries, CountryRow, LocalityRow, Page, RegionRow } from './types'
 
 /**
  * The shared geography by hand (decision 42, §14.2), three views of one screen:
  *
  * - **countries** — those the shop delivers to, in the order of the checkout's choice, each on or
- *   off, with the carrier that leads it (§4.4); a new one is switched on from the ISO list;
- * - **regions** of a country — made, renamed, deleted while empty;
+ *   off, with the carrier that leads it (§4.4), each removed by its `···`; a new one is switched
+ *   on from the ISO list;
+ * - **regions** of a country — a table sorted by name or by localities, made and edited in one
+ *   dialog, deleted while empty;
  * - **localities** — a page at a time, by country, region, source and state, searched by any
  *   of their names; made by hand, edited, switched off or deleted.
  *
@@ -48,7 +55,6 @@ const route = useRoute()
 const router = useRouter()
 const t = useDeliveryWords()
 const message = useErrorText()
-const main = useDefaultLocale()
 
 const canManage = computed(() => context.can('delivery.manage'))
 const title = computed(
@@ -128,7 +134,7 @@ const choices = computed(() => {
 
 const leaderOptions = computed(() => [
   { value: '', label: t('country.leader-none') },
-  ...(data.value?.carriers ?? []).map((key) => ({ value: key, label: key })),
+  ...(data.value?.carriers ?? []),
 ])
 
 async function enable(code: string | null): Promise<void> {
@@ -177,15 +183,80 @@ async function orderCountries(): Promise<void> {
   }
 }
 
+/*
+ * Out of the site (decision 42). The dialog says beforehand which of the two it will be: a
+ * country with regions or localities is only switched off, as points and orders may name them.
+ */
+async function removeCountry(row: CountryRow): Promise<void> {
+  const held = row.regions > 0 || row.localities > 0
+  const agreed = await confirm({
+    title: t('country.remove-title', { name: row.name }),
+    message: held ? t('country.remove-held') : t('country.remove-text'),
+    confirmText: held ? t('country.disable') : t('country.remove'),
+    cancelText: t('common.cancel'),
+    tone: 'danger',
+  })
+
+  if (!agreed) return
+
+  try {
+    const removal = await api.removeCountry(row.code)
+
+    toast.success(t(removal === 'deleted' ? 'country.removed' : 'country.deactivated'))
+    if (removal === 'deleted' && country.value === row.code) country.value = ''
+    await loadCountries()
+  } catch (error) {
+    toast.danger(message(error))
+  }
+}
+
+function countryActions(row: CountryRow): RowAction[] {
+  if (!canManage.value) return []
+
+  return [
+    {
+      key: 'remove',
+      icon: 'trash',
+      label: t('country.remove'),
+      danger: true,
+      run: () => void removeCountry(row),
+    },
+  ]
+}
+
 /* ---------------------------------------------------------------------------- regions ----- */
 
 const regions = ref<RegionRow[]>([])
 const loadingRegions = ref(false)
-const regionName = ref('')
-const regionCode = ref('')
-const regionErrors = ref<Record<string, string[]>>({})
-const renaming = ref<number | null>(null)
-const renamed = ref('')
+const regionSort = ref<TableSort | null>(null)
+const regionDialog = createModal<boolean, { country: string; region?: RegionRow | null }>(
+  RegionDialog,
+)
+
+/*
+ * A country's regions are one answer — a few dozen at most — so the table sorts them here: by
+ * name, as they come, or by how many localities each holds.
+ */
+const regionColumns = computed<TableColumn<RegionRow>[]>(() => [
+  { key: 'name', label: t('region.name'), minWidth: 180, sortable: true },
+  { key: 'code', label: t('region.code'), width: 120, hideBelow: 560 },
+  { key: 'localities', label: t('country.localities'), width: 140, align: 'right', sortable: true },
+  { key: 'actions', label: '', width: rowMenuWidth, align: 'right' },
+])
+
+const sortedRegions = computed(() => {
+  const sort = regionSort.value
+
+  if (!sort) return regions.value
+
+  const sign = sort.order === 'desc' ? -1 : 1
+
+  return [...regions.value].sort((one, two) =>
+    sort.key === 'localities'
+      ? sign * (one.localities - two.localities) || one.name.localeCompare(two.name)
+      : sign * one.name.localeCompare(two.name),
+  )
+})
 
 async function loadRegions(): Promise<void> {
   if (country.value === '') {
@@ -213,35 +284,12 @@ watch(
   { immediate: true },
 )
 
-async function addRegion(): Promise<void> {
-  regionErrors.value = {}
+async function editRegion(region: RegionRow | null): Promise<void> {
+  if (country.value === '') return
 
-  try {
-    await api.createRegion(
-      country.value,
-      { [main.value]: regionName.value.trim() },
-      regionCode.value.trim() || null,
-    )
-    regionName.value = ''
-    regionCode.value = ''
+  if (await regionDialog({ country: country.value, region })) {
     toast.success(t('region.saved'))
     await loadRegions()
-  } catch (error) {
-    regionErrors.value = (error as { errors?: Record<string, string[]> }).errors ?? {}
-    if (Object.keys(regionErrors.value).length === 0) toast.danger(message(error))
-  }
-}
-
-async function rename(region: RegionRow): Promise<void> {
-  try {
-    await api.saveRegion(region.id, {
-      names: { ...region.names, [main.value]: renamed.value.trim() },
-    })
-    renaming.value = null
-    toast.success(t('region.saved'))
-    await loadRegions()
-  } catch (error) {
-    toast.danger(message(error))
   }
 }
 
@@ -263,6 +311,24 @@ async function removeRegion(region: RegionRow): Promise<void> {
   } catch (error) {
     toast.danger(message(error))
   }
+}
+
+/* A region with localities cannot go; the item stays, greyed, and says why (§20). */
+function regionActions(region: RegionRow): RowAction[] {
+  if (!canManage.value) return []
+
+  return [
+    { key: 'edit', icon: 'edit', label: t('region.edit'), run: () => void editRegion(region) },
+    {
+      key: 'delete',
+      icon: 'trash',
+      label: t('common.delete'),
+      danger: true,
+      disabled: region.localities > 0,
+      hint: region.localities > 0 ? t('region.delete-held') : undefined,
+      run: () => void removeRegion(region),
+    },
+  ]
 }
 
 /* ------------------------------------------------------------------------- localities ----- */
@@ -349,11 +415,18 @@ function saved(): void {
   void loadLocalities()
 }
 
-const actions = computed<ScreenAction[]>(() =>
-  canManage.value && view.value === 'localities'
-    ? [{ key: 'new', label: t('locality.new'), icon: 'plus', primary: true, run: () => edit(null) }]
-    : [],
-)
+/* The action of the open view, a word without an icon like every head of the panel. */
+const actions = computed<ScreenAction[]>(() => {
+  if (!canManage.value) return []
+  if (view.value === 'localities') {
+    return [{ key: 'new', label: t('locality.new'), primary: true, run: () => edit(null) }]
+  }
+  if (view.value === 'regions' && country.value !== '') {
+    return [{ key: 'new', label: t('region.add'), primary: true, run: () => void editRegion(null) }]
+  }
+
+  return []
+})
 </script>
 
 <template>
@@ -401,14 +474,14 @@ const actions = computed<ScreenAction[]>(() =>
           <span class="wx-delivery-geo__name">{{ row.name }}</span>
           <span v-if="row.district" class="wx-delivery-geo__muted"> · {{ row.district }}</span>
         </template>
-        <template #cell-kind="{ row }">{{ row.kind }}</template>
+        <template #cell-kind="{ row }">{{ row.kind_label }}</template>
         <template #cell-region="{ row }">{{ row.region?.name ?? '' }}</template>
         <template #cell-source="{ row }">
           <wx-badge size="sm">{{ t(`locality.sources.${row.source}`) }}</wx-badge>
         </template>
         <template #cell-bindings="{ row }">
           <span class="wx-delivery-geo__muted">{{
-            row.bindings.map((one) => one.carrier).join(', ')
+            row.bindings.map((one) => one.carrier_title).join(', ')
           }}</span>
         </template>
         <template #cell-active="{ row }">
@@ -451,6 +524,17 @@ const actions = computed<ScreenAction[]>(() =>
         </wx-button>
       </div>
 
+      <!-- What «leading» means, once over the list rather than a tooltip on every row. -->
+      <wx-text
+        v-if="countries.length > 0 && leaderOptions.length > 1"
+        class="wx-delivery-geo__note"
+        tone="muted"
+        size="sm"
+        data-test="leader-help"
+      >
+        {{ t('country.leader-help') }}
+      </wx-text>
+
       <wx-skeleton v-if="loadingCountries && countries.length === 0" :rows="3" />
       <wx-empty
         v-else-if="countries.length === 0"
@@ -464,7 +548,7 @@ const actions = computed<ScreenAction[]>(() =>
         hoverable
         item-key="code"
         :handle="canManage ? 'grip' : 'row'"
-        :item-label="(item: Countries['countries'][number]) => item.name"
+        :item-label="(item: CountryRow) => item.name"
         :disabled="!canManage"
         @move="orderCountries"
       >
@@ -476,7 +560,7 @@ const actions = computed<ScreenAction[]>(() =>
               {{ t('country.regions') }}: {{ item.regions }} · {{ t('country.localities') }}:
               {{ item.localities }}
             </span>
-            <span class="wx-delivery-geo__leader">
+            <span v-if="leaderOptions.length > 1" class="wx-delivery-geo__leader">
               <span class="wx-delivery-geo__muted">{{ t('country.leader') }}</span>
               <wx-select
                 size="sm"
@@ -490,12 +574,15 @@ const actions = computed<ScreenAction[]>(() =>
           </div>
         </template>
         <template #actions="{ item }">
-          <wx-switch
-            :model-value="item.active"
-            :disabled="!canManage"
-            :aria-label="item.active ? t('country.disable') : t('country.enable')"
-            @update:model-value="toggle(item.code, Boolean($event))"
-          />
+          <span class="wx-delivery-geo__country-actions">
+            <wx-switch
+              :model-value="item.active"
+              :disabled="!canManage"
+              :aria-label="item.active ? t('country.disable') : t('country.enable')"
+              @update:model-value="toggle(item.code, Boolean($event))"
+            />
+            <wx-row-menu :actions="countryActions(item)" :label="item.name" />
+          </span>
         </template>
       </wx-sortable-list>
     </template>
@@ -508,70 +595,38 @@ const actions = computed<ScreenAction[]>(() =>
           :options="countryOptions"
           filterable
           :placeholder="t('country.choose')"
+          :aria-label="t('locality.country')"
           class="wx-delivery-geo__choose"
         />
       </div>
 
-      <div v-if="canManage && country" class="wx-delivery-geo__bar">
-        <wx-form-item :label="t('region.name')" :error="regionErrors.names?.[0]">
-          <wx-input v-model="regionName" :maxlength="120" data-test="region-name" />
-        </wx-form-item>
-        <wx-form-item :label="t('region.code')" :help="t('region.code-help')">
-          <wx-input v-model="regionCode" :maxlength="8" />
-        </wx-form-item>
-        <wx-button
-          type="primary"
-          icon="plus"
-          :disabled="regionName.trim() === ''"
-          data-test="region-add"
-          @click="addRegion"
-        >
-          {{ t('region.add') }}
-        </wx-button>
-      </div>
-
-      <wx-skeleton v-if="loadingRegions" :rows="3" />
-      <wx-empty v-else-if="country === ''" :title="t('region.country-first')" />
-      <wx-empty v-else-if="regions.length === 0" :title="t('region.empty')" />
-      <ul v-else class="wx-delivery-geo__regions">
-        <li v-for="one in regions" :key="one.id" class="wx-delivery-geo__region">
-          <template v-if="renaming === one.id">
-            <wx-input v-model="renamed" size="sm" class="wx-delivery-geo__rename" />
-            <wx-button size="sm" type="primary" @click="rename(one)">{{
-              t('common.save')
-            }}</wx-button>
-            <wx-button size="sm" variant="text" @click="renaming = null">{{
-              t('common.cancel')
-            }}</wx-button>
-          </template>
-          <template v-else>
-            <span class="wx-delivery-geo__name">{{ one.name }}</span>
-            <span v-if="one.code" class="wx-delivery-geo__muted">{{ one.code }}</span>
-            <span class="wx-delivery-geo__muted"
-              >{{ t('country.localities') }}: {{ one.localities }}</span
-            >
-            <span class="wx-delivery-geo__gap" />
-            <template v-if="canManage">
-              <wx-button
-                size="sm"
-                variant="text"
-                icon="edit"
-                @click="((renaming = one.id), (renamed = one.name))"
-              >
-                {{ t('region.rename') }}
-              </wx-button>
-              <wx-button
-                size="sm"
-                variant="text"
-                icon="trash"
-                :disabled="one.localities > 0"
-                :aria-label="t('common.delete')"
-                @click="removeRegion(one)"
-              />
-            </template>
-          </template>
-        </li>
-      </ul>
+      <wx-empty v-if="country === ''" :title="t('region.country-first')" />
+      <wx-table
+        v-else
+        :data="sortedRegions"
+        :columns="regionColumns"
+        row-key="id"
+        hover
+        flush
+        :clickable="canManage"
+        :loading="loadingRegions"
+        :cards-below="0"
+        :empty-text="t('region.empty')"
+        :aria-label="t('region.title')"
+        data-test="regions"
+        @row-click="(row: RegionRow) => canManage && editRegion(row)"
+        @sort-change="regionSort = $event"
+      >
+        <template #cell-name="{ row }">
+          <span class="wx-delivery-geo__name">{{ row.name }}</span>
+        </template>
+        <template #cell-code="{ row }">
+          <span class="wx-delivery-geo__muted">{{ row.code ?? '' }}</span>
+        </template>
+        <template #cell-actions="{ row }">
+          <wx-row-menu :actions="regionActions(row)" :label="row.name" />
+        </template>
+      </wx-table>
     </template>
   </wx-list-screen>
 </template>
@@ -625,26 +680,15 @@ const actions = computed<ScreenAction[]>(() =>
   width: 180px;
 }
 
-.wx-delivery-geo__regions {
-  margin: 0;
-  padding: 0;
-  list-style: none;
+.wx-delivery-geo__note {
+  display: block;
+  max-width: 720px;
+  margin-bottom: var(--wx-space-12);
 }
 
-.wx-delivery-geo__region {
-  display: flex;
-  flex-wrap: wrap;
+.wx-delivery-geo__country-actions {
+  display: inline-flex;
   align-items: center;
-  gap: var(--wx-space-8);
-  padding: var(--wx-space-8) 0;
-  border-bottom: 1px solid var(--wx-border-default);
-}
-
-.wx-delivery-geo__rename {
-  flex: 1 1 200px;
-}
-
-.wx-delivery-geo__gap {
-  flex: 1 1 auto;
+  gap: var(--wx-space-4);
 }
 </style>

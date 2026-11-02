@@ -23,6 +23,8 @@ export interface LocalityBrief {
   /** «Town A, District C, Region B» — what tells namesakes apart. */
   label: string
   kind: string
+  /** «Town», «Village»: the type in the panel's language. */
+  kind_label: string
   country: string
   active: boolean
 }
@@ -30,6 +32,8 @@ export interface LocalityBrief {
 export interface MethodType {
   key: string
   title: string
+  /** One line of what the type is, under its title in «What kind of method?». */
+  description: string
   carrier: string
   carrier_title: string
   asks: 'nothing' | 'address' | 'point'
@@ -158,7 +162,8 @@ export interface CountryRow {
 export interface Countries {
   countries: CountryRow[]
   choices: { code: string; name: string }[]
-  carriers: string[]
+  /** The carriers that may lead a country, by their titles. */
+  carriers: Option[]
 }
 
 export interface RegionRow {
@@ -176,7 +181,7 @@ export interface LocalityRow extends LocalityBrief {
   weight: number
   created_by: string
   source: 'manual' | 'import' | 'carrier'
-  bindings: { carrier: string; external_id: string; status: string }[]
+  bindings: { carrier: string; carrier_title: string; external_id: string; status: string }[]
 }
 
 export interface LocalityDetail {

@@ -29,10 +29,29 @@ return [
         'order-failed' => 'Sıralama kaydedilmedi.',
         'empty-search' => 'Aramayla eşleşen bir şey yok.',
         'drag' => 'Sırayı değiştirmek için satırı tutamacından sürükleyin.',
+        'edit' => 'Düzenle',
     ],
     'types' => [
         'store-pickup' => 'Mağaza noktalarından teslim alma',
         'store-courier' => 'Mağazanın kuryesi',
+        'kinds' => [
+            'branch' => ':carrier şubesi',
+            'locker' => ':carrier kargo dolabı',
+            'courier' => ':carrier kuryesi',
+            'door' => ':carrier kuryesi',
+        ],
+        'asks' => [
+            'point' => ':carrier noktasından teslim alma',
+            'address' => ':carrier ile teslimat',
+            'nothing' => ':carrier',
+        ],
+        'help' => [
+            'store-pickup' => 'Alıcı siparişi kendi noktalarınızdan birinden teslim alır: bir mağaza ya da teslim noktası.',
+            'store-courier' => 'Kendi kuryeniz siparişi seçtiğiniz yerleşim yerlerinde alıcının adresine götürür.',
+            'point' => 'Alıcı, kargo firmasının bir şubesini ya da kargo dolabını seçer.',
+            'address' => 'Kargo firması siparişi alıcının adresine götürür.',
+            'nothing' => 'Alıcıdan yerleşim yeri dışında bir şey istenmez.',
+        ],
     ],
     'method' => [
         'card' => 'Yöntem',
@@ -42,7 +61,7 @@ return [
         'price' => 'Fiyat',
         'price-help' => 'Boş veya 0 — ücretsiz.',
         'point-kind' => 'Nokta türü',
-        'point-kind-help' => 'Alıcının aralarından seçtiği noktalar.',
+        'point-kind-help' => 'Bu yöntemin hangi noktalarınızı sunduğu: siparişte yalnızca bu türdeki noktalar görünür.',
         'localities' => 'Yerleşim yerleri',
         'localities-help' => 'Kuryenin gittiği yerler. Boş — hiçbir yere: yöntem sunulmaz.',
         'countries' => 'Ülkeler',
@@ -69,6 +88,8 @@ return [
         'kind-key-help' => 'Latin harfleri, rakamlar ve tireler: parcel-shop.',
         'kind-name' => 'Ad',
         'kind-created' => 'Tür eklendi.',
+        'new-kind-help' => 'Tür, kendi noktalarınızı gruplar: «Mağaza» ya da «Teslim noktası» gibi. Bu noktaları ayrı bir yöntemle sunmak için yeni bir tür oluşturun — örneğin «Ortak noktası».',
+        'point-kind-carrier-help' => 'Yöntemin sunduğu kargo noktaları: şubeleri ya da kargo dolapları.',
     ],
     'point' => [
         'card' => 'Nokta',
@@ -94,6 +115,7 @@ return [
         'deleted' => 'Nokta silindi.',
         'title' => 'Nokta',
         'today' => 'Bugün',
+        'intro' => 'Alıcının siparişi kendisinin teslim aldığı yerler: mağazalarınız ve teslim noktalarınız. Siparişte aynı türdeki teslim alma yöntemlerinde sunulurlar. Kargo firmalarının şubeleri firmaların kendisinden gelir ve burada tutulmaz.',
     ],
     'schedule' => [
         'days' => [
@@ -178,6 +200,13 @@ return [
         'empty' => 'Henüz ülke yok.',
         'empty-help' => 'Mağazanın teslimat yaptığı ülkeleri açın.',
         'localities-tab' => 'Yerleşim yerleri',
+        'leader-help' => 'Öncü kargo firması ülkenin ortak yerleşim yerlerini oluşturur; diğer firmalar kayıtlarını bunlarla eşleştirir. «İlk eşitleyen» — ülkeyi ilk eşitleyen firma öncü olur.',
+        'remove' => 'Kaldır',
+        'remove-title' => '«:name» kaldırılsın mı?',
+        'remove-text' => 'Ülkede bölge ya da yerleşim yeri yok: silinecek.',
+        'remove-held' => 'Ülkede noktaların ve siparişlerin başvurabileceği bölgeler ya da yerleşim yerleri var. Bu yüzden yalnızca kapatılacak: siparişte artık sunulmaz, kayıtlar kalır.',
+        'removed' => 'Ülke kaldırıldı.',
+        'deactivated' => 'Ülke kullanılıyor, bu yüzden kapatıldı.',
     ],
     'region' => [
         'title' => 'Bölgeler',
@@ -185,13 +214,16 @@ return [
         'name' => 'Ad',
         'code' => 'Kod',
         'code-help' => 'Varsa ülke olmadan ISO 3166-2.',
-        'rename' => 'Yeniden adlandır',
         'delete-title' => '«:name» silinsin mi?',
         'delete-text' => 'Yalnızca boş bir bölge silinebilir.',
         'deleted' => 'Bölge silindi.',
         'saved' => 'Bölge kaydedildi.',
         'empty' => 'Ülkenin bölgesi yok.',
         'country-first' => 'Önce bir ülke seçin.',
+        'edit' => 'Düzenle',
+        'new-title' => 'Yeni bölge',
+        'edit-title' => 'Bölge',
+        'delete-held' => 'Bölgede yerleşim yerleri var: önce onları başka bir bölgeye taşıyın ya da silin.',
     ],
     'carrier' => [
         'empty' => 'Yüklü kargo firması yok.',
@@ -249,10 +281,11 @@ return [
         'added' => 'Eklendi.',
         'removed' => 'Kaldırıldı.',
         'already' => 'Zaten listede.',
+        'remove-title' => '«:name» popüler şehirlerden kaldırılsın mı?',
     ],
     'binding' => [
         'empty' => 'Kuyruk boş.',
-        'empty-help' => 'Kargo firmalarının her kaydı bir yerleşim yeriyle eşleştirilmiş.',
+        'empty-help' => 'Kargo firmalarının tüm kayıtları yerleşim yerleriyle eşleşti. Yenileri, firma kendisi eşleştiremezse eşitlemeden sonra burada görünür.',
         'carrier' => 'Kargo firması',
         'reason' => 'Neden',
         'reasons' => [
@@ -275,6 +308,7 @@ return [
         'km' => ':distance km',
         'any-carrier' => 'Herhangi bir kargo firması',
         'any-reason' => 'Herhangi bir neden',
+        'intro' => 'Bir kargo firmasının gönderdiği ama ortak coğrafyayla kendisinin eşleştiremediği kayıtlar. «Eşleştir» kaydı mevcut bir yerleşim yerine bağlar, «Ortak yerleşim yeri oluştur» ondan yeni bir yer oluşturur, «Eşleştirme» onu bir kenara koyar — firmanın oradaki noktaları sunulmaz. Kuyruk yalnızca bir kargo firması bağlıyken ve yerleşim yerlerini eşitlerken dolar.',
     ],
     'errors' => [
         'unknown_carrier' => 'Böyle bir kargo firması yok.',

@@ -59,7 +59,8 @@ final class BindingController
                     'name' => Names::pick(is_array($record['names'] ?? null) ? $record['names'] : null, $locale) ?? (string) ($record['name'] ?? ''),
                     'region' => Names::pick(is_array($record['regionNames'] ?? null) ? $record['regionNames'] : null, $locale) ?? (is_string($record['region'] ?? null) ? $record['region'] : null),
                     'district' => is_string($record['district'] ?? null) ? $record['district'] : null,
-                    'kind' => $record['kind'] ?? null,
+                    // The type in words: a known one by the dictionary, a carrier's own word as it is.
+                    'kind' => is_string($record['kind'] ?? null) ? LocalityRows::kindLabel($record['kind'], $locale) : null,
                     'country' => $record['country'] ?? null,
                     'lat' => $record['lat'] ?? null,
                     'lng' => $record['lng'] ?? null,

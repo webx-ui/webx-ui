@@ -418,7 +418,8 @@ $limit = 10): list<LocalitySuggestion>`:
 `webx:geo:import` остаётся для целой страны. Сервис — `WebxUi\Geography\Editor`, им же пользуются
 экраны и инструменты:
 
-- **страны** — `enableCountry($code, names, position)` / `disableCountry()`: список выбора — коды ISO
+- **страны** — `enableCountry($code, names, position)` / `disableCountry()` / `removeCountry()`
+  (без регионов и пунктов — удаляется, иначе только выключается): список выбора — коды ISO
   3166-1 с именами `symfony/intl`; строка `geo_countries` появляется при включении;
 - **регионы** — `createRegion()`, `updateRegion()`, `deleteRegion()` (с пунктами — отказ); ручной
   регион службы привязывают и не переименовывают;
@@ -644,6 +645,22 @@ interface MethodType
      * @return Selection|list<string>  messages keyed by field name on failure
      */
     public function validate(Method $method, DeliveryContext $context, SelectionInput $input): Selection|array;
+}
+```
+
+```php
+namespace WebxUi\Delivery\Contracts;
+
+/**
+ * Optional on top of MethodType: the type's name and one line of what it is, for the panel.
+ * Without it the panel names the type in words anyway — the kind after the dot or what it asks,
+ * with the carrier's title («Carrier A branch», «Delivery by Carrier A») — never by its key.
+ */
+interface LabelledMethodType extends MethodType
+{
+    public function title(string $locale): string;
+
+    public function description(string $locale): ?string;
 }
 ```
 
@@ -1750,6 +1767,14 @@ $this->callAfterResolving(MethodTypes::class, function (MethodTypes $types) {
   запуск — 409 со страницей. «Подтвердить снятие» — у последнего `held` запуска справочника.
 - Очередь привязок — `Panel\BindingQueue` поверх `Matcher::bind()/create()`: отмеченные строки
   или весь фильтр, 500 за запрос (ответ говорит, сколько осталось); точки привязки идут за ней.
+- Правки по замечаниям (попытка 2): ни ключей служб, ни кодов типов в интерфейсе — подписи
+  служб, типов способа (`LabelledMethodType` или подпись из вида и службы) и типов пунктов;
+  выбор типа способа — список вариантов с описанием; вид точек — поле `wx-delivery-point-kind`
+  с «Новым видом точек» под ним, только у самовывоза магазина (у способа службы с одним видом поле
+  не рисуется, вид — службы); свои точки — таблица с сортировкой и меню «…»; регионы — таблица с
+  сортировкой, меню «…» и диалогом добавления и правки; страна убирается из меню «…»
+  (`POST …/countries/{code}/remove`: удаление или выключение); пояснения на экранах точек,
+  стран (ведущая служба) и очереди привязок; удаление популярного города — с подтверждением.
 - Не сделано здесь: значок способа (поле `icon_id` ждёт выбора из медиатеки), расписание
   справочников из панели (остаётся конфиг `webx-delivery.carriers.<key>.schedule`), вкладка заказа
   (этап 10), MCP (этап 11).

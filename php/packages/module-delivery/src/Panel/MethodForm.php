@@ -11,6 +11,7 @@ use WebxUi\Cart\Contracts\CurrencySource;
 use WebxUi\Cart\Money;
 use WebxUi\Delivery\Asks;
 use WebxUi\Delivery\Carriers;
+use WebxUi\Delivery\Contracts\LabelledMethodType;
 use WebxUi\Delivery\Countries;
 use WebxUi\Delivery\MethodTypes;
 use WebxUi\Delivery\Models\DeliveryMethod;
@@ -50,7 +51,7 @@ final class MethodForm
     /**
      * The types a new method can be of: every registered one, each with the carrier it is of.
      *
-     * @return list<array{key: string, title: string, carrier: string, carrier_title: string, asks: string}>
+     * @return list<array{key: string, title: string, description: string, carrier: string, carrier_title: string, asks: string}>
      */
     public function types(): array
     {
@@ -61,6 +62,7 @@ final class MethodForm
             $types[] = [
                 'key' => $type->key(),
                 'title' => $this->typeTitle($type->key(), $locale),
+                'description' => $this->typeDescription($type->key(), $locale),
                 'carrier' => $type->carrier(),
                 'carrier_title' => $this->carrierTitle($type->carrier(), $locale),
                 'asks' => $type->asks()->value,
@@ -170,7 +172,10 @@ final class MethodForm
             throw ValidationException::withMessages(['point_kind' => [__('validation.in', ['attribute' => 'point_kind'])]]);
         }
 
-        if (! $method->exists && $this->asks($method->type) === Asks::Point && ($values['point_kind'] ?? null) === null) {
+        // A carrier's type with one kind keeps that kind whatever was stored before: the form no
+        // longer asks, and a kind of the shop's own on a carrier's method finds no point at all.
+        if ($this->asks($method->type) === Asks::Point
+            && (! $this->choosesKind($method->type) || (! $method->exists && ($values['point_kind'] ?? null) === null))) {
             $values['point_kind'] = $this->pointKindOptions($method->type)[0]['value'] ?? null;
         }
 
@@ -213,7 +218,7 @@ final class MethodForm
     {
         $hidden = [];
 
-        if ($this->asks($type) !== Asks::Point) {
+        if (! $this->choosesKind($type)) {
             $hidden[] = 'point_kind';
         }
 
@@ -224,12 +229,70 @@ final class MethodForm
         return $hidden;
     }
 
+    /**
+     * The type in words, never its key (`carrier-a.branch`): what the type says of itself, the
+     * dictionary's line for the shop's two, or a name made of the kind after the dot or of what
+     * the type asks, with the carrier's title in it — «Carrier A branch», «Delivery by Carrier A».
+     * The key itself only for a type that is not installed any more, and so has no carrier to name.
+     */
     public function typeTitle(string $type, string $locale): string
     {
-        $key = 'webx-delivery::panel.types.'.str_replace('.', '-', $type);
-        $line = trans($key, [], $locale);
+        $known = $this->types->has($type) ? $this->types->get($type) : null;
 
-        return is_string($line) && $line !== $key ? $line : $type;
+        if ($known instanceof LabelledMethodType) {
+            return $known->title($locale);
+        }
+
+        $line = $this->line('types.'.str_replace('.', '-', $type), [], $locale);
+
+        if ($line !== null || $known === null) {
+            return $line ?? $type;
+        }
+
+        $carrier = ['carrier' => $this->carrierTitle($known->carrier(), $locale)];
+        $kind = explode('.', $type, 2)[1] ?? '';
+
+        return $this->line('types.kinds.'.$kind, $carrier, $locale)
+            ?? $this->line('types.asks.'.$known->asks()->value, $carrier, $locale)
+            ?? $carrier['carrier'];
+    }
+
+    /** One line of what the type is, for «What kind of method?». */
+    public function typeDescription(string $type, string $locale): string
+    {
+        $known = $this->types->has($type) ? $this->types->get($type) : null;
+        $own = $known instanceof LabelledMethodType ? $known->description($locale) : null;
+
+        return $own
+            ?? $this->line('types.help.'.str_replace('.', '-', $type), [], $locale)
+            ?? ($known === null ? '' : ($this->line('types.help.'.$known->asks()->value, [], $locale) ?? ''));
+    }
+
+    /**
+     * Whether the form asks for the kind of points. The shop's pick-up does: its points are the
+     * shop's, of a kind it may name itself (decision 9). A carrier's type names its kind itself —
+     * a branch is a branch — and is asked only when it offers more than one.
+     */
+    private function choosesKind(string $type): bool
+    {
+        if ($this->asks($type) !== Asks::Point) {
+            return false;
+        }
+
+        return $type === StorePickup::KEY || count($this->types->get($type)->pointKinds()) > 1;
+    }
+
+    /**
+     * A line of the panel's dictionary, or null when it has none.
+     *
+     * @param  array<string, string>  $replace
+     */
+    private function line(string $key, array $replace, string $locale): ?string
+    {
+        $full = 'webx-delivery::panel.'.$key;
+        $line = trans($full, $replace, $locale);
+
+        return is_string($line) && $line !== $full ? $line : null;
     }
 
     private function carrierTitle(string $carrier, string $locale): string

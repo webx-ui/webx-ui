@@ -62,6 +62,8 @@ export function createDeliveryApi(admin: AdminContext) {
       q?: string
       kind?: string
       state?: string
+      /** `title`, `kind`, `locality` or `active`; a minus — the other way round. */
+      sort?: string
     }) => http.get<PointsPage>(`${base}/points${query(params)}`),
     point: (id: number) => http.get<{ data: PointDetail }>(`${base}/points/${id}`).then(data),
     createPoint: (values: ScreenModel) =>
@@ -100,6 +102,15 @@ export function createDeliveryApi(admin: AdminContext) {
       http.post<void>(`${base}/geography/countries`, { code }).then(() => undefined),
     disableCountry: (code: string) =>
       http.delete<void>(`${base}/geography/countries/${code}`).then(() => undefined),
+    /** Gone when nothing is in it, switched off otherwise — the answer says which. */
+    removeCountry: (code: string) =>
+      http
+        .post<{ data: { removal: 'deleted' | 'deactivated' } }>(
+          `${base}/geography/countries/${code}/remove`,
+          {},
+        )
+        .then(data)
+        .then((answer) => answer.removal),
     orderCountries: (codes: string[]) =>
       http.put<void>(`${base}/geography/countries/order`, { codes }).then(() => undefined),
     lead: (code: string, carrier: string | null) =>

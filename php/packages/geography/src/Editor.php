@@ -65,6 +65,29 @@ final class Editor
         return $country;
     }
 
+    /**
+     * Takes a country out (decision 42): deleted when it has neither regions nor localities —
+     * a code switched on by mistake; otherwise only switched off, as a locality in use is.
+     */
+    public function removeCountry(string $code): Removal
+    {
+        $country = GeoCountry::query()->find(strtoupper(trim($code)));
+
+        if (! $country instanceof GeoCountry) {
+            throw new GeographyException("There is no country \"{$code}\" on the site.");
+        }
+
+        if ($country->regions()->exists() || $country->localities()->exists()) {
+            $this->disableCountry($country->code);
+
+            return Removal::Deactivated;
+        }
+
+        $country->delete();
+
+        return Removal::Deleted;
+    }
+
     // Regions
 
     /** @param  array<string, string>  $names */

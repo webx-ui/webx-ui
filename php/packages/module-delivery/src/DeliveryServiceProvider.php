@@ -29,6 +29,7 @@ use WebxUi\Delivery\Panel\DeliverySection;
 use WebxUi\Delivery\Panel\Fields\CountryField;
 use WebxUi\Delivery\Panel\Fields\LocalitiesField;
 use WebxUi\Delivery\Panel\Fields\LocalityField;
+use WebxUi\Delivery\Panel\Fields\PointKindField;
 use WebxUi\Delivery\Panel\Fields\RegionField;
 use WebxUi\Delivery\Panel\Fields\ScheduleField;
 use WebxUi\Delivery\Panel\LocalityForm;
@@ -215,6 +216,7 @@ class DeliveryServiceProvider extends ServiceProvider
         $types->register('wx-delivery-region', new RegionField);
         $types->register('wx-delivery-country', new CountryField);
         $types->register('wx-delivery-schedule', new ScheduleField);
+        $types->register('wx-delivery-point-kind', new PointKindField);
 
         $screens = $this->app->make(ScreenRegistry::class);
         $screens->register(MethodForm::SCREEN, __DIR__.'/../resources/screens/method.json');

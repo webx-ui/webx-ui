@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace WebxUi\Delivery\Tests\Panel;
 
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Delivery\Carriers;
+use WebxUi\Delivery\Models\DeliveryCarrierLocality;
+use WebxUi\Delivery\Testing\FakeCarrier;
 use WebxUi\Geography\Models\GeoCountry;
 use WebxUi\Geography\Models\GeoLocality;
 
@@ -119,5 +122,41 @@ final class GeographyPanelTest extends PanelTestCase
 
         $this->assertFalse(GeoCountry::query()->find('XX')?->active);
         $this->assertNotNull(GeoLocality::query()->find($town->id));
+    }
+
+    #[Test]
+    public function a_country_with_nothing_in_it_is_removed_and_one_in_use_only_switched_off(): void
+    {
+        $this->signIn();
+        $this->town('Town A');
+        $this->postJson($this->api('geography/countries'), ['code' => 'ZZ'])->assertCreated();
+
+        $this->postJson($this->api('geography/countries/ZZ/remove'))->assertOk()->assertJsonPath('data.removal', 'deleted');
+        $this->assertNull(GeoCountry::query()->find('ZZ'));
+
+        $this->postJson($this->api('geography/countries/XX/remove'))->assertOk()->assertJsonPath('data.removal', 'deactivated');
+        $this->assertFalse(GeoCountry::query()->find('XX')?->active);
+    }
+
+    #[Test]
+    public function the_list_says_types_and_carriers_in_words(): void
+    {
+        $this->signIn();
+        $this->app->make(Carriers::class)->register(new FakeCarrier);
+        $town = $this->town('Town A');
+        DeliveryCarrierLocality::query()->create([
+            'carrier' => FakeCarrier::KEY,
+            'external_id' => 'L1',
+            'locality_id' => $town->id,
+            'status' => 'matched',
+            'record' => ['name' => 'Town A'],
+        ]);
+
+        $this->getJson($this->api('geography/localities?country=XX'))->assertOk()
+            ->assertJsonPath('data.0.kind_label', 'Town')
+            ->assertJsonPath('data.0.bindings.0.carrier_title', 'Carrier A');
+
+        $this->getJson($this->api('geography/countries'))->assertOk()
+            ->assertJsonPath('data.carriers', [['value' => FakeCarrier::KEY, 'label' => 'Carrier A']]);
     }
 }

@@ -31,6 +31,7 @@ module's sync. Languages come from `webx-ui/localization`.
   name, alias or later word starts with the query, heaviest first; an empty query gives the
   heaviest of the country. Two queries; not cached on purpose.
 - **`Editor`** — the geography kept by hand: `enableCountry()`, `disableCountry()`,
+  `removeCountry()` (deleted while it has no regions or localities, otherwise only switched off),
   `createRegion()`, `updateRegion()`, `deleteRegion()` (refused while it has localities),
   `similar()`, `createLocality()` (`created_by = manual`, throws `DuplicateLocality` with the
   similar ones unless `force`), `updateLocality()` (marks the changed fields of a carrier's or

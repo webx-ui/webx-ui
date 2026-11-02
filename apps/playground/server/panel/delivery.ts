@@ -510,12 +510,22 @@ function label(one: Locality, locale: string): string {
     .join(', ')
 }
 
+/* The dictionary of the panel, once `registerDelivery` is given it: a locality's type in words. */
+let say: Line | null = null
+
+const kindLabel = (kind: string, locale: string) => {
+  const text = say ? say(locale, 'webx-delivery', `delivery.locality_kinds.${kind}`) : kind
+
+  return text.endsWith(`locality_kinds.${kind}`) ? kind : text
+}
+
 function brief(one: Locality, locale: string) {
   return {
     id: one.id,
     name: pick(one.names, locale),
     label: label(one, locale),
     kind: one.kind,
+    kind_label: kindLabel(one.kind, locale),
     country: one.country,
     active: one.active,
   }
@@ -554,16 +564,45 @@ const money = (minor: number | null) =>
   minor === null ? null : `${(minor / 100).toFixed(2).replace('.', ',')} ₴`
 
 export function registerDelivery(on: On, fail: Fail, line: Line): void {
+  say = line
   const words = (locale: string, path: string) => line(locale, 'webx-delivery', `panel.${path}`)
+  /* A line of the panel's dictionary, or null — what `MethodForm::line()` is on the server. */
+  const said = (locale: string, path: string, params: Record<string, string> = {}) => {
+    let text = words(locale, path)
+
+    if (text.endsWith(path)) return null
+    for (const [name, value] of Object.entries(params)) text = text.replaceAll(`:${name}`, value)
+
+    return text
+  }
   const refuse = (field: string, text: string) => fail(422, text, undefined, { [field]: [text] })
 
+  /* The shop is the dictionary's word (`StoreCarrier::title()`); «Carrier A» names itself. */
+  const carrierTitle = (carrier: string, locale = 'en') =>
+    carrier === 'store' ? line(locale, 'webx-delivery', 'delivery.carriers.store') : 'Carrier A'
+  /* `MethodForm::typeTitle()`: words, never the key — the kind after the dot, or what it asks. */
   const typeTitle = (type: string, locale: string) => {
-    const lineKey = `types.${type.replace('.', '-')}`
-    const text = words(locale, lineKey)
+    const known = TYPES.find((one) => one.key === type)
+    const own = said(locale, `types.${type.replace('.', '-')}`)
 
-    return text.endsWith(lineKey) ? type : text
+    if (own !== null || !known) return own ?? type
+
+    const carrier = { carrier: carrierTitle(known.carrier, locale) }
+
+    return (
+      said(locale, `types.kinds.${type.split('.')[1] ?? ''}`, carrier) ??
+      said(locale, `types.asks.${known.asks}`, carrier) ??
+      carrier.carrier
+    )
   }
-  const carrierTitle = (carrier: string) => (carrier === 'store' ? 'Shop' : 'Carrier A')
+  const typeDescription = (type: string, locale: string) => {
+    const known = TYPES.find((one) => one.key === type)
+
+    return (
+      said(locale, `types.help.${type.replace('.', '-')}`) ??
+      (known ? (said(locale, `types.help.${known.asks}`) ?? '') : '')
+    )
+  }
 
   const kindOptions = (locale: string, kinds: string[]) =>
     kinds.map((value) => ({
@@ -573,13 +612,12 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
         : line(locale, 'webx-delivery', `delivery.point_kinds.${value}`),
     }))
 
+  /* The kind is asked of the shop's pick-up, and of a carrier's type only with a choice of kinds. */
   const hidden = (type: string) => {
-    const asks = TYPES.find((one) => one.key === type)?.asks
+    const known = TYPES.find((one) => one.key === type)
+    const chooses = known?.asks === 'point' && (type === 'store.pickup' || known.kinds.length > 1)
 
-    return [
-      ...(asks === 'point' ? [] : ['point_kind']),
-      ...(type === 'store.courier' ? [] : ['localities']),
-    ]
+    return [...(chooses ? [] : ['point_kind']), ...(type === 'store.courier' ? [] : ['localities'])]
   }
 
   const pointKinds = (type: string, locale: string) => {
@@ -600,7 +638,7 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
       type: one.type,
       type_title: typeTitle(one.type, locale),
       carrier: type?.carrier ?? null,
-      carrier_title: type ? carrierTitle(type.carrier) : null,
+      carrier_title: type ? carrierTitle(type.carrier, locale) : null,
       missing: !type,
       title: pick(one.titles, locale) || one.key,
       price: one.price,
@@ -666,8 +704,9 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
       types: TYPES.map((one) => ({
         key: one.key,
         title: typeTitle(one.key, locale),
+        description: typeDescription(one.key, locale),
         carrier: one.carrier,
-        carrier_title: carrierTitle(one.carrier),
+        carrier_title: carrierTitle(one.carrier, locale),
         asks: one.asks,
       })),
     },
@@ -847,11 +886,26 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
           key([...Object.values(one.titles), ...Object.values(one.address)].join(' ')).includes(q),
       )
 
+    /* `PointController::sort()`: by a column, a minus for the other way round. */
+    const sort = query.get('sort') ?? ''
+    const desc = sort.startsWith('-')
+    const by = desc ? sort.slice(1) : sort
+    const listed = rows.map((one) => pointRow(one, locale))
+    const value = (row: (typeof listed)[number]) =>
+      by === 'title'
+        ? row.title
+        : by === 'kind'
+          ? row.kind
+          : by === 'locality'
+            ? (row.locality?.name ?? '')
+            : by === 'active'
+              ? String(Number(row.active))
+              : ''
+
+    if (by !== '') listed.sort((x, y) => (desc ? -1 : 1) * value(x).localeCompare(value(y)))
+
     return {
-      ...paginate(
-        rows.map((one) => pointRow(one, locale)),
-        query,
-      ),
+      ...paginate(listed, query),
       filters: { kinds: kindOptions(locale, ['store', 'pickup', ...Object.keys(state.kinds)]) },
     }
   })
@@ -1061,7 +1115,7 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
           locale,
         ),
       })),
-      carriers: ['carrier-a'],
+      carriers: [{ value: 'carrier-a', label: carrierTitle('carrier-a') }],
     },
   }))
 
@@ -1098,6 +1152,23 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
     if (one) one.active = false
 
     return {}
+  })
+
+  /* Gone when nothing is in it, off otherwise (`Editor::removeCountry()`). */
+  on('POST', '/delivery/geography/countries/([A-Za-z]+)/remove', ({ params }) => {
+    const code = params[0]!.toUpperCase()
+    const one = state.countries.find((each) => each.code === code)
+
+    if (!one) throw fail(422, 'There is no such country on the site.')
+
+    const held =
+      state.regions.some((each) => each.country === code) ||
+      state.localities.some((each) => each.country === code)
+
+    if (held) one.active = false
+    else state.countries = state.countries.filter((each) => each !== one)
+
+    return { data: { removal: held ? 'deactivated' : 'deleted' } }
   })
 
   on('PUT', '/delivery/geography/countries/([A-Za-z]+)/leader', ({ params, body }) => {
@@ -1208,6 +1279,7 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
           .filter((each) => each.locality_id === one.id)
           .map((each) => ({
             carrier: each.carrier,
+            carrier_title: carrierTitle(each.carrier),
             external_id: each.external_id,
             status: each.status,
           })),
@@ -1470,7 +1542,12 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
       carrier_title: carrierTitle(one.carrier),
       external_id: one.external_id,
       reason: one.reason,
-      record: { ...one.record, lat: null, lng: null },
+      record: {
+        ...one.record,
+        kind: one.record.kind ? kindLabel(one.record.kind, locale) : null,
+        lat: null,
+        lng: null,
+      },
       candidates: one.candidates
         .map((candidate) => {
           const found = locality(candidate.locality_id)

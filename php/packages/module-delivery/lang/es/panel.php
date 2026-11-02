@@ -29,10 +29,29 @@ return [
         'order-failed' => 'No se guardó el orden.',
         'empty-search' => 'Nada coincide con la búsqueda.',
         'drag' => 'Arrastra una fila por su asa para cambiar el orden.',
+        'edit' => 'Editar',
     ],
     'types' => [
         'store-pickup' => 'Recogida en los puntos de la tienda',
         'store-courier' => 'Repartidor de la tienda',
+        'kinds' => [
+            'branch' => 'Oficina de :carrier',
+            'locker' => 'Taquilla de :carrier',
+            'courier' => 'Mensajero de :carrier',
+            'door' => 'Mensajero de :carrier',
+        ],
+        'asks' => [
+            'point' => 'Recogida en :carrier',
+            'address' => 'Entrega de :carrier',
+            'nothing' => ':carrier',
+        ],
+        'help' => [
+            'store-pickup' => 'El comprador recoge el pedido en uno de tus puntos: una tienda o un punto de recogida.',
+            'store-courier' => 'Tu propio mensajero lleva el pedido a la dirección del comprador, en las localidades elegidas.',
+            'point' => 'El comprador elige una oficina o taquilla del transportista.',
+            'address' => 'El transportista lleva el pedido a la dirección del comprador.',
+            'nothing' => 'Al comprador solo se le pide la localidad.',
+        ],
     ],
     'method' => [
         'card' => 'Método',
@@ -42,7 +61,7 @@ return [
         'price' => 'Precio',
         'price-help' => 'Vacío o 0 — gratis.',
         'point-kind' => 'Tipo de puntos',
-        'point-kind-help' => 'Los puntos entre los que elige el comprador.',
+        'point-kind-help' => 'Qué puntos tuyos ofrece este método: en el pedido solo aparecen los puntos de este tipo.',
         'localities' => 'Localidades',
         'localities-help' => 'Adonde va el repartidor. Vacío — a ninguna: el método no se ofrece.',
         'countries' => 'Países',
@@ -69,6 +88,8 @@ return [
         'kind-key-help' => 'Letras latinas, dígitos y guiones: parcel-shop.',
         'kind-name' => 'Nombre',
         'kind-created' => 'El tipo se ha añadido.',
+        'new-kind-help' => 'Un tipo agrupa tus propios puntos, como «Tienda» o «Punto de recogida». Crea uno nuevo — por ejemplo «Punto asociado» — para ofrecer esos puntos con un método propio.',
+        'point-kind-carrier-help' => 'Qué puntos del transportista ofrece el método: sus oficinas o sus taquillas.',
     ],
     'point' => [
         'card' => 'Punto',
@@ -94,6 +115,7 @@ return [
         'deleted' => 'El punto se ha eliminado.',
         'title' => 'Punto',
         'today' => 'Hoy',
+        'intro' => 'Los lugares donde el comprador recoge el pedido él mismo: tus tiendas y puntos de recogida. El pedido los ofrece en los métodos de recogida del mismo tipo. Las oficinas de los transportistas vienen de los propios transportistas y no se gestionan aquí.',
     ],
     'schedule' => [
         'days' => [
@@ -178,6 +200,13 @@ return [
         'empty' => 'Aún no hay países.',
         'empty-help' => 'Activa los países a los que envía la tienda.',
         'localities-tab' => 'Localidades',
+        'leader-help' => 'El transportista principal crea las localidades comunes del país; los demás vinculan sus registros a ellas. «El primero en sincronizar» — será principal el transportista que sincronice el país primero.',
+        'remove' => 'Quitar',
+        'remove-title' => '¿Quitar «:name»?',
+        'remove-text' => 'El país no tiene regiones ni localidades: se elimina.',
+        'remove-held' => 'El país tiene regiones o localidades, a las que pueden remitir puntos y pedidos. Por eso solo se desactivará: el pedido deja de ofrecerlo, los registros se quedan.',
+        'removed' => 'El país se ha quitado.',
+        'deactivated' => 'El país está en uso, por eso se ha desactivado.',
     ],
     'region' => [
         'title' => 'Regiones',
@@ -185,13 +214,16 @@ return [
         'name' => 'Nombre',
         'code' => 'Código',
         'code-help' => 'ISO 3166-2 sin el país, si lo hay.',
-        'rename' => 'Renombrar',
         'delete-title' => '¿Eliminar «:name»?',
         'delete-text' => 'Solo se puede eliminar una región vacía.',
         'deleted' => 'La región se ha eliminado.',
         'saved' => 'La región se ha guardado.',
         'empty' => 'El país no tiene regiones.',
         'country-first' => 'Elige primero un país.',
+        'edit' => 'Editar',
+        'new-title' => 'Nueva región',
+        'edit-title' => 'Región',
+        'delete-held' => 'La región tiene localidades: muévelas a otra región o elimínalas primero.',
     ],
     'carrier' => [
         'empty' => 'No hay transportistas instalados.',
@@ -249,10 +281,11 @@ return [
         'added' => 'Añadida.',
         'removed' => 'Quitada.',
         'already' => 'Ya está en la lista.',
+        'remove-title' => '¿Quitar «:name» de las ciudades populares?',
     ],
     'binding' => [
         'empty' => 'La cola está vacía.',
-        'empty-help' => 'Cada registro de los transportistas está vinculado a una localidad.',
+        'empty-help' => 'Todos los registros de los transportistas están vinculados a localidades. Los nuevos aparecerán aquí tras una sincronización, si el transportista no puede vincularlos él mismo.',
         'carrier' => 'Transportista',
         'reason' => 'Motivo',
         'reasons' => [
@@ -275,6 +308,7 @@ return [
         'km' => ':distance km',
         'any-carrier' => 'Cualquier transportista',
         'any-reason' => 'Cualquier motivo',
+        'intro' => 'Registros que un transportista envió sin poder vincularlos él mismo a la geografía común. «Vincular» une un registro a una localidad existente, «Crear una localidad común» crea una nueva a partir de él, «No vincular» lo aparta — los puntos del transportista allí no se ofrecen. La cola solo se llena mientras un transportista está conectado y sincroniza sus localidades.',
     ],
     'errors' => [
         'unknown_carrier' => 'No existe ese transportista.',

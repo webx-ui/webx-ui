@@ -7,11 +7,7 @@ import {
   useLocales,
   WxActionBar,
   WxButton,
-  WxDialog,
-  WxFormItem,
-  WxInput,
   WxSkeleton,
-  WxSpace,
   type LocalizedValue,
 } from '@webx-ui/core'
 import {
@@ -84,12 +80,26 @@ const title = computed(
     ) || t('common.untitled'),
 )
 
-/* The fields of another type are not drawn, and the kinds offered are this type's. */
+/* The type of the method open: fixed once it is saved. */
+const type = computed(() => method.value?.type ?? props.type)
+
+/*
+ * The fields of another type are not drawn, and the kinds offered are this type's. Only the
+ * shop's pick-up names kinds of its own: a carrier's type says what its points are.
+ */
 const patch = computed<Patch>(() => [
   ...hidden.value.map((target) => ({ op: 'remove' as const, target })),
   ...(hidden.value.includes('point_kind')
     ? []
-    : [{ op: 'set' as const, target: 'point_kind', props: { options: kinds.value } }]),
+    : [
+        {
+          op: 'set' as const,
+          target: 'point_kind',
+          props: { options: kinds.value, creatable: type.value === 'store.pickup' },
+          // A carrier's kinds are its branches and lockers, not the shop's points.
+          ...(type.value === 'store.pickup' ? {} : { help: t('method.point-kind-carrier-help') }),
+        },
+      ]),
 ])
 
 function take(detail: MethodDetail): void {
@@ -205,32 +215,6 @@ const actions = computed<ScreenAction[]>(() =>
       ]
     : [],
 )
-
-/* «New kind of points» (decision 9): named here, offered at once. */
-const naming = ref(false)
-const kindKey = ref('')
-const kindName = ref('')
-const kindErrors = ref<Record<string, string[]>>({})
-
-async function defineKind(): Promise<void> {
-  kindErrors.value = {}
-
-  try {
-    const options = await api.defineKind(kindKey.value.trim(), {
-      [main.value]: kindName.value.trim(),
-    })
-
-    kinds.value = options
-    values.value = { ...values.value, point_kind: kindKey.value.trim() }
-    toast.success(t('method.kind-created'))
-    naming.value = false
-    kindKey.value = ''
-    kindName.value = ''
-  } catch (error) {
-    kindErrors.value = (error as { errors?: Record<string, string[]> }).errors ?? {}
-    if (Object.keys(kindErrors.value).length === 0) toast.danger(message(error))
-  }
-}
 </script>
 
 <template>
@@ -256,17 +240,6 @@ async function defineKind(): Promise<void> {
         :disabled="!canManage || saving"
       />
 
-      <wx-button
-        v-if="canManage && !hidden.includes('point_kind')"
-        size="sm"
-        variant="text"
-        icon="plus"
-        class="wx-delivery-pane__kind"
-        @click="naming = true"
-      >
-        {{ t('method.new-kind') }}
-      </wx-button>
-
       <wx-action-bar v-if="canManage">
         <template #state>
           <wx-save-state :state="state" />
@@ -282,31 +255,6 @@ async function defineKind(): Promise<void> {
         </wx-button>
       </wx-action-bar>
     </template>
-
-    <wx-dialog v-model:open="naming" :title="t('method.new-kind')" :width="420">
-      <wx-form-item
-        :label="t('method.kind-key')"
-        :help="t('method.kind-key-help')"
-        :error="kindErrors.kind?.[0]"
-      >
-        <wx-input v-model="kindKey" :maxlength="32" />
-      </wx-form-item>
-      <wx-form-item :label="t('method.kind-name')">
-        <wx-input v-model="kindName" :maxlength="60" />
-      </wx-form-item>
-      <template #footer>
-        <wx-space size="sm">
-          <wx-button variant="outline" @click="naming = false">{{ t('common.cancel') }}</wx-button>
-          <wx-button
-            type="primary"
-            :disabled="kindKey.trim() === '' || kindName.trim() === ''"
-            @click="defineKind"
-          >
-            {{ t('common.add') }}
-          </wx-button>
-        </wx-space>
-      </template>
-    </wx-dialog>
   </div>
 </template>
 
@@ -322,9 +270,5 @@ async function defineKind(): Promise<void> {
 
 .wx-delivery-pane__ghost {
   max-width: 480px;
-}
-
-.wx-delivery-pane__kind {
-  align-self: flex-start;
 }
 </style>

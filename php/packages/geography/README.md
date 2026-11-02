@@ -64,6 +64,7 @@ try {
 
 $editor->updateLocality($town, ['weight' => 500]);
 $editor->removeLocality($town);   // Removal::Deleted, or Deactivated when something holds it
+$editor->removeCountry('XX');     // the same for a country: deleted only while nothing is in it
 ```
 
 Records made by hand get `created_by = manual`. A field an administrator changes on a carrier's

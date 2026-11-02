@@ -44,6 +44,7 @@ panel:
 | `wx-delivery-region`     | a region id of the country field beside it     |
 | `wx-delivery-country`    | a country code of the site                     |
 | `wx-delivery-schedule`   | opening hours: the week and the exceptions     |
+| `wx-delivery-point-kind` | a method's kind of points; «New kind» under it |
 
 `WxDeliveryLocalitySearch` and `WxDeliveryLocalityDialog` are exported for a screen of your own
 that picks or makes a locality the same way.

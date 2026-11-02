@@ -29,10 +29,29 @@ return [
         'order-failed' => 'Die Reihenfolge wurde nicht gespeichert.',
         'empty-search' => 'Keine Treffer für die Suche.',
         'drag' => 'Ziehen Sie eine Zeile am Griff, um die Reihenfolge zu ändern.',
+        'edit' => 'Bearbeiten',
     ],
     'types' => [
         'store-pickup' => 'Abholung an den Abholstellen des Shops',
         'store-courier' => 'Kurier des Shops',
+        'kinds' => [
+            'branch' => 'Filiale von :carrier',
+            'locker' => 'Paketstation von :carrier',
+            'courier' => 'Kurier von :carrier',
+            'door' => 'Kurier von :carrier',
+        ],
+        'asks' => [
+            'point' => 'Abholung bei :carrier',
+            'address' => 'Lieferung durch :carrier',
+            'nothing' => ':carrier',
+        ],
+        'help' => [
+            'store-pickup' => 'Der Käufer holt die Bestellung an einem Ihrer Punkte ab: im Geschäft oder an einer Abholstelle.',
+            'store-courier' => 'Ihr eigener Kurier bringt die Bestellung an die Adresse des Käufers, in den gewählten Orten.',
+            'point' => 'Der Käufer wählt eine Filiale oder Paketstation des Versanddienstes.',
+            'address' => 'Der Versanddienst bringt die Bestellung an die Adresse des Käufers.',
+            'nothing' => 'Der Käufer wird nur nach dem Ort gefragt.',
+        ],
     ],
     'method' => [
         'card' => 'Versandart',
@@ -42,7 +61,7 @@ return [
         'price' => 'Preis',
         'price-help' => 'Leer oder 0 — kostenlos.',
         'point-kind' => 'Art der Abholstellen',
-        'point-kind-help' => 'Die Abholstellen, aus denen der Käufer wählt.',
+        'point-kind-help' => 'Welche Ihrer Punkte diese Methode anbietet: Der Checkout zeigt nur die Punkte dieser Art.',
         'localities' => 'Orte',
         'localities-help' => 'Wohin der Kurier fährt. Leer — nirgendwohin: Die Versandart wird nicht angeboten.',
         'countries' => 'Länder',
@@ -69,6 +88,8 @@ return [
         'kind-key-help' => 'Lateinische Buchstaben, Ziffern und Bindestriche: parcel-shop.',
         'kind-name' => 'Name',
         'kind-created' => 'Die Art wurde hinzugefügt.',
+        'new-kind-help' => 'Eine Art fasst Ihre eigenen Punkte zusammen, etwa «Geschäft» oder «Abholstelle». Legen Sie eine neue an — etwa «Paketshop» —, um diese Punkte mit einer eigenen Methode anzubieten.',
+        'point-kind-carrier-help' => 'Welche Punkte des Versanddienstes die Methode anbietet: Filialen oder Paketstationen.',
     ],
     'point' => [
         'card' => 'Abholstelle',
@@ -94,6 +115,7 @@ return [
         'deleted' => 'Die Abholstelle wurde gelöscht.',
         'title' => 'Abholstelle',
         'today' => 'Heute',
+        'intro' => 'Orte, an denen Käufer Bestellungen selbst abholen: Ihre Geschäfte und Abholstellen. Der Checkout bietet sie bei den Abholmethoden derselben Art an. Filialen der Versanddienste kommen von den Diensten selbst und werden hier nicht gepflegt.',
     ],
     'schedule' => [
         'days' => [
@@ -178,6 +200,13 @@ return [
         'empty' => 'Noch keine Länder.',
         'empty-help' => 'Schalten Sie die Länder ein, in die der Shop liefert.',
         'localities-tab' => 'Orte',
+        'leader-help' => 'Der führende Versanddienst legt die gemeinsamen Orte des Landes an; die anderen Dienste ordnen ihre Datensätze diesen zu. «Der erste, der synchronisiert» — führend wird der Dienst, der das Land zuerst synchronisiert.',
+        'remove' => 'Entfernen',
+        'remove-title' => '«:name» entfernen?',
+        'remove-text' => 'Das Land hat keine Regionen und Orte: Es wird gelöscht.',
+        'remove-held' => 'Das Land hat Regionen oder Orte, auf die Punkte und Bestellungen verweisen können. Es wird deshalb nur ausgeschaltet: Der Checkout bietet es nicht mehr an, die Einträge bleiben.',
+        'removed' => 'Das Land ist entfernt.',
+        'deactivated' => 'Das Land wird verwendet und ist deshalb ausgeschaltet.',
     ],
     'region' => [
         'title' => 'Regionen',
@@ -185,13 +214,16 @@ return [
         'name' => 'Name',
         'code' => 'Code',
         'code-help' => 'ISO 3166-2 ohne das Land, falls vorhanden.',
-        'rename' => 'Umbenennen',
         'delete-title' => '«:name» löschen?',
         'delete-text' => 'Nur eine leere Region kann gelöscht werden.',
         'deleted' => 'Die Region wurde gelöscht.',
         'saved' => 'Die Region wurde gespeichert.',
         'empty' => 'Das Land hat keine Regionen.',
         'country-first' => 'Wählen Sie zuerst ein Land.',
+        'edit' => 'Bearbeiten',
+        'new-title' => 'Neue Region',
+        'edit-title' => 'Region',
+        'delete-held' => 'Die Region hat Orte: Verschieben Sie sie zuerst in eine andere Region oder löschen Sie sie.',
     ],
     'carrier' => [
         'empty' => 'Keine Versanddienste installiert.',
@@ -249,10 +281,11 @@ return [
         'added' => 'Hinzugefügt.',
         'removed' => 'Entfernt.',
         'already' => 'Schon in der Liste.',
+        'remove-title' => '«:name» aus den beliebten Orten entfernen?',
     ],
     'binding' => [
         'empty' => 'Die Warteschlange ist leer.',
-        'empty-help' => 'Jeder Datensatz der Versanddienste ist einem Ort zugeordnet.',
+        'empty-help' => 'Alle Datensätze der Versanddienste sind Orten zugeordnet. Neue erscheinen hier nach einer Synchronisierung, wenn der Dienst sie nicht selbst zuordnen kann.',
         'carrier' => 'Versanddienst',
         'reason' => 'Grund',
         'reasons' => [
@@ -275,6 +308,7 @@ return [
         'km' => ':distance km',
         'any-carrier' => 'Jeder Versanddienst',
         'any-reason' => 'Jeder Grund',
+        'intro' => 'Datensätze, die ein Versanddienst geschickt, aber nicht selbst der gemeinsamen Geografie zugeordnet hat. «Zuordnen» verknüpft einen Datensatz mit einem vorhandenen Ort, «Gemeinsamen Ort erstellen» legt daraus einen neuen an, «Nicht zuordnen» legt ihn beiseite — die Punkte des Dienstes dort werden nicht angeboten. Die Warteschlange füllt sich nur, solange ein Dienst verbunden ist und seine Orte synchronisiert.',
     ],
     'errors' => [
         'unknown_carrier' => 'Diesen Versanddienst gibt es nicht.',

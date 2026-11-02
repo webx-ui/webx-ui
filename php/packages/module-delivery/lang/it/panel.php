@@ -29,10 +29,29 @@ return [
         'order-failed' => 'L\'ordine non è stato salvato.',
         'empty-search' => 'Nessun risultato per la ricerca.',
         'drag' => 'Trascina una riga dalla maniglia per cambiare l\'ordine.',
+        'edit' => 'Modifica',
     ],
     'types' => [
         'store-pickup' => 'Ritiro nei punti del negozio',
         'store-courier' => 'Corriere del negozio',
+        'kinds' => [
+            'branch' => 'Filiale :carrier',
+            'locker' => 'Locker :carrier',
+            'courier' => 'Corriere :carrier',
+            'door' => 'Corriere :carrier',
+        ],
+        'asks' => [
+            'point' => 'Ritiro presso :carrier',
+            'address' => 'Consegna di :carrier',
+            'nothing' => ':carrier',
+        ],
+        'help' => [
+            'store-pickup' => 'L\'acquirente ritira l\'ordine in uno dei tuoi punti: un negozio o un punto di ritiro.',
+            'store-courier' => 'Il tuo corriere porta l\'ordine all\'indirizzo dell\'acquirente, nelle località scelte.',
+            'point' => 'L\'acquirente sceglie una filiale o un locker del corriere.',
+            'address' => 'Il corriere porta l\'ordine all\'indirizzo dell\'acquirente.',
+            'nothing' => 'All\'acquirente si chiede solo la località.',
+        ],
     ],
     'method' => [
         'card' => 'Metodo',
@@ -42,7 +61,7 @@ return [
         'price' => 'Prezzo',
         'price-help' => 'Vuoto o 0 — gratis.',
         'point-kind' => 'Tipo di punti',
-        'point-kind-help' => 'I punti tra cui sceglie l\'acquirente.',
+        'point-kind-help' => 'Quali dei tuoi punti offre questo metodo: nell\'ordine compaiono solo i punti di questo tipo.',
         'localities' => 'Località',
         'localities-help' => 'Dove va il corriere. Vuoto — da nessuna parte: il metodo non viene proposto.',
         'countries' => 'Paesi',
@@ -69,6 +88,8 @@ return [
         'kind-key-help' => 'Lettere latine, cifre e trattini: parcel-shop.',
         'kind-name' => 'Nome',
         'kind-created' => 'Il tipo è stato aggiunto.',
+        'new-kind-help' => 'Un tipo raggruppa i tuoi punti, come «Negozio» o «Punto di ritiro». Creane uno nuovo — per esempio «Punto partner» — per offrire quei punti con un metodo a parte.',
+        'point-kind-carrier-help' => 'Quali punti del corriere offre il metodo: le filiali o i locker.',
     ],
     'point' => [
         'card' => 'Punto',
@@ -94,6 +115,7 @@ return [
         'deleted' => 'Il punto è stato eliminato.',
         'title' => 'Punto',
         'today' => 'Oggi',
+        'intro' => 'I luoghi dove l\'acquirente ritira l\'ordine da sé: i tuoi negozi e punti di ritiro. L\'ordine li propone nei metodi di ritiro dello stesso tipo. Le filiali dei corrieri arrivano dai corrieri stessi e non si gestiscono qui.',
     ],
     'schedule' => [
         'days' => [
@@ -178,6 +200,13 @@ return [
         'empty' => 'Ancora nessun paese.',
         'empty-help' => 'Attiva i paesi in cui il negozio spedisce.',
         'localities-tab' => 'Località',
+        'leader-help' => 'Il corriere principale crea le località comuni del paese; gli altri corrieri vi abbinano i propri record. «Il primo a sincronizzare» — diventa principale il corriere che sincronizza il paese per primo.',
+        'remove' => 'Rimuovi',
+        'remove-title' => 'Rimuovere «:name»?',
+        'remove-text' => 'Il paese non ha regioni né località: viene eliminato.',
+        'remove-held' => 'Il paese ha regioni o località, a cui possono rimandare punti e ordini. Per questo sarà solo disattivato: l\'ordine smette di proporlo, i record restano.',
+        'removed' => 'Il paese è stato rimosso.',
+        'deactivated' => 'Il paese è in uso, quindi è stato disattivato.',
     ],
     'region' => [
         'title' => 'Regioni',
@@ -185,13 +214,16 @@ return [
         'name' => 'Nome',
         'code' => 'Codice',
         'code-help' => 'ISO 3166-2 senza il paese, se esiste.',
-        'rename' => 'Rinomina',
         'delete-title' => 'Eliminare «:name»?',
         'delete-text' => 'Si può eliminare solo una regione vuota.',
         'deleted' => 'La regione è stata eliminata.',
         'saved' => 'La regione è stata salvata.',
         'empty' => 'Il paese non ha regioni.',
         'country-first' => 'Scegli prima un paese.',
+        'edit' => 'Modifica',
+        'new-title' => 'Nuova regione',
+        'edit-title' => 'Regione',
+        'delete-held' => 'La regione ha delle località: spostale in un\'altra regione o eliminale prima.',
     ],
     'carrier' => [
         'empty' => 'Nessun corriere installato.',
@@ -249,10 +281,11 @@ return [
         'added' => 'Aggiunta.',
         'removed' => 'Rimossa.',
         'already' => 'È già nell\'elenco.',
+        'remove-title' => 'Rimuovere «:name» dalle città popolari?',
     ],
     'binding' => [
         'empty' => 'La coda è vuota.',
-        'empty-help' => 'Ogni record dei corrieri è abbinato a una località.',
+        'empty-help' => 'Tutti i record dei corrieri sono abbinati a località. I nuovi compariranno qui dopo una sincronizzazione, se il corriere non riesce ad abbinarli da sé.',
         'carrier' => 'Corriere',
         'reason' => 'Motivo',
         'reasons' => [
@@ -275,6 +308,7 @@ return [
         'km' => ':distance km',
         'any-carrier' => 'Qualsiasi corriere',
         'any-reason' => 'Qualsiasi motivo',
+        'intro' => 'Record che un corriere ha inviato senza riuscire ad abbinarli da sé alla geografia comune. «Abbina» collega un record a una località esistente, «Crea una località comune» ne crea una nuova da esso, «Non abbinare» lo mette da parte — i punti del corriere lì non vengono offerti. La coda si riempie solo mentre un corriere è collegato e sincronizza le sue località.',
     ],
     'errors' => [
         'unknown_carrier' => 'Questo corriere non esiste.',

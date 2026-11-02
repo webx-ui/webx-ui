@@ -117,7 +117,7 @@ function open(key: string): void {
               :aria-label="t('carrier.enabled')"
               @update:model-value="toggle(row, Boolean($event))"
             />
-            <wx-button size="sm" variant="outline" icon="settings" @click="open(row.key)">
+            <wx-button size="sm" variant="outline" @click="open(row.key)">
               {{ t('carrier.settings') }}
             </wx-button>
           </span>

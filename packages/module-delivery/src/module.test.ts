@@ -20,6 +20,7 @@ describe('delivery()', () => {
       'wx-delivery-region',
       'wx-delivery-country',
       'wx-delivery-schedule',
+      'wx-delivery-point-kind',
     ])
     expect(sections[0]?.types?.['wx-delivery-region']?.nested).toBe(true)
   })

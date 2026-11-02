@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Delivery\Panel;
 
+use Closure;
 use Illuminate\Support\Collection;
 use WebxUi\Delivery\Models\DeliveryCarrierLocality;
 use WebxUi\Geography\Models\GeoLocality;
@@ -31,7 +32,7 @@ final class LocalityRows
     /**
      * The short line of a picker or of a candidate.
      *
-     * @return array{id: int, name: string, label: string, kind: string, country: string, active: bool}
+     * @return array{id: int, name: string, label: string, kind: string, kind_label: string, country: string, active: bool}
      */
     public static function brief(GeoLocality $locality, string $locale): array
     {
@@ -40,18 +41,30 @@ final class LocalityRows
             'name' => $locality->name($locale),
             'label' => $locality->label($locale),
             'kind' => $locality->kind,
+            'kind_label' => self::kindLabel($locality->kind, $locale),
             'country' => $locality->country_code,
             'active' => $locality->active,
         ];
     }
 
+    /** «Town», «Village»: the type of a locality in words, as the form's select names it. */
+    public static function kindLabel(string $kind, string $locale): string
+    {
+        $key = 'webx-delivery::delivery.locality_kinds.'.$kind;
+        $line = trans($key, [], $locale);
+
+        return is_string($line) && $line !== $key ? $line : $kind;
+    }
+
     /**
-     * A row of the geography's list, with the carriers bound to it (the region is expected loaded).
+     * A row of the geography's list, with the carriers bound to it (the region is expected loaded),
+     * each named by its title — a carrier's key is not a word anybody reads.
      *
      * @param  Collection<int, DeliveryCarrierLocality>  $bindings
+     * @param  Closure(string): string  $carrierTitle
      * @return array<string, mixed>
      */
-    public static function row(GeoLocality $locality, string $locale, Collection $bindings): array
+    public static function row(GeoLocality $locality, string $locale, Collection $bindings, Closure $carrierTitle): array
     {
         return [
             ...self::brief($locality, $locale),
@@ -63,6 +76,7 @@ final class LocalityRows
             'bindings' => $bindings
                 ->map(static fn (DeliveryCarrierLocality $binding): array => [
                     'carrier' => $binding->carrier,
+                    'carrier_title' => $carrierTitle($binding->carrier),
                     'external_id' => $binding->external_id,
                     'status' => $binding->status,
                 ])

@@ -29,10 +29,29 @@ return [
         'order-failed' => 'Nie zapisano kolejności.',
         'empty-search' => 'Nic nie pasuje do wyszukiwania.',
         'drag' => 'Przeciągnij wiersz za uchwyt, aby zmienić kolejność.',
+        'edit' => 'Edytuj',
     ],
     'types' => [
         'store-pickup' => 'Odbiór w punktach sklepu',
         'store-courier' => 'Kurier sklepu',
+        'kinds' => [
+            'branch' => 'Oddział :carrier',
+            'locker' => 'Paczkomat :carrier',
+            'courier' => 'Kurier :carrier',
+            'door' => 'Kurier :carrier',
+        ],
+        'asks' => [
+            'point' => 'Odbiór w :carrier',
+            'address' => 'Dostawa przez :carrier',
+            'nothing' => ':carrier',
+        ],
+        'help' => [
+            'store-pickup' => 'Kupujący odbiera zamówienie sam w jednym z Twoich punktów: w sklepie lub punkcie odbioru.',
+            'store-courier' => 'Twój kurier dowozi zamówienie pod adres kupującego w wybranych miejscowościach.',
+            'point' => 'Kupujący wybiera oddział lub paczkomat przewoźnika.',
+            'address' => 'Przewoźnik dowozi zamówienie pod adres kupującego.',
+            'nothing' => 'Kupujący podaje tylko miejscowość.',
+        ],
     ],
     'method' => [
         'card' => 'Metoda',
@@ -42,7 +61,7 @@ return [
         'price' => 'Cena',
         'price-help' => 'Puste lub 0 — za darmo.',
         'point-kind' => 'Rodzaj punktów',
-        'point-kind-help' => 'Punkty, z których wybiera kupujący.',
+        'point-kind-help' => 'Które Twoje punkty oferuje ta metoda: przy zamówieniu widać tylko punkty tego rodzaju.',
         'localities' => 'Miejscowości',
         'localities-help' => 'Dokąd jeździ kurier. Puste — nigdzie: metoda nie jest oferowana.',
         'countries' => 'Kraje',
@@ -69,6 +88,8 @@ return [
         'kind-key-help' => 'Litery łacińskie, cyfry i myślniki: parcel-shop.',
         'kind-name' => 'Nazwa',
         'kind-created' => 'Rodzaj dodano.',
+        'new-kind-help' => 'Rodzaj grupuje Twoje punkty, np. «Sklep» lub «Punkt odbioru». Utwórz nowy — na przykład «Punkt partnera» — aby oferować takie punkty osobną metodą.',
+        'point-kind-carrier-help' => 'Które punkty przewoźnika oferuje metoda: oddziały czy paczkomaty.',
     ],
     'point' => [
         'card' => 'Punkt',
@@ -94,6 +115,7 @@ return [
         'deleted' => 'Punkt usunięto.',
         'title' => 'Punkt',
         'today' => 'Dziś',
+        'intro' => 'Miejsca, w których kupujący sam odbiera zamówienie: Twoje sklepy i punkty odbioru. Przy zamówieniu są oferowane w metodach odbioru tego samego rodzaju. Oddziały przewoźników przychodzą od samych przewoźników i nie są tu prowadzone.',
     ],
     'schedule' => [
         'days' => [
@@ -178,6 +200,13 @@ return [
         'empty' => 'Brak krajów.',
         'empty-help' => 'Włącz kraje, do których sklep dostarcza.',
         'localities-tab' => 'Miejscowości',
+        'leader-help' => 'Wiodący przewoźnik tworzy wspólne miejscowości kraju, a pozostali przewoźnicy się do nich wiążą. «Pierwszy w synchronizacji» — wiodącym zostanie przewoźnik, który pierwszy zsynchronizuje ten kraj.',
+        'remove' => 'Usuń',
+        'remove-title' => 'Usunąć «:name»?',
+        'remove-text' => 'Kraj nie ma regionów ani miejscowości: zostanie usunięty.',
+        'remove-held' => 'Kraj ma regiony lub miejscowości, do których mogą odwoływać się punkty i zamówienia. Dlatego zostanie tylko wyłączony: nie będzie oferowany przy zamówieniu, wpisy zostaną.',
+        'removed' => 'Kraj usunięty.',
+        'deactivated' => 'Kraj jest w użyciu, więc został wyłączony.',
     ],
     'region' => [
         'title' => 'Regiony',
@@ -185,13 +214,16 @@ return [
         'name' => 'Nazwa',
         'code' => 'Kod',
         'code-help' => 'ISO 3166-2 bez kraju, jeśli istnieje.',
-        'rename' => 'Zmień nazwę',
         'delete-title' => 'Usunąć «:name»?',
         'delete-text' => 'Usunąć można tylko pusty region.',
         'deleted' => 'Region usunięto.',
         'saved' => 'Region zapisano.',
         'empty' => 'Kraj nie ma regionów.',
         'country-first' => 'Najpierw wybierz kraj.',
+        'edit' => 'Edytuj',
+        'new-title' => 'Nowy region',
+        'edit-title' => 'Region',
+        'delete-held' => 'Region ma miejscowości: najpierw przenieś je do innego regionu lub usuń.',
     ],
     'carrier' => [
         'empty' => 'Nie zainstalowano przewoźników.',
@@ -249,10 +281,11 @@ return [
         'added' => 'Dodano.',
         'removed' => 'Usunięto.',
         'already' => 'Już jest na liście.',
+        'remove-title' => 'Usunąć «:name» z popularnych miejscowości?',
     ],
     'binding' => [
         'empty' => 'Kolejka jest pusta.',
-        'empty-help' => 'Każdy rekord przewoźników jest powiązany z miejscowością.',
+        'empty-help' => 'Wszystkie wpisy przewoźników są powiązane z miejscowościami. Nowe pojawią się tu po synchronizacji, jeśli przewoźnik nie dopasuje ich sam.',
         'carrier' => 'Przewoźnik',
         'reason' => 'Powód',
         'reasons' => [
@@ -275,6 +308,7 @@ return [
         'km' => ':distance km',
         'any-carrier' => 'Dowolny przewoźnik',
         'any-reason' => 'Dowolny powód',
+        'intro' => 'Wpisy, które przewoźnik przysłał, ale sam nie dopasował do wspólnej geografii. «Powiąż» łączy wpis z istniejącą miejscowością, «Utwórz wspólną miejscowość» zakłada nową na jego podstawie, «Nie powiązuj» odkłada go — punkty przewoźnika tam nie są oferowane. Kolejka zapełnia się tylko, gdy przewoźnik jest podłączony i synchronizuje miejscowości.',
     ],
     'errors' => [
         'unknown_carrier' => 'Nie ma takiego przewoźnika.',

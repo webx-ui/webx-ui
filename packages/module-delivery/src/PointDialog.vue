@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { confirm, toast, WxButton, WxDialog, WxSkeleton, WxSpace } from '@webx-ui/core'
+import { confirm, toast, WxButton, WxDialog, WxSkeleton, WxSpace, WxText } from '@webx-ui/core'
 import { useAdmin, useErrorText, WxScreen } from '@webx-ui/module-admin'
 import type { ScreenModel } from '@webx-ui/schema'
 import { createDeliveryApi } from './api'
@@ -121,6 +121,10 @@ async function remove(): Promise<void> {
 
 <template>
   <wx-dialog v-model:open="open" :title="title" :width="640" scroll="body">
+    <!-- What a point is, before the fields: the shop's own, never a carrier's branch. -->
+    <wx-text class="wx-delivery-point__intro" tone="muted" size="sm">{{
+      t('point.intro')
+    }}</wx-text>
     <wx-skeleton v-if="loading" :rows="6" />
     <wx-screen
       v-else
@@ -146,6 +150,11 @@ async function remove(): Promise<void> {
 </template>
 
 <style scoped>
+.wx-delivery-point__intro {
+  display: block;
+  margin-bottom: var(--wx-space-16);
+}
+
 .wx-delivery-point__footer {
   width: 100%;
 }
