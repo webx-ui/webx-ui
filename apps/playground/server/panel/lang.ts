@@ -30,6 +30,7 @@ const NAMESPACES: Record<string, string> = {
   'module-catalog-properties': 'webx-catalog-properties',
   'module-catalog-stock': 'webx-catalog-stock',
   'module-configurator': 'webx-configurator',
+  'module-delivery': 'webx-delivery',
   'module-events': 'webx-events',
   'module-faq': 'webx-faq',
   'module-inbox': 'webx-inbox',

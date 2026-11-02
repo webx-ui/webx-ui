@@ -41,9 +41,12 @@
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
-        "phpunit/phpunit": "^12.0 || ^13.0"
+        "phpunit/phpunit": "^12.0 || ^13.0",
+        "webx-ui/module-admin": "^0.91.0",
+        "webx-ui/module-auth": "^0.91.0"
     },
     "suggest": {
+        "webx-ui/module-admin": "The section «Delivery» of the panel: methods, the shop's points, carriers, the geography by hand, the popular towns and the binding queue.",
         "webx-ui/module-orders": "The checkout asks for delivery and the order keeps what was chosen."
     },
     "autoload": {
@@ -63,7 +66,15 @@
             ]
         },
         "webx": {
-            "module": "delivery"
+            "module": "delivery",
+            "npm": {
+                "@webx-ui/module-delivery": "^0.1.0"
+            },
+            "panel": {
+                "import": "import { delivery } from '@webx-ui/module-delivery'",
+                "style": "@webx-ui/module-delivery/style.css",
+                "register": "...delivery()"
+            }
         }
     },
     "config": {

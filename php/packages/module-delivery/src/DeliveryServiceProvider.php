@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Doctor\DoctorChecks;
+use WebxUi\Admin\ModuleRegistry;
+use WebxUi\Admin\Screens\FieldTypes;
+use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Cache\CacheGroups;
 use WebxUi\Cart\BenefitKeys;
 use WebxUi\Cart\Totals\AdjustmentSources;
@@ -22,6 +25,15 @@ use WebxUi\Delivery\Models\DeliveryCarrier;
 use WebxUi\Delivery\Models\DeliveryMethod;
 use WebxUi\Delivery\Models\DeliveryMethodLocality;
 use WebxUi\Delivery\Models\DeliveryPoint;
+use WebxUi\Delivery\Panel\DeliverySection;
+use WebxUi\Delivery\Panel\Fields\CountryField;
+use WebxUi\Delivery\Panel\Fields\LocalitiesField;
+use WebxUi\Delivery\Panel\Fields\LocalityField;
+use WebxUi\Delivery\Panel\Fields\RegionField;
+use WebxUi\Delivery\Panel\Fields\ScheduleField;
+use WebxUi\Delivery\Panel\LocalityForm;
+use WebxUi\Delivery\Panel\MethodForm;
+use WebxUi\Delivery\Panel\PointForm;
 use WebxUi\Delivery\Rendering\Assets;
 use WebxUi\Delivery\Sync\Directories;
 use WebxUi\Delivery\Sync\StoredLeadingCarriers;
@@ -29,6 +41,7 @@ use WebxUi\Delivery\Sync\Synchronizer;
 use WebxUi\Delivery\Types\StoreCourier;
 use WebxUi\Delivery\Types\StorePickup;
 use WebxUi\Delivery\View\Components\Step;
+use WebxUi\Geography\LocalityKind;
 use WebxUi\Geography\LocalityReferences;
 use WebxUi\Geography\Matching\LeadingCarriers;
 use WebxUi\Geography\Models\GeoCountry;
@@ -144,6 +157,11 @@ class DeliveryServiceProvider extends ServiceProvider
             });
         }
 
+        // The section of the panel (§14), where the panel's frame is installed.
+        if (class_exists(ModuleRegistry::class)) {
+            $this->registerPanel();
+        }
+
         if (! $this->app->runningInConsole()) {
             return;
         }
@@ -161,6 +179,61 @@ class DeliveryServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../resources/views' => resource_path('views/vendor/webx-delivery'),
         ], 'webx-delivery-views');
+    }
+
+    /**
+     * Six entries in the group «Delivery», their routes, and the three described forms with the
+     * fields only this section has. The choices of the selects come from the database, so they are
+     * laid over the screens by closures — run when a screen is asked for, not at boot.
+     *
+     * The menu group is added to the panel's config at boot rather than shipped as a default: a
+     * site that published `webx-admin.php` has its own copy of the list.
+     */
+    private function registerPanel(): void
+    {
+        $this->loadRoutesFrom(__DIR__.'/../routes/panel.php');
+
+        $config = $this->app->make('config');
+        $groups = (array) $config->get('webx-admin.groups', []);
+
+        if (! array_key_exists(DeliverySection::GROUP, $groups)) {
+            $config->set('webx-admin.groups', [
+                ...$groups,
+                DeliverySection::GROUP => ['title' => 'webx-delivery::panel.sections.group', 'icon' => 'send', 'order' => DeliverySection::ORDER],
+            ]);
+        }
+
+        $modules = $this->app->make(ModuleRegistry::class);
+
+        foreach (DeliverySection::all() as $section) {
+            $modules->register($section);
+        }
+
+        $types = $this->app->make(FieldTypes::class);
+        $types->register('wx-delivery-locality', new LocalityField);
+        $types->register('wx-delivery-localities', new LocalitiesField);
+        $types->register('wx-delivery-region', new RegionField);
+        $types->register('wx-delivery-country', new CountryField);
+        $types->register('wx-delivery-schedule', new ScheduleField);
+
+        $screens = $this->app->make(ScreenRegistry::class);
+        $screens->register(MethodForm::SCREEN, __DIR__.'/../resources/screens/method.json');
+        $screens->register(PointForm::SCREEN, __DIR__.'/../resources/screens/point.json');
+        $screens->register(LocalityForm::SCREEN, __DIR__.'/../resources/screens/locality.json');
+
+        $screens->extend(MethodForm::SCREEN, fn (): array => [
+            ['op' => 'set', 'target' => 'countries', 'props' => ['options' => $this->app->make(MethodForm::class)->countryOptions()]],
+            ['op' => 'set', 'target' => 'point_kind', 'props' => ['options' => $this->app->make(MethodForm::class)->pointKindOptions()]],
+        ]);
+        $screens->extend(PointForm::SCREEN, fn (): array => [
+            ['op' => 'set', 'target' => 'kind', 'props' => ['options' => $this->app->make(PointForm::class)->kindOptions()]],
+        ]);
+        $screens->extend(LocalityForm::SCREEN, static fn (): array => [
+            ['op' => 'set', 'target' => 'kind', 'props' => ['options' => array_map(
+                static fn (string $kind): array => ['value' => $kind, 'label' => (string) __('webx-delivery::delivery.locality_kinds.'.$kind)],
+                LocalityKind::values(),
+            )]],
+        ]);
     }
 
     /**

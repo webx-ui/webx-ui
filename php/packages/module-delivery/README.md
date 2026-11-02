@@ -240,6 +240,30 @@ The step says `webx:delivery:changed` (detail: `method`, `cost`, `selection`) on
 each change, and the event its owner names in `data-checkout-event` on `document` — the
 checkout's `webx:checkout:slot-changed`.
 
+## The panel
+
+With `webx-ui/module-admin` installed, the section «Delivery» is six screens (spec §14), the npm
+half `@webx-ui/module-delivery` (`...delivery()`), JSON under `api/cms/delivery`:
+
+| Screen        | What                                                                                                                      |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Methods       | the checkout's order, dragged (`PUT methods/order`); a new method starts from its type; `delivery.method-form`            |
+| Own points    | the shop's points, a page at a time, by kind and state; `delivery.point-form` with the opening hours                      |
+| Carriers      | each directory: last success, going on, held, stale, records, remarks; «Run» queues it, «Confirm removal»; settings, keys |
+| Geography     | countries (on, order, leading carrier), regions, localities by country, region, source and state                          |
+| Popular towns | the dialog's towns: added by search, dragged, removed                                                                     |
+| Binding queue | bind, make a shared locality, leave unbound — the rows ticked or the whole filter (`POST bindings/batch`, 500 a request)  |
+
+A locality is made through `WebxUi\Geography\Editor`, as an agent makes it: one like an existing
+locality (country, region, type and a name key in common) answers **409** with `similar`, and
+`force: true` makes it anyway. `DELETE geography/localities/{id}` deletes a locality nothing holds
+and switches off one a point, a binding or a choice holds — the answer says which (`removal`).
+
+A key of a carrier is written by `PUT carriers/{key}` (`credentials` — a blank value leaves the
+key, `clear` removes one) and is never read back: the answer has `set: true|false` instead.
+
+Every route asks for `delivery.view` or `delivery.manage` (`AccessCoverageTest`).
+
 ## Spec
 
 [`WEBX_UI_MODULE_DELIVERY.md`](https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_DELIVERY.md).

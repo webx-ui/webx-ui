@@ -12,6 +12,7 @@ return [
     'reset' => 'Sıfırlama',
     'review' => 'İnceleme',
     'work' => 'Yürütme',
+    'ship' => 'Gönderim',
     'admins-view' => 'Yöneticileri görme',
     'admins-manage' => 'Yöneticileri yönetme',
     'admins-audit' => 'Girişler ve ajan çağrıları',

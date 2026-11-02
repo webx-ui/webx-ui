@@ -12,6 +12,7 @@ return [
     'reset' => 'Restablecer',
     'review' => 'Revisar',
     'work' => 'Ejecutar',
+    'ship' => 'Envío',
     'admins-view' => 'Ver administradores',
     'admins-manage' => 'Gestionar administradores',
     'admins-audit' => 'Accesos y llamadas de agentes',

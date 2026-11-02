@@ -12,6 +12,7 @@ return [
     'reset' => 'Zurücksetzen',
     'review' => 'Prüfen',
     'work' => 'Ausführen',
+    'ship' => 'Versand',
     'admins-view' => 'Administratoren sehen',
     'admins-manage' => 'Administratoren verwalten',
     'admins-audit' => 'Anmeldungen und Agentenaufrufe',

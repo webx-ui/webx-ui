@@ -273,6 +273,7 @@ import {
 import { registerAudit } from './audit'
 import { registerCache } from './cache'
 import { registerOrders } from './orders'
+import { registerDelivery } from './delivery'
 import { registerTasks, tasksBadge } from './tasks'
 import { registerConfigurators } from './configurators'
 import {
@@ -499,6 +500,13 @@ function manifestOf(locale: string) {
         title: line(locale, 'webx-users', 'module.title'),
         icon: 'users',
         order: 400,
+      },
+      /* «Delivery» (§14 of the delivery spec): after the orders, the six screens of the section. */
+      {
+        id: 'delivery',
+        title: line(locale, 'webx-delivery', 'panel.sections.group'),
+        icon: 'send',
+        order: 360,
       },
       /* After the banners (§5.2 of the tariffs spec): the heading over tariffs and their groups. */
       {
@@ -771,6 +779,61 @@ function manifestOf(locale: string) {
         order: 350,
         group: null,
         permissions: ['orders.view', 'orders.manage', 'orders.refund', 'orders.statuses'],
+        meta: {},
+      },
+      /* «Delivery»: six sections in one group, the first declares the permissions (§14.1). */
+      {
+        id: 'delivery',
+        title: line(locale, 'webx-delivery', 'panel.sections.methods'),
+        icon: 'send',
+        order: 360,
+        group: 'delivery',
+        permissions: ['delivery.view', 'delivery.manage', 'delivery.ship'],
+        meta: {},
+      },
+      {
+        id: 'delivery-points',
+        title: line(locale, 'webx-delivery', 'panel.sections.points'),
+        icon: 'map-pin',
+        order: 361,
+        group: 'delivery',
+        permissions: [],
+        meta: {},
+      },
+      {
+        id: 'delivery-carriers',
+        title: line(locale, 'webx-delivery', 'panel.sections.carriers'),
+        icon: 'briefcase',
+        order: 362,
+        group: 'delivery',
+        permissions: [],
+        meta: {},
+      },
+      {
+        id: 'delivery-geography',
+        title: line(locale, 'webx-delivery', 'panel.sections.geography'),
+        icon: 'grid',
+        order: 363,
+        group: 'delivery',
+        permissions: [],
+        meta: {},
+      },
+      {
+        id: 'delivery-popular',
+        title: line(locale, 'webx-delivery', 'panel.sections.popular'),
+        icon: 'star',
+        order: 364,
+        group: 'delivery',
+        permissions: [],
+        meta: {},
+      },
+      {
+        id: 'delivery-bindings',
+        title: line(locale, 'webx-delivery', 'panel.sections.bindings'),
+        icon: 'link',
+        order: 365,
+        group: 'delivery',
+        permissions: [],
         meta: {},
       },
       /* One entry and no group either (§5.6 of the team spec): no categories to stand beside. */
@@ -2614,6 +2677,12 @@ registerTasks(on, (status, message) => new HttpFailure(status, message), line)
 registerOrders(
   on,
   (status, message, data, errors) => new HttpFailure(status, message, data, errors),
+  line,
+)
+/* «Delivery» (WEBX_UI_MODULE_DELIVERY.md §14): methods, points, carriers, geography by hand. */
+registerDelivery(
+  on,
+  (status, message, data, errors, extra) => new HttpFailure(status, message, data, errors, extra),
   line,
 )
 /* A product built to size, priced by the engine (WEBX_UI_MODULE_CONFIGURATOR.md): «Configurators». */

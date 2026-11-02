@@ -167,6 +167,64 @@ const SCREENS: Record<string, { base: string; patches: (string | Patch)[] }> = {
     base: 'php/packages/module-banners/resources/screens/form.json',
     patches: [],
   },
+  'delivery.method-form': {
+    base: 'php/packages/module-delivery/resources/screens/method.json',
+    patches: [
+      [
+        {
+          op: 'set',
+          target: 'countries',
+          props: { options: [{ value: 'XX', label: 'Demo country (XX)' }] },
+        },
+        {
+          op: 'set',
+          target: 'point_kind',
+          props: {
+            options: [
+              { value: 'store', label: 'Store' },
+              { value: 'pickup', label: 'Pick-up point' },
+            ],
+          },
+        },
+      ],
+    ],
+  },
+  'delivery.point-form': {
+    base: 'php/packages/module-delivery/resources/screens/point.json',
+    patches: [
+      [
+        {
+          op: 'set',
+          target: 'kind',
+          props: {
+            options: [
+              { value: 'store', label: 'Store' },
+              { value: 'pickup', label: 'Pick-up point' },
+            ],
+          },
+        },
+      ],
+    ],
+  },
+  'delivery.locality-form': {
+    base: 'php/packages/module-delivery/resources/screens/locality.json',
+    patches: [
+      [
+        {
+          op: 'set',
+          target: 'kind',
+          props: {
+            options: ['city', 'town', 'township', 'village', 'settlement', 'other'].map(
+              (value) => ({
+                value,
+                label: `trans::webx-delivery::delivery.locality_kinds.${value}`,
+              }),
+            ),
+          },
+        },
+      ],
+    ],
+  },
   'tariffs.form': {
     base: 'php/packages/module-tariffs/resources/screens/form.json',
     patches: [],

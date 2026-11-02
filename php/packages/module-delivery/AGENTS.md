@@ -62,6 +62,22 @@ its slot «delivery»; orders work without it. Words — `webx-delivery`.
 - **`Testing\FakeCarrier`** — «Carrier A» (`carrier-a`): a deterministic directory in `XX`.
 - **Cache groups** `delivery` (methods, carriers, courier's towns, countries) and `delivery-points`.
 - **Locality references** — points, bindings and selections keep a locality from deletion.
+- **Panel** (§14, when `module-admin` is installed): six sections in the group `delivery`
+  (`Panel\DeliverySection`), JSON under `api/cms/delivery/…` (`routes/panel.php`): methods
+  (order by drag), own points, carriers (directories, «Run», «Confirm removal», keys — only «set»),
+  geography by hand (countries, regions, localities through `WebxUi\Geography\Editor`; a duplicate
+  answers 409 with `similar`), popular towns, binding queue (`Panel\BindingQueue`, by rows or by
+  filter). Described screens `delivery.method-form`, `delivery.point-form`,
+  `delivery.locality-form`; field types `wx-delivery-locality`, `-localities`, `-region`,
+  `-country`, `-schedule`. The npm half — `@webx-ui/module-delivery`.
+
+### Permissions
+
+| Permission        | Opens                                                                                                 |
+| ----------------- | ----------------------------------------------------------------------------------------------------- |
+| `delivery.view`   | every screen of the section, read-only: methods, points, carriers and runs, geography, queue          |
+| `delivery.manage` | the writes: methods and their order, points, carriers and keys, sync, geography, popular towns, queue |
+| `delivery.ship`   | waybills and tracking of an order (stage 10), without the settings                                    |
 
 ### Classes
 
@@ -96,6 +112,7 @@ Tokens: `--webx-delivery-gap`, `--webx-delivery-icon-size` on `.webx-delivery`, 
 | The step on a page of your own              | `<x-webx-delivery::step />`; inside your form — `name="delivery"` prefixes its fields                        |
 | A directory on another schedule, or by hand | `webx-delivery.carriers.<key>.schedule.<directory>` — a cron or `manual`                                     |
 | Sync now                                    | `php artisan webx:delivery:sync carrier-a --directory=points` (`--queue` to hand it to the queue)            |
+| A field on a form of the section            | a patch on `delivery.method-form` / `delivery.point-form` / `delivery.locality-form`                         |
 | Other words                                 | `php artisan vendor:publish --tag=webx-delivery-lang`                                                        |
 
 ## Do not
@@ -121,6 +138,7 @@ Tokens: `--webx-delivery-gap`, `--webx-delivery-icon-size` on `.webx-delivery`, 
   the budgets of §17 on 30 000 points and 300 000 streets, no `pull()` from the step.
 - `SyncVolumeTest`, `SyncTest`, `StreetsTest` — pages, the threshold, held runs.
 - `npx vitest run php/packages/module-delivery` — `delivery.js`; `DistTest` — `dist/` built from it.
+- `tests/Panel` — the section: `AccessCoverageTest`, geography by hand, methods and points, carriers, queue.
 - The checkout in a browser at 360 px and in the dark theme: town → methods → point → address.
 
 ## Read more

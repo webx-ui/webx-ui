@@ -280,8 +280,7 @@ final class Catalogue
         ],
         'delivery' => [
             'package' => 'webx-ui/module-delivery',
-            // No screens yet, so no npm half: the module is driven from code until they come.
-            'npm' => null,
+            'npm' => '@webx-ui/module-delivery',
             'label' => 'Delivery — the shop\'s own pick-up points and courier, and carriers\' branches and lockers, priced in the town the buyer picks (needs the cart)',
             'default' => false,
             'requires' => ['cart'],

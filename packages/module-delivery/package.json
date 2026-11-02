@@ -1,0 +1,67 @@
+{
+  "name": "@webx-ui/module-delivery",
+  "version": "0.0.0",
+  "description": "Delivery for the WebX UI admin panel: methods in the checkout order, the shop's own points, carriers with their directories and keys, the shared geography by hand, the popular towns and the binding queue.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": [
+    "*.css"
+  ],
+  "keywords": [
+    "webx-ui",
+    "vue",
+    "admin",
+    "cms",
+    "e-commerce",
+    "delivery",
+    "shipping"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/webx-ui/webx-ui.git",
+    "directory": "packages/module-delivery"
+  },
+  "homepage": "https://github.com/webx-ui/webx-ui/tree/main/packages/module-delivery",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./style.css": "./dist/style.css",
+    "./dist/style.css": "./dist/style.css",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "typecheck": "vue-tsc -p tsconfig.json --noEmit"
+  },
+  "peerDependencies": {
+    "vue": "^3.5.0",
+    "vue-router": "^4.5.0"
+  },
+  "dependencies": {
+    "@webx-ui/core": "workspace:^",
+    "@webx-ui/module-admin": "workspace:^",
+    "@webx-ui/schema": "workspace:^"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@vitejs/plugin-vue": "^6.0.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.14",
+    "vite-plugin-dts": "^4.5.4",
+    "vue": "^3.5.24",
+    "vue-router": "^4.5.1",
+    "vue-tsc": "^3.1.3"
+  }
+}
