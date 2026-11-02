@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use WebxUi\Geography\Matching\BindingMethod;
 use WebxUi\Geography\Matching\Candidate;
+use WebxUi\Geography\Matching\CarrierBindings;
 use WebxUi\Geography\Matching\LeadingCarriers;
 use WebxUi\Geography\Matching\LocalityRecord;
 use WebxUi\Geography\Matching\MatchResult;
@@ -37,7 +38,10 @@ use WebxUi\Localization\Locales;
  * 6. nothing — the leading carrier makes the shared locality (`created`), any other goes to the
  *    queue (`not_found`).
  *
- * Every locality is a candidate, whoever made it: a hand-made town (decision 42) is bound to, not
+ * Every locality is a candidate, whoever made it, unless another record of the same carrier is
+ * bound to it already — a carrier never lists one town twice (decision of 02.11.2026), so two
+ * namesakes of one region it tells apart only by a qualifier stay two towns: the leading carrier
+ * makes the second, any other queues it. A hand-made town (decision 42) is bound to, not
  * duplicated, and a field an administrator set is never written over — the leading carrier only
  * fills in what nobody set by hand. A binding writes the carrier's spelling as an alias, so the
  * next carrier spelled alike matches at step 3. Duplicates are never merged here (decision 39).
@@ -61,10 +65,14 @@ final class Matcher
     /** @var array<int, array<string, true>> locality id → the name and alias keys it has */
     private array $keysOf = [];
 
+    /** @var array<int, true> localities a record of the carrier being matched is bound to */
+    private array $taken = [];
+
     public function __construct(
         private readonly LeadingCarriers $leaders,
         private readonly Config $config,
         private readonly Locales $locales,
+        private readonly CarrierBindings $bindings,
     ) {}
 
     /** One record; a sync matches its pages with {@see matchPage()}. */
@@ -110,6 +118,7 @@ final class Matcher
         }
 
         $this->load($todo);
+        $this->taken($carrier, $todo, $results);
 
         $leading = [];
 
@@ -117,7 +126,12 @@ final class Matcher
             $country = $this->country($record);
             $leading[$country] ??= $this->leaders->claim($country, $carrier) === $carrier;
 
-            $results[$record->externalId] = $this->matchOne($record, $source, $leading[$country]);
+            $result = $this->matchOne($record, $source, $leading[$country]);
+            $results[$record->externalId] = $result;
+
+            if ($result->localityId !== null) {
+                $this->taken[$result->localityId] = true;
+            }
         }
 
         return $results;
@@ -418,6 +432,10 @@ final class Matcher
                 continue;
             }
 
+            if (isset($this->taken[$id])) {
+                continue;
+            }
+
             $found[] = $locality;
         }
 
@@ -494,6 +512,36 @@ final class Matcher
         }
 
         return false;
+    }
+
+    /**
+     * The page's localities the carrier has bound another record to: stored bindings in one
+     * query, and those the records kept on this page hold.
+     *
+     * @param  list<LocalityRecord>  $todo
+     * @param  array<array-key, MatchResult>  $kept
+     */
+    private function taken(string $carrier, array $todo, array $kept): void
+    {
+        $this->taken = [];
+
+        foreach ($kept as $result) {
+            if ($result->localityId !== null) {
+                $this->taken[$result->localityId] = true;
+            }
+        }
+
+        $ids = array_keys($this->localities);
+
+        if ($ids === []) {
+            return;
+        }
+
+        $except = array_map(static fn (LocalityRecord $record): string => (string) $record->externalId, $todo);
+
+        foreach ($this->bindings->taken($carrier, $ids, $except) as $id) {
+            $this->taken[$id] = true;
+        }
     }
 
     // Regions
@@ -598,8 +646,8 @@ final class Matcher
     }
 
     /**
-     * The page learns what it just wrote: a second record of the same town on one page binds to
-     * the locality the first one made or aliased.
+     * The page learns what it just wrote: the names and aliases a locality made or aliased on this
+     * page answers to, so that it is offered — or, bound already, left out — like a stored one.
      *
      * @param  list<string>  $keys
      */

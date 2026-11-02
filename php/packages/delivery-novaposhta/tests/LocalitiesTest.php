@@ -76,7 +76,8 @@ final class LocalitiesTest extends TestCase
         $this->assertSame('Абазівка', $town->name);
         $this->assertSame('village', $town->kind);
         $this->assertSame('Полтавська', $town->region);
-        $this->assertNull($town->district);
+        // The district of the qualifier tells namesakes apart; the area part is the region.
+        $this->assertSame('Полтавський р-н', $town->district);
         $this->assertNull($town->lat);
         // Only the languages of the site: the site speaks en and uk, the carrier uk and ru.
         $this->assertSame(['uk' => 'Абазівка'], $town->names);

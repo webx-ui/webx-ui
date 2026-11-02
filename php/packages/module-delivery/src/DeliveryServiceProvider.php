@@ -42,6 +42,7 @@ use WebxUi\Delivery\Rendering\Assets;
 use WebxUi\Delivery\Settings\SettingOptions;
 use WebxUi\Delivery\Shipping\Shipments;
 use WebxUi\Delivery\Sync\Directories;
+use WebxUi\Delivery\Sync\StoredCarrierBindings;
 use WebxUi\Delivery\Sync\StoredLeadingCarriers;
 use WebxUi\Delivery\Sync\Synchronizer;
 use WebxUi\Delivery\Testing\FakeCarrierSite;
@@ -50,6 +51,7 @@ use WebxUi\Delivery\Types\StorePickup;
 use WebxUi\Delivery\View\Components\Step;
 use WebxUi\Geography\LocalityKind;
 use WebxUi\Geography\LocalityReferences;
+use WebxUi\Geography\Matching\CarrierBindings;
 use WebxUi\Geography\Matching\LeadingCarriers;
 use WebxUi\Geography\Models\GeoCountry;
 use WebxUi\Mcp\Contracts\ProvidesMcpTools;
@@ -101,6 +103,9 @@ class DeliveryServiceProvider extends ServiceProvider
         // The first carrier to sync a country leads it in every process, not only in the one that
         // claimed it (§4.4): the geography library keeps the claim in memory only.
         $this->app->singleton(LeadingCarriers::class, StoredLeadingCarriers::class);
+        // A carrier never lists one town twice: a locality one of its records holds is not a
+        // candidate for another (§4.3).
+        $this->app->singleton(CarrierBindings::class, StoredCarrierBindings::class);
 
         $this->app->afterResolving(MethodTypes::class, static function (MethodTypes $types): void {
             $types->register(StorePickup::class);

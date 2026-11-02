@@ -11,6 +11,7 @@ use WebxUi\Geography\Matcher;
 use WebxUi\Geography\Matching\BindingMethod;
 use WebxUi\Geography\Matching\BindingStatus;
 use WebxUi\Geography\Matching\Candidate;
+use WebxUi\Geography\Matching\CarrierBindings;
 use WebxUi\Geography\Matching\LeadingCarriers;
 use WebxUi\Geography\Matching\LocalityRecord;
 use WebxUi\Geography\Matching\MatchResult;
@@ -380,17 +381,84 @@ final class MatcherTest extends TestCase
 
     // Pages
 
-    public function test_a_page_makes_one_town_of_two_records_spelling_it_alike(): void
+    public function test_two_records_of_one_carrier_spelled_alike_are_two_towns(): void
     {
+        // A carrier never lists one town twice: namesakes of one region it tells apart only by a
+        // qualifier («Village N (District A)», «Village N (District B)») stay two towns.
         $results = $this->matcher()->matchPage(self::LEAD, [
             $this->record('1', 'Village N'),
             $this->record('2', 'village  n.'),
         ]);
 
         $this->assertSame(BindingMethod::Created, $results['1']->method);
-        $this->assertSame(BindingMethod::AutoExact, $results['2']->method);
-        $this->assertSame($results['1']->localityId, $results['2']->localityId);
-        $this->assertSame(1, GeoLocality::query()->count());
+        $this->assertSame(BindingMethod::Created, $results['2']->method);
+        $this->assertNotSame($results['1']->localityId, $results['2']->localityId);
+        $this->assertSame(2, GeoLocality::query()->count());
+
+        // Another carrier spelling it alike, with nothing to tell the two apart, waits for a person.
+        $other = $this->matcher()->match(self::FOLLOWER, $this->record('9', 'Village N'));
+
+        $this->assertSame(QueueReason::Ambiguous, $other->reason);
+        $this->assertCount(2, $other->candidates);
+    }
+
+    public function test_a_town_bound_to_one_record_of_a_carrier_is_no_candidate_for_its_next(): void
+    {
+        $region = $this->region('Region A');
+        $manual = $this->locality('Village N', ['region_id' => $region->id, 'kind' => 'village']);
+
+        // The follower's first record takes the hand-made town; the second waits, not merged.
+        $follower = $this->matcher()->matchPage(self::FOLLOWER, [
+            $this->record('1', 'Village N'),
+            $this->record('2', 'Village N'),
+        ]);
+
+        $this->assertSame($manual->id, $follower['1']->localityId);
+        $this->assertSame(BindingMethod::AutoExact, $follower['1']->method);
+        $this->assertSame(BindingStatus::Pending, $follower['2']->status);
+        $this->assertSame(QueueReason::NotFound, $follower['2']->reason);
+
+        // The leading carrier makes the second town instead.
+        $lead = $this->matcher()->matchPage(self::LEAD, [
+            $this->record('1', 'Village N'),
+            $this->record('2', 'Village N'),
+        ]);
+
+        $this->assertSame($manual->id, $lead['1']->localityId);
+        $this->assertSame(BindingMethod::Created, $lead['2']->method);
+        $this->assertNotSame($manual->id, $lead['2']->localityId);
+    }
+
+    public function test_a_town_a_stored_binding_holds_is_left_out_but_the_record_itself_keeps_matching(): void
+    {
+        $region = $this->region('Region A');
+        $held = $this->locality('Village N', ['region_id' => $region->id, 'kind' => 'village']);
+        $bindings = new class($held->id) implements CarrierBindings
+        {
+            /** @var list<array{string, list<int>, list<string>}> */
+            public array $asked = [];
+
+            public function __construct(private readonly int $held) {}
+
+            public function taken(string $carrier, array $localityIds, array $except): array
+            {
+                $this->asked[] = [$carrier, $localityIds, $except];
+
+                return $carrier === 'carrier-b' && ! in_array('1', $except, true) ? [$this->held] : [];
+            }
+        };
+        $this->app->instance(CarrierBindings::class, $bindings);
+
+        // Record 1 of carrier-b holds the town in the store: record 2 does not get it.
+        $second = $this->matcher()->match(self::FOLLOWER, $this->record('2', 'Village N'));
+        // Record 1 itself, matched again, is not kept off its own town; another carrier is not either.
+        $first = $this->matcher()->match(self::FOLLOWER, $this->record('1', 'Village N'));
+        $other = $this->matcher()->match('carrier-c', $this->record('5', 'Village N'));
+
+        $this->assertSame(QueueReason::NotFound, $second->reason);
+        $this->assertSame($held->id, $first->localityId);
+        $this->assertSame($held->id, $other->localityId);
+        $this->assertSame(['carrier-b', [$held->id], ['2']], $bindings->asked[0]);
     }
 
     public function test_a_page_of_known_towns_costs_a_fixed_number_of_queries(): void

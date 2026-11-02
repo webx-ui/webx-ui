@@ -6,6 +6,7 @@ namespace WebxUi\Delivery\NovaPoshta\Tests;
 
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Client\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Delivery\Models\DeliveryCarrier;
@@ -21,6 +22,7 @@ use WebxUi\Delivery\Sync\StoredLeadingCarriers;
 use WebxUi\Delivery\Sync\Synchronizer;
 use WebxUi\Delivery\Sync\Trigger;
 use WebxUi\Geography\Editor;
+use WebxUi\Geography\LocalitySearch;
 use WebxUi\Geography\Models\GeoLocality;
 use WebxUi\Geography\Models\GeoRegion;
 use WebxUi\Geography\Normalizer;
@@ -154,27 +156,64 @@ final class SyncTest extends TestCase
     }
 
     #[Test]
-    public function namesakes_the_carrier_tells_apart_only_by_brackets_are_not_merged(): void
+    public function namesakes_the_carrier_tells_apart_only_by_brackets_are_two_towns_with_their_districts(): void
     {
         $this->sync();
 
         // «Щасливе (Бориспільський р-н)» and «Щасливе (Згурівський р-н)»: two villages of one area,
-        // without coordinates — two towns, or the queue; never one town for both.
-        $bindings = DeliveryCarrierLocality::query()
-            ->where('carrier', NovaPoshtaCarrier::KEY)
-            ->get()
-            ->filter(static fn (DeliveryCarrierLocality $binding): bool => ($binding->record['name'] ?? null) === 'Щасливе' && ($binding->record['region'] ?? null) === 'Київська');
+        // without coordinates. «Білин (Волинська обл.)» and «Білин (Володимир-Волинський р-н)»: one
+        // of them has no district to tell it by. A carrier never lists one town twice, so each
+        // pair is two towns (decision of 02.11.2026).
+        foreach (['Щасливе' => 'Київська', 'Білин' => 'Волинська'] as $name => $area) {
+            $bound = $this->bindingsOf($name, $area)->pluck('locality_id')->all();
 
-        $this->assertCount(2, $bindings);
-        $bound = $bindings->pluck('locality_id')->filter()->values()->all();
-
-        if (count($bound) !== count(array_unique($bound))) {
-            // Open (stage 4): the base binds a record to the one town of its name, type and area,
-            // and the leading carrier made that town from the namesake a moment before — so two
-            // villages become one. Waits for the person's choice of the rule (the stage's question).
-            $this->markTestIncomplete('Namesakes of one area are merged by the base matcher: decision pending.');
+            $this->assertCount(2, $bound, $name);
+            $this->assertNotContains(null, $bound, $name);
+            $this->assertCount(2, array_unique($bound), "Two villages {$name} bound to one town.");
         }
 
-        $this->assertSame($bound, array_values(array_unique($bound)), 'Two villages bound to one town.');
+        $labels = array_map(
+            static fn (GeoLocality $town): string => $town->label('uk'),
+            GeoLocality::query()->whereKey($this->bindingsOf('Щасливе', 'Київська')->pluck('locality_id'))->orderBy('id')->get()->all(),
+        );
+        $this->assertSame(['Щасливе, Бориспільський р-н, Київська', 'Щасливе, Згурівський р-н, Київська'], $labels);
+
+        // The buyer's suggestions tell them apart by the district.
+        $suggested = array_column(array_map(
+            static fn ($suggestion): array => $suggestion->toArray(),
+            $this->app->make(LocalitySearch::class)->suggest('UA', 'Щасл', 'uk', 10),
+        ), 'label');
+        $this->assertContains('Щасливе, Бориспільський р-н, Київська', $suggested);
+        $this->assertContains('Щасливе, Згурівський р-н, Київська', $suggested);
+
+        // The next night binds each record to its own town again.
+        $before = $this->bindingsOf('Щасливе', 'Київська')->pluck('locality_id', 'external_id')->all();
+        $this->sync();
+        $this->assertSame($before, $this->bindingsOf('Щасливе', 'Київська')->pluck('locality_id', 'external_id')->all());
+    }
+
+    #[Test]
+    public function a_hand_made_namesake_takes_one_record_and_the_other_makes_a_town(): void
+    {
+        $editor = $this->app->make(Editor::class);
+        $region = $editor->createRegion('UA', ['uk' => 'Київська']);
+        $town = $editor->createLocality(['country' => 'UA', 'region_id' => $region->id, 'kind' => 'village', 'names' => ['uk' => 'Щасливе']]);
+
+        $this->sync();
+
+        $bound = $this->bindingsOf('Щасливе', 'Київська')->pluck('locality_id')->all();
+        $this->assertContains($town->id, $bound);
+        $this->assertCount(2, array_unique($bound), 'The hand-made village took both records.');
+    }
+
+    /** @return Collection<int, DeliveryCarrierLocality> */
+    private function bindingsOf(string $name, string $area): Collection
+    {
+        return DeliveryCarrierLocality::query()
+            ->where('carrier', NovaPoshtaCarrier::KEY)
+            ->orderBy('id')
+            ->get()
+            ->filter(static fn (DeliveryCarrierLocality $binding): bool => ($binding->record['name'] ?? null) === $name && ($binding->record['region'] ?? null) === $area)
+            ->values();
     }
 }

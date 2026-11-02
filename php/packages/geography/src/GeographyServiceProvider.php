@@ -6,8 +6,10 @@ namespace WebxUi\Geography;
 
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Geography\Console\ImportCommand;
+use WebxUi\Geography\Matching\CarrierBindings;
 use WebxUi\Geography\Matching\ConfigLeadingCarriers;
 use WebxUi\Geography\Matching\LeadingCarriers;
+use WebxUi\Geography\Matching\NoCarrierBindings;
 
 class GeographyServiceProvider extends ServiceProvider
 {
@@ -22,6 +24,8 @@ class GeographyServiceProvider extends ServiceProvider
         $this->app->singleton(Editor::class);
         // The delivery module rebinds it over the site settings (§4.4).
         $this->app->singletonIf(LeadingCarriers::class, ConfigLeadingCarriers::class);
+        // The delivery module rebinds it over its bindings table (§4.3).
+        $this->app->singletonIf(CarrierBindings::class, NoCarrierBindings::class);
     }
 
     public function boot(): void

@@ -13,6 +13,7 @@ use WebxUi\Delivery\Models\DeliveryPoint;
 use WebxUi\Delivery\Models\DeliverySyncRun;
 use WebxUi\Delivery\Sync\Directory;
 use WebxUi\Delivery\Sync\InvalidRecord;
+use WebxUi\Delivery\Sync\LocalityPages;
 use WebxUi\Delivery\Sync\PointPages;
 use WebxUi\Delivery\Sync\PointRecord;
 use WebxUi\Delivery\Sync\RunStatus;
@@ -22,6 +23,7 @@ use WebxUi\Delivery\Sync\Synchronizer;
 use WebxUi\Delivery\Sync\Trigger;
 use WebxUi\Delivery\Testing\FakeCarrier;
 use WebxUi\Geography\Editor;
+use WebxUi\Geography\Matching\LocalityRecord;
 use WebxUi\Geography\Models\GeoLocality;
 
 final class SyncTest extends SyncTestCase
@@ -369,5 +371,31 @@ final class SyncTest extends SyncTestCase
         // A page of 500 points: the carrier's localities, the points there, the upsert, the run.
         $this->assertLessThanOrEqual(8, $this->queries(static fn (): bool => $sync->page($points)));
         $this->assertSame(500, $points->refresh()->seen);
+    }
+
+    public function test_a_town_a_stored_binding_holds_is_no_candidate_for_a_namesake_on_a_later_page(): void
+    {
+        // A carrier never lists one town twice (§4.3, decision of 02.11.2026): the second village
+        // of a name, a page later, is a town of its own for the leading carrier, and the queue for
+        // the others — never the first village again.
+        $pages = $this->app->make(LocalityPages::class);
+        $run = static fn (string $carrier): int => (int) DB::table('delivery_sync_runs')->insertGetId([
+            'carrier' => $carrier, 'directory' => 'localities', 'status' => 'running', 'trigger' => 'command',
+            'started_at' => now(),
+        ]);
+        $village = static fn (string $id): LocalityRecord => new LocalityRecord($id, 'XX', 'Village N', 'village', 'Region A');
+
+        $pages->write(FakeCarrier::KEY, $run(FakeCarrier::KEY), [$village('1')]);
+        $pages->write(FakeCarrier::KEY, $run(FakeCarrier::KEY), [$village('2')]);
+        $bound = DB::table('delivery_carrier_localities')->where('carrier', FakeCarrier::KEY)->orderBy('external_id')->pluck('locality_id', 'external_id')->all();
+
+        $this->assertCount(2, array_unique($bound));
+        $this->assertNotContains(null, $bound);
+
+        // Another carrier: record 7 takes one village, record 8 cannot tell the other from it.
+        $pages->write('carrier-x', $run('carrier-x'), [new LocalityRecord('7', 'XX', 'Village N', 'village', 'Region A')]);
+        $other = DB::table('delivery_carrier_localities')->where('carrier', 'carrier-x')->first();
+        $this->assertSame('pending', $other->status);
+        $this->assertSame('ambiguous', $other->reason);
     }
 }

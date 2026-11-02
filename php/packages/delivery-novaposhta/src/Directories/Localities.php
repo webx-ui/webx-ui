@@ -15,6 +15,11 @@ use WebxUi\Geography\Matching\LocalityRecord;
  * The carrier's own words: on the key (stage 3) the names carry no prefix and namesakes are told
  * apart by a qualifier in brackets — «Абазівка (Полтавський р-н, Полтавська обл)»; the types are
  * the four below; the capital's area is «Київська», like the region around it.
+ *
+ * The district of the qualifier («Бориспільський р-н») is the record's `district`: the buyer's
+ * suggestions show it beside namesakes of one region («Щасливе, Бориспільський р-н»), and the
+ * matcher tells them apart by it (decision of 02.11.2026). A qualifier naming only the area
+ * gives none.
  */
 final class Localities
 {
@@ -101,6 +106,7 @@ final class Localities
             name: $name,
             kind: self::KINDS[mb_strtolower($type)] ?? 'other',
             region: $region === '' ? null : $region,
+            district: self::district($qualifier),
             names: $names === [] ? null : $names,
             regionNames: $regions === [] ? null : $regions,
             features: self::courier($entry) ? ['courier'] : [],
@@ -128,6 +134,18 @@ final class Localities
         }
 
         return [trim((string) preg_replace(self::PREFIX, '', trim($description))), $qualifier];
+    }
+
+    /** «Сосницький р-н., Чернігівська обл.» → «Сосницький р-н»; no district in it — null. */
+    private static function district(string $qualifier): ?string
+    {
+        foreach (explode(',', $qualifier) as $part) {
+            if (preg_match('/^(.+?)\s+(?:р-н|район)\.?$/u', trim($part), $match) === 1) {
+                return trim($match[1]).' р-н';
+            }
+        }
+
+        return null;
     }
 
     /** The area without the word for it: «Полтавська», not «Полтавська область». */

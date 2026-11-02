@@ -103,6 +103,11 @@ $results['417']->toArray();   // status, locality_id, method, reason, candidates
 - nothing — the leading carrier of the country creates the locality (`created`), any other carrier
   waits as `not_found`.
 
+A carrier never lists one town twice: a locality another record of the same carrier is bound to is
+no candidate for the next one (`Matching\CarrierBindings` — the delivery module answers from its
+bindings table; on its own the library knows the page being matched). Two villages of one name in
+one region, told apart only by a qualifier, stay two towns.
+
 The leading carrier is `webx-geography.countries.<code>.source`; unset, the first carrier to sync
 the country leads it (`LeadingCarriers` — the delivery module keeps it in the site settings).
 Hand-made and imported localities are candidates like any other: bound to, never duplicated, and

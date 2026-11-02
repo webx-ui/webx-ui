@@ -46,7 +46,9 @@ module's sync. Languages come from `webx-ui/localization`.
   `candidates`. Keeps no rows: the binding table is the delivery module's. A settled binding is
   kept; only the leading carrier of a country (`LeadingCarriers`, config
   `webx-geography.countries.<code>.source`, else the first to sync) creates regions and localities;
-  manual and imported localities are bound to, never duplicated or renamed. `bind()` and
+  manual and imported localities are bound to, never duplicated or renamed. A locality another
+  record of the same carrier is bound to is no candidate (`Matching\CarrierBindings`; one carrier
+  never lists a town twice), so namesakes it tells apart only by a qualifier stay two. `bind()` and
   `create()` are the queue's actions. Radius — `webx-geography.match_radius_km` (5).
 - **Command** `webx:geo:import <file> [--activate] [--dry-run]` — JSON array or JSON lines of
   records shaped like a carrier's `LocalityRecord` (`country`, `name`, `kind`, `region`,
@@ -64,6 +66,7 @@ module's sync. Languages come from `webx-ui/localization`.
 | A carrier's spelling to match next time           | `NameIndex::addAlias($locality, 't. Town D', 'carrier:<key>')`                                       |
 | To know if a sync may overwrite a field           | `$locality->isManual('names')` — true for hand-made records and for fields an administrator changed  |
 | The leading carrier kept elsewhere                | bind `Matching\LeadingCarriers` to your implementation in your provider's `register()`               |
+| Your own store of a carrier's bindings            | bind `Matching\CarrierBindings` (`taken()`: one query a page) in your provider's `register()`        |
 | Suggestions for your own field                    | `app(LocalitySearch::class)->suggest('XX', $q, app()->getLocale())`, `->toArray()` per line for JSON |
 
 ## Do not
