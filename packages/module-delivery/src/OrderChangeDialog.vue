@@ -306,6 +306,14 @@ watch(methodId, (now, before) => {
   }
 })
 
+// A method of points shows its first page at once: the list opens with something to pick.
+watch(
+  () => [method.value?.id, method.value?.asks, town.value?.id] as const,
+  ([, asks]) => {
+    if (asks === 'point') void searchPoints('')
+  },
+)
+
 // Any change of the choice makes the last «will be» stale.
 watch([point, streetTerm, house, apartment], () => (outcome.value = null))
 
