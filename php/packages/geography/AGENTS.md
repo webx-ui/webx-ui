@@ -38,6 +38,15 @@ module's sync. Languages come from `webx-ui/localization`.
   `Removal::Deactivated` when something holds it), `activate()`, `deactivate()`. Every refusal
   is a `GeographyException` with a message for a person.
 - **`LocalityReferences`** — who holds a locality; owners register from their providers.
+- **`Matcher`** — binds a carrier's `Matching\LocalityRecord` to a shared locality (§4.3):
+  `matchPage($carrier, $records, $current)` returns a `MatchResult` per external id — `status`
+  (`matched`, `pending`, `ignored`), `locality_id`, `method` (`auto_exact`, `auto_coords`,
+  `created`, `manual`), `reason` (`region_unknown`, `ambiguous`, `kind_mismatch`, `not_found`),
+  `candidates`. Keeps no rows: the binding table is the delivery module's. A settled binding is
+  kept; only the leading carrier of a country (`LeadingCarriers`, config
+  `webx-geography.countries.<code>.source`, else the first to sync) creates regions and localities;
+  manual and imported localities are bound to, never duplicated or renamed. `bind()` and
+  `create()` are the queue's actions. Radius — `webx-geography.match_radius_km` (5).
 - **Command** `webx:geo:import <file> [--activate] [--dry-run]` — JSON array or JSON lines of
   records shaped like a carrier's `LocalityRecord` (`country`, `name`, `kind`, `region`,
   `district`, `lat`, `lng`, `names`, `regionNames`).
@@ -53,6 +62,7 @@ module's sync. Languages come from `webx-ui/localization`.
 | A town or region by hand from your own code       | `Editor::createLocality([...])` / `createRegion()`; catch `DuplicateLocality` and offer `->similar`  |
 | A carrier's spelling to match next time           | `NameIndex::addAlias($locality, 't. Town D', 'carrier:<key>')`                                       |
 | To know if a sync may overwrite a field           | `$locality->isManual('names')` — true for hand-made records and for fields an administrator changed  |
+| The leading carrier kept elsewhere                | bind `Matching\LeadingCarriers` to your implementation in your provider's `register()`               |
 | Suggestions for your own field                    | `app(LocalitySearch::class)->suggest('XX', $q, app()->getLocale())`, `->toArray()` per line for JSON |
 
 ## Do not
@@ -62,6 +72,10 @@ module's sync. Languages come from `webx-ui/localization`.
 - Do not insert into `geo_localities` with the query builder: the search rows in
   `geo_locality_names` are written by the model's `saved` event, and a locality without them is
   never suggested. Create and update through the model or the `Editor`.
+- Do not match a carrier's towns one by one in a loop of `match()`: `matchPage()` loads the
+  candidates of a page at once (four queries), `match()` per record is a query storm.
+- Do not overwrite a stored binding the matcher returned with `kept = true`, and do not send a
+  manual one back through matching expecting it to move: a person's binding is final.
 - Do not search with `LIKE '%q%'`: no index takes it. A word inside a name is found by its
   `word` row with a prefix — that is what `LocalitySearch` does.
 - Do not delete a locality outright when something may point at it: `Editor::removeLocality()`
@@ -77,6 +91,8 @@ module's sync. Languages come from `webx-ui/localization`.
   the editor, the import, rolling the migration back.
 - A locality you made appears in `app(LocalitySearch::class)->suggest('XX', '<first letters>', 'en')`;
   after `deactivate()` it does not.
+- `MatcherTest` — the table of §4.3 cases: namesakes, type mismatch, unknown region, manual
+  binding kept, follower's unmatched queued, leader bound to a hand-made town without a duplicate.
 - `php artisan webx:geo:import <file> --dry-run` prints what would be created, updated and
   skipped, with the reason for every skipped record, and saves nothing.
 

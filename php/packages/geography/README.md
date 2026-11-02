@@ -77,6 +77,41 @@ use WebxUi\Geography\LocalityReferences;
 app(LocalityReferences::class)->table('delivery_points', 'locality_id');
 ```
 
+## Carriers: matching and the queue
+
+A carrier's locality is bound to a shared one by `Matcher` (spec §4.3–§4.4). The delivery sync
+hands it a page of records with the bindings it stored, and stores what comes back:
+
+```php
+use WebxUi\Geography\Matcher;
+use WebxUi\Geography\Matching\LocalityRecord;
+use WebxUi\Geography\Matching\MatchResult;
+
+$record = new LocalityRecord(externalId: '417', country: 'XX', name: 'Village A', kind: 'village', region: 'Region A', lat: 10.0, lng: 20.0);
+
+$results = app(Matcher::class)->matchPage('carrier-a', [$record], ['417' => MatchResult::fromRow('pending', null)]);
+$results['417']->toArray();   // status, locality_id, method, reason, candidates
+```
+
+- bound already, or ignored by a person — kept (`kept = true`); a manual binding never moves;
+- the region by its key or alias; unknown — `pending` / `region_unknown` (the leading carrier
+  brings the region in instead);
+- one locality of the same region, type and name or alias — `auto_exact`; several namesakes, or
+  only another type, — the one within `webx-geography.match_radius_km` (5) as `auto_coords`, else
+  `ambiguous` / `kind_mismatch` with the candidates and their distances;
+- nothing — the leading carrier of the country creates the locality (`created`), any other carrier
+  waits as `not_found`.
+
+The leading carrier is `webx-geography.countries.<code>.source`; unset, the first carrier to sync
+the country leads it (`LeadingCarriers` — the delivery module keeps it in the site settings).
+Hand-made and imported localities are candidates like any other: bound to, never duplicated, and
+never renamed — the leading carrier only fills in languages and coordinates nobody set by hand.
+Each carrier spelling becomes an alias of the town and of its region, so the next carrier spelled
+alike matches by itself.
+
+The queue's buttons: `$matcher->bind($carrier, $record, $locality)` (manual), `$matcher->create($carrier, $record)`
+(a shared locality from the record), `MatchResult::ignored()`.
+
 ## Import
 
 ```bash
