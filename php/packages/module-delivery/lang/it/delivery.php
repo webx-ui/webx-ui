@@ -98,4 +98,23 @@ return [
         'until' => 'Fino alle :time',
         'from' => 'Apre alle :time',
     ],
+    'shipments' => [
+        'statuses' => [
+            'created' => 'Lettera di vettura creata',
+            'in_transit' => 'In viaggio',
+            'at_point' => 'Al punto di ritiro',
+            'out_for_delivery' => 'In consegna',
+            'received' => 'Ricevuto',
+            'refused' => 'Rifiutato dall’acquirente',
+            'returning' => 'In rientro',
+            'returned' => 'Tornato al negozio',
+            'cancelled' => 'Annullato',
+        ],
+        'no_delivery' => 'L’ordine non ha spedizione.',
+        'no_waybills' => 'Questo metodo non ha lettere di vettura di un corriere: il negozio consegna da sé.',
+        'made_already' => 'Una lettera di vettura esiste già: annullala prima di crearne un’altra.',
+        'final' => 'La spedizione non si può più annullare.',
+        'cancelled_note' => 'Lettera di vettura :number annullata presso il corriere.',
+        'status_note' => 'Spedizione :number: :status. :text',
+    ],
 ];

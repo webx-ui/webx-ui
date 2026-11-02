@@ -2,12 +2,11 @@
 import { computed, ref } from 'vue'
 import {
   toast,
+  WxAction,
   WxAlert,
   WxBadge,
-  WxButton,
   WxCard,
   WxEmpty,
-  WxPopconfirm,
   WxSkeleton,
   WxSortableList,
 } from '@webx-ui/core'
@@ -129,26 +128,18 @@ async function reorder(): Promise<void> {
             </span>
           </template>
 
-          <!-- Asked first, with the bin every dragged list of the panel removes by (SEO → links). -->
+          <!-- Asked first, with the red bin the panel removes a row of a list by (blog → rubrics). -->
           <template v-if="canManage" #actions="{ item }">
-            <wx-popconfirm
-              :title="t('popular.remove-title', { name: item.name })"
+            <wx-action
+              type="remove"
+              size="sm"
+              :title="t('popular.remove')"
+              :confirm="t('popular.remove-title', { name: item.name })"
               :confirm-text="t('popular.remove')"
               :cancel-text="t('common.cancel')"
-              confirm-type="danger"
-              align="end"
-              @confirm="remove(item)"
-            >
-              <template #trigger>
-                <wx-button
-                  size="sm"
-                  variant="text"
-                  icon="trash"
-                  :aria-label="t('popular.remove')"
-                  data-test="popular-remove"
-                />
-              </template>
-            </wx-popconfirm>
+              data-test="popular-remove"
+              @click="remove(item)"
+            />
           </template>
         </wx-sortable-list>
 

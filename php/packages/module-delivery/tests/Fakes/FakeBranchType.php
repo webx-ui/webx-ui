@@ -6,13 +6,18 @@ namespace WebxUi\Delivery\Tests\Fakes;
 
 use WebxUi\Delivery\AbstractMethodType;
 use WebxUi\Delivery\Asks;
+use WebxUi\Delivery\Contracts\CreatesWaybills;
+use WebxUi\Delivery\Contracts\TracksShipments;
 use WebxUi\Delivery\DeliveryContext;
 use WebxUi\Delivery\Method;
 use WebxUi\Delivery\Quote;
+use WebxUi\Delivery\Testing\ShipsByFakeParcels;
 
 /** `carrier-a.branch`: pick up at a branch; the buyer pays the carrier unless a price is set. */
-final class FakeBranchType extends AbstractMethodType
+final class FakeBranchType extends AbstractMethodType implements CreatesWaybills, TracksShipments
 {
+    use ShipsByFakeParcels;
+
     public function key(): string
     {
         return 'carrier-a.branch';

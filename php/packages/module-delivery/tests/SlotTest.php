@@ -10,6 +10,7 @@ use WebxUi\Cart\Totals\Calculator;
 use WebxUi\Cart\Totals\Purpose;
 use WebxUi\Delivery\CartDelivery;
 use WebxUi\Delivery\Checkout\DeliveryCheckoutSlot;
+use WebxUi\Delivery\DeliverySnapshot;
 use WebxUi\Delivery\Models\DeliverySelection;
 use WebxUi\Orders\Checkout\CheckoutContext;
 use WebxUi\Orders\Checkout\Slots\CheckoutSlots;
@@ -142,9 +143,20 @@ final class SlotTest extends StepTestCase
         $block = $this->slot->snapshot($this->checkout(['locality_id' => $this->townA->id, 'method_id' => $this->pickup->id, 'point_id' => $point->id]));
 
         $this->assertSame('store-pickup', $block['method']);
-        $this->assertSame('Pick up at a store', $block['title']);
-        $this->assertSame(['id' => $this->townA->id, 'label' => 'Town A, Region A'], $block['locality']);
-        $this->assertSame('Store C', $block['point']['title']);
-        $this->assertSame('free', $block['quote']['kind']);
+        $this->assertSame('store.pickup', $block['type']);
+        $this->assertSame('store', $block['carrier']);
+        // In every language of the moment, as §11.1 has it: the order never reads the method again.
+        $this->assertSame(['en' => 'Pick up at a store'], $block['title']);
+        $this->assertSame(['id' => $this->townA->id, 'name' => ['en' => 'Town A'], 'kind' => 'town', 'region' => ['en' => 'Region A']], $block['locality']);
+        $this->assertSame($point->id, $block['point']['id']);
+        $this->assertSame(['en' => 'Store C'], $block['point']['title']);
+        $this->assertSame(['kind' => 'free', 'amount' => 0, 'was' => null, 'estimate' => null, 'currency' => 'EUR', 'in_total' => false], $block['price']);
+        $this->assertSame('sender', $block['payer']);
+        $this->assertFalse($block['paid_by_store']);
+        $this->assertSame('XX', $block['country']);
+        $this->assertNull($block['address']);
+        // The order accepts it by the delivery's own rules (§6.4 of the orders spec).
+        $this->assertSame([], DeliverySnapshot::validate($block));
+        $this->assertSame('Pick up at a store, Town A · Free', DeliverySnapshot::summary($block, 'en'));
     }
 }

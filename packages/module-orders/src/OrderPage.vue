@@ -17,6 +17,7 @@ import {
   useAdmin,
   useBodyKeys,
   useDates,
+  provideHistorySubject,
   useErrorText,
   useTranslate,
   WxSaveState,
@@ -461,6 +462,10 @@ async function pin(text: string | null): Promise<boolean> {
     return false
   }
 }
+
+// The order's id for the nodes its neighbours patch onto the card (the tab «Delivery»): they
+// read it the way a node on any editor does, without knowing this module.
+provideHistorySubject({ id })
 
 provideOrderCard({
   order,

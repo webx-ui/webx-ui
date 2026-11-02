@@ -13,11 +13,15 @@ import type {
   MethodDetail,
   MethodRow,
   MethodType,
+  OrderDelivery,
   Option,
   Page,
   PointDetail,
   PointsPage,
   RegionRow,
+  ShipmentLabel,
+  WaybillChanges,
+  WaybillDraft,
 } from './types'
 
 /** Only what was asked for: an empty filter is no filter. */
@@ -195,6 +199,25 @@ export function createDeliveryApi(admin: AdminContext) {
       reason?: string
       locality_id?: number
     }) => http.post<{ data: BatchResult }>(`${base}/bindings/batch`, body).then(data),
+
+    /** The tab «Delivery» of an order's card (§14.2). */
+    orderDelivery: (order: number) =>
+      http.get<{ data: OrderDelivery }>(`${base}/orders/${order}`).then(data),
+    createWaybill: (order: number, changes: WaybillChanges) =>
+      http.post<{ data: OrderDelivery }>(`${base}/orders/${order}/waybill`, changes).then(data),
+    previewWaybill: (order: number, changes: WaybillChanges) =>
+      http
+        .post<{ data: { request: WaybillDraft } }>(`${base}/orders/${order}/waybill`, {
+          ...changes,
+          dry_run: true,
+        })
+        .then((body) => body.data.request),
+    trackOrder: (order: number) =>
+      http.post<{ data: OrderDelivery }>(`${base}/orders/${order}/track`, {}).then(data),
+    cancelShipment: (shipment: number) =>
+      http.post<{ data: OrderDelivery }>(`${base}/shipments/${shipment}/cancel`, {}).then(data),
+    shipmentLabel: (shipment: number) =>
+      http.get<{ data: ShipmentLabel }>(`${base}/shipments/${shipment}/label`).then(data),
   }
 }
 

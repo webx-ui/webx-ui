@@ -100,4 +100,23 @@ return [
         'until' => 'Until :time',
         'from' => 'Opens at :time',
     ],
+    'shipments' => [
+        'statuses' => [
+            'created' => 'Waybill created',
+            'in_transit' => 'On the way',
+            'at_point' => 'At the pick-up point',
+            'out_for_delivery' => 'Out for delivery',
+            'received' => 'Received',
+            'refused' => 'Refused by the buyer',
+            'returning' => 'Coming back',
+            'returned' => 'Returned to the shop',
+            'cancelled' => 'Cancelled',
+        ],
+        'no_delivery' => 'The order has no delivery.',
+        'no_waybills' => 'This method has no waybills at a carrier: the shop delivers it itself.',
+        'made_already' => 'A waybill is made already: cancel it before making another.',
+        'final' => 'The parcel is past cancelling.',
+        'cancelled_note' => 'Waybill :number cancelled at the carrier.',
+        'status_note' => 'Parcel :number: :status. :text',
+    ],
 ];

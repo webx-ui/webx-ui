@@ -6,13 +6,18 @@ namespace WebxUi\Delivery\Tests\Fakes;
 
 use WebxUi\Delivery\AbstractMethodType;
 use WebxUi\Delivery\Asks;
+use WebxUi\Delivery\Contracts\CreatesWaybills;
+use WebxUi\Delivery\Contracts\TracksShipments;
 use WebxUi\Delivery\DeliveryContext;
 use WebxUi\Delivery\Method;
 use WebxUi\Delivery\Quote;
+use WebxUi\Delivery\Testing\ShipsByFakeParcels;
 
 /** `carrier-a.courier`: to the door, the street from the carrier's directory. */
-final class FakeCourierType extends AbstractMethodType
+final class FakeCourierType extends AbstractMethodType implements CreatesWaybills, TracksShipments
 {
+    use ShipsByFakeParcels;
+
     /** What the type was given the last time it was asked: the carrier's own id of the locality. */
     public static ?string $lastCarrierLocality = null;
 

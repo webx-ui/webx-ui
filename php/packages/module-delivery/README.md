@@ -240,6 +240,24 @@ The step says `webx:delivery:changed` (detail: `method`, `cost`, `selection`) on
 each change, and the event its owner names in `data-checkout-event` on `document` — the
 checkout's `webx:checkout:slot-changed`.
 
+## Parcels of orders
+
+With `webx-ui/module-orders` installed, the order keeps the delivery as it was chosen
+(`DeliverySnapshot`, every language copied, `payer` — `sender` or `recipient`), and a carrier's
+method type that implements `Contracts\CreatesWaybills` and `Contracts\TracksShipments` ships it:
+
+```php
+use WebxUi\Delivery\Shipping\Shipments;
+
+$shipments = app(Shipments::class);
+$shipments->request($order, ['cod' => 2500]);   // what the carrier would get — nothing sent
+$parcel = $shipments->create($order, [], 'panel');  // the waybill; its number goes into the order
+$shipments->track([$parcel]);                     // «received» sets the order's milestone, once
+```
+
+Nothing makes a waybill by itself. `webx:delivery:track` (every 30 minutes) asks about the parcels
+that are due; a refused or returned parcel is a line of the order's history.
+
 ## The panel
 
 With `webx-ui/module-admin` installed, the section «Delivery» is six screens (spec §14), the npm
@@ -262,7 +280,9 @@ and switches off one a point, a binding or a choice holds — the answer says wh
 A key of a carrier is written by `PUT carriers/{key}` (`credentials` — a blank value leaves the
 key, `clear` removes one) and is never read back: the answer has `set: true|false` instead.
 
-Every route asks for `delivery.view` or `delivery.manage` (`AccessCoverageTest`).
+Every route asks for `delivery.view` or `delivery.manage` (`AccessCoverageTest`). With the orders,
+the order's card gets the tab «Delivery» (`delivery.view`): the snapshot, «Create waybill», the
+parcels, «Refresh tracking», the label — the writes behind `delivery.ship`.
 
 ## Spec
 

@@ -98,4 +98,23 @@ return [
         'until' => 'Bis :time',
         'from' => 'Öffnet um :time',
     ],
+    'shipments' => [
+        'statuses' => [
+            'created' => 'Versandschein erstellt',
+            'in_transit' => 'Unterwegs',
+            'at_point' => 'In der Abholstelle',
+            'out_for_delivery' => 'In Zustellung',
+            'received' => 'Erhalten',
+            'refused' => 'Vom Käufer abgelehnt',
+            'returning' => 'Auf dem Rückweg',
+            'returned' => 'Zurück im Shop',
+            'cancelled' => 'Storniert',
+        ],
+        'no_delivery' => 'Die Bestellung hat keinen Versand.',
+        'no_waybills' => 'Diese Versandart hat keine Versandscheine eines Dienstes: der Shop liefert selbst.',
+        'made_already' => 'Ein Versandschein ist schon erstellt: stornieren Sie ihn, bevor Sie einen neuen erstellen.',
+        'final' => 'Die Sendung kann nicht mehr storniert werden.',
+        'cancelled_note' => 'Versandschein :number beim Dienst storniert.',
+        'status_note' => 'Sendung :number: :status. :text',
+    ],
 ];

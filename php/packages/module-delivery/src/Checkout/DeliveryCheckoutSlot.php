@@ -11,9 +11,9 @@ use WebxUi\Delivery\Asks;
 use WebxUi\Delivery\Carriers;
 use WebxUi\Delivery\CartDelivery;
 use WebxUi\Delivery\Delivery;
+use WebxUi\Delivery\DeliveryException;
 use WebxUi\Delivery\MethodOption;
 use WebxUi\Delivery\Methods;
-use WebxUi\Delivery\Points;
 use WebxUi\Delivery\QuoteFailed;
 use WebxUi\Delivery\QuoteKind;
 use WebxUi\Delivery\SelectionInput;
@@ -33,8 +33,8 @@ use WebxUi\Orders\Checkout\Steps\StepError;
  * the delivery API. Registered by the provider when `module-orders` is installed.
  *
  * `check(Checkout)` reads the stored choice and the methods of the town; `check(Order)` checks the
- * point or the address again and prices without cache or fallback (§9.2). The order's block is
- * what was chosen — the full snapshot with the payer of the waybill comes with stage 10 (§11.1).
+ * point or the address again and prices without cache or fallback (§9.2); the order's block is the
+ * snapshot of §11.1, with the payer of the waybill.
  */
 final class DeliveryCheckoutSlot implements NamesErrors, ShippingSlot
 {
@@ -138,29 +138,38 @@ final class DeliveryCheckoutSlot implements NamesErrors, ShippingSlot
     }
 
     /**
-     * The order's block: what was chosen, in the words of the moment.
+     * The order's block (§11.1): the choice checked once more for the order and priced without
+     * cache, copied in every language of the moment — the order does not follow the live method.
      *
      * @return array<string, mixed>
+     *
+     * @throws QuoteFailed the method cannot be priced for the order any more
+     * @throws DeliveryException the choice is not valid any more: check(Order) let it through
      */
     public function snapshot(CheckoutContext $context): array
     {
         $cart = (int) $context->cart?->id;
         $selection = $this->carts()->selection($cart);
-        $option = $this->chosen($context);
+        $option = $this->carts()->chosen($context->state, $cart, Purpose::Order);
         $locality = $selection?->locality_id !== null ? $this->carts()->locality($selection->locality_id) : null;
-        $cost = $this->delivery->cost($context->state, $cart, Purpose::Order);
 
-        return [
-            'method' => $option?->method->key,
-            'type' => $option?->method->type,
-            'carrier' => $option?->method->carrier(),
-            'title' => $option?->method->title($context->locale),
-            'country' => $selection?->country_code,
-            'locality' => $locality === null ? null : ['id' => $locality->id, 'label' => $locality->label($context->locale)],
-            'point' => $selection?->point_id !== null ? app(Points::class)->card($selection->point_id, $context->locale) : null,
-            'address' => $selection?->address,
-            'quote' => $cost?->toArray(),
-        ];
+        if ($selection === null || $option === null || $option->type === null || $option->quote === null || $locality === null) {
+            throw new DeliveryException('Nothing is chosen for the delivery of this cart.');
+        }
+
+        $deliveryContext = $this->delivery->context($context->state, $locality, Purpose::Order, $context->locale);
+        $input = match ($option->type->asks()) {
+            Asks::Point => new SelectionInput(point: $selection->point_id),
+            Asks::Address => SelectionInput::fromArray(['address' => $selection->address ?? []]),
+            Asks::Nothing => new SelectionInput,
+        };
+        $checked = $option->type->validate($option->method, $deliveryContext, $input);
+
+        if (is_array($checked)) {
+            throw new DeliveryException((string) reset($checked));
+        }
+
+        return $this->delivery->snapshot($checked, $option->quote, $context->state->currency ?? $context->currency)->toArray();
     }
 
     public function totalsLine(CheckoutContext $context): ?ShippingLine

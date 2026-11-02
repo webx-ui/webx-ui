@@ -133,7 +133,7 @@ const SCREENS: Record<string, { base: string; patches: (string | Patch)[] }> = {
     base: 'php/packages/module-team/resources/screens/form.json',
     patches: [],
   },
-  // The project patch is a neighbour as it would add itself: a tab «Delivery» after «Items» (§11.3).
+  // The tab «Delivery» after «Items», as module-delivery patches it on the server (§11.3).
   'orders.show': {
     base: 'php/packages/module-orders/resources/screens/show.json',
     // `required` is what the real server reads off `ContactRules::screen()` when it hands the

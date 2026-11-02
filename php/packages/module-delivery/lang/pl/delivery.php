@@ -98,4 +98,23 @@ return [
         'until' => 'Do :time',
         'from' => 'Otwarcie o :time',
     ],
+    'shipments' => [
+        'statuses' => [
+            'created' => 'List przewozowy utworzony',
+            'in_transit' => 'W drodze',
+            'at_point' => 'W punkcie odbioru',
+            'out_for_delivery' => 'Wydana kurierowi',
+            'received' => 'Odebrana',
+            'refused' => 'Kupujący odmówił',
+            'returning' => 'Wraca',
+            'returned' => 'Wróciła do sklepu',
+            'cancelled' => 'Anulowana',
+        ],
+        'no_delivery' => 'Zamówienie nie ma dostawy.',
+        'no_waybills' => 'Ta metoda nie ma listów przewozowych przewoźnika: sklep dostarcza sam.',
+        'made_already' => 'List przewozowy już istnieje: anuluj go, zanim utworzysz nowy.',
+        'final' => 'Przesyłki nie można już anulować.',
+        'cancelled_note' => 'List przewozowy :number anulowany u przewoźnika.',
+        'status_note' => 'Przesyłka :number: :status. :text',
+    ],
 ];

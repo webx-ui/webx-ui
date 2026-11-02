@@ -20,6 +20,7 @@ use WebxUi\Cart\Totals\AdjustmentSources;
 use WebxUi\Delivery\Checkout\DeliveryCheckoutSlot;
 use WebxUi\Delivery\Checkout\StepView;
 use WebxUi\Delivery\Console\SyncCommand;
+use WebxUi\Delivery\Console\TrackCommand;
 use WebxUi\Delivery\Doctor\SyncCheck;
 use WebxUi\Delivery\Models\DeliveryCarrier;
 use WebxUi\Delivery\Models\DeliveryMethod;
@@ -36,6 +37,7 @@ use WebxUi\Delivery\Panel\LocalityForm;
 use WebxUi\Delivery\Panel\MethodForm;
 use WebxUi\Delivery\Panel\PointForm;
 use WebxUi\Delivery\Rendering\Assets;
+use WebxUi\Delivery\Shipping\Shipments;
 use WebxUi\Delivery\Sync\Directories;
 use WebxUi\Delivery\Sync\StoredLeadingCarriers;
 use WebxUi\Delivery\Sync\Synchronizer;
@@ -46,7 +48,10 @@ use WebxUi\Geography\LocalityKind;
 use WebxUi\Geography\LocalityReferences;
 use WebxUi\Geography\Matching\LeadingCarriers;
 use WebxUi\Geography\Models\GeoCountry;
+use WebxUi\Orders\Blocks\BlockDefinition;
+use WebxUi\Orders\Blocks\OrderBlocks;
 use WebxUi\Orders\Checkout\Slots\CheckoutSlots;
+use WebxUi\Orders\OrdersServiceProvider;
 
 /**
  * Delivery: the registries of carriers and method types with the shop's own two built in, the
@@ -57,6 +62,9 @@ use WebxUi\Orders\Checkout\Slots\CheckoutSlots;
  */
 class DeliveryServiceProvider extends ServiceProvider
 {
+    /** The card of an order in `module-orders`, which the tab «Delivery» is patched onto. */
+    public const string ORDER_SCREEN = 'orders.show';
+
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__.'/../config/webx-delivery.php', 'webx-delivery');
@@ -81,6 +89,7 @@ class DeliveryServiceProvider extends ServiceProvider
         $this->app->singleton(PopularLocalities::class);
         $this->app->singleton(Directories::class);
         $this->app->singleton(Synchronizer::class);
+        $this->app->singleton(Shipments::class);
 
         // The first carrier to sync a country leads it in every process, not only in the one that
         // claimed it (§4.4): the geography library keeps the claim in memory only.
@@ -116,6 +125,15 @@ class DeliveryServiceProvider extends ServiceProvider
             $this->callAfterResolving(CheckoutSlots::class, function (CheckoutSlots $slots): void {
                 if ($slots->shipping() === null) {
                     $slots->register($this->app->make(DeliveryCheckoutSlot::class));
+                }
+            });
+        }
+
+        // The order's block `delivery` (§11.1) and its parcels (§11.2–§11.4), where the orders are.
+        if ($this->orders()) {
+            $this->callAfterResolving(OrderBlocks::class, static function (OrderBlocks $blocks): void {
+                if (! $blocks->has('delivery')) {
+                    $blocks->register(new BlockDefinition('delivery', 'delivery', DeliverySnapshot::validate(...), DeliverySnapshot::summary(...)));
                 }
             });
         }
@@ -167,7 +185,7 @@ class DeliveryServiceProvider extends ServiceProvider
             return;
         }
 
-        $this->commands([SyncCommand::class]);
+        $this->commands($this->orders() ? [SyncCommand::class, TrackCommand::class] : [SyncCommand::class]);
 
         $this->publishes([
             __DIR__.'/../config/webx-delivery.php' => config_path('webx-delivery.php'),
@@ -193,6 +211,10 @@ class DeliveryServiceProvider extends ServiceProvider
     private function registerPanel(): void
     {
         $this->loadRoutesFrom(__DIR__.'/../routes/panel.php');
+
+        if ($this->orders()) {
+            $this->loadRoutesFrom(__DIR__.'/../routes/orders.php');
+        }
 
         $config = $this->app->make('config');
         $groups = (array) $config->get('webx-admin.groups', []);
@@ -230,6 +252,24 @@ class DeliveryServiceProvider extends ServiceProvider
         $screens->extend(PointForm::SCREEN, fn (): array => [
             ['op' => 'set', 'target' => 'kind', 'props' => ['options' => $this->app->make(PointForm::class)->kindOptions()]],
         ]);
+        // The tab «Delivery» of the order's card, after «Items» (§14.2; §11.3 of the orders spec),
+        // for whoever reads the delivery: the node reads the order's id from the card. A static
+        // `can` and not a closure: the registry keeps the patched tree for every visitor.
+        if ($this->orders()) {
+            $screens->extend(self::ORDER_SCREEN, [[
+                'op' => 'add',
+                'target' => 'tabs',
+                'position' => 'after:items',
+                'node' => [
+                    'id' => 'delivery',
+                    'type' => 'wx-tab',
+                    'label' => 'trans::webx-delivery::panel.order.tab',
+                    'can' => DeliverySection::VIEW,
+                    'children' => [['id' => 'delivery-order', 'type' => 'wx-delivery-order']],
+                ],
+            ]]);
+        }
+
         $screens->extend(LocalityForm::SCREEN, static fn (): array => [
             ['op' => 'set', 'target' => 'kind', 'props' => ['options' => array_map(
                 static fn (string $kind): array => ['value' => $kind, 'label' => (string) __('webx-delivery::delivery.locality_kinds.'.$kind)],
@@ -245,6 +285,11 @@ class DeliveryServiceProvider extends ServiceProvider
      */
     private function schedule(Schedule $schedule): void
     {
+        // Where the parcels are (§11.3): every 30 minutes, each parcel by its own next time.
+        if ($this->orders()) {
+            $schedule->command('webx:delivery:track')->everyThirtyMinutes()->withoutOverlapping()->onOneServer();
+        }
+
         $directories = $this->app->make(Directories::class);
 
         foreach (array_keys($directories->carriers()) as $carrier) {
@@ -266,5 +311,11 @@ class DeliveryServiceProvider extends ServiceProvider
                     ->onOneServer();
             }
         }
+    }
+
+    /** Whether `module-orders` is on this site: installed and its provider loaded. */
+    private function orders(): bool
+    {
+        return class_exists(OrdersServiceProvider::class) && $this->app->providerIsLoaded(OrdersServiceProvider::class);
     }
 }

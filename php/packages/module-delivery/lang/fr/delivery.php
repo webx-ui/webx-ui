@@ -98,4 +98,23 @@ return [
         'until' => 'Jusqu\'à :time',
         'from' => 'Ouvre à :time',
     ],
+    'shipments' => [
+        'statuses' => [
+            'created' => 'Bordereau créé',
+            'in_transit' => 'En route',
+            'at_point' => 'Au point de retrait',
+            'out_for_delivery' => 'En cours de livraison',
+            'received' => 'Reçu',
+            'refused' => 'Refusé par l’acheteur',
+            'returning' => 'En retour',
+            'returned' => 'Revenu à la boutique',
+            'cancelled' => 'Annulé',
+        ],
+        'no_delivery' => 'La commande n’a pas de livraison.',
+        'no_waybills' => 'Ce mode n’a pas de bordereaux d’un transporteur : la boutique livre elle-même.',
+        'made_already' => 'Un bordereau existe déjà : annulez-le avant d’en créer un autre.',
+        'final' => 'Le colis ne peut plus être annulé.',
+        'cancelled_note' => 'Bordereau :number annulé chez le transporteur.',
+        'status_note' => 'Colis :number : :status. :text',
+    ],
 ];

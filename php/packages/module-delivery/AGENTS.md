@@ -6,7 +6,7 @@ are built in; a carrier comes as a satellite `delivery-<carrier>` that registers
 method types. Requires `webx-ui/module-cart` (the context of a method is the counted cart),
 `webx-ui/geography` (every locality, point and binding stands on it) and `webx-ui/widgets` (the
 step's dialog and list with a search). The checkout of `webx-ui/module-orders` gets the step as
-its slot «delivery»; orders work without it. Words — `webx-delivery`.
+its slot «delivery» and the order its block `delivery` and parcels; orders work without it. Words — `webx-delivery`.
 
 ## What it owns
 
@@ -20,7 +20,7 @@ its slot «delivery»; orders work without it. Words — `webx-delivery`.
   `search`); `delivery_streets` (carriers' streets by binding, sync only); `delivery_sync_runs`
   (the journal, last 100 a directory); `delivery_popular_localities` (the dialog's towns, one list
   a site); `delivery_selections` (the buyer's choice of a cart, `cart_id` PK cascade — written only
-  by `PUT /api/delivery/selection`).
+  by `PUT /api/delivery/selection`); `delivery_shipments` (parcels of orders; FK only where `orders` is).
 - **Contracts** `WebxUi\Delivery\Contracts\MethodType` (key `<carrier>.<kind>`, `asks()`,
   `pointKinds()`, `countries()`, `available()`, `quote()`, `validate()`), `Carrier`, optional
   `LabelledMethodType` (`title()`, `description()`; without it the panel names a type from its kind
@@ -30,13 +30,16 @@ its slot «delivery»; orders work without it. Words — `webx-delivery`.
 - **`Methods::forLocality(DeliveryContext)`** — the offered `MethodOption`s in the panel's order
   (price, points, `disabled` + `hint` for a carrier's courier without streets); `evaluate()` — every
   enabled method with why it is not offered (`MethodOption::NO_POINTS`, …).
-- **Money** — `Quote` (`fixed`, `free($was)`, `carrierRates($estimate)`, `unavailable($reason)`);
-  `Quotes` caches a satellite's price `webx-delivery.quotes.ttl` (600 s), a throw → `carrierRates()`,
-  `Purpose::Order` — no cache, no fallback (`QuoteFailed`). `DeliveryAdjustments` (priority 1000)
-  puts `fixed(N > 0)` of the chosen method into the cart's chain; `Delivery::cost($state, $cartId)`
-  — the line «Delivery cost». `shipping.paid_by_store` is in the cart's `BenefitKeys`.
-- **`Delivery`** — `needed(CartState)` (false without a shippable line), `context($cart, $locality)`.
+- **Money** — `Quote` (`fixed`, `free($was)`, `carrierRates`, `unavailable`); `Quotes` caches a
+  satellite's price 600 s, `Purpose::Order` — no cache, no fallback (`QuoteFailed`).
+  `DeliveryAdjustments` (priority 1000) puts `fixed(N > 0)` into the chain; `Delivery::cost()` — the
+  line «Delivery cost». `shipping.paid_by_store` is in the cart's `BenefitKeys`.
+- **`Delivery`** — `needed(CartState)`, `context($cart, $locality)`, `snapshot(Selection, Quote)` →
+  `DeliverySnapshot` (§11.1: the order's block, every language copied, `payer` sender|recipient).
 - **`PopularLocalities`** — `ids()`, `suggestions($country, $locale)`, `set($ids)`, `add()`, `remove()`.
+- **Parcels** (`Shipping\Shipments`, only with `module-orders`): a type implements
+  `Contracts\CreatesWaybills` / `TracksShipments`; `request()`, `create()` (number into the block,
+  `Events\ShipmentCreated`), `cancel()`, `track()` — «received» → the order's milestone, once.
 - **Directory sync** in `WebxUi\Delivery\Sync`: a carrier implements `Contracts\SyncsDirectories`
   (`directories()`, `pull($directory, $cursor)` → a `Page` of locality, point or street records);
   `Synchronizer` writes a page in one transaction, matches localities with the geography's
@@ -58,11 +61,10 @@ its slot «delivery»; orders work without it. Words — `webx-delivery`.
 - **Checkout slot** `Checkout\DeliveryCheckoutSlot` — registered into `CheckoutSlots` when
   `module-orders` is there: `needed`, `render`, `summary`, `check` (codes `delivery.locality|method|point|address|quote`),
   `snapshot`, `totalsLine`, `choice`.
-- **Command** `webx:delivery:sync {carrier?} {--directory=*} {--trigger=} {--queue}`; the schedule
-  runs each carrier's directories by their cron. `webx:doctor` — `Doctor\SyncCheck`.
-- **`Testing\FakeCarrier`** — «Carrier A» (`carrier-a`): a deterministic directory in `XX`.
-- **Cache groups** `delivery` (methods, carriers, courier's towns, countries) and `delivery-points`.
-- **Locality references** — points, bindings and selections keep a locality from deletion.
+- **Commands** `webx:delivery:sync {carrier?} {--directory=*} {--trigger=} {--queue}` (by each
+  directory's cron) and `webx:delivery:track` (every 30 min). `webx:doctor` — `Doctor\SyncCheck`.
+- **`Testing\FakeCarrier`** — «Carrier A»: a directory in `XX`; `FakeParcels` — its waybills.
+- **Cache groups** `delivery` and `delivery-points`; points, bindings and selections keep a locality.
 - **Panel** (§14, when `module-admin` is installed): six sections in the group `delivery`
   (`Panel\DeliverySection`), JSON under `api/cms/delivery/…` (`routes/panel.php`): methods
   (order by drag), own points, carriers (directories, «Run», «Confirm removal», keys — only «set»),
@@ -70,15 +72,16 @@ its slot «delivery»; orders work without it. Words — `webx-delivery`.
   answers 409 with `similar`), popular towns, binding queue (`Panel\BindingQueue`, by rows or by
   filter). Described screens `delivery.method-form`, `delivery.point-form`,
   `delivery.locality-form`; field types `wx-delivery-locality`, `-localities`, `-region`,
-  `-country`, `-schedule`, `-point-kind`. The npm half — `@webx-ui/module-delivery`.
+  `-country`, `-schedule`, `-point-kind`; the tab «Delivery» of `orders.show` (`wx-delivery-order`,
+  `routes/orders.php`). The npm half — `@webx-ui/module-delivery`.
 
 ### Permissions
 
 | Permission        | Opens                                                                                                 |
 | ----------------- | ----------------------------------------------------------------------------------------------------- |
-| `delivery.view`   | every screen of the section, read-only: methods, points, carriers and runs, geography, queue          |
+| `delivery.view`   | every screen of the section, read-only, and the tab «Delivery» of an order                            |
 | `delivery.manage` | the writes: methods and their order, points, carriers and keys, sync, geography, popular towns, queue |
-| `delivery.ship`   | waybills and tracking of an order (stage 10), without the settings                                    |
+| `delivery.ship`   | create and cancel a waybill, refresh the tracking — without the settings                              |
 
 ### Classes
 
@@ -105,6 +108,7 @@ Tokens: `--webx-delivery-gap`, `--webx-delivery-icon-size` on `.webx-delivery`, 
 | A carrier of your own                       | `callAfterResolving(Carriers::class, fn ($c) => $c->register(MyCarrier::class))` in your provider's `boot()` |
 | Its methods                                 | `callAfterResolving(MethodTypes::class, fn ($t) => $t->register(MyBranchType::class))`                       |
 | A type of your own                          | extend `AbstractMethodType`; override `quote()`, `available()`, add to `validate()` and call the parent      |
+| Waybills and tracking of your carrier       | the type implements `CreatesWaybills` and `TracksShipments`; statuses → `ShipmentStatus`                     |
 | A new kind of the shop's points             | `app(PointKinds::class)->define('showroom', ['en' => 'Showroom'])`, then a `store.pickup` method of it       |
 | The shop's courier in a town                | `$method->syncLocalities([$id, …])` — not the pivot by hand: it moves the cache group                        |
 | The popular towns                           | `app(PopularLocalities::class)->set([$id, …])` — the order given is the order shown                          |
@@ -125,22 +129,19 @@ Tokens: `--webx-delivery-gap`, `--webx-delivery-icon-size` on `.webx-delivery`, 
 - Do not write `delivery_method_localities` or `delivery_points` by the query builder without
   `CacheGroups::bump()` of `delivery` / `delivery-points`.
 - Do not put a carrier's name into the base, its tests or its demo: «carrier A», `XX`, the phone `+800 1234 5678`.
-- Do not write a carrier's points from a satellite: it returns records, the base writes them.
+- Do not write a carrier's points, nor a parcel's status, from a satellite: it returns, the base writes.
 - Do not write `delivery_selections` but through `Selections::put()` (the API): it checks the point,
   the street and the method; nor take a cart's id from a request — `CartHandle` knows the visitor's.
 - Do not write a street the buyer typed anywhere but the selection (decision 31).
 
 ## Check your work
 
-- `vendor/bin/phpunit packages/module-delivery/tests` from `php/` — registries, methods, quotes,
-  popular towns, migrations, the dictionary in ten languages; `ChainTest` — §9.3 on a real cart.
-- `ApiTest` — every door, the refusals by field, a form without JavaScript; `StepTest` — the step,
-  the dialog, both couriers, no JavaScript; `SlotTest` — the checkout's slot; `PerformanceTest` —
-  the budgets of §17 on 30 000 points and 300 000 streets, no `pull()` from the step.
-- `SyncVolumeTest`, `SyncTest`, `StreetsTest` — pages, the threshold, held runs.
+- `vendor/bin/phpunit packages/module-delivery/tests` from `php/`; `ChainTest` — §9.3 on a real cart.
+- `ApiTest` — every door and refusal; `StepTest` — the step, both couriers, no JavaScript; `SlotTest`
+  — the slot; `PerformanceTest` — §17 on 30 000 points and 300 000 streets, no `pull()` from the step.
+- `SyncVolumeTest`, `SyncTest`, `StreetsTest` — pages, the threshold, held runs; `tests/Shipping` — parcels.
 - `npx vitest run php/packages/module-delivery` — `delivery.js`; `DistTest` — `dist/` built from it.
 - `tests/Panel` — the section: `AccessCoverageTest`, geography by hand, methods and points, carriers, queue.
-- The checkout in a browser at 360 px and in the dark theme: town → methods → point → address.
 
 ## Read more
 

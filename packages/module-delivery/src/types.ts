@@ -232,3 +232,103 @@ export interface BatchResult {
   failed: { id: number; message: string }[]
   left: number
 }
+
+/** The snapshot of the order's delivery in the panel's language (§11.1), read from the copy alone. */
+export interface OrderDeliveryView {
+  method: string
+  method_key: string | null
+  carrier: string
+  carrier_title: string
+  locality: string
+  point: {
+    title: string
+    number: string | null
+    address: string | null
+    schedule: string | null
+  } | null
+  address: string | null
+  note: string | null
+  price: string | null
+  was: string | null
+  estimate: string | null
+  paid_by_store: boolean
+  payer: 'sender' | 'recipient' | null
+  waybill: string | null
+}
+
+export type ShipmentStatus =
+  | 'created'
+  | 'in_transit'
+  | 'at_point'
+  | 'out_for_delivery'
+  | 'received'
+  | 'refused'
+  | 'returning'
+  | 'returned'
+  | 'cancelled'
+
+export interface ShipmentEvent {
+  status: ShipmentStatus
+  label: string
+  at: string
+  text: string | null
+}
+
+/** A parcel of the order (§11.2–§11.3). */
+export interface ShipmentRow {
+  id: number
+  number: string | null
+  carrier: string
+  method: string
+  payer: 'sender' | 'recipient'
+  cost: number | null
+  cost_formatted: string | null
+  status: ShipmentStatus
+  status_label: string
+  status_at: string | null
+  final: boolean
+  next_check_at: string | null
+  cancellable: boolean
+  label: boolean
+  events: ShipmentEvent[]
+  created_at: string | null
+}
+
+/** What the carrier would get (§11.2): the dialog shows it and lets the manager change a few lines. */
+export interface WaybillDraft {
+  order_id: number
+  order_number: string | null
+  carrier: string
+  type: string
+  method: string | null
+  recipient: { name: string; phone: string | null; email: string | null }
+  sender: Record<string, unknown>
+  lines: { name: string; sku: string | null; qty: number; price: number }[]
+  declared_value: number
+  currency: string
+  payer: 'sender' | 'recipient'
+  cod: number | null
+}
+
+/** The tab «Delivery» of the order's card. */
+export interface OrderDelivery {
+  order_id: number
+  currency: string
+  exponent: number
+  delivery: OrderDeliveryView | null
+  waybills: boolean
+  can_ship: boolean
+  draft: WaybillDraft | null
+  active: number | null
+  shipments: ShipmentRow[]
+}
+
+export interface WaybillChanges {
+  recipient_name?: string | null
+  recipient_phone?: string | null
+  declared_value?: number | null
+  cod?: number | null
+  dry_run?: boolean
+}
+
+export type ShipmentLabel = { url: string } | { pdf: string; filename: string }

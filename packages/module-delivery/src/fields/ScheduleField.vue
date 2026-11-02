@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { WxButton, WxDatePicker, WxInput, WxSelect } from '@webx-ui/core'
+import { WxAction, WxButton, WxDatePicker, WxInput, WxSelect } from '@webx-ui/core'
 import { useDeliveryWords } from '../i18n'
 
 /**
@@ -198,11 +198,10 @@ function removeException(index: number): void {
           :disabled="props.disabled"
           @change="setException(index, { text: String($event ?? '') })"
         />
-        <wx-button
+        <wx-action
+          type="remove"
           size="sm"
-          variant="text"
-          icon="trash"
-          :aria-label="t('schedule.remove')"
+          :title="t('schedule.remove')"
           :disabled="props.disabled"
           @click="removeException(index)"
         />

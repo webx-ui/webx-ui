@@ -89,6 +89,15 @@ final class Delivery
     }
 
     /**
+     * The order's block `delivery` (§11.1): the checked choice and its price for the order, copied
+     * in every language — the checkout calls it after `validate()` passed again for the order.
+     */
+    public function snapshot(Selection $selection, Quote $quote, ?string $currency = null): DeliverySnapshot
+    {
+        return DeliverySnapshot::of($selection, $quote, $currency);
+    }
+
+    /**
      * The totals line «Delivery cost» of the cart (decision 7): null — delivery is not needed or
      * nothing is chosen, or the chosen method is not offered there any more.
      *

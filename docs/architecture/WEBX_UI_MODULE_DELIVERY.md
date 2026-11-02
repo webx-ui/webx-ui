@@ -584,6 +584,7 @@ removed_at, name_key)` — подсказки префиксом внутри п
 | `id`            | `bigint` PK        |                                                                                   |
 | `order_id`      | `bigint`           | заказ `module-orders`; FK — только если таблица заказов есть (миграция проверяет) |
 | `carrier`       | `varchar(32)`      |                                                                                   |
+| `type`          | `varchar(64)`      | тип способа из снимка: его спрашивают об этикетке, отмене и трекинге (этап 10)    |
 | `method_key`    | `varchar(64)`      | из снимка                                                                         |
 | `number`        | `varchar(64)` null | номер накладной у службы                                                          |
 | `payer`         | `varchar(12)`      | `sender`, `recipient`                                                             |
@@ -1458,6 +1459,50 @@ next_check_at <= now()` по индексу, пачками по 100 на слу
 в истории заказа, дальше решает менеджер; событие `ShipmentReturned` — отложенное (решение 39,
 §21). Без `module-orders` отправлений нет вовсе.
 
+**Как сделано (этап 10).**
+
+- **Снимок** — `WebxUi\Delivery\DeliverySnapshot` (`Delivery::snapshot(Selection, Quote, $currency)`),
+  форма — как в §11.1: `title`, `locality.name`, `locality.region`, `point.title`, `point.address`,
+  `point.schedule_text` — на всех языках строки (копия, а не язык оформления); у точки ещё `week`.
+  `price.amount` — сумма `fixed`, `0` у `free`, `null` у «по тарифам»; `payer` — `sender` у
+  `fixed`/`free`/привилегии, `recipient` у `carrierRates` (§9.3). Слот при заказе берёт выбор,
+  ещё раз зовёт `validate()` типа с `Purpose::Order` и цену без кеша — `check(Order)` уже
+  отказал бы с кодом `delivery.point`/`delivery.quote`, так что снимок не пишется из
+  непроверенного выбора. Блок регистрируется в `OrderBlocks` (`DeliverySnapshot::validate()` —
+  общая часть и форма, `summary()` — «Pick up at a store, Town A · Free» для списка и писем).
+- **Накладная** — `Contracts\CreatesWaybills` и `Contracts\TracksShipments` — у **типа**
+  (§13.1), значения — в `WebxUi\Delivery\Shipping`: `WaybillRequest` (блок заказа, получатель —
+  `recipient` заказа или покупатель, отправитель — `delivery_carriers.settings`, shippable-строки
+  без снятых и возвращённых, ценность — итог заказа, `payer` из снимка, `cod` — от менеджера:
+  `module-payments` своего шва ещё не отдаёт), `Waybill`, `Label` (адрес или PDF), `Shipment`
+  (копия строки), `TrackingState`, `ShipmentStatus`, `WaybillRefused`. Сервис
+  `Shipping\Shipments`: `request()`, `create()` — строка `delivery_shipments`, `waybill`
+  (`number`, `shipment_id`, `payer`) в блок через `Orders::patchBlock()` (строка истории),
+  `ShipmentCreated`; **одна действующая накладная на заказ** — вторая только после отмены;
+  `cancel()` — `cancelWaybill()` службы, статус `cancelled`, строка истории; `label()`. Служба не
+  ответила — `WaybillRefused` словами `SyncFailure`, ничего не записано. Свои способы магазина
+  накладных не делают.
+- **Трекинг** — `Shipments::track()`: без аргумента — всё, что `final = false AND
+next_check_at <= now`, по типу пачками по 100 (`chunkById`); со списком — «Обновить трекинг».
+  Следующий опрос — через 30 мин (`at_point`, `out_for_delivery`) или 2 ч; упавший опрос — строка
+  в лог и тот же интервал; 60 дней без смены статуса — `final`. `events` — новые сверху, ≤ 50.
+  `received` → `Orders::mark(Received, 'delivery:<служба>')` — раз: дальше отправление `final`, а
+  веха, поставленная менеджером раньше, остаётся его (`already_marked`). `refused`, `returned` —
+  `Orders::note()` «Parcel A-0001: Refused by the buyer. …»; отменённый заказ вместо вехи получает
+  ту же строку. `webx:delivery:track` — в расписании `everyThirtyMinutes()->withoutOverlapping()`.
+- **Без `module-orders`** (провайдер не загружен) — нет блока, сервиса в расписании, команды
+  трекинга, маршрутов `routes/orders.php` и вкладки; таблица `delivery_shipments` есть, без FK.
+- **Вкладка «Доставка»** — патч `orders.show` (`after:items`, узел `wx-delivery-order`,
+  `can: delivery.view`: реестр экранов кеширует собранное дерево, поэтому видимость — статичным
+  `can`, а не замыканием по пользователю). Узел берёт id заказа из `provideHistorySubject`
+  карточки (`OrderPage.vue` `module-orders` теперь его даёт). Маршруты: `GET delivery/orders/{id}`
+  и `GET shipments/{id}/label` — `delivery.view|ship|manage`; `POST orders/{id}/waybill` (с
+  `dry_run` — только `WaybillRequest`), `POST orders/{id}/track`, `POST shipments/{id}/cancel` —
+  `delivery.ship`. Этикетка — JSON (`url` или `pdf` base64), панель открывает её сама.
+- **Подставная служба** — `Testing\FakeParcels` (номера `A-0001…`, `move()`, `refuse()`,
+  `down()`) и трейт `Testing\ShipsByFakeParcels` для типов «службы A».
+- **MCP** (`delivery_shipments_*`) — этап 11.
+
 ## 12. Шаг доставки в оформлении
 
 Шаг целиком — оформление `module-orders` (§19–§34 его спеки): где он стоит, как сохраняется
@@ -1704,7 +1749,7 @@ $this->callAfterResolving(MethodTypes::class, function (MethodTypes $types) {
 
 | Право             | Что даёт                                                                                                                |
 | ----------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `delivery.view`   | видеть способы, точки, службы и журнал синхронизации, географию, отправления                                            |
+| `delivery.view`   | видеть способы, точки, службы и журнал синхронизации, географию, отправления и вкладку «Доставка» заказа                |
 | `delivery.manage` | способы, свои точки, служба: включить, настройки, ключи, расписание, запуск синхронизации; география и очередь привязок |
 | `delivery.ship`   | создать и отменить накладную, обновить трекинг — менеджеру заказов без доступа к настройкам                             |
 

@@ -5,6 +5,7 @@ import LocalityField from './fields/LocalityField.vue'
 import PointKindField from './fields/PointKindField.vue'
 import RegionField from './fields/RegionField.vue'
 import ScheduleField from './fields/ScheduleField.vue'
+import OrderDeliveryNode from './OrderDeliveryNode.vue'
 
 export interface DeliveryOptions {
   /** Where the section lives inside the panel; its screens sit under it. */
@@ -22,7 +23,7 @@ export interface DeliveryOptions {
  *
  * The fields only this section's screens have — a locality, the courier's localities, a region
  * of the country, a country of the site, the opening hours, the kind of points — come with the
- * first module.
+ * first module, and so does the node of the tab «Delivery» the server patches onto the order's card.
  */
 export function delivery(options: DeliveryOptions = {}): AdminModule[] {
   const path = options.path ?? '/delivery'
@@ -48,6 +49,8 @@ export function delivery(options: DeliveryOptions = {}): AdminModule[] {
         'wx-delivery-country': { component: CountryField, kind: 'field' },
         'wx-delivery-schedule': { component: ScheduleField, kind: 'field', wide: true },
         'wx-delivery-point-kind': { component: PointKindField, kind: 'field' },
+        // The tab «Delivery» of the order's card, patched onto `orders.show` by the server.
+        'wx-delivery-order': { component: OrderDeliveryNode, kind: 'display' },
       },
     },
     section('delivery-points', 'points', 'webx.delivery.points', () => import('./PointsPage.vue')),

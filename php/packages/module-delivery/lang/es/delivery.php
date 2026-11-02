@@ -98,4 +98,23 @@ return [
         'until' => 'Hasta las :time',
         'from' => 'Abre a las :time',
     ],
+    'shipments' => [
+        'statuses' => [
+            'created' => 'Guía creada',
+            'in_transit' => 'En camino',
+            'at_point' => 'En el punto de recogida',
+            'out_for_delivery' => 'En reparto',
+            'received' => 'Recibido',
+            'refused' => 'Rechazado por el comprador',
+            'returning' => 'De vuelta',
+            'returned' => 'Devuelto a la tienda',
+            'cancelled' => 'Cancelado',
+        ],
+        'no_delivery' => 'El pedido no tiene envío.',
+        'no_waybills' => 'Este método no tiene guías de una empresa de transporte: la tienda lo entrega ella misma.',
+        'made_already' => 'Ya hay una guía: cancélela antes de crear otra.',
+        'final' => 'El envío ya no se puede cancelar.',
+        'cancelled_note' => 'Guía :number cancelada en la empresa de transporte.',
+        'status_note' => 'Envío :number: :status. :text',
+    ],
 ];

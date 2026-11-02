@@ -1553,6 +1553,215 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
     return popular(locale)
   })
 
+  /* -------------------------------------------------------------- the order's tab ----- */
+
+  /* The tab «Delivery» of an order's card (§11, §14.2): order 7 goes by carrier A's courier,
+     order 9 is picked up at the shop's own store — no waybill — and every other one goes to a
+     branch of carrier A at a fixed price. The parcels live here; «Refresh tracking» moves a
+     parcel one status on, as a carrier would tell it. */
+  type Parcel = {
+    id: number
+    order: number
+    number: string
+    payer: 'sender' | 'recipient'
+    status: string
+    final: boolean
+    events: { status: string; at: string; text: string | null }[]
+  }
+  const parcels: Parcel[] = []
+  let parcelSeq = 0
+  const PATH = ['created', 'in_transit', 'at_point', 'received']
+  const statusWord = (locale: string, status: string) =>
+    line(locale, 'webx-delivery', `delivery.shipments.statuses.${status}`)
+  const orderView = (order: number) =>
+    order === 9
+      ? {
+          method: 'Pick up at a store',
+          method_key: 'store-pickup',
+          carrier: 'store',
+          carrier_title: carrierTitle('store'),
+          locality: 'Town A, Region A',
+          point: { title: 'Store A', number: '1', address: '1 Example street', schedule: null },
+          address: null,
+          note: null,
+          price: 'Free',
+          was: null,
+          estimate: null,
+          paid_by_store: false,
+          payer: 'sender' as const,
+          waybill: null,
+        }
+      : order === 7
+        ? {
+            method: 'Carrier A courier',
+            method_key: 'carrier-a-courier',
+            carrier: 'carrier-a',
+            carrier_title: 'Carrier A',
+            locality: 'Town B, Region B',
+            point: null,
+            address: 'Elm 3, 5, 12',
+            note: 'Ring twice',
+            price: 'By carrier rates',
+            was: null,
+            estimate: '70,00 €',
+            paid_by_store: false,
+            payer: 'recipient' as const,
+            waybill: null,
+          }
+        : {
+            method: 'Carrier A branch',
+            method_key: 'carrier-a-branch',
+            carrier: 'carrier-a',
+            carrier_title: 'Carrier A',
+            locality: 'Town A, Region A',
+            point: {
+              title: 'Branch 12',
+              number: '12',
+              address: '12 Example street',
+              schedule: 'Mon–Fri 09:00–18:00',
+            },
+            address: null,
+            note: null,
+            price: 'Free',
+            was: '9,00 €',
+            estimate: null,
+            paid_by_store: true,
+            payer: 'sender' as const,
+            waybill: null,
+          }
+  const draftOf = (order: number) => {
+    const view = orderView(order)
+
+    return {
+      order_id: order,
+      order_number: `WX-${1000 + order}`,
+      carrier: view.carrier,
+      type: `${view.carrier}.${order === 7 ? 'courier' : 'branch'}`,
+      method: view.method_key,
+      recipient: {
+        name: `Buyer ${'ABCDEFGHIJKL'[order - 1] ?? ''}`.trim(),
+        phone: '+800 1234 5678',
+        email: null,
+      },
+      sender: { name: 'Example shop', phone: '+800 1234 5678' },
+      lines: [{ name: 'Item A', sku: 'A-1', qty: 1, price: 4999 }],
+      declared_value: 4999,
+      currency: 'EUR',
+      payer: view.payer,
+      cod: null,
+    }
+  }
+  const orderDelivery = (order: number, locale: string) => {
+    const view = orderView(order)
+    const own = view.carrier === 'store'
+    const mine = parcels.filter((one) => one.order === order).sort((a, b) => b.id - a.id)
+    const active = mine.find((one) => one.status !== 'cancelled') ?? null
+
+    return {
+      data: {
+        order_id: order,
+        currency: 'EUR',
+        exponent: 2,
+        delivery: { ...view, waybill: active?.number ?? null },
+        waybills: !own,
+        can_ship: true,
+        draft: own || active ? null : draftOf(order),
+        active: active?.id ?? null,
+        shipments: mine.map((one) => ({
+          id: one.id,
+          number: one.number,
+          carrier: view.carrier,
+          method: view.method_key,
+          payer: one.payer,
+          cost: 4500,
+          cost_formatted: '45,00 €',
+          status: one.status,
+          status_label: statusWord(locale, one.status),
+          status_at: one.events[0]?.at ?? null,
+          final: one.final,
+          next_check_at: null,
+          cancellable: !one.final,
+          label: one.status !== 'cancelled',
+          events: one.events.map((event) => ({
+            ...event,
+            label: statusWord(locale, event.status),
+          })),
+          created_at: one.events[one.events.length - 1]?.at ?? null,
+        })),
+      },
+    }
+  }
+
+  on('GET', '/delivery/orders/(\\d+)', ({ params, locale }) =>
+    orderDelivery(Number(params[0]), locale),
+  )
+
+  on('POST', '/delivery/orders/(\\d+)/waybill', ({ params, body, locale }) => {
+    const order = Number(params[0])
+    const input = (body ?? {}) as Record<string, unknown>
+
+    if (orderView(order).carrier === 'store') {
+      throw refuse('waybill', line(locale, 'webx-delivery', 'delivery.shipments.no_waybills'))
+    }
+
+    if (input.dry_run) return { data: { request: { ...draftOf(order), ...input } } }
+
+    if (parcels.some((one) => one.order === order && one.status !== 'cancelled')) {
+      throw refuse('waybill', line(locale, 'webx-delivery', 'delivery.shipments.made_already'))
+    }
+
+    parcelSeq++
+    parcels.push({
+      id: parcelSeq,
+      order,
+      number: `A-${String(parcelSeq).padStart(4, '0')}`,
+      payer: orderView(order).payer,
+      status: 'created',
+      final: false,
+      events: [{ status: 'created', at: new Date().toISOString(), text: null }],
+    })
+
+    return orderDelivery(order, locale)
+  })
+
+  on('POST', '/delivery/orders/(\\d+)/track', ({ params, locale }) => {
+    const order = Number(params[0])
+
+    for (const one of parcels.filter((parcel) => parcel.order === order && !parcel.final)) {
+      const next = PATH[PATH.indexOf(one.status) + 1]
+
+      if (!next) continue
+      one.status = next
+      one.final = next === 'received'
+      one.events.unshift({
+        status: next,
+        at: new Date().toISOString(),
+        text: next === 'at_point' ? 'Arrived at branch 12' : null,
+      })
+    }
+
+    return orderDelivery(order, locale)
+  })
+
+  on('POST', '/delivery/shipments/(\\d+)/cancel', ({ params, locale }) => {
+    const one = parcels.find((parcel) => parcel.id === Number(params[0]))
+
+    if (!one) throw fail(404, 'Not found')
+    one.status = 'cancelled'
+    one.final = true
+    one.events.unshift({ status: 'cancelled', at: new Date().toISOString(), text: null })
+
+    return orderDelivery(one.order, locale)
+  })
+
+  on('GET', '/delivery/shipments/(\\d+)/label', ({ params }) => {
+    const one = parcels.find((parcel) => parcel.id === Number(params[0]))
+
+    if (!one) throw fail(404, 'Not found')
+
+    return { data: { url: `https://carrier-a.example.test/labels/${one.number}.pdf` } }
+  })
+
   /* ----------------------------------------------------------------------- bindings ----- */
 
   const pending = (query: { get: (name: string) => string | null }) =>

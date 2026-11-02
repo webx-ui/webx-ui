@@ -98,4 +98,23 @@ return [
         'until' => 'Saat :time\'e kadar',
         'from' => 'Açılış :time',
     ],
+    'shipments' => [
+        'statuses' => [
+            'created' => 'Gönderi belgesi oluşturuldu',
+            'in_transit' => 'Yolda',
+            'at_point' => 'Teslim noktasında',
+            'out_for_delivery' => 'Dağıtımda',
+            'received' => 'Teslim alındı',
+            'refused' => 'Alıcı reddetti',
+            'returning' => 'Geri dönüyor',
+            'returned' => 'Mağazaya döndü',
+            'cancelled' => 'İptal edildi',
+        ],
+        'no_delivery' => 'Siparişte teslimat yok.',
+        'no_waybills' => 'Bu yöntemin kargo firması gönderi belgesi yok: mağaza kendisi teslim ediyor.',
+        'made_already' => 'Gönderi belgesi zaten var: yenisini oluşturmadan önce iptal edin.',
+        'final' => 'Gönderi artık iptal edilemez.',
+        'cancelled_note' => ':number numaralı gönderi belgesi kargo firmasında iptal edildi.',
+        'status_note' => 'Gönderi :number: :status. :text',
+    ],
 ];
