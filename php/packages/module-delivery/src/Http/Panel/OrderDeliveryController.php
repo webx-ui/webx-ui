@@ -14,12 +14,14 @@ use WebxUi\Delivery\Carriers;
 use WebxUi\Delivery\DeliverySnapshot;
 use WebxUi\Delivery\Models\DeliveryShipment;
 use WebxUi\Delivery\Panel\DeliverySection;
+use WebxUi\Delivery\Shipping\OrderDeliveryChange;
 use WebxUi\Delivery\Shipping\Shipments;
 use WebxUi\Delivery\Shipping\ShipmentStatus;
 use WebxUi\Delivery\Shipping\WaybillRefused;
 use WebxUi\Geography\Names;
 use WebxUi\Localization\Locales;
 use WebxUi\Orders\Models\Order;
+use WebxUi\Orders\Panel\OrdersModule;
 
 /**
  * The tab «Delivery» of the order's card (§14.2): the snapshot as it was placed, «Create waybill»
@@ -33,6 +35,7 @@ final class OrderDeliveryController
         private readonly Shipments $shipments,
         private readonly Locales $locales,
         private readonly Money $money,
+        private readonly OrderDeliveryChange $change,
     ) {}
 
     public function show(Request $request, int $order): JsonResponse
@@ -116,12 +119,15 @@ final class OrderDeliveryController
     }
 
     /** @return array<string, mixed> */
-    private function card(Request $request, Order $order): array
+    public function card(Request $request, Order $order): array
     {
         $locale = $this->locales->current();
         $block = $order->delivery;
         $user = $request->user();
         $canShip = $user instanceof HasPermissions && $user->hasPermission(DeliverySection::SHIP);
+        // «Change delivery» is an edit of the order: whoever edits the order may (orders.manage).
+        $canChange = $user instanceof HasPermissions && $user->hasPermission(OrdersModule::MANAGE);
+        $refusal = $block === null ? null : $this->change->refusal($order);
         $waybills = $block !== null && $this->shipments->waybills($order) !== null;
         $active = $this->shipments->active($order->id);
         $draft = null;
@@ -143,6 +149,17 @@ final class OrderDeliveryController
             'can_ship' => $canShip,
             'draft' => $draft,
             'active' => $active?->id,
+            'change' => $block === null || ! $canChange ? null : [
+                'refusal' => $refusal === null ? null : $this->change->refusalText($refusal, $locale),
+                'locality' => is_array($block['locality'] ?? null) && isset($block['locality']['id']) ? [
+                    'id' => (int) $block['locality']['id'],
+                    'label' => (string) ($this->view($block, $locale)['locality'] ?? ''),
+                ] : null,
+                'method' => $block['method'] ?? null,
+                'point' => is_array($block['point'] ?? null) && isset($block['point']['id']) ? (int) $block['point']['id'] : null,
+                'address' => is_array($block['address'] ?? null) ? $block['address'] : null,
+                'country' => $block['country'] ?? null,
+            ],
             'shipments' => $this->shipments->ofOrder($order->id)->map(fn (DeliveryShipment $shipment): array => $this->shipment($shipment, $order->currency, $locale))->all(),
         ];
     }

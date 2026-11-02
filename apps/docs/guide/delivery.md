@@ -64,6 +64,22 @@ it on, runs its sync and makes its three methods: the checkout has a carrier to 
 panel's «Carriers» and «Binding queue» have something in them. Never switch it on in production:
 its waybills go nowhere. Writing a carrier of your own — [Delivery carriers](./delivery-carriers.md).
 
+## Put an order's delivery right
+
+The buyer mistyped the street, chose the wrong pick-up point, or one the carrier will not take the
+parcel to: on the order's tab «Delivery», **Change delivery** opens the checkout's choice again — the
+town by the search and the popular towns, the methods of that town priced for the order's lines, the
+point by its number or address, the address by the method's rules (a carrier's courier takes a
+street of its list only). It is checked exactly as the checkout checks it.
+
+«Check» shows what the delivery and the order's total were and will be. When the new method costs
+another price, the total is counted again, as an edit of the lines counts it: a paid order shows
+«Top-up due» or «Give back» in its «Summary». The same price, or «By carrier rates» on both sides —
+the total stays. A line of the history says what the delivery was, what it is, why and who changed it.
+
+Whoever edits orders (`orders.manage`) may change it, and not while a waybill stands: cancel the
+waybill first — the carrier has the old address.
+
 ## Agents
 
 With the panel and `webx-ui/mcp` installed, an agent runs the delivery through the same doors as
@@ -100,6 +116,7 @@ the parcels' writes behind `delivery.ship`. Every write takes `dry_run`.
 | `delivery_shipments_list`    | parcels by order, carrier, status, on the way too long, returned — with `module-orders`                                            |
 | `delivery_shipments_create`  | the waybill of an order; a dry run answers the request without asking the carrier                                                  |
 | `delivery_shipments_track`   | ask the carriers where the parcels of an order are                                                                                 |
+| `delivery_order_change`      | put the delivery of an order right — town, method, point or address; a dry run answers the new block and the difference of the sum |
 
 The resource `delivery://catalog` lists the types of methods and what each can do, the kinds of
 points, the carriers with their directories, the countries the site delivers to, what the

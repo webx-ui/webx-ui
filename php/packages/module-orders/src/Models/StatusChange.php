@@ -7,6 +7,7 @@ namespace WebxUi\Orders\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
+use WebxUi\Orders\Orders;
 
 /**
  * A line of the order's history (spec §3, §8): a move between statuses, a module's note, a
@@ -44,6 +45,12 @@ class StatusChange extends Model
     public const string PAYMENT = 'payment';
 
     public const string BLOCK = 'block';
+
+    /**
+     * A block replaced whole by a manager ({@see Orders::changeBlock()}); `note` is JSON:
+     * `block`, `from` and `to` — its lines then, `total_from`, `total_to`, `reason`.
+     */
+    public const string BLOCK_CHANGED = 'block_changed';
 
     /** The lines edited (§38.2); `note` is «revision#<N>: <reason>». */
     public const string ITEMS = 'items';

@@ -31,6 +31,9 @@ use WebxUi\Cart\Totals\CartState;
 use WebxUi\Cart\Totals\Purpose;
 use WebxUi\Cart\Totals\ResolvedLine;
 use WebxUi\Cart\Totals\Tender;
+use WebxUi\Orders\Blocks\BlockChange;
+use WebxUi\Orders\Blocks\BlockChangeRefused;
+use WebxUi\Orders\Blocks\BlockChangeResult;
 use WebxUi\Orders\Blocks\BlockRefused;
 use WebxUi\Orders\Blocks\OrderBlocks;
 use WebxUi\Orders\Data\OrderData;
@@ -586,6 +589,130 @@ final class Orders
             $this->line($locked, StatusChange::BLOCK, $source, $adminId, $at, $block);
             $this->events->dispatch(new OrderBlockUpdated($this->snapshot($locked), $block, $patch, $source, $adminId, $at));
         });
+    }
+
+    /**
+     * Replace a block whole after placing — the manager puts right the pick-up point, the street,
+     * the method (§11.1 of delivery: a new snapshot, as at placing). The block's price goes into
+     * the total in place of the old one, as an edit of the lines does (§37): the total, the
+     * payable and the balance are counted again, and «Summary» says what to take or give back.
+     *
+     * Checked by the block's owner; a history line «was → is», who changed it and why; the
+     * journal; `OrderBlockUpdated` with the block whole. A dry run answers the same and writes
+     * nothing; a refusal there is in the answer instead of an exception.
+     *
+     * @throws BlockRefused a block no module registered, one with no price given a price, or the value its owner refuses
+     * @throws BlockChangeRefused
+     */
+    public function changeBlock(Order $order, BlockChange $change, bool $dryRun = false): BlockChangeResult
+    {
+        $definition = $this->blocks->get($change->block) ?? throw new BlockRefused($change->block, ['no module registered it']);
+
+        if ($definition->charge === null && ($change->amount ?? 0) !== 0) {
+            throw new BlockRefused($change->block, ['the block has no price in the total']);
+        }
+
+        $this->blocks->check([$change->block => $change->value]);
+
+        if ($dryRun) {
+            return $this->blockPlan(Order::query()->findOrFail($order->id), $change, $definition->charge, true);
+        }
+
+        $reason = self::text($change->reason, 300);
+        $adminId = $this->adminId($change->source);
+
+        return $this->locked($order, function (Order $locked) use ($change, $definition, $reason, $adminId): BlockChangeResult {
+            $plan = $this->blockPlan($locked, $change, $definition->charge, false);
+
+            if ($plan->refusal !== null) {
+                throw new BlockChangeRefused($plan);
+            }
+
+            $at = CarbonImmutable::now();
+
+            if ($definition->charge !== null) {
+                OrderAdjustment::query()->where('order_id', $locked->id)->whereNull('item_id')->where('source', $definition->charge)->delete();
+
+                if ($plan->amountTo !== 0) {
+                    OrderAdjustment::query()->insert([
+                        'order_id' => $locked->id,
+                        'item_id' => null,
+                        'source' => (string) self::cut($definition->charge, 64),
+                        'label' => (string) self::cut($change->label !== '' ? $change->label : $change->block, 190),
+                        'amount' => $plan->amountTo,
+                        'meta' => $change->meta !== [] ? json_encode($change->meta, JSON_UNESCAPED_UNICODE) : null,
+                    ]);
+                }
+            }
+
+            $locked->setAttribute($change->block, $change->value);
+            $locked->fill([
+                'adjustments_total' => $plan->after['adjustments_total'],
+                'total' => $plan->after['total'],
+                'payable' => $plan->after['payable'],
+            ]);
+            $locked->balance = Balance::stored($locked);
+            $locked->save();
+
+            // «was → is» of the timeline, in the order's language, from this moment's lines: the
+            // block is the owner's shape, the card does not read it again for the history.
+            $this->line($locked, StatusChange::BLOCK_CHANGED, $change->source, $adminId, $at, (string) json_encode([
+                'block' => $change->block,
+                'from' => self::cut($plan->summaryFrom, 250),
+                'to' => self::cut($plan->summaryTo, 250),
+                'total_from' => $plan->before['total'],
+                'total_to' => $locked->total,
+                'reason' => $reason,
+            ], JSON_UNESCAPED_UNICODE));
+
+            $money = Container::getInstance()->make(Money::class);
+            $this->journal->record($locked, 'updated', [
+                $change->block => [(string) $plan->summaryFrom, (string) $plan->summaryTo],
+                ...($plan->totalChanges() ? ['total' => [$money->format($plan->before['total'], $locked->currency), $money->format($locked->total, $locked->currency)]] : []),
+            ]);
+
+            $this->events->dispatch(new OrderBlockUpdated($this->snapshot($locked), $change->block, $change->value, $change->source, $adminId, $at));
+
+            return new BlockChangeResult($change->block, $plan->summaryFrom, $plan->summaryTo, $plan->amountFrom, $plan->amountTo, $plan->before, self::totals($locked), Balance::of($locked), $change->value, null, false);
+        });
+    }
+
+    /** What a change of a block would write: its price in place of the old one, the order's money counted again. */
+    private function blockPlan(Order $order, BlockChange $change, ?string $charge, bool $dryRun): BlockChangeResult
+    {
+        $before = self::totals($order);
+        $current = $order->getAttribute($change->block);
+        $current = is_array($current) ? $current : null;
+        $from = $charge === null ? 0 : (int) OrderAdjustment::query()->where('order_id', $order->id)->whereNull('item_id')->where('source', $charge)->sum('amount');
+        $to = $charge === null ? 0 : (int) ($change->amount ?? 0);
+        $summaryFrom = $current !== null ? $this->blocks->summary($change->block, $current, $order->locale) : null;
+        $summaryTo = $this->blocks->summary($change->block, $change->value, $order->locale);
+
+        $after = clone $order;
+        $after->adjustments_total = $order->adjustments_total - $from + $to;
+        $after->total = max(0, $order->subtotal + $after->adjustments_total);
+        $after->payable = max(0, $after->total - $order->tenders_total);
+        $after->balance = Balance::stored($after);
+
+        $refusal = match (true) {
+            $order->received_at !== null || $order->cancelled_at !== null || $order->refunded_at !== null => BlockChangeResult::STATE,
+            $current === $change->value && $from === $to => BlockChangeResult::NOTHING,
+            default => null,
+        };
+
+        return new BlockChangeResult(
+            $change->block,
+            $summaryFrom,
+            $summaryTo,
+            $from,
+            $to,
+            $before,
+            $refusal === null ? self::totals($after) : $before,
+            Balance::of($refusal === null ? $after : $order),
+            $change->value,
+            $refusal,
+            $dryRun,
+        );
     }
 
     /** A line in the order's history from a module (§5.3, §8): «the parcel came back». No event. */

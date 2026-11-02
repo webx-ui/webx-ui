@@ -12,12 +12,14 @@ import {
   WxSkeleton,
   WxSpace,
   WxText,
+  WxTooltip,
   type BadgeType,
 } from '@webx-ui/core'
 import { useAdmin, useErrorText, useHistorySubject, WxDate } from '@webx-ui/module-admin'
 import { createDeliveryApi } from './api'
 import { useDeliveryWords } from './i18n'
-import type { OrderDelivery, ShipmentRow, ShipmentStatus } from './types'
+import OrderChangeDialog from './OrderChangeDialog.vue'
+import type { OrderDelivery, OrderDeliveryChangeState, ShipmentRow, ShipmentStatus } from './types'
 import WaybillDialog from './WaybillDialog.vue'
 
 /**
@@ -25,6 +27,8 @@ import WaybillDialog from './WaybillDialog.vue'
  * where the orders are installed. What the buyer chose comes from the order's copy (§11.1), never
  * from the live method. Under it — the parcels: «Create waybill» with the request to look over,
  * the statuses the tracking brought, «Refresh tracking», the label and «Cancel waybill».
+ * «Change delivery» puts the choice right for whoever edits the order — not while a waybill
+ * stands — and the card reads the order again: its total may have moved.
  *
  * The card does not know the module: the order's id is the one it gives its history.
  */
@@ -51,6 +55,25 @@ const waybillDialog = createModal<
   OrderDelivery,
   { orderId: number; draft: NonNullable<OrderDelivery['draft']>; exponent: number }
 >(WaybillDialog)
+
+const changeDialog = createModal<
+  OrderDelivery,
+  { orderId: number; start: OrderDeliveryChangeState }
+>(OrderChangeDialog)
+
+async function change(): Promise<void> {
+  const open = state.value
+
+  if (!open?.change || open.change.refusal) return
+
+  const next = await changeDialog({ orderId: open.order_id, start: open.change })
+
+  if (next) {
+    state.value = next
+    toast.success(t('order.changed'))
+    await subject?.reload?.()
+  }
+}
 
 async function load(): Promise<void> {
   if (id.value === null) return
@@ -157,6 +180,25 @@ async function label(row: ShipmentRow): Promise<void> {
 
       <template v-else>
         <wx-card :title="t('order.chosen')">
+          <template v-if="state.change" #extra>
+            <wx-tooltip
+              :content="state.change.refusal ?? undefined"
+              :disabled="!state.change.refusal"
+            >
+              <span>
+                <wx-button
+                  size="sm"
+                  variant="outline"
+                  icon="edit"
+                  :disabled="Boolean(state.change.refusal) || busy"
+                  data-test="order-change"
+                  @click="change"
+                >
+                  {{ t('order.change') }}
+                </wx-button>
+              </span>
+            </wx-tooltip>
+          </template>
           <dl class="wx-delivery-order__facts" data-test="order-delivery-facts">
             <div class="wx-delivery-order__fact">
               <dt>{{ t('order.method') }}</dt>
@@ -209,6 +251,15 @@ async function label(row: ShipmentRow): Promise<void> {
               </dd>
             </div>
           </dl>
+          <wx-text
+            v-if="state.change?.refusal"
+            size="sm"
+            tone="muted"
+            class="wx-delivery-order__why"
+            data-test="order-change-why"
+          >
+            {{ state.change.refusal }}
+          </wx-text>
         </wx-card>
 
         <wx-card :title="t('order.parcels')">
@@ -352,6 +403,11 @@ async function label(row: ShipmentRow): Promise<void> {
   min-width: 0;
   margin: 0;
   overflow-wrap: anywhere;
+}
+
+.wx-delivery-order__why {
+  display: block;
+  margin-block-start: var(--wx-space-12);
 }
 
 .wx-delivery-order__strong {

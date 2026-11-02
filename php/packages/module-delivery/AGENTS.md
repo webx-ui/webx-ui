@@ -57,8 +57,7 @@ binding) and `webx-ui/widgets`. `webx-ui/module-orders` gets the step as its che
   checks and writes; a refusal (422) writes nothing.
 - **Checkout slot** `Checkout\DeliveryCheckoutSlot` (in `CheckoutSlots` with `module-orders`): `needed`, `render`,
   `summary`, `check` (`delivery.locality|method|point|address|quote`), `snapshot`, `totalsLine`, `choice`.
-- **Commands** `webx:delivery:sync {carrier?} {--directory=*} {--trigger=} {--queue}` (by cron),
-  `webx:delivery:track` (every 30 min); `webx:doctor` — `Doctor\SyncCheck`.
+- **Commands** `webx:delivery:sync {carrier?} {--directory=*} {--trigger=} {--queue}` (by cron), `webx:delivery:track` (every 30 min); `webx:doctor` — `Doctor\SyncCheck`.
 - **Testing**: `FakeCarrier` — «Carrier A», a directory in `XX`; `FakeParcels` — its waybills; `CarrierContract` — a satellite's
   contract test; `FakeCarrierSite` — carrier A on a dev site. **Demo** (`delivery`): `XX`, towns by hand, points, couriers, popular towns. **Cache groups** `delivery`, `delivery-points`.
 - **Panel** (§14, with `module-admin`): six sections of the group `delivery` (`Panel\DeliverySection`),
@@ -67,10 +66,11 @@ binding) and `webx-ui/widgets`. `webx-ui/module-orders` gets the step as its che
   `WebxUi\Geography\Editor`; a duplicate answers 409 with `similar`), popular towns, binding queue
   (`Panel\BindingQueue`). Screens `delivery.method-form`, `.point-form`, `.locality-form`; field
   types `wx-delivery-locality`, `-localities`, `-region`, `-country`, `-schedule`, `-point-kind`; the
-  tab «Delivery» of `orders.show` (`routes/orders.php`). The npm half — `@webx-ui/module-delivery`.
+  tab «Delivery» of `orders.show` (`routes/orders.php`; «Change delivery» — `Shipping\OrderDeliveryChange`, behind
+  `orders.manage`, not while a waybill stands). The npm half — `@webx-ui/module-delivery`.
 - **MCP** (§15, with `webx-ui/mcp`; `Mcp\DeliveryModule` is the first section): `delivery_*` — methods,
   `quote` (each method priced, or why not), points, geography by hand (a duplicate answers
-  `similar`), popular towns, bindings, carriers, sync, parcels (`delivery.ship`, with orders) behind
+  `similar`), popular towns, bindings, carriers, sync, parcels (`delivery.ship`, with orders), `order_change` (`orders.manage`) behind
   `delivery:read|write`, writes with `dry_run`; `delivery://catalog`. A key never passes: `api_key: set`.
 
 ### Permissions

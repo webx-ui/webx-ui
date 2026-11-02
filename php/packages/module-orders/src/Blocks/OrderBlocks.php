@@ -79,4 +79,35 @@ final class OrderBlocks
 
         return $summary !== null ? (string) $summary($value, $locale) : null;
     }
+
+    /**
+     * The block's price in words when no adjustment of the order carries it (§11.3 of the card):
+     * null — its owner gave no words, or the block has no price.
+     *
+     * @param  array<string, mixed>  $value
+     */
+    public function price(string $key, array $value, string $locale): ?string
+    {
+        $price = $this->get($key)?->price;
+
+        return $price !== null ? $price($value, $locale) : null;
+    }
+
+    /**
+     * The adjustment sources that are a block's price, by block: `delivery` → `delivery`.
+     *
+     * @return array<string, string>
+     */
+    public function charges(): array
+    {
+        $charges = [];
+
+        foreach ($this->blocks as $key => $block) {
+            if ($block->charge !== null) {
+                $charges[$key] = $block->charge;
+            }
+        }
+
+        return $charges;
+    }
 }

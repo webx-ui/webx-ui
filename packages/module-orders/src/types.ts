@@ -248,6 +248,10 @@ export interface TimelineLine {
   event_label?: string
   /** An edit of the lines (§38.2): each line before → after, the total, the balance it left. */
   revision?: TimelineRevision
+  /** A block replaced by a manager: which, its line was → is (`from`, `to`), the total when it moved. */
+  block?: string | null
+  total_from?: string | null
+  total_to?: string | null
 }
 
 /** An edit of the lines as the timeline shows it; the money is written. */
@@ -319,12 +323,26 @@ export interface OrderCardData {
     paid_first: string | null
     paid_topups: string | null
     balance: OrderBalanceLine | null
+    /**
+     * The blocks' prices as rows of their own — «Delivery» between the discounts and the total:
+     * the money in the total, or the owner's words when nothing is («Free», «By carrier rates»).
+     */
+    charges: { key: string; amount: string | null; amount_minor: number }[]
   }
   /** The lines and their units; a set is one line, its parts are not counted apart. */
   count: { lines: number; units: number; refunded_units: number }
   /** The refunds recorded, oldest first, each with its reason and the reference of the operation. */
   refunds: OrderRefundEntry[]
-  blocks: { key: string; summary: string | null; value: Record<string, unknown> }[]
+  /**
+   * Each block with its owner's line; `value` — its raw data, null for a block its owner draws on
+   * a tab of its own; `own` — the reader opens that tab, and «Items» leaves the block to it.
+   */
+  blocks: {
+    key: string
+    summary: string | null
+    value: Record<string, unknown> | null
+    own: boolean
+  }[]
   timeline: TimelineLine[]
   /** The note pinned over the feed «Notes» (decision 91); null — none. */
   manager_note: string | null

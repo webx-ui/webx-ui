@@ -141,7 +141,18 @@ class DeliveryServiceProvider extends ServiceProvider
         if ($this->orders()) {
             $this->callAfterResolving(OrderBlocks::class, static function (OrderBlocks $blocks): void {
                 if (! $blocks->has('delivery')) {
-                    $blocks->register(new BlockDefinition('delivery', 'delivery', DeliverySnapshot::validate(...), DeliverySnapshot::summary(...)));
+                    // Its price is the adjustment `delivery` — a row of its own in the card's
+                    // «Summary», replaced when a manager changes the delivery — and its own view
+                    // is the tab «Delivery»: «Items» does not repeat it.
+                    $blocks->register(new BlockDefinition(
+                        'delivery',
+                        'delivery',
+                        DeliverySnapshot::validate(...),
+                        DeliverySnapshot::summary(...),
+                        charge: DeliveryAdjustments::SOURCE,
+                        price: static fn (array $block, string $locale): ?string => DeliverySnapshot::priceText(is_array($block['price'] ?? null) ? $block['price'] : [], $locale),
+                        view: DeliverySection::VIEW,
+                    ));
                 }
             });
         }

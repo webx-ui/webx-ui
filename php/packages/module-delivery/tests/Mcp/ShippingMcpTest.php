@@ -8,6 +8,7 @@ use Illuminate\Foundation\Application;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Testing\CountsQueries;
 use WebxUi\Delivery\Models\DeliveryCarrierLocality;
+use WebxUi\Delivery\Models\DeliveryPoint;
 use WebxUi\Delivery\Models\DeliveryShipment;
 use WebxUi\Delivery\Tests\Shipping\ShippingTestCase;
 use WebxUi\Mcp\McpServiceProvider;
@@ -108,5 +109,33 @@ final class ShippingMcpTest extends ShippingTestCase
         $this->assertSame(3, $this->use('delivery_bindings_resolve', ['action' => 'bind', 'all' => true, 'locality' => $this->townA->id, 'dry_run' => true])['matching']);
         $this->assertSame(3, DeliveryCarrierLocality::query()->where('status', 'pending')->count());
         $this->assertSame(0, $this->use('delivery_bindings_resolve', ['action' => 'ignore', 'all' => true, 'reason' => 'not_found'])['left']);
+    }
+
+    #[Test]
+    public function an_agent_changes_the_delivery_of_an_order_after_a_dry_run(): void
+    {
+        $this->assertSame(['orders.manage'], $this->app->make(ToolRegistry::class)->tool('delivery_order_change')->permissions());
+
+        $point = DeliveryPoint::query()->where('carrier', 'store')->orderBy('id')->firstOrFail();
+        $order = $this->placeWith(['method_id' => $this->pickup->id, 'point_id' => $point->id]);
+        $total = $order->total;
+        $manager = $this->signIn(['orders.view', 'orders.manage']);
+        $arguments = ['order' => $order->id, 'locality' => $this->townA->id, 'method' => 'our-courier', 'address' => ['street' => 'Elm street', 'house' => '5'], 'reason' => 'Wrong door'];
+
+        // The dry run answers the new block and the difference of the sum, and writes nothing.
+        $dry = $this->content($this->agent('delivery_order_change', [...$arguments, 'dry_run' => true], $manager)->assertOk());
+        $this->assertTrue($dry['dry_run']);
+        $this->assertSame('our-courier', $dry['delivery']['method']);
+        $this->assertSame(500, $dry['total_difference']);
+        $this->assertSame('store-pickup', $order->refresh()->delivery['method']);
+        $this->assertSame($total, $order->total);
+
+        $done = $this->content($this->agent('delivery_order_change', $arguments, $manager)->assertOk());
+        $this->assertTrue($done['changed']);
+        $this->assertSame('our-courier', $order->refresh()->delivery['method']);
+        $this->assertSame($total + 500, $order->total);
+
+        // Who only ships does not edit the order.
+        $this->agent('delivery_order_change', $arguments, $this->signIn(['delivery.ship']))->assertHasErrors(['[orders.manage]']);
     }
 }

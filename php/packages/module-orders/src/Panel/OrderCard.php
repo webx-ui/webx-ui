@@ -10,6 +10,7 @@ use WebxUi\Admin\Support\Authors;
 use WebxUi\Admin\Visitors\Visitors;
 use WebxUi\Cart\Money;
 use WebxUi\Orders\Balance;
+use WebxUi\Orders\Blocks\OrderBlocks;
 use WebxUi\Orders\Milestone;
 use WebxUi\Orders\Models\Order;
 use WebxUi\Orders\Models\OrderAdjustment;
@@ -45,6 +46,7 @@ final readonly class OrderCard
         private Money $money,
         private OrderList $list,
         private OrderChannels $channels,
+        private OrderBlocks $blocks,
     ) {}
 
     /**
@@ -164,6 +166,8 @@ final readonly class OrderCard
         // buyer a letter» says why it cannot when no channel writes to the buyer or there is no e-mail.
         $notifying = $manage && $this->channels->available();
         $notifyReason = $notifying ? $this->channels->buyerEvents($order)['reason'] : null;
+        // The adjustments that are a block's price — delivery: a row of their own in «Summary».
+        $charges = $this->blocks->charges();
 
         return [
             'id' => $order->id,
@@ -185,7 +189,7 @@ final readonly class OrderCard
             'items_revision' => $order->items_revision,
             'items_changed_at' => $order->items_changed_at?->toAtomString(),
             'adjustments' => $order->adjustments
-                ->filter(static fn (OrderAdjustment $adjustment): bool => $adjustment->item_id === null)
+                ->filter(static fn (OrderAdjustment $adjustment): bool => $adjustment->item_id === null && ! in_array($adjustment->source, $charges, true))
                 ->map(static fn (OrderAdjustment $adjustment): array => [
                     'id' => $adjustment->id,
                     'label' => $adjustment->label,
@@ -207,6 +211,7 @@ final readonly class OrderCard
             ])->values()->all(),
             'totals' => [
                 ...self::totals($order, $money),
+                ...$this->charges($order, $charges, $money, $locale),
                 'refundable' => $money(max(0, $refundable)),
                 'refundable_minor' => max(0, $refundable),
             ],
@@ -225,7 +230,7 @@ final readonly class OrderCard
                     'reason' => $refund->reversal_reason,
                 ] : null,
             ])->values()->all(),
-            'blocks' => $this->blocks($order, $locale),
+            'blocks' => $this->blocks($order, $locale, $can),
             'timeline' => $this->timeline($order, $statuses, $locale, $people, $money),
             // The note pinned over the feed (decision 91): one standing line, changed in place.
             'manager_note' => $order->manager_note,
@@ -521,21 +526,71 @@ final readonly class OrderCard
 
     /**
      * Each block with the line of its owner, and the block itself for the card without the
-     * owner's tab — folded JSON under the line (§11.3).
+     * owner's tab — folded JSON under the line (§11.3). A block whose owner draws it on a tab of
+     * its own (`view` of its definition) never shows its raw data: `own` — the reader opens that
+     * tab, and «Items» leaves the block to it; otherwise its line alone.
      *
-     * @return list<array{key: string, summary: string|null, value: array<string, mixed>}>
+     * @param  (callable(string): bool)|null  $can  the reader's permissions; null — the list's glance
+     * @return list<array{key: string, summary: string|null, value: array<string, mixed>|null, own: bool}>
      */
-    private function blocks(Order $order, string $locale): array
+    private function blocks(Order $order, string $locale, ?callable $can = null): array
     {
         $blocks = [];
 
         foreach (['delivery' => $order->delivery, 'payment' => $order->payment] as $key => $value) {
             if (is_array($value) && $value !== []) {
-                $blocks[] = ['key' => $key, 'summary' => $this->list->summary($key, $value, $locale), 'value' => $value];
+                $view = $this->blocks->get($key)?->view;
+                $blocks[] = [
+                    'key' => $key,
+                    'summary' => $this->list->summary($key, $value, $locale),
+                    'value' => $view === null ? $value : null,
+                    'own' => $view !== null && $can !== null && $can($view),
+                ];
             }
         }
 
         return $blocks;
+    }
+
+    /**
+     * The blocks' prices as rows of «Summary» (§11.3): «Delivery 2,00 €» between the discounts and
+     * the total — the adjustment of the block's `charge` source, or the owner's words when none
+     * carries it («Free», «By carrier rates»). «Discounts and charges» is what is left.
+     *
+     * @param  array<string, string>  $charges  block → adjustment source
+     * @param  Closure(int): string  $money
+     * @return array{adjustments?: string|null, charges: list<array{key: string, amount: string|null, amount_minor: int}>}
+     */
+    private function charges(Order $order, array $charges, Closure $money, string $locale): array
+    {
+        if ($charges === []) {
+            return ['charges' => []];
+        }
+
+        $rows = [];
+        $taken = 0;
+
+        foreach ($charges as $key => $source) {
+            $value = $order->getAttribute($key);
+            $sum = (int) $order->adjustments
+                ->filter(static fn (OrderAdjustment $adjustment): bool => $adjustment->item_id === null && $adjustment->source === $source)
+                ->sum('amount');
+            $taken += $sum;
+
+            if ($sum === 0 && (! is_array($value) || $value === [])) {
+                continue;
+            }
+
+            $rows[] = [
+                'key' => $key,
+                'amount' => $sum !== 0 ? $money($sum) : (is_array($value) ? $this->blocks->price($key, $value, $locale) : null),
+                'amount_minor' => $sum,
+            ];
+        }
+
+        $left = $order->adjustments_total - $taken;
+
+        return ['adjustments' => $left !== 0 ? $money($left) : null, 'charges' => $rows];
     }
 
     /**
@@ -611,6 +666,21 @@ final readonly class OrderCard
             if ($change->kind === StatusChange::ITEMS && $change->note !== null && preg_match('/^revision#(\d+)(?:: (.*))?$/s', $change->note, $match) === 1) {
                 $line['note'] = ($match[2] ?? '') !== '' ? $match[2] : null;
                 $line['revision'] = self::revision($order->revisions->firstWhere('number', (int) $match[1]), (int) $match[1], $money);
+            }
+
+            // A block replaced by a manager: its lines then, «was → is», the total before and
+            // after when it moved, the reason as a note.
+            if ($change->kind === StatusChange::BLOCK_CHANGED && $change->note !== null) {
+                $changed = json_decode($change->note, true);
+                $changed = is_array($changed) ? $changed : [];
+                $totalFrom = isset($changed['total_from']) ? (int) $changed['total_from'] : null;
+                $totalTo = isset($changed['total_to']) ? (int) $changed['total_to'] : null;
+                $line['block'] = is_string($changed['block'] ?? null) ? $changed['block'] : null;
+                $line['from'] = is_string($changed['from'] ?? null) ? $changed['from'] : null;
+                $line['to'] = is_string($changed['to'] ?? null) ? $changed['to'] : null;
+                $line['total_from'] = $totalFrom !== null && $totalFrom !== $totalTo ? $money($totalFrom) : null;
+                $line['total_to'] = $totalTo !== null && $totalFrom !== $totalTo ? $money($totalTo) : null;
+                $line['note'] = is_string($changed['reason'] ?? null) && $changed['reason'] !== '' ? $changed['reason'] : null;
             }
 
             if ($change->kind === StatusChange::MILESTONE_REMOVED && $change->note !== null && ($taken = Milestone::tryFrom($change->note)) !== null) {

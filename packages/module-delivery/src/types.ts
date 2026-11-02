@@ -320,7 +320,78 @@ export interface OrderDelivery {
   can_ship: boolean
   draft: WaybillDraft | null
   active: number | null
+  /** «Change delivery» for whoever edits the order (orders.manage); null — not theirs. */
+  change: OrderDeliveryChangeState | null
   shipments: ShipmentRow[]
+}
+
+/** What the dialog of «Change delivery» starts from: the choice as the order has it. */
+export interface OrderDeliveryChangeState {
+  /** Why it cannot be changed now — a waybill stands; null — it can. */
+  refusal: string | null
+  locality: { id: number; label: string } | null
+  /** The method's key. */
+  method: string | null
+  point: number | null
+  address: Record<string, string | null> | null
+  country: string | null
+}
+
+/** A town of the dialog's search and of its popular buttons. */
+export interface ChangeTown {
+  id: number
+  name: string
+  label: string
+  region: string | null
+}
+
+/** A method of the town, priced for the order's lines — the checkout's row. */
+export interface ChangeMethod {
+  id: number
+  key: string
+  title: string
+  description: string | null
+  asks: 'nothing' | 'point' | 'address' | null
+  carrier: string
+  points: number | null
+  disabled: boolean
+  hint: string | null
+  price: { kind: string; text: string; was: string | null; estimate: string | null } | null
+}
+
+export interface ChangeOption {
+  value: string
+  label: string
+  hint?: string | null
+}
+
+/** The input of «Change delivery». */
+export interface ChangeInput {
+  locality: number
+  method: number
+  point?: number | null
+  address?: {
+    street?: string | null
+    street_id?: string | null
+    house?: string | null
+    apartment?: string | null
+    note?: string | null
+  } | null
+  reason?: string | null
+  dry_run?: boolean
+}
+
+/** «Was → will be» of the sum, in the order's money. */
+export interface ChangeOutcome {
+  summary_from: string | null
+  summary_to: string | null
+  amount_from: string
+  amount_to: string
+  total_from: string
+  total_to: string
+  total_changes: boolean
+  balance: { kind: 'topup' | 'over'; amount: string } | null
+  dry_run: boolean
 }
 
 export interface WaybillChanges {

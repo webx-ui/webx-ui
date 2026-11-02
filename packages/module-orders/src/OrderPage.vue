@@ -465,7 +465,17 @@ async function pin(text: string | null): Promise<boolean> {
 
 // The order's id for the nodes its neighbours patch onto the card (the tab «Delivery»): they
 // read it the way a node on any editor does, without knowing this module.
-provideHistorySubject({ id })
+provideHistorySubject({
+  id,
+  // A neighbour changed the order (the delivery and its price): the head, the totals, the history again.
+  reload: async () => {
+    try {
+      take(await api.get(id.value), false)
+    } catch (error) {
+      toast.danger(message(error))
+    }
+  },
+})
 
 provideOrderCard({
   order,

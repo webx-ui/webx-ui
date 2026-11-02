@@ -17,6 +17,7 @@ use WebxUi\Delivery\Models\DeliveryCarrier;
 use WebxUi\Delivery\Models\DeliveryShipment;
 use WebxUi\Delivery\Panel\CarrierRows;
 use WebxUi\Delivery\Panel\DeliverySection;
+use WebxUi\Delivery\Shipping\OrderDeliveryChange;
 use WebxUi\Delivery\Shipping\Shipments;
 use WebxUi\Delivery\Shipping\ShipmentStatus;
 use WebxUi\Delivery\Shipping\WaybillRefused;
@@ -32,6 +33,7 @@ use WebxUi\Mcp\Exceptions\ToolFailure;
 use WebxUi\Mcp\Tool;
 use WebxUi\Orders\Models\Order;
 use WebxUi\Orders\OrdersServiceProvider;
+use WebxUi\Orders\Panel\OrdersModule;
 
 /**
  * The carriers, their sync and the parcels for an agent (§15). The state of a carrier is
@@ -157,6 +159,32 @@ final class CarrierTools
                     'shipments' => ['type' => 'array', 'items' => ['type' => 'integer']],
                 ]],
                 permission: DeliverySection::SHIP,
+            ),
+            Tool::mutating(
+                'order_change',
+                'Put the delivery of an order right — the buyer mistyped the street, chose the wrong pick-up point, '
+                .'or one the carrier will not take the parcel to: the town (`locality`, an id), the method (an id or a '
+                .'key), and the `point` or the `address` the method asks for, checked as the checkout checks them. '
+                .'Writes a new delivery block, its price in place of the old one, and a history line. The total and '
+                .'the balance are counted again when the price differs. Refused while a waybill stands (cancel it '
+                .'first). A dry run answers the new block and «was → will be» of the sum, and writes nothing.',
+                fn (array $arguments): array => $this->attempt(fn (): array => $this->changeOrder($arguments)),
+                ['properties' => [
+                    'order' => $order,
+                    'locality' => ['type' => 'integer', 'description' => 'The town\'s id: delivery_localities_search.'],
+                    'method' => ['type' => ['integer', 'string'], 'description' => 'The method\'s id or key.'],
+                    'point' => ['type' => 'integer', 'description' => 'The point\'s id, for a method that asks for a point: delivery_points_search.'],
+                    'address' => ['type' => 'object', 'description' => 'For a courier: street (or street_id of a carrier\'s directory), house, apartment, postcode, note.', 'properties' => [
+                        'street' => ['type' => 'string'],
+                        'street_id' => ['type' => 'string'],
+                        'house' => ['type' => 'string'],
+                        'apartment' => ['type' => 'string'],
+                        'postcode' => ['type' => 'string'],
+                        'note' => ['type' => 'string'],
+                    ]],
+                    'reason' => ['type' => 'string', 'description' => 'Why — for the managers, never shown to the buyer.'],
+                ], 'required' => ['order', 'locality', 'method']],
+                permission: OrdersModule::MANAGE,
             ),
         ];
     }
@@ -502,6 +530,34 @@ final class CarrierTools
     }
 
     /** The parcels are the orders': without module-orders there is no table of them, and no tool. */
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function changeOrder(array $arguments): array
+    {
+        $order = $this->order($arguments['order'] ?? null);
+        $input = array_intersect_key($arguments, array_flip(['locality', 'method', 'point', 'address']));
+        $reason = is_string($arguments['reason'] ?? null) ? $arguments['reason'] : null;
+        $dryRun = $this->dryRun($arguments);
+        $done = $this->container->make(OrderDeliveryChange::class)->change($order, $input, 'mcp', $reason, $dryRun);
+        $result = $done['result'];
+
+        return [
+            ...($dryRun ? ['dry_run' => true] : ['changed' => true]),
+            'delivery' => $done['snapshot'],
+            'summary_from' => $result->summaryFrom,
+            'summary_to' => $result->summaryTo,
+            'delivery_amount_from' => $result->amountFrom,
+            'delivery_amount_to' => $result->amountTo,
+            'total_from' => $result->before['total'],
+            'total_to' => $result->after['total'],
+            'total_difference' => $result->after['total'] - $result->before['total'],
+            'balance' => $result->toArray()['balance'],
+            'currency' => $order->currency,
+        ];
+    }
+
     private function orders(): bool
     {
         return class_exists(OrdersServiceProvider::class)

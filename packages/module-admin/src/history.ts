@@ -97,6 +97,11 @@ export function createHistoryApi(
  */
 export interface HistorySubject {
   id: Ref<number | string | null | undefined>
+  /**
+   * Read the record again after a node patched onto the screen changed it on the server — the
+   * tab «Delivery» of an order changes its total. The host keeps what is being typed.
+   */
+  reload?: () => Promise<void>
 }
 
 export const historySubjectKey: InjectionKey<HistorySubject> = Symbol('wx-history-subject')

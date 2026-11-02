@@ -1,6 +1,11 @@
 import type { AdminContext } from '@webx-ui/module-admin'
 import type { ScreenModel } from '@webx-ui/schema'
 import type {
+  ChangeInput,
+  ChangeMethod,
+  ChangeOption,
+  ChangeOutcome,
+  ChangeTown,
   BatchResult,
   BindingsPage,
   CarrierDetail,
@@ -212,6 +217,37 @@ export function createDeliveryApi(admin: AdminContext) {
           dry_run: true,
         })
         .then((body) => body.data.request),
+    /** «Change delivery» (decision of 02.11.2026): the checkout's search, for the order's lines. */
+    changeTowns: (order: number, q: string) =>
+      http
+        .get<{
+          data: { localities: ChangeTown[]; popular: ChangeTown[] }
+        }>(`${base}/orders/${order}/change/localities${query({ q })}`)
+        .then(data),
+    changeMethods: (order: number, locality: number) =>
+      http
+        .get<{
+          data: { locality: { id: number; label: string }; methods: ChangeMethod[] }
+        }>(`${base}/orders/${order}/change/methods${query({ locality })}`)
+        .then(data),
+    changePoints: (order: number, locality: number, method: number, q: string, page = 1) =>
+      http
+        .get<{
+          data: { options: ChangeOption[]; total: number; page: number; more: boolean }
+        }>(`${base}/orders/${order}/change/points${query({ locality, method, q, page })}`)
+        .then(data),
+    changeStreets: (order: number, locality: number, method: number, q: string) =>
+      http
+        .get<{
+          data: { options: ChangeOption[] }
+        }>(`${base}/orders/${order}/change/streets${query({ locality, method, q })}`)
+        .then(data),
+    changeDelivery: (order: number, input: ChangeInput) =>
+      http
+        .post<{
+          data: { change: ChangeOutcome; delivery?: OrderDelivery }
+        }>(`${base}/orders/${order}/change`, input)
+        .then(data),
     trackOrder: (order: number) =>
       http.post<{ data: OrderDelivery }>(`${base}/orders/${order}/track`, {}).then(data),
     cancelShipment: (shipment: number) =>

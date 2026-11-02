@@ -14,6 +14,7 @@ import type { MilestoneKey } from './types'
  * What came in, the top-ups apart, and the balance when it says more than «to pay» (§42.4): a
  * plate «Top-up due» with «Record a top-up», or «Give back». The lines edited (§42.4): how many
  * edits and when the last one was; «History» has each of them.
+ * A block's price — delivery — is a row of its own between the discounts and the total.
  * Money comes written by the server in the currency of the order; nothing is counted here.
  */
 defineOptions({ name: 'WxOrdersSummary' })
@@ -124,6 +125,10 @@ const dates = computed(() =>
       <template v-if="order.totals.adjustments">
         <dt>{{ t('panel.adjustments') }}</dt>
         <dd>{{ order.totals.adjustments }}</dd>
+      </template>
+      <template v-for="charge in order.totals.charges ?? []" :key="charge.key">
+        <dt>{{ t(`panel.block-${charge.key}`) }}</dt>
+        <dd :data-test="`summary-${charge.key}`">{{ charge.amount ?? '—' }}</dd>
       </template>
       <dt class="is-strong">{{ t('panel.total') }}</dt>
       <dd class="is-strong">{{ order.totals.total }}</dd>
