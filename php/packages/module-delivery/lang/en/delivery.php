@@ -26,6 +26,11 @@ return [
         'other' => 'Locality',
     ],
     'step' => [
+        'country' => 'Country',
+        'choose' => 'Choose',
+        'methods' => 'Delivery method',
+        'save' => 'Save',
+        'choose_street' => 'Choose the street from the list',
         'delivery' => 'Delivery',
         'locality' => 'City or town',
         'locality_placeholder' => 'Start typing the name',
@@ -67,6 +72,10 @@ return [
         'other' => ':name',
     ],
     'errors' => [
+        'choose_country' => 'Choose the country of delivery.',
+        'choose_locality' => 'Choose a city or town from the list.',
+        'choose_method' => 'Choose a delivery method.',
+        'method_gone' => 'This delivery method is not available here any more, choose another one.',
         'choose_point' => 'Choose a pick-up point.',
         'point_gone' => 'Pick-up point is no longer available, choose another one.',
         'choose_street' => 'Choose the street from the list.',

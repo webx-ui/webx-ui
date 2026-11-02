@@ -24,6 +24,11 @@ return [
         'other' => 'Località',
     ],
     'step' => [
+        'country' => 'Paese',
+        'choose' => 'Scegli',
+        'methods' => 'Metodo di consegna',
+        'save' => 'Salva',
+        'choose_street' => 'Scegli la via dall’elenco',
         'delivery' => 'Spedizione',
         'locality' => 'Città o località',
         'locality_placeholder' => 'Inizia a scrivere il nome',
@@ -65,6 +70,10 @@ return [
         'other' => ':name',
     ],
     'errors' => [
+        'choose_country' => 'Scegli il paese di consegna.',
+        'choose_locality' => 'Scegli una località dall’elenco.',
+        'choose_method' => 'Scegli un metodo di consegna.',
+        'method_gone' => 'Questo metodo di consegna non è più disponibile qui, scegline un altro.',
         'choose_point' => 'Scegli un punto di ritiro.',
         'point_gone' => 'Il punto di ritiro non è più disponibile, scegline un altro.',
         'choose_street' => 'Scegli la via dall’elenco.',

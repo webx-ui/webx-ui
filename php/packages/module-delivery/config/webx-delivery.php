@@ -3,6 +3,19 @@
 declare(strict_types=1);
 
 return [
+    // The JSON API of the delivery step (§12.2) and the address of its script.
+    'path' => 'api/delivery',
+    'script_path' => 'webx/delivery',
+
+    // Requests a minute per IP: suggestions and points (60, §12.2), and writes of the choice.
+    'throttle' => [
+        'suggest' => 60,
+        'write' => 60,
+    ],
+
+    // Points a page of the list in a locality (§12.2).
+    'points_per_page' => 20,
+
     // The price a carrier's API gives (§9.2) — the only place the checkout may wait for a carrier.
     'quotes' => [
         // The same step shown again does not call the API: by method, the carrier's locality and

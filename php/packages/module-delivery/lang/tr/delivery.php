@@ -24,6 +24,11 @@ return [
         'other' => 'Yerleşim yeri',
     ],
     'step' => [
+        'country' => 'Ülke',
+        'choose' => 'Seç',
+        'methods' => 'Teslimat yöntemi',
+        'save' => 'Kaydet',
+        'choose_street' => 'Sokağı listeden seçin',
         'delivery' => 'Teslimat',
         'locality' => 'Şehir veya yerleşim yeri',
         'locality_placeholder' => 'Adını yazmaya başlayın',
@@ -65,6 +70,10 @@ return [
         'other' => ':name',
     ],
     'errors' => [
+        'choose_country' => 'Teslimat ülkesini seçin.',
+        'choose_locality' => 'Listeden bir yerleşim yeri seçin.',
+        'choose_method' => 'Bir teslimat yöntemi seçin.',
+        'method_gone' => 'Bu teslimat yöntemi artık burada kullanılamıyor, başka birini seçin.',
         'choose_point' => 'Bir teslim alma noktası seçin.',
         'point_gone' => 'Teslim alma noktası artık kullanılamıyor, başka birini seçin.',
         'choose_street' => 'Sokağı listeden seçin.',

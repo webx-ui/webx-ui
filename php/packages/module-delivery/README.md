@@ -201,6 +201,45 @@ app(PopularLocalities::class)->suggestions('XX', 'en');   // the buttons of «Wh
 
 A deleted locality leaves the list; a switched-off one stays and is not shown.
 
+## The checkout step
+
+With `webx-ui/module-orders` installed, the step fills the checkout's slot «delivery» by itself
+(`Checkout\DeliveryCheckoutSlot`). Anywhere else it is one tag — the visitor's own cart:
+
+```blade
+<x-webx-delivery::step />
+```
+
+The buyer sees the card of the town («Town A, Region A · Change»); «Change» opens the dialog
+«Where to deliver the order?» with the search of the server and the popular towns. Under it — the
+methods of the town with their prices; the chosen one opens its list of points (a list with a
+search, 20 a page) or its address (a carrier's courier — a street of its directory only; the
+shop's courier — text). `delivery.js` writes every change at once and draws the step again; without
+JavaScript the step is one form that comes back to its page.
+
+The JSON API under `api/delivery` (`webx-delivery.path`):
+
+| Request                                                | Answer                                                     |
+| ------------------------------------------------------ | ---------------------------------------------------------- |
+| `GET countries`                                        | the active countries                                       |
+| `GET localities?country=XX&q=tow`                      | ≤ 10 towns — `options` for a list, `localities` in full    |
+| `GET localities/popular?country=XX`                    | the popular towns in the administrator's order             |
+| `GET points?method=store-pickup&locality=41&q=&page=1` | a page of 20 points of the method in the town              |
+| `GET points/{id}`                                      | the card of a point: the week, the limits, the phone       |
+| `GET streets?method=…&locality=41&q=elm`               | ≤ 10 streets                                               |
+| `GET methods?locality=41`                              | the methods priced for the visitor's cart                  |
+| `GET selection`, `PUT selection`                       | the choice with «Delivery cost»; 422 by field on a refusal |
+
+The first six are everybody's: no session, cached by the browser for five minutes, 60 a minute per
+IP. The last two are the visitor's cart (404 without one) and guarded by CSRF. `PUT` takes
+`country`, `locality`, `method` (an id or a key), `point`, `address` (`street`, `street_id`,
+`house`, `apartment`, `note`) — each only when given; with `X-Webx-Delivery-View: step` it answers
+the step drawn again as `html`.
+
+The step says `webx:delivery:changed` (detail: `method`, `cost`, `selection`) on its root after
+each change, and the event its owner names in `data-checkout-event` on `document` — the
+checkout's `webx:checkout:slot-changed`.
+
 ## Spec
 
 [`WEBX_UI_MODULE_DELIVERY.md`](https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_DELIVERY.md).

@@ -4,26 +4,35 @@ declare(strict_types=1);
 
 namespace WebxUi\Delivery;
 
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Cache\CacheGroups;
 use WebxUi\Cart\BenefitKeys;
 use WebxUi\Cart\Totals\AdjustmentSources;
+use WebxUi\Delivery\Checkout\DeliveryCheckoutSlot;
+use WebxUi\Delivery\Checkout\StepView;
 use WebxUi\Delivery\Console\SyncCommand;
 use WebxUi\Delivery\Doctor\SyncCheck;
 use WebxUi\Delivery\Models\DeliveryCarrier;
 use WebxUi\Delivery\Models\DeliveryMethod;
 use WebxUi\Delivery\Models\DeliveryMethodLocality;
 use WebxUi\Delivery\Models\DeliveryPoint;
+use WebxUi\Delivery\Rendering\Assets;
 use WebxUi\Delivery\Sync\Directories;
 use WebxUi\Delivery\Sync\StoredLeadingCarriers;
 use WebxUi\Delivery\Sync\Synchronizer;
 use WebxUi\Delivery\Types\StoreCourier;
 use WebxUi\Delivery\Types\StorePickup;
+use WebxUi\Delivery\View\Components\Step;
 use WebxUi\Geography\LocalityReferences;
 use WebxUi\Geography\Matching\LeadingCarriers;
 use WebxUi\Geography\Models\GeoCountry;
+use WebxUi\Orders\Checkout\Slots\CheckoutSlots;
 
 /**
  * Delivery: the registries of carriers and method types with the shop's own two built in, the
@@ -46,6 +55,13 @@ class DeliveryServiceProvider extends ServiceProvider
         // What one request read of a cart's delivery is not the next one's.
         $this->app->scoped(CartDelivery::class);
         $this->app->singleton(Points::class);
+        $this->app->singleton(Countries::class);
+        // They read and write the choice through CartDelivery, which is the request's.
+        $this->app->scoped(Selections::class);
+        $this->app->scoped(StepView::class);
+        // The flag «the script is on this page already» belongs to the response being built.
+        $this->app->scoped(Assets::class);
+        $this->app->singleton(DeliveryCheckoutSlot::class);
         $this->app->singleton(Streets::class);
         $this->app->singleton(PointKinds::class);
         $this->app->singleton(PopularLocalities::class);
@@ -66,6 +82,29 @@ class DeliveryServiceProvider extends ServiceProvider
     {
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-delivery');
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-delivery');
+        $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+
+        // The step (§12.3): the class component, and its parts — the anonymous views under components/.
+        Blade::component('webx-delivery::step', Step::class);
+
+        // Suggestions and points per IP a minute (§12.2), and the writes of the choice.
+        foreach (['webx-delivery' => 'suggest', 'webx-delivery-write' => 'write'] as $limiter => $key) {
+            RateLimiter::for($limiter, function (Request $request) use ($key): Limit {
+                $perMinute = $this->app->make('config')->get('webx-delivery.throttle.'.$key);
+
+                return Limit::perMinute(is_numeric($perMinute) ? max(1, (int) $perMinute) : 60)->by((string) $request->ip());
+            });
+        }
+
+        // The checkout's slot «delivery», where module-orders is installed (§22.2 of its spec).
+        if (class_exists(CheckoutSlots::class)) {
+            $this->callAfterResolving(CheckoutSlots::class, function (CheckoutSlots $slots): void {
+                if ($slots->shipping() === null) {
+                    $slots->register($this->app->make(DeliveryCheckoutSlot::class));
+                }
+            });
+        }
 
         // Methods, carriers, the localities of the shop's courier and the countries are read by
         // every request of the delivery step (§17).
@@ -118,6 +157,10 @@ class DeliveryServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../lang' => lang_path('vendor/webx-delivery'),
         ], 'webx-delivery-lang');
+
+        $this->publishes([
+            __DIR__.'/../resources/views' => resource_path('views/vendor/webx-delivery'),
+        ], 'webx-delivery-views');
     }
 
     /**

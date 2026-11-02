@@ -36,6 +36,16 @@ final class CartDelivery
         return $this->selections[$cart];
     }
 
+    /** What was just written, so that the same request does not read it back (§17: the write's budget). */
+    public function remember(int $cart, ?DeliverySelection $selection, ?GeoLocality $locality = null): void
+    {
+        $this->selections[$cart] = $selection;
+
+        if ($locality !== null) {
+            $this->localities[$locality->id] = $locality;
+        }
+    }
+
     public function forget(?int $cart = null): void
     {
         if ($cart === null) {
@@ -79,7 +89,8 @@ final class CartDelivery
         return $option;
     }
 
-    private function locality(int $id): ?GeoLocality
+    /** A locality with its region, read once a request. */
+    public function locality(int $id): ?GeoLocality
     {
         if (! array_key_exists($id, $this->localities)) {
             $this->localities[$id] = GeoLocality::query()->with('region')->find($id);

@@ -4,15 +4,157 @@ declare(strict_types=1);
 
 namespace WebxUi\Delivery;
 
+use Illuminate\Database\Query\Builder;
+use Illuminate\Support\Facades\DB;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Delivery\Models\DeliveryPoint;
+use WebxUi\Delivery\Sync\Limits;
+use WebxUi\Delivery\Sync\Schedule;
+use WebxUi\Delivery\Sync\Synchronizer;
+use WebxUi\Geography\Names;
+use WebxUi\Geography\Normalizer;
 
-/** The points as the base hands them to method types: copies of rows, never the models. */
+/**
+ * The points as the base hands them out: copies of rows for method types, and the list of a
+ * method in a locality for the step (§12.2) — a page of 20, searched inside the locality only.
+ *
+ * The search is `LIKE '%q%'` on the normalised `search` string of the rows the locality, the
+ * carrier and the kind already narrowed — up to a couple of thousand rows, within the rule of
+ * `LIKE` under 5 000 (decision 35); a number typed exactly comes first. The first page without
+ * a query is the same for every buyer and lives in the group `delivery-points` (§17); «today
+ * until 18:00» is worked out on each read, never cached.
+ */
 final class Points
 {
+    public function __construct(private readonly CacheGroups $groups) {}
+
     public function ref(int $id): ?PointRef
     {
         $point = DeliveryPoint::query()->find($id);
 
         return $point === null ? null : PointRef::of($point);
+    }
+
+    /**
+     * A page of the points of a carrier's kind in a locality: two queries with a query or after
+     * the first page (the rows and their count), none or one for the first page without one.
+     *
+     * @return array{points: list<array<string, mixed>>, total: int, page: int, more: bool}
+     */
+    public function page(string $carrier, string $kind, int $locality, string $query = '', int $page = 1, ?string $locale = null): array
+    {
+        $perPage = max(1, min(100, (int) config('webx-delivery.points_per_page', 20)));
+        $page = max(1, $page);
+        $key = Normalizer::key($query);
+
+        $load = function () use ($carrier, $kind, $locality, $key, $page, $perPage): array {
+            $base = $this->base($carrier, $kind, $locality);
+
+            if ($key !== '') {
+                $base->whereRaw("search like ? escape '!'", ['%'.self::escapeLike($key).'%']);
+            }
+
+            $total = (clone $base)->count();
+            $rows = $base
+                ->select(['id', 'number', 'titles', 'address', 'postcode', 'schedule', 'kind'])
+                // A number typed in full first, then the short numbers before the long ones: «2» before «10».
+                ->when($key !== '', static fn (Builder $q) => $q->orderByRaw('case when number = ? then 0 else 1 end', [$key]))
+                ->orderByRaw('length(coalesce(number, \'\'))')
+                ->orderBy('number')
+                ->orderBy('id')
+                ->offset(($page - 1) * $perPage)
+                ->limit($perPage)
+                ->get()
+                ->map(static fn (object $row): array => (array) $row)
+                ->all();
+
+            return ['rows' => $rows, 'total' => $total];
+        };
+
+        $found = $key === '' && $page === 1
+            ? $this->groups->remember("delivery.points:{$carrier}:{$kind}:{$locality}", [Synchronizer::POINTS_GROUP], $load, localized: false)
+            : $load();
+
+        return [
+            'points' => array_values(array_map(fn (array $row): array => $this->item($row, $locale), $found['rows'])),
+            'total' => $found['total'],
+            'page' => $page,
+            'more' => $page * $perPage < $found['total'],
+        ];
+    }
+
+    /**
+     * The card of a point: the week, the limits, the phone. One query.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function card(int $id, ?string $locale = null): ?array
+    {
+        $point = DeliveryPoint::query()->whereKey($id)->where('active', true)->whereNull('removed_at')->first();
+
+        if ($point === null) {
+            return null;
+        }
+
+        $schedule = Schedule::fromArray($point->schedule);
+
+        return [
+            ...$this->item([
+                'id' => $point->id,
+                'number' => $point->number,
+                'titles' => $point->titles,
+                'address' => $point->address,
+                'postcode' => $point->postcode,
+                'schedule' => $point->schedule,
+                'kind' => $point->kind,
+            ], $locale),
+            'carrier' => $point->carrier,
+            'locality_id' => $point->locality_id,
+            'phone' => $point->phone,
+            'week' => $schedule === null ? [] : $schedule->week,
+            'limits' => Limits::fromArray($point->limits)?->toArray(),
+            'lat' => $point->lat,
+            'lng' => $point->lng,
+        ];
+    }
+
+    /**
+     * One row as the list shows it.
+     *
+     * @param  array<string, mixed>  $row
+     * @return array{id: int, number: string|null, kind: string, title: string, address: string, postcode: string|null, today: string|null}
+     */
+    private function item(array $row, ?string $locale): array
+    {
+        $decode = static fn (mixed $value): ?array => is_array($value) ? $value : (is_string($value) ? json_decode($value, true) : null);
+        $number = isset($row['number']) ? (string) $row['number'] : null;
+        $kind = (string) ($row['kind'] ?? '');
+        $title = Names::pick($decode($row['titles'] ?? null), $locale);
+        $schedule = Schedule::fromArray($decode($row['schedule'] ?? null));
+
+        return [
+            'id' => (int) $row['id'],
+            'number' => $number,
+            'kind' => $kind,
+            'title' => $title ?? trim(app(PointKinds::class)->label($kind, $locale).' '.$number),
+            'address' => (string) Names::pick($decode($row['address'] ?? null), $locale),
+            'postcode' => isset($row['postcode']) ? (string) $row['postcode'] : null,
+            'today' => $schedule?->todayLabel($locale, null, (string) config('app.timezone', 'UTC')),
+        ];
+    }
+
+    private function base(string $carrier, string $kind, int $locality): Builder
+    {
+        return DB::table('delivery_points')
+            ->where('locality_id', $locality)
+            ->where('active', true)
+            ->whereNull('removed_at')
+            ->where('carrier', $carrier)
+            ->where('kind', $kind);
+    }
+
+    private static function escapeLike(string $text): string
+    {
+        return str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $text);
     }
 }
