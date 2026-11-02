@@ -259,6 +259,7 @@ export const deliveryMessages: Record<string, Messages> = {
       enabled: 'On',
       settings: 'Settings',
       credentials: 'Keys',
+      key: 'Access key',
       set: 'Set',
       'not-set': 'Not set',
       replace: 'Type a new one to replace',
@@ -362,6 +363,7 @@ export const deliveryMessages: Record<string, Messages> = {
       'create-title': 'New waybill',
       'create-help':
         'The carrier gets this request. Check the recipient, the value and the cash on delivery.',
+      'create-help-no-cod': 'The carrier gets this request. Check the recipient and the value.',
       'recipient-name': 'Recipient',
       'recipient-phone': "Recipient's phone",
       'recipient-first-name': 'First name',

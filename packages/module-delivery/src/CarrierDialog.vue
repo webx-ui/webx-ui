@@ -5,6 +5,7 @@ import {
   WxBadge,
   WxButton,
   WxDialog,
+  WxForm,
   WxFormItem,
   WxInput,
   WxInputNumber,
@@ -84,6 +85,13 @@ function label(field: CarrierField): string {
   }
 
   return field.name
+}
+
+/** A key the carrier gave no label: words, never its code name. */
+function keyLabel(field: CarrierField, index: number, count: number): string {
+  if (field.label) return label(field)
+
+  return count > 1 ? `${t('carrier.key')} ${index + 1}` : t('carrier.key')
 }
 
 function byName(name: string): CarrierField | undefined {
@@ -227,17 +235,16 @@ function search(field: CarrierField, q: string): void {
   timers[field.name] = setTimeout(() => void ask(field, q.trim()), 250)
 }
 
-/** Under the field: why it is off, a value gone from the account, or nothing. */
+/**
+ * Under the field: why it is off, a value gone from the account, or nothing. «Type to search» is
+ * the placeholder of a search field already — said twice under it, it only adds a line.
+ */
 function helpOf(field: CarrierField): string | undefined {
   if (!isFromAccount(field)) return undefined
 
   const missing = detail.value?.settings.missing?.[field.name]
 
-  return (
-    blocked(field) ??
-    (missing ? t('options.missing', { label: missing }) : undefined) ??
-    (field.search ? t('options.search') : undefined)
-  )
+  return blocked(field) ?? (missing ? t('options.missing', { label: missing }) : undefined)
 }
 
 async function load(): Promise<void> {
@@ -356,87 +363,96 @@ const statusType = {
             {{ t('options.refresh') }}
           </wx-button>
         </div>
-        <wx-form-item
-          v-for="field in detail.settings.fields"
-          :key="field.name"
-          :label="label(field)"
-          :help="helpOf(field)"
-          :error="errors[field.name]"
-          :data-test="`setting-${field.name}`"
-        >
-          <div v-if="isFromAccount(field)" class="wx-delivery-carrier-form__choice">
-            <!-- A wrapper takes the row: the select's own root carries no scoped attribute. -->
-            <div class="wx-delivery-carrier-form__select">
-              <wx-select
-                :model-value="(settings[field.name] as string | null) ?? null"
-                :options="optionsOf(field)"
-                :filterable="field.search === true"
-                :disabled="!canManage || blocked(field) !== null || asking[field.name] === true"
-                :status="detail.settings.missing?.[field.name] ? 'warning' : undefined"
-                :placeholder="field.search ? t('options.search') : undefined"
-                clearable
-                @update:model-value="choose(field, $event)"
-                @search="search(field, $event)"
-              />
+        <!-- The form keeps the panel's rhythm between fields; a bare list of items has none. -->
+        <wx-form>
+          <wx-form-item
+            v-for="field in detail.settings.fields"
+            :key="field.name"
+            :label="label(field)"
+            :help="helpOf(field)"
+            :error="errors[field.name]"
+            :data-test="`setting-${field.name}`"
+          >
+            <div v-if="isFromAccount(field)" class="wx-delivery-carrier-form__choice">
+              <!-- A wrapper takes the row: the select's own root carries no scoped attribute. -->
+              <div class="wx-delivery-carrier-form__select">
+                <wx-select
+                  :model-value="(settings[field.name] as string | null) ?? null"
+                  :options="optionsOf(field)"
+                  :filterable="field.search === true"
+                  :disabled="!canManage || blocked(field) !== null || asking[field.name] === true"
+                  :status="detail.settings.missing?.[field.name] ? 'warning' : undefined"
+                  :placeholder="field.search ? t('options.search') : undefined"
+                  clearable
+                  @update:model-value="choose(field, $event)"
+                  @search="search(field, $event)"
+                />
+              </div>
+              <wx-button
+                v-if="failures[field.name] && canManage"
+                size="sm"
+                variant="outline"
+                @click="ask(field, undefined, true)"
+              >
+                {{ t('options.retry') }}
+              </wx-button>
             </div>
-            <wx-button
-              v-if="failures[field.name] && canManage"
-              size="sm"
-              variant="outline"
-              @click="ask(field, undefined, true)"
-            >
-              {{ t('options.retry') }}
-            </wx-button>
-          </div>
-          <wx-switch
-            v-else-if="field.type === 'boolean'"
-            v-model="settings[field.name] as boolean"
-            :disabled="!canManage"
-          />
-          <wx-input-number
-            v-else-if="field.type === 'number'"
-            v-model="settings[field.name] as number"
-            :step="field.step"
-            :precision="field.precision"
-            :min="field.min"
-            :max="field.max"
-            :disabled="!canManage"
-          />
-          <wx-select
-            v-else-if="field.type === 'select'"
-            v-model="settings[field.name] as string"
-            :options="Array.isArray(field.options) ? field.options : []"
-            :disabled="!canManage"
-          />
-          <wx-input v-else v-model="settings[field.name] as string" :disabled="!canManage" />
-        </wx-form-item>
+            <wx-switch
+              v-else-if="field.type === 'boolean'"
+              v-model="settings[field.name] as boolean"
+              :disabled="!canManage"
+            />
+            <wx-input-number
+              v-else-if="field.type === 'number'"
+              v-model="settings[field.name] as number"
+              :step="field.step"
+              :precision="field.precision"
+              :min="field.min"
+              :max="field.max"
+              :disabled="!canManage"
+            />
+            <wx-select
+              v-else-if="field.type === 'select'"
+              v-model="settings[field.name] as string"
+              :options="Array.isArray(field.options) ? field.options : []"
+              :disabled="!canManage"
+            />
+            <wx-input v-else v-model="settings[field.name] as string" :disabled="!canManage" />
+          </wx-form-item>
+        </wx-form>
       </section>
 
       <section v-if="detail.credentials.length > 0" data-test="credentials">
         <h4 class="wx-delivery-carrier-form__title">{{ t('carrier.credentials') }}</h4>
-        <wx-form-item v-for="field in detail.credentials" :key="field.name" :label="label(field)">
-          <div class="wx-delivery-carrier-form__secret">
-            <wx-badge :type="field.set ? 'success' : 'default'" dot>
-              {{ field.set ? t('carrier.set') : t('carrier.not-set') }}
-            </wx-badge>
-            <wx-input
-              v-model="typed[field.name]"
-              type="password"
-              autocomplete="new-password"
-              :placeholder="t('carrier.replace')"
-              :disabled="!canManage"
-              class="wx-delivery-carrier-form__key"
-            />
-            <wx-button
-              v-if="field.set && canManage"
-              size="sm"
-              variant="text"
-              @click="save([field.name])"
-            >
-              {{ t('carrier.clear') }}
-            </wx-button>
-          </div>
-        </wx-form-item>
+        <wx-form>
+          <wx-form-item
+            v-for="(field, index) in detail.credentials"
+            :key="field.name"
+            :label="keyLabel(field, index, detail.credentials.length)"
+          >
+            <div class="wx-delivery-carrier-form__secret">
+              <wx-badge :type="field.set ? 'success' : 'default'" dot>
+                {{ field.set ? t('carrier.set') : t('carrier.not-set') }}
+              </wx-badge>
+              <wx-input
+                v-model="typed[field.name]"
+                type="password"
+                autocomplete="new-password"
+                :placeholder="t('carrier.replace')"
+                :disabled="!canManage"
+                class="wx-delivery-carrier-form__key"
+              />
+              <wx-button
+                v-if="field.set && canManage"
+                size="sm"
+                variant="text"
+                @click="save([field.name])"
+              >
+                {{ t('carrier.clear') }}
+              </wx-button>
+            </div>
+          </wx-form-item>
+        </wx-form>
       </section>
 
       <section>

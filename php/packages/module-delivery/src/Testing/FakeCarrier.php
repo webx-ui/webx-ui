@@ -191,7 +191,7 @@ final class FakeCarrier implements Carrier, ProvidesSettingOptions, SyncsDirecto
 
     public function credentials(): array
     {
-        return [['name' => 'api_key', 'type' => 'secret']];
+        return [['name' => 'api_key', 'type' => 'secret', 'label' => ['en' => 'API key', 'ru' => 'Ключ API']]];
     }
 
     public function testConnection(array $credentials): ConnectionResult

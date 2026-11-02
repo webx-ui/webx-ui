@@ -115,7 +115,9 @@ async function submit(): Promise<void> {
 <template>
   <wx-dialog v-model:open="open" :title="t('order.create-title')" :width="560">
     <div class="wx-delivery-waybill">
-      <wx-text tone="muted" size="sm">{{ t('order.create-help') }}</wx-text>
+      <wx-text tone="muted" size="sm">{{
+        t(takesCod ? 'order.create-help' : 'order.create-help-no-cod')
+      }}</wx-text>
 
       <wx-alert v-if="errorOf('waybill')" type="danger" :description="errorOf('waybill')" />
 

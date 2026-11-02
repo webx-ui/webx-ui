@@ -32,7 +32,8 @@ interface Carrier
     public function settings(): array;
 
     /**
-     * Secret fields stored encrypted in delivery_carriers.credentials (API key).
+     * Secret fields stored encrypted in delivery_carriers.credentials (API key). Give each one a
+     * `label` (words, or locale → words): without it the panel can only say «Access key».
      *
      * @return list<array<string, mixed>>
      */
