@@ -43,15 +43,15 @@ return [
 
         /*
         | When the streets run: a cron, or `manual` — by hand only. Weekly by default; a read-only
-        | key (somebody else's account) runs them by hand only, unless said otherwise.
+        | key (somebody else's account) runs them by hand only, unless said otherwise. null — so.
         */
-        'streets_cron' => env('NOVAPOSHTA_STREETS_CRON', (bool) env('NOVAPOSHTA_READ_ONLY', false) ? 'manual' : '30 0 * * 0'),
+        'streets_cron' => env('NOVAPOSHTA_STREETS_CRON'),
 
         /*
         | Walk the streets of only this many first towns with a courier, not of all ~10 000 —
-        | ~10 500 requests. null — every town. A read-only key walks 20 unless said otherwise:
-        | a pass on somebody else's account must not spend its limits.
+        | ~10 500 requests; 0 — every town. null — every town, but a read-only key walks 20: a
+        | pass on somebody else's account must not spend its limits.
         */
-        'streets_sample' => env('NOVAPOSHTA_STREETS_SAMPLE', (bool) env('NOVAPOSHTA_READ_ONLY', false) ? 20 : null),
+        'streets_sample' => env('NOVAPOSHTA_STREETS_SAMPLE'),
     ],
 ];

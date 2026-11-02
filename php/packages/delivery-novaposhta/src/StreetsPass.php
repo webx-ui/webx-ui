@@ -10,6 +10,9 @@ namespace WebxUi\Delivery\NovaPoshta;
  */
 final readonly class StreetsPass
 {
+    /** The towns a read-only key walks unless told otherwise: at most 20 (decision 19). */
+    public const int READ_ONLY_SAMPLE = 20;
+
     /**
      * @param  string  $cron  the satellite's schedule; `manual` — by hand only
      * @param  int  $requests  at most this many `getStreet` a pull

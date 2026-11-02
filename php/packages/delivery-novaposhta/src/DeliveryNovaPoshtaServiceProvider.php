@@ -53,11 +53,13 @@ class DeliveryNovaPoshtaServiceProvider extends ServiceProvider
 
         $this->app->singleton(StreetsPass::class, function (): StreetsPass {
             $config = $this->app->make('config');
+            // A read-only key is somebody else's account: its streets by hand, and a sample (§6.4).
+            $readOnly = (bool) $config->get('webx-delivery-novaposhta.read_only', false);
             $cron = $config->get('webx-delivery-novaposhta.sync.streets_cron');
-            $sample = $config->get('webx-delivery-novaposhta.sync.streets_sample');
+            $sample = $config->get('webx-delivery-novaposhta.sync.streets_sample') ?? ($readOnly ? StreetsPass::READ_ONLY_SAMPLE : null);
 
             return new StreetsPass(
-                cron: is_string($cron) && trim($cron) !== '' ? trim($cron) : NovaPoshtaCarrier::WEEKLY,
+                cron: is_string($cron) && trim($cron) !== '' ? trim($cron) : ($readOnly ? 'manual' : NovaPoshtaCarrier::WEEKLY),
                 requests: max(1, (int) $config->get('webx-delivery-novaposhta.sync.max_requests_per_pull', 20)),
                 seconds: (float) $config->get('webx-delivery-novaposhta.sync.pull_seconds', 20),
                 sample: is_numeric($sample) && (int) $sample > 0 ? (int) $sample : null,

@@ -10,7 +10,7 @@ use WebxUi\Geography\Matching\LocalityRecord;
 final readonly class Page
 {
     /**
-     * @param  list<LocalityRecord|PointRecord>  $records
+     * @param  list<LocalityRecord|PointRecord|StreetRecord>  $records
      * @param  string|null  $next  the cursor of the next page; null — this is the last one
      * @param  array<string, list<string>>  $skipped  what the carrier gave and the satellite left out, by
      *                                                why — the external ids; the run counts them in its warnings

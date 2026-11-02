@@ -26,7 +26,6 @@ use WebxUi\Delivery\Sync\CarrierUnavailable;
 use WebxUi\Delivery\Sync\Directory;
 use WebxUi\Delivery\Sync\Page;
 use WebxUi\Delivery\Sync\RunStatus;
-use WebxUi\Delivery\Sync\StreetRecord;
 use WebxUi\Delivery\Sync\Synchronizer;
 use WebxUi\Delivery\Sync\Trigger;
 use WebxUi\Localization\Locales;
@@ -151,7 +150,7 @@ final class StreetsTest extends TestCase
     /** @return list<string> */
     private static function ids(Page $page): array
     {
-        return array_map(static fn (StreetRecord $record): string => $record->externalId, $page->records);
+        return array_map(static fn (object $record): string => $record->externalId, $page->records);
     }
 
     #[Test]
@@ -294,7 +293,7 @@ final class StreetsTest extends TestCase
             $this->assertMatchesRegularExpression('/^\S.* \((лінія|бульвар)\)$/u', $name);
         }
         $this->assertSame(['street', 'avenue', 'lane', 'square', 'other', 'other'], array_map(
-            static fn (string $type): string => Streets::record('T', ['Ref' => 'R', 'Description' => 'Приклад', 'StreetsTypeRef' => $type, 'StreetsType' => 'бульвар'])?->kind ?? '-',
+            static fn (string $type): string => Streets::record('T', ['Ref' => 'R', 'Description' => 'Приклад', 'StreetsTypeRef' => $type, 'StreetsType' => 'бульвар'])->kind ?? '-',
             ['Street', 'Prospectus', 'Lane', 'Square', 'Boulevard', 'Line'],
         ));
         $this->assertSame('Шевченка (бульвар)', Streets::record('T', ['Ref' => 'R', 'Description' => 'Шевченка', 'StreetsTypeRef' => 'Boulevard', 'StreetsType' => 'бульвар'])?->name);
@@ -330,8 +329,18 @@ final class StreetsTest extends TestCase
         $token = (string) $this->app->make(CartService::class)->add(null, [['type' => 'test.parcel', 'ref' => 1]], 'en')->token;
         $step = fn (): static => $this->withCredentials()->withCookie($this->app->make(CartCookie::class)->name(), $token);
 
-        $courier = fn (int $town): array => collect($step()->getJson("/api/delivery/methods?locality={$town}")->assertOk()->json('methods'))
-            ->firstWhere('key', 'novaposhta-courier') ?? [];
+        $courier = function (int $town) use ($step): array {
+            $methods = $step()->getJson("/api/delivery/methods?locality={$town}")->assertOk()->json('methods');
+            $this->assertIsArray($methods);
+
+            foreach ($methods as $method) {
+                if (is_array($method) && ($method['key'] ?? null) === 'novaposhta-courier') {
+                    return $method;
+                }
+            }
+
+            return [];
+        };
 
         $this->assertFalse($courier($withStreets)['disabled'] ?? null);
         $this->assertTrue($courier($without)['disabled'] ?? null);
@@ -341,5 +350,31 @@ final class StreetsTest extends TestCase
         $found = $step()->getJson("/api/delivery/streets?method=novaposhta-courier&locality={$withStreets}&q=Прикладна 1")->assertOk()->json('options');
         $this->assertNotSame([], $found);
         $this->assertStringContainsString('Прикладна 1', (string) $found[0]['label']);
+    }
+
+    #[Test]
+    public function a_read_only_key_runs_the_streets_by_hand_and_walks_a_sample(): void
+    {
+        $pass = function (array $config): StreetsPass {
+            foreach ($config as $key => $value) {
+                config()->set('webx-delivery-novaposhta.'.$key, $value);
+            }
+
+            $this->app->forgetInstance(StreetsPass::class);
+
+            return $this->app->make(StreetsPass::class);
+        };
+
+        $this->assertEquals(new StreetsPass(NovaPoshtaCarrier::WEEKLY, 20, 20.0, null), $pass(['read_only' => false]));
+        $this->assertEquals(new StreetsPass('manual', 20, 20.0, 20), $pass(['read_only' => true]));
+        // Said outright, a read-only key walks every town and on a schedule of its own.
+        $this->assertEquals(new StreetsPass('0 1 * * 1', 5, 3.0, null), $pass([
+            'sync.streets_sample' => '0', 'sync.streets_cron' => '0 1 * * 1', 'sync.max_requests_per_pull' => 5, 'sync.pull_seconds' => 3,
+        ]));
+
+        // The carrier the base resolves has the schedule of its pass.
+        $this->app->forgetInstance(NovaPoshtaCarrier::class);
+        $streets = $this->app->make(NovaPoshtaCarrier::class)->directories()[2];
+        $this->assertSame([Directory::Streets, '0 1 * * 1', 2000], [$streets->directory, $streets->cron, $streets->pageSize]);
     }
 }
