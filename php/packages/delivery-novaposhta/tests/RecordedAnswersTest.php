@@ -103,7 +103,8 @@ final class RecordedAnswersTest extends TestCase
         $failure = $this->failure('Counterparty', 'getCounterparties');
 
         $this->assertSame(SyncFailure::KeyRejected, $failure->failure);
-        $this->assertSame(['20000201204'], $failure->getPrevious()?->codes ?? null);
+        $this->assertInstanceOf(ApiError::class, $failure->getPrevious());
+        $this->assertSame(['20000201204'], $failure->getPrevious()->codes);
     }
 
     #[Test]

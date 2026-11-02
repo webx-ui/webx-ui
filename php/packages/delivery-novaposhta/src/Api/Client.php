@@ -100,7 +100,7 @@ final class Client
      *
      * @param  array<string, mixed>  $properties
      */
-    private function send(string $apiKey, string $model, string $method, array $properties, ?int $page, int &$started): Response
+    private function send(string $apiKey, string $model, string $method, array $properties, ?int $page, int $started): Response
     {
         $name = Methods::name($model, $method);
 
@@ -121,8 +121,6 @@ final class Client
 
             throw CarrierUnavailable::keyRejected("Nova Poshta: {$name} without an API key.");
         }
-
-        $started = hrtime(true);
 
         try {
             return $this->http

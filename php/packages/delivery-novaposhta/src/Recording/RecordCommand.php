@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Delivery\NovaPoshta\Recording;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Env;
 use JsonException;
 use WebxUi\Delivery\NovaPoshta\Api\Client;
 use WebxUi\Delivery\NovaPoshta\Api\Methods;
@@ -59,7 +60,7 @@ final class RecordCommand extends Command
             return self::FAILURE;
         }
 
-        $key = $this->option('fake-key') ? str_repeat('0', 32) : (string) env('NOVAPOSHTA_KEY', '');
+        $key = $this->option('fake-key') ? str_repeat('0', 32) : (string) Env::get('NOVAPOSHTA_KEY', '');
 
         if ($key === '') {
             $this->error('NOVAPOSHTA_KEY is not set.');
