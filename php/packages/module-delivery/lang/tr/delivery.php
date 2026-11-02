@@ -1,0 +1,60 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'title' => 'Teslimat',
+    'cache' => 'Teslimat yöntemleri ve kargo firmaları',
+    'carriers' => [
+        'store' => 'Mağaza',
+    ],
+    'point_kinds' => [
+        'branch' => 'Şube',
+        'locker' => 'Kargo dolabı',
+        'store' => 'Mağaza',
+        'pickup' => 'Teslim alma noktası',
+    ],
+    'locality_kinds' => [
+        'city' => 'Şehir',
+        'town' => 'İlçe',
+        'township' => 'Kasaba',
+        'village' => 'Köy',
+        'settlement' => 'Mahalle',
+        'other' => 'Yerleşim yeri',
+    ],
+    'step' => [
+        'delivery' => 'Teslimat',
+        'locality' => 'Şehir veya yerleşim yeri',
+        'locality_placeholder' => 'Adını yazmaya başlayın',
+        'where' => 'Sipariş nereye teslim edilsin?',
+        'choose_locality' => 'Şehir seçin',
+        'change' => 'Değiştir',
+        'popular' => 'Popüler şehirler',
+        'show_methods' => 'Teslimat yöntemlerini göster',
+        'no_methods' => 'Buraya teslimat yöntemi yok',
+        'free' => 'Ücretsiz',
+        'carrier_rates' => 'Kargo firmasının tarifesine göre',
+        'choose_point' => 'Şube seçin',
+        'pick_up_here' => 'Buradan alacağım',
+        'open_until' => 'Bugün :time saatine kadar açık',
+        'closed_today' => 'Bugün kapalı',
+        'street' => 'Sokak',
+        'house' => 'Bina no',
+        'apartment' => 'Daire',
+        'note' => 'Kurye için not',
+        'cost' => 'Teslimat ücreti',
+        'points' => 'Nokta sayısı: :count',
+    ],
+    'hints' => [
+        'no_streets' => 'Buraya kurye ile teslimat yok, başka bir yöntem seçin',
+    ],
+    'errors' => [
+        'choose_point' => 'Bir teslim alma noktası seçin.',
+        'point_gone' => 'Teslim alma noktası artık kullanılamıyor, başka birini seçin.',
+        'choose_street' => 'Sokağı listeden seçin.',
+        'street_required' => 'Sokağı belirtin.',
+        'house_required' => 'Bina numarasını belirtin.',
+        'too_long' => 'En fazla :max karakter.',
+        'no_quote' => 'Teslimat hesaplanamadı, başka bir yöntem seçin.',
+    ],
+];

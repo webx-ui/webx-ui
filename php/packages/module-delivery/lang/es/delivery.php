@@ -1,0 +1,60 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'title' => 'Envío',
+    'cache' => 'Métodos de envío y transportistas',
+    'carriers' => [
+        'store' => 'La tienda',
+    ],
+    'point_kinds' => [
+        'branch' => 'Oficina',
+        'locker' => 'Taquilla',
+        'store' => 'Tienda',
+        'pickup' => 'Punto de recogida',
+    ],
+    'locality_kinds' => [
+        'city' => 'Ciudad',
+        'town' => 'Ciudad',
+        'township' => 'Municipio',
+        'village' => 'Pueblo',
+        'settlement' => 'Aldea',
+        'other' => 'Localidad',
+    ],
+    'step' => [
+        'delivery' => 'Envío',
+        'locality' => 'Ciudad o localidad',
+        'locality_placeholder' => 'Empieza a escribir el nombre',
+        'where' => '¿Dónde entregamos el pedido?',
+        'choose_locality' => 'Elige una ciudad',
+        'change' => 'Cambiar',
+        'popular' => 'Ciudades populares',
+        'show_methods' => 'Mostrar métodos de envío',
+        'no_methods' => 'No hay métodos de envío disponibles aquí',
+        'free' => 'Gratis',
+        'carrier_rates' => 'Según tarifas del transportista',
+        'choose_point' => 'Elige una oficina',
+        'pick_up_here' => 'Recoger aquí',
+        'open_until' => 'Hoy abierto hasta las :time',
+        'closed_today' => 'Hoy cerrado',
+        'street' => 'Calle',
+        'house' => 'Número',
+        'apartment' => 'Piso',
+        'note' => 'Nota para el repartidor',
+        'cost' => 'Coste de envío',
+        'points' => 'Puntos: :count',
+    ],
+    'hints' => [
+        'no_streets' => 'La entrega a domicilio no está disponible aquí, elige otro método',
+    ],
+    'errors' => [
+        'choose_point' => 'Elige un punto de recogida.',
+        'point_gone' => 'El punto de recogida ya no está disponible, elige otro.',
+        'choose_street' => 'Elige la calle de la lista.',
+        'street_required' => 'Indica la calle.',
+        'house_required' => 'Indica el número.',
+        'too_long' => 'Como máximo :max caracteres.',
+        'no_quote' => 'No se pudo calcular el envío, elige otro método.',
+    ],
+];

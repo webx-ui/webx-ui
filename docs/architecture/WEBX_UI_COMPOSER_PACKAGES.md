@@ -212,6 +212,7 @@ Packagist ([`WEBX_UI_PHP_RELEASE.md`](WEBX_UI_PHP_RELEASE.md)). Версия у 
 | **Разделы: коммерция**      |                                                                       |                                      |
 | `module-cart`               | гостевая корзина: контракт `Purchasable`, цепочка итогов, `cart()`    | —                                    |
 | `module-orders`             | заказы и оформление: снимок корзины, статусы и вехи, `/checkout`      | `@webx-ui/module-orders`             |
+| `module-delivery`           | доставка: реестры служб и типов, свои точки и курьер, способы пункта  | — (экраны — позже)                   |
 | **Разделы: работа**         |                                                                       |                                      |
 | `module-tasks`              | очередь работы между людьми и агентами                                | `@webx-ui/module-tasks`              |
 
@@ -689,6 +690,18 @@ httpOnly-cookie (в базе — хеш). Что лежит в строке и �
 (`CheckoutSummaryParts`), черновик `order_checkout_drafts`, сверка суммы и ключ повтора, композиция
 `checkout.page`, вкладка «Оформление» с правом `orders.checkout.settings`, MCP `orders_checkout_*`.
 Выключается `WEBX_ORDERS_CHECKOUT=false` — заказ тогда только из кода через `Orders::place()`.
+
+### `webx-ui/module-delivery` — доставка
+
+Статус: в работе (webx-ui#99, этап 4); не выпущен. Спека —
+[`WEBX_UI_MODULE_DELIVERY.md`](WEBX_UI_MODULE_DELIVERY.md).
+Куда, как и почём: реестры `Carriers` (магазин `store` встроен) и `MethodTypes` (встроены
+`store.pickup` — свои точки, вид точек у каждого способа свой, и `store.courier` — свой курьер в
+своих пунктах по одной цене способа); таблицы способов, служб, привязок, точек, журнала синхронизации
+и популярных городов диалога «Куда доставить заказ?»; `Methods::forLocality()` — способы пункта с
+ценой (`Quote`) за два запроса поверх кеша способов; `Delivery::needed()` — нужен ли шаг. Требует
+`module-cart` и `geography`; работает на ручной географии без единой службы. Экранов и
+npm-половины пока нет; по умолчанию выключен в `webx:setup`.
 
 ---
 
