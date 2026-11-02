@@ -210,6 +210,6 @@ return [
         'more' => 'Daha fazla göster',
         'count' => 'Seçenek: :count',
         'failed' => 'Liste yüklenemedi. Tekrar deneyin.',
-        'loading' => 'Yükleniyor…',
+        'searching' => 'Aranıyor…',
     ],
 ];

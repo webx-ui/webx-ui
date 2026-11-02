@@ -55,14 +55,14 @@ final class Select extends Component
         public ?string $placeholder = null,
         public bool $required = false,
         public bool $disabled = false,
-        public int $min = 1,
+        public int $min = 2,
         public int $delay = 250,
         public bool $inline = false,
         public ?string $nothingLabel = null,
         public ?string $moreLabel = null,
         public ?string $countLabel = null,
         public ?string $failedLabel = null,
-        public ?string $loadingLabel = null,
+        public ?string $searchingLabel = null,
     ) {
         if (preg_match('/^[A-Za-z_][A-Za-z0-9_.\-\[\]]*$/', $name) !== 1) {
             throw new InvalidArgumentException("<x-webx-select name=\"{$name}\">: the name of a field.");
@@ -145,7 +145,7 @@ final class Select extends Component
                 'more' => $this->moreLabel ?? __('webx-widgets::widgets.select.more'),
                 'count' => $this->countLabel ?? __('webx-widgets::widgets.select.count'),
                 'failed' => $this->failedLabel ?? __('webx-widgets::widgets.select.failed'),
-                'loading' => $this->loadingLabel ?? __('webx-widgets::widgets.select.loading'),
+                'searching' => $this->searchingLabel ?? __('webx-widgets::widgets.select.searching'),
             ],
         ]);
     }

@@ -79,7 +79,7 @@ export function select(root) {
   }
 
   const param = root.getAttribute('data-param') || 'q'
-  const min = Math.max(0, Number(root.getAttribute('data-min') ?? 1) || 0)
+  const min = Math.max(0, Number(root.getAttribute('data-min') ?? 2) || 0)
   const delay = Math.max(0, Number(root.getAttribute('data-delay') ?? 250) || 0)
   const loaded = optionsOf(strict ? native : root.querySelector('.webx-select__options'))
 
@@ -148,6 +148,9 @@ export function select(root) {
   let timer = null
   let request = null
   let turn = 0
+  // What the list says when it has no option: nothing while the server is asked, «Nothing found»
+  // only once an answer (or the loaded options alone) came back empty.
+  let state = 'done'
 
   const say = (text) => {
     if (status) status.textContent = text
@@ -218,18 +221,32 @@ export function select(root) {
       list.append(item)
     }
 
+    const note =
+      state === 'searching'
+        ? words.searching || 'Searching…'
+        : state === 'failed'
+          ? words.failed || 'The list could not be loaded.'
+          : words.nothing || 'Nothing found'
+
     if (shown.length === 0) {
       const empty = document.createElement('li')
       empty.className = 'webx-select__empty'
-      empty.textContent = words.nothing || 'Nothing found'
+      empty.textContent = note
       list.append(empty)
     }
 
     say(
-      shown.length === 0
-        ? words.nothing || ''
+      state !== 'done' || shown.length === 0
+        ? note
         : (words.count || ':count').replace(':count', String(shown.length)),
     )
+  }
+
+  /** Nothing to show yet — an empty field, or too few characters to ask: no list at all. */
+  const hush = () => {
+    list.replaceChildren()
+    close()
+    say('')
   }
 
   /** The loaded options the text matches anywhere in the label or the hint. */
@@ -255,7 +272,8 @@ export function select(root) {
     else url.searchParams.delete('page')
     request = new AbortController()
     root.classList.add('is-loading')
-    say(words.loading || '')
+    state = 'searching'
+    say(words.searching || '')
     try {
       const response = await fetch(url, {
         headers: { Accept: 'application/json' },
@@ -267,13 +285,16 @@ export function select(root) {
       if (mine !== turn) return
       page = next
       more = answer.more
+      state = 'done'
       shown = next > 1 ? shown.concat(answer.options) : answer.options
       draw()
       open()
       if (next > 1) highlight(shown.length - answer.options.length)
     } catch (error) {
       if (error?.name === 'AbortError' || mine !== turn) return
-      say(words.failed || '')
+      state = 'failed'
+      if (shown.length === 0) draw()
+      else say(words.failed || '')
     } finally {
       if (mine === turn) {
         root.classList.remove('is-loading')
@@ -287,15 +308,27 @@ export function select(root) {
     stop()
     shown = local(text)
     more = false
-    draw()
-    open()
-    if (
-      source &&
-      Array.from(fold(text)).length >= min &&
-      (fold(text) !== '' || loaded.length === 0)
-    ) {
+    const key = fold(text)
+    const asks = source && Array.from(key).length >= min && (key !== '' || loaded.length === 0)
+
+    if (asks) {
+      // The loaded options that match stay in view; with none, «Searching…» until the answer.
+      state = 'searching'
+      draw()
+      open()
       timer = setTimeout(() => ask(text, 1), delay)
+      return
     }
+
+    state = 'done'
+    // The loaded options alone are the whole search: an empty filter is a real «Nothing found».
+    if (shown.length > 0 || (key !== '' && !source)) {
+      draw()
+      open()
+      return
+    }
+
+    hush()
   }
 
   const choose = (option) => {

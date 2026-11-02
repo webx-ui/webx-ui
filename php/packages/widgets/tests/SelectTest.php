@@ -27,7 +27,8 @@ final class SelectTest extends TestCase
             ],
         ]);
 
-        $this->assertMatchesRegularExpression('~<div data-webx-select="/api/points\?method=a" data-param="q" data-min="1" data-delay="250" data-strict="true" data-words="[^"]+" class="webx-select webx-select--searchable">~', $html);
+        $this->assertMatchesRegularExpression('~<div data-webx-select="/api/points\?method=a" data-param="q" data-min="2" data-delay="250" data-strict="true" data-words="[^"]+" class="webx-select webx-select--searchable">~', $html);
+        $this->assertStringContainsString('&quot;searching&quot;:&quot;Searching…&quot;', $html);
         $this->assertStringContainsString('<label class="webx-select__label" for="select-1">Choose</label>', $html);
         $this->assertStringContainsString('<select class="webx-select__native" id="select-1" name="point"', $html);
         $this->assertStringContainsString('<option value="">Choose a branch</option>', $html);

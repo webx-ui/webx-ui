@@ -14,7 +14,7 @@ const words = JSON.stringify({
   more: 'Show more',
   count: 'Options: :count',
   failed: 'Failed',
-  loading: 'Loading',
+  searching: 'Searching…',
 }).replace(/"/g, '&quot;')
 
 // What `<x-webx-select>` prints.
@@ -31,6 +31,16 @@ const strictBox = ({ source = '/api/points', value = '' } = {}) => `
       <p class="webx-select__status" role="status"></p>
     </div>
   </form>`
+
+// The town of the delivery dialog: nothing loaded, the server only, the default `min`.
+const townBox = () => `
+  <div class="webx-select webx-select--searchable" data-webx-select="/api/towns" data-param="q" data-min="2" data-delay="0" data-strict="true" data-inline="true" data-words="${words}">
+    <label class="webx-select__label" for="select-3">Town</label>
+    <select class="webx-select__native" id="select-3" name="locality">
+      <option value="">Start typing a town</option>
+    </select>
+    <p class="webx-select__status" role="status"></p>
+  </div>`
 
 const freeBox = () => `
   <div class="webx-select webx-select--free" data-webx-select="/api/streets" data-param="q" data-min="1" data-delay="0" data-strict="false" data-words="${words}">
@@ -208,5 +218,103 @@ describe('select', () => {
       more: true,
     })
     expect(fromAnswer([{ value: 'x', label: 'X', hint: 'h' }]).options[0].hint).toBe('h')
+  })
+})
+
+describe('select: what an empty list says', () => {
+  // The answer waits until the test lets it go: the state «while asking» is seen.
+  const held = () => {
+    const pending = []
+    const fetcher = vi.fn(
+      () =>
+        new Promise((resolve) => {
+          pending.push((options) =>
+            resolve({ ok: true, status: 200, json: async () => ({ options, more: false }) }),
+          )
+        }),
+    )
+    return { fetcher, answer: (options = []) => pending.shift()(options) }
+  }
+
+  const note = (root) => root.querySelector('.webx-select__empty')?.textContent ?? null
+
+  it('an empty field: no list at all, no request, nothing said', async () => {
+    const { fetcher } = held()
+    const { input, list, root } = await start(townBox(), fetcher)
+
+    input.dispatchEvent(new Event('click'))
+    key(input, 'ArrowDown')
+    await settle()
+    expect(list.hidden).toBe(true)
+    expect(note(root)).toBeNull()
+    expect(root.querySelector('.webx-select__status').textContent).toBe('')
+    expect(fetcher).not.toHaveBeenCalled()
+
+    // Cleared after a search: the list goes away again.
+    type(input, 'xyz')
+    type(input, '')
+    expect(list.hidden).toBe(true)
+    expect(note(root)).toBeNull()
+  })
+
+  it('fewer characters than min: no request and no «Nothing found»', async () => {
+    const { fetcher } = held()
+    const { input, list, root } = await start(townBox(), fetcher)
+
+    type(input, 'x')
+    await settle()
+    expect(fetcher).not.toHaveBeenCalled()
+    expect(list.hidden).toBe(true)
+    expect(note(root)).toBeNull()
+  })
+
+  it('while the server is asked: «Searching…», then «Nothing found» once it answered empty', async () => {
+    const { fetcher, answer } = held()
+    const { input, list, root } = await start(townBox(), fetcher)
+
+    type(input, 'xyz')
+    expect(list.hidden).toBe(false)
+    expect(note(root)).toBe('Searching…')
+    expect(root.querySelector('.webx-select__status').textContent).toBe('Searching…')
+    await settle()
+    expect(fetcher).toHaveBeenCalledTimes(1)
+    expect(note(root)).toBe('Searching…')
+
+    answer([])
+    await settle()
+    expect(note(root)).toBe('Nothing found')
+    expect(root.querySelector('.webx-select__status').textContent).toBe('Nothing found')
+  })
+
+  it('an answer with towns shows them, not a note', async () => {
+    const { fetcher, answer } = held()
+    const { input, list, root } = await start(townBox(), fetcher)
+
+    type(input, 'ex')
+    await settle()
+    answer([{ value: '7', label: 'Exampleton', hint: 'Example region' }])
+    await settle()
+    expect(note(root)).toBeNull()
+    expect(list.querySelectorAll('.webx-select__option')).toHaveLength(1)
+  })
+
+  it('loaded options are still shown in an empty field', async () => {
+    const { input, list } = await start(strictBox())
+
+    input.dispatchEvent(new Event('click'))
+    expect(list.hidden).toBe(false)
+    expect(list.querySelectorAll('.webx-select__option')).toHaveLength(3)
+    expect(fetch).not.toHaveBeenCalled()
+  })
+
+  it('a failed request says so in the list instead of «Searching…»', async () => {
+    const { input, root } = await start(
+      townBox(),
+      vi.fn(async () => ({ ok: false, status: 500, json: async () => ({}) })),
+    )
+
+    type(input, 'xyz')
+    await settle()
+    expect(note(root)).toBe('Failed')
   })
 })

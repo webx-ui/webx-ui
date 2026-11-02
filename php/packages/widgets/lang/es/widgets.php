@@ -210,6 +210,6 @@ return [
         'more' => 'Mostrar más',
         'count' => 'Opciones: :count',
         'failed' => 'No se pudo cargar la lista. Inténtelo de nuevo.',
-        'loading' => 'Cargando…',
+        'searching' => 'Buscando…',
     ],
 ];

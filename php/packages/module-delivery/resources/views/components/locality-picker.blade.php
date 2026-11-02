@@ -42,7 +42,6 @@
                     name="locality"
                     searchable
                     :source="$step['urls']['localities']"
-                    :min="1"
                     inline
                     :label="__('webx-delivery::delivery.step.locality')"
                     :show-label="true"

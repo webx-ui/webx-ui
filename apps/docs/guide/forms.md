@@ -562,8 +562,10 @@ the select as to any field.
 
 The script puts a combobox over it: the options already loaded are filtered at once as the visitor
 types (accents and apostrophes folded, anywhere in the label or the hint); with `source` the server
-is asked as well, after a pause (`delay`, 250 ms) and `min` characters (1), the stale request
-cancelled. The answer is JSON:
+is asked as well, after a pause (`delay`, 250 ms) and `min` characters (2), the stale request
+cancelled. An empty field shows the loaded options, or no list at all; fewer than `min` characters
+ask nothing and say nothing; while the server is asked the list says «Searching…», and «Nothing
+found» only once an answer came back empty. The answer is JSON:
 
 ```json
 {
@@ -582,7 +584,7 @@ is added to the select, so a form sent without the script still carries it.
 | `searchable`                         | the combobox over the select; with `source` it is on by itself                           |
 | `source`, `param`                    | the server's search, this site's; the query parameter (`q`)                              |
 | `strict`                             | on: only an option is the value; `:strict="false"` — a text field with suggestions       |
-| `min`, `delay`                       | characters before asking (1; 0 — the list opens with the server's first page), 250 ms    |
+| `min`, `delay`                       | characters before asking (2; 0 — the list opens with the server's first page), 250 ms    |
 | `inline`                             | the list opens in the flow, not over the page — inside a dialog, whose edge would cut it |
 | `label`, `show-label`, `placeholder` | the name of the field (hidden for a screen reader unless shown); the empty option's text |
 | `nothing-label`, `more-label`, …     | the words, the dictionary's `widgets.select.*` behind them                               |
