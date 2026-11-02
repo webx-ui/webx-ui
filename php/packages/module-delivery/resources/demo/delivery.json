@@ -1,0 +1,59 @@
+{
+  "methods": {
+    "store": {
+      "title": {
+        "en": "Pick up at a store",
+        "pl": "Odbiór w sklepie",
+        "ru": "Самовывоз из магазина",
+        "uk": "Самовивіз із магазину"
+      },
+      "description": {
+        "en": "Ready the next working day.",
+        "pl": "Gotowe następnego dnia roboczego.",
+        "ru": "Готов на следующий рабочий день.",
+        "uk": "Готове наступного робочого дня."
+      }
+    },
+    "pickup": {
+      "title": {
+        "en": "Pick-up point",
+        "pl": "Punkt odbioru",
+        "ru": "Пункт выдачи",
+        "uk": "Пункт видачі"
+      }
+    },
+    "courier": {
+      "title": { "en": "Our courier", "pl": "Nasz kurier", "ru": "Наш курьер", "uk": "Наш кур'єр" },
+      "description": {
+        "en": "To the door in Town A and Town B.",
+        "pl": "Pod drzwi w Town A i Town B.",
+        "ru": "До двери в Town A и Town B.",
+        "uk": "До дверей у Town A і Town B."
+      }
+    },
+    "carrier-a.branch": {
+      "title": {
+        "en": "Carrier A branch",
+        "pl": "Oddział Carrier A",
+        "ru": "Отделение Carrier A",
+        "uk": "Відділення Carrier A"
+      }
+    },
+    "carrier-a.locker": {
+      "title": {
+        "en": "Carrier A locker",
+        "pl": "Paczkomat Carrier A",
+        "ru": "Почтомат Carrier A",
+        "uk": "Поштомат Carrier A"
+      }
+    },
+    "carrier-a.courier": {
+      "title": {
+        "en": "Carrier A courier",
+        "pl": "Kurier Carrier A",
+        "ru": "Курьер Carrier A",
+        "uk": "Кур'єр Carrier A"
+      }
+    }
+  }
+}

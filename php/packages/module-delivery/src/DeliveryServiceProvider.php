@@ -27,6 +27,7 @@ use WebxUi\Delivery\Models\DeliveryCarrier;
 use WebxUi\Delivery\Models\DeliveryMethod;
 use WebxUi\Delivery\Models\DeliveryMethodLocality;
 use WebxUi\Delivery\Models\DeliveryPoint;
+use WebxUi\Delivery\Panel\DeliveryHome;
 use WebxUi\Delivery\Panel\DeliverySection;
 use WebxUi\Delivery\Panel\Fields\CountryField;
 use WebxUi\Delivery\Panel\Fields\LocalitiesField;
@@ -42,6 +43,7 @@ use WebxUi\Delivery\Shipping\Shipments;
 use WebxUi\Delivery\Sync\Directories;
 use WebxUi\Delivery\Sync\StoredLeadingCarriers;
 use WebxUi\Delivery\Sync\Synchronizer;
+use WebxUi\Delivery\Testing\FakeCarrierSite;
 use WebxUi\Delivery\Types\StoreCourier;
 use WebxUi\Delivery\Types\StorePickup;
 use WebxUi\Delivery\View\Components\Step;
@@ -101,6 +103,10 @@ class DeliveryServiceProvider extends ServiceProvider
             $types->register(StorePickup::class);
             $types->register(StoreCourier::class);
         });
+
+        // Carrier A on a development site, for the guide of a carrier and the demo (§18): off
+        // unless the site asks for it.
+        FakeCarrierSite::register($this->app);
     }
 
     public function boot(): void
@@ -231,11 +237,14 @@ class DeliveryServiceProvider extends ServiceProvider
         $modules = $this->app->make(ModuleRegistry::class);
 
         foreach (DeliverySection::all() as $section) {
-            // The first entry carries the agent's tools where the MCP server is installed (§15):
-            // delivery does not require it, and nothing loads the tools' classes otherwise.
-            $modules->register($section->id() === DeliverySection::GROUP && interface_exists(ProvidesMcpTools::class)
-                ? $this->app->make(DeliveryModule::class)
-                : $section);
+            // The first entry seeds the section's demo (§18) and carries the agent's tools where
+            // the MCP server is installed (§15): delivery does not require it, and nothing loads
+            // the tools' classes otherwise.
+            $modules->register(match (true) {
+                $section->id() !== DeliverySection::GROUP => $section,
+                interface_exists(ProvidesMcpTools::class) => $this->app->make(DeliveryModule::class),
+                default => $this->app->make(DeliveryHome::class),
+            });
         }
 
         $types = $this->app->make(FieldTypes::class);

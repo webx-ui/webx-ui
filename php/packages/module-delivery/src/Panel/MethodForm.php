@@ -76,18 +76,23 @@ final class MethodForm
     public function row(DeliveryMethod $method, string $locale): array
     {
         $known = $this->types->has($method->type);
+        $carrier = $known ? $this->types->get($method->type)->carrier() : null;
 
         return [
             'id' => $method->id,
             'key' => $method->key,
             'type' => $method->type,
             'type_title' => $this->typeTitle($method->type, $locale),
-            'carrier' => $known ? $this->types->get($method->type)->carrier() : null,
-            'carrier_title' => $known ? $this->carrierTitle($this->types->get($method->type)->carrier(), $locale) : null,
+            'carrier' => $carrier,
+            'carrier_title' => $carrier !== null ? $this->carrierTitle($carrier, $locale) : null,
             'missing' => ! $known,
             'title' => Names::pick($method->titles, $locale) ?? $method->key,
             'price' => $method->price,
-            'price_text' => $this->priceText($method->price),
+            // No price of its own: the shop's method is free, a carrier's is priced by its type —
+            // the list says what the checkout will (§9.1), not «Free» for both.
+            'price_text' => $method->price === null && $carrier !== null && $carrier !== Carriers::STORE
+                ? (string) __('webx-delivery::delivery.step.carrier_rates', [], $locale)
+                : $this->priceText($method->price),
             'countries' => $method->countries ?? [],
             'enabled' => $method->enabled,
             'position' => $method->position,

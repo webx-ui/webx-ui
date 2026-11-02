@@ -35,7 +35,8 @@ use WebxUi\Geography\Matching\LocalityRecord;
  * back empty, records that vanish, and a lock that makes any `pull()` outside a sync throw — the
  * checkout never calls the carrier for its directories (decision 38).
  *
- * Registered only in tests and in the playground, never on a site.
+ * Registered in tests and in the playground; on a development site only by
+ * `WEBX_DELIVERY_FAKE_CARRIER=true` ({@see FakeCarrierSite}), never in production.
  */
 final class FakeCarrier implements Carrier, SyncsDirectories
 {

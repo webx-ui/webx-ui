@@ -39,6 +39,17 @@ final class FakeParcels
 
     private int $cost = 4500;
 
+    /** Numbers given before this instance: a site keeps its parcels between requests, a test does not. */
+    private int $issued = 0;
+
+    /** Numbers go on after `$issued` earlier ones — on a site, the parcels of carrier A already in the table. */
+    public function from(int $issued): self
+    {
+        $this->issued = max(0, $issued);
+
+        return $this;
+    }
+
     public function refuse(?string $reason = 'The carrier does not take parcels over 30 kg.'): self
     {
         $this->refusal = $reason;
@@ -70,7 +81,7 @@ final class FakeParcels
         }
 
         $this->requests[] = $request;
-        $number = sprintf('A-%04d', count($this->requests));
+        $number = sprintf('A-%04d', $this->issued + count($this->requests));
 
         return new Waybill($number, $this->cost, meta: ['label' => "https://carrier-a.example.test/labels/{$number}.pdf"]);
     }

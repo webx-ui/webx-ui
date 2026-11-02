@@ -45,6 +45,11 @@ return [
         'stuck_after_minutes' => 360,
     ],
 
+    // «Carrier A», the fake carrier of the tests, on a development site: its towns, points and
+    // streets in the private-use country XX, waybills that go nowhere. For the demo and the guide of
+    // a carrier (apps/docs/guide/delivery-carriers.md) — never in production.
+    'fake_carrier' => (bool) env('WEBX_DELIVERY_FAKE_CARRIER', false),
+
     // Per carrier: 'carrier-a' => ['schedule' => ['points' => '0 4 * * *', 'localities' => 'manual']].
     // A cron over the satellite's own, or `manual` — run from the panel, MCP or the command only.
     'carriers' => [],

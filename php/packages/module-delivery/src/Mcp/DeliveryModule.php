@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace WebxUi\Delivery\Mcp;
 
-use WebxUi\Delivery\Panel\DeliverySection;
+use WebxUi\Delivery\Demo\DeliveryDemo;
+use WebxUi\Delivery\Panel\DeliveryHome;
 use WebxUi\Mcp\Contracts\ProvidesMcpTools;
 use WebxUi\Mcp\McpResource;
 use WebxUi\Mcp\ProvidesMcpDefaults;
@@ -16,10 +17,10 @@ use WebxUi\Mcp\Tool;
  * `delivery.view` / `delivery.manage`, the waybills behind `delivery.ship`; and
  * `delivery://catalog` to read first.
  *
- * Registered in place of the plain entry only where `webx-ui/mcp` is installed: delivery does
+ * Registered in place of {@see DeliveryHome} only where `webx-ui/mcp` is installed: delivery does
  * not require it, and nothing loads this class otherwise.
  */
-final class DeliveryModule extends DeliverySection implements ProvidesMcpTools
+final class DeliveryModule extends DeliveryHome implements ProvidesMcpTools
 {
     use ProvidesMcpDefaults;
 
@@ -28,8 +29,9 @@ final class DeliveryModule extends DeliverySection implements ProvidesMcpTools
         private readonly GeographyTools $geography,
         private readonly CarrierTools $carriers,
         private readonly DeliveryResources $resources,
+        DeliveryDemo $demo,
     ) {
-        parent::__construct(self::GROUP);
+        parent::__construct($demo);
     }
 
     /** @return list<Tool> */

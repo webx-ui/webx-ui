@@ -24,8 +24,7 @@ binding) and `webx-ui/widgets`. `webx-ui/module-orders` gets the step as its che
   `pointKinds()`, `countries()`, `available()`, `quote()`, `validate()`), `Carrier`, optional
   `LabelledMethodType` (`title()`, `description()`; without it the panel names a type from its kind
   or `asks()` and the carrier, never by key); `AbstractMethodType` — the price and default checks.
-- **Registries** (singletons): `Carriers` (`store` built in), `MethodTypes` (`store.pickup`,
-  `store.courier` built in). A repeated or malformed key, a type of an unknown carrier — an exception.
+- **Registries** (singletons): `Carriers` (`store` built in), `MethodTypes` (`store.pickup`, `store.courier` built in). A repeated or malformed key, a type of an unknown carrier — an exception.
 - **`Methods::forLocality(DeliveryContext)`** — the offered `MethodOption`s in the panel's order
   (price, points, `disabled` + `hint` for a carrier's courier without streets); `evaluate()` — every
   enabled method with why it is not offered (`MethodOption::NO_POINTS`, …).
@@ -33,8 +32,7 @@ binding) and `webx-ui/widgets`. `webx-ui/module-orders` gets the step as its che
   satellite's price 600 s, `Purpose::Order` — no cache, no fallback (`QuoteFailed`).
   `DeliveryAdjustments` (priority 1000) puts `fixed(N > 0)` into the chain; `Delivery::cost()` — the
   line «Delivery cost». `shipping.paid_by_store` is in the cart's `BenefitKeys`.
-- **`Delivery`** — `needed(CartState)`, `context($cart, $locality)`, `snapshot(Selection, Quote)` →
-  `DeliverySnapshot` (§11.1: the order's block, every language copied, `payer` sender|recipient).
+- **`Delivery`** — `needed(CartState)`, `context($cart, $locality)`, `snapshot(Selection, Quote)` → `DeliverySnapshot` (§11.1: the order's block, every language copied, `payer` sender|recipient).
 - **`PopularLocalities`** — `ids()`, `suggestions($country, $locale)`, `set($ids)`, `add()`, `remove()`.
 - **Parcels** (`Shipping\Shipments`, only with `module-orders`): a type implements
   `Contracts\CreatesWaybills` / `TracksShipments`; `request()`, `create()` (number into the block,
@@ -61,7 +59,8 @@ binding) and `webx-ui/widgets`. `webx-ui/module-orders` gets the step as its che
   `summary`, `check` (`delivery.locality|method|point|address|quote`), `snapshot`, `totalsLine`, `choice`.
 - **Commands** `webx:delivery:sync {carrier?} {--directory=*} {--trigger=} {--queue}` (by cron),
   `webx:delivery:track` (every 30 min); `webx:doctor` — `Doctor\SyncCheck`.
-- **`Testing\FakeCarrier`** — «Carrier A»: a directory in `XX`; `FakeParcels` — its waybills. **Cache groups** `delivery`, `delivery-points`.
+- **Testing**: `FakeCarrier` — «Carrier A», a directory in `XX`; `FakeParcels` — its waybills; `CarrierContract` — a satellite's
+  contract test; `FakeCarrierSite` — carrier A on a dev site. **Demo** (`delivery`): `XX`, towns by hand, points, couriers, popular towns. **Cache groups** `delivery`, `delivery-points`.
 - **Panel** (§14, with `module-admin`): six sections of the group `delivery` (`Panel\DeliverySection`),
   JSON under `api/cms/delivery/…` (`routes/panel.php`): methods (order by drag), own points, carriers
   (directories, «Run», «Confirm removal», keys — only «set»), geography by hand (through
@@ -116,6 +115,7 @@ Tokens: `--webx-delivery-gap`, `--webx-delivery-icon-size` on `.webx-delivery`, 
 | The step on a page of your own              | `<x-webx-delivery::step />`; inside your form — `name="delivery"` prefixes its fields                        |
 | A directory on another schedule, or by hand | `webx-delivery.carriers.<key>.schedule.<directory>` — a cron or `manual`                                     |
 | Sync now                                    | `php artisan webx:delivery:sync carrier-a --directory=points` (`--queue` to hand it to the queue)            |
+| Carrier A on a development site             | `WEBX_DELIVERY_FAKE_CARRIER=true` — never in production; then `webx:demo --module=delivery` or a sync        |
 | A field on a form of the section            | a patch on `delivery.method-form` / `delivery.point-form` / `delivery.locality-form`                         |
 | Other words                                 | `php artisan vendor:publish --tag=webx-delivery-lang`                                                        |
 
@@ -138,8 +138,8 @@ Tokens: `--webx-delivery-gap`, `--webx-delivery-icon-size` on `.webx-delivery`, 
 - `vendor/bin/phpunit packages/module-delivery/tests` from `php/`; `ChainTest` — §9.3 on a real cart.
 - `ApiTest` — every door and refusal; `StepTest` — the step, both couriers, no JavaScript; `SlotTest`
   — the slot; `PerformanceTest` — §17 on 30 000 points and 300 000 streets, no `pull()` from the step.
-- `SyncVolumeTest`, `SyncTest`, `StreetsTest` — pages, the threshold, held runs; `tests/Shipping` — parcels.
-- `npx vitest run php/packages/module-delivery` — `delivery.js`; `DistTest` — `dist/` built from it.
+- `SyncVolumeTest`, `SyncTest`, `StreetsTest` — pages, the threshold, held runs; `tests/Shipping` — parcels; `CarrierContractTest` — carrier A.
+- `npx vitest run php/packages/module-delivery` — `delivery.js`; `DistTest` — `dist/` built from it; `Panel/DemoTest` — the demo and its removal.
 - `tests/Panel` — the section: `AccessCoverageTest`, geography by hand, methods and points, carriers, queue;
   `tests/Mcp` — the tools: keys never leave, dry runs write nothing, duplicates, no repeated query.
 

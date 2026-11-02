@@ -284,7 +284,7 @@ final class Catalogue
             'label' => 'Delivery — the shop\'s own pick-up points and courier, and carriers\' branches and lockers, priced in the town the buyer picks (needs the cart)',
             'default' => false,
             'requires' => ['cart'],
-            'demo' => [],
+            'demo' => ['en', 'pl', 'ru', 'uk'],
         ],
         'users' => [
             'package' => 'webx-ui/module-users',

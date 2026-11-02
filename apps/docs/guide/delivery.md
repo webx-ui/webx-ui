@@ -17,6 +17,53 @@ php artisan migrate
 The panel gets the group «Delivery»: methods, the shop's points, carriers, the geography, the
 popular towns of the checkout and the binding queue.
 
+## A shop without carriers
+
+Nothing in the delivery needs a carrier. A shop that hands parcels over at its own counters and
+drives them out itself is set up in the panel, in this order:
+
+1. **Geography** — switch on the country the shop works in (any ISO code, named by `symfony/intl`),
+   make its regions, then its towns: a name in each language of the site, a type (city, town,
+   village…), the region, coordinates if you have them, and a weight — the heavier town comes
+   first in the suggestions. A town like one already there (same country, region, type and name,
+   whatever the apostrophes or dashes) is not made twice: the form shows the similar one and
+   offers to pick it.
+2. **Own points** — a point of the shop: its kind (a store, a pick-up point, or a kind of your own),
+   the town, the address, the phone and the opening hours. «Add a locality» in the town's field
+   makes a missing town on the spot and puts it into the point.
+3. **Methods** — a «Pick up at a store» method for each kind of point (a store and a pick-up point
+   are two methods, each with its own title and price), and «Our courier» with the towns it drives
+   to — «Add a locality» works there too — and its one price. Drag them into the checkout's order.
+4. **Popular towns** — the buttons of the dialog «Where to deliver the order?»: add the towns most
+   buyers pick, drag them into order. An empty list shows the search alone.
+
+A buyer then picks the town in the checkout — by the search or a button — and sees the methods of
+that town: a pick-up method only where the town has an active point of its kind, the courier only
+in its towns.
+
+A town a point, a method, a buyer's choice or an order points at is never deleted: «Delete»
+switches it off, and it leaves the suggestions. When a carrier comes later, its sync binds its towns
+to the ones made by hand — no second «Town A» — and never renames them; what it cannot place goes
+to the binding queue.
+
+## Try it with the demo
+
+```bash
+php artisan webx:demo --module=delivery
+```
+
+The country `XX` (a code for private use — no real country), «Region A» and «Region B» with six
+towns made by hand, «Store A», «Store B» and two pick-up points, the methods «Pick up at a store»,
+«Pick-up point» and «Our courier» (Town A and Town B, one price), and the popular towns Town A,
+Town D, Town B. A site that already has delivery methods or towns in `XX` is left alone.
+`webx:demo --remove --module=delivery` takes it all away again.
+
+On a development site, `WEBX_DELIVERY_FAKE_CARRIER=true` in `.env` adds «Carrier A» — the fake
+carrier of the tests, with branches, lockers and a courier by its own streets. The demo then switches
+it on, runs its sync and makes its three methods: the checkout has a carrier to choose too, and the
+panel's «Carriers» and «Binding queue» have something in them. Never switch it on in production:
+its waybills go nowhere. Writing a carrier of your own — [Delivery carriers](./delivery-carriers.md).
+
 ## Agents
 
 With the panel and `webx-ui/mcp` installed, an agent runs the delivery through the same doors as
@@ -66,5 +113,6 @@ When a buyer says a method is missing in their town, start from `delivery_quote`
 
 ## Read more
 
+- [Delivery carriers](./delivery-carriers.md) — writing a satellite of a carrier and its contract test.
 - The delivery spec — [`WEBX_UI_MODULE_DELIVERY.md`](https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_DELIVERY.md).
 - [AI agents](./agents.md) — connecting an agent, scopes and permissions.

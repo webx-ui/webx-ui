@@ -106,6 +106,7 @@ export default defineConfig({
             { text: 'Orders', link: '/guide/orders' },
             { text: 'Checkout', link: '/guide/checkout' },
             { text: 'Delivery', link: '/guide/delivery' },
+            { text: 'Delivery carriers', link: '/guide/delivery-carriers' },
             { text: 'Site visitors', link: '/guide/site-visitors' },
           ],
         },
