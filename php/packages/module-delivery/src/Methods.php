@@ -24,6 +24,7 @@ final class Methods
         private readonly MethodTypes $types,
         private readonly Carriers $carriers,
         private readonly CacheGroups $groups,
+        private readonly Quotes $quotes,
     ) {}
 
     /**
@@ -47,11 +48,30 @@ final class Methods
      */
     public function evaluate(DeliveryContext $context): array
     {
+        return $this->judgeAll($context, null);
+    }
+
+    /**
+     * One method of the site as the locality and the cart see it — what the chain of the cart
+     * prices (§9.3) without pricing every other; null — no such method enabled.
+     */
+    public function option(DeliveryContext $context, int $method): ?MethodOption
+    {
+        return $this->judgeAll($context, $method)[0] ?? null;
+    }
+
+    /** @return list<MethodOption> */
+    private function judgeAll(DeliveryContext $context, ?int $only): array
+    {
         ['methods' => $rows, 'carriers' => $enabled] = $this->catalogue();
         $candidates = [];
 
         foreach ($rows as $row) {
             $method = Method::fromArray($row);
+
+            if ($only !== null && $method->id !== $only) {
+                continue;
+            }
 
             if (! $this->types->has($method->type)) {
                 $candidates[] = new MethodOption($method, null, unavailable: MethodOption::TYPE_MISSING);
@@ -158,7 +178,7 @@ final class Methods
             return new MethodOption($method, $type, points: $count, unavailable: MethodOption::NOT_AVAILABLE);
         }
 
-        $quote = $type->quote($method, $context);
+        $quote = $this->quotes->quote($method, $type, $context);
 
         if (! $quote->available()) {
             return new MethodOption($method, $type, $quote, $count, MethodOption::NO_QUOTE);

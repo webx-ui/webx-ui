@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Delivery;
 
+use WebxUi\Cart\Money;
 use WebxUi\Cart\Totals\CartState;
 use WebxUi\Cart\Totals\Purpose;
 use WebxUi\Cart\Totals\ResolvedLine;
@@ -63,5 +64,64 @@ final class Delivery
     public function methods(DeliveryContext $context): array
     {
         return $this->methods->forLocality($context);
+    }
+
+    /**
+     * The price of what the buyer chose, as the chain counts it (§9.1, §9.4): the base's quote of
+     * the method — cached for a satellite, «Free» under `shipping.paid_by_store` — or
+     * `unavailable` with the reason the method is not offered there now.
+     *
+     * @throws QuoteFailed making an order, when the carrier could not price it
+     */
+    public function quoteFor(Selection $selection, DeliveryContext $context): Quote
+    {
+        $option = $this->methods->option($context, $selection->method->id);
+
+        if ($option !== null && $option->offered() && ! $option->disabled && $option->quote !== null) {
+            return $option->quote;
+        }
+
+        if ($option?->quote !== null && ! $option->quote->available()) {
+            return $option->quote;
+        }
+
+        return Quote::unavailable($option?->reason() ?? MethodOption::NOT_AVAILABLE);
+    }
+
+    /**
+     * The totals line «Delivery cost» of the cart (decision 7): null — delivery is not needed or
+     * nothing is chosen, or the chosen method is not offered there any more.
+     *
+     * @throws QuoteFailed making an order whose chosen method cannot be priced
+     */
+    public function cost(CartState $state, int $cart, Purpose $purpose = Purpose::Checkout): ?DeliveryCost
+    {
+        $chosen = app(CartDelivery::class)->chosen($state, $cart, $purpose);
+
+        if ($chosen === null || $chosen->quote === null) {
+            return null;
+        }
+
+        $quote = $chosen->quote;
+        $locale = $state->locale;
+        $money = app(Money::class);
+        $format = static fn (?int $minor): ?string => $minor === null
+            ? null
+            : ($state->currency === null ? (string) $minor : $money->format($minor, $state->currency));
+        $word = static fn (string $key): string => (string) trans("webx-delivery::delivery.step.{$key}", [], $locale);
+
+        return new DeliveryCost(
+            method: $chosen->method->key,
+            quote: $quote,
+            label: $word('cost'),
+            text: match ($quote->kind) {
+                QuoteKind::Fixed => (string) $format($quote->amount),
+                QuoteKind::CarrierRates => $word('carrier_rates'),
+                default => $word('free'),
+            },
+            amountFormatted: $format($quote->amount),
+            wasFormatted: $format($quote->was),
+            estimateFormatted: $format($quote->estimate),
+        );
     }
 }

@@ -46,6 +46,13 @@ return [
         'cost' => 'Teslimat ücreti',
         'points' => 'Nokta sayısı: :count',
     ],
+    // The line of the cart's totals, and the benefit the shop's cart rules may grant (§9.4).
+    'totals' => [
+        'delivery' => 'Teslimat',
+    ],
+    'benefits' => [
+        'paid_by_store' => 'Teslimatı mağaza öder',
+    ],
     'hints' => [
         'no_streets' => 'Buraya kurye ile teslimat yok, başka bir yöntem seçin',
     ],

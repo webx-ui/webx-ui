@@ -46,6 +46,13 @@ return [
         'cost' => 'Custo de entrega',
         'points' => 'Pontos: :count',
     ],
+    // The line of the cart's totals, and the benefit the shop's cart rules may grant (§9.4).
+    'totals' => [
+        'delivery' => 'Entrega',
+    ],
+    'benefits' => [
+        'paid_by_store' => 'A loja paga a entrega',
+    ],
     'hints' => [
         'no_streets' => 'A entrega por estafeta não está disponível aqui, escolha outro método',
     ],

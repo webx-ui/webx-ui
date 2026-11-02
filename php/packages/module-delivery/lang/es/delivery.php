@@ -46,6 +46,13 @@ return [
         'cost' => 'Coste de envío',
         'points' => 'Puntos: :count',
     ],
+    // The line of the cart's totals, and the benefit the shop's cart rules may grant (§9.4).
+    'totals' => [
+        'delivery' => 'Envío',
+    ],
+    'benefits' => [
+        'paid_by_store' => 'La tienda paga el envío',
+    ],
     'hints' => [
         'no_streets' => 'La entrega a domicilio no está disponible aquí, elige otro método',
     ],

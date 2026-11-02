@@ -60,9 +60,59 @@ final readonly class Quote
         return new self(QuoteKind::Unavailable, null, null, null, $reason, Payer::Buyer);
     }
 
+    /**
+     * What the shop pays for the buyer under `shipping.paid_by_store` (§9.4): «Free» with the price
+     * it would have been crossed out, the sender paying on the waybill. A method that is free
+     * already stays as it is; one not offered is not offered either way.
+     */
+    public function paidByStore(): self
+    {
+        return match ($this->kind) {
+            QuoteKind::Fixed => self::free($this->amount, Benefits::PAID_BY_STORE),
+            QuoteKind::CarrierRates => self::free($this->estimate, Benefits::PAID_BY_STORE),
+            default => $this,
+        };
+    }
+
+    /** Free because the cart's rules gave `shipping.paid_by_store` — the snapshot's `paid_by_store`. */
+    public function isPaidByStore(): bool
+    {
+        return $this->kind === QuoteKind::Free && $this->reason === Benefits::PAID_BY_STORE;
+    }
+
     public function available(): bool
     {
         return $this->kind !== QuoteKind::Unavailable;
+    }
+
+    /**
+     * What {@see self::toStored()} gave — the cache keeps arrays, never objects.
+     *
+     * @param  array<string, mixed>  $row
+     */
+    public static function fromStored(array $row): self
+    {
+        $int = static fn (mixed $value): ?int => is_numeric($value) ? (int) $value : null;
+        $reason = isset($row['reason']) && is_string($row['reason']) ? $row['reason'] : null;
+
+        return match (QuoteKind::tryFrom((string) ($row['kind'] ?? ''))) {
+            QuoteKind::Fixed => self::fixed(max(0, $int($row['amount'] ?? null) ?? 0)),
+            QuoteKind::Free => self::free($int($row['was'] ?? null), $reason),
+            QuoteKind::CarrierRates => self::carrierRates($int($row['estimate'] ?? null)),
+            default => self::unavailable($reason ?? 'unknown'),
+        };
+    }
+
+    /** @return array{kind: string, amount: int|null, was: int|null, estimate: int|null, reason: string|null} */
+    public function toStored(): array
+    {
+        return [
+            'kind' => $this->kind->value,
+            'amount' => $this->amount,
+            'was' => $this->was,
+            'estimate' => $this->estimate,
+            'reason' => $this->reason,
+        ];
     }
 
     /** @return array{kind: string, price: int|null, was: int|null, estimate: int|null, in_total: bool, payer: string} */

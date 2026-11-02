@@ -8,6 +8,8 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Cache\CacheGroups;
+use WebxUi\Cart\BenefitKeys;
+use WebxUi\Cart\Totals\AdjustmentSources;
 use WebxUi\Delivery\Console\SyncCommand;
 use WebxUi\Delivery\Doctor\SyncCheck;
 use WebxUi\Delivery\Models\DeliveryCarrier;
@@ -40,6 +42,9 @@ class DeliveryServiceProvider extends ServiceProvider
         $this->app->singleton(MethodTypes::class);
         $this->app->singleton(Methods::class);
         $this->app->singleton(Delivery::class);
+        $this->app->singleton(Quotes::class);
+        // What one request read of a cart's delivery is not the next one's.
+        $this->app->scoped(CartDelivery::class);
         $this->app->singleton(Points::class);
         $this->app->singleton(Streets::class);
         $this->app->singleton(PointKinds::class);
@@ -72,11 +77,21 @@ class DeliveryServiceProvider extends ServiceProvider
         $groups->declare(Synchronizer::POINTS_GROUP, 'webx-delivery::delivery.cache_points');
         $groups->bumpOn(Synchronizer::POINTS_GROUP, DeliveryPoint::class);
 
+        // The price of delivery in the cart's chain, after the discounts (§9.3), and the benefit the
+        // shop's rules may grant for it (§9.4): the rules offer the key from a list.
+        $this->callAfterResolving(AdjustmentSources::class, function (AdjustmentSources $sources): void {
+            $sources->register($this->app->make(DeliveryAdjustments::class), DeliveryAdjustments::PRIORITY);
+        });
+        $this->callAfterResolving(BenefitKeys::class, static function (BenefitKeys $keys): void {
+            $keys->register(Benefits::PAID_BY_STORE, 'webx-delivery::delivery.benefits.paid_by_store');
+        });
+
         // A locality a point or a carrier's binding stands on is switched off, not deleted
         // (decision 42). The popular towns and the courier's list follow a deletion by their keys.
         $this->callAfterResolving(LocalityReferences::class, static function (LocalityReferences $references): void {
             $references->table('delivery_points', 'locality_id', 'delivery points');
             $references->table('delivery_carrier_localities', 'locality_id', 'carrier bindings');
+            $references->table('delivery_selections', 'locality_id', 'buyers\' choices');
         });
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {

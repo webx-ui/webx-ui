@@ -51,6 +51,7 @@ class CartServiceProvider extends ServiceProvider
         $this->app->singleton(TenderSources::class);
         $this->app->singleton(BenefitSources::class);
         $this->app->singleton(HintSources::class);
+        $this->app->singleton(BenefitKeys::class);
         // If: a currencies module that binds its own wins whatever order the providers run in.
         $this->app->singletonIf(CurrencySource::class, ConfigCurrency::class);
         $this->app->singleton(Money::class);

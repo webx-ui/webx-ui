@@ -75,4 +75,32 @@ final class QuoteTest extends PhpUnitTestCase
 
         Quote::fixed(-1);
     }
+
+    #[Test]
+    public function paid_by_store_makes_a_price_free_with_it_crossed_out_and_the_sender_paying(): void
+    {
+        foreach ([[Quote::fixed(700), 700], [Quote::carrierRates(7000), 7000], [Quote::carrierRates(), null]] as [$quote, $was]) {
+            $free = $quote->paidByStore();
+
+            $this->assertSame(QuoteKind::Free, $free->kind);
+            $this->assertSame($was, $free->was);
+            $this->assertSame(Payer::Store, $free->payer);
+            $this->assertFalse($free->inTotal);
+            $this->assertTrue($free->isPaidByStore());
+        }
+
+        // Free already, or not offered: nothing to give.
+        $this->assertFalse(Quote::free()->paidByStore()->isPaidByStore());
+        $this->assertFalse(Quote::unavailable('Too heavy')->paidByStore()->available());
+    }
+
+    #[Test]
+    public function a_stored_quote_comes_back_the_same(): void
+    {
+        foreach ([Quote::fixed(700), Quote::free(700), Quote::carrierRates(7000), Quote::unavailable('Too heavy')] as $quote) {
+            $this->assertEquals($quote, Quote::fromStored($quote->toStored()));
+        }
+
+        $this->assertFalse(Quote::fromStored([])->available());
+    }
 }

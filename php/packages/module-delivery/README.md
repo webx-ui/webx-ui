@@ -72,6 +72,25 @@ A method asking for a point is offered only where the locality has an active poi
 and kind; the shop's courier only in its localities; a method of another country or of a carrier
 that is off — never. `Methods::evaluate()` returns every method with the reason it is left out.
 
+## Money
+
+The price of the chosen method is part of the cart's chain (§9.3): `DeliveryAdjustments`, priority
+`1000` — after every discount, so a discount in per cent never touches it, and before the wallet,
+which pays for it too. Only `fixed(N > 0)` is a line of the total; `free` and «By carrier rates»
+add nothing. The widget of the cart (`Purpose::Cart`) shows no delivery.
+
+```php
+$cost = app(Delivery::class)->cost($cartState, $cartId);   // null — nothing chosen
+$cost?->text;                // "7,00 €", "Free" or "By carrier rates"
+$cost?->quote->was;          // the crossed-out price under shipping.paid_by_store
+```
+
+`shipping.paid_by_store` (registered in the cart's `BenefitKeys`) turns the price of every method
+with `honours_paid_by_store` into `free(was)` — the type does nothing for it. A satellite's quote is
+cached for `webx-delivery.quotes.ttl`; it should give its API `app(Quotes::class)->timeout()`
+seconds. A quote that throws is «By carrier rates» on the checkout and `QuoteFailed` when an
+order is made — no order without its delivery priced.
+
 ## A carrier
 
 A satellite `delivery-<carrier>` registers its carrier and its types from its provider:

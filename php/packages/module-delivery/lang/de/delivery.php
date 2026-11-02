@@ -46,6 +46,13 @@ return [
         'cost' => 'Versandkosten',
         'points' => 'Stellen: :count',
     ],
+    // The line of the cart's totals, and the benefit the shop's cart rules may grant (§9.4).
+    'totals' => [
+        'delivery' => 'Versand',
+    ],
+    'benefits' => [
+        'paid_by_store' => 'Der Shop zahlt den Versand',
+    ],
     'hints' => [
         'no_streets' => 'Kurierzustellung ist hier nicht möglich, wählen Sie eine andere Versandart',
     ],

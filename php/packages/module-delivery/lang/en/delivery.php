@@ -48,6 +48,13 @@ return [
         'cost' => 'Delivery cost',
         'points' => 'Points: :count',
     ],
+    // The line of the cart's totals, and the benefit the shop's cart rules may grant (§9.4).
+    'totals' => [
+        'delivery' => 'Delivery',
+    ],
+    'benefits' => [
+        'paid_by_store' => 'The shop pays for delivery',
+    ],
     'hints' => [
         'no_streets' => 'Courier delivery is not available here, choose another method',
     ],

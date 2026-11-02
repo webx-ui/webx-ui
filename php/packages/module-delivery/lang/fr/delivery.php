@@ -46,6 +46,13 @@ return [
         'cost' => 'Frais de livraison',
         'points' => 'Points : :count',
     ],
+    // The line of the cart's totals, and the benefit the shop's cart rules may grant (§9.4).
+    'totals' => [
+        'delivery' => 'Livraison',
+    ],
+    'benefits' => [
+        'paid_by_store' => 'La boutique paie la livraison',
+    ],
     'hints' => [
         'no_streets' => 'La livraison par coursier n’est pas disponible ici, choisissez un autre mode',
     ],

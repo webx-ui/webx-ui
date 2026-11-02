@@ -46,6 +46,13 @@ return [
         'cost' => 'Вартість доставки',
         'points' => 'Точок: :count',
     ],
+    // The line of the cart's totals, and the benefit the shop's cart rules may grant (§9.4).
+    'totals' => [
+        'delivery' => 'Доставка',
+    ],
+    'benefits' => [
+        'paid_by_store' => 'Доставку оплачує магазин',
+    ],
     'hints' => [
         'no_streets' => 'Кур’єр сюди не доставляє, виберіть інший спосіб',
     ],

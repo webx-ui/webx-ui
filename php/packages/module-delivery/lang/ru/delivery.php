@@ -46,6 +46,13 @@ return [
         'cost' => 'Стоимость доставки',
         'points' => 'Точек: :count',
     ],
+    // The line of the cart's totals, and the benefit the shop's cart rules may grant (§9.4).
+    'totals' => [
+        'delivery' => 'Доставка',
+    ],
+    'benefits' => [
+        'paid_by_store' => 'Доставку оплачивает магазин',
+    ],
     'hints' => [
         'no_streets' => 'Курьер сюда не доставляет, выберите другой способ',
     ],

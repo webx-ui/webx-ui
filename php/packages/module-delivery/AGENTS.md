@@ -26,7 +26,9 @@ checkout of `webx-ui/module-orders` asks it; orders work without it. Words — `
     `failed`, `held`), `trigger`, `cursor`, counters, `error` (the base's words), `warnings`; the
     last 100 runs of each carrier's directory are kept;
   - `delivery_popular_localities` — the popular towns of the checkout dialog: `locality_id`,
-    `position`; one list for the site (decision 40).
+    `position`; one list for the site (decision 40);
+  - `delivery_selections` — the buyer's choice of a cart (`cart_id` PK, cascade): locality, method,
+    point or `address`; the chain reads it, only the delivery step writes it.
 - **Contracts** in `WebxUi\Delivery\Contracts`: `MethodType` (key `<carrier>.<kind>`, `asks()`,
   `pointKinds()`, `countries()`, `available()`, `quote()`, `validate()`) and `Carrier`.
   `AbstractMethodType` gives the method's price and the default check of a point or an address.
@@ -41,7 +43,13 @@ checkout of `webx-ui/module-orders` asks it; orders work without it. Words — `
   (price, points, `disabled` + `hint` for a carrier's courier without streets); `evaluate()` —
   every enabled method with the reason it is not offered (`MethodOption::NO_POINTS`, …).
 - **`Quote`** — `fixed()`, `free($was)`, `carrierRates($estimate)`, `unavailable($reason)`;
-  `inTotal`, `payer`.
+  `inTotal`, `payer`, `paidByStore()`. **`Quotes`** prices every method: a satellite's quote cached
+  `webx-delivery.quotes.ttl` (600 s), a throw → `carrierRates()` + log, `Purpose::Order` — no cache, no
+  fallback (`QuoteFailed`); `shipping.paid_by_store` on a method that honours it → `free(was)`.
+- **The cart's chain**: `DeliveryAdjustments` (priority 1000, after discounts) adds `fixed(N > 0)` of
+  the chosen method as `Adjustment('delivery', meta.kind = delivery)`; silent on `Purpose::Cart`.
+  `Delivery::cost($state, $cartId)` — the totals line «Delivery cost» (`DeliveryCost`);
+  `quoteFor($selection, $context)`. The key `shipping.paid_by_store` is in the cart's `BenefitKeys`.
 - **`Delivery`** — `Delivery::needed(CartState)`: false without a shippable line that can be
   bought; `context($cart, $locality)` builds the `DeliveryContext`.
 - **`PopularLocalities`** — `ids()`, `suggestions($country, $locale)` (active ones only, two
@@ -71,7 +79,7 @@ checkout of `webx-ui/module-orders` asks it; orders work without it. Words — `
   `XX`, a failing page, an empty answer, vanished records, a lock against pulls outside a sync.
 - **Cache groups** `delivery` — methods, carriers, the courier's localities, countries;
   `delivery-points` — the points, bumped by every page of a points sync.
-- **Locality references** — `delivery_points` and `delivery_carrier_localities` keep a locality
+- **Locality references** — `delivery_points`, `delivery_carrier_localities`, `delivery_selections` keep a locality
   from deletion: the geography's editor switches it off instead.
 
 ## Change it without forking
@@ -116,6 +124,7 @@ checkout of `webx-ui/module-orders` asks it; orders work without it. Words — `
 - `vendor/bin/phpunit packages/module-delivery/tests` from `php/` of the monorepo — the registries,
   the methods of a locality on hand-made towns, the default checks, the quotes, the popular towns,
   the migrations rolling back, the dictionary in ten languages.
+- `ChainTest` — the table of §9.3 on a real cart, paid by store, per-cent discount and wallet, cache, `Order`.
 - `MethodsTest::a_warm_list_costs_…` — a warm list is two queries whatever the number of methods.
 - `SyncVolumeTest` — 30 000 points of `FakeCarrier` in pages of 500, each page 4 queries;
   `SyncTest` — a page twice makes no second row, an empty answer is held, a failure part-way
@@ -129,5 +138,5 @@ checkout of `webx-ui/module-orders` asks it; orders work without it. Words — `
 ## Read more
 
 - [README.md](README.md) in this directory — the API with examples.
-- The delivery spec, §5 (tables), §6 (contract and registry), §7 (sync), §8 (streets), §10 (built-in methods), decision 40
+- The delivery spec, §5 (tables), §6 (contract and registry), §7 (sync), §8 (streets), §9 (money), §10 (built-in methods), decision 40
   (popular towns): https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_DELIVERY.md

@@ -2,7 +2,7 @@
 
 Статус: принята (webx-ui#59, 27.10.2026); реализация — webx-ui#99: `webx-ui/geography` (этапы
 2–3), пакет `module-delivery` с реестрами и своими способами (этап 4), синхронизация пунктов и
-точек служб (этап 5) и улицы (этап 6) в коде, не выпущены.
+точек служб (этап 5), улицы (этап 6) и деньги в цепочке корзины (этап 7) в коде, не выпущены.
 Решения человека 02.11.2026 (40–42) вписаны. Карта семейства —
 [`WEBX_UI_COMMERCE.md`](WEBX_UI_COMMERCE.md), корзина и её цепочка итогов —
 [`WEBX_UI_MODULE_CART.md`](WEBX_UI_MODULE_CART.md). Пакет — `webx-ui/module-delivery` (composer,
@@ -1238,6 +1238,51 @@ final class Quote
 - **Подсказка** «до бесплатной доставки осталось N» — `HintSource` правил корзины, не доставки.
 - **В снимок** привилегия попадает дважды: в привилегии заказа (корзина → заказ) и флагом
   `paid_by_store` блока доставки — менеджер и накладная читают второй.
+
+**Как сделано (этап 7).**
+
+- **Цена способа** — `WebxUi\Delivery\Quotes::quote($method, $type, $context)`; через него считает и
+  `Methods` (список шага), и цепочка. Свои способы (`store`) не кешируются: цена из строки
+  способа, правка в панели видна сразу. Цена спутника — в `Cache` по ключу
+  `delivery.quotes:<хеш>`: строка способа целиком (правка цены или настроек — другой ключ),
+  пункт, пункт службы, валюта, сумма строк и shippable-строки (тип, ref, `effectiveQty`, цена,
+  опции); TTL — `webx-delivery.quotes.ttl` (600 с). Кеш хранит массив (`Quote::toStored()` /
+  `fromStored()`) и цену до привилегии — привилегия накладывается каждый раз.
+- **Таймаут** — `webx-delivery.quotes.timeout` (2 с), спутник отдаёт его своему HTTP-клиенту
+  (`app(Quotes::class)->timeout()`): PHP не прервёт чужой вызов снаружи. Исключение спутника на
+  показе — `carrierRates()`, строка в лог, способ в списке, в кеш не пишется; ответ дольше таймаута
+  — строка в лог. **Параллельный расчёт** способов не сделан: цепочка считает один выбранный
+  способ, а список шага (этап 8) — по одному; `Http::pool` — дело спутника.
+- **`Purpose::Order`** — без чтения кеша и без отката: исключение спутника — `QuoteFailed`
+  («Could not calculate delivery, choose another method.», `method`, исходное — `previous`);
+  выбранный способ больше не предлагается в пункте — тоже `QuoteFailed`. Вычислитель корзины при
+  `Order` пробрасывает его дальше — заказ не создаётся.
+- **Привилегия** — `Quote::paidByStore()`: `fixed(N)` → `free(was: N)`, `carrierRates(e)` →
+  `free(was: e)`, `payer = Store`, `reason = shipping.paid_by_store` (`isPaidByStore()` — флаг снимка);
+  `free` и `unavailable` не меняются. Только у способа с `honours_paid_by_store`.
+- **Источник цепочки** — `DeliveryAdjustments` (`PRIORITY = 1000`, `source = delivery`), регистрируется
+  в `boot()` через `callAfterResolving(AdjustmentSources::class)`. Привилегии корзина считает на
+  шаге 7, после сумм, а доставке они нужны на шаге 4 — **источник сам спрашивает `BenefitSources`**
+  с тем контекстом, что видит (строки и скидки до него; оплат ещё нет), и собирает из него
+  `CartState` для `DeliveryContext`. Упавший источник привилегий пропускается с записью в лог
+  (предупреждение цепочки даст сам шаг 7), при `Order` — пробрасывается. Подпись строки —
+  `delivery.totals.delivery` («Delivery»), `meta` — `kind`, `method`, `type`, `quote`.
+- **Выбор корзины** — таблица `delivery_selections` (§5) заведена этим этапом: цепочке нужно, что
+  читать. Чтение — `CartDelivery` (`scoped`, мемо выбора и пункта на запрос, `forget($cartId)` — для
+  того, кто пишет выбор); запись (`PUT /api/delivery/selection`) — этап 8. Пункт выбора держит
+  `LocalityReferences` (решение 42).
+- **Строка «Стоимость доставки»** — `Delivery::cost(CartState $state, int $cartId, Purpose)` →
+  `DeliveryCost` (`label`, `text` — сумма, «Free» или «By carrier rates», суммы с `*_formatted`,
+  `in_total`, `paid_by_store`); `null` — доставка не нужна, способ не выбран или больше не
+  предлагается. В самом `CartState` корзины поля доставки нет — контракт корзины не меняется;
+  `ShippingSlot::totalsLine()` (этап 8) строит `ShippingLine` из `DeliveryCost`.
+  `Delivery::quoteFor(Selection, DeliveryContext)` — цена выбора или `unavailable` с причиной.
+  `Methods::option($context, $methodId)` — один способ без расчёта остальных.
+- **Реестр `BenefitKeys`** — в `module-cart` (`register`, `has`, `keys`, `options`); доставка
+  регистрирует `shipping.paid_by_store` с подписью `webx-delivery::delivery.benefits.paid_by_store`
+  («The shop pays for delivery»); `cart://catalog` перечисляет ключи в `benefit_keys`.
+- Тесты — `ChainTest` (таблица §9.3 на настоящей корзине и её вычислителе, процентная скидка и
+  кошелёк, кеш, `Order`, снятый способ), `QuoteTest`, `BenefitKeysTest` корзины.
 
 ## 10. Встроенные способы
 

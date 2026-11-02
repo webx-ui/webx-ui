@@ -6,6 +6,7 @@ namespace WebxUi\Cart\Mcp;
 
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Contracts\Translation\Translator;
+use WebxUi\Cart\BenefitKeys;
 use WebxUi\Cart\Contracts\ChecksOptions;
 use WebxUi\Cart\Contracts\CurrencySource;
 use WebxUi\Cart\Contracts\ResolvesWithOptions;
@@ -39,6 +40,7 @@ final class CartResources
         private readonly TenderSources $tenders,
         private readonly BenefitSources $benefits,
         private readonly HintSources $hints,
+        private readonly BenefitKeys $benefitKeys,
         private readonly CurrencySource $currencies,
         private readonly Calculator $calculator,
         private readonly Locales $locales,
@@ -57,7 +59,7 @@ final class CartResources
                 'Cart catalog',
                 'What can go into a cart (the purchasable types and whether each takes options), the sources of every '
                 .'link of the totals chain in the order they run, the currency, the limits and lifetimes, the fields of '
-                .'a cart\'s state and of a line, and the warning codes with their phrases. Read it before cart_quote.',
+                .'a cart\'s state and of a line, the benefit keys modules understand, and the warning codes with their phrases. Read it before cart_quote.',
                 fn (): array => $this->catalog(),
             ),
         ];
@@ -87,6 +89,8 @@ final class CartResources
                 'benefits' => $this->sources($this->benefits),
                 'hints' => $this->sources($this->hints),
             ],
+            // The benefits rules may grant, with the label of the site's default language.
+            'benefit_keys' => $this->benefitKeys($locale),
             'settings' => [
                 'currency' => $this->currencies->currency(),
                 'cookie_days' => $this->config->get('webx-cart.cookie.days'),
@@ -102,6 +106,18 @@ final class CartResources
                 'phrase' => (string) $this->translator->get('webx-cart::warnings.'.$code, [], $locale),
             ], Warning::CODES),
         ];
+    }
+
+    /** @return list<array{key: string, label: string}> */
+    private function benefitKeys(string $locale): array
+    {
+        $keys = [];
+
+        foreach ($this->benefitKeys->options($locale) as $key => $label) {
+            $keys[] = ['key' => $key, 'label' => $label];
+        }
+
+        return $keys;
     }
 
     /**
