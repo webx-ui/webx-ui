@@ -49,6 +49,14 @@ return [
     'hints' => [
         'no_streets' => 'La livraison par coursier n’est pas disponible ici, choisissez un autre mode',
     ],
+    // A street of a carrier's directory as shown: its name with the type word where the language puts it.
+    'street_kinds' => [
+        'street' => 'rue :name',
+        'avenue' => 'avenue :name',
+        'lane' => 'allée :name',
+        'square' => 'place :name',
+        'other' => ':name',
+    ],
     'errors' => [
         'choose_point' => 'Choisissez un point de retrait.',
         'point_gone' => 'Ce point de retrait n’est plus disponible, choisissez-en un autre.',

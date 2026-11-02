@@ -49,6 +49,14 @@ return [
     'hints' => [
         'no_streets' => 'Buraya kurye ile teslimat yok, başka bir yöntem seçin',
     ],
+    // A street of a carrier's directory as shown: its name with the type word where the language puts it.
+    'street_kinds' => [
+        'street' => ':name Sokak',
+        'avenue' => ':name Caddesi',
+        'lane' => ':name Çıkmazı',
+        'square' => ':name Meydanı',
+        'other' => ':name',
+    ],
     'errors' => [
         'choose_point' => 'Bir teslim alma noktası seçin.',
         'point_gone' => 'Teslim alma noktası artık kullanılamıyor, başka birini seçin.',

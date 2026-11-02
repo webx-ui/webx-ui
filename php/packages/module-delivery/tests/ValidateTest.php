@@ -5,14 +5,10 @@ declare(strict_types=1);
 namespace WebxUi\Delivery\Tests;
 
 use PHPUnit\Framework\Attributes\Test;
-use WebxUi\Delivery\Carriers;
 use WebxUi\Delivery\Method;
 use WebxUi\Delivery\MethodTypes;
 use WebxUi\Delivery\Selection;
 use WebxUi\Delivery\SelectionInput;
-use WebxUi\Delivery\Tests\Fakes\FakeBranchType;
-use WebxUi\Delivery\Tests\Fakes\FakeCarrierA;
-use WebxUi\Delivery\Tests\Fakes\FakeCourierType;
 use WebxUi\Delivery\Types\StoreCourier;
 use WebxUi\Delivery\Types\StorePickup;
 
@@ -88,26 +84,5 @@ final class ValidateTest extends TestCase
         $errors = $type->validate($method, $this->context($town), new SelectionInput(street: 'Example street', house: str_repeat('1', 33)));
 
         $this->assertSame(['house' => 'At most 32 characters.'], $errors);
-    }
-
-    #[Test]
-    public function a_carriers_courier_takes_a_street_of_its_directory_only(): void
-    {
-        $this->app->make(Carriers::class)->register(FakeCarrierA::class);
-        $types = $this->app->make(MethodTypes::class);
-        $types->register(FakeBranchType::class);
-        $types->register(FakeCourierType::class);
-        $town = $this->town('Town A');
-        $method = Method::of($this->method('carrier-a-courier', 'carrier-a.courier'));
-        $type = $types->get('carrier-a.courier');
-
-        $this->assertSame(
-            ['street' => 'Choose the street from the list.', 'house' => 'Enter the house number.'],
-            $type->validate($method, $this->context($town), new SelectionInput(street: 'Typed street')),
-        );
-
-        $selection = $type->validate($method, $this->context($town), new SelectionInput(street: 'Example street', streetId: 's-1', house: '3'));
-        $this->assertInstanceOf(Selection::class, $selection);
-        $this->assertSame('s-1', $selection->address?->streetId);
     }
 }

@@ -49,6 +49,14 @@ return [
     'hints' => [
         'no_streets' => 'Кур’єр сюди не доставляє, виберіть інший спосіб',
     ],
+    // A street of a carrier's directory as shown: its name with the type word where the language puts it.
+    'street_kinds' => [
+        'street' => 'вул. :name',
+        'avenue' => 'просп. :name',
+        'lane' => 'пров. :name',
+        'square' => 'пл. :name',
+        'other' => ':name',
+    ],
     'errors' => [
         'choose_point' => 'Виберіть пункт видачі.',
         'point_gone' => 'Пункт видачі більше не працює, виберіть інший.',

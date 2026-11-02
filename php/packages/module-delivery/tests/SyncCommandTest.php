@@ -68,7 +68,7 @@ final class SyncCommandTest extends SyncTestCase
     #[Test]
     public function a_directory_or_trigger_that_does_not_exist_is_refused(): void
     {
-        $this->artisan('webx:delivery:sync', ['--directory' => ['streets']])->assertFailed();
+        $this->artisan('webx:delivery:sync', ['--directory' => ['roads']])->assertFailed();
         $this->artisan('webx:delivery:sync', ['--trigger' => 'cron'])->assertFailed();
         $this->artisan('webx:delivery:sync', ['carrier' => 'carrier-z'])->assertFailed();
     }

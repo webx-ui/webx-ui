@@ -20,6 +20,8 @@ checkout of `webx-ui/module-orders` asks it; orders work without it. Words — `
     `status`, `method`, `reason`, `candidates`, `record`, `features` (`["courier"]`), `streets`;
   - `delivery_points` — the points of every carrier and of the shop (`carrier = store`), with the
     normalised `search` string the model writes;
+  - `delivery_streets` — the streets of carriers by their locality (`carrier_locality_id`),
+    `names`, `kind`, `name_key`; written by the sync only;
   - `delivery_sync_runs` — the journal of directory syncs: `status` (`running`, `succeeded`,
     `failed`, `held`), `trigger`, `cursor`, counters, `error` (the base's words), `warnings`; the
     last 100 runs of each carrier's directory are kept;
@@ -47,14 +49,20 @@ checkout of `webx-ui/module-orders` asks it; orders work without it. Words — `
 - **`PointKinds`** — the built-in kinds with the dictionary's words and the shop's own.
 - **Directory sync** (§7) in `WebxUi\Delivery\Sync`: a satellite's carrier implements
   `Contracts\SyncsDirectories` (`directories()` — `DirectorySchedule`s, `pull($directory, $cursor)`
-  — a `Page` of `LocalityRecord`s of the geography or `PointRecord`s, `CarrierUnavailable` on
-  failure). `Synchronizer` writes a page in one transaction with the run's cursor, matches
+  — a `Page` of `LocalityRecord`s of the geography, `PointRecord`s or `StreetRecord`s,
+  `CarrierUnavailable` on failure). `Synchronizer` writes a page in one transaction with the run's cursor, matches
   localities with the geography's `Matcher`, removes what a complete pass did not see — or holds
   the run when that is over `webx-delivery.sync.max_removal_share` (10 %) and `confirm()` removes
-  it — and recounts `geo_localities.weight` after points. `Directories` — who syncs, the cron, the
+  it — and recounts `geo_localities.weight` after points, the `streets` of each binding after
+  streets (a locality with a courier and no street — `warnings.no_streets`). Points and streets
+  follow a successful pass of localities. `Directories` — who syncs, the cron, the
   last success, `stale()`. `SyncDirectory` — the queued job (3 tries, 60/300/900 s, from the
   same cursor). `StoredLeadingCarriers` — the first carrier to sync a country leads it, kept in
   the `store` row's `meta`.
+- **`Streets`** — what the step reads, never the carrier: `forCarrier($carrier, $locality, $q)`
+  (a prefix inside the locality, ≤ 10, two queries), `forStore($locality, $q)` (the carriers'
+  streets of the town as text), `find()`, `count()`. A carrier's courier takes a street of its
+  directory only; without streets it is disabled and `validate()` refuses it under `method`.
 - **Command** `webx:delivery:sync {carrier?} {--directory=*} {--trigger=} {--queue}`; the schedule
   runs each carrier's directories by their cron, localities before points, through the queue.
 - **`webx:doctor`** — `Doctor\SyncCheck`: a directory whose last success is older than three
@@ -100,6 +108,8 @@ checkout of `webx-ui/module-orders` asks it; orders work without it. Words — `
   writes them — idempotency, removal and the journal are one for every carrier. The shop's own
   points (`carrier = store`) are never synced.
 - Do not delete `removed_at` rows by hand: carts and shipments still name them.
+- Do not write a street the buyer typed anywhere but the selection: `delivery_streets` is the
+  carriers' directory, the geography is the shop's (decision 31).
 
 ## Check your work
 
@@ -109,7 +119,8 @@ checkout of `webx-ui/module-orders` asks it; orders work without it. Words — `
 - `MethodsTest::a_warm_list_costs_…` — a warm list is two queries whatever the number of methods.
 - `SyncVolumeTest` — 30 000 points of `FakeCarrier` in pages of 500, each page 4 queries;
   `SyncTest` — a page twice makes no second row, an empty answer is held, a failure part-way
-  removes nothing.
+  removes nothing. `StreetsTest` — streets by pages, the threshold, the counts, both couriers,
+  no pull from the step; `SyncVolumeTest` — 300 000 streets, a page of 2 000 in 4 queries.
 - `php artisan webx:delivery:sync` says each run: pages, seen, new, updated, removed, held;
   `php artisan webx:doctor` says a stale or held directory.
 - A method you turned on shows in `app(Methods::class)->forLocality($context)`; `evaluate()` says
@@ -118,5 +129,5 @@ checkout of `webx-ui/module-orders` asks it; orders work without it. Words — `
 ## Read more
 
 - [README.md](README.md) in this directory — the API with examples.
-- The delivery spec, §5 (tables), §6 (contract and registry), §7 (sync), §10 (built-in methods), decision 40
+- The delivery spec, §5 (tables), §6 (contract and registry), §7 (sync), §8 (streets), §10 (built-in methods), decision 40
   (popular towns): https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_DELIVERY.md

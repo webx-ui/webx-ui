@@ -49,6 +49,14 @@ return [
     'hints' => [
         'no_streets' => 'La entrega a domicilio no está disponible aquí, elige otro método',
     ],
+    // A street of a carrier's directory as shown: its name with the type word where the language puts it.
+    'street_kinds' => [
+        'street' => 'calle :name',
+        'avenue' => 'avenida :name',
+        'lane' => 'callejón :name',
+        'square' => 'plaza :name',
+        'other' => ':name',
+    ],
     'errors' => [
         'choose_point' => 'Elige un punto de recogida.',
         'point_gone' => 'El punto de recogida ya no está disponible, elige otro.',

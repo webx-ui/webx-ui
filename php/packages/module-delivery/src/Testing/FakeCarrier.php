@@ -15,6 +15,7 @@ use WebxUi\Delivery\Sync\Limits;
 use WebxUi\Delivery\Sync\Page;
 use WebxUi\Delivery\Sync\PointRecord;
 use WebxUi\Delivery\Sync\Schedule;
+use WebxUi\Delivery\Sync\StreetRecord;
 use WebxUi\Geography\Matching\LocalityRecord;
 
 /**
@@ -25,7 +26,10 @@ use WebxUi\Geography\Matching\LocalityRecord;
  * spelled with a typographic apostrophe («O’Town N»), every other one with a courier; and two
  * namesake villages «Village Same» in Region A and Region B. Points `P0…` are branches and every
  * third a locker, spread over the localities in turn, at «N Example street», phone
- * `+800 1234 5678`.
+ * `+800 1234 5678`. Streets `S0…` (only when asked for: a carrier without a courier declares no
+ * streets directory) go to the localities with a courier in turn — all but `L0`, the city where
+ * the carrier says it goes to doors and gives no street (§8.2); every eighth is spelled with a
+ * typographic apostrophe («O’Neil 7»).
  *
  * What a test needs to go wrong goes wrong on request: a page that fails, a directory that comes
  * back empty, records that vanish, and a lock that makes any `pull()` outside a sync throw — the
@@ -56,14 +60,18 @@ final class FakeCarrier implements Carrier, SyncsDirectories
         public int $points = 200,
         public int $pageSize = 500,
         public bool $namesakes = true,
+        public int $streets = 0,
+        public int $streetPageSize = 2000,
     ) {}
 
     /** The size of the directories and of a page. */
-    public function size(?int $localities = null, ?int $points = null, ?int $pageSize = null): self
+    public function size(?int $localities = null, ?int $points = null, ?int $pageSize = null, ?int $streets = null, ?int $streetPageSize = null): self
     {
         $this->localities = $localities ?? $this->localities;
         $this->points = $points ?? $this->points;
         $this->pageSize = $pageSize ?? $this->pageSize;
+        $this->streets = $streets ?? $this->streets;
+        $this->streetPageSize = $streetPageSize ?? $this->streetPageSize;
 
         return $this;
     }
@@ -150,10 +158,17 @@ final class FakeCarrier implements Carrier, SyncsDirectories
 
     public function directories(): array
     {
-        return [
+        $directories = [
             new DirectorySchedule(Directory::Localities, '30 3 * * *', $this->pageSize),
             new DirectorySchedule(Directory::Points, '30 3 * * *', $this->pageSize),
         ];
+
+        if ($this->streets > 0) {
+            // Streets change least and take longest: once a week (§7.1).
+            $directories[] = new DirectorySchedule(Directory::Streets, '0 4 * * 0', $this->streetPageSize);
+        }
+
+        return $directories;
     }
 
     public function pull(Directory $directory, ?string $cursor): Page
@@ -163,8 +178,9 @@ final class FakeCarrier implements Carrier, SyncsDirectories
         }
 
         $this->pulls[] = ['directory' => $directory->value, 'cursor' => $cursor];
+        $size = max(1, $directory === Directory::Streets ? $this->streetPageSize : $this->pageSize);
         $offset = max(0, (int) $cursor);
-        $number = intdiv($offset, max(1, $this->pageSize)) + 1;
+        $number = intdiv($offset, $size) + 1;
 
         if (($this->failures[$directory->value][$number] ?? 0) > 0) {
             $this->failures[$directory->value][$number]--;
@@ -179,22 +195,28 @@ final class FakeCarrier implements Carrier, SyncsDirectories
         $total = $this->total($directory);
         $records = [];
 
-        for ($index = $offset; $index < min($total, $offset + $this->pageSize); $index++) {
+        for ($index = $offset; $index < min($total, $offset + $size); $index++) {
             if (! isset($this->dropped[$directory->value][$index])) {
-                $records[] = $directory === Directory::Localities ? $this->locality($index) : $this->point($index);
+                $records[] = match ($directory) {
+                    Directory::Localities => $this->locality($index),
+                    Directory::Points => $this->point($index),
+                    Directory::Streets => $this->street($index),
+                };
             }
         }
 
-        $next = $offset + $this->pageSize;
+        $next = $offset + $size;
 
         return new Page($records, $next < $total ? (string) $next : null);
     }
 
     public function total(Directory $directory): int
     {
-        return $directory === Directory::Localities
-            ? $this->localities + ($this->namesakes ? 2 : 0)
-            : $this->points;
+        return match ($directory) {
+            Directory::Localities => $this->localities + ($this->namesakes ? 2 : 0),
+            Directory::Points => $this->points,
+            Directory::Streets => $this->streets,
+        };
     }
 
     public function locality(int $index): LocalityRecord
@@ -248,6 +270,29 @@ final class FakeCarrier implements Carrier, SyncsDirectories
                 : new Schedule(['mon' => [['09:00', '18:00']], 'tue' => [['09:00', '18:00']], 'wed' => [['09:00', '18:00']], 'thu' => [['09:00', '18:00']], 'fri' => [['09:00', '18:00']], 'sat' => [], 'sun' => null]),
             limits: new Limits(maxWeightG: $locker ? 20000 : 30000, cod: ! $locker),
             phone: '+800 1234 5678',
+        );
+    }
+
+    /** The locality index of street `$index`: the localities with a courier but `L0`, in turn. */
+    public function streetLocality(int $index): int
+    {
+        $couriers = max(1, intdiv($this->localities - 1, 2));
+
+        return 2 * (1 + $index % $couriers);
+    }
+
+    public function street(int $index): StreetRecord
+    {
+        $words = ['Example', 'Sample', 'Oak', 'Maple', 'River', 'Hill', 'Garden', 'O’Neil'];
+        $kinds = ['street', 'street', 'street', 'street', 'street', 'street', 'street', 'avenue', 'lane', 'square'];
+        $name = $words[$index % 8].' '.$index;
+
+        return new StreetRecord(
+            externalId: 'S'.$index,
+            localityExternalId: 'L'.$this->streetLocality($index),
+            name: $name,
+            kind: $kinds[$index % 10],
+            names: ['en' => $name],
         );
     }
 }

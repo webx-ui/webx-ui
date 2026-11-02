@@ -41,6 +41,7 @@ class DeliveryServiceProvider extends ServiceProvider
         $this->app->singleton(Methods::class);
         $this->app->singleton(Delivery::class);
         $this->app->singleton(Points::class);
+        $this->app->singleton(Streets::class);
         $this->app->singleton(PointKinds::class);
         $this->app->singleton(PopularLocalities::class);
         $this->app->singleton(Directories::class);

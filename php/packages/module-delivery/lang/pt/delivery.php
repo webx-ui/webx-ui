@@ -49,6 +49,14 @@ return [
     'hints' => [
         'no_streets' => 'A entrega por estafeta não está disponível aqui, escolha outro método',
     ],
+    // A street of a carrier's directory as shown: its name with the type word where the language puts it.
+    'street_kinds' => [
+        'street' => 'rua :name',
+        'avenue' => 'avenida :name',
+        'lane' => 'travessa :name',
+        'square' => 'praça :name',
+        'other' => ':name',
+    ],
     'errors' => [
         'choose_point' => 'Escolha um ponto de recolha.',
         'point_gone' => 'O ponto de recolha já não está disponível, escolha outro.',

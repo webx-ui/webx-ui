@@ -32,6 +32,9 @@ final class Synchronizer
 
     public const float DEFAULT_MAX_REMOVAL_SHARE = 0.1;
 
+    /** The warning of a streets pass: localities where the carrier has a courier and no street (§8.2). */
+    public const string NO_STREETS = 'no_streets';
+
     /** The journal keeps this many runs of each carrier's directory (§5). */
     public const int KEEP_RUNS = 100;
 
@@ -39,6 +42,7 @@ final class Synchronizer
         private readonly Directories $directories,
         private readonly LocalityPages $localities,
         private readonly PointPages $points,
+        private readonly StreetPages $streets,
         private readonly CacheGroups $groups,
         private readonly Config $config,
     ) {}
@@ -122,6 +126,7 @@ final class Synchronizer
             $result = match ($run->directory) {
                 Directory::Localities => $this->localities->write($run->carrier, $run->id, array_values($page->records)),
                 Directory::Points => $this->points->write($run->carrier, $run->id, array_values($page->records)),
+                Directory::Streets => $this->streets->write($run->carrier, $run->id, array_values($page->records)),
             };
 
             $warnings = $run->warnings ?? [];
@@ -299,7 +304,8 @@ final class Synchronizer
 
     /**
      * Marks what the run did not see as removed. Removed, not deleted: carts and shipments still
-     * name them (§7.5). The points of a removed locality go with it.
+     * name them (§7.5). The points and streets of a removed locality go with it, and its count of
+     * streets with them: a locality that comes back has none in force until the next streets pass.
      */
     private function remove(DeliverySyncRun $run): int
     {
@@ -311,19 +317,38 @@ final class Synchronizer
                 ->whereNull('removed_at')
                 ->whereIn('carrier_locality_id', $this->vanished($run)->select('id'))
                 ->update(['removed_at' => $now, 'updated_at' => $now]);
+
+            DB::table('delivery_streets')
+                ->where('carrier', $run->carrier)
+                ->whereNull('removed_at')
+                ->whereIn('carrier_locality_id', $this->vanished($run)->select('id'))
+                ->update(['removed_at' => $now, 'updated_at' => $now]);
+
+            return $this->vanished($run)->update(['removed_at' => $now, 'streets' => 0, 'updated_at' => $now]);
         }
 
         return $this->vanished($run)->update(['removed_at' => $now, 'updated_at' => $now]);
     }
 
-    /** After the pass: the points the checkout reads, the order of the suggestions, the journal's length. */
+    /**
+     * After the pass: the points the checkout reads, the order of the suggestions, the streets a
+     * courier has in each locality, the journal's length.
+     */
     private function after(DeliverySyncRun $run): void
     {
         if ($run->directory === Directory::Points) {
             $this->weigh($run->carrier);
         }
 
-        $this->groups->bump(self::POINTS_GROUP);
+        if ($run->directory === Directory::Streets) {
+            $this->countStreets($run);
+        }
+
+        // Streets are not cached: their suggestions are one query by the index (§17).
+        if ($run->directory !== Directory::Streets) {
+            $this->groups->bump(self::POINTS_GROUP);
+        }
+
         $this->prune($run);
     }
 
@@ -353,6 +378,39 @@ final class Synchronizer
             ]);
     }
 
+    /**
+     * The streets in force of each of the carrier's localities, by one `UPDATE` (§7.3): `0` turns
+     * its courier there off (§8.2). A locality where the carrier says it goes to doors and has no
+     * street is the carrier's directory gone wrong — the run says how many in its warnings.
+     */
+    private function countStreets(DeliverySyncRun $run): void
+    {
+        DB::table('delivery_carrier_localities')
+            ->where('carrier', $run->carrier)
+            ->update([
+                'streets' => DB::raw('(select count(*) from delivery_streets s where s.carrier_locality_id = delivery_carrier_localities.id and s.removed_at is null)'),
+            ]);
+
+        $without = DB::table('delivery_carrier_localities')
+            ->where('carrier', $run->carrier)
+            ->whereNull('removed_at')
+            ->where('streets', 0)
+            ->where('features', 'like', '%"courier"%');
+
+        $count = (clone $without)->count();
+        $warnings = $run->warnings ?? [];
+        unset($warnings[self::NO_STREETS]);
+
+        if ($count > 0) {
+            $warnings[self::NO_STREETS] = [
+                'count' => $count,
+                'ids' => $without->orderBy('id')->limit(50)->pluck('external_id')->map(static fn (mixed $id): string => (string) $id)->all(),
+            ];
+        }
+
+        $run->forceFill(['warnings' => $warnings === [] ? null : $warnings])->save();
+    }
+
     /** The journal keeps the last {@see KEEP_RUNS} runs of a carrier's directory. */
     private function prune(DeliverySyncRun $run): void
     {
@@ -369,8 +427,11 @@ final class Synchronizer
     /** The directory's rows of the carrier. */
     private function rows(DeliverySyncRun $run): Builder
     {
-        return DB::table($run->directory === Directory::Localities ? 'delivery_carrier_localities' : 'delivery_points')
-            ->where('carrier', $run->carrier);
+        return DB::table(match ($run->directory) {
+            Directory::Localities => 'delivery_carrier_localities',
+            Directory::Points => 'delivery_points',
+            Directory::Streets => 'delivery_streets',
+        })->where('carrier', $run->carrier);
     }
 
     /** The rows still in force that the run did not see. */

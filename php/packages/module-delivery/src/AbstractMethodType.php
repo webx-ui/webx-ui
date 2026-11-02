@@ -85,11 +85,23 @@ abstract class AbstractMethodType implements MethodType
     {
         $errors = [];
         $store = $this->carrier() === Carriers::STORE;
+        $street = null;
 
-        // A carrier's courier takes a street of its directory only (decision 31): the id is what
-        // says the street is one. The shop's courier takes any text and never an id.
-        if (! $store && $input->streetId === null) {
-            $errors['street'] = $this->word('choose_street', $context);
+        // A carrier's courier takes a street of its directory only (decision 31): the id says
+        // which, and the name is the directory's, not what came with it. The shop's courier takes
+        // any text and never an id — what the buyer typed goes nowhere but the selection (§8.3).
+        if (! $store) {
+            $streets = app(Streets::class);
+            $street = $input->streetId === null ? null : $streets->find($this->carrier(), $context->locality->id, $input->streetId, $context->locale);
+
+            if ($street === null && $streets->count($this->carrier(), $context->locality->id) === 0) {
+                // No street of the carrier here: its courier cannot come, whatever is typed (§8.2).
+                return ['method' => (string) trans('webx-delivery::delivery.hints.no_streets', [], $context->locale)];
+            }
+
+            if ($street === null) {
+                $errors['street'] = $this->word('choose_street', $context);
+            }
         } elseif ($input->street === null) {
             $errors['street'] = $this->word('street_required', $context);
         } elseif (mb_strlen($input->street) > self::STREET_MAX) {
@@ -119,8 +131,8 @@ abstract class AbstractMethodType implements MethodType
         }
 
         return new Selection($method, $context->locality, address: new Address(
-            street: (string) $input->street,
-            streetId: $store ? null : $input->streetId,
+            street: $street->name ?? (string) $input->street,
+            streetId: $street?->streetId,
             house: (string) $input->house,
             apartment: $input->apartment,
             postcode: $input->postcode,

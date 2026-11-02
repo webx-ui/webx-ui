@@ -19,8 +19,9 @@ use WebxUi\Delivery\Models\DeliverySyncRun;
  * run, it writes pages for `webx-delivery.sync.job_seconds` and queues the rest: a worker's time
  * limit or a deploy cuts a run between pages, never inside one. A page the carrier failed throws,
  * and the queue tries it again from the same cursor after 60, 300, 900 seconds; the last failure
- * closes the run in the journal. When a directory succeeds, the next one of the list follows —
- * the points of a night after its localities.
+ * closes the run in the journal. The next directory of the list follows a successful one — the
+ * points and streets of a night after its localities; only a failed or held pass of localities
+ * stops the rest, which stand on them.
  */
 final class SyncDirectory implements ShouldQueue
 {
@@ -78,6 +79,7 @@ final class SyncDirectory implements ShouldQueue
         } catch (InvalidRecord $failure) {
             // Trying again gives the same records: the run fails at once.
             $sync->fail($run, $failure);
+            $this->next($bus, $directory, RunStatus::Failed);
 
             return;
         }
@@ -88,11 +90,7 @@ final class SyncDirectory implements ShouldQueue
             return;
         }
 
-        $rest = array_slice($this->directories, 1);
-
-        if ($rest !== [] && $run->refresh()->status === RunStatus::Succeeded) {
-            $bus->dispatch(new self($this->carrier, array_values($rest), $this->trigger));
-        }
+        $this->next($bus, $directory, $run->refresh()->status);
     }
 
     public function failed(?Throwable $failure): void
@@ -101,6 +99,19 @@ final class SyncDirectory implements ShouldQueue
 
         if ($run instanceof DeliverySyncRun && $run->isRunning()) {
             app(Synchronizer::class)->fail($run, $failure ?? new CarrierUnavailable('The sync job failed.'));
+            $this->next(app(Dispatcher::class), $run->directory, RunStatus::Failed);
         }
+    }
+
+    /** The rest of the list after a pass: points and streets need a successful pass of localities. */
+    private function next(Dispatcher $bus, Directory $done, RunStatus $status): void
+    {
+        $rest = array_values(array_slice($this->directories, 1));
+
+        if ($rest === [] || ($done === Directory::Localities && $status !== RunStatus::Succeeded)) {
+            return;
+        }
+
+        $bus->dispatch(new self($this->carrier, $rest, $this->trigger));
     }
 }

@@ -15,7 +15,7 @@ final class MigrationsTest extends TestCase
 {
     private const array TABLES = [
         'delivery_carriers', 'delivery_methods', 'delivery_method_localities', 'delivery_sync_runs',
-        'delivery_carrier_localities', 'delivery_points', 'delivery_popular_localities',
+        'delivery_carrier_localities', 'delivery_points', 'delivery_popular_localities', 'delivery_streets',
     ];
 
     #[Test]

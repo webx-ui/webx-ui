@@ -89,13 +89,13 @@ come with it.
 
 ## Directories of a carrier
 
-A carrier that keeps its localities and points on the site implements `SyncsDirectories`. It
+A carrier that keeps its localities, points and streets on the site implements `SyncsDirectories`. It
 returns records page by page; the base writes them, matches the localities with the shared
 geography, keeps a journal and removes what the carrier no longer has.
 
 ```php
 use WebxUi\Delivery\Contracts\SyncsDirectories;
-use WebxUi\Delivery\Sync\{CarrierUnavailable, Directory, DirectorySchedule, Page, PointRecord};
+use WebxUi\Delivery\Sync\{CarrierUnavailable, Directory, DirectorySchedule, Page, PointRecord, StreetRecord};
 use WebxUi\Geography\Matching\LocalityRecord;
 
 final class CarrierA implements Carrier, SyncsDirectories
@@ -105,6 +105,8 @@ final class CarrierA implements Carrier, SyncsDirectories
         return [
             new DirectorySchedule(Directory::Localities, '30 3 * * *'),
             new DirectorySchedule(Directory::Points, '30 3 * * *'),
+            // Only a carrier that goes to doors: weekly, pages of 2 000 narrow rows.
+            new DirectorySchedule(Directory::Streets, '0 4 * * 0', pageSize: 2000),
         ];
     }
 
@@ -116,6 +118,7 @@ final class CarrierA implements Carrier, SyncsDirectories
         return new Page(array_map(fn (array $row) => match ($directory) {
             Directory::Localities => new LocalityRecord(externalId: $row['id'], country: 'XX', name: $row['name'], kind: 'town', region: $row['region']),
             Directory::Points => new PointRecord(externalId: $row['id'], kind: 'branch', localityExternalId: $row['town'], address: $row['address'], number: $row['no']),
+            Directory::Streets => new StreetRecord(externalId: $row['id'], localityExternalId: $row['town'], name: $row['name'], kind: 'street'),
         }, $answer['items']), $answer['next']);
     }
 }
@@ -128,6 +131,10 @@ final class CarrierA implements Carrier, SyncsDirectories
   run is `held`, nothing goes, and `app(Synchronizer::class)->confirm($run)` removes it. A run
   that fails part-way removes nothing.
 - Points of a locality not bound yet wait with `locality_id = null` and follow the binding.
+- Streets hang on the carrier's locality. After a streets pass every binding counts its streets
+  in force (`streets`, one `UPDATE`); a locality with the carrier's courier and no street is
+  `warnings.no_streets` of the run. Points and streets follow a successful pass of localities,
+  not each other.
 - `php artisan webx:delivery:sync [carrier] [--directory=points] [--queue]`; the schedule runs a
   carrier's directories by their cron, localities first; `webx-delivery.carriers.<key>.schedule.<directory>`
   overrides the cron or turns it to `manual`.
@@ -135,7 +142,34 @@ final class CarrierA implements Carrier, SyncsDirectories
   schedule, or its last pass is held.
 
 `WebxUi\Delivery\Testing\FakeCarrier` is «Carrier A» for tests: a directory of any size, a page
-that fails, an empty answer, records that vanish.
+that fails, an empty answer, records that vanish; streets when asked for (`size(streets: 300000)`),
+with `L0` a city where its courier goes and no street is given.
+
+## Streets
+
+What the step reads — the site's tables only, never the carrier (decision 38):
+
+```php
+use WebxUi\Delivery\Streets;
+
+$streets = app(Streets::class);
+
+// A carrier's courier: its streets in force in the locality, a prefix of the name, ≤ 10 — two queries.
+$streets->forCarrier('carrier-a', $localityId, 'exa', 'en');   // list<StreetRef>: streetId, name "Example 1 street"
+// The shop's courier: the streets every carrier bound to the town has there, as text (streetId null).
+$streets->forStore($localityId, 'exa', 'en');
+// The street a carrier's courier is sent to: in force, of this carrier, in this locality.
+$streets->find('carrier-a', $localityId, 'S1');
+```
+
+- A carrier's courier takes a street of its directory only (decision 31): `validate()` of
+  `AbstractMethodType` wants a `streetId` of it, and the name in the selection is the directory's.
+  Where the carrier has no street, the courier is shown disabled with a hint, and `validate()`
+  refuses it under `method` with the same words.
+- The shop's courier takes any text, never an id; what the buyer typed goes into the selection
+  only — not into `delivery_streets`, not into the geography.
+- A street is shown with its kind's word where the language puts it:
+  `webx-delivery::delivery.street_kinds.<kind>` («:name street», «ul. :name»).
 
 ## Popular towns
 

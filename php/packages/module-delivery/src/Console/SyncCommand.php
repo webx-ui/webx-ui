@@ -25,11 +25,11 @@ final class SyncCommand extends Command
 {
     protected $signature = 'webx:delivery:sync
         {carrier? : The carrier\'s key; every carrier that is on when left out}
-        {--directory=* : localities, points — all of the carrier\'s when left out}
+        {--directory=* : localities, points, streets — all of the carrier\'s when left out}
         {--trigger=command : Who asked — schedule, panel, mcp or command}
         {--queue : Queue the run instead of doing it here}';
 
-    protected $description = 'Sync the directories of delivery carriers: localities, then points';
+    protected $description = 'Sync the directories of delivery carriers: localities, then points and streets';
 
     public function handle(Directories $directories, Synchronizer $sync, Dispatcher $bus): int
     {
@@ -113,6 +113,8 @@ final class SyncCommand extends Command
     /** @param  list<string>  $directories */
     private function here(Synchronizer $sync, string $carrier, array $directories, Trigger $trigger): bool
     {
+        $ok = true;
+
         foreach ($directories as $index => $name) {
             try {
                 $run = $sync->run($carrier, Directory::from($name), $trigger);
@@ -128,18 +130,21 @@ final class SyncCommand extends Command
 
             $this->say($run);
 
-            if ($run->status !== RunStatus::Succeeded) {
+            $ok = $ok && $run->status !== RunStatus::Failed;
+
+            // Points and streets stand on the localities: only a pass of these stops the rest.
+            if ($run->status !== RunStatus::Succeeded && $name === Directory::Localities->value) {
                 $rest = array_slice($directories, $index + 1);
 
                 if ($rest !== []) {
                     $this->components->warn("{$carrier}: ".implode(', ', $rest).' not synced — they follow a successful '.$name.'.');
                 }
 
-                return $run->status !== RunStatus::Failed;
+                return $ok;
             }
         }
 
-        return true;
+        return $ok;
     }
 
     private function say(DeliverySyncRun $run): void
