@@ -156,6 +156,7 @@ final class GeographyController
         $regions = GeoRegion::query()
             ->where('country_code', $country)
             ->withCount('localities')
+            ->orderBy('position')
             ->orderBy('name_key')
             ->get();
 
@@ -165,8 +166,25 @@ final class GeographyController
             'names' => $region->names,
             'code' => $region->code,
             'country' => $region->country_code,
+            'position' => $region->position,
             'localities' => (int) $region->getAttribute('localities_count'),
         ])->values()->all());
+    }
+
+    /**
+     * The order of a country's regions: the ids as dragged. Only that country's are moved — an id
+     * of another one in the list is passed over, not pulled across.
+     */
+    public function orderRegions(Request $request): JsonResponse
+    {
+        $country = strtoupper(trim((string) $request->input('country')));
+        $ids = array_values(array_filter(array_map(intval(...), (array) $request->input('ids', []))));
+
+        foreach ($ids as $position => $id) {
+            GeoRegion::query()->whereKey($id)->where('country_code', $country)->update(['position' => $position]);
+        }
+
+        return ApiResponse::noContent();
     }
 
     public function storeRegion(Request $request): JsonResponse
@@ -339,6 +357,14 @@ final class GeographyController
     public function activate(GeoLocality $locality): JsonResponse
     {
         $this->editor->activate($locality);
+
+        return ApiResponse::noContent();
+    }
+
+    /** Out of the suggestions and kept: the «Switch off» of a row, whoever holds the locality. */
+    public function deactivate(GeoLocality $locality): JsonResponse
+    {
+        $this->editor->deactivate($locality);
 
         return ApiResponse::noContent();
     }

@@ -109,6 +109,7 @@ async function reorder(): Promise<void> {
       <template v-else>
         <wx-sortable-list
           v-model="rows"
+          class="wx-delivery-popular__list"
           hoverable
           plain
           item-key="id"
@@ -128,7 +129,7 @@ async function reorder(): Promise<void> {
             </span>
           </template>
 
-          <!-- Asked first, in the popover every list of the panel asks in (Catalog → properties). -->
+          <!-- Asked first, with the bin every dragged list of the panel removes by (SEO → links). -->
           <template v-if="canManage" #actions="{ item }">
             <wx-popconfirm
               :title="t('popular.remove-title', { name: item.name })"
@@ -142,7 +143,7 @@ async function reorder(): Promise<void> {
                 <wx-button
                   size="sm"
                   variant="text"
-                  icon="close"
+                  icon="trash"
                   :aria-label="t('popular.remove')"
                   data-test="popular-remove"
                 />
@@ -174,6 +175,12 @@ async function reorder(): Promise<void> {
 .wx-delivery-popular__help {
   color: var(--wx-text-muted);
   font-size: var(--wx-font-size-sm);
+}
+
+/* Off the card's edge on both sides: the bin at the end gets room, as the grip at the start has. */
+.wx-delivery-popular__list :deep(.wx-sortable-list__row) {
+  gap: var(--wx-space-8);
+  padding-inline: var(--wx-space-4) var(--wx-space-8);
 }
 
 .wx-delivery-popular__row {

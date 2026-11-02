@@ -172,6 +172,8 @@ export interface RegionRow {
   names: Record<string, string>
   code: string | null
   country: string
+  /** Where it stands in the country's own order; alphabetical breaks a tie. */
+  position: number
   localities: number
 }
 

@@ -315,8 +315,9 @@ const paneKey = computed(() => String(route.query.method ?? ''))
   padding: var(--wx-space-12);
 }
 
+/* Nothing stands above the list in its card, so it keeps off the top edge too (as Menu's lists do). */
 .wx-delivery-methods__list {
-  padding-inline: var(--wx-space-8);
+  padding: var(--wx-space-8);
 }
 
 .wx-delivery-methods__list :deep(.wx-sortable-list__row) {

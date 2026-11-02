@@ -97,6 +97,43 @@ final class GeographyPanelTest extends PanelTestCase
 
         $this->postJson($this->api('geography/localities/'.$held->id.'/activate'))->assertNoContent();
         $this->assertTrue($held->refresh()->active);
+
+        // The row's «Switch off»: out of the suggestions, still there.
+        $this->postJson($this->api('geography/localities/'.$held->id.'/deactivate'))->assertNoContent();
+        $this->assertFalse($held->refresh()->active);
+    }
+
+    #[Test]
+    public function the_regions_keep_the_order_they_are_dragged_to(): void
+    {
+        $this->signIn();
+        $this->postJson($this->api('geography/countries'), ['code' => 'XX'])->assertCreated();
+
+        $ids = [];
+
+        foreach (['Region A', 'Region B', 'Region C'] as $name) {
+            $ids[$name] = $this->postJson($this->api('geography/regions'), ['country' => 'XX', 'names' => ['en' => $name]])
+                ->assertCreated()
+                ->json('data.id');
+        }
+
+        // Made one after another, they come in that order before anyone drags.
+        $this->assertSame(['Region A', 'Region B', 'Region C'], array_column($this->getJson($this->api('geography/regions?country=XX'))->json('data'), 'name'));
+
+        $this->putJson($this->api('geography/regions/order'), [
+            'country' => 'XX',
+            'ids' => [$ids['Region C'], $ids['Region A'], $ids['Region B']],
+        ])->assertNoContent();
+
+        $this->assertSame(['Region C', 'Region A', 'Region B'], array_column($this->getJson($this->api('geography/regions?country=XX'))->json('data'), 'name'));
+
+        // A region made after the drag goes last, not over the first.
+        $this->postJson($this->api('geography/regions'), ['country' => 'XX', 'names' => ['en' => 'Region D']])->assertCreated();
+        $this->assertSame('Region D', $this->getJson($this->api('geography/regions?country=XX'))->json('data.3.name'));
+
+        // Ordering needs the right to manage.
+        $this->signIn(['delivery.view']);
+        $this->putJson($this->api('geography/regions/order'), ['country' => 'XX', 'ids' => [$ids['Region A']]])->assertForbidden();
     }
 
     #[Test]

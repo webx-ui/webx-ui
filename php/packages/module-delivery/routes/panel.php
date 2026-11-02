@@ -65,6 +65,7 @@ Route::prefix((string) config('webx-admin.api_path'))
                 Route::put('geography/countries/{code}/leader', [GeographyController::class, 'lead'])->where('code', '[A-Za-z]+')->name('countries.leader');
 
                 Route::post('geography/regions', [GeographyController::class, 'storeRegion'])->name('regions.store');
+                Route::put('geography/regions/order', [GeographyController::class, 'orderRegions'])->name('regions.order');
                 Route::put('geography/regions/{region}', [GeographyController::class, 'updateRegion'])->whereNumber('region')->name('regions.update');
                 Route::delete('geography/regions/{region}', [GeographyController::class, 'destroyRegion'])->whereNumber('region')->name('regions.destroy');
 
@@ -72,6 +73,7 @@ Route::prefix((string) config('webx-admin.api_path'))
                 Route::put('geography/localities/{locality}', [GeographyController::class, 'updateLocality'])->whereNumber('locality')->name('localities.update');
                 Route::delete('geography/localities/{locality}', [GeographyController::class, 'destroyLocality'])->whereNumber('locality')->name('localities.destroy');
                 Route::post('geography/localities/{locality}/activate', [GeographyController::class, 'activate'])->whereNumber('locality')->name('localities.activate');
+                Route::post('geography/localities/{locality}/deactivate', [GeographyController::class, 'deactivate'])->whereNumber('locality')->name('localities.deactivate');
 
                 Route::put('popular', [PopularController::class, 'update'])->name('popular.update');
                 Route::post('popular', [PopularController::class, 'store'])->name('popular.store');

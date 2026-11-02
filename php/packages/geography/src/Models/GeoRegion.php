@@ -17,6 +17,7 @@ use WebxUi\Geography\Normalizer;
  * @property int $id
  * @property string $country_code
  * @property string|null $code
+ * @property int $position
  * @property array<string, string> $names
  * @property string $name_key
  */
@@ -26,18 +27,26 @@ class GeoRegion extends Model
 
     protected $table = 'geo_regions';
 
-    protected $fillable = ['country_code', 'code', 'names', 'manual_fields'];
+    protected $fillable = ['country_code', 'code', 'position', 'names', 'manual_fields'];
 
     protected function casts(): array
     {
         return [
             'names' => 'array',
             'manual_fields' => 'array',
+            'position' => 'integer',
         ];
     }
 
     protected static function booted(): void
     {
+        // A new region goes after the ones already ordered, not over the first of them.
+        static::creating(static function (self $region): void {
+            if ($region->getAttribute('position') === null) {
+                $region->position = (int) static::query()->where('country_code', $region->country_code)->max('position') + 1;
+            }
+        });
+
         static::saving(static function (self $region): void {
             $region->name_key = Normalizer::key((string) Names::main($region->names));
         });

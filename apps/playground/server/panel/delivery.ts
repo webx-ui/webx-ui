@@ -46,6 +46,8 @@ interface Region {
   country: string
   names: Localized
   code: string | null
+  /** The country's own order, dragged in the panel; the name breaks a tie. */
+  position: number
 }
 
 interface Locality {
@@ -171,8 +173,8 @@ const state = {
     },
   ] as Country[],
   regions: [
-    { id: 1, country: 'XX', names: { ru: 'Регион A', en: 'Region A' }, code: 'A' },
-    { id: 2, country: 'XX', names: { ru: 'Регион B', en: 'Region B' }, code: 'B' },
+    { id: 1, country: 'XX', names: { ru: 'Регион A', en: 'Region A' }, code: 'A', position: 1 },
+    { id: 2, country: 'XX', names: { ru: 'Регион B', en: 'Region B' }, code: 'B', position: 2 },
   ] as Region[],
   localities: [
     {
@@ -1189,10 +1191,24 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
         names: one.names,
         code: one.code,
         country: one.country,
+        position: one.position,
         localities: state.localities.filter((each) => each.region_id === one.id).length,
       }))
-      .sort((a, b) => a.name.localeCompare(b.name)),
+      .sort((a, b) => a.position - b.position || a.name.localeCompare(b.name)),
   }))
+
+  on('PUT', '/delivery/geography/regions/order', ({ body }) => {
+    const country = String(body.country ?? '').toUpperCase()
+    const ids = Array.isArray(body.ids) ? body.ids.map(Number) : []
+
+    ids.forEach((id, position) => {
+      const one = region(id)
+
+      if (one && one.country === country) one.position = position
+    })
+
+    return {}
+  })
 
   const regionFree = (country: string, names: Localized, except: number | null) =>
     !state.regions.some(
@@ -1213,7 +1229,13 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
     if (!regionFree(country, names, null))
       throw refuse('names', 'The country already has this region.')
 
-    const one = { id: ++next, country, names, code: (body.code as string | null) ?? null }
+    // A new region goes after the ones already ordered, as on the server.
+    const position =
+      Math.max(
+        0,
+        ...state.regions.filter((each) => each.country === country).map((each) => each.position),
+      ) + 1
+    const one = { id: ++next, country, names, code: (body.code as string | null) ?? null, position }
 
     state.regions.push(one)
 
@@ -1484,6 +1506,12 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
 
   on('POST', '/delivery/geography/localities/(\\d+)/activate', ({ params }) => {
     findLocality(params[0]!).active = true
+
+    return new Reply(200, {})
+  })
+
+  on('POST', '/delivery/geography/localities/(\\d+)/deactivate', ({ params }) => {
+    findLocality(params[0]!).active = false
 
     return new Reply(200, {})
   })

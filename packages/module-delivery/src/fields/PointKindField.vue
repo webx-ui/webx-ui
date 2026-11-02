@@ -6,6 +6,7 @@ import {
   WxDialog,
   WxFormItem,
   WxInput,
+  WxLink,
   WxSelect,
   WxSpace,
   WxText,
@@ -17,8 +18,9 @@ import type { Option } from '../types'
 
 /**
  * `wx-delivery-point-kind`: the kind of points of a method. A select of the kinds its type allows
- * and, for the shop's pick-up (`creatable`), «New kind of points» right under it (decision 9) —
- * next to the field it fills, not at the foot of the form where nobody connects the two.
+ * and, for the shop's pick-up (`creatable`), «New kind of points» as a link beside it (decision 9) —
+ * next to the field it fills, not at the foot of the form where nobody connects the two. A link
+ * and not a button: it is a way to more choices, the way «Set up channels» sits by its field.
  *
  * A kind named here is offered at once and chosen; the server keeps it for every method after.
  */
@@ -51,7 +53,9 @@ const name = ref('')
 const errors = ref<Record<string, string[]>>({})
 const saving = ref(false)
 
-function startNaming(): void {
+function startNaming(event?: Event): void {
+  // A link to nowhere: the dialog is where it goes.
+  event?.preventDefault()
   key.value = ''
   name.value = ''
   errors.value = {}
@@ -82,16 +86,16 @@ async function define(): Promise<void> {
   <div class="wx-delivery-point-kind">
     <wx-select v-model="value" :options="choices" :disabled="props.disabled" />
 
-    <wx-button
+    <wx-link
       v-if="props.creatable && !props.disabled"
       class="wx-delivery-point-kind__new"
+      href="#"
       size="sm"
-      variant="text"
       data-test="new-kind"
       @click="startNaming"
     >
       {{ t('method.new-kind') }}
-    </wx-button>
+    </wx-link>
 
     <wx-dialog v-model:open="naming" :title="t('method.new-kind')" :width="440">
       <div class="wx-delivery-point-kind__form">
@@ -126,16 +130,23 @@ async function define(): Promise<void> {
 </template>
 
 <style scoped>
+/* The select and the link on one line while there is room for both; the link under it after. */
 .wx-delivery-point-kind {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--wx-space-4);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wx-space-4) var(--wx-space-12);
   min-width: 0;
 }
 
 .wx-delivery-point-kind > :deep(.wx-select) {
-  align-self: stretch;
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+.wx-delivery-point-kind__new {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 .wx-delivery-point-kind__form {

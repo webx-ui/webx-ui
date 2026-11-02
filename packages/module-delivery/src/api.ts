@@ -126,6 +126,9 @@ export function createDeliveryApi(admin: AdminContext) {
         .then(data),
     saveRegion: (id: number, changes: { names?: Record<string, string>; code?: string | null }) =>
       http.put<void>(`${base}/geography/regions/${id}`, changes).then(() => undefined),
+    /** The country's regions in the order dragged to: the selects and the list read them so. */
+    orderRegions: (country: string, ids: number[]) =>
+      http.put<void>(`${base}/geography/regions/order`, { country, ids }).then(() => undefined),
     removeRegion: (id: number) =>
       http.delete<void>(`${base}/geography/regions/${id}`).then(() => undefined),
 
@@ -171,6 +174,8 @@ export function createDeliveryApi(admin: AdminContext) {
         .then(data),
     activateLocality: (id: number) =>
       http.post<void>(`${base}/geography/localities/${id}/activate`, {}).then(() => undefined),
+    deactivateLocality: (id: number) =>
+      http.post<void>(`${base}/geography/localities/${id}/deactivate`, {}).then(() => undefined),
 
     popular: () => http.get<{ data: LocalityBrief[] }>(`${base}/popular`).then(data),
     setPopular: (ids: number[]) =>
