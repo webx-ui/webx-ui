@@ -49,17 +49,17 @@ checkout of `webx-ui/module-orders` asks it; orders work without it. Words — `
 
 ## Change it without forking
 
-| You want                                   | Do this                                                                                                      |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
-| A carrier of your own                      | `callAfterResolving(Carriers::class, fn ($c) => $c->register(MyCarrier::class))` in your provider's `boot()` |
-| Its methods                                | `callAfterResolving(MethodTypes::class, fn ($t) => $t->register(MyBranchType::class))`                       |
-| A type of your own                         | extend `AbstractMethodType`; override `quote()`, `available()`, add to `validate()` and call the parent      |
-| The shop's courier priced another way      | register a type under your own key extending `AbstractMethodType` with `asks() = Address`                    |
-| A new kind of the shop's points            | `app(PointKinds::class)->define('showroom', ['en' => 'Showroom'])`, then a `store.pickup` method of it       |
-| The shop's courier in a town               | `$method->syncLocalities([$id, …])` — not the pivot by hand: it moves the cache group                        |
-| The popular towns                          | `app(PopularLocalities::class)->set([$id, …])` — the order given is the order shown                          |
-| What a buyer is offered, from your own code | `app(Methods::class)->forLocality(app(Delivery::class)->context($cartState, $localityId))`                  |
-| Other words                                | `php artisan vendor:publish --tag=webx-delivery-lang`                                                        |
+| You want                                    | Do this                                                                                                      |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| A carrier of your own                       | `callAfterResolving(Carriers::class, fn ($c) => $c->register(MyCarrier::class))` in your provider's `boot()` |
+| Its methods                                 | `callAfterResolving(MethodTypes::class, fn ($t) => $t->register(MyBranchType::class))`                       |
+| A type of your own                          | extend `AbstractMethodType`; override `quote()`, `available()`, add to `validate()` and call the parent      |
+| The shop's courier priced another way       | register a type under your own key extending `AbstractMethodType` with `asks() = Address`                    |
+| A new kind of the shop's points             | `app(PointKinds::class)->define('showroom', ['en' => 'Showroom'])`, then a `store.pickup` method of it       |
+| The shop's courier in a town                | `$method->syncLocalities([$id, …])` — not the pivot by hand: it moves the cache group                        |
+| The popular towns                           | `app(PopularLocalities::class)->set([$id, …])` — the order given is the order shown                          |
+| What a buyer is offered, from your own code | `app(Methods::class)->forLocality(app(Delivery::class)->context($cartState, $localityId))`                   |
+| Other words                                 | `php artisan vendor:publish --tag=webx-delivery-lang`                                                        |
 
 ## Do not
 
