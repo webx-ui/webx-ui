@@ -8,8 +8,10 @@ use Illuminate\Http\Client\Factory;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Delivery\Carriers;
 use WebxUi\Delivery\MethodTypes;
+use WebxUi\Delivery\NovaPoshta\Api\AccountKey;
 use WebxUi\Delivery\NovaPoshta\Api\Client;
 use WebxUi\Delivery\NovaPoshta\Api\Journal;
+use WebxUi\Delivery\NovaPoshta\Api\Pace;
 use WebxUi\Delivery\NovaPoshta\Recording\RecordCommand;
 use WebxUi\Delivery\NovaPoshta\Types\BranchType;
 use WebxUi\Delivery\NovaPoshta\Types\CourierType;
@@ -42,6 +44,11 @@ class DeliveryNovaPoshtaServiceProvider extends ServiceProvider
                 timeout: (int) $config->get('webx-delivery-novaposhta.timeout', 10),
                 readOnly: (bool) $config->get('webx-delivery-novaposhta.read_only', false),
             );
+        });
+
+        $this->app->singleton(AccountKey::class, static fn (): AccountKey => new AccountKey);
+        $this->app->singleton(Pace::class, function (): Pace {
+            return new Pace((int) $this->app->make('config')->get('webx-delivery-novaposhta.sync.requests_per_minute', 60));
         });
 
         $this->app->singleton(NovaPoshtaCarrier::class);

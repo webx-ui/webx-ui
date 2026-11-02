@@ -6,9 +6,17 @@ namespace WebxUi\Delivery\NovaPoshta;
 
 use WebxUi\Delivery\ConnectionResult;
 use WebxUi\Delivery\Contracts\Carrier;
+use WebxUi\Delivery\Contracts\SyncsDirectories;
+use WebxUi\Delivery\NovaPoshta\Api\AccountKey;
 use WebxUi\Delivery\NovaPoshta\Api\Client;
+use WebxUi\Delivery\NovaPoshta\Api\Pace;
+use WebxUi\Delivery\NovaPoshta\Directories\Localities;
 use WebxUi\Delivery\Sync\CarrierUnavailable;
+use WebxUi\Delivery\Sync\Directory;
+use WebxUi\Delivery\Sync\DirectorySchedule;
+use WebxUi\Delivery\Sync\Page;
 use WebxUi\Delivery\Sync\SyncFailure;
+use WebxUi\Localization\Locales;
 
 /**
  * Nova Poshta (`novaposhta`), the national carrier of Ukraine (§4): its key, the settings of the
@@ -17,15 +25,31 @@ use WebxUi\Delivery\Sync\SyncFailure;
  * The settings here are the ones typed or chosen from a fixed list. The sender, its contact
  * person and the branch of sending come from the carrier's account and directories through the
  * base's `ProvidesSettingOptions` together with the waybill (§4.3, §5; stage 7 of §17).
+ *
+ * Its directories (§6) are pulled with the key stored in the panel, one request a page, paced by
+ * {@see Pace}: the towns from `getCities` — the carrier leads Ukraine (decision 8), so the base
+ * creates the shared towns and regions from them; points and streets come with stages 5 and 6.
  */
-final class NovaPoshtaCarrier implements Carrier
+final class NovaPoshtaCarrier implements Carrier, SyncsDirectories
 {
     public const string KEY = 'novaposhta';
 
     /** The languages the package speaks: a label of a field is given in all of them. */
     public const array LOCALES = ['en', 'uk', 'ru', 'de', 'pl', 'fr', 'es', 'it', 'pt', 'tr'];
 
-    public function __construct(private readonly Client $client) {}
+    /** Records a page of a directory: `Limit` 500 is what the carrier gives on the key (stage 3). */
+    public const int PAGE_SIZE = 500;
+
+    /** Nightly, towns first; the base pulls the points after the towns succeed (§6.1). */
+    public const string NIGHTLY = '10 2 * * *';
+
+    public function __construct(
+        private readonly Client $client,
+        private readonly AccountKey $key,
+        private readonly Pace $pace,
+        private readonly Locales $locales,
+        private readonly int $pageSize = self::PAGE_SIZE,
+    ) {}
 
     public function key(): string
     {
@@ -112,6 +136,41 @@ final class NovaPoshtaCarrier implements Carrier
         }
 
         return ConnectionResult::ok((string) __('webx-delivery-novaposhta::novaposhta.connection.ok', ['count' => $senders]));
+    }
+
+    public function directories(): array
+    {
+        return [new DirectorySchedule(Directory::Localities, self::NIGHTLY, $this->pageSize)];
+    }
+
+    /**
+     * A page of a directory. The cursor is the number of the last page pulled (§6.2): '3' asks
+     * for page 4; the list ends on a page that is empty or shorter than the limit.
+     */
+    public function pull(Directory $directory, ?string $cursor): Page
+    {
+        if ($directory !== Directory::Localities) {
+            throw CarrierUnavailable::badResponse("Nova Poshta keeps no {$directory->value} directory yet.");
+        }
+
+        if ($cursor !== null && preg_match('/^\d{1,6}$/', $cursor) !== 1) {
+            throw CarrierUnavailable::badResponse("The cursor «{$cursor}» is not a page of Nova Poshta.");
+        }
+
+        $key = $this->key->get();
+
+        if ($key === null) {
+            // Nothing goes to the carrier without a key: the run fails with «the key was refused».
+            throw CarrierUnavailable::keyRejected('No API key of Nova Poshta is stored.');
+        }
+
+        $number = $cursor === null ? 1 : (int) $cursor + 1;
+        $this->pace->wait();
+        $answer = $this->client->call($key, 'Address', 'getCities', ['Page' => $number, 'Limit' => $this->pageSize]);
+        $entries = $answer->records();
+        $records = (new Localities($this->locales->codes()))->records($entries);
+
+        return new Page($records, $entries === [] || count($entries) < $this->pageSize ? null : (string) $number);
     }
 
     public function client(): Client

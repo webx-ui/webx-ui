@@ -26,8 +26,6 @@ use WebxUi\Delivery\Sync\SyncFailure;
  */
 final class ClientTest extends TestCase
 {
-    private const string URL = 'https://api.novaposhta.test/v2.0/json/';
-
     private function client(bool $readOnly = false): Client
     {
         $this->app['config']->set('webx-delivery-novaposhta.read_only', $readOnly);

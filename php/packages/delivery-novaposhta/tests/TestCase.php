@@ -24,6 +24,8 @@ abstract class TestCase extends Orchestra
 {
     public const string KEY = 'test-key';
 
+    public const string URL = 'https://api.novaposhta.test/v2.0/json/';
+
     protected string $journal;
 
     protected function setUp(): void
@@ -69,7 +71,10 @@ abstract class TestCase extends Orchestra
         $app['config']->set('webx-localization.cache.enabled', false);
         $app['config']->set('webx-cart.currency', 'UAH');
         $app['config']->set('webx-delivery-novaposhta.journal', $this->journal);
-        $app['config']->set('webx-delivery-novaposhta.url', 'https://api.novaposhta.test/v2.0/json/');
+        $app['config']->set('webx-delivery-novaposhta.url', self::URL);
+        // No pauses in tests: the pace has a test of its own.
+        $app['config']->set('webx-delivery-novaposhta.sync.requests_per_minute', 0);
+        $app['config']->set('webx-delivery.sync.backoff', [0, 0, 0]);
     }
 
     protected function defineDatabaseMigrations(): void
@@ -97,6 +102,20 @@ abstract class TestCase extends Orchestra
             'warningCodes' => [],
             'infoCodes' => [],
         ];
+    }
+
+    /**
+     * An answer recorded on the key (stage 3, §13.1), scrubbed: `tests/Fixtures/api/<name>.json`.
+     *
+     * @return array<string, mixed>
+     */
+    protected static function fixture(string $name): array
+    {
+        $body = json_decode((string) file_get_contents(__DIR__.'/Fixtures/api/'.$name.'.json'), true);
+        self::assertIsArray($body, $name);
+
+        /** @var array<string, mixed> $body */
+        return $body;
     }
 
     /** @return list<array<string, mixed>> */

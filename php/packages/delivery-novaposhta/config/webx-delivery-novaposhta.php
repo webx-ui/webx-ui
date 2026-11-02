@@ -26,4 +26,12 @@ return [
     | or the data. It is how one checks which methods a site called. null — no journal.
     */
     'journal' => env('NOVAPOSHTA_JOURNAL', storage_path('logs/novaposhta-calls.log')),
+
+    /*
+    | The directories' sync (§6.6): at most this many requests a minute — a pause of 60 / N
+    | seconds between them. The carrier refuses two directory requests within one second.
+    */
+    'sync' => [
+        'requests_per_minute' => (int) env('NOVAPOSHTA_REQUESTS_PER_MINUTE', 60),
+    ],
 ];

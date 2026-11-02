@@ -18,8 +18,6 @@ use WebxUi\Delivery\Sync\SyncFailure;
  */
 final class RecordedAnswersTest extends TestCase
 {
-    private const string URL = 'https://api.novaposhta.test/v2.0/json/';
-
     /** @return array<string, mixed> */
     private static function recorded(string $name): array
     {

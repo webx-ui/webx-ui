@@ -27,8 +27,6 @@ use WebxUi\Delivery\QuoteKind;
  */
 final class CarrierTest extends TestCase
 {
-    private const string URL = 'https://api.novaposhta.test/v2.0/json/';
-
     private function carrier(): NovaPoshtaCarrier
     {
         $carrier = $this->app->make(Carriers::class)->get(NovaPoshtaCarrier::KEY);

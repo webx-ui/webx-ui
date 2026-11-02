@@ -19,8 +19,6 @@ use WebxUi\Delivery\NovaPoshta\Recording\Scrubber;
  */
 final class RecordCommandTest extends TestCase
 {
-    private const string URL = 'https://api.novaposhta.test/v2.0/json/';
-
     private const string SECRET = 'a1b2c3d4e5f60718293a4b5c6d7e8f90';
 
     private string $directory;
