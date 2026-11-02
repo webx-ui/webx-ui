@@ -93,7 +93,13 @@ final class ShipmentsTest extends ShippingTestCase
         $request = $this->parcels->requests[0];
         $this->assertSame('recipient', $request->payer);
         $this->assertSame('recipient', $shipment->payer);
-        $this->assertSame('Ann Example', $request->recipientName);
+        // The names as the order keeps them, apart — never split by spaces.
+        $this->assertSame('Ann', $request->recipientFirstName);
+        $this->assertSame('Example', $request->recipientLastName);
+        $this->assertSame('Ann Example', $request->recipientName());
+        // The waybill names the carrier's own town of the snapshot.
+        $this->assertSame('a-1', $request->carrierLocality);
+        $this->assertSame([], $request->extra);
         $this->assertSame('+800 1234 5678', $request->recipientPhone);
         $this->assertSame($order->total, $request->declaredValue);
         $this->assertNull($request->cod);
@@ -119,12 +125,13 @@ final class ShipmentsTest extends ShippingTestCase
     {
         $order = $this->branchOrder(900);
 
-        $shipment = $this->shipments()->create($order, ['recipient_name' => 'Bo Example', 'recipient_phone' => '', 'declared_value' => 1500, 'cod' => 2500], 'panel');
+        $shipment = $this->shipments()->create($order, ['recipient_first_name' => 'Bo', 'recipient_last_name' => 'Example-Two', 'recipient_phone' => '', 'declared_value' => 1500, 'cod' => 2500], 'panel');
 
         $request = $this->parcels->requests[0];
         $this->assertSame('sender', $request->payer);
         $this->assertSame('sender', $shipment->payer);
-        $this->assertSame('Bo Example', $request->recipientName);
+        $this->assertSame('Bo', $request->recipientFirstName);
+        $this->assertSame('Example-Two', $request->recipientLastName);
         $this->assertNull($request->recipientPhone);
         $this->assertSame(1500, $request->declaredValue);
         $this->assertSame(2500, $request->cod);

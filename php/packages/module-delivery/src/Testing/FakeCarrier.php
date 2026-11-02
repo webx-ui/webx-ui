@@ -7,7 +7,9 @@ namespace WebxUi\Delivery\Testing;
 use LogicException;
 use WebxUi\Delivery\ConnectionResult;
 use WebxUi\Delivery\Contracts\Carrier;
+use WebxUi\Delivery\Contracts\ProvidesSettingOptions;
 use WebxUi\Delivery\Contracts\SyncsDirectories;
+use WebxUi\Delivery\Settings\SettingOption;
 use WebxUi\Delivery\Sync\CarrierUnavailable;
 use WebxUi\Delivery\Sync\Directory;
 use WebxUi\Delivery\Sync\DirectorySchedule;
@@ -31,16 +33,36 @@ use WebxUi\Geography\Matching\LocalityRecord;
  * the carrier says it goes to doors and gives no street (§8.2); every eighth is spelled with a
  * typographic apostrophe («O’Neil 7»).
  *
+ * Its settings take the sender from «its account» (`ProvidesSettingOptions`, §13.1): senders
+ * «Sender A» and «Sender B», their contact persons, the town of sending searched among its
+ * localities and the branch of sending among the branches of that town — the chain the panel draws
+ * as dependent selects.
+ *
  * What a test needs to go wrong goes wrong on request: a page that fails, a directory that comes
- * back empty, records that vanish, and a lock that makes any `pull()` outside a sync throw — the
- * checkout never calls the carrier for its directories (decision 38).
+ * back empty, records that vanish, options that do not come, a contact gone from the account, and
+ * a lock that makes any `pull()` outside a sync throw — the checkout never calls the carrier for
+ * its directories (decision 38).
  *
  * Registered in tests and in the playground; on a development site only by
  * `WEBX_DELIVERY_FAKE_CARRIER=true` ({@see FakeCarrierSite}), never in production.
  */
-final class FakeCarrier implements Carrier, SyncsDirectories
+final class FakeCarrier implements Carrier, ProvidesSettingOptions, SyncsDirectories
 {
     public const string KEY = 'carrier-a';
+
+    /** The senders of «its account» and their contact persons. */
+    public const array SENDERS = [
+        'sender-a' => ['label' => 'Sender A', 'hint' => 'Tax id 00000001', 'contacts' => ['contact-a1' => 'Contact A1', 'contact-a2' => 'Contact A2']],
+        'sender-b' => ['label' => 'Sender B', 'hint' => 'Tax id 00000002', 'contacts' => ['contact-b1' => 'Contact B1']],
+    ];
+
+    /** @var list<array{field: string, values: array<string, mixed>, query: string|null}> every question for options, in order */
+    public array $optionCalls = [];
+
+    private bool $optionsFail = false;
+
+    /** @var array<string, true> contact persons deleted in «the account» */
+    private array $gone = [];
 
     /** @var list<array{directory: string, cursor: string|null}> every pull, in order */
     public array $pulls = [];
@@ -110,6 +132,22 @@ final class FakeCarrier implements Carrier, SyncsDirectories
         return $this;
     }
 
+    /** The options do not come: `CarrierUnavailable`, as when the carrier is down. */
+    public function failOptions(bool $fail = true): self
+    {
+        $this->optionsFail = $fail;
+
+        return $this;
+    }
+
+    /** A contact person is deleted in «the account»: a value chosen before is no longer offered. */
+    public function removeContact(string $contact): self
+    {
+        $this->gone[$contact] = true;
+
+        return $this;
+    }
+
     /** From now on any pull throws: what a checkout request must never reach. */
     public function lock(bool $locked = true): self
     {
@@ -142,7 +180,13 @@ final class FakeCarrier implements Carrier, SyncsDirectories
 
     public function settings(): array
     {
-        return [];
+        return [
+            ['name' => 'sender', 'type' => 'select', 'options' => 'carrier', 'label' => ['en' => 'Sender', 'ru' => 'Отправитель']],
+            ['name' => 'contact', 'type' => 'select', 'options' => 'carrier', 'depends' => ['sender'], 'label' => ['en' => 'Contact person', 'ru' => 'Контактное лицо']],
+            ['name' => 'sender_city', 'type' => 'select', 'options' => 'carrier', 'search' => true, 'label' => ['en' => 'Town of sending', 'ru' => 'Город отправки']],
+            ['name' => 'sender_point', 'type' => 'select', 'options' => 'carrier', 'depends' => ['sender_city'], 'search' => true, 'label' => ['en' => 'Branch of sending', 'ru' => 'Отделение отправки']],
+            ['name' => 'weight', 'type' => 'number', 'step' => 0.1, 'min' => 0.1, 'label' => ['en' => 'Weight by default, kg', 'ru' => 'Вес по умолчанию, кг']],
+        ];
     }
 
     public function credentials(): array
@@ -153,6 +197,68 @@ final class FakeCarrier implements Carrier, SyncsDirectories
     public function testConnection(array $credentials): ConnectionResult
     {
         return ConnectionResult::ok();
+    }
+
+    // ProvidesSettingOptions
+
+    public function settingOptions(string $field, array $values, array $credentials, ?string $query = null): array
+    {
+        $this->optionCalls[] = ['field' => $field, 'values' => $values, 'query' => $query];
+
+        if ($this->optionsFail) {
+            throw new CarrierUnavailable('Carrier A: HTTP 503 on the options of '.$field.'.');
+        }
+
+        $found = static fn (string $value, string $label): bool => $query === null
+            || $value === $query
+            || mb_stripos($label, $query) !== false;
+
+        $options = [];
+
+        switch ($field) {
+            case 'sender':
+                foreach (self::SENDERS as $value => $sender) {
+                    $options[] = new SettingOption($value, $sender['label'], $sender['hint']);
+                }
+
+                break;
+
+            case 'contact':
+                foreach (self::SENDERS[(string) ($values['sender'] ?? '')]['contacts'] ?? [] as $value => $label) {
+                    if (! isset($this->gone[$value])) {
+                        $options[] = new SettingOption($value, $label, '+800 1234 5678');
+                    }
+                }
+
+                break;
+
+            case 'sender_city':
+                for ($index = 0; $index < $this->localities && count($options) < 50; $index++) {
+                    $town = $this->locality($index);
+
+                    if ($found($town->externalId, $town->name)) {
+                        $options[] = new SettingOption($town->externalId, $town->name, $town->region);
+                    }
+                }
+
+                break;
+
+            case 'sender_point':
+                $city = (string) ($values['sender_city'] ?? '');
+
+                for ($index = 0; $index < $this->points && count($options) < 50; $index++) {
+                    $point = $this->point($index);
+
+                    // Sending only from a branch: a locker takes no parcel in.
+                    if ($point->kind === 'branch' && $point->localityExternalId === $city && $found($point->externalId, (string) $point->title)) {
+                        $options[] = new SettingOption($point->externalId, (string) $point->title, $point->address);
+                    }
+                }
+
+                break;
+        }
+
+        return $options;
     }
 
     // SyncsDirectories

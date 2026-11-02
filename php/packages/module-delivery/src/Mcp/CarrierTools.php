@@ -17,10 +17,14 @@ use WebxUi\Delivery\Models\DeliveryCarrier;
 use WebxUi\Delivery\Models\DeliveryShipment;
 use WebxUi\Delivery\Panel\CarrierRows;
 use WebxUi\Delivery\Panel\DeliverySection;
+use WebxUi\Delivery\Settings\SettingOption;
+use WebxUi\Delivery\Settings\SettingOptions;
+use WebxUi\Delivery\Settings\SettingsRejected;
 use WebxUi\Delivery\Shipping\OrderDeliveryChange;
 use WebxUi\Delivery\Shipping\Shipments;
 use WebxUi\Delivery\Shipping\ShipmentStatus;
 use WebxUi\Delivery\Shipping\WaybillRefused;
+use WebxUi\Delivery\Sync\CarrierUnavailable;
 use WebxUi\Delivery\Sync\Directories;
 use WebxUi\Delivery\Sync\Directory;
 use WebxUi\Delivery\Sync\ManualSync;
@@ -60,13 +64,18 @@ final class CarrierTools
                 'carriers_list',
                 'The carriers of the site: key, title, on or off, countries, the method types they bring with what each '
                 .'can do (price, waybill, tracking), their settings (sender and defaults — nothing secret) and their '
-                .'keys as set or not. A key is never shown and never taken here: it is typed in the panel.',
+                .'keys as set or not. A field with `options: carrier` takes a value from the carrier\'s account — '
+                .'delivery_carriers_options lists them; `_labels` holds the label of each chosen value, `missing` '
+                .'the chosen values the account no longer has (from the options last asked for). A key is never shown '
+                .'and never taken here: it is typed in the panel.',
                 fn (): array => $this->carriers(),
             ),
 
             Tool::mutating(
                 'carriers_update',
                 'Switch a carrier on or off, or change its settings by name (the fields delivery_carriers_list gives). '
+                .'A field with options from the carrier\'s account takes only a value its list has '
+                .'(delivery_carriers_options), checked with the carrier as the panel checks it — a dry run checks too. '
                 .'Keys are not set here. A carrier switched off offers no method and runs no sync.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->updateCarrier($arguments)),
                 ['properties' => [
@@ -74,6 +83,25 @@ final class CarrierTools
                     'enabled' => ['type' => 'boolean'],
                     'settings' => ['type' => 'object', 'description' => 'Setting → value.'],
                 ], 'required' => ['carrier']],
+            ),
+
+            Tool::read(
+                'carriers_options',
+                'The options of a carrier\'s settings field from its own account — senders, contact persons, points: '
+                .'value (what delivery_carriers_update takes), label and hint, at most 50. `values` — the values of the '
+                .'fields it depends on (`depends` in delivery_carriers_list); `q` — what to search for, in a field '
+                .'with `search`; `fresh` — past the ten-minute cache. Asked with the stored key, which is never shown. '
+                .'A carrier without options from its account has no field here.',
+                fn (array $arguments): array => $this->attempt(fn (): array => $this->options($arguments)),
+                ['properties' => [
+                    'carrier' => $carrier,
+                    'field' => ['type' => 'string', 'description' => 'A settings field whose `options` is `carrier`.'],
+                    'values' => ['type' => 'object', 'description' => 'Field → value of what this field depends on.'],
+                    'q' => ['type' => 'string'],
+                    'fresh' => ['type' => 'boolean'],
+                ], 'required' => ['carrier', 'field']],
+                // The options hold the account's contacts and phones: whoever keeps the settings (§5.5).
+                permission: DeliverySection::MANAGE,
             ),
 
             Tool::read(
@@ -137,14 +165,17 @@ final class CarrierTools
                 'shipments_create',
                 'Make the waybill of an order at its carrier — one at a time; a second after the first is cancelled. '
                 .'Who pays is what the order\'s delivery says (§9.3). A dry run answers the request the carrier would '
-                .'get, and asks the carrier nothing.',
+                .'get, with `form` — the carrier\'s own fields of the waybill and whether it takes cash on delivery — and asks '
+                .'the carrier nothing.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->createShipment($arguments)),
                 ['properties' => [
                     'order' => $order,
-                    'recipient_name' => ['type' => 'string'],
+                    'recipient_first_name' => ['type' => 'string'],
+                    'recipient_last_name' => ['type' => 'string'],
                     'recipient_phone' => ['type' => 'string'],
                     'declared_value' => ['type' => 'integer', 'description' => 'Minor units; the order\'s total by default.'],
-                    'cod' => ['type' => 'integer', 'description' => 'Cash on delivery, minor units.'],
+                    'cod' => ['type' => 'integer', 'description' => 'Cash on delivery, minor units; refused where the type takes none (`form.cod` of a dry run).'],
+                    'extra' => ['type' => 'object', 'description' => 'The carrier\'s own fields of the waybill by name (`form.fields` of a dry run): weight, seats, sizes, description.'],
                 ], 'required' => ['order']],
                 permission: DeliverySection::SHIP,
             ),
@@ -220,6 +251,7 @@ final class CarrierTools
                 'settings' => [
                     'fields' => $carrier->settings(),
                     'values' => $row->settings ?? [],
+                    'missing' => (object) $this->container->make(CarrierRows::class)->missing($carrier),
                 ],
                 'credentials' => self::credentials($carrier, $row),
             ];
@@ -271,7 +303,15 @@ final class CarrierTools
             }
 
             if (is_array($settings)) {
-                $row->settings = [...($row->settings ?? []), ...$settings];
+                $before = $row->settings ?? [];
+
+                try {
+                    // As the panel: a value from the carrier's account only if the account has it.
+                    $row->settings = $this->container->make(SettingOptions::class)
+                        ->check($carrier, $before, [...$before, ...$settings], $row->credentials ?? []);
+                } catch (SettingsRejected $rejected) {
+                    throw new ToolFailure($rejected->getMessage());
+                }
             }
 
             $row->save();
@@ -289,6 +329,44 @@ final class CarrierTools
         }
 
         return ['updated' => true, 'carrier' => $work()];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function options(array $arguments): array
+    {
+        $carrier = $this->carrier($arguments['carrier'] ?? null);
+        $field = $arguments['field'] ?? null;
+        $values = $arguments['values'] ?? [];
+
+        if (! is_string($field) || $field === '') {
+            throw new ToolFailure('`field` is the name of a settings field.');
+        }
+
+        if (! is_array($values)) {
+            throw new ToolFailure('`values` is an object of field → value.');
+        }
+
+        try {
+            $options = $this->container->make(SettingOptions::class)->options(
+                $carrier,
+                $field,
+                $values,
+                DeliveryCarrier::query()->find($carrier->key())->credentials ?? [],
+                is_string($arguments['q'] ?? null) ? $arguments['q'] : null,
+                ($arguments['fresh'] ?? false) === true,
+            );
+        } catch (CarrierUnavailable $failure) {
+            throw new ToolFailure(SettingOptions::unavailable($failure));
+        }
+
+        return [
+            'carrier' => $carrier->key(),
+            'field' => $field,
+            'options' => array_map(static fn (SettingOption $option): array => $option->toArray(), $options),
+        ];
     }
 
     // Sync
@@ -457,7 +535,7 @@ final class CarrierTools
         $order = $this->order($arguments['order'] ?? null);
         $changes = [];
 
-        foreach (['recipient_name', 'recipient_phone'] as $field) {
+        foreach (['recipient_first_name', 'recipient_last_name', 'recipient_phone'] as $field) {
             if (array_key_exists($field, $arguments)) {
                 $changes[$field] = is_string($arguments[$field]) ? mb_substr(trim($arguments[$field]), 0, 190) : null;
             }
@@ -469,11 +547,15 @@ final class CarrierTools
             }
         }
 
+        if (array_key_exists('extra', $arguments)) {
+            $changes['extra'] = is_array($arguments['extra']) ? $arguments['extra'] : throw new ToolFailure('`extra` is an object of field → value.');
+        }
+
         $shipments = $this->container->make(Shipments::class);
 
         try {
             if ($this->dryRun($arguments)) {
-                return ['dry_run' => true, 'request' => $shipments->request($order, $changes)->toArray()];
+                return ['dry_run' => true, 'request' => $shipments->request($order, $changes)->toArray(), 'form' => $shipments->describe($order)];
             }
 
             $shipment = $shipments->create($order, $changes, 'mcp');

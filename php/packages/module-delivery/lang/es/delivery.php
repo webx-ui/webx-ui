@@ -116,5 +116,9 @@ return [
         'final' => 'El envío ya no se puede cancelar.',
         'cancelled_note' => 'Guía :number cancelada en la empresa de transporte.',
         'status_note' => 'Envío :number: :status. :text',
+        'no_cod' => 'Este transportista no acepta contra reembolso para este método.',
+        'no_name' => 'Falta el nombre del destinatario.',
+        'field_required' => 'Rellene: :field',
+        'field_number' => ':field debe ser un número.',
     ],
 ];

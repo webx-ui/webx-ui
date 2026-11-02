@@ -10,6 +10,7 @@ import type {
   BindingsPage,
   CarrierDetail,
   CarrierRow,
+  SettingOption,
   Countries,
   LocalityBrief,
   LocalityDetail,
@@ -93,6 +94,32 @@ export function createDeliveryApi(admin: AdminContext) {
         clear?: string[]
       },
     ) => http.put<{ data: CarrierDetail }>(`${base}/carriers/${key}`, body).then(data),
+    /**
+     * The options of a settings field from the carrier's account (§5.2 of a satellite's spec): the
+     * values of what it depends on, what was typed, and `fresh` past the cache. No key travels.
+     */
+    carrierOptions: (
+      key: string,
+      field: string,
+      params: { values?: Record<string, unknown>; q?: string; fresh?: boolean } = {},
+    ) => {
+      const values: Record<string, string> = {}
+
+      for (const [name, value] of Object.entries(params.values ?? {})) {
+        if (value !== null && value !== undefined && value !== '')
+          values[`values[${name}]`] = String(value)
+      }
+
+      return http
+        .get<{ data: SettingOption[] }>(
+          `${base}/carriers/${key}/options/${field}${query({
+            ...values,
+            q: params.q || undefined,
+            fresh: params.fresh ? 1 : undefined,
+          })}`,
+        )
+        .then(data)
+    },
     testCarrier: (key: string, credentials: Record<string, string>) =>
       http
         .post<{

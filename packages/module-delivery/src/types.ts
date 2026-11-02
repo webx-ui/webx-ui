@@ -129,19 +129,47 @@ export interface CarrierRow {
   syncs: boolean
   directories: CarrierDirectory[]
   queue: number
+  /** Labels of chosen settings the carrier's account no longer has, from the options last asked for. */
+  missing: string[]
 }
 
-/** A field a carrier asks for (§13.2): the name it is stored by and how to draw it. */
+/**
+ * A field a carrier asks for (§13.2): the name it is stored by and how to draw it. `options:
+ * 'carrier'` — its options come from the carrier's account (`ProvidesSettingOptions`), `depends`
+ * — the fields they depend on, `search` — they are searched by what is typed, not listed.
+ */
 export interface CarrierField {
   name: string
   type?: string
   label?: string | Record<string, string>
-  options?: Option[]
+  options?: Option[] | 'carrier'
+  depends?: string[]
+  search?: boolean
+  default?: unknown
+  required?: boolean
+  min?: number
+  max?: number
+  /** A number's step and decimal places: a weight of 0.5 kg needs 0.1, not the default 1. */
+  step?: number
+  precision?: number
   [key: string]: unknown
 }
 
+/** One option of a field from the carrier's account. */
+export interface SettingOption {
+  value: string
+  label: string
+  hint: string | null
+}
+
 export interface CarrierDetail extends CarrierRow {
-  settings: { fields: CarrierField[]; values: Record<string, unknown> }
+  settings: {
+    fields: CarrierField[]
+    /** The stored values, with `_labels` — field → label of the chosen option. */
+    values: Record<string, unknown>
+    /** Chosen values the carrier's account no longer has: field → label. */
+    missing: Record<string, string>
+  }
   /** The keys: whether each is set, never what it is. */
   credentials: (CarrierField & { set: boolean })[]
   runs: SyncRun[]
@@ -301,13 +329,24 @@ export interface WaybillDraft {
   carrier: string
   type: string
   method: string | null
-  recipient: { name: string; phone: string | null; email: string | null }
+  recipient: {
+    first_name: string
+    last_name: string
+    name: string
+    phone: string | null
+    email: string | null
+  }
   sender: Record<string, unknown>
   lines: { name: string; sku: string | null; qty: number; price: number }[]
   declared_value: number
   currency: string
   payer: 'sender' | 'recipient'
   cod: number | null
+  carrier_locality: string | null
+  /** The carrier's own fields of the waybill, by name. */
+  extra: Record<string, unknown>
+  /** What the dialog draws besides the base's lines: the type's own fields and whether cash on delivery is asked. */
+  form?: { fields: CarrierField[]; cod: boolean }
 }
 
 /** The tab «Delivery» of the order's card. */
@@ -395,10 +434,12 @@ export interface ChangeOutcome {
 }
 
 export interface WaybillChanges {
-  recipient_name?: string | null
+  recipient_first_name?: string | null
+  recipient_last_name?: string | null
   recipient_phone?: string | null
   declared_value?: number | null
   cod?: number | null
+  extra?: Record<string, unknown>
   dry_run?: boolean
 }
 

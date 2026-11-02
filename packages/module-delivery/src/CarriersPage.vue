@@ -123,6 +123,14 @@ function open(key: string): void {
           </span>
         </template>
 
+        <p
+          v-if="row.missing && row.missing.length > 0"
+          class="wx-delivery-carrier__missing"
+          data-test="carrier-missing"
+        >
+          {{ t('options.missing-list', { list: row.missing.join(', ') }) }}
+        </p>
+
         <p v-if="row.queue > 0" class="wx-delivery-carrier__queue">
           {{ t('carrier.queue') }}: <strong>{{ row.queue }}</strong>
           <router-link :to="{ name: 'webx.delivery.bindings', query: { carrier: row.key } }"
@@ -203,6 +211,11 @@ function open(key: string): void {
 
 .wx-delivery-carrier__queue {
   margin: 0 0 var(--wx-space-12);
+}
+
+.wx-delivery-carrier__missing {
+  margin: 0 0 var(--wx-space-12);
+  color: var(--wx-color-warning);
 }
 
 .wx-delivery-dir {

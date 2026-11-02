@@ -118,5 +118,9 @@ return [
         'final' => 'The parcel is past cancelling.',
         'cancelled_note' => 'Waybill :number cancelled at the carrier.',
         'status_note' => 'Parcel :number: :status. :text',
+        'no_cod' => 'This carrier takes no cash on delivery for this method.',
+        'no_name' => 'The recipient\'s first name is empty.',
+        'field_required' => 'Fill in: :field',
+        'field_number' => ':field must be a number.',
     ],
 ];

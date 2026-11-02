@@ -14,6 +14,11 @@ use WebxUi\Delivery\DeliveryException;
 use WebxUi\Delivery\Models\DeliveryCarrier;
 use WebxUi\Delivery\Models\DeliverySyncRun;
 use WebxUi\Delivery\Panel\CarrierRows;
+use WebxUi\Delivery\Settings\SettingOption;
+use WebxUi\Delivery\Settings\SettingOptions;
+use WebxUi\Delivery\Settings\SettingOptionsRefused;
+use WebxUi\Delivery\Settings\SettingsRejected;
+use WebxUi\Delivery\Sync\CarrierUnavailable;
 use WebxUi\Delivery\Sync\Directories;
 use WebxUi\Delivery\Sync\Directory;
 use WebxUi\Delivery\Sync\ManualSync;
@@ -39,6 +44,7 @@ final class CarrierController
         private readonly Directories $directories,
         private readonly Locales $locales,
         private readonly CarrierRows $rows,
+        private readonly SettingOptions $options,
     ) {}
 
     public function index(): JsonResponse
@@ -65,6 +71,8 @@ final class CarrierController
             'settings' => [
                 'fields' => $one->settings(),
                 'values' => $row->settings ?? [],
+                // Chosen values the carrier's account no longer has: field → label (§5.4).
+                'missing' => (object) $this->options->missing($one, $row->settings ?? [], $stored),
             ],
             'credentials' => array_map(static fn (array $field): array => [
                 ...$field,
@@ -88,11 +96,6 @@ final class CarrierController
             $row->enabled = $request->boolean('enabled');
         }
 
-        if (is_array($request->input('settings'))) {
-            $names = array_filter(array_column($one->settings(), 'name'), 'is_string');
-            $row->settings = [...($row->settings ?? []), ...array_intersect_key($request->input('settings'), array_flip($names))];
-        }
-
         if (is_array($request->input('credentials')) || is_array($request->input('clear'))) {
             $names = array_filter(array_column($one->credentials(), 'name'), 'is_string');
             $credentials = $row->credentials ?? [];
@@ -111,9 +114,59 @@ final class CarrierController
             $row->credentials = $credentials === [] ? null : $credentials;
         }
 
+        // After the keys: a key typed in the same save is the one the options are asked with.
+        if (is_array($request->input('settings'))) {
+            $names = array_filter(array_column($one->settings(), 'name'), 'is_string');
+            $before = $row->settings ?? [];
+            $after = [...$before, ...array_intersect_key($request->input('settings'), array_flip($names))];
+
+            try {
+                // A value from the carrier's account is taken only if the account has it (§5.4).
+                $row->settings = $this->options->check($one, $before, $after, $row->credentials ?? []);
+            } catch (SettingsRejected $rejected) {
+                $errors = [];
+
+                foreach ($rejected->errors as $field => $words) {
+                    $errors['settings.'.$field] = [$words];
+                }
+
+                throw ValidationException::withMessages($errors);
+            }
+        }
+
         $row->save();
 
         return $this->show($carrier);
+    }
+
+    /**
+     * The options of a field from the carrier's account (§5.2): the values of what it depends on
+     * in `values`, what was typed in `q`, and `fresh` for «Refresh lists». The keys are the stored
+     * ones — none travels in the request.
+     */
+    public function options(Request $request, string $carrier, string $field): JsonResponse
+    {
+        $one = $this->carrier($carrier);
+        $values = $request->query('values');
+        $query = $request->query('q');
+
+        try {
+            $options = $this->options->options(
+                $one,
+                $field,
+                is_array($values) ? $values : [],
+                DeliveryCarrier::query()->find($carrier)->credentials ?? [],
+                is_string($query) ? $query : null,
+                $request->boolean('fresh'),
+            );
+        } catch (SettingOptionsRefused $refused) {
+            return ApiResponse::message($refused->getMessage(), $refused->status);
+        } catch (CarrierUnavailable $failure) {
+            // 422: the panel shows the words of a refusal it wrote itself, and a 5xx only as «server error».
+            return ApiResponse::message(SettingOptions::unavailable($failure), 422);
+        }
+
+        return ApiResponse::data(array_map(static fn (SettingOption $option): array => $option->toArray(), $options));
     }
 
     /** «Check the connection» with the stored keys and any typed over them, not saved. */

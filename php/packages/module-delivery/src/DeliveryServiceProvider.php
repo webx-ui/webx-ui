@@ -39,6 +39,7 @@ use WebxUi\Delivery\Panel\LocalityForm;
 use WebxUi\Delivery\Panel\MethodForm;
 use WebxUi\Delivery\Panel\PointForm;
 use WebxUi\Delivery\Rendering\Assets;
+use WebxUi\Delivery\Settings\SettingOptions;
 use WebxUi\Delivery\Shipping\Shipments;
 use WebxUi\Delivery\Sync\Directories;
 use WebxUi\Delivery\Sync\StoredLeadingCarriers;
@@ -89,6 +90,8 @@ class DeliveryServiceProvider extends ServiceProvider
         $this->app->scoped(Assets::class);
         $this->app->singleton(DeliveryCheckoutSlot::class);
         $this->app->singleton(Streets::class);
+        $this->app->singleton(CarrierLocalities::class);
+        $this->app->singleton(SettingOptions::class);
         $this->app->singleton(PointKinds::class);
         $this->app->singleton(PopularLocalities::class);
         $this->app->singleton(Directories::class);

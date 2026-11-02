@@ -116,5 +116,9 @@ return [
         'final' => 'Gönderi artık iptal edilemez.',
         'cancelled_note' => ':number numaralı gönderi belgesi kargo firmasında iptal edildi.',
         'status_note' => 'Gönderi :number: :status. :text',
+        'no_cod' => 'Bu kargo firması bu yöntem için kapıda ödeme kabul etmiyor.',
+        'no_name' => 'Alıcının adı boş.',
+        'field_required' => 'Doldurun: :field',
+        'field_number' => ':field bir sayı olmalı.',
     ],
 ];

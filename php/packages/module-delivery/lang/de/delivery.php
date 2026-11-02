@@ -116,5 +116,9 @@ return [
         'final' => 'Die Sendung kann nicht mehr storniert werden.',
         'cancelled_note' => 'Versandschein :number beim Dienst storniert.',
         'status_note' => 'Sendung :number: :status. :text',
+        'no_cod' => 'Dieser Versanddienst nimmt für diese Methode keine Nachnahme an.',
+        'no_name' => 'Der Vorname des Empfängers fehlt.',
+        'field_required' => 'Bitte ausfüllen: :field',
+        'field_number' => ':field muss eine Zahl sein.',
     ],
 ];

@@ -8,18 +8,22 @@ import {
   WxFormItem,
   WxInput,
   WxInputNumber,
+  WxSelect,
   WxSpace,
+  WxSwitch,
   WxText,
 } from '@webx-ui/core'
 import { useAdmin, useErrorText } from '@webx-ui/module-admin'
 import { createDeliveryApi } from './api'
 import { useDeliveryWords } from './i18n'
-import type { OrderDelivery, WaybillDraft } from './types'
+import type { CarrierField, OrderDelivery, WaybillDraft } from './types'
 
 /**
  * «Create waybill» (§11.2, §14.2): the request the carrier gets, looked over first. The manager
- * may change who receives the parcel, what it is declared to be worth and the cash to collect on
- * receipt; who pays the carrier and what is inside are the order's and are shown as they are.
+ * may change who receives the parcel — first and last name apart, as the order keeps them — what
+ * it is declared to be worth, the cash to collect on receipt and the carrier's own fields of its
+ * type (weight, what is inside: `DescribesWaybill`); a type that takes no cash on delivery has no
+ * such field. Who pays the carrier and what is inside are the order's and are shown as they are.
  *
  * Resolves with the tab's new state once the carrier made the waybill.
  */
@@ -29,7 +33,8 @@ const props = defineProps<{ orderId: number; draft: WaybillDraft; exponent: numb
 
 const { open, resolve } = useModal<OrderDelivery>()
 
-const api = createDeliveryApi(useAdmin())
+const context = useAdmin()
+const api = createDeliveryApi(context)
 const t = useDeliveryWords()
 const message = useErrorText()
 
@@ -38,11 +43,33 @@ const major = (minor: number | null) => (minor === null ? null : minor / scale)
 const minor = (value: number | null | undefined) =>
   value === null || value === undefined ? null : Math.round(value * scale)
 
-const name = ref(props.draft.recipient.name)
+const firstName = ref(props.draft.recipient.first_name)
+const lastName = ref(props.draft.recipient.last_name)
 const phone = ref(props.draft.recipient.phone ?? '')
 const declared = ref<number | null>(major(props.draft.declared_value))
 const cod = ref<number | null>(major(props.draft.cod))
 const errors = ref<Record<string, string[]>>({})
+
+/** The type's own fields, and whether it takes cash on delivery at all (no form — the base's dialog). */
+const extraFields = computed<CarrierField[]>(() => props.draft.form?.fields ?? [])
+const takesCod = computed(() => props.draft.form?.cod ?? true)
+const extra = ref<Record<string, unknown>>(
+  Object.fromEntries(
+    extraFields.value.map((field) => [
+      field.name,
+      props.draft.extra?.[field.name] ?? field.default ?? null,
+    ]),
+  ),
+)
+
+function fieldLabel(field: CarrierField): string {
+  if (typeof field.label === 'string') return field.label
+  if (field.label && typeof field.label === 'object') {
+    return field.label[context.i18n.state.locale] ?? Object.values(field.label)[0] ?? field.name
+  }
+
+  return field.name
+}
 const saving = ref(false)
 
 const money = (amount: number) =>
@@ -60,7 +87,7 @@ const payer = computed(() =>
 const errorOf = (key: string) => errors.value[key]?.[0]
 
 async function submit(): Promise<void> {
-  if (saving.value || name.value.trim() === '') return
+  if (saving.value || firstName.value.trim() === '') return
 
   saving.value = true
   errors.value = {}
@@ -68,10 +95,12 @@ async function submit(): Promise<void> {
   try {
     resolve(
       await api.createWaybill(props.orderId, {
-        recipient_name: name.value.trim(),
+        recipient_first_name: firstName.value.trim(),
+        recipient_last_name: lastName.value.trim(),
         recipient_phone: phone.value.trim() || null,
         declared_value: minor(declared.value),
-        cod: minor(cod.value),
+        ...(takesCod.value ? { cod: minor(cod.value) } : {}),
+        ...(extraFields.value.length > 0 ? { extra: extra.value } : {}),
       }),
     )
   } catch (error) {
@@ -92,24 +121,83 @@ async function submit(): Promise<void> {
 
       <div class="wx-delivery-waybill__pair">
         <wx-form-item
-          :label="t('order.recipient-name')"
-          :error="errorOf('recipient_name')"
+          :label="t('order.recipient-first-name')"
+          :error="errorOf('recipient_first_name')"
           required
         >
-          <wx-input v-model="name" :maxlength="190" autocomplete="off" data-test="waybill-name" />
+          <wx-input
+            v-model="firstName"
+            :maxlength="190"
+            autocomplete="off"
+            data-test="waybill-first-name"
+          />
         </wx-form-item>
-        <wx-form-item :label="t('order.recipient-phone')" :error="errorOf('recipient_phone')">
-          <wx-input v-model="phone" :maxlength="32" autocomplete="off" />
+        <wx-form-item
+          :label="t('order.recipient-last-name')"
+          :error="errorOf('recipient_last_name')"
+        >
+          <wx-input
+            v-model="lastName"
+            :maxlength="190"
+            autocomplete="off"
+            data-test="waybill-last-name"
+          />
         </wx-form-item>
       </div>
 
       <div class="wx-delivery-waybill__pair">
+        <wx-form-item :label="t('order.recipient-phone')" :error="errorOf('recipient_phone')">
+          <wx-input v-model="phone" :maxlength="32" autocomplete="off" />
+        </wx-form-item>
         <wx-form-item :label="t('order.declared')" :error="errorOf('declared_value')">
           <wx-input-number v-model="declared" :min="0" :precision="exponent" :step="1" />
         </wx-form-item>
-        <wx-form-item :label="t('order.cod')" :help="t('order.cod-help')" :error="errorOf('cod')">
-          <wx-input-number v-model="cod" :min="0" :precision="exponent" :step="1" />
-        </wx-form-item>
+      </div>
+
+      <wx-form-item
+        v-if="takesCod"
+        :label="t('order.cod')"
+        :help="t('order.cod-help')"
+        :error="errorOf('cod')"
+        data-test="waybill-cod"
+      >
+        <wx-input-number v-model="cod" :min="0" :precision="exponent" :step="1" />
+      </wx-form-item>
+
+      <div
+        v-if="extraFields.length > 0"
+        class="wx-delivery-waybill__fact"
+        data-test="waybill-extra"
+      >
+        <span class="wx-delivery-waybill__label">{{ t('order.carrier-fields') }}</span>
+        <div class="wx-delivery-waybill__pair">
+          <wx-form-item
+            v-for="field in extraFields"
+            :key="field.name"
+            :label="fieldLabel(field)"
+            :required="field.required === true"
+            :error="errorOf(`extra.${field.name}`)"
+          >
+            <wx-input-number
+              v-if="field.type === 'number'"
+              v-model="extra[field.name] as number"
+              :min="field.min"
+              :max="field.max"
+              :step="field.step"
+              :precision="field.precision"
+            />
+            <wx-switch
+              v-else-if="field.type === 'boolean'"
+              v-model="extra[field.name] as boolean"
+            />
+            <wx-select
+              v-else-if="field.type === 'select' && Array.isArray(field.options)"
+              v-model="extra[field.name] as string"
+              :options="field.options"
+            />
+            <wx-input v-else v-model="extra[field.name] as string" autocomplete="off" />
+          </wx-form-item>
+        </div>
       </div>
 
       <div class="wx-delivery-waybill__fact">
@@ -135,7 +223,7 @@ async function submit(): Promise<void> {
         <wx-button
           type="primary"
           :loading="saving"
-          :disabled="name.trim() === ''"
+          :disabled="firstName.trim() === ''"
           data-test="waybill-create"
           @click="submit"
         >

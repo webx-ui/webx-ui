@@ -86,6 +86,7 @@ abstract class StepTestCase extends TestCase
     protected function carrierA(int $branches = 3, int $streets = 3, string|Carrier $carrier = FakeCarrierA::class): DeliveryCarrierLocality
     {
         $this->app->make(Carriers::class)->register($carrier);
+        FakeBranchType::reset();
         $this->app->make(MethodTypes::class)->register(FakeBranchType::class);
         $this->app->make(MethodTypes::class)->register(FakeCourierType::class);
         DeliveryCarrier::query()->create(['key' => 'carrier-a', 'enabled' => true]);

@@ -420,7 +420,20 @@ const state = {
   ] as Binding[],
   carrier: {
     enabled: true,
-    settings: { sender: 'Demo shop', sender_phone: '+800 1234 5678' } as Record<string, unknown>,
+    // The sender as `FakeCarrier` gives it from «its account»: `_labels` — the labels of the chosen values.
+    settings: {
+      sender: 'sender-a',
+      contact: 'contact-a1',
+      sender_city: 'L2',
+      sender_point: 'P2',
+      weight: 0.5,
+      _labels: {
+        sender: 'Sender A',
+        contact: 'Contact A1',
+        sender_city: 'Town 2',
+        sender_point: 'Branch 2',
+      },
+    } as Record<string, unknown>,
     credentials: { api_key: 'demo-secret-key' } as Record<string, string>,
   },
   runs: [
@@ -984,21 +997,140 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
     countries: ['XX'],
     syncs: true,
     directories: ['localities', 'points', 'streets'].map(directory),
+    missing: [] as string[],
     queue: state.bindings.filter((one) => one.status === 'pending').length,
   })
+
+  /* The settings of carrier A take the sender from «its account» (`ProvidesSettingOptions`): the
+     options as `FakeCarrier::settingOptions()` gives them — two senders and their contacts, its
+     towns searched by name, the branches of the town of sending. A key typed as `options-down`
+     plays a carrier that does not answer: the list fails, the label of the chosen value stays. */
+  const carrierFields = [
+    {
+      name: 'sender',
+      type: 'select',
+      options: 'carrier',
+      label: { en: 'Sender', ru: 'Отправитель' },
+    },
+    {
+      name: 'contact',
+      type: 'select',
+      options: 'carrier',
+      depends: ['sender'],
+      label: { en: 'Contact person', ru: 'Контактное лицо' },
+    },
+    {
+      name: 'sender_city',
+      type: 'select',
+      options: 'carrier',
+      search: true,
+      label: { en: 'Town of sending', ru: 'Город отправки' },
+    },
+    {
+      name: 'sender_point',
+      type: 'select',
+      options: 'carrier',
+      depends: ['sender_city'],
+      search: true,
+      label: { en: 'Branch of sending', ru: 'Отделение отправки' },
+    },
+    {
+      name: 'weight',
+      type: 'number',
+      step: 0.1,
+      min: 0.1,
+      label: { en: 'Weight by default, kg', ru: 'Вес по умолчанию, кг' },
+    },
+  ]
+  const SENDERS: Record<string, { label: string; hint: string; contacts: Record<string, string> }> =
+    {
+      'sender-a': {
+        label: 'Sender A',
+        hint: 'Tax id 00000001',
+        contacts: { 'contact-a1': 'Contact A1', 'contact-a2': 'Contact A2' },
+      },
+      'sender-b': {
+        label: 'Sender B',
+        hint: 'Tax id 00000002',
+        contacts: { 'contact-b1': 'Contact B1' },
+      },
+    }
+  type Choice = { value: string; label: string; hint: string | null }
+  const optionsOf = (field: string, values: Record<string, unknown>, q: string | null) => {
+    const found = (value: string, label: string) =>
+      q === null || value === q || label.toLowerCase().includes(q.toLowerCase())
+    const list: Choice[] = []
+
+    if (field === 'sender') {
+      for (const [value, one] of Object.entries(SENDERS))
+        list.push({ value, label: one.label, hint: one.hint })
+    } else if (field === 'contact') {
+      for (const [value, label] of Object.entries(
+        SENDERS[String(values.sender ?? '')]?.contacts ?? {},
+      ))
+        list.push({ value, label, hint: '+800 1234 5678' })
+    } else if (field === 'sender_city') {
+      for (let index = 0; index < 20 && list.length < 50; index++) {
+        const name = `Town ${index}`
+        if (found(`L${index}`, name))
+          list.push({ value: `L${index}`, label: name, hint: `Region ${'ABCDE'[index % 5]}` })
+      }
+    } else if (field === 'sender_point') {
+      const city = Number(String(values.sender_city ?? '').slice(1))
+
+      for (let index = 0; index < 60 && list.length < 50; index++) {
+        // Sending only from a branch: every third point is a locker and takes no parcel in.
+        if (index % 3 === 0 || index % 20 !== city) continue
+        if (found(`P${index}`, `Branch ${index}`))
+          list.push({
+            value: `P${index}`,
+            label: `Branch ${index}`,
+            hint: `${index} Example street`,
+          })
+      }
+    }
+
+    return list.slice(0, 50)
+  }
+  const fieldTitle = (name: string, locale: string) => {
+    const field = carrierFields.find((one) => one.name === name)
+
+    return (field?.label as Localized | undefined)?.[locale] ?? field?.label.en ?? name
+  }
+  /* Why the options of a field cannot be asked now: `SettingOptions::options()` on the server. */
+  const optionsRefusal = (field: string, values: Record<string, unknown>, locale: string) => {
+    const definition = carrierFields.find((one) => one.name === field && one.options === 'carrier')
+
+    if (!definition) return fail(404, said(locale, 'options.no-field', { field }) ?? field)
+    if (!state.carrier.credentials.api_key) return fail(422, words(locale, 'options.no-key'))
+    if (state.carrier.credentials.api_key === 'options-down') {
+      return fail(
+        422,
+        said(locale, 'options.unavailable', {
+          reason: line(locale, 'webx-delivery', 'delivery.sync.errors.no_answer'),
+        }) ?? 'The carrier did not answer.',
+      )
+    }
+
+    for (const parent of definition.depends ?? []) {
+      const value = values[parent]
+
+      if (value === null || value === undefined || value === '')
+        return fail(
+          422,
+          said(locale, 'options.choose-first', { field: fieldTitle(parent, locale) }) ?? parent,
+        )
+    }
+
+    return null
+  }
 
   const carrierDetail = () => ({
     ...carrierRow(),
     settings: {
-      fields: [
-        { name: 'sender', type: 'text', label: { ru: 'Отправитель', en: 'Sender' } },
-        {
-          name: 'sender_phone',
-          type: 'text',
-          label: { ru: 'Телефон отправителя', en: 'Sender phone' },
-        },
-      ],
+      fields: carrierFields,
       values: state.carrier.settings,
+      missing: {},
     },
     // The key itself never leaves the server: only whether it is set (§13.2).
     credentials: [
@@ -1023,12 +1155,33 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
     ({ params }) => (known(params[0]!), { data: carrierDetail() }),
   )
 
-  on('PUT', '/delivery/carriers/([a-z0-9-]+)', ({ params, body }) => {
+  on(
+    'GET',
+    '/delivery/carriers/([a-z0-9-]+)/options/([A-Za-z0-9_]+)',
+    ({ params, query, locale }) => {
+      known(params[0]!)
+
+      const values: Record<string, unknown> = {}
+      for (const [name, value] of query.entries()) {
+        const match = /^values\[(.+)\]$/.exec(name)
+        if (match) values[match[1]!] = value
+      }
+
+      const refusal = optionsRefusal(params[1]!, values, locale)
+      if (refusal) throw refusal
+
+      const definition = carrierFields.find((one) => one.name === params[1])
+
+      return {
+        data: optionsOf(params[1]!, values, definition?.search ? query.get('q') || null : null),
+      }
+    },
+  )
+
+  on('PUT', '/delivery/carriers/([a-z0-9-]+)', ({ params, body, locale }) => {
     known(params[0]!)
 
     if ('enabled' in body) state.carrier.enabled = Boolean(body.enabled)
-    if (body.settings && typeof body.settings === 'object')
-      Object.assign(state.carrier.settings, body.settings)
 
     for (const [name, value] of Object.entries(
       (body.credentials ?? {}) as Record<string, string>,
@@ -1038,6 +1191,54 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
     }
 
     for (const name of (body.clear ?? []) as string[]) delete state.carrier.credentials[name]
+
+    if (body.settings && typeof body.settings === 'object') {
+      // As `SettingOptions::check()`: a value from the account only if the account has it.
+      const before = state.carrier.settings
+      const after: Record<string, unknown> = { ...before }
+      const labels = { ...((before._labels as Record<string, string> | undefined) ?? {}) }
+      const errors: Record<string, string[]> = {}
+
+      for (const field of carrierFields) {
+        if (field.name in (body.settings as Record<string, unknown>))
+          after[field.name] = (body.settings as Record<string, unknown>)[field.name]
+      }
+
+      for (const field of carrierFields.filter((one) => one.options === 'carrier')) {
+        const value = after[field.name]
+
+        if (value === null || value === undefined || value === '') {
+          delete labels[field.name]
+          continue
+        }
+
+        const moved =
+          String(value) !== String(before[field.name] ?? '') ||
+          (field.depends ?? []).some(
+            (parent) => String(after[parent] ?? '') !== String(before[parent] ?? ''),
+          )
+
+        if (!moved && labels[field.name]) continue
+
+        const refusal = optionsRefusal(field.name, after, locale)
+        if (refusal) {
+          errors[`settings.${field.name}`] = [refusal.message]
+          continue
+        }
+
+        const match = optionsOf(field.name, after, field.search ? String(value) : null).find(
+          (one) => one.value === String(value),
+        )
+
+        if (!match) errors[`settings.${field.name}`] = [words(locale, 'options.choose-from-list')]
+        else labels[field.name] = match.label
+      }
+
+      if (Object.keys(errors).length > 0)
+        throw fail(422, Object.values(errors)[0]![0]!, undefined, errors)
+
+      state.carrier.settings = { ...after, _labels: labels }
+    }
 
     return { data: carrierDetail() }
   })
@@ -1608,27 +1809,66 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
             payer: 'recipient' as const,
             waybill: null,
           }
-        : {
-            method: 'Carrier A branch',
-            method_key: 'carrier-a-branch',
-            carrier: 'carrier-a',
-            carrier_title: 'Carrier A',
-            locality: 'Town A, Region A',
-            point: {
-              title: 'Branch 12',
-              number: '12',
-              address: '12 Example street',
-              schedule: 'Mon–Fri 09:00–18:00',
-            },
-            address: null,
-            note: null,
-            price: 'Free',
-            was: '9,00 €',
-            estimate: null,
-            paid_by_store: true,
-            payer: 'sender' as const,
-            waybill: null,
-          }
+        : order === 8
+          ? {
+              method: 'Carrier A locker',
+              method_key: 'carrier-a-locker',
+              carrier: 'carrier-a',
+              carrier_title: 'Carrier A',
+              locality: 'Town A, Region A',
+              point: {
+                title: 'Locker 9',
+                number: '9',
+                address: '9 Example street',
+                schedule: 'Every day 00:00–24:00',
+              },
+              address: null,
+              note: null,
+              price: 'By carrier rates',
+              was: null,
+              estimate: null,
+              paid_by_store: false,
+              payer: 'recipient' as const,
+              waybill: null,
+            }
+          : {
+              method: 'Carrier A branch',
+              method_key: 'carrier-a-branch',
+              carrier: 'carrier-a',
+              carrier_title: 'Carrier A',
+              locality: 'Town A, Region A',
+              point: {
+                title: 'Branch 12',
+                number: '12',
+                address: '12 Example street',
+                schedule: 'Mon–Fri 09:00–18:00',
+              },
+              address: null,
+              note: null,
+              price: 'Free',
+              was: '9,00 €',
+              estimate: null,
+              paid_by_store: true,
+              payer: 'sender' as const,
+              waybill: null,
+            }
+  const waybillFields = [
+    {
+      name: 'weight',
+      type: 'number',
+      required: true,
+      default: state.carrier.settings.weight ?? 0.5,
+      min: 0.1,
+      step: 0.1,
+      label: { en: 'Weight, kg', ru: 'Вес, кг' },
+    },
+    {
+      name: 'description',
+      type: 'text',
+      default: 'Goods',
+      label: { en: 'What is inside', ru: 'Что внутри' },
+    },
+  ]
   const draftOf = (order: number) => {
     const view = orderView(order)
 
@@ -1636,9 +1876,11 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
       order_id: order,
       order_number: `WX-${1000 + order}`,
       carrier: view.carrier,
-      type: `${view.carrier}.${order === 7 ? 'courier' : 'branch'}`,
+      type: `${view.carrier}.${order === 7 ? 'courier' : order === 8 ? 'locker' : 'branch'}`,
       method: view.method_key,
       recipient: {
+        first_name: 'Buyer',
+        last_name: 'ABCDEFGHIJKL'[order - 1] ?? '',
         name: `Buyer ${'ABCDEFGHIJKL'[order - 1] ?? ''}`.trim(),
         phone: '+800 1234 5678',
         email: null,
@@ -1649,6 +1891,11 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
       currency: 'EUR',
       payer: view.payer,
       cod: null,
+      carrier_locality: order === 7 ? 'L1' : 'L0',
+      extra: {},
+      // `DescribesWaybill` of carrier A's types: a branch asks weight and contents, a locker
+      // (order 8) the same and takes no cash on delivery; its courier has none — the base's dialog.
+      form: order === 7 ? undefined : { fields: waybillFields, cod: order !== 8 },
     }
   }
   const orderDelivery = (order: number, locale: string) => {
@@ -1702,6 +1949,11 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
 
     if (orderView(order).carrier === 'store') {
       throw refuse('waybill', line(locale, 'webx-delivery', 'delivery.shipments.no_waybills'))
+    }
+
+    // A locker takes no cash on delivery (`supportsCod()` false): refused, as `Shipments::request()`.
+    if (order === 8 && input.cod !== undefined && input.cod !== null) {
+      throw refuse('waybill', line(locale, 'webx-delivery', 'delivery.shipments.no_cod'))
     }
 
     if (input.dry_run) return { data: { request: { ...draftOf(order), ...input } } }

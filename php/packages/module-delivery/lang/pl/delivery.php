@@ -116,5 +116,9 @@ return [
         'final' => 'Przesyłki nie można już anulować.',
         'cancelled_note' => 'List przewozowy :number anulowany u przewoźnika.',
         'status_note' => 'Przesyłka :number: :status. :text',
+        'no_cod' => 'Ten przewoźnik nie przyjmuje pobrania dla tej metody.',
+        'no_name' => 'Brak imienia odbiorcy.',
+        'field_required' => 'Uzupełnij: :field',
+        'field_number' => ':field musi być liczbą.',
     ],
 ];

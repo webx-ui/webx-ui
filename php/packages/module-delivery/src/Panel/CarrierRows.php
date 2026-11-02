@@ -6,9 +6,11 @@ namespace WebxUi\Delivery\Panel;
 
 use WebxUi\Delivery\Contracts\Carrier;
 use WebxUi\Delivery\Contracts\SyncsDirectories;
+use WebxUi\Delivery\Models\DeliveryCarrier;
 use WebxUi\Delivery\Models\DeliveryCarrierLocality;
 use WebxUi\Delivery\Models\DeliveryPoint;
 use WebxUi\Delivery\Models\DeliverySyncRun;
+use WebxUi\Delivery\Settings\SettingOptions;
 use WebxUi\Delivery\Sync\Directories;
 use WebxUi\Delivery\Sync\Directory;
 use WebxUi\Delivery\Sync\DirectorySchedule;
@@ -24,7 +26,10 @@ use WebxUi\Geography\Matching\BindingStatus;
  */
 final class CarrierRows
 {
-    public function __construct(private readonly Directories $directories) {}
+    public function __construct(
+        private readonly Directories $directories,
+        private readonly SettingOptions $options,
+    ) {}
 
     /** @return array<string, mixed> */
     public function summary(Carrier $carrier, string $locale): array
@@ -46,12 +51,26 @@ final class CarrierRows
             'countries' => $carrier->countries(),
             'syncs' => $carrier instanceof SyncsDirectories,
             'directories' => $directories,
+            // Settings the account no longer has, from the options last asked for: a list asks no carrier.
+            'missing' => array_values($this->missing($carrier)),
             'queue' => DeliveryCarrierLocality::query()
                 ->where('carrier', $key)
                 ->whereNull('removed_at')
                 ->where('status', BindingStatus::Pending->value)
                 ->count(),
         ];
+    }
+
+    /** @return array<string, string> field → label */
+    public function missing(Carrier $carrier, bool $ask = false): array
+    {
+        if (SettingOptions::fields($carrier) === []) {
+            return [];
+        }
+
+        $row = DeliveryCarrier::query()->find($carrier->key());
+
+        return $this->options->missing($carrier, $row->settings ?? [], $row->credentials ?? [], $ask);
     }
 
     /** @return array<string, mixed> */

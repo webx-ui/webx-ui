@@ -37,7 +37,7 @@ final class McpTest extends McpTestCase
         'delivery_localities_search', 'delivery_countries_list', 'delivery_countries_set', 'delivery_regions_list',
         'delivery_regions_save', 'delivery_localities_save', 'delivery_localities_remove', 'delivery_popular_list',
         'delivery_popular_set', 'delivery_bindings_list', 'delivery_bindings_resolve',
-        'delivery_carriers_list', 'delivery_carriers_update', 'delivery_sync_status', 'delivery_sync_run', 'delivery_sync_confirm',
+        'delivery_carriers_list', 'delivery_carriers_update', 'delivery_carriers_options', 'delivery_sync_status', 'delivery_sync_run', 'delivery_sync_confirm',
     ];
 
     #[Test]

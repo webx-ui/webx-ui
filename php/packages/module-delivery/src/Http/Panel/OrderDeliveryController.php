@@ -104,15 +104,17 @@ final class OrderDeliveryController
         return Order::query()->findOrFail($id);
     }
 
-    /** @return array{recipient_name?: string|null, recipient_phone?: string|null, declared_value?: int|null, cod?: int|null} */
+    /** @return array{recipient_first_name?: string|null, recipient_last_name?: string|null, recipient_phone?: string|null, declared_value?: int|null, cod?: int|null, extra?: array<string, mixed>} */
     private function changes(Request $request): array
     {
-        /** @var array{recipient_name?: string|null, recipient_phone?: string|null, declared_value?: int|null, cod?: int|null} $valid */
+        /** @var array{recipient_first_name?: string|null, recipient_last_name?: string|null, recipient_phone?: string|null, declared_value?: int|null, cod?: int|null, extra?: array<string, mixed>} $valid */
         $valid = $request->validate([
-            'recipient_name' => ['sometimes', 'nullable', 'string', 'max:190'],
+            'recipient_first_name' => ['sometimes', 'nullable', 'string', 'max:190'],
+            'recipient_last_name' => ['sometimes', 'nullable', 'string', 'max:190'],
             'recipient_phone' => ['sometimes', 'nullable', 'string', 'max:32'],
             'declared_value' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:2000000000'],
             'cod' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:2000000000'],
+            'extra' => ['sometimes', 'array'],
         ]);
 
         return $valid;
@@ -134,7 +136,8 @@ final class OrderDeliveryController
 
         if ($waybills && $canShip && $active === null) {
             try {
-                $draft = $this->shipments->request($order)->toArray();
+                // The carrier's own fields and whether it takes cash on delivery: the dialog draws them.
+                $draft = [...$this->shipments->request($order)->toArray(), 'form' => $this->shipments->describe($order)];
             } catch (WaybillRefused) {
                 $draft = null;
             }

@@ -116,5 +116,9 @@ return [
         'final' => 'O envio já não pode ser cancelado.',
         'cancelled_note' => 'Guia :number cancelada na transportadora.',
         'status_note' => 'Envio :number: :status. :text',
+        'no_cod' => 'Esta transportadora não aceita pagamento na entrega para este método.',
+        'no_name' => 'Falta o nome do destinatário.',
+        'field_required' => 'Preencha: :field',
+        'field_number' => ':field tem de ser um número.',
     ],
 ];

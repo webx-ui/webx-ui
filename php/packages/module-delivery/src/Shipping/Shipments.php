@@ -11,7 +11,9 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
+use WebxUi\Delivery\CarrierLocalities;
 use WebxUi\Delivery\Contracts\CreatesWaybills;
+use WebxUi\Delivery\Contracts\DescribesWaybill;
 use WebxUi\Delivery\Contracts\TracksShipments;
 use WebxUi\Delivery\Events\ShipmentCreated;
 use WebxUi\Delivery\MethodTypes;
@@ -46,6 +48,7 @@ final class Shipments
         private readonly MethodTypes $types,
         private readonly Orders $orders,
         private readonly Dispatcher $events,
+        private readonly CarrierLocalities $localities,
     ) {}
 
     /** @return Collection<int, DeliveryShipment> newest first */
@@ -76,9 +79,10 @@ final class Shipments
 
     /**
      * What a waybill of this order would be (§11.2), with what the manager changed in the dialog:
-     * the recipient, the declared value and the cash on delivery.
+     * the recipient's names and phone, the declared value, the cash on delivery and the carrier's own
+     * fields of its type ({@see DescribesWaybill}).
      *
-     * @param  array{recipient_name?: string|null, recipient_phone?: string|null, declared_value?: int|null, cod?: int|null}  $changes
+     * @param  array{recipient_first_name?: string|null, recipient_last_name?: string|null, recipient_phone?: string|null, declared_value?: int|null, cod?: int|null, extra?: array<string, mixed>}  $changes
      *
      * @throws WaybillRefused the order has no delivery its carrier makes waybills for
      */
@@ -95,8 +99,11 @@ final class Shipments
             throw new WaybillRefused(self::word('no_waybills', $locale));
         }
 
+        // The order keeps the names apart (decision 40 of the orders' spec): the recipient when
+        // another person gets the parcel, the buyer otherwise — never split by spaces.
         $recipient = $order->recipient;
-        $name = trim(($recipient['first_name'] ?? $order->customer_first_name).' '.($recipient === null ? $order->customer_last_name : ($recipient['last_name'] ?? '')));
+        $first = trim((string) ($recipient === null ? $order->customer_first_name : ($recipient['first_name'] ?? '')));
+        $last = trim((string) ($recipient === null ? $order->customer_last_name : ($recipient['last_name'] ?? '')));
         $phone = $recipient !== null ? ($recipient['phone'] ?? $order->customer_phone) : $order->customer_phone;
         $carrier = (string) ($block['carrier'] ?? '');
         $price = is_array($block['price'] ?? null) ? $block['price'] : [];
@@ -124,20 +131,120 @@ final class Shipments
             ->values()
             ->all();
 
+        $type = $this->waybills($order);
+        $sender = DeliveryCarrier::query()->find($carrier)->settings ?? [];
+        $cod = isset($changes['cod']) ? max(0, (int) $changes['cod']) : null;
+
+        if ($cod !== null && $type instanceof DescribesWaybill && ! $type->supportsCod()) {
+            throw new WaybillRefused(self::word('no_cod', $locale));
+        }
+
+        $localityId = is_array($block['locality'] ?? null) && isset($block['locality']['id']) ? (int) $block['locality']['id'] : null;
+
         return new WaybillRequest(
             orderId: $order->id,
             orderNumber: $order->number,
             delivery: $block,
-            recipientName: self::filled($changes['recipient_name'] ?? null) ?? $name,
+            recipientFirstName: self::filled($changes['recipient_first_name'] ?? null) ?? $first,
+            recipientLastName: array_key_exists('recipient_last_name', $changes) ? (self::filled($changes['recipient_last_name']) ?? '') : $last,
             recipientPhone: array_key_exists('recipient_phone', $changes) ? self::filled($changes['recipient_phone']) : $phone,
             recipientEmail: $order->customer_email,
-            sender: DeliveryCarrier::query()->find($carrier)->settings ?? [],
+            sender: $sender,
             lines: $lines,
             declaredValue: max(0, (int) ($changes['declared_value'] ?? $order->total)),
             currency: $order->currency,
             payer: $payer,
-            cod: isset($changes['cod']) ? max(0, (int) $changes['cod']) : null,
+            cod: $cod,
+            // A waybill names the carrier's own town; the snapshot keeps only the shared one.
+            carrierLocality: $localityId === null ? null : $this->localities->externalId($carrier, $localityId),
+            extra: $type instanceof DescribesWaybill ? self::extra($type, $sender, (array) ($changes['extra'] ?? []), $locale) : [],
         );
+    }
+
+    /**
+     * What the dialog draws besides the base's lines: the carrier's own fields of the order's type
+     * with their values to start from, and whether the cash on delivery is asked at all.
+     *
+     * @return array{fields: list<array<string, mixed>>, cod: bool}
+     */
+    public function describe(Order $order): array
+    {
+        $type = $this->waybills($order);
+
+        if (! $type instanceof DescribesWaybill) {
+            return ['fields' => [], 'cod' => true];
+        }
+
+        $sender = DeliveryCarrier::query()->find((string) ($order->delivery['carrier'] ?? ''))->settings ?? [];
+        $fields = [];
+
+        foreach ($type->waybillFields() as $field) {
+            if (is_string($field['name'] ?? null)) {
+                $fields[] = [...$field, 'default' => $sender[$field['name']] ?? $field['default'] ?? null];
+            }
+        }
+
+        return ['fields' => $fields, 'cod' => $type->supportsCod()];
+    }
+
+    /**
+     * The carrier's own fields of a waybill: what the manager gave, or the carrier's setting of that
+     * name, or the field's default; a name the type does not declare is dropped.
+     *
+     * @param  array<string, mixed>  $sender
+     * @param  array<array-key, mixed>  $given
+     * @return array<string, mixed>
+     *
+     * @throws WaybillRefused a required field is empty, a number is not one
+     */
+    private static function extra(DescribesWaybill $type, array $sender, array $given, ?string $locale): array
+    {
+        $extra = [];
+
+        foreach ($type->waybillFields() as $field) {
+            $name = $field['name'] ?? null;
+
+            if (! is_string($name)) {
+                continue;
+            }
+
+            $value = array_key_exists($name, $given) ? $given[$name] : ($sender[$name] ?? $field['default'] ?? null);
+            $label = self::fieldLabel($field, $name, $locale);
+
+            if ($value === null || $value === '') {
+                if (($field['required'] ?? false) === true) {
+                    throw new WaybillRefused(self::word('field_required', $locale, ['field' => $label]));
+                }
+
+                $extra[$name] = null;
+
+                continue;
+            }
+
+            if (($field['type'] ?? null) === 'number') {
+                if (! is_numeric($value)) {
+                    throw new WaybillRefused(self::word('field_number', $locale, ['field' => $label]));
+                }
+
+                $value = $value + 0;
+            }
+
+            $extra[$name] = $value;
+        }
+
+        return $extra;
+    }
+
+    /** @param  array<string, mixed>  $field */
+    private static function fieldLabel(array $field, string $name, ?string $locale): string
+    {
+        $label = $field['label'] ?? null;
+
+        if (is_array($label)) {
+            $label = $label[$locale ?? app()->getLocale()] ?? $label['en'] ?? reset($label);
+        }
+
+        return is_string($label) && $label !== '' ? $label : $name;
     }
 
     /**
@@ -145,13 +252,17 @@ final class Shipments
      * order's block and its history, `ShipmentCreated`. One waybill an order at a time: a second
      * one comes after the first is cancelled.
      *
-     * @param  array{recipient_name?: string|null, recipient_phone?: string|null, declared_value?: int|null, cod?: int|null}  $changes
+     * @param  array{recipient_first_name?: string|null, recipient_last_name?: string|null, recipient_phone?: string|null, declared_value?: int|null, cod?: int|null, extra?: array<string, mixed>}  $changes
      *
      * @throws WaybillRefused
      */
     public function create(Order $order, array $changes, string $source): DeliveryShipment
     {
         $request = $this->request($order, $changes);
+
+        if (trim($request->recipientFirstName) === '') {
+            throw new WaybillRefused(self::word('no_name', $order->locale));
+        }
         $type = $this->waybills($order);
         $locale = $order->locale;
 

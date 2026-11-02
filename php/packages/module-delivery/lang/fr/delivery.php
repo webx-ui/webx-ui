@@ -116,5 +116,9 @@ return [
         'final' => 'Le colis ne peut plus être annulé.',
         'cancelled_note' => 'Bordereau :number annulé chez le transporteur.',
         'status_note' => 'Colis :number : :status. :text',
+        'no_cod' => 'Ce transporteur n’accepte pas le contre-remboursement pour ce mode.',
+        'no_name' => 'Le prénom du destinataire est vide.',
+        'field_required' => 'À remplir : :field',
+        'field_number' => ':field doit être un nombre.',
     ],
 ];

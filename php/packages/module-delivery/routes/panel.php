@@ -54,6 +54,8 @@ Route::prefix((string) config('webx-admin.api_path'))
                 Route::delete('points/{point}', [PointController::class, 'destroy'])->whereNumber('point')->name('points.destroy');
 
                 Route::put('carriers/{carrier}', [CarrierController::class, 'update'])->where('carrier', '[a-z0-9-]+')->name('carriers.update');
+                // Options from the carrier's account hold its contacts and phones: not for a reader (§5.5).
+                Route::get('carriers/{carrier}/options/{field}', [CarrierController::class, 'options'])->where('carrier', '[a-z0-9-]+')->where('field', '[A-Za-z0-9_]+')->name('carriers.options');
                 Route::post('carriers/{carrier}/test', [CarrierController::class, 'test'])->where('carrier', '[a-z0-9-]+')->name('carriers.test');
                 Route::post('carriers/{carrier}/sync/{directory}', [CarrierController::class, 'sync'])->where('carrier', '[a-z0-9-]+')->where('directory', '[a-z]+')->name('carriers.sync');
                 Route::post('carriers/{carrier}/confirm/{directory}', [CarrierController::class, 'confirm'])->where('carrier', '[a-z0-9-]+')->where('directory', '[a-z]+')->name('carriers.confirm');

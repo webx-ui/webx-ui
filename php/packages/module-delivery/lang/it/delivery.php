@@ -116,5 +116,9 @@ return [
         'final' => 'La spedizione non si può più annullare.',
         'cancelled_note' => 'Lettera di vettura :number annullata presso il corriere.',
         'status_note' => 'Spedizione :number: :status. :text',
+        'no_cod' => 'Questo corriere non accetta il contrassegno per questo metodo.',
+        'no_name' => 'Manca il nome del destinatario.',
+        'field_required' => 'Compila: :field',
+        'field_number' => ':field deve essere un numero.',
     ],
 ];

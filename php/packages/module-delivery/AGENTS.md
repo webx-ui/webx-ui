@@ -23,7 +23,7 @@ binding) and `webx-ui/widgets`. `webx-ui/module-orders` gets the step as its che
 - **Contracts** `WebxUi\Delivery\Contracts\MethodType` (key `<carrier>.<kind>`, `asks()`,
   `pointKinds()`, `countries()`, `available()`, `quote()`, `validate()`), `Carrier`, optional
   `LabelledMethodType` (`title()`, `description()`; without it the panel names a type from its kind
-  or `asks()` and the carrier, never by key); `AbstractMethodType` — the price and default checks.
+  or `asks()` and the carrier, never by key); `AbstractMethodType` — the price and default checks. Optional `ProvidesSettingOptions` (a settings field `options: 'carrier'`, `depends`, `search` — `Settings\SettingOptions` asks, caches 600 s, checks on save, keeps `settings._labels`) and `DescribesWaybill` (`waybillFields()` → `WaybillRequest::$extra`, `supportsCod()`).
 - **Registries** (singletons): `Carriers` (`store` built in), `MethodTypes` (`store.pickup`, `store.courier` built in). A repeated or malformed key, a type of an unknown carrier — an exception.
 - **`Methods::forLocality(DeliveryContext)`** — the offered `MethodOption`s in the panel's order
   (price, points, `disabled` + `hint` for a carrier's courier without streets); `evaluate()` — every
@@ -33,9 +33,9 @@ binding) and `webx-ui/widgets`. `webx-ui/module-orders` gets the step as its che
   `DeliveryAdjustments` (priority 1000) puts `fixed(N > 0)` into the chain; `Delivery::cost()` — the
   line «Delivery cost». `shipping.paid_by_store` is in the cart's `BenefitKeys`.
 - **`Delivery`** — `needed(CartState)`, `context($cart, $locality)`, `snapshot(Selection, Quote)` → `DeliverySnapshot` (§11.1: the order's block, every language copied, `payer` sender|recipient).
-- **`PopularLocalities`** — `ids()`, `suggestions($country, $locale)`, `set($ids)`, `add()`, `remove()`.
+- **`PopularLocalities`** — `ids()`, `suggestions($country, $locale)`, `set($ids)`, `add()`, `remove()`. **`CarrierLocalities`** — a satellite reads its towns: `externalIds()`, `externalId()`.
 - **Parcels** (`Shipping\Shipments`, only with `module-orders`): a type implements
-  `Contracts\CreatesWaybills` / `TracksShipments`; `request()`, `create()` (number into the block,
+  `Contracts\CreatesWaybills` / `TracksShipments`; `request()` (first and last name apart, `carrierLocality`), `create()` (number into the block,
   `Events\ShipmentCreated`), `cancel()`, `track()` — «received» → the order's milestone, once.
 - **Directory sync** in `WebxUi\Delivery\Sync`: a carrier implements `Contracts\SyncsDirectories`
   (`directories()`, `pull($directory, $cursor)` → a `Page` of locality, point or street records);
@@ -70,7 +70,7 @@ binding) and `webx-ui/widgets`. `webx-ui/module-orders` gets the step as its che
   `orders.manage`, not while a waybill stands). The npm half — `@webx-ui/module-delivery`.
 - **MCP** (§15, with `webx-ui/mcp`; `Mcp\DeliveryModule` is the first section): `delivery_*` — methods,
   `quote` (each method priced, or why not), points, geography by hand (a duplicate answers
-  `similar`), popular towns, bindings, carriers, sync, parcels (`delivery.ship`, with orders), `order_change` (`orders.manage`) behind
+  `similar`), popular towns, bindings, carriers (`carriers_options` — `delivery.manage`), sync, parcels (`delivery.ship`, with orders), `order_change` (`orders.manage`) behind
   `delivery:read|write`, writes with `dry_run`; `delivery://catalog`. A key never passes: `api_key: set`.
 
 ### Permissions
@@ -101,23 +101,23 @@ Tokens: `--webx-delivery-gap`, `--webx-delivery-icon-size` on `.webx-delivery`, 
 
 ## Change it without forking
 
-| You want                                    | Do this                                                                                                      |
-| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| A carrier of your own                       | `callAfterResolving(Carriers::class, fn ($c) => $c->register(MyCarrier::class))` in your provider's `boot()` |
-| Its methods                                 | `callAfterResolving(MethodTypes::class, fn ($t) => $t->register(MyBranchType::class))`                       |
-| A type of your own                          | extend `AbstractMethodType`; override `quote()`, `available()`, add to `validate()` and call the parent      |
-| Waybills and tracking of your carrier       | the type implements `CreatesWaybills` and `TracksShipments`; statuses → `ShipmentStatus`                     |
-| A new kind of the shop's points             | `app(PointKinds::class)->define('showroom', ['en' => 'Showroom'])`, then a `store.pickup` method of it       |
-| The shop's courier in a town                | `$method->syncLocalities([$id, …])` — not the pivot by hand: it moves the cache group                        |
-| The popular towns                           | `app(PopularLocalities::class)->set([$id, …])` — the order given is the order shown                          |
-| What a buyer is offered, from your own code | `app(Methods::class)->forLocality(app(Delivery::class)->context($cartState, $localityId))`                   |
-| The step's markup                           | `vendor:publish --tag=webx-delivery-views`, or one file in `<layer>/views/vendor/webx-delivery/components/`  |
-| The step on a page of your own              | `<x-webx-delivery::step />`; inside your form — `name="delivery"` prefixes its fields                        |
-| A directory on another schedule, or by hand | `webx-delivery.carriers.<key>.schedule.<directory>` — a cron or `manual`                                     |
-| Sync now                                    | `php artisan webx:delivery:sync carrier-a --directory=points` (`--queue` to hand it to the queue)            |
-| Carrier A on a development site             | `WEBX_DELIVERY_FAKE_CARRIER=true` — never in production; then `webx:demo --module=delivery` or a sync        |
-| A field on a form of the section            | a patch on `delivery.method-form` / `delivery.point-form` / `delivery.locality-form`                         |
-| Other words                                 | `php artisan vendor:publish --tag=webx-delivery-lang`                                                        |
+| You want                                    | Do this                                                                                                                   |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| A carrier of your own                       | `callAfterResolving(Carriers::class, fn ($c) => $c->register(MyCarrier::class))` in your provider's `boot()`              |
+| Its methods                                 | `callAfterResolving(MethodTypes::class, fn ($t) => $t->register(MyBranchType::class))`                                    |
+| A type of your own                          | extend `AbstractMethodType`; override `quote()`, `available()`, add to `validate()` and call the parent                   |
+| Waybills and tracking of your carrier       | the type implements `CreatesWaybills` and `TracksShipments`; statuses → `ShipmentStatus`; own fields — `DescribesWaybill` |
+| A new kind of the shop's points             | `app(PointKinds::class)->define('showroom', ['en' => 'Showroom'])`, then a `store.pickup` method of it                    |
+| The shop's courier in a town                | `$method->syncLocalities([$id, …])` — not the pivot by hand: it moves the cache group                                     |
+| The popular towns                           | `app(PopularLocalities::class)->set([$id, …])` — the order given is the order shown                                       |
+| What a buyer is offered, from your own code | `app(Methods::class)->forLocality(app(Delivery::class)->context($cartState, $localityId))`                                |
+| The step's markup                           | `vendor:publish --tag=webx-delivery-views`, or one file in `<layer>/views/vendor/webx-delivery/components/`               |
+| The step on a page of your own              | `<x-webx-delivery::step />`; inside your form — `name="delivery"` prefixes its fields                                     |
+| A directory on another schedule, or by hand | `webx-delivery.carriers.<key>.schedule.<directory>` — a cron or `manual`                                                  |
+| Sync now                                    | `php artisan webx:delivery:sync carrier-a --directory=points` (`--queue` to hand it to the queue)                         |
+| Carrier A on a development site             | `WEBX_DELIVERY_FAKE_CARRIER=true` — never in production; then `webx:demo --module=delivery` or a sync                     |
+| A field on a form of the section            | a patch on `delivery.method-form` / `delivery.point-form` / `delivery.locality-form`                                      |
+| Other words                                 | `php artisan vendor:publish --tag=webx-delivery-lang`                                                                     |
 
 ## Do not
 

@@ -65,6 +65,45 @@ final class CarrierA implements Carrier, SyncsDirectories
 
 The address of the API is the satellite's config, not something a person types in the panel.
 
+### The sender from the carrier's account
+
+A carrier whose API knows the shop's senders lets the panel offer them instead of a text field:
+it implements `ProvidesSettingOptions` and marks the fields `options: 'carrier'`. `depends` names
+the fields the options wait for — a new sender empties its contact — and `search` asks as the
+admin types, for lists of hundreds.
+
+```php
+use WebxUi\Delivery\Contracts\ProvidesSettingOptions;
+use WebxUi\Delivery\Settings\SettingOption;
+
+final class CarrierA implements Carrier, ProvidesSettingOptions, SyncsDirectories
+{
+    public function settings(): array
+    {
+        return [
+            ['name' => 'sender', 'type' => 'select', 'options' => 'carrier'],
+            ['name' => 'contact', 'type' => 'select', 'options' => 'carrier', 'depends' => ['sender']],
+        ];
+    }
+
+    /** @return list<SettingOption> at most 50 */
+    public function settingOptions(string $field, array $values, array $credentials, ?string $query = null): array
+    {
+        return match ($field) {
+            'sender' => $this->api->senders($credentials['api_key']),
+            'contact' => $this->api->contacts($credentials['api_key'], $values['sender']),
+        };
+    }
+}
+```
+
+The base asks with the stored key — none set, it does not ask — keeps the options ten minutes,
+asks again past the cache on «Refresh lists» and on every save, and takes only a value the list
+has. The label of the chosen value is kept in `settings._labels`, so the dialog shows «Sender A»
+when the carrier is down; a value gone from the account is said, never wiped. Throw
+`CarrierUnavailable` when the API does not answer — within five seconds, a person is waiting. The
+agent's door is the same: `delivery_carriers_options` and `delivery_carriers_update`.
+
 ## Directories
 
 A carrier that keeps its towns, points and streets on the site implements `SyncsDirectories`:
@@ -147,6 +186,13 @@ a town the carrier gives no streets for shows the method switched off with a hin
 A type that implements `CreatesWaybills` makes waybills from the order's card; one that implements
 `TracksShipments` is asked where parcels are every 30 minutes, its states translated into the
 base's `ShipmentStatus` — `received` sets the order's milestone «received», once.
+
+The waybill gets the recipient's first and last name apart, as the order keeps them, and
+`carrierLocality` — the carrier's own id of the town. What the carrier asks beyond that — weight,
+seats, what is inside — the type declares with `DescribesWaybill`: `waybillFields()` in the form
+of the settings (filled from the carrier's setting of the same name, or `default`) reach it in
+`WaybillRequest::$extra`; `supportsCod(): false` hides the cash on delivery in the dialog and
+refuses it from an agent.
 
 ## Registering
 

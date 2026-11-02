@@ -88,12 +88,14 @@ final class OrderTabTest extends ShippingTestCase
         $order = $this->branchOrder(900);
         $this->signIn(['orders.view', 'delivery.ship']);
 
-        $request = $this->postJson("/api/cms/delivery/orders/{$order->id}/waybill", ['dry_run' => true, 'cod' => 1200, 'recipient_name' => 'Bo Example'])
+        $request = $this->postJson("/api/cms/delivery/orders/{$order->id}/waybill", ['dry_run' => true, 'cod' => 1200, 'recipient_first_name' => 'Bo', 'recipient_last_name' => 'Example'])
             ->assertOk()
             ->json('data.request');
 
         $this->assertSame('sender', $request['payer']);
         $this->assertSame(1200, $request['cod']);
+        $this->assertSame('Bo', $request['recipient']['first_name']);
+        $this->assertSame('Example', $request['recipient']['last_name']);
         $this->assertSame('Bo Example', $request['recipient']['name']);
         $this->assertSame([], $this->parcels->requests);
         $this->assertSame(0, DeliveryShipment::query()->count());
