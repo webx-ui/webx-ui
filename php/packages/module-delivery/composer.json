@@ -68,7 +68,7 @@
         "webx": {
             "module": "delivery",
             "npm": {
-                "@webx-ui/module-delivery": "^0.1.0"
+                "@webx-ui/module-delivery": "^0.0.0"
             },
             "panel": {
                 "import": "import { delivery } from '@webx-ui/module-delivery'",
