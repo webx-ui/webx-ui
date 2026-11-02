@@ -78,7 +78,7 @@ The theme's contract, in `resources/theme/delivery.css`; restyle with the same c
 `webx-delivery__point-today`, `webx-delivery__point-phone`, `webx-delivery__address`, `webx-delivery__field`
 (+ `webx-delivery__field--<name>`), `webx-delivery__summary`, `webx-delivery__summary-label`,
 `webx-delivery__summary-value`, `webx-delivery__dialog`, `webx-delivery__search`, `webx-delivery__popular`,
-`webx-delivery__popular-title`, `webx-delivery__popular-list`, `webx-delivery__town`.
+`webx-delivery__popular-title`, `webx-delivery__popular-list`, `webx-delivery__popular-item`, `webx-delivery__town`.
 Tokens: `--webx-delivery-gap`, `--webx-delivery-icon-size` on `.webx-delivery`, `--webx-delivery-dialog-width` on the dialog.
 
 ## Change it without forking

@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace WebxUi\Delivery\Tests;
 
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\MessageBag;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Cart\Totals\Calculator;
 use WebxUi\Cart\Totals\Purpose;
+use WebxUi\Delivery\CartDelivery;
 use WebxUi\Delivery\Checkout\StepView;
 use WebxUi\Delivery\Models\DeliveryMethod;
 use WebxUi\Delivery\Models\DeliverySelection;
@@ -28,6 +30,7 @@ final class StepTest extends StepTestCase
     private function choose(array $attributes): void
     {
         DeliverySelection::query()->updateOrCreate(['cart_id' => $this->basket->id], ['country_code' => 'XX', ...$attributes]);
+        $this->app->make(CartDelivery::class)->forget();
     }
 
     private function render(?MessageBag $errors = null, ?string $name = null): string
@@ -112,6 +115,23 @@ final class StepTest extends StepTestCase
         $this->assertMatchesRegularExpression('~<div class="webx-delivery__point-card">\s*<p class="webx-delivery__point-title">Store C</p>\s*<p class="webx-delivery__point-address">3 Example street</p>~', $html);
         $this->assertStringContainsString('<a href="tel:+80012345678">+800 1234 5678</a>', $html);
         $this->assertMatchesRegularExpression('~<option value="'.$point->id.'"\s+data-hint="3 Example street"\s+selected\s*>Store C</option>~', $html);
+    }
+
+    #[Test]
+    public function a_point_and_a_street_beyond_the_first_ones_loaded_are_named_in_their_lists(): void
+    {
+        $this->carrierA(branches: 25, streets: 60);
+        $branch = DeliveryMethod::query()->where('key', 'carrier-a-branch')->firstOrFail();
+        $far = (int) DB::table('delivery_points')->where('carrier', 'carrier-a')->where('number', '24')->value('id');
+        $this->choose(['locality_id' => $this->townA->id, 'method_id' => $branch->id, 'point_id' => $far]);
+
+        $this->assertMatchesRegularExpression('~<option value="'.$far.'"\s+data-hint="24 Example street[^"]*"\s+selected\s*>Branch 24</option>~', $this->render());
+
+        $courier = DeliveryMethod::query()->where('key', 'carrier-a-courier')->firstOrFail();
+        $this->choose(['method_id' => $courier->id, 'point_id' => null, 'address' => ['street' => 'Elm 9 street', 'street_id' => 's-9', 'house' => '1']]);
+
+        // Elm 9 sorts after Elm 59 and is not among the first fifty.
+        $this->assertMatchesRegularExpression('~<option value="s-9"\s+selected\s*>Elm 9 street</option>~', $this->render());
     }
 
     #[Test]

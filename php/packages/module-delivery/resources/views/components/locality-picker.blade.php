@@ -6,7 +6,7 @@
     which «Change» opens once the script runs.
 
     Classes: webx-delivery__locality, __card, __card-label, __card-value, __change,
-    __locality-form, __popular, __popular-title, __popular-list, __town, __search, __nojs,
+    __locality-form, __popular, __popular-title, __popular-list, __popular-item, __town, __search, __nojs,
     __error; is-empty on the card while no town is chosen.
 --}}
 @props(['step', 'dialog' => false])
@@ -43,6 +43,7 @@
                     searchable
                     :source="$step['urls']['localities']"
                     :min="1"
+                    inline
                     :label="__('webx-delivery::delivery.step.locality')"
                     :show-label="true"
                     :placeholder="__('webx-delivery::delivery.step.locality_placeholder')"
@@ -55,7 +56,7 @@
                 <p class="webx-delivery__popular-title">{{ __('webx-delivery::delivery.step.popular') }}</p>
                 <ul class="webx-delivery__popular-list">
                     @foreach ($step['popular'] as $town)
-                        <li>
+                        <li class="webx-delivery__popular-item">
                             <button type="button" class="webx-delivery__town" data-delivery-town="{{ $town['id'] }}" title="{{ $town['label'] }}" @if (($step['locality']['id'] ?? null) === $town['id']) aria-pressed="true" @endif>{{ $town['name'] }}</button>
                         </li>
                     @endforeach

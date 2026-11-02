@@ -95,6 +95,8 @@ export function select(root) {
   const input = strict ? document.createElement('input') : native
   const list = document.createElement('ul')
   list.className = 'webx-select__list'
+  // In a dialog the list opens in the flow: hanging over the content, its edge would cut it.
+  if (root.getAttribute('data-inline') === 'true') list.classList.add('webx-select__list--inline')
   list.hidden = true
   list.setAttribute('role', 'listbox')
   idOf(list, 'webx-select-list')

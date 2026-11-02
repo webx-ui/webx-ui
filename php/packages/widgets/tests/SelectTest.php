@@ -46,6 +46,10 @@ final class SelectTest extends TestCase
         $this->assertStringContainsString('<option value="77" selected>77</option>', $html);
         // Searchable without a server: the loaded options only, the attribute still marks it.
         $this->assertStringContainsString('data-webx-select=""', $html);
+        $this->assertStringNotContainsString('data-inline', $html);
+
+        // In a dialog: the list opens in the flow.
+        $this->assertStringContainsString('data-inline="true"', Blade::render('<x-webx-select name="town" searchable inline />'));
     }
 
     #[Test]

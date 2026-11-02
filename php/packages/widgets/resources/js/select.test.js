@@ -175,6 +175,14 @@ describe('select', () => {
     expect(input.value).toBe('Anything typed')
   })
 
+  it('opens the list in the flow when asked to, inside a dialog', async () => {
+    const { list } = await start(
+      strictBox().replace('data-strict="true"', 'data-strict="true" data-inline="true"'),
+    )
+
+    expect(list.classList.contains('webx-select__list--inline')).toBe(true)
+  })
+
   it('says when the server failed, and lets go on unmount', async () => {
     const { input, root, native } = await start(
       strictBox(),

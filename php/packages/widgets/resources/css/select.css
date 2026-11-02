@@ -99,6 +99,13 @@
   color: var(--site-color-text);
 }
 
+/* In the flow of a dialog: the dialog grows with it and scrolls as a whole. */
+.webx-select__list.webx-select__list--inline {
+  position: static;
+  margin-block-start: var(--site-space-1);
+  box-shadow: none;
+}
+
 .webx-select__list[hidden] {
   display: none;
 }

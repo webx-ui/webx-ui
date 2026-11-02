@@ -6,10 +6,11 @@
     for a screen reader.
 
     `data-webx-select` — the server's address of the search (empty: the loaded options only);
-    `data-strict` — only an option can be the value.
+    `data-strict` — only an option can be the value; `data-inline` — the list opens in the flow
+    (`__list--inline`), not over the page: inside a dialog.
 
     Classes: webx-select (+ --searchable, --free), __label (--shown), __native, __box, __input,
-    __options, __list, __option, __hint, __more, __empty, __status; states is-open, is-loading, and
+    __options, __list (--inline), __option, __hint, __more, __empty, __status; states is-open, is-loading, and
     aria-selected="true" on the option chosen by keys.
 --}}
 <div {{ $attributes->class(['webx-select', 'webx-select--searchable' => $searchable || $source !== null, 'webx-select--free' => ! $strict])->merge([
@@ -18,6 +19,7 @@
     'data-min' => $min,
     'data-delay' => $delay,
     'data-strict' => $strict ? 'true' : 'false',
+    'data-inline' => $inline ? 'true' : null,
     'data-words' => json_encode($words, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
 ]) }}>
     <label @class(['webx-select__label', 'webx-select__label--shown' => $showLabel]) for="{{ $key }}">{{ $labelText }}</label>

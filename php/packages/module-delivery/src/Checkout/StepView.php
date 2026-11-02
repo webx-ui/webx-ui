@@ -143,6 +143,11 @@ final class StepView
                 if ($step['point'] !== null && $step['point']['locality_id'] !== $locality->id) {
                     $step['point'] = null;
                 }
+
+                // The chosen point may be on another page than the first: the list names it all the same.
+                if ($step['point'] !== null && ! in_array((string) $step['point']['id'], array_column($step['points']['options'], 'value'), true)) {
+                    array_unshift($step['points']['options'], self::pointOption($step['point']));
+                }
             }
 
             if ($asks === Asks::Address) {
@@ -161,6 +166,12 @@ final class StepView
                     'apartment' => (string) $old('address.apartment', $stored['apartment'] ?? ''),
                     'note' => (string) $old('address.note', $stored['note'] ?? ''),
                 ];
+
+                // A street beyond the first ones loaded: the list names it all the same.
+                $id = $step['address']['street_id'];
+                if ($strict && $id !== '' && ! in_array($id, array_column($step['address']['streets'], 'value'), true)) {
+                    array_unshift($step['address']['streets'], ['value' => $id, 'label' => $step['address']['street']]);
+                }
             }
 
             $step['cost'] = $this->delivery->cost($state, (int) $cart, Purpose::Checkout);

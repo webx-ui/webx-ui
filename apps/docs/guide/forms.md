@@ -583,6 +583,7 @@ is added to the select, so a form sent without the script still carries it.
 | `source`, `param`                    | the server's search, this site's; the query parameter (`q`)                              |
 | `strict`                             | on: only an option is the value; `:strict="false"` — a text field with suggestions       |
 | `min`, `delay`                       | characters before asking (1; 0 — the list opens with the server's first page), 250 ms    |
+| `inline`                             | the list opens in the flow, not over the page — inside a dialog, whose edge would cut it |
 | `label`, `show-label`, `placeholder` | the name of the field (hidden for a screen reader unless shown); the empty option's text |
 | `nothing-label`, `more-label`, …     | the words, the dictionary's `widgets.select.*` behind them                               |
 
@@ -595,7 +596,7 @@ whatever is typed is the value. The shop's courier takes a street like that, wit
 carriers know as suggestions; a carrier's courier takes only a street of its directory — strict.
 
 Classes: `webx-select` (`--searchable`, `--free`), `__label`, `__native`, `__box`, `__input`,
-`__list`, `__option` (`is-chosen`), `__hint`, `__more`, `__empty`, `__status`; states `is-open`,
+`__list` (`--inline`), `__option` (`is-chosen`), `__hint`, `__more`, `__empty`, `__status`; states `is-open`,
 `is-loading`. Tokens `--webx-select-*` on `:root`.
 
 ## Example: a sign-in

@@ -21,6 +21,9 @@ use WebxUi\Widgets\Facades\Widgets;
  * `more` adds «Show more», which asks the next page. Choosing an option sets the select and fires
  * its `change` — the owner listens to the select as to any field.
  *
+ * `inline`: the list opens in the flow of the page, not over it — inside a dialog, whose edge would
+ * cut a list that hangs over the content.
+ *
  * `strict` (on by default): only an option can be the value — a carrier's street, a branch.
  * `:strict="false"`: the field is text, an option only fills it — a street typed by hand with the
  * suggestions it may take; without JavaScript it is a plain text field.
@@ -54,6 +57,7 @@ final class Select extends Component
         public bool $disabled = false,
         public int $min = 1,
         public int $delay = 250,
+        public bool $inline = false,
         public ?string $nothingLabel = null,
         public ?string $moreLabel = null,
         public ?string $countLabel = null,
