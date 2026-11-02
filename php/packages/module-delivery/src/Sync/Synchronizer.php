@@ -258,6 +258,23 @@ final class Synchronizer
         return $run;
     }
 
+    /**
+     * What confirming a held run would remove (§7.5): how many records in force the run did not
+     * see, and the first of them by id — what `delivery_sync_confirm` shows on a dry run.
+     *
+     * @return array{count: int, first: list<array{id: int, external_id: string}>}
+     */
+    public function vanishing(DeliverySyncRun $run, int $limit = 50): array
+    {
+        return [
+            'count' => $this->vanished($run)->count(),
+            'first' => $this->vanished($run)->orderBy('id')->limit($limit)->get(['id', 'external_id'])
+                ->map(static fn (object $row): array => ['id' => (int) $row->id, 'external_id' => (string) $row->external_id])
+                ->values()
+                ->all(),
+        ];
+    }
+
     /** @return positive-int */
     public function tries(): int
     {

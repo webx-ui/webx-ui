@@ -70,15 +70,21 @@ final class PointForm
         ];
     }
 
-    /** @return array<string, mixed> a line of the list */
-    public static function row(DeliveryPoint $point, string $locale, PointKinds $kinds): array
+    /**
+     * A line of the list. A page of them takes the names of the kinds once, as `$kinds->all()`:
+     * the shop's own kinds are read from the database, and once a row is once too often.
+     *
+     * @param  PointKinds|array<string, string>  $kinds
+     * @return array<string, mixed>
+     */
+    public static function row(DeliveryPoint $point, string $locale, PointKinds|array $kinds): array
     {
         $schedule = Schedule::fromArray($point->schedule);
 
         return [
             'id' => $point->id,
             'kind' => $point->kind,
-            'kind_label' => $kinds->label($point->kind, $locale),
+            'kind_label' => is_array($kinds) ? ($kinds[$point->kind] ?? $point->kind) : $kinds->label($point->kind, $locale),
             'title' => Names::pick($point->titles, $locale) ?? '',
             'address' => Names::pick($point->address, $locale) ?? '',
             'locality' => $point->locality === null ? null : LocalityRows::brief($point->locality, $locale),

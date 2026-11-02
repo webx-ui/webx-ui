@@ -14,7 +14,7 @@ use WebxUi\Admin\AbstractModule;
  * the geography, the popular towns and the binding queue. Only the first declares permissions;
  * the rest are opened with the same two (`delivery.view`, `delivery.manage`).
  */
-final class DeliverySection extends AbstractModule
+class DeliverySection extends AbstractModule
 {
     /** The id of the navigation group. */
     public const string GROUP = 'delivery';

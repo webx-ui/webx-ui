@@ -4,27 +4,23 @@ declare(strict_types=1);
 
 namespace WebxUi\Delivery\Http\Panel;
 
-use Illuminate\Contracts\Bus\Dispatcher;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Delivery\Carriers;
 use WebxUi\Delivery\Contracts\Carrier;
-use WebxUi\Delivery\Contracts\SyncsDirectories;
 use WebxUi\Delivery\DeliveryException;
 use WebxUi\Delivery\Models\DeliveryCarrier;
-use WebxUi\Delivery\Models\DeliveryCarrierLocality;
-use WebxUi\Delivery\Models\DeliveryPoint;
 use WebxUi\Delivery\Models\DeliverySyncRun;
+use WebxUi\Delivery\Panel\CarrierRows;
 use WebxUi\Delivery\Sync\Directories;
 use WebxUi\Delivery\Sync\Directory;
-use WebxUi\Delivery\Sync\DirectorySchedule;
+use WebxUi\Delivery\Sync\ManualSync;
 use WebxUi\Delivery\Sync\RunStatus;
 use WebxUi\Delivery\Sync\SyncAlreadyRunning;
-use WebxUi\Delivery\Sync\SyncDirectory;
 use WebxUi\Delivery\Sync\Synchronizer;
-use WebxUi\Geography\Matching\BindingStatus;
+use WebxUi\Delivery\Sync\Trigger;
 use WebxUi\Localization\Locales;
 
 /**
@@ -42,6 +38,7 @@ final class CarrierController
         private readonly Carriers $carriers,
         private readonly Directories $directories,
         private readonly Locales $locales,
+        private readonly CarrierRows $rows,
     ) {}
 
     public function index(): JsonResponse
@@ -50,7 +47,7 @@ final class CarrierController
 
         foreach ($this->carriers->all() as $carrier) {
             if ($carrier->key() !== Carriers::STORE) {
-                $rows[] = $this->summary($carrier);
+                $rows[] = $this->rows->summary($carrier, $this->locales->current());
             }
         }
 
@@ -64,7 +61,7 @@ final class CarrierController
         $stored = $row->credentials ?? [];
 
         return ApiResponse::data([
-            ...$this->summary($one),
+            ...$this->rows->summary($one, $this->locales->current()),
             'settings' => [
                 'fields' => $one->settings(),
                 'values' => $row->settings ?? [],
@@ -75,7 +72,7 @@ final class CarrierController
                 'set' => isset($field['name']) && ($stored[$field['name']] ?? null) !== null && ($stored[$field['name']] ?? '') !== '',
             ], $one->credentials()),
             'runs' => DeliverySyncRun::query()->where('carrier', $carrier)->orderByDesc('id')->limit(30)->get()
-                ->map(static fn (DeliverySyncRun $run): array => self::run($run))
+                ->map(static fn (DeliverySyncRun $run): array => CarrierRows::run($run))
                 ->values()
                 ->all(),
         ]);
@@ -140,28 +137,22 @@ final class CarrierController
      * «Run»: the pass goes to the queue, as the schedule sends it; the localities bring the points
      * and the streets after them (§7.7). A run going on is a 409 with its page.
      */
-    public function sync(string $carrier, string $directory, Synchronizer $sync, Dispatcher $bus): JsonResponse
+    public function sync(string $carrier, string $directory, ManualSync $manual): JsonResponse
     {
         $this->carrier($carrier);
         $first = Directory::tryFrom($directory) ?? abort(404);
-        $schedules = $this->directories->schedules($carrier);
 
-        abort_unless(isset($schedules[$first->value]), 404);
+        abort_unless(isset($this->directories->schedules($carrier)[$first->value]), 404);
 
-        $running = $sync->running($carrier, $first);
-
-        if ($running !== null) {
-            return ApiResponse::message((new SyncAlreadyRunning($running))->getMessage(), 409);
+        try {
+            $list = $manual->plan($carrier, $first);
+        } catch (SyncAlreadyRunning $running) {
+            return ApiResponse::message($running->getMessage(), 409);
+        } catch (DeliveryException $refusal) {
+            throw ValidationException::withMessages(['carrier' => [$refusal->getMessage()]]);
         }
 
-        if (! $this->directories->enabled($carrier)) {
-            throw ValidationException::withMessages(['carrier' => [__('webx-delivery::panel.errors.carrier_off')]]);
-        }
-
-        $list = $first === Directory::Localities ? array_keys($schedules) : [$first->value];
-        $list = [$first->value, ...array_values(array_diff($list, [$first->value]))];
-
-        $bus->dispatch(new SyncDirectory($carrier, $list, 'panel'));
+        $manual->start($carrier, $list, Trigger::Panel);
 
         return ApiResponse::data(['queued' => $list], 202);
     }
@@ -183,97 +174,7 @@ final class CarrierController
             throw ValidationException::withMessages(['run' => [$refusal->getMessage()]]);
         }
 
-        return ApiResponse::data(self::run($run->refresh()));
-    }
-
-    /** @return array<string, mixed> */
-    private function summary(Carrier $carrier): array
-    {
-        $key = $carrier->key();
-        $directories = [];
-
-        if ($carrier instanceof SyncsDirectories) {
-            foreach ($this->directories->schedules($key) as $schedule) {
-                $directories[] = $this->directory($key, $schedule);
-            }
-        }
-
-        return [
-            'key' => $key,
-            'title' => $carrier->title($this->locales->current()),
-            'icon' => $carrier->icon(),
-            'enabled' => $this->directories->enabled($key),
-            'countries' => $carrier->countries(),
-            'syncs' => $carrier instanceof SyncsDirectories,
-            'directories' => $directories,
-            'queue' => DeliveryCarrierLocality::query()
-                ->where('carrier', $key)
-                ->whereNull('removed_at')
-                ->where('status', BindingStatus::Pending->value)
-                ->count(),
-        ];
-    }
-
-    /** @return array<string, mixed> */
-    private function directory(string $carrier, DirectorySchedule $schedule): array
-    {
-        $directory = $schedule->directory;
-        $latest = $this->directories->latest($carrier, $directory);
-        $success = $this->directories->lastSuccess($carrier, $directory);
-        $remarks = [];
-
-        // «Localities with a courier and no streets: N» — from the last pass of the streets.
-        if ($directory === Directory::Streets && is_array($success?->warnings[Synchronizer::NO_STREETS] ?? null)) {
-            $remarks[] = ['key' => Synchronizer::NO_STREETS, 'count' => (int) ($success->warnings[Synchronizer::NO_STREETS]['count'] ?? 0)];
-        }
-
-        if (is_array($success?->warnings['skipped'] ?? null)) {
-            foreach ($success->warnings['skipped'] as $reason => $skipped) {
-                $remarks[] = ['key' => 'skipped.'.$reason, 'count' => (int) (is_array($skipped) ? ($skipped['count'] ?? 0) : $skipped)];
-            }
-        }
-
-        return [
-            'directory' => $directory->value,
-            'cron' => $this->directories->cron($carrier, $schedule),
-            'last_success' => $success?->finished_at?->toIso8601String(),
-            'latest' => $latest === null ? null : self::run($latest),
-            'running' => $latest?->isRunning() ?? false,
-            'held' => $latest !== null && $latest->status === RunStatus::Held ? $latest->held() : null,
-            'stale' => $this->directories->stale($carrier, $schedule),
-            'records' => $this->records($carrier, $directory),
-            'remarks' => $remarks,
-        ];
-    }
-
-    private function records(string $carrier, Directory $directory): int
-    {
-        return match ($directory) {
-            Directory::Localities => DeliveryCarrierLocality::query()->where('carrier', $carrier)->whereNull('removed_at')->count(),
-            Directory::Points => DeliveryPoint::query()->where('carrier', $carrier)->whereNull('removed_at')->count(),
-            Directory::Streets => (int) DeliveryCarrierLocality::query()->where('carrier', $carrier)->whereNull('removed_at')->sum('streets'),
-        };
-    }
-
-    /** @return array<string, mixed> */
-    private static function run(DeliverySyncRun $run): array
-    {
-        return [
-            'id' => $run->id,
-            'directory' => $run->directory->value,
-            'status' => $run->status->value,
-            'trigger' => $run->trigger->value,
-            'pages' => $run->pages,
-            'seen' => $run->seen,
-            'created' => $run->created,
-            'updated' => $run->updated,
-            'removed' => $run->removed,
-            'queued' => $run->queued,
-            'held' => $run->status === RunStatus::Held ? $run->held() : null,
-            'error' => $run->error,
-            'started_at' => $run->started_at?->toIso8601String(),
-            'finished_at' => $run->finished_at?->toIso8601String(),
-        ];
+        return ApiResponse::data(CarrierRows::run($run->refresh()));
     }
 
     private function carrier(string $key): Carrier

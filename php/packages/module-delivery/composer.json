@@ -42,11 +42,13 @@
     "require-dev": {
         "orchestra/testbench": "^11.0",
         "phpunit/phpunit": "^12.0 || ^13.0",
+        "webx-ui/mcp": "^0.91.0",
         "webx-ui/module-admin": "^0.91.0",
         "webx-ui/module-auth": "^0.91.0",
         "webx-ui/module-orders": "^0.91.0"
     },
     "suggest": {
+        "webx-ui/mcp": "Agents run the delivery: methods, a trial quote that says why a method is not offered, points, the geography by hand, the popular towns, the binding queue, the sync, waybills and tracking — delivery_* tools and delivery://catalog behind delivery:read and delivery:write.",
         "webx-ui/module-admin": "The section «Delivery» of the panel: methods, the shop's points, carriers, the geography by hand, the popular towns and the binding queue.",
         "webx-ui/module-orders": "The checkout asks for delivery, the order keeps what was chosen, and its card gets the tab «Delivery» with waybills and tracking."
     },

@@ -1850,8 +1850,9 @@ $this->callAfterResolving(MethodTypes::class, function (MethodTypes $types) {
 | `delivery_localities_search` | общие пункты: подсказки §4.5 плюс привязки служб, число точек                                                                                                                                                                        |
 | `delivery_countries_list`    | страны: включённые сайтом (порядок, ведущая служба) и коды ISO с именами `symfony/intl` для включения                                                                                                                                |
 | `delivery_countries_set`     | включить / выключить страну, порядок, своё название; `dry_run`                                                                                                                                                                       |
-| `delivery_regions_save`      | создать или переименовать регион страны; удалить пустой; `dry_run`                                                                                                                                                                   |
-| `delivery_localities_save`   | создать (`created_by = manual`) или изменить пункт (§4.6): похожий — отказ со списком похожих, `force` — создать всё равно; правка записи службы помечает поле ручным; `dry_run`                                                     |
+| `delivery_regions_list`      | регионы страны по порядку: названия по языкам, код, число пунктов — id для `delivery_localities_save`                                                                                                                                |
+| `delivery_regions_save`      | создать или переименовать регион страны, код, место в порядке; удалить пустой; `dry_run`                                                                                                                                             |
+| `delivery_localities_save`   | создать (`created_by = manual`) или изменить пункт (§4.6): похожий — отказ `duplicate: true` со списком похожих (и в `dry_run`), `force` — создать всё равно; правка записи службы помечает поле ручным; `dry_run`                   |
 | `delivery_localities_remove` | удалить пункт без ссылок или деактивировать держимый (кем — в ответе); включить обратно; `dry_run` — что произойдёт                                                                                                                  |
 | `delivery_popular_list`      | популярные города по порядку: id, подпись, активен ли                                                                                                                                                                                |
 | `delivery_popular_set`       | весь список популярных городов в новом порядке (или добавить / убрать один); `dry_run` — список до и после                                                                                                                           |
@@ -1864,7 +1865,7 @@ $this->callAfterResolving(MethodTypes::class, function (MethodTypes $types) {
 | `delivery_shipments_create`  | накладная по заказу (`delivery.ship`); `dry_run` — `WaybillRequest` без вызова службы                                                                                                                                                |
 | `delivery_shipments_track`   | обновить трекинг отправлений заказа или списка (`delivery.ship`)                                                                                                                                                                     |
 | `delivery_carriers_list`     | службы: включена, страны, типы, настройки без секретов                                                                                                                                                                               |
-| `delivery_carriers_update`   | включить / выключить службу, расписание, несекретные настройки                                                                                                                                                                       |
+| `delivery_carriers_update`   | включить / выключить службу, несекретные настройки; расписание — только читается (`cron` в `delivery_sync_status`, задаётся конфигом §7.7, как и в панели)                                                                           |
 
 - **Ресурс `delivery://catalog`:** типы способов реестра (ключ, служба, `asks`, виды точек,
   возможности: расчёт, накладная, трекинг), виды точек, службы и их справочники (пункты, точки, улицы), активные
@@ -1874,6 +1875,16 @@ $this->callAfterResolving(MethodTypes::class, function (MethodTypes $types) {
   carrier-a binding»; неизвестный тип — со списком известных.
 - `delivery_points_search`, `delivery_bindings_list`, `delivery_shipments_list` — в
   `PerformanceTest` тёплыми.
+- **Как сделано (этап 11).** Инструменты — у первого раздела «Доставка» (`Mcp\DeliveryModule`, он
+  встаёт вместо простого `DeliverySection` только при установленном `webx-ui/mcp`), три набора:
+  `DeliveryTools` (способы, расчёт, точки), `GeographyTools` (география, популярные города, очередь),
+  `CarrierTools` (службы, синхронизация, отправления). Двери — те же, что у панели: `MethodForm`,
+  `PointForm`, `LocalityForm` (с проверкой экрана), `Editor`, `PopularLocalities`, `BindingQueue`,
+  `CarrierRows` (строка службы — общая с экраном), `ManualSync` (кнопка «Запустить»). `dry_run` —
+  запись в откатываемой транзакции (`Rehearsal`); где запись уходит наружу (очередь, служба,
+  ведущая служба в памяти) — описание без записи. Отправления — только при загруженном
+  `module-orders`. Пункт по имени — точное совпадение среди стран сайта, два одноимённых — отказ с
+  id обоих. Тесты — `tests/Mcp` (`McpTest`, `ShippingMcpTest` с `assertNoRepeatedQueries`).
 
 ## 16. Словарь `webx-delivery`
 

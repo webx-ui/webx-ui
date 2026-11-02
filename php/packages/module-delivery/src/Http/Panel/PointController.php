@@ -57,7 +57,7 @@ final class PointController
         $this->sort($query, (string) $request->query('sort', ''));
 
         $page = $query->orderBy('id')->paginate(min(100, max(10, (int) $request->query('per_page', 25))));
-        $kinds = $this->kinds;
+        $kinds = $this->kinds->all($locale);
         $page->setCollection($page->getCollection()->map(
             static fn (DeliveryPoint $point): array => PointForm::row($point, $locale, $kinds),
         ));

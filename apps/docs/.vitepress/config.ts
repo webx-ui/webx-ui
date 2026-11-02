@@ -105,6 +105,7 @@ export default defineConfig({
             { text: 'Cart', link: '/guide/cart' },
             { text: 'Orders', link: '/guide/orders' },
             { text: 'Checkout', link: '/guide/checkout' },
+            { text: 'Delivery', link: '/guide/delivery' },
             { text: 'Site visitors', link: '/guide/site-visitors' },
           ],
         },

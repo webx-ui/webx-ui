@@ -61,6 +61,17 @@ final class LocalityForm
     /** @param  array<string, mixed>  $input */
     public function create(array $input, bool $force = false): GeoLocality
     {
+        return $this->write(fn (): GeoLocality => $this->make($input, $force));
+    }
+
+    /**
+     * The same save with the editor's refusals as they are — {@see DuplicateLocality} with the
+     * similar ones, {@see GeographyException} — for a door that words them itself (MCP).
+     *
+     * @param  array<string, mixed>  $input
+     */
+    public function make(array $input, bool $force = false): GeoLocality
+    {
         $values = $this->check($input);
 
         // No weight given — the type's (§4.1), and the recount after points goes on adding to it.
@@ -68,11 +79,21 @@ final class LocalityForm
             unset($values['weight']);
         }
 
-        return $this->write(fn (): GeoLocality => $this->editor->createLocality($values, $force));
+        return $this->editor->createLocality($values, $force);
     }
 
     /** @param  array<string, mixed>  $input */
     public function update(GeoLocality $locality, array $input, bool $force = false): GeoLocality
+    {
+        return $this->write(fn (): GeoLocality => $this->change($locality, $input, $force));
+    }
+
+    /**
+     * {@see self::update()} with the editor's refusals as they are, as {@see self::make()}.
+     *
+     * @param  array<string, mixed>  $input
+     */
+    public function change(GeoLocality $locality, array $input, bool $force = false): GeoLocality
     {
         $values = $this->check($input);
         // The country of a locality is where its carriers bound it; it is not moved by hand.
@@ -82,7 +103,7 @@ final class LocalityForm
             unset($values['weight']);
         }
 
-        return $this->write(fn (): GeoLocality => $this->editor->updateLocality($locality, $values, $force));
+        return $this->editor->updateLocality($locality, $values, $force);
     }
 
     /**

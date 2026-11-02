@@ -22,6 +22,7 @@ use WebxUi\Delivery\Checkout\StepView;
 use WebxUi\Delivery\Console\SyncCommand;
 use WebxUi\Delivery\Console\TrackCommand;
 use WebxUi\Delivery\Doctor\SyncCheck;
+use WebxUi\Delivery\Mcp\DeliveryModule;
 use WebxUi\Delivery\Models\DeliveryCarrier;
 use WebxUi\Delivery\Models\DeliveryMethod;
 use WebxUi\Delivery\Models\DeliveryMethodLocality;
@@ -48,6 +49,7 @@ use WebxUi\Geography\LocalityKind;
 use WebxUi\Geography\LocalityReferences;
 use WebxUi\Geography\Matching\LeadingCarriers;
 use WebxUi\Geography\Models\GeoCountry;
+use WebxUi\Mcp\Contracts\ProvidesMcpTools;
 use WebxUi\Orders\Blocks\BlockDefinition;
 use WebxUi\Orders\Blocks\OrderBlocks;
 use WebxUi\Orders\Checkout\Slots\CheckoutSlots;
@@ -229,7 +231,11 @@ class DeliveryServiceProvider extends ServiceProvider
         $modules = $this->app->make(ModuleRegistry::class);
 
         foreach (DeliverySection::all() as $section) {
-            $modules->register($section);
+            // The first entry carries the agent's tools where the MCP server is installed (§15):
+            // delivery does not require it, and nothing loads the tools' classes otherwise.
+            $modules->register($section->id() === DeliverySection::GROUP && interface_exists(ProvidesMcpTools::class)
+                ? $this->app->make(DeliveryModule::class)
+                : $section);
         }
 
         $types = $this->app->make(FieldTypes::class);
