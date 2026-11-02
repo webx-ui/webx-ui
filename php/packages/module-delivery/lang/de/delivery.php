@@ -5,6 +5,7 @@ declare(strict_types=1);
 return [
     'title' => 'Versand',
     'cache' => 'Versandarten und Versanddienste',
+    'cache_points' => 'Abholstellen der Versanddienste',
     'carriers' => [
         'store' => 'Der Shop',
     ],
@@ -56,5 +57,21 @@ return [
         'house_required' => 'Geben Sie die Hausnummer an.',
         'too_long' => 'Höchstens :max Zeichen.',
         'no_quote' => 'Der Versand konnte nicht berechnet werden, wählen Sie eine andere Versandart.',
+    ],
+    'sync' => [
+        'running' => 'Läuft bereits, Seite :page',
+        'errors' => [
+            'no_answer' => 'Der Versanddienst hat nicht geantwortet',
+            'key_rejected' => 'Der Versanddienst hat den API-Schlüssel abgelehnt',
+            'bad_response' => 'Die Antwort des Versanddienstes hatte nicht das erwartete Format',
+            'failed' => 'Die Synchronisierung ist auf Seiten der Website fehlgeschlagen — siehe Log',
+            'interrupted' => 'Die Synchronisierung wurde unterbrochen',
+        ],
+    ],
+    'schedule' => [
+        'closed' => 'Geschlossen',
+        'around_the_clock' => 'Rund um die Uhr geöffnet',
+        'until' => 'Bis :time',
+        'from' => 'Öffnet um :time',
     ],
 ];

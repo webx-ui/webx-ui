@@ -94,6 +94,8 @@ return new class extends Migration
             $table->string('status', 12);
             $table->string('method', 12)->nullable();
             $table->string('reason', 24)->nullable();
+            // What the queue offers a person: the namesakes with their distances (§4.3).
+            $table->json('candidates')->nullable();
             $table->json('record');
             $table->json('features')->nullable();
             $table->unsignedInteger('streets')->default(0);

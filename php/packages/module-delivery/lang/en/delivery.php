@@ -7,6 +7,7 @@ declare(strict_types=1);
 return [
     'title' => 'Delivery',
     'cache' => 'Delivery methods and carriers',
+    'cache_points' => 'Delivery points of carriers',
     'carriers' => [
         'store' => 'The shop',
     ],
@@ -58,5 +59,21 @@ return [
         'house_required' => 'Enter the house number.',
         'too_long' => 'At most :max characters.',
         'no_quote' => 'Could not calculate delivery, choose another method.',
+    ],
+    'sync' => [
+        'running' => 'Already running, page :page',
+        'errors' => [
+            'no_answer' => 'The carrier did not answer',
+            'key_rejected' => 'The carrier refused the API key',
+            'bad_response' => 'The carrier\'s answer was not in the expected format',
+            'failed' => 'The sync failed on the site\'s side — see the log',
+            'interrupted' => 'The sync was interrupted',
+        ],
+    ],
+    'schedule' => [
+        'closed' => 'Closed',
+        'around_the_clock' => 'Open 24 hours',
+        'until' => 'Until :time',
+        'from' => 'Opens at :time',
     ],
 ];

@@ -5,6 +5,7 @@ declare(strict_types=1);
 return [
     'title' => 'Envío',
     'cache' => 'Métodos de envío y transportistas',
+    'cache_points' => 'Puntos de entrega de los transportistas',
     'carriers' => [
         'store' => 'La tienda',
     ],
@@ -56,5 +57,21 @@ return [
         'house_required' => 'Indica el número.',
         'too_long' => 'Como máximo :max caracteres.',
         'no_quote' => 'No se pudo calcular el envío, elige otro método.',
+    ],
+    'sync' => [
+        'running' => 'Ya en curso, página :page',
+        'errors' => [
+            'no_answer' => 'El transportista no respondió',
+            'key_rejected' => 'El transportista rechazó la clave de API',
+            'bad_response' => 'La respuesta del transportista no tenía el formato esperado',
+            'failed' => 'La sincronización falló en el sitio — consulta el registro',
+            'interrupted' => 'La sincronización se interrumpió',
+        ],
+    ],
+    'schedule' => [
+        'closed' => 'Cerrado',
+        'around_the_clock' => 'Abierto 24 horas',
+        'until' => 'Hasta las :time',
+        'from' => 'Abre a las :time',
     ],
 ];

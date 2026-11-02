@@ -5,6 +5,7 @@ declare(strict_types=1);
 return [
     'title' => 'Teslimat',
     'cache' => 'Teslimat yöntemleri ve kargo firmaları',
+    'cache_points' => 'Kargo firmalarının teslim noktaları',
     'carriers' => [
         'store' => 'Mağaza',
     ],
@@ -56,5 +57,21 @@ return [
         'house_required' => 'Bina numarasını belirtin.',
         'too_long' => 'En fazla :max karakter.',
         'no_quote' => 'Teslimat hesaplanamadı, başka bir yöntem seçin.',
+    ],
+    'sync' => [
+        'running' => 'Zaten çalışıyor, sayfa :page',
+        'errors' => [
+            'no_answer' => 'Kargo firması yanıt vermedi',
+            'key_rejected' => 'Kargo firması API anahtarını reddetti',
+            'bad_response' => 'Kargo firmasının yanıtı beklenen biçimde değildi',
+            'failed' => 'Senkronizasyon site tarafında başarısız oldu — günlüğe bakın',
+            'interrupted' => 'Senkronizasyon yarıda kesildi',
+        ],
+    ],
+    'schedule' => [
+        'closed' => 'Kapalı',
+        'around_the_clock' => '24 saat açık',
+        'until' => 'Saat :time\'e kadar',
+        'from' => 'Açılış :time',
     ],
 ];

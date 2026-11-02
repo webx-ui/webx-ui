@@ -5,6 +5,7 @@ declare(strict_types=1);
 return [
     'title' => 'Spedizione',
     'cache' => 'Metodi di spedizione e corrieri',
+    'cache_points' => 'Punti di ritiro dei corrieri',
     'carriers' => [
         'store' => 'Il negozio',
     ],
@@ -56,5 +57,21 @@ return [
         'house_required' => 'Indica il numero civico.',
         'too_long' => 'Al massimo :max caratteri.',
         'no_quote' => 'Impossibile calcolare la spedizione, scegli un altro metodo.',
+    ],
+    'sync' => [
+        'running' => 'Già in corso, pagina :page',
+        'errors' => [
+            'no_answer' => 'Il corriere non ha risposto',
+            'key_rejected' => 'Il corriere ha rifiutato la chiave API',
+            'bad_response' => 'La risposta del corriere non era nel formato previsto',
+            'failed' => 'La sincronizzazione non è riuscita sul sito — vedi il log',
+            'interrupted' => 'La sincronizzazione è stata interrotta',
+        ],
+    ],
+    'schedule' => [
+        'closed' => 'Chiuso',
+        'around_the_clock' => 'Aperto 24 ore su 24',
+        'until' => 'Fino alle :time',
+        'from' => 'Apre alle :time',
     ],
 ];

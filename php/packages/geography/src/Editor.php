@@ -183,6 +183,12 @@ final class Editor
                 'country_code' => $country->code,
                 'created_by' => GeoLocality::MANUAL,
             ]);
+
+            // A weight given by hand is kept by the recount after a carrier's points (§4.6).
+            if (array_key_exists('weight', $attributes)) {
+                $locality->markManual(['weight']);
+            }
+
             $locality->save();
 
             return $locality;
@@ -219,6 +225,10 @@ final class Editor
 
         if ($changed !== [] && $locality->created_by !== GeoLocality::MANUAL) {
             $locality->markManual($changed);
+        } elseif (in_array('weight', $changed, true)) {
+            // A hand-made locality is the carriers' to leave alone as a whole; its weight is
+            // recounted from the points unless a person set it (§4.6).
+            $locality->markManual(['weight']);
         }
 
         DB::transaction(static fn () => $locality->save());

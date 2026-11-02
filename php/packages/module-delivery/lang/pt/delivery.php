@@ -5,6 +5,7 @@ declare(strict_types=1);
 return [
     'title' => 'Entrega',
     'cache' => 'Métodos de entrega e transportadoras',
+    'cache_points' => 'Pontos de entrega das transportadoras',
     'carriers' => [
         'store' => 'A loja',
     ],
@@ -56,5 +57,21 @@ return [
         'house_required' => 'Indique o número.',
         'too_long' => 'No máximo :max caracteres.',
         'no_quote' => 'Não foi possível calcular a entrega, escolha outro método.',
+    ],
+    'sync' => [
+        'running' => 'Já em curso, página :page',
+        'errors' => [
+            'no_answer' => 'A transportadora não respondeu',
+            'key_rejected' => 'A transportadora recusou a chave de API',
+            'bad_response' => 'A resposta da transportadora não estava no formato esperado',
+            'failed' => 'A sincronização falhou do lado do site — veja o registo',
+            'interrupted' => 'A sincronização foi interrompida',
+        ],
+    ],
+    'schedule' => [
+        'closed' => 'Fechado',
+        'around_the_clock' => 'Aberto 24 horas',
+        'until' => 'Até às :time',
+        'from' => 'Abre às :time',
     ],
 ];

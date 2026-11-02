@@ -5,6 +5,7 @@ declare(strict_types=1);
 return [
     'title' => 'Dostawa',
     'cache' => 'Metody dostawy i przewoźnicy',
+    'cache_points' => 'Punkty odbioru przewoźników',
     'carriers' => [
         'store' => 'Sklep',
     ],
@@ -56,5 +57,21 @@ return [
         'house_required' => 'Podaj numer domu.',
         'too_long' => 'Najwyżej :max znaków.',
         'no_quote' => 'Nie udało się obliczyć dostawy, wybierz inną metodę.',
+    ],
+    'sync' => [
+        'running' => 'Już trwa, strona :page',
+        'errors' => [
+            'no_answer' => 'Przewoźnik nie odpowiedział',
+            'key_rejected' => 'Przewoźnik odrzucił klucz API',
+            'bad_response' => 'Odpowiedź przewoźnika miała nieoczekiwany format',
+            'failed' => 'Synchronizacja nie powiodła się po stronie witryny — szczegóły w logu',
+            'interrupted' => 'Synchronizacja została przerwana',
+        ],
+    ],
+    'schedule' => [
+        'closed' => 'Zamknięte',
+        'around_the_clock' => 'Czynne całą dobę',
+        'until' => 'Do :time',
+        'from' => 'Otwarcie o :time',
     ],
 ];

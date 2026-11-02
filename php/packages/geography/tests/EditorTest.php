@@ -74,6 +74,21 @@ final class EditorTest extends TestCase
         $this->assertSame(['code', 'names'], $region->manual_fields);
     }
 
+    public function test_a_weight_set_by_hand_is_marked_even_on_a_hand_made_locality(): void
+    {
+        $region = $this->editor()->createRegion('XX', ['en' => 'Region A']);
+        $plain = $this->editor()->createLocality(['country' => 'XX', 'names' => ['en' => 'Town A'], 'kind' => 'town', 'region_id' => $region->id]);
+        $weighed = $this->editor()->createLocality(['country' => 'XX', 'names' => ['en' => 'Town B'], 'kind' => 'town', 'region_id' => $region->id, 'weight' => 7]);
+
+        // The recount after a carrier's points reads the mark, not the whole record (§4.6).
+        $this->assertNull($plain->manual_fields);
+        $this->assertSame(['weight'], $weighed->refresh()->manual_fields);
+        $this->assertSame(7, $weighed->weight);
+
+        $this->editor()->updateLocality($plain, ['weight' => 30]);
+        $this->assertSame(['weight'], $plain->refresh()->manual_fields);
+    }
+
     public function test_a_similar_locality_is_found_before_a_second_one_is_made(): void
     {
         $region = $this->region('Region A');

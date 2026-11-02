@@ -21,6 +21,7 @@ use WebxUi\Geography\Models\GeoLocality;
  * @property string $status
  * @property string|null $method
  * @property string|null $reason
+ * @property list<array{locality_id: int, distance_km: float|null}>|null $candidates
  * @property array<string, mixed> $record
  * @property list<string>|null $features
  * @property int $streets
@@ -32,7 +33,7 @@ class DeliveryCarrierLocality extends Model
     protected $table = 'delivery_carrier_localities';
 
     protected $fillable = [
-        'carrier', 'external_id', 'locality_id', 'status', 'method', 'reason', 'record', 'features',
+        'carrier', 'external_id', 'locality_id', 'status', 'method', 'reason', 'candidates', 'record', 'features',
         'streets', 'seen_run_id', 'removed_at',
     ];
 
@@ -44,6 +45,7 @@ class DeliveryCarrierLocality extends Model
     {
         return [
             'locality_id' => 'integer',
+            'candidates' => 'array',
             'record' => 'array',
             'features' => 'array',
             'streets' => 'integer',

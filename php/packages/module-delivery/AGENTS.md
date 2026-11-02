@@ -17,10 +17,12 @@ checkout of `webx-ui/module-orders` asks it; orders work without it. Words — `
   - `delivery_carriers` — `key` (`store` is there from the migration), `enabled`, `settings`,
     `credentials` (`encrypted:array`, hidden), `meta`;
   - `delivery_carrier_localities` — a carrier's locality bound to a shared one or queued:
-    `status`, `method`, `reason`, `record`, `features` (`["courier"]`), `streets`;
+    `status`, `method`, `reason`, `candidates`, `record`, `features` (`["courier"]`), `streets`;
   - `delivery_points` — the points of every carrier and of the shop (`carrier = store`), with the
     normalised `search` string the model writes;
-  - `delivery_sync_runs` — the journal of directory syncs;
+  - `delivery_sync_runs` — the journal of directory syncs: `status` (`running`, `succeeded`,
+    `failed`, `held`), `trigger`, `cursor`, counters, `error` (the base's words), `warnings`; the
+    last 100 runs of each carrier's directory are kept;
   - `delivery_popular_localities` — the popular towns of the checkout dialog: `locality_id`,
     `position`; one list for the site (decision 40).
 - **Contracts** in `WebxUi\Delivery\Contracts`: `MethodType` (key `<carrier>.<kind>`, `asks()`,
@@ -43,7 +45,24 @@ checkout of `webx-ui/module-orders` asks it; orders work without it. Words — `
 - **`PopularLocalities`** — `ids()`, `suggestions($country, $locale)` (active ones only, two
   queries), `set($ids)` (the whole list in order), `add($id, $position)`, `remove($id)`.
 - **`PointKinds`** — the built-in kinds with the dictionary's words and the shop's own.
-- **Cache group** `delivery` — methods, carriers, the courier's localities, countries.
+- **Directory sync** (§7) in `WebxUi\Delivery\Sync`: a satellite's carrier implements
+  `Contracts\SyncsDirectories` (`directories()` — `DirectorySchedule`s, `pull($directory, $cursor)`
+  — a `Page` of `LocalityRecord`s of the geography or `PointRecord`s, `CarrierUnavailable` on
+  failure). `Synchronizer` writes a page in one transaction with the run's cursor, matches
+  localities with the geography's `Matcher`, removes what a complete pass did not see — or holds
+  the run when that is over `webx-delivery.sync.max_removal_share` (10 %) and `confirm()` removes
+  it — and recounts `geo_localities.weight` after points. `Directories` — who syncs, the cron, the
+  last success, `stale()`. `SyncDirectory` — the queued job (3 tries, 60/300/900 s, from the
+  same cursor). `StoredLeadingCarriers` — the first carrier to sync a country leads it, kept in
+  the `store` row's `meta`.
+- **Command** `webx:delivery:sync {carrier?} {--directory=*} {--trigger=} {--queue}`; the schedule
+  runs each carrier's directories by their cron, localities before points, through the queue.
+- **`webx:doctor`** — `Doctor\SyncCheck`: a directory whose last success is older than three
+  intervals of its schedule, or whose last pass is held (where the panel's frame is installed).
+- **`Testing\FakeCarrier`** — «Carrier A» (`carrier-a`): a deterministic directory of any size in
+  `XX`, a failing page, an empty answer, vanished records, a lock against pulls outside a sync.
+- **Cache groups** `delivery` — methods, carriers, the courier's localities, countries;
+  `delivery-points` — the points, bumped by every page of a points sync.
 - **Locality references** — `delivery_points` and `delivery_carrier_localities` keep a locality
   from deletion: the geography's editor switches it off instead.
 
@@ -59,6 +78,9 @@ checkout of `webx-ui/module-orders` asks it; orders work without it. Words — `
 | The shop's courier in a town                | `$method->syncLocalities([$id, …])` — not the pivot by hand: it moves the cache group                        |
 | The popular towns                           | `app(PopularLocalities::class)->set([$id, …])` — the order given is the order shown                          |
 | What a buyer is offered, from your own code | `app(Methods::class)->forLocality(app(Delivery::class)->context($cartState, $localityId))`                   |
+| A directory on another schedule, or by hand | `webx-delivery.carriers.<key>.schedule.<directory>` — a cron or `manual`                                     |
+| A threshold of removal                      | `webx-delivery.sync.max_removal_share` (0.1); a held run — `app(Synchronizer::class)->confirm($run)`         |
+| Sync now                                    | `php artisan webx:delivery:sync carrier-a --directory=points` (`--queue` to hand it to the queue)            |
 | Other words                                 | `php artisan vendor:publish --tag=webx-delivery-lang`                                                        |
 
 ## Do not
@@ -74,6 +96,10 @@ checkout of `webx-ui/module-orders` asks it; orders work without it. Words — `
 - Do not put a carrier's name into the base, its tests or its demo: «carrier A», `XX`, invented
   towns, the phone `+800 1234 5678`.
 - Do not delete a locality to drop it from the popular towns: `remove()` it from the list.
+- Do not write a carrier's points or bindings from a satellite: it returns records, the base
+  writes them — idempotency, removal and the journal are one for every carrier. The shop's own
+  points (`carrier = store`) are never synced.
+- Do not delete `removed_at` rows by hand: carts and shipments still name them.
 
 ## Check your work
 
@@ -81,11 +107,16 @@ checkout of `webx-ui/module-orders` asks it; orders work without it. Words — `
   the methods of a locality on hand-made towns, the default checks, the quotes, the popular towns,
   the migrations rolling back, the dictionary in ten languages.
 - `MethodsTest::a_warm_list_costs_…` — a warm list is two queries whatever the number of methods.
+- `SyncVolumeTest` — 30 000 points of `FakeCarrier` in pages of 500, each page 4 queries;
+  `SyncTest` — a page twice makes no second row, an empty answer is held, a failure part-way
+  removes nothing.
+- `php artisan webx:delivery:sync` says each run: pages, seen, new, updated, removed, held;
+  `php artisan webx:doctor` says a stale or held directory.
 - A method you turned on shows in `app(Methods::class)->forLocality($context)`; `evaluate()` says
   why one does not.
 
 ## Read more
 
 - [README.md](README.md) in this directory — the API with examples.
-- The delivery spec, §5 (tables), §6 (contract and registry), §10 (built-in methods), decision 40
+- The delivery spec, §5 (tables), §6 (contract and registry), §7 (sync), §10 (built-in methods), decision 40
   (popular towns): https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_DELIVERY.md

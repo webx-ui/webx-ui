@@ -87,6 +87,56 @@ $this->callAfterResolving(MethodTypes::class, function (MethodTypes $types) {
 A type extends `AbstractMethodType`: the method's price and the check of a point or an address
 come with it.
 
+## Directories of a carrier
+
+A carrier that keeps its localities and points on the site implements `SyncsDirectories`. It
+returns records page by page; the base writes them, matches the localities with the shared
+geography, keeps a journal and removes what the carrier no longer has.
+
+```php
+use WebxUi\Delivery\Contracts\SyncsDirectories;
+use WebxUi\Delivery\Sync\{CarrierUnavailable, Directory, DirectorySchedule, Page, PointRecord};
+use WebxUi\Geography\Matching\LocalityRecord;
+
+final class CarrierA implements Carrier, SyncsDirectories
+{
+    public function directories(): array
+    {
+        return [
+            new DirectorySchedule(Directory::Localities, '30 3 * * *'),
+            new DirectorySchedule(Directory::Points, '30 3 * * *'),
+        ];
+    }
+
+    public function pull(Directory $directory, ?string $cursor): Page
+    {
+        $answer = $this->api->page($directory->value, $cursor)
+            ?? throw new CarrierUnavailable('HTTP 503 from the carrier');   // logged, never shown
+
+        return new Page(array_map(fn (array $row) => match ($directory) {
+            Directory::Localities => new LocalityRecord(externalId: $row['id'], country: 'XX', name: $row['name'], kind: 'town', region: $row['region']),
+            Directory::Points => new PointRecord(externalId: $row['id'], kind: 'branch', localityExternalId: $row['town'], address: $row['address'], number: $row['no']),
+        }, $answer['items']), $answer['next']);
+    }
+}
+```
+
+- A page is written in one transaction with the run's cursor: a page tried again writes the same
+  rows, and a run the queue picks up again goes on from where it stopped.
+- At the end of a **complete** pass, what the carrier did not return is marked `removed_at` —
+  unless it is more than `webx-delivery.sync.max_removal_share` (10 %) of what it had: then the
+  run is `held`, nothing goes, and `app(Synchronizer::class)->confirm($run)` removes it. A run
+  that fails part-way removes nothing.
+- Points of a locality not bound yet wait with `locality_id = null` and follow the binding.
+- `php artisan webx:delivery:sync [carrier] [--directory=points] [--queue]`; the schedule runs a
+  carrier's directories by their cron, localities first; `webx-delivery.carriers.<key>.schedule.<directory>`
+  overrides the cron or turns it to `manual`.
+- `webx:doctor` warns when a directory's last success is older than three intervals of its
+  schedule, or its last pass is held.
+
+`WebxUi\Delivery\Testing\FakeCarrier` is «Carrier A» for tests: a directory of any size, a page
+that fails, an empty answer, records that vanish.
+
 ## Popular towns
 
 ```php

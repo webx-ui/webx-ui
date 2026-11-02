@@ -5,6 +5,7 @@ declare(strict_types=1);
 return [
     'title' => 'Livraison',
     'cache' => 'Modes de livraison et transporteurs',
+    'cache_points' => 'Points de retrait des transporteurs',
     'carriers' => [
         'store' => 'La boutique',
     ],
@@ -56,5 +57,21 @@ return [
         'house_required' => 'Indiquez le numéro.',
         'too_long' => ':max caractères au plus.',
         'no_quote' => 'Impossible de calculer la livraison, choisissez un autre mode.',
+    ],
+    'sync' => [
+        'running' => 'Déjà en cours, page :page',
+        'errors' => [
+            'no_answer' => 'Le transporteur n\'a pas répondu',
+            'key_rejected' => 'Le transporteur a refusé la clé d\'API',
+            'bad_response' => 'La réponse du transporteur n\'avait pas le format attendu',
+            'failed' => 'La synchronisation a échoué côté site — voir le journal',
+            'interrupted' => 'La synchronisation a été interrompue',
+        ],
+    ],
+    'schedule' => [
+        'closed' => 'Fermé',
+        'around_the_clock' => 'Ouvert 24 h/24',
+        'until' => 'Jusqu\'à :time',
+        'from' => 'Ouvre à :time',
     ],
 ];
