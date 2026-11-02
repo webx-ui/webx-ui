@@ -32,5 +32,11 @@ final readonly class PointRecord
         public ?string $phone = null,
         public bool $active = true,
         public array $meta = [],
+        /**
+         * Who alone may pick the point up, when not everybody: `residents` — a locker in a block of
+         * flats for those who live there. Shown beside the point, and such points go after the
+         * others in the list; null — open to all.
+         */
+        public ?string $restriction = null,
     ) {}
 }

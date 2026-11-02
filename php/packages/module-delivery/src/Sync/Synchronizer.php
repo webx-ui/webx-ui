@@ -15,6 +15,7 @@ use WebxUi\Delivery\Carriers;
 use WebxUi\Delivery\DeliveryException;
 use WebxUi\Delivery\Models\DeliverySyncRun;
 use WebxUi\Geography\LocalityKind;
+use WebxUi\Geography\Models\GeoLocality;
 
 /**
  * Pulls a carrier's directory page by page and writes it (§7): the run in the journal, one
@@ -131,7 +132,7 @@ final class Synchronizer
 
             $warnings = $run->warnings ?? [];
 
-            foreach ($result->skipped as $why => $ids) {
+            foreach ([...$page->skipped, ...$result->skipped] as $why => $ids) {
                 $warnings['skipped'][$why]['count'] = ($warnings['skipped'][$why]['count'] ?? 0) + count($ids);
                 $warnings['skipped'][$why]['ids'] = array_slice([...($warnings['skipped'][$why]['ids'] ?? []), ...$ids], 0, 50);
             }
@@ -348,13 +349,14 @@ final class Synchronizer
     }
 
     /**
-     * After the pass: the points the checkout reads, the order of the suggestions, the streets a
-     * courier has in each locality, the journal's length.
+     * After the pass: the points the checkout reads, the order of the suggestions, where a locality
+     * lies, the streets a courier has in each locality, the journal's length.
      */
     private function after(DeliverySyncRun $run): void
     {
         if ($run->directory === Directory::Points) {
             $this->weigh($run->carrier);
+            $this->locate($run->carrier);
         }
 
         if ($run->directory === Directory::Streets) {
@@ -393,6 +395,31 @@ final class Synchronizer
             ->update([
                 'weight' => DB::raw("({$kinds}) + (select count(*) from delivery_points p where p.locality_id = geo_localities.id and p.active = 1 and p.removed_at is null)"),
             ]);
+    }
+
+    /**
+     * Where a locality lies, from its points (§7.3): a carrier whose towns come without coordinates
+     * — Nova Poshta's `getCities` has none — still gives them to its points, and the matcher needs
+     * them to tell namesakes of one region apart (`auto_coords`, §4.3). The middle of the carrier's
+     * points in force with coordinates — one `UPDATE` for the localities this carrier has such
+     * points in. Only a locality without coordinates is filled, and neither one made by hand nor one
+     * whose coordinates a person set or cleared (decision 42): as with the leading carrier's fill-in,
+     * a value is never replaced and what a person keeps is left to them.
+     */
+    private function locate(string $carrier): void
+    {
+        // Points in force with coordinates; 0, 0 is a coordinate nobody filled in, not a place.
+        $located = 'p.carrier = ? and p.removed_at is null and p.lat is not null and p.lng is not null and not (p.lat = 0 and p.lng = 0)';
+        $middle = static fn (string $column): string => "(select round(avg(p.{$column}), 6) from delivery_points p where p.locality_id = geo_localities.id and {$located})";
+
+        // Plain SQL: a value with a binding in its subquery — the same on MariaDB and sqlite.
+        DB::update(
+            'update geo_localities set lat = '.$middle('lat').', lng = '.$middle('lng')
+            .' where lat is null and lng is null and created_by <> ?'
+            .' and (manual_fields is null or (manual_fields not like \'%"lat"%\' and manual_fields not like \'%"lng"%\'))'
+            ." and id in (select p.locality_id from delivery_points p where p.locality_id is not null and {$located})",
+            [$carrier, $carrier, GeoLocality::MANUAL, $carrier],
+        );
     }
 
     /**

@@ -12,9 +12,12 @@ final readonly class Page
     /**
      * @param  list<LocalityRecord|PointRecord>  $records
      * @param  string|null  $next  the cursor of the next page; null — this is the last one
+     * @param  array<string, list<string>>  $skipped  what the carrier gave and the satellite left out, by
+     *                                                why — the external ids; the run counts them in its warnings
      */
     public function __construct(
         public array $records,
         public ?string $next = null,
+        public array $skipped = [],
     ) {}
 }

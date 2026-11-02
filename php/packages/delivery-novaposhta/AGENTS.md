@@ -17,6 +17,13 @@ npm package of its own.
   `locker`) and `novaposhta.courier` (address). Each is a `LabelledMethodType`. The price is «by
   the carrier's rates» and the API is never asked; a method given a price of its own is charged
   that price.
+- **Directories** (`SyncsDirectories`), nightly, pages of 500, paced by `Api\Pace`: towns from
+  `getCities` (`Directories\Localities`; the carrier leads `UA`), then the whole network of
+  points from `getWarehouses` (`Directories\Points`). `Branch` and `Store` are `branch`,
+  `Postomat` is `locker`. `DropOff`, `Fulfillment` and `DenyToSelect=1` are left out and
+  counted in the run's warnings. A locker `ForResidentsOfEntrance` is kept with the base's
+  restriction `residents`: said beside it, listed after the others. The base fills a town's
+  missing coordinates from its points.
 - **Migration**: three methods, `novaposhta-branch`, `novaposhta-locker` and `novaposhta-courier`.
   They start switched off, without a price, for `UA` only. A second run adds nothing.
 - **Client** `Api\Client::call($key, $model, $method, $properties)`. It posts to the one address

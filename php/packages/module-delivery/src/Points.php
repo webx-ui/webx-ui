@@ -56,9 +56,12 @@ final class Points
 
             $total = (clone $base)->count();
             $rows = $base
-                ->select(['id', 'number', 'titles', 'address', 'postcode', 'schedule', 'kind'])
-                // A number typed in full first, then the short numbers before the long ones: «2» before «10».
+                ->select(['id', 'number', 'titles', 'address', 'postcode', 'schedule', 'kind', 'restriction'])
+                // A number typed in full first; then the points open to all before those for some
+                // people only (a locker for the residents of a block); the short numbers before the
+                // long ones: «2» before «10».
                 ->when($key !== '', static fn (Builder $q) => $q->orderByRaw('case when number = ? then 0 else 1 end', [$key]))
+                ->orderByRaw('case when restriction is null then 0 else 1 end')
                 ->orderByRaw('length(coalesce(number, \'\'))')
                 ->orderBy('number')
                 ->orderBy('id')
@@ -107,6 +110,7 @@ final class Points
                 'postcode' => $point->postcode,
                 'schedule' => $point->schedule,
                 'kind' => $point->kind,
+                'restriction' => $point->restriction,
             ], $locale),
             'carrier' => $point->carrier,
             'locality_id' => $point->locality_id,
@@ -122,7 +126,7 @@ final class Points
      * One row as the list shows it.
      *
      * @param  array<string, mixed>  $row
-     * @return array{id: int, number: string|null, kind: string, title: string, address: string, postcode: string|null, today: string|null}
+     * @return array{id: int, number: string|null, kind: string, title: string, address: string, postcode: string|null, today: string|null, restriction: string|null, restricted: string|null}
      */
     private function item(array $row, ?string $locale): array
     {
@@ -131,6 +135,7 @@ final class Points
         $kind = (string) ($row['kind'] ?? '');
         $title = Names::pick($decode($row['titles'] ?? null), $locale);
         $schedule = Schedule::fromArray($decode($row['schedule'] ?? null));
+        $restriction = isset($row['restriction']) && $row['restriction'] !== '' ? (string) $row['restriction'] : null;
 
         return [
             'id' => (int) $row['id'],
@@ -140,7 +145,20 @@ final class Points
             'address' => (string) Names::pick($decode($row['address'] ?? null), $locale),
             'postcode' => isset($row['postcode']) ? (string) $row['postcode'] : null,
             'today' => $schedule?->todayLabel($locale, null, (string) config('app.timezone', 'UTC')),
+            'restriction' => $restriction,
+            'restricted' => $restriction === null ? null : self::restriction($restriction, $locale),
         ];
+    }
+
+    /**
+     * Who may use a point, in words: the known codes by name, any other as «limited access».
+     */
+    public static function restriction(string $code, ?string $locale = null): string
+    {
+        $key = 'webx-delivery::delivery.restrictions.'.$code;
+        $words = __($key, [], $locale);
+
+        return is_string($words) && $words !== $key ? $words : (string) __('webx-delivery::delivery.restrictions.other', [], $locale);
     }
 
     private function base(string $carrier, string $kind, int $locality): Builder

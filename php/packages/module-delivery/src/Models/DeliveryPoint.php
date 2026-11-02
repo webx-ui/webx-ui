@@ -33,6 +33,7 @@ use WebxUi\Geography\Normalizer;
  * @property string $search
  * @property array<string, mixed>|null $meta
  * @property bool $active
+ * @property string|null $restriction
  * @property int|null $seen_run_id
  * @property Carbon|null $removed_at
  * @property-read GeoLocality|null $locality
@@ -44,7 +45,7 @@ class DeliveryPoint extends Model
     protected $fillable = [
         'carrier', 'external_id', 'kind', 'locality_id', 'carrier_locality_id', 'number', 'titles',
         'address', 'postcode', 'lat', 'lng', 'schedule', 'limits', 'phone', 'meta', 'active',
-        'seen_run_id', 'removed_at',
+        'restriction', 'seen_run_id', 'removed_at',
     ];
 
     protected $attributes = [

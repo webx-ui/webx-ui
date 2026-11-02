@@ -94,6 +94,10 @@ return [
             'interrupted' => 'The sync was interrupted',
         ],
     ],
+    'restrictions' => [
+        'residents' => 'Only for residents of the building',
+        'other' => 'Limited access',
+    ],
     'schedule' => [
         'closed' => 'Closed',
         'around_the_clock' => 'Open 24 hours',

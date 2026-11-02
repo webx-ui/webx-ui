@@ -11,6 +11,7 @@ use WebxUi\Delivery\NovaPoshta\Api\AccountKey;
 use WebxUi\Delivery\NovaPoshta\Api\Client;
 use WebxUi\Delivery\NovaPoshta\Api\Pace;
 use WebxUi\Delivery\NovaPoshta\Directories\Localities;
+use WebxUi\Delivery\NovaPoshta\Directories\Points;
 use WebxUi\Delivery\Sync\CarrierUnavailable;
 use WebxUi\Delivery\Sync\Directory;
 use WebxUi\Delivery\Sync\DirectorySchedule;
@@ -28,7 +29,8 @@ use WebxUi\Localization\Locales;
  *
  * Its directories (§6) are pulled with the key stored in the panel, one request a page, paced by
  * {@see Pace}: the towns from `getCities` — the carrier leads Ukraine (decision 8), so the base
- * creates the shared towns and regions from them; points and streets come with stages 5 and 6.
+ * creates the shared towns and regions from them; then the points from `getWarehouses`, the whole
+ * network page by page (§6.3). Streets come with stage 6.
  */
 final class NovaPoshtaCarrier implements Carrier, SyncsDirectories
 {
@@ -140,16 +142,20 @@ final class NovaPoshtaCarrier implements Carrier, SyncsDirectories
 
     public function directories(): array
     {
-        return [new DirectorySchedule(Directory::Localities, self::NIGHTLY, $this->pageSize)];
+        return [
+            new DirectorySchedule(Directory::Localities, self::NIGHTLY, $this->pageSize),
+            new DirectorySchedule(Directory::Points, self::NIGHTLY, $this->pageSize),
+        ];
     }
 
     /**
-     * A page of a directory. The cursor is the number of the last page pulled (§6.2): '3' asks
-     * for page 4; the list ends on a page that is empty or shorter than the limit.
+     * A page of a directory. The cursor is the number of the last page pulled (§6.2, §6.3): '3'
+     * asks for page 4; the list ends on a page that is empty or shorter than the limit. Points are
+     * the whole network without `CityRef` — a 303 to a ready file is followed by the client.
      */
     public function pull(Directory $directory, ?string $cursor): Page
     {
-        if ($directory !== Directory::Localities) {
+        if ($directory === Directory::Streets) {
             throw CarrierUnavailable::badResponse("Nova Poshta keeps no {$directory->value} directory yet.");
         }
 
@@ -166,11 +172,18 @@ final class NovaPoshtaCarrier implements Carrier, SyncsDirectories
 
         $number = $cursor === null ? 1 : (int) $cursor + 1;
         $this->pace->wait();
-        $answer = $this->client->call($key, 'Address', 'getCities', ['Page' => $number, 'Limit' => $this->pageSize]);
+        $method = $directory === Directory::Points ? 'getWarehouses' : 'getCities';
+        $answer = $this->client->call($key, 'Address', $method, ['Page' => $number, 'Limit' => $this->pageSize]);
         $entries = $answer->records();
-        $records = (new Localities($this->locales->codes()))->records($entries);
+        $next = $entries === [] || count($entries) < $this->pageSize ? null : (string) $number;
 
-        return new Page($records, $entries === [] || count($entries) < $this->pageSize ? null : (string) $number);
+        if ($directory === Directory::Points) {
+            $points = new Points($this->locales->codes());
+
+            return new Page($points->records($entries), $next, $points->skipped());
+        }
+
+        return new Page((new Localities($this->locales->codes()))->records($entries), $next);
     }
 
     public function client(): Client

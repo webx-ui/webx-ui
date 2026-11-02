@@ -540,6 +540,7 @@ $limit = 10): list<LocalitySuggestion>`:
 | `search`              | `varchar(500)`      | нормализованные номер, название и адрес на всех языках — для поиска внутри пункта            |
 | `meta`                | `json`              | своё спутника (например, «оплата картой есть»); показывается шаблоном точки, если тема хочет |
 | `active`              | `bool`              | у служб — флаг службы (временно закрыто); у своих — из панели                                |
+| `restriction`         | `varchar(32)` null  | кому только можно забрать: `residents` — почтомат для жителей дома; `null` — всем (§7.2)     |
 | `seen_run_id`         | FK nullable         |                                                                                              |
 | `removed_at`          | `timestamp` null    | исчезла у службы (§7.5); показывается как неактивная                                         |
 
@@ -850,6 +851,7 @@ final class Page
     public function __construct(
         public readonly array $records,
         public readonly ?string $next,           // cursor of the next page; null — last page
+        public readonly array $skipped = [],     // why → external ids the satellite left out
     ) {}
 }
 
@@ -923,6 +925,7 @@ final class PointRecord
         public readonly ?string $phone = null,
         public readonly bool $active = true,       // temporarily closed at the carrier
         public readonly array $meta = [],
+        public readonly ?string $restriction = null, // residents | a word of the carrier; null — open to all
     ) {}
 }
 
@@ -941,6 +944,15 @@ final class StreetRecord
 
 Записи — именованными аргументами, новые поля — в конце и необязательными (как `PurchasableLine`).
 
+**Точка не для всех** — `restriction` (решение человека 02.11.2026, этап 5 webx-ui#103): почтомат
+в доме для его жителей — та точка, которую житель и выберет, поэтому служба её отдаёт, а не
+пропускает. База хранит код (`a-z0-9_-`, до 32), показывает его словами словаря
+(`delivery.restrictions.<код>`, незнакомый — «Limited access») в строке списка точек и в карточке и
+ставит такие точки в списке после обычных. Любая служба может пометить точку.
+
+Запись, которую спутник сам не взял (служебная точка службы), — в `Page::$skipped` по причине;
+база складывает их в `warnings.skipped` запуска вместе со своими (`unknown_locality`).
+
 ### 7.3. Что делает база на странице
 
 На каждую страницу — одна транзакция:
@@ -958,6 +970,12 @@ final class StreetRecord
   `Normalizer::key()`; `upsert` по `(carrier_locality_id, external_id)` с `seen_run_id`; улица
   неизвестного пункта службы пропускается со счётчиком в журнале;
 - курсор и счётчики — в `delivery_sync_runs` после коммита страницы.
+
+После полного прохода точек — вес пунктов (§4.1) и **координаты пунктов из точек**: пункт без
+`lat`/`lng` получает середину неснятых точек этой службы с координатами, одним `UPDATE` с
+коррелированным подзапросом. Пункт, заведённый руками, и пункт с `lat`/`lng` в `manual_fields` не
+трогаются, имеющиеся координаты не заменяются. Так служба без координат пунктов (Нова пошта)
+всё равно даёт их `Matcher` для `auto_coords` других служб.
 
 После полного прохода улиц (и снятия, §7.5) — одним `UPDATE` пересчёт
 `delivery_carrier_localities.streets` службы (счёт — коррелированным подзапросом по индексу улиц:
@@ -1586,7 +1604,9 @@ PUT  /api/delivery/selection                          { country, locality, metho
 - **Поиск точек** — внутри пункта: `delivery_points` по `(locality_id, active, carrier, kind)`,
   затем `search LIKE '%q%'` по уже отобранным строкам. В пункте — от единиц до пары тысяч точек
   одной службы и вида, это в пределах правила «`LIKE` до 5 000 записей» (§4.3 правил
-  производительности); число `q` сравнивается с `number` точно и поднимает совпадение наверх.
+  производительности); число `q` сравнивается с `number` точно и поднимает совпадение наверх;
+  затем точки для всех, потом с `restriction` (§7.2) — их подпись идёт в `hint` строки и в
+  `restricted` точки.
   Manticore для точек не подключается (решение 35); пункт с точками больше 5 000 одного способа —
   повод вернуться к нему (§21).
 - `methods` считает цены для **текущей** корзины (cookie корзины); без корзины — 404.

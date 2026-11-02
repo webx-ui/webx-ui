@@ -277,6 +277,7 @@
 .webx-delivery__point-title,
 .webx-delivery__point-address,
 .webx-delivery__point-today,
+.webx-delivery__point-restricted,
 .webx-delivery__point-phone {
   margin: 0;
   overflow-wrap: anywhere;
@@ -286,7 +287,8 @@
   font-weight: 600;
 }
 
-.webx-delivery__point-today {
+.webx-delivery__point-today,
+.webx-delivery__point-restricted {
   color: var(--site-color-text-muted);
   font-size: var(--site-font-size-6);
 }

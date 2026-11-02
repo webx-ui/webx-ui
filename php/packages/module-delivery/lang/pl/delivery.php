@@ -92,6 +92,10 @@ return [
             'interrupted' => 'Synchronizacja została przerwana',
         ],
     ],
+    'restrictions' => [
+        'residents' => 'Tylko dla mieszkańców budynku',
+        'other' => 'Ograniczony dostęp',
+    ],
     'schedule' => [
         'closed' => 'Zamknięte',
         'around_the_clock' => 'Czynne całą dobę',

@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace WebxUi\Delivery\Tests;
 
+use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Delivery\Models\DeliverySelection;
+use WebxUi\Delivery\Points;
 
 /**
  * The JSON API of the step (§12.2): the suggestions are everybody's and cached by the browser, the
@@ -64,6 +66,32 @@ final class ApiTest extends StepTestCase
 
         $id = $first->json('points.0.id');
         $this->getJson("/api/delivery/points/{$id}")->assertOk()->assertJsonPath('point.week.mon.0', ['09:00', '18:00']);
+    }
+
+    #[Test]
+    public function a_point_for_some_people_only_is_said_and_comes_after_the_others(): void
+    {
+        $this->carrierA(branches: 4);
+        // Branch 1 is a locker in a block of flats, for those who live there; Branch 3 has a word
+        // of a carrier the base does not know.
+        DB::table('delivery_points')->where('external_id', 'p-1')->update(['restriction' => 'residents']);
+        DB::table('delivery_points')->where('external_id', 'p-3')->update(['restriction' => 'staff-only']);
+
+        $list = $this->getJson("/api/delivery/points?method=carrier-a-branch&locality={$this->townA->id}")->assertOk();
+
+        $this->assertSame(['Branch 2', 'Branch 4', 'Branch 1', 'Branch 3'], array_column($list->json('options'), 'label'));
+        $this->assertSame([null, null, 'residents', 'staff-only'], array_column($list->json('points'), 'restriction'));
+        $this->assertStringEndsWith('Only for residents of the building', (string) $list->json('options.2.hint'));
+        $this->assertStringEndsWith('Limited access', (string) $list->json('options.3.hint'));
+        $this->assertStringNotContainsString('residents', (string) $list->json('options.0.hint'));
+
+        // A number typed in full still comes first.
+        $this->getJson("/api/delivery/points?method=carrier-a-branch&locality={$this->townA->id}&q=1")
+            ->assertJsonPath('options.0.label', 'Branch 1');
+
+        $id = $list->json('points.2.id');
+        $this->getJson("/api/delivery/points/{$id}")->assertJsonPath('point.restricted', 'Only for residents of the building');
+        $this->assertSame('Лише для мешканців будинку', Points::restriction('residents', 'uk'));
     }
 
     #[Test]

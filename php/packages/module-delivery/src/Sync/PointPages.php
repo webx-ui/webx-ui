@@ -99,6 +99,7 @@ final class PointPages
                 'search' => DeliveryPoint::searchOf($number, $titles, $address),
                 'meta' => $record->meta === [] ? null : json_encode($record->meta, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE),
                 'active' => $record->active,
+                'restriction' => $record->restriction,
                 'seen_run_id' => $runId,
                 'removed_at' => null,
                 'created_at' => $now,
@@ -109,7 +110,7 @@ final class PointPages
         if ($rows !== []) {
             DB::table(self::TABLE)->upsert($rows, ['carrier', 'external_id'], [
                 'kind', 'locality_id', 'carrier_locality_id', 'number', 'titles', 'address', 'postcode', 'lat',
-                'lng', 'schedule', 'limits', 'phone', 'search', 'meta', 'active', 'seen_run_id', 'removed_at',
+                'lng', 'schedule', 'limits', 'phone', 'search', 'meta', 'active', 'restriction', 'seen_run_id', 'removed_at',
                 'updated_at',
             ]);
         }
@@ -143,6 +144,10 @@ final class PointPages
 
             if (preg_match('/^[a-z0-9_-]{1,32}$/', $record->kind) !== 1) {
                 throw new InvalidRecord("Point {$id}: [{$record->kind}] is not a kind of point — a-z, 0-9, \"_\" and \"-\", at most 32.");
+            }
+
+            if ($record->restriction !== null && preg_match('/^[a-z0-9_-]{1,32}$/', $record->restriction) !== 1) {
+                throw new InvalidRecord("Point {$id}: [{$record->restriction}] is not a restriction — a-z, 0-9, \"_\" and \"-\", at most 32.");
             }
 
             if (trim($record->localityExternalId) === '') {

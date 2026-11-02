@@ -92,6 +92,10 @@ return [
             'interrupted' => 'Синхронізацію перервано',
         ],
     ],
+    'restrictions' => [
+        'residents' => 'Лише для мешканців будинку',
+        'other' => 'Обмежений доступ',
+    ],
     'schedule' => [
         'closed' => 'Зачинено',
         'around_the_clock' => 'Цілодобово',

@@ -193,14 +193,16 @@ final class LocalitiesTest extends TestCase
     }
 
     #[Test]
-    public function the_directories_are_the_towns_nightly_by_pages_of_500(): void
+    public function the_directories_are_the_towns_then_the_points_nightly_by_pages_of_500(): void
     {
         $directories = $this->carrier()->directories();
 
-        $this->assertCount(1, $directories);
-        $this->assertSame(Directory::Localities, $directories[0]->directory);
-        $this->assertSame('10 2 * * *', $directories[0]->cron);
-        $this->assertSame(500, $directories[0]->pageSize);
+        $this->assertSame([Directory::Localities, Directory::Points], array_map(static fn ($schedule) => $schedule->directory, $directories));
+
+        foreach ($directories as $schedule) {
+            $this->assertSame('10 2 * * *', $schedule->cron);
+            $this->assertSame(500, $schedule->pageSize);
+        }
     }
 
     #[Test]
@@ -236,7 +238,7 @@ final class LocalitiesTest extends TestCase
     {
         Http::fake();
 
-        foreach ([[Directory::Localities, 'L7'], [Directory::Points, null], [Directory::Streets, null]] as [$directory, $cursor]) {
+        foreach ([[Directory::Localities, 'L7'], [Directory::Points, 'P1'], [Directory::Streets, null]] as [$directory, $cursor]) {
             try {
                 $this->carrier()->pull($directory, $cursor);
                 $this->fail("{$directory->value} at «{$cursor}» was expected to fail.");

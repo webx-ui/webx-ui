@@ -92,6 +92,10 @@ return [
             'interrupted' => 'Senkronizasyon yarıda kesildi',
         ],
     ],
+    'restrictions' => [
+        'residents' => 'Yalnızca bina sakinleri için',
+        'other' => 'Sınırlı erişim',
+    ],
     'schedule' => [
         'closed' => 'Kapalı',
         'around_the_clock' => '24 saat açık',

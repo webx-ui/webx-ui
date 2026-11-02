@@ -25,6 +25,7 @@ use WebxUi\Localization\Locales;
  * The base's contract of a satellite (§13.2) on the answers recorded on the key (stage 3): the
  * towns' first, second and last pages and the page past the end, cut to 20 records each — so the
  * carrier is asked for pages of 20 here, and the walk ends on the empty page as it would on the key.
+ * The points are the recorded answer of a small town of the last page — seven points, one page.
  */
 final class CarrierContractTest extends TestCase
 {
@@ -41,6 +42,10 @@ final class CarrierContractTest extends TestCase
     {
         Http::fake([self::URL => static function (Request $request) {
             $page = (string) ($request['methodProperties']['Page'] ?? '');
+
+            if ($request['calledMethod'] === 'getWarehouses') {
+                return Http::response(self::fixture($page === '1' ? 'Address.getWarehouses.small-city' : 'Address.getWarehouses.network-past-the-end'));
+            }
 
             return Http::response(self::fixture(self::PAGES[$page] ?? 'Address.getCities.past-the-end'));
         }]);

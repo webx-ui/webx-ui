@@ -298,6 +298,44 @@ final class SyncTest extends SyncTestCase
     }
 
     #[Test]
+    public function a_locality_without_coordinates_lies_where_its_points_are_unless_a_person_said_otherwise(): void
+    {
+        $this->night();
+        $town = static fn (string $id): GeoLocality => GeoLocality::query()->findOrFail(DeliveryCarrierLocality::query()->where('external_id', $id)->value('locality_id'));
+        // Towns of a carrier that gives no coordinates; L1 was cleared by hand, L2 is a town the
+        // site made itself.
+        GeoLocality::query()->whereKey([$town('L0')->id, $town('L1')->id, $town('L2')->id])->update(['lat' => null, 'lng' => null]);
+        $town('L1')->forceFill(['manual_fields' => ['lat', 'lng']])->save();
+        $town('L2')->forceFill(['created_by' => GeoLocality::MANUAL])->save();
+        $kept = [$town('L3')->lat, $town('L3')->lng];
+
+        $this->sync(Directory::Points);
+
+        // L0 has P0, P20 and P40: 20.00, 20.20 and 20.40 east, all at 10 north.
+        $this->assertSame([10.0, 20.2], [$town('L0')->lat, $town('L0')->lng]);
+        $this->assertSame([null, null], [$town('L1')->lat, $town('L1')->lng]);
+        $this->assertSame([null, null], [$town('L2')->lat, $town('L2')->lng]);
+        // A town that has coordinates keeps its own.
+        $this->assertSame($kept, [$town('L3')->lat, $town('L3')->lng]);
+    }
+
+    #[Test]
+    public function a_point_for_some_people_only_keeps_its_restriction_and_a_wrong_word_breaks_the_contract(): void
+    {
+        $run = $this->night();
+        $pages = $this->app->make(PointPages::class);
+
+        $pages->write(FakeCarrier::KEY, $run->id, [new PointRecord(externalId: 'P0', kind: 'locker', localityExternalId: 'L0', address: '0 Example street', restriction: 'residents')]);
+        $this->assertSame('residents', DB::table('delivery_points')->where('external_id', 'P0')->value('restriction'));
+
+        $pages->write(FakeCarrier::KEY, $run->id, [new PointRecord(externalId: 'P0', kind: 'locker', localityExternalId: 'L0', address: '0 Example street')]);
+        $this->assertNull(DB::table('delivery_points')->where('external_id', 'P0')->value('restriction'));
+
+        $this->expectException(InvalidRecord::class);
+        $pages->write(FakeCarrier::KEY, $run->id, [new PointRecord(externalId: 'P0', kind: 'locker', localityExternalId: 'L0', address: '0 Example street', restriction: 'For residents')]);
+    }
+
+    #[Test]
     public function a_second_run_of_a_directory_does_not_start(): void
     {
         $sync = $this->app->make(Synchronizer::class);

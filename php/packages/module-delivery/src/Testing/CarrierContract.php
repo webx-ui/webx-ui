@@ -143,7 +143,10 @@ trait CarrierContract
         do {
             $page = $carrier->pull($directory, $cursor);
             $pages[] = [$cursor, $page];
-            $this->assertNotSame($cursor, $page->next, "{$directory->value}: the cursor «{$cursor}» points at itself.");
+            // A directory of one page ends at once: null after null is its end, not a loop.
+            if ($page->next !== null) {
+                $this->assertNotSame($cursor, $page->next, "{$directory->value}: the cursor «{$cursor}» points at itself.");
+            }
             $cursor = $page->next;
             $this->assertLessThanOrEqual($this->maxPages(), count($pages), "{$directory->value}: no end after {$this->maxPages()} pages.");
         } while ($cursor !== null);

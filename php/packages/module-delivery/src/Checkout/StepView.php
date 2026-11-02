@@ -230,14 +230,15 @@ final class StepView
     }
 
     /**
-     * A point as an option of the list: the title, and the address with today's hours under it.
+     * A point as an option of the list: the title, and under it the address, today's hours and who
+     * alone may use it, if not everybody.
      *
      * @param  array<string, mixed>  $point  a row of `Points::page()`
      * @return array{value: string, label: string, hint: string|null}
      */
     public static function pointOption(array $point): array
     {
-        $hint = implode(' · ', array_filter([$point['address'] ?? null, $point['today'] ?? null], static fn (mixed $part): bool => is_string($part) && $part !== ''));
+        $hint = implode(' · ', array_filter([$point['address'] ?? null, $point['today'] ?? null, $point['restricted'] ?? null], static fn (mixed $part): bool => is_string($part) && $part !== ''));
 
         return [
             'value' => (string) $point['id'],

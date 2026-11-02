@@ -93,7 +93,7 @@ The theme's contract, in `resources/theme/delivery.css`; restyle with the same c
 `webx-delivery__method-description`, `webx-delivery__method-hint`, `webx-delivery__price` (+ `webx-delivery__price--<kind>`),
 `webx-delivery__price-was`, `webx-delivery__price-estimate`, `webx-delivery__method-body`, `webx-delivery__empty`,
 `webx-delivery__point`, `webx-delivery__point-card`, `webx-delivery__point-title`, `webx-delivery__point-address`,
-`webx-delivery__point-today`, `webx-delivery__point-phone`, `webx-delivery__address`, `webx-delivery__field`
+`webx-delivery__point-today`, `webx-delivery__point-restricted`, `webx-delivery__point-phone`, `webx-delivery__address`, `webx-delivery__field`
 (+ `webx-delivery__field--<name>`), `webx-delivery__summary`, `webx-delivery__summary-label`,
 `webx-delivery__summary-value`, `webx-delivery__dialog`, `webx-delivery__search`, `webx-delivery__popular`,
 `webx-delivery__popular-title`, `webx-delivery__popular-list`, `webx-delivery__popular-item`, `webx-delivery__town`.
