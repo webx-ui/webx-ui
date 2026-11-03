@@ -24,4 +24,5 @@ return [
     'inbox-manage' => 'Configurar formularios',
     'snippets-manage' => 'Código en el sitio',
     'media-manage' => 'Renombrar, mover, eliminar',
+    'payments-exchange' => 'Cuerpos en bruto del intercambio',
 ];

@@ -4,7 +4,7 @@ Payments for a WebX UI shop: method types (on receipt, bank transfer), the metho
 amount and the delivery, the checkout's step, the order's block `payment`, «Mark as paid», the
 **journal of the exchange with gateways** (raw, keys masked, append-only), the contract of an online
 gateway with the fake «gateway A» and its contract test, notifications, returns, holds, the poll and
-the problems. The panel section comes later.
+the problems, and the panel section «Payments» with the tab «Payment» of an order.
 Orders, their milestones and balance are `webx-ui/module-orders`; the cart is `webx-ui/module-cart`.
 
 ## What it owns
@@ -38,9 +38,8 @@ Orders, their milestones and balance are `webx-ui/module-orders`; the cart is `w
   line `webx-payments: journal write failed` if it cannot), `recordOrFail()` throws
   `JournalUnavailable` (a notification gets 503), `decide()` adds the decision once. Its own
   connection (`ExchangeConnection`, `webx-payments-exchange`): a rollback never takes an event.
-- **Masking** `ExchangeMasker`: the values of `Credentials` in every encoding (url, JSON, base64),
-  `Authorization`, `Cookie`, `Set-Cookie` and the gateway's secret headers and fields, run-time
-  secrets (`ExchangeSecrets`), Luhn card numbers; signatures kept. Bodies over 1 MB are cut.
+- **Masking** `ExchangeMasker`: key values in every encoding, `Authorization`, cookies, the gateway's secret
+  headers and fields, run-time secrets, Luhn card numbers; signatures kept. Bodies over 1 MB are cut.
 - **HTTP client of satellites** `WebxUi\Payments\GatewayHttp`: `request()` (Laravel `Http` with
   the journal's middleware and the timeouts of `webx-payments.http`), `kind()`, `secret()`,
   `psr()` (PSR-18 for an SDK). Every attempt of a request is one event.
@@ -53,28 +52,17 @@ Orders, their milestones and balance are `webx-ui/module-orders`; the cart is `w
   `CapturesPayments` (`capturesPartially()`). Errors: `GatewayUnavailable`, `GatewayRefused` —
   words, never a body. Amounts: `GatewayAmount::toDecimal()` / `fromDecimal()`, no float.
 - **Keys** `MethodCredentials::for(Method)`: the column, over it `WEBX_PAYMENTS_<METHOD>_<FIELD>`.
-- **Online payment** `Payments::begin(order, method, source)` — an attempt `created` for
-  `balance()->due`; earlier `pending` ones are asked and closed at the gateway first
-  (`Online\Closings`; `BeginRefused` `paid`, `held`, …); `GET /pay/go/{uuid}` (`Online\Handoffs`) calls
-  `start()` once under the attempt's lock, journals `browser/handoff`, redirects or posts the form
-  (`webx-payments::pay.handoff`); a failure makes the attempt `failed`. The page of payment
-  `GET /pay/{number}` (signed, `Online\PaymentLinks::page()`, view `webx-payments::pay.page`) with
-  «Pay» (`POST /pay/{number}/attempts`), «we are checking» for two minutes, the reason of a failure,
-  «Top up» of a paid order that owes more (`method` posted), «Pay online now» of an order on receipt
-  (`POST /pay/{number}/method` → `Payments::switchMethod()`).
-- **Hold** `Payments::capture(payment, ?amount, source, dryRun)` / `void()` (`Online\Holds`,
-  `HoldRefused`): under the attempt's lock, `capture_amount` first; a refusal → problem
-  `capture_failed`. **Poll** `webx:payments:poll` (`Online\Poll`, every 5 minutes): unfinished
-  attempts older than 5 minutes, `expired` past the deadline (`internal/expire`), holds ending within
-  a day (`hold_expiring`, once a day). **Problems** on `payments.problem`; events
-  `Events\PaymentSucceeded`, `PaymentFailed`, `PaymentProblem` after the commit;
+- **Online payment** `Payments::begin(order, method, source)` — an attempt `created` for the debt, earlier
+  `pending` ones asked and closed first (`BeginRefused`); `GET /pay/go/{uuid}` (`Online\Handoffs`) calls
+  `start()` once and journals `browser/handoff`; the signed page `GET /pay/{number}` (`PaymentLinks::page()`)
+  with «Pay», «we are checking», «Top up» and «Pay online now» (`Payments::switchMethod()`).
+- **Hold** `Payments::capture(payment, ?amount, source, dryRun)` / `void()` (`HoldRefused`, problem
+  `capture_failed`). **Poll** `webx:payments:poll` every 5 minutes: unfinished attempts, `expired`,
+  `hold_expiring`. **Problems**: events `PaymentSucceeded`, `PaymentFailed`, `PaymentProblem`;
   `Payments::resolveProblem()` (`ProblemRefused`). `Payments::cashOnDelivery(OrderData)` — for a waybill.
-- **Settling** `Payments::settle(payment, GatewayStatus)` → `SettleResult` — the only door from the
-  gateway to the attempt and the order (§9.1); `Payments::check()` asks `fetchStatus()` under the
-  lock `webx-payments:{uuid}` first. `POST /payments/notify/{method}` (`Online\Notifications`, no
-  middleware at all) journals `in/notify` before parsing (503 if it cannot), then `rejected`,
-  `unmatched`, `ignored`, `duplicate`, `applied`/`same` or `error` (500). The return
-  `GET|POST /pay/return/{uuid}` (`Online\Returns`) journals `browser/return`, asks the API, not the URL.
+- **Settling** `Payments::settle(payment, GatewayStatus)` → `SettleResult`, the only door to the attempt
+  and the order; `check()` asks `fetchStatus()` under the lock first. `POST /payments/notify/{method}` (no
+  middleware) journals `in/notify` before parsing (503 if it cannot); `GET|POST /pay/return/{uuid}` asks the API.
 - **Gateway A** `Testing\FakeGateway` (`gateway-a`): `GatewayACard`, `GatewayAForm`,
   `GatewayAUnsigned`; API `FakeGatewayServer` on `gateway-a.test` in the process, page
   `GET /pay/fake/{uuid}`; only with `WEBX_PAYMENTS_FAKE_GATEWAY=true`, never in production
@@ -82,7 +70,21 @@ Orders, their milestones and balance are `webx-ui/module-orders`; the cart is `w
 - **Commands** `webx:payments:exchange-prune --days=N [--dry-run] [--force]` — the only removal of
   events, `N` ≥ 365; `webx:payments:selections-prune` — nightly, choices of carts that are gone.
 - **Doctor** `Doctor\ExchangeSizeCheck` (with module-admin): a note over `exchange.warn_size`.
-- **Words** `webx-payments::` `module`, `methods`, `buyer`, `reasons`, `errors`, `exchange`, ten languages.
+- **Panel** (with module-admin; `routes/panel.php`, npm `@webx-ui/module-payments`): «Methods» — keys
+  «set / replace / remove», never sent back, «Test the connection» journaled `out/connection`
+  (`Panel\MethodForm`, screen `payments.method-form`); «Attempts»; «Gateway exchange» — keyset pages,
+  no route writes an event; the tab «Payment» of `orders.show` (node `wx-payments-order`).
+- **Words** `webx-payments::` `module`, `methods`, `buyer`, `reasons`, `errors`, `exchange`, `panel`, `statuses`.
+
+### Permissions
+
+| Permission          | Opens                                                                                      |
+| ------------------- | ------------------------------------------------------------------------------------------ |
+| `payments.view`     | methods without keys, attempts, the exchange without bodies, the tab «Payment» of an order |
+| `payments.manage`   | methods: on, order, words, rules, limits, settings, the gateway's keys and their test      |
+| `payments.exchange` | raw headers and bodies of the exchange, «Download»; only the super-admin by default        |
+
+Actions on an order (mark paid, check, change the method, payment link, problem resolved) — `orders.manage`.
 
 ### Classes
 
@@ -136,9 +138,7 @@ The theme's contract, in `resources/theme/payments.css`; restyle with the same c
 - Switched on, `bank-transfer` shows on the checkout; after an order, «Thank you» shows the details
   with «Payment for order <number>».
 - `php artisan webx:payments:exchange-prune --days=365 --dry-run` counts and removes nothing.
-- `php artisan webx:doctor` — no note about the journal until it outgrows `warn_size`.
 - Gateway A on: «Pay» on `/pay/fake/{uuid}` gives `in/notify` `applied` and `browser/return` `same`.
-- `php artisan webx:payments:poll` prints what it checked, expired and warned of.
 - After a gateway call, the newest row of `payment_gateway_events` holds the request and answer,
   and `[secret:<field>]` where a key was.
 

@@ -24,4 +24,5 @@ return [
     'inbox-manage' => 'Configurar formulários',
     'snippets-manage' => 'Código no site',
     'media-manage' => 'Mudar o nome, mover, eliminar',
+    'payments-exchange' => 'Corpos brutos da troca',
 ];

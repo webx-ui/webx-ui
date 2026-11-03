@@ -24,4 +24,5 @@ return [
     'inbox-manage' => 'Налаштування форм',
     'snippets-manage' => 'Код на сайті',
     'media-manage' => 'Перейменування, перенесення, видалення',
+    'payments-exchange' => 'Сирі тіла обміну',
 ];

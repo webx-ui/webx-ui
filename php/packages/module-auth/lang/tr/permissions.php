@@ -24,4 +24,5 @@ return [
     'inbox-manage' => 'Formları ayarlama',
     'snippets-manage' => 'Sitedeki kod',
     'media-manage' => 'Yeniden adlandırma, taşıma, silme',
+    'payments-exchange' => 'Alışverişin ham gövdeleri',
 ];

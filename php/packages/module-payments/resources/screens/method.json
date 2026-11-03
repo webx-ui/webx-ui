@@ -1,0 +1,123 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "payments.method-form",
+  "model": "method",
+  "root": [
+    {
+      "id": "method",
+      "type": "wx-card",
+      "label": "trans::webx-payments::panel.method.card",
+      "children": [
+        {
+          "id": "titles",
+          "type": "wx-input",
+          "name": "titles",
+          "label": "trans::webx-payments::panel.method.titles",
+          "help": "trans::webx-payments::panel.method.titles-help",
+          "localized": true,
+          "props": {
+            "maxlength": 120
+          }
+        },
+        {
+          "id": "descriptions",
+          "type": "wx-textarea",
+          "name": "descriptions",
+          "label": "trans::webx-payments::panel.method.descriptions",
+          "help": "trans::webx-payments::panel.method.descriptions-help",
+          "localized": true,
+          "props": {
+            "rows": 2,
+            "maxlength": 500
+          }
+        },
+        {
+          "id": "enabled",
+          "type": "wx-switch",
+          "name": "enabled",
+          "label": "trans::webx-payments::panel.method.enabled",
+          "help": "trans::webx-payments::panel.method.enabled-help"
+        }
+      ]
+    },
+    {
+      "id": "rules",
+      "type": "wx-card",
+      "label": "trans::webx-payments::panel.method.rules",
+      "children": [
+        {
+          "id": "delivery_mode",
+          "type": "wx-select",
+          "name": "delivery_mode",
+          "label": "trans::webx-payments::panel.method.delivery-mode",
+          "help": "trans::webx-payments::panel.method.delivery-mode-help",
+          "props": {
+            "options": [
+              {
+                "value": "any",
+                "label": "trans::webx-payments::panel.method.modes.any"
+              },
+              {
+                "value": "on_hand",
+                "label": "trans::webx-payments::panel.method.modes.on_hand"
+              },
+              {
+                "value": "methods",
+                "label": "trans::webx-payments::panel.method.modes.methods"
+              },
+              {
+                "value": "except",
+                "label": "trans::webx-payments::panel.method.modes.except"
+              }
+            ]
+          }
+        },
+        {
+          "id": "delivery_methods",
+          "type": "wx-checkbox-group",
+          "name": "delivery_methods",
+          "label": "trans::webx-payments::panel.method.delivery-methods",
+          "visible": {
+            "when": "delivery_mode",
+            "in": ["methods", "except"]
+          },
+          "props": {
+            "options": []
+          }
+        },
+        {
+          "id": "min_amount",
+          "type": "wx-input-number",
+          "name": "min_amount",
+          "label": "trans::webx-payments::panel.method.min-amount",
+          "help": "trans::webx-payments::panel.method.amount-help",
+          "props": {
+            "min": 0,
+            "max": 100000000,
+            "precision": 2,
+            "step": 1
+          }
+        },
+        {
+          "id": "max_amount",
+          "type": "wx-input-number",
+          "name": "max_amount",
+          "label": "trans::webx-payments::panel.method.max-amount",
+          "props": {
+            "min": 0,
+            "max": 100000000,
+            "precision": 2,
+            "step": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "settings",
+      "type": "wx-card",
+      "label": "trans::webx-payments::panel.method.settings",
+      "visible": false,
+      "children": []
+    }
+  ]
+}

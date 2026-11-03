@@ -24,4 +24,5 @@ return [
     'inbox-manage' => 'Konfiguracja formularzy',
     'snippets-manage' => 'Kod na stronie',
     'media-manage' => 'Zmiana nazwy, przenoszenie, usuwanie',
+    'payments-exchange' => 'Surowe treści wymiany',
 ];

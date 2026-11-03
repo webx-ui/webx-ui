@@ -24,4 +24,5 @@ return [
     'inbox-manage' => 'Set up forms',
     'snippets-manage' => 'Edit code on the site',
     'media-manage' => 'Rename, move, delete',
+    'payments-exchange' => 'Raw exchange bodies',
 ];

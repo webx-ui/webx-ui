@@ -95,6 +95,7 @@ export default defineConfig({
       pkg('module-notifications'),
       pkg('module-orders'),
       pkg('module-pages'),
+      pkg('module-payments'),
       pkg('module-press'),
       pkg('module-recipes'),
       pkg('module-reviews'),

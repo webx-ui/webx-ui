@@ -24,4 +24,5 @@ return [
     'inbox-manage' => 'Formulare einrichten',
     'snippets-manage' => 'Code auf der Website',
     'media-manage' => 'Umbenennen, verschieben, löschen',
+    'payments-exchange' => 'Rohdaten des Austauschs',
 ];

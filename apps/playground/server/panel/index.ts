@@ -274,6 +274,7 @@ import { registerAudit } from './audit'
 import { registerCache } from './cache'
 import { registerOrders } from './orders'
 import { registerDelivery } from './delivery'
+import { registerPayments } from './payments'
 import { registerTasks, tasksBadge } from './tasks'
 import { registerConfigurators } from './configurators'
 import {
@@ -507,6 +508,13 @@ function manifestOf(locale: string) {
         title: line(locale, 'webx-delivery', 'panel.sections.group'),
         icon: 'send',
         order: 360,
+      },
+      /* «Payments» (§13 of the payments spec): after the delivery, the three screens of the section. */
+      {
+        id: 'payments',
+        title: line(locale, 'webx-payments', 'panel.sections.group'),
+        icon: 'sliders',
+        order: 370,
       },
       /* After the banners (§5.2 of the tariffs spec): the heading over tariffs and their groups. */
       {
@@ -789,6 +797,34 @@ function manifestOf(locale: string) {
         order: 360,
         group: 'delivery',
         permissions: ['delivery.view', 'delivery.manage', 'delivery.ship'],
+        meta: {},
+      },
+      /* «Payments»: three sections in one group, the first declares the permissions (§13.1). */
+      {
+        id: 'payments',
+        title: line(locale, 'webx-payments', 'panel.sections.methods'),
+        icon: 'sliders',
+        order: 370,
+        group: 'payments',
+        permissions: ['payments.view', 'payments.manage', 'payments.exchange'],
+        meta: {},
+      },
+      {
+        id: 'payments-attempts',
+        title: line(locale, 'webx-payments', 'panel.sections.attempts'),
+        icon: 'list',
+        order: 371,
+        group: 'payments',
+        permissions: [],
+        meta: {},
+      },
+      {
+        id: 'payments-exchange',
+        title: line(locale, 'webx-payments', 'panel.sections.exchange'),
+        icon: 'refresh',
+        order: 372,
+        group: 'payments',
+        permissions: [],
         meta: {},
       },
       {
@@ -2681,6 +2717,12 @@ registerOrders(
 )
 /* «Delivery» (WEBX_UI_MODULE_DELIVERY.md §14): methods, points, carriers, geography by hand. */
 registerDelivery(
+  on,
+  (status, message, data, errors, extra) => new HttpFailure(status, message, data, errors, extra),
+  line,
+)
+/* «Payments» (WEBX_UI_MODULE_PAYMENTS.md §13): methods with keys, attempts, the exchange journal. */
+registerPayments(
   on,
   (status, message, data, errors, extra) => new HttpFailure(status, message, data, errors, extra),
   line,

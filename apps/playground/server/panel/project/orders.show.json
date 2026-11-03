@@ -15,5 +15,22 @@
         }
       ]
     }
+  },
+  {
+    "op": "add",
+    "target": "tabs",
+    "position": "before:customer",
+    "node": {
+      "id": "payment",
+      "type": "wx-tab",
+      "label": "trans::webx-payments::panel.order.tab",
+      "can": "payments.view",
+      "children": [
+        {
+          "id": "payment-order",
+          "type": "wx-payments-order"
+        }
+      ]
+    }
   }
 ]

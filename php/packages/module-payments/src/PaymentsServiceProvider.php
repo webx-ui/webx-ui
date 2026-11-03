@@ -11,11 +11,14 @@ use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Doctor\DoctorChecks;
+use WebxUi\Admin\ModuleRegistry;
+use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Cache\CacheGroups;
 use WebxUi\Orders\Blocks\BlockDefinition;
 use WebxUi\Orders\Blocks\OrderBlocks;
 use WebxUi\Orders\Checkout\Slots\CheckoutSlots;
 use WebxUi\Orders\Models\Order;
+use WebxUi\Orders\Panel\OrdersModule;
 use WebxUi\Payments\Checkout\PaymentsCheckoutSlot;
 use WebxUi\Payments\Console\ExchangePruneCommand;
 use WebxUi\Payments\Console\PollCommand;
@@ -39,6 +42,10 @@ use WebxUi\Payments\Online\Poll;
 use WebxUi\Payments\Online\Returns;
 use WebxUi\Payments\Online\Settlement;
 use WebxUi\Payments\Online\StartRequests;
+use WebxUi\Payments\Panel\AttemptRows;
+use WebxUi\Payments\Panel\MethodForm;
+use WebxUi\Payments\Panel\PaymentsHome;
+use WebxUi\Payments\Panel\PaymentsSection;
 use WebxUi\Payments\Rendering\Assets;
 use WebxUi\Payments\Testing\FakeGatewaySite;
 use WebxUi\Payments\Types\BankTransfer;
@@ -87,6 +94,9 @@ class PaymentsServiceProvider extends ServiceProvider
         $this->app->scoped(Selections::class);
         // The flag «the script is on this page already» belongs to the response being built.
         $this->app->scoped(Assets::class);
+        // The titles of the methods a list of attempts names are read once per request.
+        $this->app->scoped(AttemptRows::class);
+        $this->app->singleton(MethodForm::class);
 
         $this->app->afterResolving(MethodTypes::class, static function (MethodTypes $types): void {
             $types->register(OnReceipt::class);
@@ -154,6 +164,11 @@ class PaymentsServiceProvider extends ServiceProvider
             });
         }
 
+        // The section of the panel and the order's tab (§13), where the panel's frame is installed.
+        if (class_exists(ModuleRegistry::class)) {
+            $this->registerPanel();
+        }
+
         // The choices of carts the cart's own pruning took (§5).
         $this->callAfterResolving(Schedule::class, static function (Schedule $schedule): void {
             // A lost notification, a closed tab, a hold about to end (§9.3).
@@ -178,5 +193,70 @@ class PaymentsServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../resources/views' => resource_path('views/vendor/webx-payments'),
         ], 'webx-payments-views');
+    }
+
+    /**
+     * Three entries in the group «Payments», their routes, the described form of a method and the
+     * tab «Payment» of the order's card.
+     *
+     * The menu group is added to the panel's config at boot rather than shipped as a default: a
+     * site that published `webx-admin.php` has its own copy of the list.
+     */
+    private function registerPanel(): void
+    {
+        $this->loadRoutesFrom(__DIR__.'/../routes/panel.php');
+
+        $config = $this->app->make('config');
+        $groups = (array) $config->get('webx-admin.groups', []);
+
+        if (! array_key_exists(PaymentsSection::GROUP, $groups)) {
+            $config->set('webx-admin.groups', [
+                ...$groups,
+                PaymentsSection::GROUP => ['title' => 'webx-payments::panel.sections.group', 'icon' => 'sliders', 'order' => PaymentsSection::ORDER],
+            ]);
+        }
+
+        $modules = $this->app->make(ModuleRegistry::class);
+
+        foreach (PaymentsSection::all() as $section) {
+            // The first entry seeds the section's demo: the two built-in methods switched on.
+            $modules->register($section->id() === PaymentsSection::GROUP ? $this->app->make(PaymentsHome::class) : $section);
+        }
+
+        $screens = $this->app->make(ScreenRegistry::class);
+        $screens->register(MethodForm::SCREEN, __DIR__.'/../resources/screens/method.json');
+
+        // The delivery methods a rule names: the delivery module's list, or their keys as text
+        // where it is not installed (§13.3). Read when the screen is asked for, not at boot.
+        $screens->extend(MethodForm::SCREEN, fn (): array => ($options = $this->app->make(MethodForm::class)->deliveryOptions()) !== null
+            ? [['op' => 'set', 'target' => 'delivery_methods', 'props' => ['options' => $options]]]
+            : [
+                ['op' => 'remove', 'target' => 'delivery_methods'],
+                ['op' => 'add', 'target' => 'rules', 'position' => 'after:delivery_mode', 'node' => [
+                    'id' => 'delivery_keys',
+                    'type' => 'wx-input',
+                    'name' => 'delivery_keys',
+                    'label' => 'trans::webx-payments::panel.method.delivery-keys',
+                    'help' => 'trans::webx-payments::panel.method.delivery-keys-help',
+                    'visible' => ['when' => 'delivery_mode', 'in' => ['methods', 'except']],
+                    'props' => ['maxlength' => 500],
+                ]],
+            ]);
+
+        // The tab «Payment» of the order's card, before «Customer» — after «Delivery» where it is
+        // (§13.4): the node reads the order's id from the card. A static `can`, not a closure: the
+        // registry keeps the patched tree for every visitor.
+        $screens->extend(OrdersModule::SCREEN, [[
+            'op' => 'add',
+            'target' => 'tabs',
+            'position' => 'before:customer',
+            'node' => [
+                'id' => 'payment',
+                'type' => 'wx-tab',
+                'label' => 'trans::webx-payments::panel.order.tab',
+                'can' => PaymentsSection::VIEW,
+                'children' => [['id' => 'payment-order', 'type' => 'wx-payments-order']],
+            ],
+        ]]);
     }
 }

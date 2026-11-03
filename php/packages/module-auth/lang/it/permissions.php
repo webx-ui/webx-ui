@@ -24,4 +24,5 @@ return [
     'inbox-manage' => 'Configurare i moduli',
     'snippets-manage' => 'Codice sul sito',
     'media-manage' => 'Rinominare, spostare, eliminare',
+    'payments-exchange' => 'Corpi grezzi dello scambio',
 ];

@@ -167,6 +167,24 @@ const SCREENS: Record<string, { base: string; patches: (string | Patch)[] }> = {
     base: 'php/packages/module-banners/resources/screens/form.json',
     patches: [],
   },
+  'payments.method-form': {
+    base: 'php/packages/module-payments/resources/screens/method.json',
+    // Without module-delivery the server would ask for the keys as text; the fixture has the list.
+    patches: [
+      [
+        {
+          op: 'set',
+          target: 'delivery_methods',
+          props: {
+            options: [
+              { value: 'pickup', label: 'Pick-up at the shop' },
+              { value: 'courier', label: "The shop's courier" },
+            ],
+          },
+        },
+      ],
+    ],
+  },
   'delivery.method-form': {
     base: 'php/packages/module-delivery/resources/screens/method.json',
     patches: [
