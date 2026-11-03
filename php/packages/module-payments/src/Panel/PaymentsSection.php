@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Payments\Panel;
 
 use WebxUi\Admin\AbstractModule;
+use WebxUi\Admin\Contracts\HasVisibility;
 
 /**
  * One entry of «Payments» in the panel's menu (spec §13).
@@ -12,8 +13,12 @@ use WebxUi\Admin\AbstractModule;
  * The navigation is one entry per module, and the section is three screens — the methods, the
  * attempts and the exchange journal — so it is three modules in one group. Only the first declares
  * the permissions; the rest open with the same ones.
+ *
+ * Every entry says so through {@see HasVisibility}: an entry with no permissions of its own would
+ * otherwise be shown to everybody signed in. The two are the ones the section's reading routes ask
+ * for; `payments.exchange` alone opens only the bodies, which are read from the journal.
  */
-class PaymentsSection extends AbstractModule
+class PaymentsSection extends AbstractModule implements HasVisibility
 {
     /** The id of the navigation group. */
     public const string GROUP = 'payments';
@@ -74,5 +79,11 @@ class PaymentsSection extends AbstractModule
     public function permissions(): array
     {
         return $this->id === self::GROUP ? [self::VIEW, self::MANAGE, self::EXCHANGE] : [];
+    }
+
+    /** @return list<string> */
+    public function visibleWith(): array
+    {
+        return [self::VIEW, self::MANAGE];
     }
 }

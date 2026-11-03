@@ -81,6 +81,17 @@ final class PaymentsMcpTest extends McpCase
     }
 
     #[Test]
+    public function another_sections_right_is_refused_reads_and_writes(): void
+    {
+        $this->agent('payments_methods_list', [], ['delivery.view'])->assertHasErrors(['[payments.view]']);
+        $this->agent('payments_list', [], ['delivery.view'])->assertHasErrors(['[payments.view]']);
+        $this->agent('payments_exchange_list', [], ['delivery.view'])->assertHasErrors(['[payments.view]']);
+        $this->agent('payments_methods_reorder', ['methods' => []], ['delivery.view'])->assertHasErrors(['[payments.manage]']);
+        $this->agent('payments_methods_reorder', ['methods' => []], ['payments.view'])->assertHasErrors(['[payments.manage]']);
+        $this->agent('payments_methods_list', [], ['payments.view'])->assertOk();
+    }
+
+    #[Test]
     public function the_methods_are_put_in_order_by_key(): void
     {
         $first = PaymentMethod::query()->orderByDesc('position')->value('key');

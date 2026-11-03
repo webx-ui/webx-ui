@@ -77,6 +77,18 @@ final class McpTest extends McpTestCase
     }
 
     #[Test]
+    public function another_sections_right_is_refused_reads_and_writes(): void
+    {
+        $stranger = $this->signIn(['payments.view']);
+
+        $this->agent('delivery_popular_list', [], $stranger)->assertHasErrors(['[delivery.view]']);
+        $this->agent('delivery_carriers_list', [], $stranger)->assertHasErrors(['[delivery.view]']);
+        $this->agent('delivery_popular_set', ['localities' => []], $stranger)->assertHasErrors(['[delivery.manage]']);
+
+        $this->agent('delivery_popular_set', ['localities' => []], $this->signIn(['delivery.manage']))->assertOk();
+    }
+
+    #[Test]
     public function the_catalogue_comes_from_the_registries(): void
     {
         $this->app->make(Carriers::class)->register(new FakeCarrier(localities: 0, points: 0));

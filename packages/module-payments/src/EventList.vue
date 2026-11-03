@@ -134,7 +134,7 @@ function signatureTone(row: EventLine) {
         :type="signatureTone(row)"
         size="sm"
         dot
-        class="wx-payments-events__signature"
+        class="wx-payments-events__badge wx-payments-events__signature"
       >
         {{ w(`exchange.signature.${row.signature}`) }}
       </wx-badge>
@@ -189,9 +189,14 @@ function signatureTone(row: EventLine) {
   text-align: start;
 }
 
-/* «Signature invalid» reads as one word: its column is wide enough for it on one line. */
+/* A signature is read whole («Not signed — status asked from the gateway»): it wraps like the
+   other badges, and its dot stays by the first line. */
 .wx-payments-events__signature {
-  white-space: nowrap;
+  align-items: flex-start;
+}
+
+.wx-payments-events__signature :deep(.wx-badge__dot) {
+  margin-block-start: calc((1lh - 6px) / 2);
 }
 
 .wx-payments-events__key {

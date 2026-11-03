@@ -72,6 +72,10 @@ final class FaqModule extends AbstractModule
 
 - A module with no permissions and no `visibleWith()` is visible to every administrator. That is
   right for the history or "Connect an agent", and wrong for anything with data.
+- A section of several menu entries (delivery: methods, points, carriers…) declares its permissions
+  on the first entry only — and every other entry still needs `visibleWith()`, or it is shown to
+  everybody signed in. The matrix row of such a section is called by the title of the menu group
+  it heads (a group with the module's own id), not by the first entry's title.
 - The label in the matrix comes from the dictionary of `module-auth` (`webx-auth::permissions`): the
   action word is translated once for everybody, so `view`, `manage`, `delete` need nothing. A new
   action word gets its line there, in all ten languages.

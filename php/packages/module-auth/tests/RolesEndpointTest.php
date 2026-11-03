@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace WebxUi\Auth\Tests;
 
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\AbstractModule;
 use WebxUi\Admin\History\HistoryEntry;
+use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Auth\Access\Refusal;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Auth\Models\Role;
@@ -186,6 +188,45 @@ final class RolesEndpointTest extends TestCase
                 $this->assertTrue($permission['held'], $name);
             }
         }
+    }
+
+    /**
+     * A section of several menu entries declares its permissions on the first, whose title is the
+     * entry's («Methods»): the row says the section's name — the title of the group it heads — and
+     * a module of somebody else's group keeps its own title.
+     */
+    #[Test]
+    public function a_row_is_called_by_the_module_and_not_by_its_first_entry(): void
+    {
+        config()->set('webx-admin.groups.shipping', ['title' => 'Shipping', 'order' => 360]);
+        $modules = $this->app->make(ModuleRegistry::class);
+        $modules->register(new class extends AbstractModule
+        {
+            public function id(): string
+            {
+                return 'shipping';
+            }
+
+            public function title(): string
+            {
+                return 'Methods';
+            }
+
+            public function group(): string
+            {
+                return 'shipping';
+            }
+
+            public function permissions(): array
+            {
+                return ['shipping.view'];
+            }
+        });
+
+        $rows = $this->keyed($this->actingAs($this->editor(['shipping.view']), 'cms')->getJson('/api/cms/auth/roles/permissions')->assertOk()->json('data'), 'module');
+
+        $this->assertSame('Shipping', $rows['shipping']['title']);
+        $this->assertSame($this->app->make(ModuleRegistry::class)->get('cache')->title(), $rows['cache']['title']);
     }
 
     /**

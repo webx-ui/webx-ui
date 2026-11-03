@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Delivery\Panel;
 
 use WebxUi\Admin\AbstractModule;
+use WebxUi\Admin\Contracts\HasVisibility;
 
 /**
  * One entry of «Delivery» in the panel's menu (§14.2).
@@ -13,8 +14,13 @@ use WebxUi\Admin\AbstractModule;
  * in one group — the methods (which declare the permissions), the shop's points, the carriers,
  * the geography, the popular towns and the binding queue. Only the first declares permissions;
  * the rest are opened with the same two (`delivery.view`, `delivery.manage`).
+ *
+ * Every entry says so through {@see HasVisibility}: an entry with no permissions of its own would
+ * otherwise be shown to everybody signed in — a role with only `payments.view` saw the points, the
+ * carriers and the geography. The two are the ones the section's reading routes ask for, so the
+ * menu shows exactly what the server lets in; `delivery.ship` alone opens only the order's tab.
  */
-class DeliverySection extends AbstractModule
+class DeliverySection extends AbstractModule implements HasVisibility
 {
     /** The id of the navigation group. */
     public const string GROUP = 'delivery';
@@ -78,5 +84,11 @@ class DeliverySection extends AbstractModule
     public function permissions(): array
     {
         return $this->id === 'delivery' ? [self::VIEW, self::MANAGE, self::SHIP] : [];
+    }
+
+    /** @return list<string> */
+    public function visibleWith(): array
+    {
+        return [self::VIEW, self::MANAGE];
     }
 }
