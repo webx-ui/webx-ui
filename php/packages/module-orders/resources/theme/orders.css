@@ -310,6 +310,12 @@
   overflow-wrap: anywhere;
 }
 
+/* What a block's owner adds under its line: the bank details of a transfer. */
+.webx-order__details {
+  margin-block-start: var(--site-space-3);
+  min-width: 0;
+}
+
 /* «My orders»: a card a row, the number and the amount on the first line. */
 .webx-account-orders__back {
   margin: 0;

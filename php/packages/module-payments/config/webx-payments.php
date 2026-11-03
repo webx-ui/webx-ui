@@ -3,6 +3,15 @@
 declare(strict_types=1);
 
 return [
+    // The JSON API of the checkout's payment step (spec §10.2) and the address of its script.
+    'api_path' => 'api/payments',
+    'script_path' => 'webx/payments',
+
+    // Writes of the buyer's choice per IP a minute.
+    'throttle' => [
+        'write' => 30,
+    ],
+
     // The journal of the exchange with gateways (spec §20).
     'exchange' => [
         // The connection the journal writes through. Null — a copy of the default connection made

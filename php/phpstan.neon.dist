@@ -132,6 +132,7 @@ parameters:
                 - packages/module-delivery/src/Http/DeliveryController.php
                 - packages/module-delivery/src/View/Components/Step.php
                 - packages/module-delivery/tests/StepTest.php
+                - packages/module-payments/src/Checkout/PaymentsCheckoutSlot.php
                 - packages/module-users/src/Http/Controllers/RegisterController.php
                 - packages/module-users/src/Http/Controllers/EmailController.php
                 - packages/module-users/src/Http/Controllers/ForgotController.php

@@ -94,7 +94,13 @@ final readonly class OrderPage
                 $value = $order->getAttribute($key);
                 $line = is_array($value) ? $this->blocks->summary($key, $value, $locale) : null;
 
-                return $line !== null && $line !== '' ? ['key' => $key, 'label' => __('webx-orders::site.blocks.'.$key), 'line' => $line] : null;
+                return $line !== null && $line !== '' ? [
+                    'key' => $key,
+                    'label' => __('webx-orders::site.blocks.'.$key),
+                    'line' => $line,
+                    // The owner's word under the line, as HTML: the bank details of a transfer.
+                    'details' => $this->blocks->details($key, $value, $order, $locale),
+                ] : null;
             }, OrderBlocks::KEYS))),
             'customer' => [
                 'name' => $order->customerName(),

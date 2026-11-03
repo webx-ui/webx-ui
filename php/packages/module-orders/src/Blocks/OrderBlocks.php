@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace WebxUi\Orders\Blocks;
 
+use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
+use Throwable;
+use WebxUi\Orders\Models\Order;
 
 /**
  * The blocks of the snapshot (§6.4): two columns, `delivery` and `payment`, each filled by the
@@ -78,6 +81,31 @@ final class OrderBlocks
         $summary = $this->get($key)?->summary;
 
         return $summary !== null ? (string) $summary($value, $locale) : null;
+    }
+
+    /**
+     * What the buyer reads of a block under its line (§13.1), as HTML: null — its owner has nothing
+     * more to say. An owner that throws says nothing: the order's page does not go down with it.
+     *
+     * @param  array<string, mixed>  $value
+     */
+    public function details(string $key, array $value, Order $order, string $locale): ?string
+    {
+        $details = $this->get($key)?->details;
+
+        if ($details === null) {
+            return null;
+        }
+
+        try {
+            $html = $details($value, $order, $locale);
+        } catch (Throwable $e) {
+            Log::warning("webx-orders: the details of the block «{$key}» failed", ['exception' => $e]);
+
+            return null;
+        }
+
+        return is_string($html) && trim($html) !== '' ? $html : null;
     }
 
     /**
