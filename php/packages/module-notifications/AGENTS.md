@@ -16,7 +16,7 @@ of the panel and the MCP tools `notifications_*` edit channels; the panel and it
   `failed`, `skipped` with a `reason` — with the values the event brought).
 - **Mail that goes nowhere**: `EmailProvider` is `Contracts\HasMailRoute`, described by the frame's `Mail\MailRoutes`; a letter a
   trap took (`log`, `array`, a sandbox) is `sent` with `trap`; `mail` and `warnings` in the panel, `notifications_channel_get`, `_test`, `_deliveries`.
-- **Registries** `Providers` (`telegram`, `email`) and `NotificationEvents`.
+- **Registries** `Providers` (`telegram`, `email`) and `NotificationEvents` — `register()`, and `extend(['orders.*'], $variables, fn ($subject, $event) => [...])`: a module adds variables to events it does not own (values from the subject at `send()`; a name of the owner refused; a failure — empty values and a warning).
 - **API for consumers** `Notifications::send()`; the job `Jobs\Deliver` — three attempts, after
   the response when the queue is `sync`; `Notifications::test()`, `retry()`, `resend()` and `sendByHand()` (by hand, §8.6), `deliveriesFor()`.
 - **Panel screen** `notifications.channel`, API under `/api/cms/notifications`.

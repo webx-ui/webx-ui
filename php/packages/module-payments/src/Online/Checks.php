@@ -60,10 +60,13 @@ final readonly class Checks
      * enough (or no wait was asked): the attempt's row is the answer then.
      *
      * @param  bool  $complete  a type that completes an approval does it first (§6.4): the return and the poll
+     * @param  bool  $dryRun  the gateway is asked — the request and its answer are in the journal, as
+     *                        every exchange is — and what it says is settled and rolled back: the
+     *                        answer is what would change, nothing of the attempt or the order is
      *
      * @throws GatewayUnavailable the gateway failed or did not answer: the attempt is not touched
      */
-    public function check(Payment $payment, string $source, ?string $trace = null, bool $complete = false, int $wait = 0): ?SettleResult
+    public function check(Payment $payment, string $source, ?string $trace = null, bool $complete = false, int $wait = 0, bool $dryRun = false): ?SettleResult
     {
         $method = $this->methods->any($payment->method_key);
         $type = $this->calls->type($payment->type);
@@ -99,7 +102,21 @@ final readonly class Checks
                 throw GatewayUnavailable::timeout($e);
             }
 
-            return $this->settlement->settle($payment, $status);
+            if (! $dryRun) {
+                return $this->settlement->settle($payment, $status);
+            }
+
+            $db = $payment->getConnection();
+            $db->beginTransaction();
+
+            try {
+                $would = $this->settlement->settle($payment, $status);
+            } finally {
+                $db->rollBack();
+                $payment->refresh();
+            }
+
+            return new SettleResult($would->outcome, $would->before, $would->after, $would->reported, $would->message, $would->problem, dryRun: true);
         } finally {
             $lock->release();
         }

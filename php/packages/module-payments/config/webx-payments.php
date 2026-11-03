@@ -49,4 +49,11 @@ return [
         'timeout' => 15,
         'connect_timeout' => 5,
     ],
+
+    // The channels of `webx-ui/module-notifications` a payment problem goes to (§11.5), by id. A
+    // site with `module-settings` chooses them on the settings tab «Payments»
+    // (`payments.notify.problem`); this list is read only where nothing was saved there.
+    'notices' => [
+        'problem' => [],
+    ],
 ];

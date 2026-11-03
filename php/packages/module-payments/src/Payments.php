@@ -69,13 +69,14 @@ final readonly class Payments
 
     /**
      * Asks the gateway and settles (§9.1): the return, a notification to poke, the page «we are
-     * checking». Null — another request holds the attempt's lock: its row is the answer.
+     * checking». Null — another request holds the attempt's lock: its row is the answer. A dry run
+     * asks the gateway all the same and answers what would change, writing nothing of the attempt.
      *
      * @throws GatewayUnavailable
      */
-    public function check(Payment $payment, string $source, ?string $trace = null, bool $complete = false, int $wait = 0): ?SettleResult
+    public function check(Payment $payment, string $source, ?string $trace = null, bool $complete = false, int $wait = 0, bool $dryRun = false): ?SettleResult
     {
-        return $this->checks->check($payment, $source, $trace, $complete, $wait);
+        return $this->checks->check($payment, $source, $trace, $complete, $wait, $dryRun);
     }
 
     /**

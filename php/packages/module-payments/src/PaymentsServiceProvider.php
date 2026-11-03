@@ -8,12 +8,15 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Cache\CacheGroups;
+use WebxUi\Mcp\Contracts\ProvidesMcpTools;
+use WebxUi\Notifications\NotificationEvents;
 use WebxUi\Orders\Blocks\BlockDefinition;
 use WebxUi\Orders\Blocks\OrderBlocks;
 use WebxUi\Orders\Checkout\Slots\CheckoutSlots;
@@ -25,11 +28,14 @@ use WebxUi\Payments\Console\ExchangePruneCommand;
 use WebxUi\Payments\Console\PollCommand;
 use WebxUi\Payments\Console\SelectionsPruneCommand;
 use WebxUi\Payments\Doctor\ExchangeSizeCheck;
+use WebxUi\Payments\Events\PaymentProblem;
 use WebxUi\Payments\Exchange\ExchangeConnection;
 use WebxUi\Payments\Exchange\ExchangeJournal;
 use WebxUi\Payments\Exchange\ExchangeMasker;
 use WebxUi\Payments\Exchange\InProcessHosts;
+use WebxUi\Payments\Mcp\PaymentsModule;
 use WebxUi\Payments\Models\PaymentMethod;
+use WebxUi\Payments\Notifications\PaymentNotices;
 use WebxUi\Payments\Online\Checks;
 use WebxUi\Payments\Online\Closings;
 use WebxUi\Payments\Online\GatewayCalls;
@@ -52,6 +58,7 @@ use WebxUi\Payments\Rendering\Assets;
 use WebxUi\Payments\Testing\FakeGatewaySite;
 use WebxUi\Payments\Types\BankTransfer;
 use WebxUi\Payments\Types\OnReceipt;
+use WebxUi\Settings\Settings;
 
 /**
  * Payments: the registry of method types with the shop's own two built in, the methods of the
@@ -109,6 +116,14 @@ class PaymentsServiceProvider extends ServiceProvider
 
         // «Gateway A» (§21): only with WEBX_PAYMENTS_FAKE_GATEWAY and never in production.
         FakeGatewaySite::register($this->app);
+
+        // The pay link and the bank details in the order's letters, and the manager's notice of a
+        // problem (§11.5) — where `webx-ui/module-notifications` is installed.
+        if (class_exists(NotificationEvents::class)) {
+            $this->callAfterResolving(NotificationEvents::class, function (NotificationEvents $events): void {
+                PaymentNotices::declare($events, $this->app);
+            });
+        }
     }
 
     public function boot(): void
@@ -162,6 +177,10 @@ class PaymentsServiceProvider extends ServiceProvider
                 ));
             }
         });
+
+        if (class_exists(NotificationEvents::class)) {
+            Event::listen(PaymentProblem::class, [PaymentNotices::class, 'problem']);
+        }
 
         // The size of the journal in `webx:doctor`, where the panel's frame is installed.
         if (class_exists(DoctorChecks::class)) {
@@ -225,11 +244,23 @@ class PaymentsServiceProvider extends ServiceProvider
         $modules = $this->app->make(ModuleRegistry::class);
 
         foreach (PaymentsSection::all() as $section) {
-            // The first entry seeds the section's demo: the two built-in methods switched on.
-            $modules->register($section->id() === PaymentsSection::GROUP ? $this->app->make(PaymentsHome::class) : $section);
+            // The first entry seeds the section's demo — the two built-in methods switched on — and
+            // carries the agent's tools where the MCP server is installed (§16): payments does not
+            // require it, and nothing loads the tools' classes otherwise.
+            $modules->register(match (true) {
+                $section->id() !== PaymentsSection::GROUP => $section,
+                interface_exists(ProvidesMcpTools::class) => $this->app->make(PaymentsModule::class),
+                default => $this->app->make(PaymentsHome::class),
+            });
         }
 
         $screens = $this->app->make(ScreenRegistry::class);
+
+        // The tab «Payments» of the site's settings: who hears of a problem (§11.5). A patch may
+        // name a screen nobody registered yet — the registry applies it when the tree is built.
+        if (class_exists(Settings::class) && class_exists(NotificationEvents::class)) {
+            $screens->extend(Settings::SCREEN, __DIR__.'/../resources/screens/settings.json');
+        }
         $screens->register(MethodForm::SCREEN, __DIR__.'/../resources/screens/method.json');
 
         // The delivery methods a rule names: the delivery module's list, or their keys as text

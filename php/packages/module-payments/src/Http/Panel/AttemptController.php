@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace WebxUi\Payments\Http\Panel;
 
-use Carbon\CarbonImmutable;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -16,6 +14,7 @@ use WebxUi\Payments\GatewayUnavailable;
 use WebxUi\Payments\Models\Payment;
 use WebxUi\Payments\Models\PaymentGatewayEvent;
 use WebxUi\Payments\Models\PaymentMethod;
+use WebxUi\Payments\Panel\AttemptQuery;
 use WebxUi\Payments\Panel\AttemptRows;
 use WebxUi\Payments\Panel\EventNames;
 use WebxUi\Payments\Panel\EventRows;
@@ -30,12 +29,6 @@ use WebxUi\Payments\Words;
  */
 final class AttemptController
 {
-    /** The tabs of the list: which statuses each shows. */
-    public const array TABS = [
-        'pending' => [PaymentStatus::Created, PaymentStatus::Pending, PaymentStatus::Authorized],
-        'failed' => [PaymentStatus::Failed, PaymentStatus::Cancelled, PaymentStatus::Expired],
-    ];
-
     public function __construct(
         private readonly AttemptRows $rows,
         private readonly EventNames $names,
@@ -43,39 +36,7 @@ final class AttemptController
 
     public function index(Request $request): JsonResponse
     {
-        $query = Payment::query()->with('order:id,number');
-        $tab = $request->query('tab');
-
-        if (is_string($tab) && isset(self::TABS[$tab])) {
-            $query->whereIn('status', array_map(static fn (PaymentStatus $status): string => $status->value, self::TABS[$tab]));
-        } elseif ($tab === 'problems') {
-            $query->whereNotNull('problem');
-        }
-
-        $method = $request->query('method');
-
-        if (is_string($method) && $method !== '') {
-            $query->where('method_key', $method);
-        }
-
-        $search = trim((string) $request->query('search', ''));
-
-        if ($search !== '') {
-            $query->where(static function (Builder $q) use ($search): void {
-                $q->where('uuid', $search)
-                    ->orWhere('gateway_ref', $search)
-                    ->orWhereHas('order', static fn (Builder $order): Builder => $order->where('number', $search));
-            });
-        }
-
-        foreach (['from' => '>=', 'to' => '<='] as $name => $operator) {
-            $value = $request->query($name);
-
-            if (is_string($value) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) === 1) {
-                $day = CarbonImmutable::parse($value);
-                $query->where('created_at', $operator, $operator === '>=' ? $day->startOfDay() : $day->endOfDay());
-            }
-        }
+        $query = AttemptQuery::filter(Payment::query()->with('order:id,number'), $request->query());
 
         $page = $query->orderByDesc('id')->paginate(max(10, min(100, (int) $request->query('per_page', '25'))));
         $lines = $this->rows->lines($page->getCollection());

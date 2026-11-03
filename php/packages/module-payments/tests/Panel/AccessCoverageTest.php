@@ -11,6 +11,7 @@ use WebxUi\Auth\AuthServiceProvider;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Auth\Models\Role;
 use WebxUi\Auth\Testing\AssertsPermissions;
+use WebxUi\Mcp\McpServiceProvider;
 use WebxUi\Payments\Tests\TestCase;
 use WebxUi\Themes\ThemeServiceProvider;
 
@@ -32,7 +33,7 @@ final class AccessCoverageTest extends TestCase
     protected function getPackageProviders($app): array
     {
         // The widgets ask the theme for its assets on every request through the kernel.
-        return [ThemeServiceProvider::class, ...parent::getPackageProviders($app), AuthServiceProvider::class];
+        return [ThemeServiceProvider::class, ...parent::getPackageProviders($app), AuthServiceProvider::class, McpServiceProvider::class];
     }
 
     /** @param  list<string>  $permissions */
@@ -59,6 +60,12 @@ final class AccessCoverageTest extends TestCase
     public function every_route_asks_for_a_declared_permission(): void
     {
         $this->assertPanelRoutesNeedPermission(['WebxUi\\Payments\\Http\\Panel\\', 'api/cms/payments/']);
+    }
+
+    #[Test]
+    public function every_tool_asks_for_a_declared_permission(): void
+    {
+        $this->assertToolsNeedPermission('payments');
     }
 
     #[Test]

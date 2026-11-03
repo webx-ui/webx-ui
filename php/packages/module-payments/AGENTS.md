@@ -4,7 +4,7 @@ Payments for a WebX UI shop: method types (on receipt, bank transfer), the metho
 amount and the delivery, the checkout's step, the order's block `payment`, «Mark as paid», the
 **journal of the exchange with gateways** (raw, keys masked, append-only), the contract of an online
 gateway with the fake «gateway A» and its contract test, notifications, returns, holds, the poll and
-the problems, and the panel section «Payments» with the tab «Payment» of an order.
+the problems, the panel section «Payments» with the tab «Payment» of an order, the agent's tools and the letters.
 Orders, their milestones and balance are `webx-ui/module-orders`; the cart is `webx-ui/module-cart`.
 
 ## What it owns
@@ -13,8 +13,7 @@ Orders, their milestones and balance are `webx-ui/module-orders`; the cart is `w
   `Contracts\MethodType`, key `<provider>.<kind>`): `store.on_receipt` (`Types\OnReceipt`, does not
   await payment, «Pay at the counter» at the shop's point) and `store.bank_transfer`
   (`Types\BankTransfer`, awaits payment; settings `recipient`, `account`, `purpose` with `{number}`,
-  `note` by language). The migration adds the methods `on-receipt` (rule `on_hand`) and
-  `bank-transfer` switched off.
+  `note` by language). The migration adds the methods `on-receipt` (rule `on_hand`) and `bank-transfer` switched off.
 - **Methods** `Methods::available(PaymentContext)` — enabled, known type, amount within
   `min_amount`/`max_amount`, currency, `delivery_rule` (`any`, `on_hand`, `methods`, `except` against
   the checkout's `ShippingChoice`), the type's own limits, keys of an online method;
@@ -32,17 +31,15 @@ Orders, their milestones and balance are `webx-ui/module-orders`; the cart is `w
   cancelled. Bound as orders' `MarksPaidByHand` (`Orders\PaymentsMarkPaid`): the card's button is this mark.
 - **Tables** `payment_methods` (`WebxUi\Payments\Models\PaymentMethod`, keys in the encrypted
   column `credentials`, hidden from arrays and JSON), `payment_selections` (`PaymentSelection`),
-  `payments` (`Payment`, statuses `WebxUi\Payments\PaymentStatus`) and `payment_gateway_events`
-  (`PaymentGatewayEvent`, read-only).
+  `payments` (`Payment`, statuses `WebxUi\Payments\PaymentStatus`) and `payment_gateway_events` (`PaymentGatewayEvent`, read-only).
 - **Journal** `Exchange\ExchangeJournal`: `record()` writes the raw half of an event (null and a log
   line `webx-payments: journal write failed` if it cannot), `recordOrFail()` throws
   `JournalUnavailable` (a notification gets 503), `decide()` adds the decision once. Its own
   connection (`ExchangeConnection`, `webx-payments-exchange`): a rollback never takes an event.
 - **Masking** `ExchangeMasker`: key values in every encoding, `Authorization`, cookies, the gateway's secret
   headers and fields, run-time secrets, Luhn card numbers; signatures kept. Bodies over 1 MB are cut.
-- **HTTP client of satellites** `WebxUi\Payments\GatewayHttp`: `request()` (Laravel `Http` with
-  the journal's middleware and the timeouts of `webx-payments.http`), `kind()`, `secret()`,
-  `psr()` (PSR-18 for an SDK). Every attempt of a request is one event.
+- **HTTP client of satellites** `WebxUi\Payments\GatewayHttp`: `request()` (Laravel `Http` with the journal's middleware
+  and the timeouts of `webx-payments.http`), `kind()`, `secret()`, `psr()` (PSR-18). Every attempt of a request is one event.
 - **Gateway contract** (spec §6.3–§6.4, §14.1): `Contracts\Gateway` (keys, settings, secret
   headers and fields, `testConnection()`), registry `WebxUi\Payments\Gateways`; online types
   implement `Contracts\ChargesOnline` (`start()` → `Handoff::redirect|post`, `fetchStatus()` →
@@ -63,18 +60,24 @@ Orders, their milestones and balance are `webx-ui/module-orders`; the cart is `w
 - **Settling** `Payments::settle(payment, GatewayStatus)` → `SettleResult`, the only door to the attempt
   and the order; `check()` asks `fetchStatus()` under the lock first. `POST /payments/notify/{method}` (no
   middleware) journals `in/notify` before parsing (503 if it cannot); `GET|POST /pay/return/{uuid}` asks the API.
-- **Gateway A** `Testing\FakeGateway` (`gateway-a`): `GatewayACard`, `GatewayAForm`,
-  `GatewayAUnsigned`; API `FakeGatewayServer` on `gateway-a.test` in the process, page
-  `GET /pay/fake/{uuid}`; only with `WEBX_PAYMENTS_FAKE_GATEWAY=true`, never in production
+- **Gateway A** `Testing\FakeGateway` (`gateway-a`): `GatewayACard`, `GatewayAForm`, `GatewayAUnsigned`;
+  API `FakeGatewayServer` on `gateway-a.test` in the process, page `GET /pay/fake/{uuid}`; only with `WEBX_PAYMENTS_FAKE_GATEWAY=true`, never in production
   (`FakeGatewaySite::methods()` adds its methods). Contract test: trait `Testing\GatewayContract`.
 - **Commands** `webx:payments:exchange-prune --days=N [--dry-run] [--force]` — the only removal of
-  events, `N` ≥ 365; `webx:payments:selections-prune` — nightly, choices of carts that are gone.
-- **Doctor** `Doctor\ExchangeSizeCheck` (with module-admin): a note over `exchange.warn_size`.
+  events, `N` ≥ 365; `webx:payments:selections-prune` — nightly, choices of carts that are gone;
+  `Doctor\ExchangeSizeCheck` (with module-admin): a note over `exchange.warn_size`.
 - **Panel** (with module-admin; `routes/panel.php`, npm `@webx-ui/module-payments`): «Methods» — keys
   «set / replace / remove», never sent back, «Test the connection» journaled `out/connection`
   (`Panel\MethodForm`, screen `payments.method-form`); «Attempts»; «Gateway exchange» — keyset pages,
-  no route writes an event; the tab «Payment» of `orders.show` (node `wx-payments-order`).
-- **Words** `webx-payments::` `module`, `methods`, `buyer`, `reasons`, `errors`, `exchange`, `panel`, `statuses`.
+  no route writes an event; the tab «Payment» of `orders.show` (node `wx-payments-order`). The panel's lists and the
+  tab are `Panel\AttemptQuery`, `Panel\ExchangeQuery`, `Panel\OrderPaymentCard` — the agent's tools read the same.
+- **MCP** (with `webx-ui/mcp`, `Mcp\PaymentsModule`): `payments_methods_list`, `_methods_save`, `_methods_reorder`,
+  `_available`, `_list`, `_get`, `_check`, `_mark_paid`, `_switch_method`, `_pay_link`, `_problems`, `_resolve_problem`,
+  `_exchange_list`, `_exchange_get` (read only, bodies ≤ 64 KB); resource `payments://catalog`. Keys never shown nor taken.
+- **Letters** (with `webx-ui/module-notifications`, `Notifications\PaymentNotices`): `orders.*` get `payment_url`,
+  `payment_instructions`, `payment_method`; event `payments.problem`, channels — setting `payments.notify.problem`
+  (tab «Payments» of the site's settings), else `webx-payments.notices.problem`.
+- **Words** `webx-payments::` `module`, `methods`, `buyer`, `reasons`, `errors`, `exchange`, `panel`, `statuses`, `notifications`.
 
 ### Permissions
 
@@ -84,7 +87,8 @@ Orders, their milestones and balance are `webx-ui/module-orders`; the cart is `w
 | `payments.manage`   | methods: on, order, words, rules, limits, settings, the gateway's keys and their test      |
 | `payments.exchange` | raw headers and bodies of the exchange, «Download»; only the super-admin by default        |
 
-Actions on an order (mark paid, check, change the method, payment link, problem resolved) — `orders.manage`.
+Actions on an order (mark paid, check, change the method, payment link, problem resolved) — `orders.manage`, in the
+panel and as tools; `payments_exchange_get` — `payments.exchange`; the other tools read with `payments.view`.
 
 ### Classes
 
@@ -112,8 +116,7 @@ The theme's contract, in `resources/theme/payments.css`; restyle with the same c
 | write the journal to another database     | `WEBX_PAYMENTS_EXCHANGE_CONNECTION=<connection>` (a connection of `config/database.php`)   |
 | keep more of a body, warn at another size | `webx-payments.exchange.body_limit` (≤ 16 MB), `webx-payments.exchange.warn_size`, bytes   |
 | give gateways more time                   | `webx-payments.http.timeout`, `webx-payments.http.connect_timeout` (seconds)               |
-| change the words                          | `php artisan vendor:publish --tag=webx-payments-lang`, edit `lang/vendor/webx-payments`    |
-| change the defaults above in one file     | `php artisan vendor:publish --tag=webx-payments-config`                                    |
+| change the words, or the defaults above   | `vendor:publish --tag=webx-payments-lang`, or `--tag=webx-payments-config`                 |
 | remove events older than a year           | `php artisan webx:payments:exchange-prune --days=365 --dry-run`, then without `--dry-run`  |
 
 ## Do not
@@ -124,27 +127,24 @@ The theme's contract, in `resources/theme/payments.css`; restyle with the same c
   answer `Notification::poke()` and let the base ask `fetchStatus()`.
 - Do not put a card field in `Handoff::post()` — it throws: the shop never takes a card.
 - Do not update or delete rows of `payment_gateway_events` — the model refuses (`AppendOnly`), and a
-  raw query would destroy the evidence of a payment dispute. Prune with the command, older than a
-  year.
+  raw query would destroy the evidence of a payment dispute. Prune with the command, older than a year.
 - Do not point `WEBX_PAYMENTS_EXCHANGE_CONNECTION` at the default connection on a site: the event
   would roll back with the status change it explains. Leave it empty for the copy.
-- Do not put a gateway's keys in `.env.example`, seeders, fixtures or logs; they live encrypted in
-  `payment_methods.credentials` and never leave the server.
+- Do not put a gateway's keys in `.env.example`, seeders, fixtures, logs or a tool's arguments; they live encrypted in
+  `payment_methods.credentials`, set in the panel, and never leave the server.
 
 ## Check your work
 
-- `php artisan migrate:status` lists `create_payments_tables`, `create_payment_gateway_events_table`
-  and `create_built_in_payment_methods`.
-- Switched on, `bank-transfer` shows on the checkout; after an order, «Thank you» shows the details
-  with «Payment for order <number>».
+- `php artisan migrate:status` lists `create_payments_tables`, `create_payment_gateway_events_table`, `create_built_in_payment_methods`.
+- Switched on, `bank-transfer` shows on the checkout; «Thank you» shows the details with «Payment for order <number>».
 - `php artisan webx:payments:exchange-prune --days=365 --dry-run` counts and removes nothing.
 - Gateway A on: «Pay» on `/pay/fake/{uuid}` gives `in/notify` `applied` and `browser/return` `same`.
 - After a gateway call, the newest row of `payment_gateway_events` holds the request and answer,
-  and `[secret:<field>]` where a key was.
+  and `[secret:<field>]` where a key was; `payments_exchange_get` shows the same, `payments_mark_paid` with `dry_run` writes nothing.
+- Budgets: `vendor/bin/phpunit packages/module-payments/tests/Panel/PanelPerformanceTest.php` and `tests/Mcp/McpPerformanceTest.php`.
 
 ## Read more
 
-- `README.md` next to this file.
-- Spec: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_PAYMENTS.md
-  (§5 tables, §6 contracts, §7 methods, §8 online payment, §10 the step, §12 built-in methods,
-  §14 a gateway's satellite, §20 the journal, §21 gateway A, §23 the plan).
+- `README.md` next to this file. Spec: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_PAYMENTS.md
+  (§5 tables, §6 contracts, §7 methods, §8 online payment, §10 the step, §11.5 letters, §12 built-in methods,
+  §14 a satellite, §16 MCP, §20 the journal, §21 gateway A, §23 the plan).

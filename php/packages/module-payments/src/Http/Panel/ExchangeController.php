@@ -4,24 +4,17 @@ declare(strict_types=1);
 
 namespace WebxUi\Payments\Http\Panel;
 
-use Carbon\CarbonImmutable;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use WebxUi\Admin\Contracts\HasPermissions;
 use WebxUi\Admin\Http\ApiResponse;
-use WebxUi\Orders\Models\Order;
-use WebxUi\Payments\Exchange\Direction;
-use WebxUi\Payments\Exchange\ExchangeKind;
 use WebxUi\Payments\Gateways;
-use WebxUi\Payments\Models\Payment;
 use WebxUi\Payments\Models\PaymentGatewayEvent;
-use WebxUi\Payments\Models\PaymentMethod;
 use WebxUi\Payments\Panel\EventNames;
 use WebxUi\Payments\Panel\EventRows;
+use WebxUi\Payments\Panel\ExchangeQuery;
 use WebxUi\Payments\Panel\PaymentsSection;
-use WebxUi\Payments\Words;
 
 /**
  * The exchange journal (spec §13.2, §20.7): every event newest first, a keyset page at a time,
@@ -33,34 +26,16 @@ use WebxUi\Payments\Words;
  */
 final class ExchangeController
 {
-    public const int PER_PAGE = 50;
-
     public function __construct(private readonly EventNames $names) {}
 
     public function index(Request $request, Gateways $gateways): JsonResponse
     {
-        $query = EventRows::query();
-
-        if (! $this->filter($query, $request)) {
-            return ApiResponse::data(['data' => [], 'next' => null, 'filters' => $this->filters($gateways)]);
-        }
-
-        $before = (int) $request->query('before', '0');
-        $perPage = max(10, min(100, (int) $request->query('per_page', (string) self::PER_PAGE)));
-
-        $rows = $query
-            ->when($before > 0, static fn (Builder $q): Builder => $q->where('id', '<', $before))
-            ->orderByDesc('id')
-            ->limit($perPage + 1)
-            ->get();
-
-        $more = $rows->count() > $perPage;
-        $page = $rows->take($perPage);
+        $page = ExchangeQuery::page($request->query(), (int) $request->query('per_page', (string) ExchangeQuery::PER_PAGE));
 
         return ApiResponse::data([
-            'data' => $this->names->apply($page->map(static fn (PaymentGatewayEvent $event): array => EventRows::line($event))->values()->all(), $request->user()),
-            'next' => $more ? (int) $page->last()?->id : null,
-            'filters' => $this->filters($gateways),
+            'data' => $this->names->apply($page['rows']->map(static fn (PaymentGatewayEvent $event): array => EventRows::line($event))->values()->all(), $request->user()),
+            'next' => $page['next'],
+            'filters' => ExchangeQuery::filters($gateways, app()->getLocale()),
         ]);
     }
 
@@ -96,92 +71,6 @@ final class ExchangeController
             'X-Content-Type-Options' => 'nosniff',
             'Cache-Control' => 'no-store, private',
         ]);
-    }
-
-    /**
-     * The filters of §20.7; false — the attempt or the order asked for does not exist, so nothing
-     * can match.
-     *
-     * @param  Builder<PaymentGatewayEvent>  $query
-     */
-    private function filter(Builder $query, Request $request): bool
-    {
-        foreach (['gateway', 'method_key' => 'method', 'kind', 'direction'] as $column => $name) {
-            $column = is_string($column) ? $column : $name;
-            $value = $request->query($name);
-
-            if (is_string($value) && $value !== '') {
-                $query->where($column, $value);
-            }
-        }
-
-        $payment = $request->query('payment');
-
-        if (is_string($payment) && $payment !== '') {
-            $id = Payment::query()->where('uuid', $payment)->value('id');
-
-            if ($id === null) {
-                return false;
-            }
-
-            $query->where('payment_id', $id);
-        }
-
-        // The tab of an order links here by its id; a person types the number.
-        $order = $request->query('order');
-        $orderId = $request->query('order_id');
-
-        if (is_string($orderId) && ctype_digit($orderId)) {
-            $query->where('order_id', (int) $orderId);
-        } elseif (is_string($order) && $order !== '') {
-            $id = Order::query()->where('number', $order)->value('id');
-
-            if ($id === null) {
-                return false;
-            }
-
-            $query->where('order_id', $id);
-        }
-
-        if ($request->boolean('signature')) {
-            $query->where('signature', 'invalid');
-        }
-
-        if ($request->boolean('errors')) {
-            $query->where(static function (Builder $q): void {
-                $q->whereIn('outcome', EventRows::ERRORS)
-                    ->orWhere('response_status', '>=', 400)
-                    ->orWhereNotNull('transport_error')
-                    ->orWhere('signature', 'invalid');
-            });
-        }
-
-        foreach (['from' => '>=', 'to' => '<='] as $name => $operator) {
-            $value = $request->query($name);
-
-            if (is_string($value) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) === 1) {
-                $day = CarbonImmutable::parse($value);
-                $query->where('created_at', $operator, $operator === '>=' ? $day->startOfDay() : $day->endOfDay());
-            }
-        }
-
-        return true;
-    }
-
-    /** @return array<string, mixed> what the filters offer */
-    private function filters(Gateways $gateways): array
-    {
-        $locale = app()->getLocale();
-
-        return [
-            'gateways' => array_values(array_map(static fn ($gateway): array => ['value' => $gateway->key(), 'label' => $gateway->title($locale)], $gateways->all())),
-            'methods' => PaymentMethod::query()->orderBy('position')->get(['key', 'title'])
-                ->map(static fn (PaymentMethod $method): array => ['value' => $method->key, 'label' => Words::pick($method->title, $locale) ?? $method->key])
-                ->values()
-                ->all(),
-            'kinds' => array_map(static fn (ExchangeKind $kind): string => $kind->value, ExchangeKind::cases()),
-            'directions' => array_map(static fn (Direction $direction): string => $direction->value, Direction::cases()),
-        ];
     }
 
     private function bodies(Request $request): bool

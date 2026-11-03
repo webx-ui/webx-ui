@@ -36,11 +36,16 @@
     "require-dev": {
         "orchestra/testbench": "^11.0",
         "phpunit/phpunit": "^12.0 || ^13.0",
+        "webx-ui/mcp": "^0.91.0",
         "webx-ui/module-admin": "^0.91.0",
-        "webx-ui/module-auth": "^0.91.0"
+        "webx-ui/module-auth": "^0.91.0",
+        "webx-ui/module-notifications": "^0.91.0",
+        "webx-ui/module-settings": "^0.91.0"
     },
     "suggest": {
-        "webx-ui/module-admin": "The section «Payments» of the panel — methods with their keys and a connection test, the journal of attempts, the gateway exchange journal — the tab «Payment» of an order, and the size of the journal in `webx:doctor`."
+        "webx-ui/mcp": "The agent's tools `payments_*` and the resource `payments://catalog`: methods, attempts, marking paid, checking with the gateway, the exchange journal read only.",
+        "webx-ui/module-admin": "The section «Payments» of the panel — methods with their keys and a connection test, the journal of attempts, the gateway exchange journal — the tab «Payment» of an order, and the size of the journal in `webx:doctor`.",
+        "webx-ui/module-notifications": "The pay link, the bank details and the method in the order's letters, and the manager's notice `payments.problem`."
     },
     "autoload": {
         "psr-4": {

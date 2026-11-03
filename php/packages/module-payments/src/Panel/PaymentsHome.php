@@ -12,7 +12,7 @@ use WebxUi\Payments\Demo\PaymentsDemo;
  * The first entry of «Payments» — the methods — which also seeds the section's demo: the two
  * built-in methods switched on, under the module's own id `payments`.
  */
-final class PaymentsHome extends PaymentsSection implements ProvidesDemo
+class PaymentsHome extends PaymentsSection implements ProvidesDemo
 {
     public function __construct(private readonly PaymentsDemo $demo)
     {
