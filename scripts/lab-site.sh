@@ -17,6 +17,13 @@
 #
 #   LAB_NAME         webx-lab — the directory beside this checkout, the subdomain, the database
 #   LAB_ADMIN        admin@example.com; the password is made once and kept in <site>/.lab-admin
+#
+# What the lab keeps of its own beside the password, through reset and every rewrite of .env:
+#   <site>/.lab-env      lines of .env the skeleton has no say in (keys of services, switches);
+#                        written over the template's at the end of every environment step
+#   <site>/.lab-config/  files of config/ the skeleton does not have (a carrier's own schedule);
+#                        copied into config/ after the site is made again, and by refresh when gone
+# Neither is ever printed: names only, the values may be a client's keys.
 
 set -euo pipefail
 
@@ -34,6 +41,10 @@ DEV_DOMAIN="${DEV_DOMAIN:-$(sed -n 's/^DEV_DOMAIN=//p' /opt/devbox/.env 2> /dev/
 URL="https://$NAME.$DEV_DOMAIN"
 STATE="$SITE/.lab-state"
 SECRET="$SITE/.lab-admin"
+LAB_ENV="$SITE/.lab-env"
+LAB_CONFIG="$SITE/.lab-config"
+# What reset carries over and create-project finds waiting in the directory.
+KEPT=(.lab-admin .lab-env .lab-config)
 # Written once setup, the block types and the demo are through: a create that stopped halfway
 # runs them again, one that finished goes straight to refresh.
 BUILT="$SITE/.lab-built"
@@ -115,6 +126,99 @@ lab_environment() {
     # walked on the lab without the keys of a real console.
     [ -n "$(env_get WEBX_USERS_DEV_ENABLED)" ] || env_set WEBX_USERS_DEV_ENABLED true
     [ -n "$(env_get APP_KEY)" ] || artisan key:generate --force --no-interaction
+    apply_lab_env
+}
+
+# Keys lab_environment always writes: they follow LAB_NAME and the template, never .lab-env.
+LAB_OWN_KEYS='CACHE_STORE REDIS_HOST REDIS_PASSWORD REDIS_PREFIX CACHE_PREFIX MANTICORE_HOST MANTICORE_PORT MANTICORE_TABLE_PREFIX MAIL_MAILER APP_URL'
+
+# The lines of .lab-env over the template's, last, so that setup, build and the template lose to them.
+apply_lab_env() {
+    [ -f "$LAB_ENV" ] || return 0
+    local line key names=()
+    while IFS= read -r line || [ -n "$line" ]; do
+        [[ "$line" =~ ^([A-Za-z_][A-Za-z0-9_]*)= ]] || continue
+        key="${BASH_REMATCH[1]}"
+        env_set "$key" "${line#*=}"
+        names+=("$key")
+    done < "$LAB_ENV"
+    if [ ${#names[@]} -gt 0 ]; then note ".lab-env over .env: ${names[*]}"; fi
+}
+
+# Once: the lines of .env that the skeleton's .env.example does not name (set or commented out)
+# and lab_environment does not write go to .lab-env. Values move file to file, never to the console.
+migrate_lab_env() {
+    [ ! -e "$LAB_ENV" ] && [ -f "$SITE/.env" ] && [ -f "$SITE/.env.example" ] || return 0
+    ( umask 077 && OWN="$LAB_OWN_KEYS" awk '
+        BEGIN { n = split(ENVIRON["OWN"], own, " "); for (i = 1; i <= n; i++) skip[own[i]] = 1 }
+        FNR == NR {
+            line = $0
+            sub(/^#[ \t]*/, "", line)
+            if (match(line, /^[A-Za-z_][A-Za-z0-9_]*=/)) skip[substr(line, 1, RLENGTH - 1)] = 1
+            next
+        }
+        match($0, /^[A-Za-z_][A-Za-z0-9_]*=/) {
+            key = substr($0, 1, RLENGTH - 1)
+            if (key in skip) next
+            if (!(key in last)) order[++m] = key
+            last[key] = $0
+        }
+        END { for (i = 1; i <= m; i++) print last[order[i]] }' "$SITE/.env.example" "$SITE/.env" > "$LAB_ENV" )
+    chmod 600 "$LAB_ENV"
+    note ".lab-env made from .env: $(cut -d= -f1 "$LAB_ENV" | tr '\n' ' ')"
+}
+
+# Once: the carrier's own schedule (webx-ui#103) goes to .lab-config/. The other files of config/
+# the skeleton lacks are what setup publishes, not told apart from a hand edit — left where they are.
+migrate_lab_config() {
+    [ ! -e "$LAB_CONFIG" ] && [ -d "$SITE/config" ] || return 0
+    ( umask 077 && mkdir "$LAB_CONFIG" )
+    local name moved=()
+    for name in webx-delivery.php; do
+        if [ -f "$SITE/config/$name" ]; then
+            cp -p "$SITE/config/$name" "$LAB_CONFIG/$name"
+            moved+=("$name")
+        fi
+    done
+    note ".lab-config/ made: ${moved[*]:-empty}"
+}
+
+# The files of .lab-config/ into config/: every one after the site is made again (`all`), only the
+# missing ones otherwise — an edit made in config/ by hand is not taken back.
+apply_lab_config() {
+    [ -d "$LAB_CONFIG" ] && [ -d "$SITE/config" ] || return 0
+    local file name copied=()
+    for file in "$LAB_CONFIG"/*; do
+        [ -f "$file" ] || continue
+        name="$(basename "$file")"
+        if [ "$1" = all ] || [ ! -f "$SITE/config/$name" ]; then
+            cp "$file" "$SITE/config/$name"
+            copied+=("$name")
+        fi
+    done
+    if [ ${#copied[@]} -gt 0 ]; then note ".lab-config/ into config/: ${copied[*]}"; fi
+}
+
+migrate_kept() {
+    migrate_lab_env
+    migrate_lab_config
+}
+
+# What reset keeps goes out of the directory and back: create-project wants none of it there.
+stash_kept() {
+    local stash="$1" name
+    for name in "${KEPT[@]}"; do
+        if [ -e "$SITE/$name" ]; then mv "$SITE/$name" "$stash/"; fi
+    done
+}
+
+unstash_kept() {
+    local stash="$1" name
+    mkdir -p "$SITE"
+    for name in "${KEPT[@]}"; do
+        if [ -e "$stash/$name" ]; then mv "$stash/$name" "$SITE/"; fi
+    done
+    rmdir "$stash"
 }
 
 admin_password() {
@@ -132,29 +236,32 @@ admin_password() {
 build() {
     guard_site
 
+    local fresh=""
     if [ ! -f "$SITE/artisan" ]; then
-        # Only the admin password kept by reset may wait there: create-project wants no directory.
-        local kept=""
+        # Only what reset keeps may wait there: create-project wants no directory.
+        local stash=""
         if [ -e "$SITE" ]; then
-            [ -z "$(ls -A "$SITE" | grep -vx .lab-admin)" ] || fail "$SITE is there but is not a site; reset takes it away."
-            [ -f "$SECRET" ] && kept="$(cat "$SECRET")"
-            rm -f "$SECRET"
+            [ -z "$(ls -A "$SITE" | grep -vxF -e .lab-admin -e .lab-env -e .lab-config)" ] \
+                || fail "$SITE is there but is not a site; reset takes it away."
+            stash="$(mktemp -d "$(dirname "$SITE")/.$NAME-kept.XXXXXX")"
+            stash_kept "$stash"
             rmdir "$SITE"
         fi
         step "Create the site from the skeleton (webx-ui/site $(monorepo_version), this checkout)"
         create_skeleton "$SITE"
-        if [ -n "$kept" ]; then
-            ( umask 077 && printf "%s\n" "$kept" > "$SECRET" )
-            chmod 600 "$SECRET"
-        fi
+        if [ -n "$stash" ]; then unstash_kept "$stash"; fi
+        fresh=1
         point_composer "$SITE"
         ( cd "$SITE" && composer_bin install --no-interaction )
     else
         note "$SITE is there"
+        migrate_kept
     fi
 
     register_site
     lab_environment
+    # Before setup: what boots there (the schedule of a carrier among it) reads the lab's own.
+    if [ -n "$fresh" ]; then apply_lab_config all; else apply_lab_config missing; fi
 
     if [ -f "$BUILT" ]; then
         note 'setup, block types and demo were done before'
@@ -169,8 +276,10 @@ build() {
         --db-connection=mariadb --db-host="$(env_get DB_HOST)" --db-port="$(env_get DB_PORT)" \
         --db-username="$(env_get DB_USERNAME)" --db-password="$(env_get DB_PASSWORD)" --db="$(env_get DB_DATABASE)" \
         --admin="$ADMIN" --admin-name='Lab admin' --no-build
-    # Setup writes the address it was given; what it may rewrite of ours goes back.
+    # Setup writes the address it was given and publishes the configs of the modules; what it may
+    # rewrite of ours goes back.
     lab_environment
+    apply_lab_config all
 
     step 'Block types and the demo of every module'
     artisan webx:blocks:import --theme --publish --no-interaction
@@ -208,6 +317,10 @@ refresh() {
     local branch head
     branch="$(git -C "$MONOREPO" rev-parse --abbrev-ref HEAD)"
     head="$(git -C "$MONOREPO" rev-parse --short HEAD)"
+
+    step 'What the lab keeps of its own (.lab-env, .lab-config/)'
+    migrate_kept
+    apply_lab_config missing
 
     step "npm packages of this checkout ($branch @ $head)"
     local stale
@@ -299,8 +412,8 @@ refresh() {
 reset() {
     guard_site
     step "Reset $NAME"
-    local kept=""
-    if [ -f "$SECRET" ]; then kept="$(cat "$SECRET")"; fi
+    # A lab made before .lab-env and .lab-config/ hands its lines and files over first.
+    if [ -d "$SITE" ]; then migrate_kept; fi
 
     if [ -f "$SITE/.env" ] && [ -n "$(env_get DB_DATABASE)" ]; then
         DB_HOST="$(env_get DB_HOST)" DB_PORT="$(env_get DB_PORT)" DB_USERNAME="$(env_get DB_USERNAME)" \
@@ -313,15 +426,13 @@ reset() {
     fi
 
     if [ -d "$SITE" ]; then
+        local stash
+        stash="$(mktemp -d "$(dirname "$SITE")/.$NAME-kept.XXXXXX")"
+        stash_kept "$stash"
         remove_site_tree "$SITE"
         [ -f "$MONOREPO/packages/core/package.json" ] || fail "the removal reached this checkout: packages/core is gone"
-    fi
-
-    if [ -n "$kept" ]; then
-        mkdir -p "$SITE"
-        ( umask 077 && printf '%s\n' "$kept" > "$SECRET" )
-        chmod 600 "$SECRET"
-        note 'the admin password is kept'
+        unstash_kept "$stash"
+        note "kept: $(ls -A "$SITE" | tr '\n' ' ')"
     fi
 
     build
