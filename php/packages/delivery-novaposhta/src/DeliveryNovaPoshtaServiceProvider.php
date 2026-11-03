@@ -13,6 +13,7 @@ use WebxUi\Delivery\NovaPoshta\Api\Client;
 use WebxUi\Delivery\NovaPoshta\Api\Journal;
 use WebxUi\Delivery\NovaPoshta\Api\Pace;
 use WebxUi\Delivery\NovaPoshta\Recording\RecordCommand;
+use WebxUi\Delivery\NovaPoshta\Tracking\Tracking;
 use WebxUi\Delivery\NovaPoshta\Types\BranchType;
 use WebxUi\Delivery\NovaPoshta\Types\CourierType;
 use WebxUi\Delivery\NovaPoshta\Types\LockerType;
@@ -63,6 +64,18 @@ class DeliveryNovaPoshtaServiceProvider extends ServiceProvider
                 requests: max(1, (int) $config->get('webx-delivery-novaposhta.sync.max_requests_per_pull', 20)),
                 seconds: (float) $config->get('webx-delivery-novaposhta.sync.pull_seconds', 20),
                 sample: is_numeric($sample) && (int) $sample > 0 ? (int) $sample : null,
+            );
+        });
+
+        $this->app->singleton(Tracking::class, function (): Tracking {
+            $config = $this->app->make('config');
+            // A read-only key is somebody else's account: its parcels are its buyers' data (§9).
+            $enabled = $config->get('webx-delivery-novaposhta.tracking') ?? ! (bool) $config->get('webx-delivery-novaposhta.read_only', false);
+
+            return new Tracking(
+                client: $this->app->make(Client::class),
+                key: $this->app->make(AccountKey::class),
+                enabled: filter_var($enabled, FILTER_VALIDATE_BOOL),
             );
         });
 

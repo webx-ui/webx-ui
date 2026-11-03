@@ -1,0 +1,50 @@
+{
+  "_source": "After the carrier's documentation, not recorded: the numbers of a client's parcels are its buyers' data, the tracking is never asked on a client's key (stage 8). Made-up numbers and dates; the field of the status's time is not confirmed (§9.2).",
+  "success": true,
+  "data": [
+    {
+      "Number": "20450000000001",
+      "StatusCode": "1",
+      "Status": "Відправник самостійно створив цю накладну, але ще не надав до відправки",
+      "DateCreated": "02-11-2026 09:12:00",
+      "TrackingUpdateDate": "2026-11-02 09:12:00",
+      "RecipientDateTime": ""
+    },
+    {
+      "Number": "20450000000002",
+      "StatusCode": "7",
+      "Status": "Прибув у відділення",
+      "DateCreated": "31-10-2026 14:00:00",
+      "TrackingUpdateDate": "2026-11-02 08:30:00",
+      "RecipientDateTime": ""
+    },
+    {
+      "Number": "20450000000003",
+      "StatusCode": "9",
+      "Status": "Відправлення отримано",
+      "DateCreated": "30-10-2026 11:00:00",
+      "TrackingUpdateDate": "2026-11-02 09:41:00",
+      "RecipientDateTime": "02.11.2026 09:40:00"
+    },
+    {
+      "Number": "20450000000004",
+      "StatusCode": "3",
+      "Status": "Номер не знайдено"
+    },
+    {
+      "Number": "20450000000005",
+      "StatusCode": "999",
+      "Status": "Новий статус служби",
+      "DateCreated": "01-11-2026 10:00:00",
+      "TrackingUpdateDate": "2026-11-02 07:00:00",
+      "RecipientDateTime": ""
+    }
+  ],
+  "errors": [],
+  "warnings": [],
+  "info": [],
+  "messageCodes": [],
+  "errorCodes": [],
+  "warningCodes": [],
+  "infoCodes": []
+}

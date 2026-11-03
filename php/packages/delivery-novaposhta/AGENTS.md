@@ -31,6 +31,11 @@ npm package of its own.
   `WarehouseDoors`, `PayerType` from the snapshot. `cancelWaybill()` is `InternetDocument.delete`
   by `meta.ref`. The carrier's refusal: its text and codes, frequent ones in the dictionary's words
   (`Waybills\CarrierErrors`). A read-only key refuses before a single request.
+- **Tracking** (`TracksShipments`, `Tracking\Tracking`): one `getStatusDocuments` per batch of the
+  base (up to 100 numbers), codes by `Tracking::STATUSES` (§9.2 of the spec). Code 3 and a number
+  left out of the answer are «ask later»; a new code keeps the status, logs a line and puts the
+  carrier's words in the events; `returned` is never set. The base stops asking at a final status
+  and marks «received» once. Off on a read-only key unless `NOVAPOSHTA_TRACKING=true`.
 - **Directories** (`SyncsDirectories`), nightly, pages of 500, paced by `Api\Pace`: towns from
   `getCities` (`Directories\Localities`; the carrier leads `UA`), then the whole network of
   points from `getWarehouses` (`Directories\Points`). `Branch` and `Store` are `branch`,
@@ -72,18 +77,19 @@ None of its own. The carrier's settings, key and «Test the connection» are beh
 
 ## Change it without forking
 
-| You want                                  | Do this                                                            |
-| ----------------------------------------- | ------------------------------------------------------------------ |
-| Never write to the account behind the key | `NOVAPOSHTA_READ_ONLY=true`                                        |
-| A longer wait for the API                 | `NOVAPOSHTA_TIMEOUT` (seconds, 10 by default)                      |
-| The journal elsewhere, or none            | `NOVAPOSHTA_JOURNAL` (a path; empty turns it off)                  |
-| Another address (a proxy, a test server)  | `NOVAPOSHTA_API_URL`                                               |
-| Streets on another day, or by hand only   | `NOVAPOSHTA_STREETS_CRON` (a cron or `manual`)                     |
-| The streets of only the first N towns     | `NOVAPOSHTA_STREETS_SAMPLE` (`0` — every town)                     |
-| A smaller or larger pull of streets       | `NOVAPOSHTA_MAX_REQUESTS_PER_PULL`, `NOVAPOSHTA_PULL_SECONDS`      |
-| Other words                               | `php artisan vendor:publish --tag=webx-delivery-novaposhta-lang`   |
-| The config in the site                    | `php artisan vendor:publish --tag=webx-delivery-novaposhta-config` |
-| A method with a price the shop charges    | give the method a price in «Delivery → Methods»; the type keeps it |
+| You want                                   | Do this                                                            |
+| ------------------------------------------ | ------------------------------------------------------------------ |
+| Never write to the account behind the key  | `NOVAPOSHTA_READ_ONLY=true`                                        |
+| Track parcels on a read-only key, or never | `NOVAPOSHTA_TRACKING` (`true` / `false`)                           |
+| A longer wait for the API                  | `NOVAPOSHTA_TIMEOUT` (seconds, 10 by default)                      |
+| The journal elsewhere, or none             | `NOVAPOSHTA_JOURNAL` (a path; empty turns it off)                  |
+| Another address (a proxy, a test server)   | `NOVAPOSHTA_API_URL`                                               |
+| Streets on another day, or by hand only    | `NOVAPOSHTA_STREETS_CRON` (a cron or `manual`)                     |
+| The streets of only the first N towns      | `NOVAPOSHTA_STREETS_SAMPLE` (`0` — every town)                     |
+| A smaller or larger pull of streets        | `NOVAPOSHTA_MAX_REQUESTS_PER_PULL`, `NOVAPOSHTA_PULL_SECONDS`      |
+| Other words                                | `php artisan vendor:publish --tag=webx-delivery-novaposhta-lang`   |
+| The config in the site                     | `php artisan vendor:publish --tag=webx-delivery-novaposhta-config` |
+| A method with a price the shop charges     | give the method a price in «Delivery → Methods»; the type keeps it |
 
 ## Do not
 
@@ -112,6 +118,8 @@ None of its own. The carrier's settings, key and «Test the connection» are beh
 - «Delivery → Carriers» in the panel shows Nova Poshta with its key, settings and «Test the
   connection». «Delivery → Methods» shows the three methods, switched off.
 - The journal lists every call. With read only on it has no writing method with `ok`.
+- `TrackingTest` follows the table of §9.2 and the base's milestone; the journal of a client's
+  key has no `getStatusDocuments`.
 - The playground's `/panel/orders/10` and `/11` make a waybill of a branch and a locker on fixtures.
 
 ## Read more

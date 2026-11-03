@@ -8,13 +8,16 @@ use WebxUi\Delivery\AbstractMethodType;
 use WebxUi\Delivery\Contracts\CreatesWaybills;
 use WebxUi\Delivery\Contracts\DescribesWaybill;
 use WebxUi\Delivery\Contracts\LabelledMethodType;
+use WebxUi\Delivery\Contracts\TracksShipments;
 use WebxUi\Delivery\DeliveryContext;
 use WebxUi\Delivery\Method;
 use WebxUi\Delivery\NovaPoshta\NovaPoshtaCarrier;
+use WebxUi\Delivery\NovaPoshta\Tracking\Tracking;
 use WebxUi\Delivery\NovaPoshta\Waybills\Waybills;
 use WebxUi\Delivery\Quote;
 use WebxUi\Delivery\Shipping\Label;
 use WebxUi\Delivery\Shipping\Shipment;
+use WebxUi\Delivery\Shipping\TrackingState;
 use WebxUi\Delivery\Shipping\Waybill;
 use WebxUi\Delivery\Shipping\WaybillRequest;
 
@@ -25,9 +28,10 @@ use WebxUi\Delivery\Shipping\WaybillRequest;
  *
  * Each makes a waybill (§8): the base's dialog draws the carrier's own fields of the kind
  * ({@see waybillFields()}) and no cash on delivery (decision 5); there is no label to print
- * (decision 12) — the manager prints it in the carrier's account by the number.
+ * (decision 12) — the manager prints it in the carrier's account by the number. Its parcels are
+ * tracked by the base's schedule, a batch to one request (§9).
  */
-abstract class NovaPoshtaType extends AbstractMethodType implements CreatesWaybills, DescribesWaybill, LabelledMethodType
+abstract class NovaPoshtaType extends AbstractMethodType implements CreatesWaybills, DescribesWaybill, LabelledMethodType, TracksShipments
 {
     /** 'branch', 'locker', 'courier': the kind after the dot and the key of its words. */
     abstract protected function kind(): string;
@@ -116,6 +120,15 @@ abstract class NovaPoshtaType extends AbstractMethodType implements CreatesWaybi
         $fields[] = ['name' => 'date', 'type' => 'text', 'label' => NovaPoshtaCarrier::words('waybill.date')];
 
         return $fields;
+    }
+
+    /**
+     * @param  list<Shipment>  $shipments
+     * @return array<int, TrackingState>
+     */
+    public function track(array $shipments): array
+    {
+        return app(Tracking::class)->track($shipments);
     }
 
     public function supportsCod(): bool

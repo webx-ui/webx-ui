@@ -16,10 +16,17 @@ return [
     /*
     | Read only: the client refuses every method that changes the carrier's account — a waybill,
     | a recipient, an address — before a request is made. Turn it on wherever the key belongs to
-    | somebody else's account (a development copy with a client's key): directories, senders and
-    | tracking still work, nothing is written there.
+    | somebody else's account (a development copy with a client's key): directories and senders
+    | still work, nothing is written there; the tracking is off unless said otherwise.
     */
     'read_only' => (bool) env('NOVAPOSHTA_READ_ONLY', false),
+
+    /*
+    | The tracking of parcels (§9): one `getStatusDocuments` per batch of the base's schedule.
+    | false — nothing is asked, every parcel stays as it is. null — on, but off on a read-only key:
+    | somebody else's parcels are its buyers' data.
+    */
+    'tracking' => env('NOVAPOSHTA_TRACKING'),
 
     /*
     | The journal of calls: one line per call — time, model, method, page, outcome — never the key
