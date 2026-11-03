@@ -145,6 +145,63 @@ describe('delivery step', () => {
     expect(put.mock.calls[0][1]).toEqual({ delivery: { method: '1' }, _prefix: 'delivery' })
   })
 
+  it('chooses a popular town in a step the checkout drew again (after a sign-in)', async () => {
+    // The runtime's contract, as the widgets' core keeps it: a setup per element, its cleanup on
+    // unmount.
+    const widgets = new Map()
+    const cleanups = new Map()
+    const runtime = {
+      widget: vi.fn((name, selector, setup) => {
+        widgets.set(name, { selector, setup })
+        runtime.mount(document)
+      }),
+      mount: (scope) => {
+        for (const { selector, setup } of widgets.values()) {
+          const found = [...scope.querySelectorAll(selector)]
+          if (scope instanceof Element && scope.matches(selector)) found.unshift(scope)
+          for (const el of found) if (!cleanups.has(el)) cleanups.set(el, setup(el))
+        }
+      },
+      unmount: (scope) => {
+        for (const [el, cleanup] of cleanups) {
+          if (scope === el || scope.contains?.(el)) {
+            cleanup?.()
+            cleanups.delete(el)
+          }
+        }
+      },
+    }
+    document.body.innerHTML = step()
+    window.webx = runtime
+    vi.resetModules()
+    const module = await import('./delivery.js')
+    const put = vi.spyOn(module.server, 'put').mockResolvedValue({ status: 200, body: {} })
+    expect(runtime.widget).toHaveBeenCalledWith(
+      'delivery',
+      '[data-webx-delivery]',
+      expect.any(Function),
+    )
+
+    // What the checkout's redrawPage does with the step: the server's copy put in its place.
+    const old = document.querySelector('[data-webx-delivery]')
+    const fresh = new DOMParser()
+      .parseFromString(step(), 'text/html')
+      .querySelector('[data-webx-delivery]')
+    runtime.unmount(old)
+    old.replaceWith(fresh)
+    runtime.mount(fresh)
+
+    expect(fresh.classList.contains('is-live')).toBe(true)
+    fresh.querySelector('[data-delivery-town]').click()
+    await vi.waitFor(() => expect(put).toHaveBeenCalledTimes(1))
+    expect(put.mock.calls[0][1]).toEqual({ country: undefined, locality: '9' })
+
+    // The step let go answers nothing.
+    old.querySelector('[data-delivery-town]').click()
+    await Promise.resolve()
+    expect(put).toHaveBeenCalledTimes(1)
+  })
+
   it('keeps the step as it was when the write fails', async () => {
     const { put, root } = await load(step(), async () => ({ status: 500, body: {} }))
 

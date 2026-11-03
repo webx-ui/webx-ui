@@ -12,6 +12,9 @@
 // - After each change: `webx:delivery:changed` on the step (detail: the method, the cost) and, when
 //   the owner asked (`data-checkout-event`), its event on `document` — the checkout redraws its
 //   column of the totals and the payment step.
+// - The step is a widget of the runtime (`webx.widget`): whoever puts a step drawn again in place
+//   — the checkout after a sign-in redraws all its steps — starts it with `webx.mount`. Started
+//   only at load, such a step stayed dead: no popular town, no search answered.
 
 const STEP = '[data-webx-delivery]'
 const ADDRESS_PAUSE = 600
@@ -227,8 +230,25 @@ export function startAll(scope = document) {
   for (const root of scope.querySelectorAll(STEP)) start(root)
 }
 
+/** Registers the step with the runtime once it is there; true when it is. */
+export function register() {
+  const runtime = webx()
+  if (typeof runtime.widget !== 'function') return false
+  runtime.widget('delivery', STEP, (root) => {
+    const api = start(root)
+    return () => api?.stop()
+  })
+  return true
+}
+
 if (typeof document !== 'undefined') {
+  // The runtime may be a module script printed after this one: the steps start on their own now,
+  // and are handed to it once it runs.
+  const boot = () => {
+    startAll()
+    if (!register()) window.addEventListener('load', register, { once: true })
+  }
   if (document.readyState === 'loading')
-    document.addEventListener('DOMContentLoaded', () => startAll())
-  else startAll()
+    document.addEventListener('DOMContentLoaded', boot, { once: true })
+  else boot()
 }

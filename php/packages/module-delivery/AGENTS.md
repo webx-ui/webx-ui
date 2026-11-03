@@ -49,7 +49,7 @@ binding) and `webx-ui/widgets`. `webx-ui/module-orders` gets the step as its che
   (`<x-webx-select searchable>`), `address-form`, `summary-line` — views under
   `resources/views/components`, the data from `Checkout\StepView::build()`. `dist/delivery.js`
   (served at `webx/delivery/delivery.js`) writes each change and redraws the step; without
-  JavaScript the step is one form. Events: `webx:delivery:changed` on the step, `data-checkout-event` on `document`.
+  JavaScript the step is one form. It is the runtime widget `delivery`: a step an owner redraws starts on `webx.mount`. Events: `webx:delivery:changed` on the step, `data-checkout-event` on `document`.
 - **API** `api/delivery/…` (`webx-delivery.path`): `countries`, `localities?country&q`,
   `localities/popular`, `points?method&locality&q&page` (20 a page), `points/{id}`,
   `streets?method&locality&q` — public, `max-age=300`, 60 a minute per IP; `methods?locality`,
