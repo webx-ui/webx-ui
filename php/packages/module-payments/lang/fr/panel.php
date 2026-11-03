@@ -130,6 +130,7 @@ return [
         'gateway-ref' => 'Référence de la passerelle',
         'paid' => 'Payé',
         'held' => ':amount bloqué jusqu’au :date',
+        'part' => 'Encaissé en partie : :paid sur :amount',
         'reference' => 'Document',
         'failure' => 'Raison',
         'source' => 'Lancée depuis',

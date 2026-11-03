@@ -69,6 +69,11 @@ function title(line: TimelineLine): string {
       return t('panel.timeline-refund_reversed', { amount: line.amount ?? '' })
     case 'payment':
       return t('panel.timeline-payment', { amount: line.amount ?? '' })
+    case 'payment_part':
+      return t('panel.timeline-payment_part', {
+        amount: line.amount ?? '',
+        total: line.total ?? '',
+      })
     case 'notification_sent':
       return t('panel.timeline-notification_sent', { event: line.event_label ?? line.event ?? '' })
     case 'milestone_removed':
@@ -89,7 +94,7 @@ function title(line: TimelineLine): string {
 function tone(line: TimelineLine): TimelineItemType {
   if (line.kind === 'status') return toneOf(line.to_color)
   if (line.kind === 'payment_failed') return 'danger'
-  if (line.kind === 'payment') return 'success'
+  if (line.kind === 'payment' || line.kind === 'payment_part') return 'success'
   if (line.kind === 'items' || line.kind === 'block_changed') return 'primary'
   if (line.kind === 'refund') return line.reversed ? 'default' : 'warning'
   if (line.kind === 'refund_reversed' || line.kind === 'milestone_removed') return 'warning'

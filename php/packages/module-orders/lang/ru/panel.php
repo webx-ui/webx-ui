@@ -187,6 +187,7 @@ return [
     'timeline-payment_awaiting_stopped' => 'Оплату больше не ждём',
     'timeline-payment_awaiting' => 'Снова ожидает оплаты',
     'timeline-payment' => 'Доплата :amount',
+    'timeline-payment_part' => 'Списано :amount из :total',
     'timeline-visitor' => 'Изменена привязка к посетителю',
     'timeline-details' => 'Изменены контакты',
     'timeline-visitor-linked' => 'Привязан к посетителю',

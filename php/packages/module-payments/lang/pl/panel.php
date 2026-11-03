@@ -130,6 +130,7 @@ return [
         'gateway-ref' => 'Numer w bramce',
         'paid' => 'Opłacono',
         'held' => 'Zablokowano :amount do :date',
+        'part' => 'Pobrano częściowo: :paid z :amount',
         'reference' => 'Dokument',
         'failure' => 'Przyczyna',
         'source' => 'Rozpoczęto z',

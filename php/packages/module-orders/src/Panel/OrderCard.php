@@ -424,18 +424,21 @@ final readonly class OrderCard
     /**
      * The money, the reference and the note of a history line `payment` ({@see Orders::paymentNote()}).
      *
-     * @return array{amount: int, reference: string|null, note: string|null}
+     * A part (`payment_part`) carries what was owed before it as `owed`; a top-up has it null.
+     *
+     * @return array{amount: int, owed: int|null, reference: string|null, note: string|null}
      */
     public static function paymentLine(?string $line): array
     {
-        if ($line === null || preg_match('/^(\d+)(?: \[([^\]]*)\])?(?:: (.*))?$/s', $line, $match) !== 1) {
-            return ['amount' => 0, 'reference' => null, 'note' => $line];
+        if ($line === null || preg_match('/^(\d+)(?:\/(\d+))?(?: \[([^\]]*)\])?(?:: (.*))?$/s', $line, $match) !== 1) {
+            return ['amount' => 0, 'owed' => null, 'reference' => null, 'note' => $line];
         }
 
         return [
             'amount' => (int) $match[1],
-            'reference' => ($match[2] ?? '') !== '' ? $match[2] : null,
-            'note' => ($match[3] ?? '') !== '' ? $match[3] : null,
+            'owed' => ($match[2] ?? '') !== '' ? (int) $match[2] : null,
+            'reference' => ($match[3] ?? '') !== '' ? $match[3] : null,
+            'note' => ($match[4] ?? '') !== '' ? $match[4] : null,
         ];
     }
 
@@ -656,10 +659,14 @@ final readonly class OrderCard
             }
 
             // «1500 [bank-77]: by card» — a top-up's money, its reference and its note (§36.3).
-            if ($change->kind === StatusChange::PAYMENT) {
+            if ($change->kind === StatusChange::PAYMENT || $change->kind === StatusChange::PAYMENT_PART) {
                 $payment = self::paymentLine($change->note);
                 $line['amount'] = $money($payment['amount']);
                 $line['amount_minor'] = $payment['amount'];
+
+                if ($change->kind === StatusChange::PAYMENT_PART) {
+                    $line['total'] = $money((int) $payment['owed']);
+                }
                 $line['reference'] = $payment['reference'];
                 $line['note'] = $payment['note'];
             }

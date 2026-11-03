@@ -3,9 +3,13 @@
 Payments for a WebX UI shop on Laravel: the methods of the site, the attempts to pay an order, and
 the journal of every exchange with a payment gateway.
 
-This release is the base of the module (spec §23, stage П1): the schema, the gateway exchange
-journal and the HTTP client gateway satellites use. Methods on receipt and by bank transfer, the
-gateway contract, the pay page, the panel section and MCP come next.
+Methods on receipt and by bank transfer are built in; an online gateway comes as a satellite
+package `payment-<gateway>` on the contract of this one, with the hold, the poll and the problems
+handled by the base. The panel section «Payments», the order's tab «Payment», the agent's tools and
+the letters come with it.
+
+- For the shop: [Payments](https://github.com/webx-ui/webx-ui/blob/main/apps/docs/guide/payments.md).
+- For a satellite of a gateway: [Payment gateways](https://github.com/webx-ui/webx-ui/blob/main/apps/docs/guide/payment-gateways.md).
 
 ## Install
 

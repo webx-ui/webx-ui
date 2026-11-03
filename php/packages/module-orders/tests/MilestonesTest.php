@@ -268,6 +268,30 @@ final class MilestonesTest extends PlaceTestCase
     }
 
     #[Test]
+    public function money_held_takes_the_flag_of_a_failed_payment_down_and_the_order_still_awaits_payment(): void
+    {
+        $order = $this->awaiting();
+        $this->orders()->paymentFailed($order, 'payment:gateway-a', 'Declined');
+        $this->assertNotNull($order->payment_failed_at);
+        Event::fake(self::EVENTS);
+        $lines = StatusChange::query()->where('order_id', $order->id)->count();
+
+        $this->orders()->paymentHeld($order);
+        // Nothing to take down: silence.
+        $this->orders()->paymentHeld($order);
+
+        $this->assertNull($order->payment_failed_at);
+        $fresh = Order::query()->findOrFail($order->id);
+        $this->assertNull($fresh->payment_failed_at);
+        $this->assertTrue($fresh->awaiting_payment);
+        $this->assertNull($fresh->paid_at);
+        $this->assertSame($lines, StatusChange::query()->where('order_id', $order->id)->count());
+        foreach (self::EVENTS as $event) {
+            Event::assertNotDispatched($event);
+        }
+    }
+
+    #[Test]
     public function stop_awaiting_payment_takes_the_flag_down_with_a_history_line_and_no_event(): void
     {
         $order = $this->awaiting();

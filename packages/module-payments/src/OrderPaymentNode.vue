@@ -24,7 +24,7 @@ import { useAdmin, useDates, useErrorText, useHistorySubject, WxDate } from '@we
 import { createPaymentsApi } from './api'
 import EventDialog from './EventDialog.vue'
 import EventList from './EventList.vue'
-import { statusTones } from './format'
+import { partly, statusTones } from './format'
 import { usePaymentsLines, usePaymentsWords } from './i18n'
 import type { EventLine, HoldPreview, OrderAttempt, OrderPayment, OrderPaymentState } from './types'
 
@@ -448,7 +448,15 @@ const hasEvents = computed(
               </span>
               <span class="wx-payments-order__row">
                 <span class="wx-payments-order__status">
-                  <wx-badge :type="statusTones[row.status]" size="sm">
+                  <wx-badge v-if="partly(row)" type="warning" size="sm" data-test="attempt-part">
+                    {{
+                      t('attempts.part', {
+                        paid: row.paid_amount_formatted ?? '',
+                        amount: row.amount_formatted,
+                      })
+                    }}
+                  </wx-badge>
+                  <wx-badge v-else :type="statusTones[row.status]" size="sm">
                     {{ w(`statuses.statuses.${row.status}`) }}
                   </wx-badge>
                   <wx-badge
@@ -737,6 +745,12 @@ const hasEvents = computed(
   font: inherit;
   text-align: start;
   cursor: pointer;
+}
+
+/* Open, the head sits on the body of the card: only its top corners follow the card's. */
+.wx-payments-order__attempt.is-open > .wx-payments-order__head {
+  border-end-start-radius: 0;
+  border-end-end-radius: 0;
 }
 
 .wx-payments-order__head:hover {

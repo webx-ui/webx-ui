@@ -130,6 +130,7 @@ return [
         'gateway-ref' => 'Riferimento del gateway',
         'paid' => 'Pagato',
         'held' => ':amount bloccato fino al :date',
+        'part' => 'Addebitato in parte: :paid su :amount',
         'reference' => 'Documento',
         'failure' => 'Motivo',
         'source' => 'Avviato da',

@@ -241,7 +241,9 @@ final class BalanceTest extends PlaceTestCase
         $this->assertSame(0, $order->milestones()->where('milestone', 'paid')->count());
         $balance = $this->orders()->balance($order);
         $this->assertSame([6998, 'topup'], [$balance->due, $balance->kind()]);
-        $this->assertSame(1, StatusChange::query()->where('order_id', $order->id)->where('kind', StatusChange::PAYMENT)->count());
+        // A part of what was owed, not a top-up: its own line, with the debt before it.
+        $this->assertSame(0, StatusChange::query()->where('order_id', $order->id)->where('kind', StatusChange::PAYMENT)->count());
+        $this->assertSame('3000/9998 [ref-1]', StatusChange::query()->where('order_id', $order->id)->where('kind', StatusChange::PAYMENT_PART)->sole()->note);
 
         $this->orders()->mark($order, Milestone::Paid, 'panel');
         $this->assertSame([9998, 0], [$order->refresh()->paid_total, $this->orders()->balance($order)->due]);

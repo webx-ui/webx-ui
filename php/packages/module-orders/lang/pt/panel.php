@@ -187,6 +187,7 @@ return [
     'timeline-payment_awaiting_stopped' => 'O pagamento já não é aguardado',
     'timeline-payment_awaiting' => 'Aguarda pagamento novamente',
     'timeline-payment' => 'Complemento :amount',
+    'timeline-payment_part' => 'Capturado :amount de :total',
     'timeline-visitor' => 'A ligação a um visitante mudou',
     'timeline-details' => 'Contactos alterados',
     'timeline-visitor-linked' => 'Associada a um visitante',

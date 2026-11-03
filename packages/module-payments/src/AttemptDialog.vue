@@ -15,7 +15,7 @@ import { useAdmin, useDates, useErrorText, WxDate } from '@webx-ui/module-admin'
 import { createPaymentsApi } from './api'
 import EventDialog from './EventDialog.vue'
 import EventList from './EventList.vue'
-import { localTimes, statusTones } from './format'
+import { localTimes, partly, statusTones } from './format'
 import { usePaymentsLines, usePaymentsWords } from './i18n'
 import type { AttemptDetail, EventLine } from './types'
 
@@ -99,7 +99,15 @@ function show(line: EventLine): void {
     <div v-else-if="attempt" class="wx-payments-attempt">
       <wx-descriptions :columns="2" size="sm">
         <wx-descriptions-item :label="t('attempts.status')">
-          <wx-badge :type="statusTones[attempt.status]" size="sm">
+          <wx-badge v-if="partly(attempt)" type="warning" size="sm">
+            {{
+              t('attempts.part', {
+                paid: attempt.paid_amount_formatted ?? '',
+                amount: attempt.amount_formatted,
+              })
+            }}
+          </wx-badge>
+          <wx-badge v-else :type="statusTones[attempt.status]" size="sm">
             {{ w(`statuses.statuses.${attempt.status}`) }}
           </wx-badge>
           <wx-badge v-if="attempt.problem" type="danger" size="sm">

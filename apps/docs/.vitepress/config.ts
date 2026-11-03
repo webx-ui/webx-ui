@@ -108,6 +108,8 @@ export default defineConfig({
             { text: 'Delivery', link: '/guide/delivery' },
             { text: 'Delivery carriers', link: '/guide/delivery-carriers' },
             { text: 'Nova Poshta', link: '/guide/delivery-novaposhta' },
+            { text: 'Payments', link: '/guide/payments' },
+            { text: 'Payment gateways', link: '/guide/payment-gateways' },
             { text: 'Site visitors', link: '/guide/site-visitors' },
           ],
         },

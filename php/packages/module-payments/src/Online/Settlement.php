@@ -131,6 +131,8 @@ final readonly class Settlement
 
         $until = $expires !== null ? ' until '.$expires->format('d.m.Y') : '';
         $this->note($row, 'Money held: '.$this->money->format($amount, $row->currency).$until.' — capture or release it');
+        // The money is held: a try that failed before is not the order's state any more.
+        $this->orders->paymentHeld(Order::query()->findOrFail($row->order_id));
 
         return $result;
     }

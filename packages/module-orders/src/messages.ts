@@ -235,6 +235,7 @@ export const ordersMessages: Record<string, Messages> = {
     'timeline-payment_awaiting_stopped': 'No longer awaiting payment',
     'timeline-payment_awaiting': 'Awaiting payment again',
     'timeline-payment': 'Top-up :amount',
+    'timeline-payment_part': 'Captured :amount of :total',
     'timeline-visitor': 'The link to a visitor changed',
     'timeline-details': 'Contacts changed',
     'timeline-visitor-linked': 'Linked to a visitor',

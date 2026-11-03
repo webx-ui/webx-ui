@@ -240,6 +240,8 @@ export interface TimelineLine {
   amount?: string
   /** A top-up's money in minor units (§36.3), and a refund's. */
   amount_minor?: number
+  /** A part of the money (`payment_part`): what was owed before it, written. */
+  total?: string
   units?: number
   /** A refund's line and a reversal's: the record it is about (decision 98). */
   refund_id?: number

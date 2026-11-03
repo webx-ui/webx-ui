@@ -226,6 +226,32 @@ final class HoldTest extends OnlineCase
         $this->assertSame(now()->addDays(7)->toIso8601String(), $payment->refresh()->hold_expires_at?->toIso8601String());
     }
 
+    /**
+     * A try that failed, then a hold on the next one (found on lab 03.11.2026): the money is held,
+     * so the status strip must not say «Payment failed» — the hold takes the flag down as money in
+     * does. The order still awaits payment and has no milestone «paid».
+     */
+    #[Test]
+    public function a_hold_after_a_failed_try_takes_the_flag_of_the_failure_down(): void
+    {
+        $order = $this->onlineOrder();
+        $create = fn (): Payment => Payment::query()->create([
+            'order_id' => $order->id, 'method_key' => 'gateway-a-card', 'type' => 'gateway-a.card', 'amount' => 4999,
+            'currency' => 'EUR', 'status' => PaymentStatus::Pending, 'hold' => true, 'source' => 'pay-page',
+        ]);
+
+        $this->payments()->settle($create(), new GatewayStatus(Reported::Failed, 'ga_1', 4999, 'EUR'));
+        $this->assertNotNull($order->refresh()->payment_failed_at);
+
+        $this->payments()->settle($held = $create(), new GatewayStatus(Reported::Authorized, 'ga_2', 4999, 'EUR'));
+
+        $this->assertSame(PaymentStatus::Authorized, $held->refresh()->status);
+        $order->refresh();
+        $this->assertNull($order->payment_failed_at);
+        $this->assertTrue($order->awaiting_payment);
+        $this->assertNull($order->paid_at);
+    }
+
     #[Test]
     public function a_method_without_hold_is_not_held(): void
     {

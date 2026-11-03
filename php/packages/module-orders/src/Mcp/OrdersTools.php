@@ -568,7 +568,7 @@ final readonly class OrdersTools
             'number' => $order->number,
             // A refund's money as every amount here is: an integer and the string beside it.
             'timeline' => array_map(static function (array $line): array {
-                if (in_array($line['kind'], ['refund', 'refund_reversed', 'payment'], true) && array_key_exists('amount_minor', $line)) {
+                if (in_array($line['kind'], ['refund', 'refund_reversed', 'payment', 'payment_part'], true) && array_key_exists('amount_minor', $line)) {
                     $line['amount_formatted'] = $line['amount'];
                     $line['amount'] = $line['amount_minor'];
                     unset($line['amount_minor']);

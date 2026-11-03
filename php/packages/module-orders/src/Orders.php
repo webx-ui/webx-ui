@@ -302,6 +302,24 @@ final class Orders
     }
 
     /**
+     * The buyer's money is held for the order (§5.4, payments §9.5): a try that did not go through
+     * before it is no longer the order's state, as with a payment — the flag «payment failed» comes
+     * down. The order keeps awaiting payment, no milestone; the payments module writes the hold in
+     * the history itself. No line, no event; an order without the flag, or paid, is silence.
+     */
+    public function paymentHeld(Order $order): void
+    {
+        $this->locked($order, function (Order $locked): void {
+            if ($locked->payment_failed_at === null || $locked->paid_at !== null) {
+                return;
+            }
+
+            $locked->setAttribute('payment_failed_at', null);
+            $locked->save();
+        });
+    }
+
+    /**
      * The order stops awaiting payment without being paid (§5.5, decision 42): its method was
      * switched to one that does not await it. A history line, no event; an order that does not
      * await payment is silence.
@@ -435,6 +453,7 @@ final class Orders
                 throw new PaymentRefused($plan);
             }
 
+            $owed = Balance::stored($locked);
             $locked->paid_total += $amount;
             $locked->balance = Balance::stored($locked);
 
@@ -444,7 +463,10 @@ final class Orders
             }
             $locked->save();
 
-            $this->line($locked, StatusChange::PAYMENT, $source, $adminId, $at, self::paymentNote($amount, $reference, $note));
+            // A part is not a top-up: the history says how much of what was owed came in.
+            $part
+                ? $this->line($locked, StatusChange::PAYMENT_PART, $source, $adminId, $at, self::paymentNote($amount, $reference, $note, $owed))
+                : $this->line($locked, StatusChange::PAYMENT, $source, $adminId, $at, self::paymentNote($amount, $reference, $note));
             $this->events->dispatch(new OrderPaymentReceived($this->snapshot($locked), $amount, $reference, $plan->after, $source, $adminId, $at));
 
             return $plan;
@@ -2385,9 +2407,10 @@ final class Orders
      * The history line of a top-up: «1500», «1500 [bank-77]», «1500 [bank-77]: by card at the
      * desk» — the panel reads the money and the reference back from it.
      */
-    public static function paymentNote(int $amount, ?string $reference, ?string $note): string
+    public static function paymentNote(int $amount, ?string $reference, ?string $note, ?int $owed = null): string
     {
         $line = (string) $amount
+            .($owed !== null ? '/'.$owed : '')
             .($reference !== null ? ' ['.str_replace(']', ')', $reference).']' : '')
             .($note !== null ? ': '.$note : '');
 

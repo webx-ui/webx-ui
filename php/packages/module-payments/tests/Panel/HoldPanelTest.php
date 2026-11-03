@@ -7,6 +7,7 @@ namespace WebxUi\Payments\Tests\Panel;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Orders\Models\Order;
 use WebxUi\Orders\Models\StatusChange;
+use WebxUi\Orders\Panel\OrderCard;
 use WebxUi\Payments\Models\Payment;
 use WebxUi\Payments\Models\PaymentGatewayEvent;
 use WebxUi\Payments\PaymentStatus;
@@ -95,6 +96,12 @@ final class HoldPanelTest extends PanelCase
         $note = StatusChange::query()->where('order_id', $order->id)->where('kind', StatusChange::NOTE)->latest('id')->firstOrFail();
         $this->assertSame(['panel', $manager->id], [$note->source, $note->admin_id]);
         $this->assertStringStartsWith('Held money captured', (string) $note->note);
+
+        // The money is a part of what was owed, not a top-up: its own line, «Captured 30,00 of 49,99».
+        $lines = StatusChange::query()->where('order_id', $order->id)->whereIn('kind', [StatusChange::PAYMENT, StatusChange::PAYMENT_PART])->get();
+        $this->assertSame([StatusChange::PAYMENT_PART], $lines->pluck('kind')->all());
+        $this->assertSame(['amount' => 3000, 'owed' => 4999], array_intersect_key(OrderCard::paymentLine($lines->sole()->note), ['amount' => 0, 'owed' => 0]));
+        $this->assertSame('payment:'.$payment->method_key, $lines->sole()->source);
     }
 
     #[Test]

@@ -130,6 +130,7 @@ return [
         'gateway-ref' => 'Номер в шлюзе',
         'paid' => 'Оплачено',
         'held' => 'Заблокировано :amount до :date',
+        'part' => 'Частично списано: :paid из :amount',
         'reference' => 'Документ',
         'failure' => 'Причина',
         'source' => 'Откуда',

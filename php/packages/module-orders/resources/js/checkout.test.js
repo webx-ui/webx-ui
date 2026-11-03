@@ -51,6 +51,7 @@ const emit = (el, name, detail) =>
 
 afterEach(() => {
   vi.restoreAllMocks()
+  delete window.webx
 })
 
 describe('checkout.js', () => {
@@ -156,6 +157,115 @@ describe('checkout.js', () => {
     // The step the buyer is in stays the element it was.
     expect(root.querySelector('[data-step="contacts"]')).toBe(contacts)
     expect(root.querySelector('#checkout-summary dd').textContent).toBe('€15.00')
+  })
+
+  describe('«Place the order» with a step left unsaved', () => {
+    // The page of the press: «Contacts» filled by the account, never saved — not done.
+    const pressPage = (contacts = 'is-open') => {
+      doc = document.implementation.createHTMLDocument('checkout')
+      doc.body.innerHTML = `
+        <div class="webx-orders-checkout" data-steps="collapse">
+          <ol class="webx-orders-checkout__steps" data-summary="/checkout/summary">
+            <li class="webx-orders-checkout__step ${contacts}" data-step="contacts">
+              <div class="webx-orders-checkout__step-body">
+                <form class="webx-form" id="checkout-step-contacts-form"><input name="first_name" value="Ann"></form>
+              </div>
+            </li>
+          </ol>
+          ${summary('€10.00')}
+        </div>`
+      start(doc)
+      return doc.querySelector('.webx-orders-checkout')
+    }
+
+    /**
+     * What the widgets' shell does on submit, in short: its checks (`valid`), then
+     * `webx:form:submit` — a listener may cancel it —, then the answer.
+     */
+    const shell = (form, sent, { valid = true, answer = 'success' } = {}) => {
+      form.addEventListener('submit', (event) => {
+        event.preventDefault()
+        if (!valid) return
+        if (!emit(form, 'webx:form:submit', { wait: () => {} })) return
+        sent.push(form.id)
+        setTimeout(() =>
+          emit(
+            form,
+            `webx:form:${answer}`,
+            answer === 'success' ? { response: {} } : { status: 422, errors: {} },
+          ),
+        )
+      })
+    }
+    const press = (root) => root.querySelector('#checkout-place').requestSubmit()
+
+    it('saves the step first, as «Save» would, and presses itself again after the redraw', async () => {
+      const root = pressPage()
+      const sent = []
+      shell(root.querySelector('#checkout-step-contacts-form'), sent)
+      shell(root.querySelector('#checkout-place'), sent)
+      // The page after the save: the step done; the column a fresh form, the shell's again.
+      vi.spyOn(server, 'fetch').mockResolvedValue(markup('collapse'))
+      window.webx = {
+        mount: (el) =>
+          el.querySelectorAll?.('#checkout-place').forEach((form) => shell(form, sent)),
+      }
+
+      press(root)
+      expect(sent).toEqual(['checkout-step-contacts-form'])
+
+      for (let i = 0; i < 4; i++) await flush()
+      expect(sent).toEqual(['checkout-step-contacts-form', 'checkout-place'])
+    })
+
+    it('leaves the errors at the fields of a step the server refuses, and sends no order', async () => {
+      const root = pressPage()
+      const sent = []
+      shell(root.querySelector('#checkout-step-contacts-form'), sent, { answer: 'error' })
+      shell(root.querySelector('#checkout-place'), sent)
+      const fetch = vi.spyOn(server, 'fetch')
+
+      press(root)
+      await flush()
+      await flush()
+
+      expect(sent).toEqual(['checkout-step-contacts-form'])
+      expect(fetch).not.toHaveBeenCalled()
+      expect(root.querySelector('[data-step="contacts"]').classList.contains('is-editing')).toBe(
+        true,
+      )
+      expect(root.querySelector('#checkout-place .webx-form__error').textContent).toBe('')
+    })
+
+    it('stops at a field the shell finds wrong before anything goes', () => {
+      const root = pressPage()
+      const sent = []
+      shell(root.querySelector('#checkout-step-contacts-form'), sent, { valid: false })
+      shell(root.querySelector('#checkout-place'), sent)
+
+      press(root)
+
+      expect(sent).toEqual([])
+      expect(root.querySelector('[data-step="contacts"]').classList.contains('is-editing')).toBe(
+        true,
+      )
+    })
+
+    it('sends at once when every step is done and untouched, and saves one typed in', () => {
+      const root = pressPage('is-done')
+      const sent = []
+      shell(root.querySelector('#checkout-step-contacts-form'), sent)
+      shell(root.querySelector('#checkout-place'), sent)
+
+      press(root)
+      expect(sent).toEqual(['checkout-place'])
+
+      const input = root.querySelector('input[name="first_name"]')
+      input.value = 'Bea'
+      input.dispatchEvent(new Event('input', { bubbles: true }))
+      press(root)
+      expect(sent).toEqual(['checkout-place', 'checkout-step-contacts-form'])
+    })
   })
 
   it('says webx:checkout:placed on «Thank you»', () => {

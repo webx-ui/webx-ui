@@ -130,6 +130,7 @@ return [
         'gateway-ref' => 'Referencia de la pasarela',
         'paid' => 'Pagado',
         'held' => ':amount retenido hasta el :date',
+        'part' => 'Cobrado en parte: :paid de :amount',
         'reference' => 'Documento',
         'failure' => 'Motivo',
         'source' => 'Iniciado desde',

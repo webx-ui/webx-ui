@@ -201,6 +201,33 @@ describe('the tab «Payment»', () => {
     wrapper.unmount()
   })
 
+  it('says «captured in part» of an attempt paid short of its amount, «Paid» only when covered', async () => {
+    const paid = {
+      status: 'paid' as const,
+      hold: false,
+      can_capture: false,
+      amount: 9290,
+      amount_formatted: '92,90 €',
+    }
+    const { wrapper } = await render(
+      tab({
+        state: 'awaiting',
+        attempts: [
+          attempt({ ...paid, paid_amount: 5000, paid_amount_formatted: '50,00 €' }),
+          attempt({ ...paid, id: 6, paid_amount: 9290, paid_amount_formatted: '92,90 €' }),
+        ],
+      }),
+    )
+    const part = wrapper.get('[data-test="attempt-5"]')
+    const whole = wrapper.get('[data-test="attempt-6"]')
+
+    expect(part.get('[data-test="attempt-part"]').text()).toBe('Captured 50,00 € of 92,90 €')
+    expect(part.text()).not.toContain('Paid')
+    expect(whole.find('[data-test="attempt-part"]').exists()).toBe(false)
+    expect(whole.text()).toContain('Paid')
+    wrapper.unmount()
+  })
+
   it('warns that a part short of the order leaves it unpaid', async () => {
     const { wrapper, post } = await render(tab())
 

@@ -214,6 +214,7 @@ Packagist ([`WEBX_UI_PHP_RELEASE.md`](WEBX_UI_PHP_RELEASE.md)). Версия у 
 | `module-orders`             | заказы и оформление: снимок корзины, статусы и вехи, `/checkout`      | `@webx-ui/module-orders`             |
 | `module-delivery`           | доставка: реестры служб и типов, свои точки и курьер, способы пункта  | `@webx-ui/module-delivery`           |
 | `delivery-novaposhta`       | спутник доставки: «Нова пошта» — справочники, накладная, трекинг      | —                                    |
+| `module-payments`           | оплата: способы, онлайн-шлюзы спутниками, холд, журнал обмена         | `@webx-ui/module-payments`           |
 | **Разделы: работа**         |                                                                       |                                      |
 | `module-tasks`              | очередь работы между людьми и агентами                                | `@webx-ui/module-tasks`              |
 
@@ -708,6 +709,31 @@ MCP `delivery_*`. Требует `module-cart` и `geography`; работает 
 службы. Демо `webx:demo --module=delivery` — страна `XX`, города руками, свои точки двух видов,
 свой курьер, популярные города; с `WEBX_DELIVERY_FAKE_CARRIER=true` на dev-сайте — и подставная
 служба A. По умолчанию выключен в `webx:setup`.
+
+### `webx-ui/module-payments` — оплата
+
+Статус: сделан (webx-ui#106), выходит с релизом дня; **первую версию обоих пакетов публикует
+человек** — composer `webx-ui/module-payments` (пустое зеркало и Packagist руками,
+[`WEBX_UI_PHP_RELEASE.md`](WEBX_UI_PHP_RELEASE.md)) и npm `@webx-ui/module-payments`
+(`docs/pitfalls/release-and-ci.md`). Спека — [`WEBX_UI_MODULE_PAYMENTS.md`](WEBX_UI_MODULE_PAYMENTS.md),
+обзор шлюзов — [`WEBX_UI_PAYMENT_GATEWAYS.md`](WEBX_UI_PAYMENT_GATEWAYS.md), гайды —
+`apps/docs/guide/payments.md` (магазин: способы, онлайн-оплата, холд, журнал, права, MCP) и
+`apps/docs/guide/payment-gateways.md` (как написать спутник шлюза и его контрактный тест).
+Как платят за заказ: реестры `MethodTypes` (встроены `store.on_receipt` и `store.bank_transfer`) и
+`Gateways`; способы с правилами суммы и доставки; шаг оформления (слот `payment` в `module-orders`),
+блок `payment` заказа, реквизиты на «Спасибо», «Отметить оплату» (контракт заказов
+`MarksPaidByHand`). Онлайн — контракт `ChargesOnline` и необязательные `CancelsPayments`,
+`CompletesApproval`, `CapturesPayments` (холд, частичное списание): шлюз — спутник
+`payment-<шлюз>` без правки базы. Попытки `payments`, `Payments::settle()` — единственная дверь к
+статусу; уведомления `POST /payments/notify/{method}` без middleware, неподписанным не верит —
+опрашивает API; опрос `webx:payments:poll` раз в 5 минут, проблемные платежи. **Журнал обмена**
+`payment_gateway_events`: сырьё до разбора, ключи замаскированы, только дописывание, своё соединение,
+чистка только командой и не младше 365 дней. Панель «Payments» (способы, попытки, журнал), вкладка
+«Оплата» заказа, право `payments.exchange` на сырые тела, MCP `payments_*`, письма. Подставной
+«шлюз A» с контрактным тестом `GatewayContract` — с `WEBX_PAYMENTS_FAKE_GATEWAY=true` на dev-сайте,
+никогда в production. Демо `webx:demo --module=payments` — оба встроенных способа с фейковыми
+реквизитами, со шлюзом A — и три его способа. Требует `module-orders`. По умолчанию выключен в
+`webx:setup`.
 
 ### `webx-ui/delivery-novaposhta` — служба «Нова пошта»
 

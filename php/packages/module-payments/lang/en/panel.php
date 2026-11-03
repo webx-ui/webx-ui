@@ -130,6 +130,7 @@ return [
         'gateway-ref' => 'Gateway reference',
         'paid' => 'Paid',
         'held' => 'Held :amount until :date',
+        'part' => 'Captured :paid of :amount',
         'reference' => 'Document',
         'failure' => 'Why',
         'source' => 'Started from',

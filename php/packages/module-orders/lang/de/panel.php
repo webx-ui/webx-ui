@@ -187,6 +187,7 @@ return [
     'timeline-payment_awaiting_stopped' => 'Keine Zahlung mehr erwartet',
     'timeline-payment_awaiting' => 'Wartet wieder auf Zahlung',
     'timeline-payment' => 'Nachzahlung :amount',
+    'timeline-payment_part' => ':amount von :total eingezogen',
     'timeline-visitor' => 'Die Verknüpfung mit einem Besucher wurde geändert',
     'timeline-details' => 'Kontakte geändert',
     'timeline-visitor-linked' => 'Mit einem Besucher verknüpft',

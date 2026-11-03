@@ -130,6 +130,7 @@ return [
         'gateway-ref' => 'Ağ geçidi referansı',
         'paid' => 'Ödendi',
         'held' => ':amount :date tarihine kadar bloke',
+        'part' => 'Kısmen tahsil edildi: :amount tutarın :paid kadarı',
         'reference' => 'Belge',
         'failure' => 'Neden',
         'source' => 'Başlatıldığı yer',

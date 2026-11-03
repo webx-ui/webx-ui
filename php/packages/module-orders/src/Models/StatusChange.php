@@ -44,6 +44,12 @@ class StatusChange extends Model
     /** Money in for an order paid already — a top-up (§36.3); `note` is «<minor>[ [reference]][: note]». */
     public const string PAYMENT = 'payment';
 
+    /**
+     * Money in for an order not paid yet that does not cover it — a hold captured in part (§36.3,
+     * payments §9.5); `note` is «<minor>/<owed minor>[ [reference]][: note]», owed — before it.
+     */
+    public const string PAYMENT_PART = 'payment_part';
+
     public const string BLOCK = 'block';
 
     /**

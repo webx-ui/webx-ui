@@ -187,6 +187,7 @@ return [
     'timeline-payment_awaiting_stopped' => 'Artık ödeme beklenmiyor',
     'timeline-payment_awaiting' => 'Yeniden ödeme bekliyor',
     'timeline-payment' => 'Ek ödeme :amount',
+    'timeline-payment_part' => ':total tutarın :amount kadarı tahsil edildi',
     'timeline-visitor' => 'Ziyaretçi bağlantısı değişti',
     'timeline-details' => 'İletişim bilgileri değişti',
     'timeline-visitor-linked' => 'Bir ziyaretçiye bağlandı',

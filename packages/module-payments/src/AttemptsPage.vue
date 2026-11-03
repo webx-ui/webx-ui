@@ -15,7 +15,7 @@ import {
 import { useAdmin, useErrorText, WxDate, WxListScreen } from '@webx-ui/module-admin'
 import { createPaymentsApi } from './api'
 import AttemptDialog from './AttemptDialog.vue'
-import { orderLink, statusTones } from './format'
+import { orderLink, partly, statusTones } from './format'
 import { usePaymentsLines, usePaymentsWords } from './i18n'
 import type { AttemptRow, AttemptsPage } from './types'
 
@@ -163,7 +163,15 @@ function open(row: AttemptRow): void {
       </template>
       <template #cell-status="{ row }">
         <span class="wx-payments-attempts__status">
-          <wx-badge :type="statusTones[row.status as AttemptRow['status']]" size="sm">
+          <wx-badge v-if="partly(row as AttemptRow)" type="warning" size="sm">
+            {{
+              t('attempts.part', {
+                paid: row.paid_amount_formatted ?? '',
+                amount: row.amount_formatted,
+              })
+            }}
+          </wx-badge>
+          <wx-badge v-else :type="statusTones[row.status as AttemptRow['status']]" size="sm">
             {{ w(`statuses.statuses.${row.status}`) }}
           </wx-badge>
           <wx-badge v-if="row.problem" :type="row.resolved ? 'default' : 'danger'" size="sm">

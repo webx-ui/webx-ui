@@ -187,6 +187,7 @@ return [
     'timeline-payment_awaiting_stopped' => 'Płatność nie jest już oczekiwana',
     'timeline-payment_awaiting' => 'Znów oczekuje na płatność',
     'timeline-payment' => 'Dopłata :amount',
+    'timeline-payment_part' => 'Pobrano :amount z :total',
     'timeline-visitor' => 'Zmieniono powiązanie z odwiedzającym',
     'timeline-details' => 'Zmieniono kontakty',
     'timeline-visitor-linked' => 'Powiązano z odwiedzającym',

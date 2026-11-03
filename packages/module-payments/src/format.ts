@@ -1,5 +1,5 @@
 import type { BadgeType } from '@webx-ui/core'
-import type { EventLine, PaymentStatus } from './types'
+import type { AttemptRow, EventLine, PaymentStatus } from './types'
 
 /** The colour of an attempt's status: what a manager scans a column for. */
 export const statusTones: Record<PaymentStatus, BadgeType> = {
@@ -10,6 +10,14 @@ export const statusTones: Record<PaymentStatus, BadgeType> = {
   failed: 'danger',
   cancelled: 'default',
   expired: 'default',
+}
+
+/**
+ * Paid, but less than the attempt asked: a hold captured in part. «Paid» would say the order is
+ * covered; it is not (payments §9.5).
+ */
+export function partly(row: Pick<AttemptRow, 'status' | 'paid_amount' | 'amount'>): boolean {
+  return row.status === 'paid' && row.paid_amount !== null && row.paid_amount < row.amount
 }
 
 /** The colour of a decision of the journal. */

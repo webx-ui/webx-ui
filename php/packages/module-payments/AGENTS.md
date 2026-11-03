@@ -111,7 +111,7 @@ The theme's contract, in `resources/theme/payments.css`; restyle with the same c
 | change the step or the bank details       | `vendor:publish --tag=webx-payments-views`, edit `step.blade.php` or `components/*`        |
 | add a gateway                             | a satellite `payment-<gateway>`: `Gateways::register()`, its types, `GatewayContract` test |
 | keep live keys out of the database        | `WEBX_PAYMENTS_<METHOD>_<FIELD>` in the site's environment, stronger than the column       |
-| try online payment without a gateway      | `WEBX_PAYMENTS_FAKE_GATEWAY=true` (not in production), `FakeGatewaySite::methods()`        |
+| try online payment without a gateway      | `WEBX_PAYMENTS_FAKE_GATEWAY=true` (not in production), then `webx:demo --module=payments`  |
 | add a type of your own                    | `callAfterResolving(MethodTypes::class, fn ($t) => $t->register(MyType::class))`           |
 | write the journal to another database     | `WEBX_PAYMENTS_EXCHANGE_CONNECTION=<connection>` (a connection of `config/database.php`)   |
 | keep more of a body, warn at another size | `webx-payments.exchange.body_limit` (≤ 16 MB), `webx-payments.exchange.warn_size`, bytes   |
@@ -145,6 +145,6 @@ The theme's contract, in `resources/theme/payments.css`; restyle with the same c
 
 ## Read more
 
-- `README.md` next to this file. Spec: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_PAYMENTS.md
+- Guides: `apps/docs/guide/payments.md` (the shop), `payment-gateways.md` (a satellite). `README.md` here. Spec: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_PAYMENTS.md
   (§5 tables, §6 contracts, §7 methods, §8 online payment, §10 the step, §11.5 letters, §12 built-in methods,
   §14 a satellite, §16 MCP, §20 the journal, §21 gateway A, §23 the plan).
