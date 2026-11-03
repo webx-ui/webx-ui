@@ -53,8 +53,15 @@ final class AccessCoverageTest extends PanelTestCase
 
         $this->signIn(['payments.view', 'delivery.view']);
 
-        $entry = collect($this->getJson('/api/cms/manifest')->assertOk()->json('data.modules'))->firstWhere('id', 'orders');
-        $this->assertFalse($entry['allowed']);
+        $allowed = null;
+
+        foreach ((array) $this->getJson('/api/cms/manifest')->assertOk()->json('data.modules') as $module) {
+            if (is_array($module) && $module['id'] === 'orders') {
+                $allowed = $module['allowed'];
+            }
+        }
+
+        $this->assertFalse($allowed);
         $this->getJson($this->api())->assertForbidden();
         $this->getJson($this->api($order->id))->assertForbidden();
         $this->getJson($this->api('statuses'))->assertForbidden();
