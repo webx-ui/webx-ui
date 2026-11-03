@@ -357,11 +357,11 @@ final class PanelTest extends PanelTestCase
     {
         $definitions = $this->app->make(DefaultRoles::class)->definitions();
 
-        $this->assertSame(['orders.view', 'orders.manage', 'users.view'], $definitions['orders']);
+        $this->assertSame(['orders.view', 'orders.manage', 'users.view', 'payments.view'], $definitions['orders']);
 
         $this->app->make(DefaultRoles::class)->seed();
 
-        // Without the visitors installed there is no `users.view` to give.
+        // Without the visitors and the payments installed there is no `users.view` nor `payments.view` to give.
         $this->assertSame(['orders.view', 'orders.manage'], Role::query()->where('slug', 'orders')->sole()->permissions);
         $this->assertNotContains('orders.refund', Role::query()->where('slug', 'orders')->sole()->permissions);
     }
