@@ -46,6 +46,8 @@ parameters:
         - packages/module-delivery/tests
         - packages/delivery-novaposhta/src
         - packages/delivery-novaposhta/tests
+        - packages/module-payments/src
+        - packages/module-payments/tests
         - packages/module-events/src
         - packages/module-events/tests
         - packages/module-faq/src

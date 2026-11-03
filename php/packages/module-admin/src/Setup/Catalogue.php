@@ -286,6 +286,15 @@ final class Catalogue
             'requires' => ['cart'],
             'demo' => ['en', 'pl', 'ru', 'uk'],
         ],
+        // No npm half yet: the section of the panel comes with its screens (spec §13, stage П6).
+        'payments' => [
+            'package' => 'webx-ui/module-payments',
+            'npm' => null,
+            'label' => 'Payments — on receipt, by bank transfer and through a gateway\'s page, with a journal of every exchange with the gateway (needs the orders)',
+            'default' => false,
+            'requires' => ['orders'],
+            'demo' => [],
+        ],
         'users' => [
             'package' => 'webx-ui/module-users',
             'npm' => '@webx-ui/module-users',
