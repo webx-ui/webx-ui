@@ -107,6 +107,7 @@ export default defineConfig({
             { text: 'Checkout', link: '/guide/checkout' },
             { text: 'Delivery', link: '/guide/delivery' },
             { text: 'Delivery carriers', link: '/guide/delivery-carriers' },
+            { text: 'Nova Poshta', link: '/guide/delivery-novaposhta' },
             { text: 'Site visitors', link: '/guide/site-visitors' },
           ],
         },

@@ -22,6 +22,9 @@ then switch on the methods the shop needs in «Delivery → Methods».
 The key is stored encrypted by `module-delivery` and never reaches a log, the journal or an answer
 of the panel.
 
+The shop's guide — connecting the carrier, its directories, waybills and a read-only key:
+[Nova Poshta](https://webx-ui.github.io/webx-ui/guide/delivery-novaposhta) (`apps/docs/guide/delivery-novaposhta.md`).
+
 Agents and contributors: read [`AGENTS.md`](AGENTS.md).
 
 MIT licence.

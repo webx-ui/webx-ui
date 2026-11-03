@@ -131,5 +131,6 @@ When a buyer says a method is missing in their town, start from `delivery_quote`
 ## Read more
 
 - [Delivery carriers](./delivery-carriers.md) — writing a satellite of a carrier and its contract test.
+- [Nova Poshta](./delivery-novaposhta.md) — the first carrier: connecting it, its directories and waybills.
 - The delivery spec — [`WEBX_UI_MODULE_DELIVERY.md`](https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_DELIVERY.md).
 - [AI agents](./agents.md) — connecting an agent, scopes and permissions.
