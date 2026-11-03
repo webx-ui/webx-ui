@@ -20,13 +20,15 @@ use WebxUi\Payments\Exchange\ExchangeKind;
 use WebxUi\Payments\Exchange\ExchangeSecrets;
 use WebxUi\Payments\Exchange\Outcome;
 use WebxUi\Payments\Models\Payment;
+use WebxUi\Payments\Online\Checks;
 use WebxUi\Payments\Online\GatewayCalls;
+use WebxUi\Payments\Online\Settlement;
 use WebxUi\Payments\Types\BankTransfer;
 
 /**
  * The payments of orders (spec §8–§12): a new online attempt (`begin()`, §8.2) and a manager's
- * «Mark as paid» of an order paid by transfer or on receipt (§12.2). The callback, the hold and the
- * poll come with the next stages.
+ * «Mark as paid» of an order paid by transfer or on receipt (§12.2), and what the gateway says of
+ * an attempt (`settle()`, `check()`, §9.1). The hold and the poll come with the next stages.
  */
 final readonly class Payments
 {
@@ -35,7 +37,29 @@ final readonly class Payments
         private ExchangeJournal $journal,
         private ConnectionInterface $db,
         private GatewayCalls $calls,
+        private Settlement $settlement,
+        private Checks $checks,
     ) {}
+
+    /**
+     * The only door from «the gateway says» to the attempt and the order (§9.1): one transaction,
+     * no network. The caller writes the result into its event of the journal.
+     */
+    public function settle(Payment $payment, GatewayStatus $status): SettleResult
+    {
+        return $this->settlement->settle($payment, $status);
+    }
+
+    /**
+     * Asks the gateway and settles (§9.1): the return, a notification to poke, the page «we are
+     * checking». Null — another request holds the attempt's lock: its row is the answer.
+     *
+     * @throws GatewayUnavailable
+     */
+    public function check(Payment $payment, string $source, ?string $trace = null, bool $complete = false, int $wait = 0): ?SettleResult
+    {
+        return $this->checks->check($payment, $source, $trace, $complete, $wait);
+    }
 
     /**
      * A new attempt for an order (§8.2, §8.5): a row `created` for what the order owes now

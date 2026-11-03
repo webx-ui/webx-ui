@@ -14,6 +14,8 @@ use Illuminate\Routing\Router;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use WebxUi\Payments\GatewayAmount;
 use WebxUi\Payments\Online\PaymentLinks;
+use WebxUi\Payments\Testing\FakeGatewayNotification;
+use WebxUi\Payments\Testing\FakeGatewayNotifier;
 use WebxUi\Payments\Testing\FakeGatewayServer;
 use WebxUi\Payments\Testing\FakeGatewaySite;
 
@@ -22,11 +24,15 @@ use WebxUi\Payments\Testing\FakeGatewaySite;
  * 404 unless the fake gateway is on and the site is not in production.
  *
  * `open` takes the form a `form` or `unsigned` type hands off (its fields as the browser posts
- * them); the other buttons change the payment at the gateway. The notification and the way back
- * go to the site's own addresses once it serves them (/payments/notify, /pay/return).
+ * them); the other buttons change the payment at the gateway, post its notification to the site
+ * (`FakeGatewayNotifier`, the path of §9.2) and send the buyer back to /pay/return — or, for the
+ * test buttons (repeat, bad signature, foreign), stay on the page and say what the shop answered.
  */
 final readonly class FakeGatewayController
 {
+    /** The buttons after which the buyer leaves the gateway's page for the shop's return address. */
+    public const array BACK = ['pay', 'decline', 'cancel', 'pay-later', 'hold', 'approve'];
+
     public const array ACTIONS = ['pay', 'decline', 'cancel', 'pay-later', 'repeat-notify', 'bad-signature', 'foreign', 'hold', 'approve'];
 
     public function __construct(
@@ -34,6 +40,7 @@ final readonly class FakeGatewayController
         private FakeGatewayServer $server,
         private Router $router,
         private Redirector $redirect,
+        private FakeGatewayNotifier $notifier,
     ) {}
 
     public function show(Views $views, string $uuid): View
@@ -63,10 +70,25 @@ final readonly class FakeGatewayController
             throw new NotFoundHttpException;
         }
 
-        $this->server->act($uuid, $action);
+        $state = $this->server->act($uuid, $action) ?? $state;
+        $answer = match ($action) {
+            'pay', 'decline', 'hold', 'repeat-notify' => $this->notifier->send($uuid),
+            'bad-signature' => $this->notifier->send($uuid, 'signature'),
+            'foreign' => $this->notifier->send($uuid, 'foreign'),
+            'pay-later' => $this->later($uuid),
+            default => null,
+        };
 
-        return $this->redirect->route(FakeGatewaySite::PAGE, ['uuid' => $uuid], 303)
-            ->with('webx-payments.fake', "Gateway A: «{$action}» done.");
+        // Like a real gateway's page: after paying, declining or cancelling the buyer goes back to the shop.
+        $back = in_array($action, self::BACK, true) ? $this->back($state) : null;
+
+        if ($back !== null) {
+            return $this->redirect->to($back, 303);
+        }
+
+        $done = "Gateway A: «{$action}» done.".($answer !== null ? " The shop answered the notification with HTTP {$answer->getStatusCode()}." : '');
+
+        return $this->redirect->route(FakeGatewaySite::PAGE, ['uuid' => $uuid], 303)->with('webx-payments.fake', $done);
     }
 
     /** The form of a `form` or `unsigned` type, as a real gateway's page takes it. */
@@ -122,6 +144,14 @@ final readonly class FakeGatewayController
         }
 
         return $buttons;
+    }
+
+    /** «Pay, notify later»: the notification from the queue, half a minute after the buyer is back. */
+    private function later(string $uuid): null
+    {
+        FakeGatewayNotification::dispatch($uuid)->delay(now()->addSeconds(FakeGatewayNotification::DELAY_SECONDS));
+
+        return null;
     }
 
     /** @param  array<string, mixed>  $state */

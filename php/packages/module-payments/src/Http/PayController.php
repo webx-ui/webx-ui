@@ -6,6 +6,7 @@ namespace WebxUi\Payments\Http;
 
 use Illuminate\Contracts\View\Factory as Views;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Redirector;
@@ -14,15 +15,19 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use WebxUi\Orders\Models\Order;
 use WebxUi\Payments\BeginRefused;
 use WebxUi\Payments\Models\Payment;
+use WebxUi\Payments\Online\Checks;
 use WebxUi\Payments\Online\Handoffs;
 use WebxUi\Payments\Online\PaymentLinks;
 use WebxUi\Payments\Online\PayPage;
+use WebxUi\Payments\Online\Returns;
 use WebxUi\Payments\Payments;
+use WebxUi\Payments\PaymentStatus;
 
 /**
  * The buyer's doors of an online payment (spec §4, §8): the page of payment of an order and its
  * «Pay» behind the order's signed link — a wrong or missing signature is a 404, the page does not
- * say that such a number exists —, and the step to the gateway by the attempt's uuid.
+ * say that such a number exists —, the step to the gateway and the way back by the attempt's
+ * uuid, and the JSON the page «we are checking» polls.
  */
 final readonly class PayController
 {
@@ -36,9 +41,10 @@ final readonly class PayController
     {
         $order = $this->order($request);
         $error = $request->session()->get(Handoffs::FLASH);
+        $status = $request->session()->get(Returns::FLASH);
 
         return $views->make('webx-payments::pay.page', [
-            'page' => $this->page->of($order, is_string($error) ? $error : null),
+            'page' => $this->page->of($order, is_string($error) ? $error : null, is_string($status) ? $status : null),
         ]);
     }
 
@@ -67,6 +73,28 @@ final readonly class PayController
         $payment = Payment::query()->where('uuid', $uuid)->first() ?? throw new NotFoundHttpException;
 
         return $handoffs->go($payment, $request);
+    }
+
+    /** The buyer back from the gateway (§8.3), GET or POST. */
+    public function back(Request $request, Returns $returns, string $uuid): RedirectResponse
+    {
+        return $returns->back($request, $uuid);
+    }
+
+    /**
+     * What the page «we are checking» polls (§8.4): the attempt's status from its row; the gateway
+     * is asked at most once in 15 s. The uuid is the only key — 26 random letters.
+     */
+    public function status(Checks $checks, string $uuid): JsonResponse
+    {
+        $payment = Payment::query()->where('uuid', $uuid)->first() ?? throw new NotFoundHttpException;
+        $checks->recheck($payment, 'pay-page');
+        $payment->refresh();
+
+        return new JsonResponse([
+            'status' => $payment->status->value,
+            'final' => ! in_array($payment->status, [PaymentStatus::Created, PaymentStatus::Pending], true),
+        ]);
     }
 
     private function order(Request $request): Order

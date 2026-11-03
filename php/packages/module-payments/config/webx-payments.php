@@ -7,6 +7,13 @@ return [
     // /pay/go/{uuid}.
     'path' => 'pay',
 
+    // The gateways' notifications (spec §9.2): POST /{path}/{method}. A body over max_body is
+    // answered 413 — and still journaled, cut (§20.4).
+    'notify' => [
+        'path' => 'payments/notify',
+        'max_body' => 1024 * 1024,
+    ],
+
     // «Gateway A» (spec §21): the fake gateway with its three types and its page /pay/fake/{uuid},
     // for development sites and tests. Never in production, whatever this says.
     'fake_gateway' => (bool) env('WEBX_PAYMENTS_FAKE_GATEWAY', false),

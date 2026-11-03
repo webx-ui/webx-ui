@@ -29,7 +29,8 @@ final class FakeGatewayPageTest extends OnlineCase
             ->assertSeeInOrder(['Pay', 'Decline', 'Cancel', 'Pay, notify later', 'Repeat the notification', 'Bad signature', 'Foreign payment'])
             ->assertDontSee('Approve');
 
-        $this->post(route(FakeGatewaySite::ACTION, ['uuid' => $card->uuid, 'action' => 'decline']))->assertRedirect(route(FakeGatewaySite::PAGE, ['uuid' => $card->uuid]));
+        // Like a real gateway's page: declined, the buyer goes back to the shop.
+        $this->post(route(FakeGatewaySite::ACTION, ['uuid' => $card->uuid, 'action' => 'decline']))->assertRedirect(route('webx.payments.return', ['uuid' => $card->uuid]));
         $this->assertSame('declined', $this->server()->payment($card->uuid)['status'] ?? null);
         $this->post(route(FakeGatewaySite::ACTION, ['uuid' => $card->uuid, 'action' => 'approve']))->assertNotFound();
     }

@@ -5,7 +5,8 @@ receipt and bank transfer — the methods offered by the amount and the chosen d
 checkout's step «payment», the order's block `payment` with the bank details, a manager's «Mark as
 paid», and the **journal of the exchange with gateways** — raw bodies as they went, the shop's keys
 masked, append-only — and the contract of an online gateway with the fake «gateway A» and the
-contract test a satellite runs. The callback, the hold actions and the panel section come later.
+contract test a satellite runs, the gateway's notifications and the buyer's return. The hold
+actions, the poll and the panel section come later.
 Orders, their milestones and balance are `webx-ui/module-orders`; the cart is `webx-ui/module-cart`.
 
 ## What it owns
@@ -63,7 +64,13 @@ Orders, their milestones and balance are `webx-ui/module-orders`; the cart is `w
   `start()` once under the attempt's lock, journals `browser/handoff`, redirects or posts the form
   (`webx-payments::pay.handoff`); a failure makes the attempt `failed`. The page of payment
   `GET /pay/{number}` (signed, `Online\PaymentLinks::page()`, view `webx-payments::pay.page`) with
-  «Pay» (`POST /pay/{number}/attempts`).
+  «Pay» (`POST /pay/{number}/attempts`), «we are checking» for two minutes, the reason of a failure.
+- **Settling** `Payments::settle(payment, GatewayStatus)` → `SettleResult` — the only door from the
+  gateway to the attempt and the order (§9.1); `Payments::check()` asks `fetchStatus()` under the
+  lock `webx-payments:{uuid}` first. `POST /payments/notify/{method}` (`Online\Notifications`, no
+  middleware at all) journals `in/notify` before parsing (503 if it cannot), then `rejected`,
+  `unmatched`, `ignored`, `duplicate`, `applied`/`same` or `error` (500). The return
+  `GET|POST /pay/return/{uuid}` (`Online\Returns`) journals `browser/return`, asks the API, not the URL.
 - **Gateway A** `WebxUi\Payments\Testing\FakeGateway` (`gateway-a`) with `GatewayACard`,
   `GatewayAForm`, `GatewayAUnsigned`; its API `FakeGatewayServer` answers `gateway-a.test` inside
   the process (`Exchange\InProcessHosts`), its page is `GET /pay/fake/{uuid}`. Only with
@@ -130,6 +137,7 @@ The theme's contract, in `resources/theme/payments.css`; restyle with the same c
   with «Payment for order <number>».
 - `php artisan webx:payments:exchange-prune --days=365 --dry-run` counts and removes nothing.
 - `php artisan webx:doctor` — no note about the journal until it outgrows `warn_size`.
+- Gateway A on: «Pay» on `/pay/fake/{uuid}` gives `in/notify` `applied` and `browser/return` `same`.
 - After a gateway call, the newest row of `payment_gateway_events` holds the request and answer,
   and `[secret:<field>]` where a key was.
 

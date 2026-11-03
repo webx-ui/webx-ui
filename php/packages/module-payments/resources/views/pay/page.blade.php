@@ -1,8 +1,9 @@
 {{--
     The page of payment of an order (spec §8.4) behind its signed link, in the site's layout with
-    the handle `payments.pay` (the orders' layout, `webx-orders.layout`). This stage: paid,
-    cancelled, «we are checking», «did not go through» and «Pay» with an online method, the bank
-    details of a transfer. Nobody but the holder of the link reads it: `noindex`, `no-store`.
+    the handle `payments.pay` (the orders' layout, `webx-orders.layout`): paid, cancelled, held,
+    «we are checking» (refreshes itself for two minutes, then «Check again»), «did not go through»
+    with the reason and «Pay» with an online method, the bank details of a transfer. Nobody but the
+    holder of the link reads it: `noindex`, `no-store`.
 
     Override: <layer>/views/vendor/webx-payments/pay/page.blade.php.
     Classes: webx-payments-pay, __title, __amount, __message (+ --error), __form, __button, __link.
@@ -12,12 +13,19 @@
     <x-slot:head>
         <title>{{ $title }}@if (is_string(config('app.name')) && config('app.name') !== '') — {{ config('app.name') }}@endif</title>
         <meta name="robots" content="noindex">
+        @if ($page['refresh'])
+            <meta http-equiv="refresh" content="{{ $page['refresh'] }}">
+        @endif
     </x-slot:head>
     <div class="webx-payments-pay">
         <h1 class="webx-payments-pay__title">{{ $title }}</h1>
 
         @if ($page['error'])
             <p class="webx-payments-pay__message webx-payments-pay__message--error" role="alert">{{ $page['error'] }}</p>
+        @endif
+
+        @if ($page['status'])
+            <p class="webx-payments-pay__message" role="status">{{ $page['status'] }}</p>
         @endif
 
         @switch($page['state'])
@@ -27,8 +35,15 @@
             @case('paid')
                 <p class="webx-payments-pay__message">{{ __('webx-payments::buyer.pay.paid', ['number' => $page['number']]) }}</p>
                 @break
+            @case('held')
+                <p class="webx-payments-pay__message">{{ __('webx-payments::buyer.pay.held') }}</p>
+                @break
             @case('checking')
-                <p class="webx-payments-pay__message">{{ __('webx-payments::buyer.pay.checking') }}</p>
+                <p class="webx-payments-pay__message" role="status">{{ __('webx-payments::buyer.pay.checking') }}</p>
+                @break
+            @case('checking_long')
+                <p class="webx-payments-pay__message" role="status">{{ __('webx-payments::buyer.pay.checking_long') }}</p>
+                <p><a class="webx-payments-pay__link" href="{{ $page['check'] }}">{{ __('webx-payments::buyer.pay.check_again') }}</a></p>
                 @break
             @case('on_receipt')
                 <p class="webx-payments-pay__message">{{ __('webx-payments::buyer.pay.on_receipt') }}</p>
@@ -39,7 +54,7 @@
                 @break
             @default
                 @if ($page['failed'])
-                    <p class="webx-payments-pay__message webx-payments-pay__message--error">{{ __('webx-payments::buyer.pay.failed') }}</p>
+                    <p class="webx-payments-pay__message webx-payments-pay__message--error">{{ __('webx-payments::buyer.pay.failed') }}@if ($page['reason']): {{ $page['reason'] }}@endif</p>
                 @endif
                 <p class="webx-payments-pay__amount">{{ __('webx-payments::buyer.pay.due', ['amount' => $page['due']]) }}</p>
                 @if ($page['attempts'])

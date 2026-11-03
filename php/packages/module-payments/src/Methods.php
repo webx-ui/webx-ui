@@ -59,6 +59,17 @@ final readonly class Methods
     }
 
     /**
+     * A method by its key, switched on or off, read from its row: an attempt opened with a method
+     * the shop switched off later still hears from its gateway (§9.2). Null — no such method.
+     */
+    public function any(string $key): ?Method
+    {
+        $row = PaymentMethod::query()->where('key', $key)->first();
+
+        return $row !== null ? Method::of($row) : null;
+    }
+
+    /**
      * What the buyer is offered for this context, in the shop's order.
      *
      * @return list<MethodOption>

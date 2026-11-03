@@ -25,10 +25,14 @@ use WebxUi\Payments\Exchange\ExchangeJournal;
 use WebxUi\Payments\Exchange\ExchangeMasker;
 use WebxUi\Payments\Exchange\InProcessHosts;
 use WebxUi\Payments\Models\PaymentMethod;
+use WebxUi\Payments\Online\Checks;
 use WebxUi\Payments\Online\GatewayCalls;
 use WebxUi\Payments\Online\Handoffs;
+use WebxUi\Payments\Online\Notifications;
 use WebxUi\Payments\Online\PaymentLinks;
 use WebxUi\Payments\Online\PayPage;
+use WebxUi\Payments\Online\Returns;
+use WebxUi\Payments\Online\Settlement;
 use WebxUi\Payments\Online\StartRequests;
 use WebxUi\Payments\Rendering\Assets;
 use WebxUi\Payments\Testing\FakeGatewaySite;
@@ -63,6 +67,10 @@ class PaymentsServiceProvider extends ServiceProvider
         $this->app->singleton(StartRequests::class);
         $this->app->singleton(PayPage::class);
         $this->app->singleton(Handoffs::class);
+        $this->app->singleton(Settlement::class);
+        $this->app->singleton(Checks::class);
+        $this->app->singleton(Notifications::class);
+        $this->app->singleton(Returns::class);
         $this->app->singleton(Methods::class);
         $this->app->singleton(Payments::class);
         $this->app->singleton(PaymentsCheckoutSlot::class);
@@ -88,6 +96,7 @@ class PaymentsServiceProvider extends ServiceProvider
         $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
         $this->loadRoutesFrom(__DIR__.'/../routes/pay.php');
         $this->loadRoutesFrom(__DIR__.'/../routes/fake.php');
+        $this->loadRoutesFrom(__DIR__.'/../routes/notify.php');
 
         RateLimiter::for('webx-payments-write', function (Request $request): Limit {
             $perMinute = $this->app->make('config')->get('webx-payments.throttle.write');

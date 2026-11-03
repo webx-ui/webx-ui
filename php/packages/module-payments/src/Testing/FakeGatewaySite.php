@@ -37,6 +37,7 @@ final class FakeGatewaySite
     public static function register(Container $app): void
     {
         $app->singleton(FakeGatewayServer::class);
+        $app->singleton(FakeGatewayNotifier::class);
 
         $app->afterResolving(Gateways::class, static function (Gateways $gateways) use ($app): void {
             if (self::on($app)) {
