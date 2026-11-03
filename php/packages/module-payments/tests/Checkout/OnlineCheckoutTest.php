@@ -98,12 +98,12 @@ final class OnlineCheckoutTest extends OnlineCase
         $order = $this->onlineOrder();
         // The attempt cannot be written: the table is gone.
         Schema::rename('payments', 'payments_gone');
-        Log::spy();
+        $log = Log::spy();
 
         $slot = $this->app->make(PaymentsCheckoutSlot::class);
 
         $this->assertNull($slot->next(OrderData::of($order)));
-        Log::shouldHaveReceived('warning')->withArgs(static fn (string $message): bool => str_contains($message, 'not opened'))->once();
+        $log->shouldHaveReceived('warning')->withArgs(static fn (string $message): bool => str_contains($message, 'not opened'))->once();
         $this->assertSame($this->payPage($order), $slot->payAgainUrl(OrderData::of($order)));
         Schema::rename('payments_gone', 'payments');
     }

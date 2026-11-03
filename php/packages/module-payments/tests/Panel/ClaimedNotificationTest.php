@@ -39,10 +39,14 @@ final class ClaimedNotificationTest extends PanelCase
 
         $this->signIn(['payments.view']);
         $tab = $this->getJson($this->api('orders/'.$order->id))->assertOk();
-        $claimed = collect($tab->json('data.attempts.0.events'))->firstWhere('id', $event->id);
+        /** @var list<array<string, mixed>> $events */
+        $events = $tab->json('data.attempts.0.events');
+        $claimed = collect($events)->firstWhere('id', $event->id);
         $this->assertTrue($claimed['claimed'] ?? null);
 
-        $line = collect($this->getJson($this->api('exchange?signature=1'))->assertOk()->json('data.data'))->firstWhere('id', $event->id);
+        /** @var list<array<string, mixed>> $lines */
+        $lines = $this->getJson($this->api('exchange?signature=1'))->assertOk()->json('data.data');
+        $line = collect($lines)->firstWhere('id', $event->id);
         $this->assertSame($order->number, $line['order_number'] ?? null);
     }
 }
