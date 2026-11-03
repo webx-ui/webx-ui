@@ -15,6 +15,12 @@ final readonly class PlacedOrders
 {
     public const string SESSION = 'webx-orders.checkout.placed';
 
+    /**
+     * A line «Thank you» says once above the order — flashed by whoever sends the buyer there:
+     * the payment back from its gateway («Payment received»).
+     */
+    public const string NOTICE = 'webx-orders.checkout.notice';
+
     private const int KEEP = 5;
 
     public function __construct(private Session $session) {}

@@ -327,11 +327,18 @@
   line-height: 1.2;
 }
 
+.webx-orders-thanks__notice,
 .webx-orders-thanks__sent,
 .webx-orders-thanks__decrease,
 .webx-orders-thanks__pay,
 .webx-orders-thanks__link {
   margin: 0;
+}
+
+/* What the gateway said when the buyer came back: paid, or the money held. */
+.webx-orders-thanks__notice {
+  color: var(--site-color-success);
+  font-weight: 600;
 }
 
 .webx-orders-thanks__register {

@@ -125,8 +125,10 @@ final readonly class Returns
         $to = $placed ? $this->checkoutLinks->thanks((string) $order->number, $locale) : '';
         $to = $to !== '' ? $to : $this->orderLinks->page((string) $order->number, $locale);
 
+        // «Thank you» of the checkout says it in its own words' place; the order's page and the
+        // page of payment read this module's flash.
         return $this->redirect->to($to !== '' ? $to : ($this->links->page($order) ?: '/'), 303)
-            ->with(self::FLASH, (string) trans($words, [], $locale));
+            ->with($placed ? PlacedOrders::NOTICE : self::FLASH, (string) trans($words, [], $locale));
     }
 
     /** @return array{0: string|null, 1: ExchangeSecrets} the gateway and the keys to wipe */

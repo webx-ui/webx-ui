@@ -74,6 +74,9 @@ final class OnlineCheckoutTest extends OnlineCase
         $this->visit($cart, '/pay/return/'.$payment->uuid)
             ->assertRedirect('/checkout/thanks/'.$order->number);
         $this->assertNotNull($order->refresh()->paid_at);
+        $this->visit($cart, '/checkout/thanks/'.$order->number)->assertOk()
+            ->assertSee('Payment received')
+            ->assertDontSee(e($this->payPage($order)), false);
     }
 
     #[Test]
@@ -104,8 +107,29 @@ final class OnlineCheckoutTest extends OnlineCase
 
         $this->assertNull($slot->next(OrderData::of($order)));
         $log->shouldHaveReceived('warning')->withArgs(static fn (string $message): bool => str_contains($message, 'not opened'))->once();
-        $this->assertSame($this->payPage($order), $slot->payAgainUrl(OrderData::of($order)));
         Schema::rename('payments_gone', 'payments');
+        $this->assertSame($this->payPage($order), $slot->payAgainUrl(OrderData::of($order)));
+    }
+
+    #[Test]
+    public function money_held_is_paid_for_the_buyer_and_thanks_has_no_pay(): void
+    {
+        $this->app->make('db')->table('payment_methods')->where('key', 'gateway-a-card')->update(['settings' => json_encode(['hold' => true])]);
+        $cart = $this->cart();
+        $this->visit($cart, '/api/payments/selection', ['_method' => 'PUT', 'method' => 'gateway-a-card'], json: true)->assertOk();
+        $this->fill($cart);
+        $this->submit($cart)->assertRedirect();
+        $order = Order::query()->sole();
+        $payment = Payment::query()->sole();
+        $this->get($this->app->make(PaymentLinks::class)->go($payment));
+        $this->post(route(FakeGatewaySite::ACTION, ['uuid' => $payment->uuid, 'action' => 'pay']));
+
+        $this->visit($cart, '/pay/return/'.$payment->uuid)->assertRedirect('/checkout/thanks/'.$order->number);
+        $this->assertSame(PaymentStatus::Authorized, $payment->refresh()->status);
+        $this->visit($cart, '/checkout/thanks/'.$order->number)->assertOk()
+            ->assertSee('Payment accepted')
+            ->assertDontSee(e($this->payPage($order)), false);
+        $this->assertNull($this->app->make(PaymentsCheckoutSlot::class)->payAgainUrl(OrderData::of($order->refresh())));
     }
 
     #[Test]

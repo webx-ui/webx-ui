@@ -5,6 +5,7 @@
     `noindex`, `no-store`.
 
     $order — `WebxUi\Orders\Site\OrderPage::of()`; $email — null when no letter goes to the buyer;
+    $notice — a line flashed by whoever sent the buyer here («Payment received» back from a gateway), or null;
     $pay — «Pay» of the payment slot for an order that awaits payment (§22.3), null — none; the
     order's body says it awaits payment either way.
     The stack `checkout.thanks` is the place of a counter's code (`module-snippets`); the order is in
@@ -13,7 +14,7 @@
     register (§26): the dialog of the registration with the address filled in; null — none.
 
     Override: <layer>/views/vendor/webx-orders/checkout/thanks.blade.php.
-    Classes: webx-orders-thanks, __title, __sent, __decrease, __pay, __link, __register, __analytics.
+    Classes: webx-orders-thanks, __title, __notice, __sent, __decrease, __pay, __link, __register, __analytics.
 --}}
 @php($title = __('webx-orders::checkout.thanks.title', ['number' => $order['number']]))
 <x-dynamic-component :component="\WebxUi\Orders\Checkout\CheckoutLayout::name()" handle="checkout.thanks">
@@ -23,6 +24,9 @@
     </x-slot:head>
     <div class="webx-orders-thanks">
         <h1 class="webx-orders-thanks__title">{{ $title }}</h1>
+        @if (($notice ?? null) !== null)
+            <p class="webx-orders-thanks__notice" role="status">{{ $notice }}</p>
+        @endif
         @if ($email !== null)
             <p class="webx-orders-thanks__sent">{{ __('webx-orders::checkout.thanks.sent', ['email' => $email]) }}</p>
         @endif

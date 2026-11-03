@@ -22,9 +22,11 @@ use WebxUi\Orders\Data\OrderData;
 use WebxUi\Orders\Models\Order;
 use WebxUi\Payments\Kind;
 use WebxUi\Payments\Methods;
+use WebxUi\Payments\Models\Payment;
 use WebxUi\Payments\Online\PaymentLinks;
 use WebxUi\Payments\PaymentContext;
 use WebxUi\Payments\Payments;
+use WebxUi\Payments\PaymentStatus;
 use WebxUi\Payments\Rendering\Assets;
 use WebxUi\Payments\Selections;
 
@@ -148,12 +150,14 @@ final class PaymentsCheckoutSlot implements NamesErrors, PaymentSlot
     /**
      * «Pay» on «Thank you» and the order's page (§8.4): the signed page of payment of an order that
      * still awaits its money and is not cancelled; null otherwise, or while the site has no page.
+     * Money held is paid for the buyer (§8.3): the shop captures it, nothing is to pay again.
      */
     public function payAgainUrl(OrderData $order): ?string
     {
         $model = Order::query()->find($order->id);
 
-        if ($model === null || ! $model->awaiting_payment || $model->cancelled_at !== null) {
+        if ($model === null || ! $model->awaiting_payment || $model->cancelled_at !== null
+            || Payment::query()->where('order_id', $model->id)->where('status', PaymentStatus::Authorized->value)->exists()) {
             return null;
         }
 
