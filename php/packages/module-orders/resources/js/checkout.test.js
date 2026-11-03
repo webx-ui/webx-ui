@@ -49,7 +49,11 @@ const flush = () => new Promise((resolve) => setTimeout(resolve, 0))
 const emit = (el, name, detail) =>
   el.dispatchEvent(new CustomEvent(name, { bubbles: true, cancelable: true, detail }))
 
+// The answers the fake shell schedules; a test that ends first must not hear them after teardown.
+const answers = []
+
 afterEach(() => {
+  answers.splice(0).forEach(clearTimeout)
   vi.restoreAllMocks()
   delete window.webx
 })
@@ -188,11 +192,13 @@ describe('checkout.js', () => {
         if (!valid) return
         if (!emit(form, 'webx:form:submit', { wait: () => {} })) return
         sent.push(form.id)
-        setTimeout(() =>
-          emit(
-            form,
-            `webx:form:${answer}`,
-            answer === 'success' ? { response: {} } : { status: 422, errors: {} },
+        answers.push(
+          setTimeout(() =>
+            emit(
+              form,
+              `webx:form:${answer}`,
+              answer === 'success' ? { response: {} } : { status: 422, errors: {} },
+            ),
           ),
         )
       })
