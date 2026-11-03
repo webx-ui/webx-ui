@@ -8,4 +8,9 @@ return [
         'paid' => 'Die Bestellung ist bereits bezahlt',
         'cancelled' => 'Die Bestellung ist storniert',
     ],
+    'begin' => [
+        'cancelled' => 'Die Bestellung ist storniert',
+        'nothing_due' => 'Für die Bestellung ist nichts zu zahlen',
+        'not_online' => 'Die Zahlungsart ist keine Online-Zahlung',
+    ],
 ];

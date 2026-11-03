@@ -8,4 +8,9 @@ return [
         'paid' => 'Sipariş zaten ödendi',
         'cancelled' => 'Sipariş iptal edildi',
     ],
+    'begin' => [
+        'cancelled' => 'Sipariş iptal edildi',
+        'nothing_due' => 'Sipariş için ödenecek bir şey yok',
+        'not_online' => 'Yöntem çevrim içi değil',
+    ],
 ];

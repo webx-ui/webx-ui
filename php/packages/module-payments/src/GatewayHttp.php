@@ -20,6 +20,7 @@ use WebxUi\Payments\Exchange\ExchangeEntry;
 use WebxUi\Payments\Exchange\ExchangeJournal;
 use WebxUi\Payments\Exchange\ExchangeKind;
 use WebxUi\Payments\Exchange\ExchangeSecrets;
+use WebxUi\Payments\Exchange\InProcessHosts;
 use WebxUi\Payments\Exchange\JournaledPsrClient;
 
 /**
@@ -39,6 +40,7 @@ final class GatewayHttp
         private readonly ExchangeContext $context,
         private readonly ExchangeSecrets $secrets,
         private readonly ExchangeKind $kind = ExchangeKind::Other,
+        private readonly ?InProcessHosts $hosts = null,
     ) {}
 
     /** `Http::…` with the journal's middleware and the base's timeouts. */
@@ -46,13 +48,15 @@ final class GatewayHttp
     {
         return Http::timeout($this->seconds('timeout', 15))
             ->connectTimeout($this->seconds('connect_timeout', 5))
-            ->withMiddleware($this->middleware());
+            ->withMiddleware($this->middleware())
+            // Below the journal, so that an answer from inside the process is journaled like any.
+            ->withMiddleware($this->inProcess());
     }
 
     /** The same client for another kind of request: `key` for a signing key, `status` inside readNotification(). */
     public function kind(ExchangeKind|string $kind): self
     {
-        return new self($this->journal, $this->config, $this->context, $this->secrets, $kind instanceof ExchangeKind ? $kind : ExchangeKind::from($kind));
+        return new self($this->journal, $this->config, $this->context, $this->secrets, $kind instanceof ExchangeKind ? $kind : ExchangeKind::from($kind), $this->hosts);
     }
 
     /** A secret made at run time — an OAuth token — wiped from this and every later event of the trace (§20.5). */
@@ -76,6 +80,43 @@ final class GatewayHttp
     public function context(): ExchangeContext
     {
         return $this->context;
+    }
+
+    /** What the events of this trace wipe — for the base's own events of the same action (a handoff). */
+    public function secrets(): ExchangeSecrets
+    {
+        return $this->secrets;
+    }
+
+    /** The kind its events are written with. */
+    public function currentKind(): ExchangeKind
+    {
+        return $this->kind;
+    }
+
+    /**
+     * Hosts served inside the process (`InProcessHosts`, «gateway A»): their answer, or the
+     * failure they throw, instead of the network.
+     *
+     * @return callable(callable): callable
+     */
+    private function inProcess(): callable
+    {
+        $hosts = $this->hosts;
+
+        return static fn (callable $handler): callable => static function (RequestInterface $request, array $options) use ($handler, $hosts): PromiseInterface {
+            $server = $hosts?->for($request);
+
+            if ($server === null) {
+                return $handler($request, $options);
+            }
+
+            try {
+                return Create::promiseFor($server($request));
+            } catch (Throwable $e) {
+                return Create::rejectionFor($e);
+            }
+        };
     }
 
     /** @return callable(callable): callable */

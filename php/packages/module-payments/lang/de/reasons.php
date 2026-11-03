@@ -12,4 +12,5 @@ return [
     'delivery_pending' => 'Wartet auf die Wahl des Versands',
     'delivery_rule' => 'Für den gewählten Versand nicht verfügbar',
     'no_credentials' => 'Die Schlüssel des Gateways fehlen',
+    'gateway_missing' => 'Das Gateway :gateway ist nicht installiert',
 ];

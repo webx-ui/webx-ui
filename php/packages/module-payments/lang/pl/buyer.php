@@ -26,4 +26,18 @@ return [
         'awaiting' => 'Oczekuje na płatność',
         'pay' => 'Zapłać',
     ],
+    'pay' => [
+        'title' => 'Płatność za zamówienie :number',
+        'description' => 'Zamówienie :number',
+        'due' => 'Do zapłaty: :amount',
+        'paid' => 'Zamówienie :number jest opłacone',
+        'cancelled' => 'Zamówienie :number jest anulowane',
+        'checking' => 'Sprawdzamy płatność. Zwykle trwa to do minuty.',
+        'failed' => 'Płatność nie powiodła się',
+        'unavailable' => 'Nie udało się otworzyć płatności. Spróbuj ponownie lub wybierz inną metodę.',
+        'on_receipt' => 'Zamówienie jest opłacane przy odbiorze',
+        'order_link' => 'Przejdź do zamówienia',
+        'redirecting' => 'Przechodzimy do strony płatności…',
+        'go' => 'Przejdź do płatności',
+    ],
 ];

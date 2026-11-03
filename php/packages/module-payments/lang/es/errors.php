@@ -8,4 +8,9 @@ return [
         'paid' => 'El pedido ya está pagado',
         'cancelled' => 'El pedido está cancelado',
     ],
+    'begin' => [
+        'cancelled' => 'El pedido está cancelado',
+        'nothing_due' => 'El pedido no tiene nada pendiente de pago',
+        'not_online' => 'El método no es de pago en línea',
+    ],
 ];

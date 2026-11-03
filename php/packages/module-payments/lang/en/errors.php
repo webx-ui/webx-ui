@@ -8,4 +8,9 @@ return [
         'paid' => 'The order is paid already',
         'cancelled' => 'The order is cancelled',
     ],
+    'begin' => [
+        'cancelled' => 'The order is cancelled',
+        'nothing_due' => 'The order owes nothing',
+        'not_online' => 'The method is not an online one',
+    ],
 ];

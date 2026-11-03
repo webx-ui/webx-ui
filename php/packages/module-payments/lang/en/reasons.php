@@ -12,4 +12,5 @@ return [
     'delivery_pending' => 'Waits for the buyer to choose a delivery',
     'delivery_rule' => 'Not offered for the chosen delivery',
     'no_credentials' => 'The gateway\'s keys are not set',
+    'gateway_missing' => 'The gateway :gateway is not installed',
 ];

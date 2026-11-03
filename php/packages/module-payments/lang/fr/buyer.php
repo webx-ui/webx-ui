@@ -26,4 +26,18 @@ return [
         'awaiting' => 'En attente de paiement',
         'pay' => 'Payer',
     ],
+    'pay' => [
+        'title' => 'Paiement de la commande :number',
+        'description' => 'Commande :number',
+        'due' => 'À payer : :amount',
+        'paid' => 'La commande :number est payée',
+        'cancelled' => 'La commande :number est annulée',
+        'checking' => 'Nous vérifions le paiement. Cela prend généralement jusqu’à une minute.',
+        'failed' => 'Le paiement n’a pas abouti',
+        'unavailable' => 'Impossible d’ouvrir le paiement. Réessayez ou choisissez un autre moyen.',
+        'on_receipt' => 'La commande se paie à la réception',
+        'order_link' => 'Voir la commande',
+        'redirecting' => 'Redirection vers la page de paiement…',
+        'go' => 'Aller au paiement',
+    ],
 ];

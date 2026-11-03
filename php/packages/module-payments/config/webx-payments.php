@@ -3,6 +3,14 @@
 declare(strict_types=1);
 
 return [
+    // The buyer's page of payment of an order and the step to the gateway (spec §4): /pay/{number},
+    // /pay/go/{uuid}.
+    'path' => 'pay',
+
+    // «Gateway A» (spec §21): the fake gateway with its three types and its page /pay/fake/{uuid},
+    // for development sites and tests. Never in production, whatever this says.
+    'fake_gateway' => (bool) env('WEBX_PAYMENTS_FAKE_GATEWAY', false),
+
     // The JSON API of the checkout's payment step (spec §10.2) and the address of its script.
     'api_path' => 'api/payments',
     'script_path' => 'webx/payments',

@@ -12,4 +12,5 @@ return [
     'delivery_pending' => 'Attend le choix de la livraison',
     'delivery_rule' => 'Indisponible pour la livraison choisie',
     'no_credentials' => 'Les clés de la passerelle ne sont pas définies',
+    'gateway_missing' => 'La passerelle :gateway n’est pas installée',
 ];

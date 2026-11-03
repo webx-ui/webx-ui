@@ -22,6 +22,8 @@ final readonly class Methods
     public function __construct(
         private CacheGroups $groups,
         private MethodTypes $types,
+        private Gateways $gateways,
+        private MethodCredentials $credentials,
     ) {}
 
     /**
@@ -152,7 +154,12 @@ final readonly class Methods
             return $own;
         }
 
-        if ($type->kind() === Kind::Online && ! $method->hasCredentials) {
+        if ($type->kind() === Kind::Online && ! $this->gateways->has($type->provider())) {
+            return Availability::no('gateway_missing', ['gateway' => $type->provider()]);
+        }
+
+        // The keys are in the column or in the site's environment (§15.1).
+        if ($type->kind() === Kind::Online && ! $method->hasCredentials && ! $this->credentials->inEnvironment($method)) {
             return Availability::no('no_credentials');
         }
 

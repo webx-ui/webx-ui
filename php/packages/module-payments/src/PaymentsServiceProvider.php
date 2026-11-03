@@ -23,8 +23,15 @@ use WebxUi\Payments\Doctor\ExchangeSizeCheck;
 use WebxUi\Payments\Exchange\ExchangeConnection;
 use WebxUi\Payments\Exchange\ExchangeJournal;
 use WebxUi\Payments\Exchange\ExchangeMasker;
+use WebxUi\Payments\Exchange\InProcessHosts;
 use WebxUi\Payments\Models\PaymentMethod;
+use WebxUi\Payments\Online\GatewayCalls;
+use WebxUi\Payments\Online\Handoffs;
+use WebxUi\Payments\Online\PaymentLinks;
+use WebxUi\Payments\Online\PayPage;
+use WebxUi\Payments\Online\StartRequests;
 use WebxUi\Payments\Rendering\Assets;
+use WebxUi\Payments\Testing\FakeGatewaySite;
 use WebxUi\Payments\Types\BankTransfer;
 use WebxUi\Payments\Types\OnReceipt;
 
@@ -48,6 +55,14 @@ class PaymentsServiceProvider extends ServiceProvider
         $this->app->singleton(ExchangeJournal::class);
 
         $this->app->singleton(MethodTypes::class);
+        $this->app->singleton(Gateways::class);
+        $this->app->singleton(InProcessHosts::class);
+        $this->app->singleton(MethodCredentials::class);
+        $this->app->singleton(GatewayCalls::class);
+        $this->app->singleton(PaymentLinks::class);
+        $this->app->singleton(StartRequests::class);
+        $this->app->singleton(PayPage::class);
+        $this->app->singleton(Handoffs::class);
         $this->app->singleton(Methods::class);
         $this->app->singleton(Payments::class);
         $this->app->singleton(PaymentsCheckoutSlot::class);
@@ -60,6 +75,9 @@ class PaymentsServiceProvider extends ServiceProvider
             $types->register(OnReceipt::class);
             $types->register(BankTransfer::class);
         });
+
+        // «Gateway A» (§21): only with WEBX_PAYMENTS_FAKE_GATEWAY and never in production.
+        FakeGatewaySite::register($this->app);
     }
 
     public function boot(): void
@@ -68,6 +86,8 @@ class PaymentsServiceProvider extends ServiceProvider
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-payments');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-payments');
         $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+        $this->loadRoutesFrom(__DIR__.'/../routes/pay.php');
+        $this->loadRoutesFrom(__DIR__.'/../routes/fake.php');
 
         RateLimiter::for('webx-payments-write', function (Request $request): Limit {
             $perMinute = $this->app->make('config')->get('webx-payments.throttle.write');

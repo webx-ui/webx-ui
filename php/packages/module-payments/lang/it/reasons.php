@@ -12,4 +12,5 @@ return [
     'delivery_pending' => 'Attende la scelta della consegna',
     'delivery_rule' => 'Non disponibile per la consegna scelta',
     'no_credentials' => 'Le chiavi del gateway non sono impostate',
+    'gateway_missing' => 'Il gateway :gateway non è installato',
 ];

@@ -11,11 +11,15 @@ use WebxUi\Cart\Totals\Purpose;
 use WebxUi\Orders\Checkout\Slots\ShippingChoice;
 use WebxUi\Payments\Availability;
 use WebxUi\Payments\DeliveryRule;
+use WebxUi\Payments\Gateways;
 use WebxUi\Payments\Method;
+use WebxUi\Payments\MethodCredentials;
 use WebxUi\Payments\Methods;
 use WebxUi\Payments\MethodTypes;
 use WebxUi\Payments\Models\PaymentMethod;
 use WebxUi\Payments\PaymentContext;
+use WebxUi\Payments\Testing\FakeGateway;
+use WebxUi\Payments\Testing\FakeGatewayServer;
 use WebxUi\Payments\Tests\Fakes\FakeOnlineType;
 use WebxUi\Payments\Types\BankTransfer;
 use WebxUi\Payments\Types\OnReceipt;
@@ -93,14 +97,45 @@ final class MethodsTest extends TestCase
         PaymentMethod::query()->create(['key' => 'gateway-a-card', 'type' => 'gateway-a.card', 'title' => ['en' => 'Card'], 'enabled' => true, 'position' => 1]);
         PaymentMethod::query()->create(['key' => 'gone', 'type' => 'gateway-z.card', 'title' => ['en' => 'Gone'], 'enabled' => true, 'position' => 2]);
 
-        $reasons = array_map(static fn (Availability $a): ?string => $a->reason, $this->app->make(Methods::class)->explain(self::context()));
+        $reasons = fn (): array => array_map(static fn (Availability $a): ?string => $a->reason, $this->app->make(Methods::class)->explain(self::context()));
 
-        $this->assertSame(['gateway-a-card' => 'no_credentials', 'gone' => 'type_missing'], $reasons);
+        // An online type without its gateway: the satellite forgot to register it (§6.2).
+        $this->assertSame(['gateway-a-card' => 'gateway_missing', 'gone' => 'type_missing'], $reasons());
+
+        $this->app->make(Gateways::class)->register(new FakeGateway($this->app->make(FakeGatewayServer::class)));
+        $this->assertSame(['gateway-a-card' => 'no_credentials', 'gone' => 'type_missing'], $reasons());
         $this->assertSame('currency', $this->app->make(Methods::class)->explain(self::context(currency: 'USD'))['gateway-a-card']->reason);
 
         PaymentMethod::query()->where('key', 'gateway-a-card')->firstOrFail()->update(['credentials' => ['secret_key' => self::SECRET]]);
 
         $this->assertSame(['gateway-a-card'], $this->offered(self::context()));
+    }
+
+    #[Test]
+    public function the_keys_may_come_from_the_environment_and_are_stronger_there(): void
+    {
+        $this->app->make(MethodTypes::class)->register(new FakeOnlineType);
+        $this->app->make(Gateways::class)->register(new FakeGateway($this->app->make(FakeGatewayServer::class)));
+        PaymentMethod::query()->create(['key' => 'gateway-a-card', 'type' => 'gateway-a.card', 'title' => ['en' => 'Card'], 'enabled' => true, 'position' => 1]);
+        $variable = MethodCredentials::variable('gateway-a-card', 'secret_key');
+        $this->assertSame('WEBX_PAYMENTS_GATEWAY_A_CARD_SECRET_KEY', $variable);
+
+        $this->assertSame([], $this->offered(self::context()));
+
+        putenv($variable.'=from-the-environment-0001');
+
+        try {
+            $this->assertSame(['gateway-a-card'], $this->offered(self::context()));
+
+            PaymentMethod::query()->where('key', 'gateway-a-card')->firstOrFail()->update(['credentials' => ['secret_key' => self::SECRET]]);
+            $method = $this->app->make(Methods::class)->find('gateway-a-card');
+            $this->assertNotNull($method);
+            $this->assertSame('from-the-environment-0001', $this->app->make(MethodCredentials::class)->for($method)->get('secret_key'));
+        } finally {
+            putenv($variable);
+        }
+
+        $this->assertSame(self::SECRET, $this->app->make(MethodCredentials::class)->for($method)->get('secret_key'));
     }
 
     #[Test]

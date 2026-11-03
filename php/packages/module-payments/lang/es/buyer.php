@@ -26,4 +26,18 @@ return [
         'awaiting' => 'Pendiente de pago',
         'pay' => 'Pagar',
     ],
+    'pay' => [
+        'title' => 'Pago del pedido :number',
+        'description' => 'Pedido :number',
+        'due' => 'A pagar: :amount',
+        'paid' => 'El pedido :number está pagado',
+        'cancelled' => 'El pedido :number está cancelado',
+        'checking' => 'Estamos comprobando el pago. Suele tardar hasta un minuto.',
+        'failed' => 'El pago no se ha completado',
+        'unavailable' => 'No se pudo abrir el pago. Inténtelo de nuevo o elija otro método.',
+        'on_receipt' => 'El pedido se paga al recibirlo',
+        'order_link' => 'Ir al pedido',
+        'redirecting' => 'Le llevamos a la página de pago…',
+        'go' => 'Ir al pago',
+    ],
 ];

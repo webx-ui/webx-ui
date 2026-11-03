@@ -26,4 +26,18 @@ return [
         'awaiting' => 'Ödeme bekleniyor',
         'pay' => 'Öde',
     ],
+    'pay' => [
+        'title' => ':number numaralı sipariş için ödeme',
+        'description' => 'Sipariş :number',
+        'due' => 'Ödenecek: :amount',
+        'paid' => ':number numaralı sipariş ödendi',
+        'cancelled' => ':number numaralı sipariş iptal edildi',
+        'checking' => 'Ödemeyi kontrol ediyoruz. Genellikle bir dakika kadar sürer.',
+        'failed' => 'Ödeme gerçekleşmedi',
+        'unavailable' => 'Ödeme açılamadı. Tekrar deneyin veya başka bir yöntem seçin.',
+        'on_receipt' => 'Sipariş teslimatta ödenir',
+        'order_link' => 'Siparişe git',
+        'redirecting' => 'Ödeme sayfasına yönlendiriliyorsunuz…',
+        'go' => 'Ödemeye geç',
+    ],
 ];

@@ -26,4 +26,18 @@ return [
         'awaiting' => 'Awaiting payment',
         'pay' => 'Pay',
     ],
+    'pay' => [
+        'title' => 'Payment for order :number',
+        'description' => 'Order :number',
+        'due' => 'To pay: :amount',
+        'paid' => 'Order :number is paid',
+        'cancelled' => 'Order :number is cancelled',
+        'checking' => 'We are checking the payment. It usually takes up to a minute.',
+        'failed' => 'The payment did not go through',
+        'unavailable' => 'Could not open the payment. Try again or choose another method.',
+        'on_receipt' => 'The order is paid on receipt',
+        'order_link' => 'Go to the order',
+        'redirecting' => 'Taking you to the payment page…',
+        'go' => 'Go to payment',
+    ],
 ];

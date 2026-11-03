@@ -12,4 +12,5 @@ return [
     'delivery_pending' => 'Teslimat seçimini bekliyor',
     'delivery_rule' => 'Seçilen teslimat için sunulmuyor',
     'no_credentials' => 'Ağ geçidi anahtarları ayarlanmadı',
+    'gateway_missing' => ':gateway ödeme geçidi kurulu değil',
 ];

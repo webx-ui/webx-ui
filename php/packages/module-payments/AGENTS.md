@@ -4,7 +4,8 @@ Payments for a WebX UI shop: the registry of method types with the shop's own tw
 receipt and bank transfer — the methods offered by the amount and the chosen delivery, the
 checkout's step «payment», the order's block `payment` with the bank details, a manager's «Mark as
 paid», and the **journal of the exchange with gateways** — raw bodies as they went, the shop's keys
-masked, append-only. Online methods, the pay page and the panel section come in later releases.
+masked, append-only — and the contract of an online gateway with the fake «gateway A» and the
+contract test a satellite runs. The callback, the hold actions and the panel section come later.
 Orders, their milestones and balance are `webx-ui/module-orders`; the cart is `webx-ui/module-cart`.
 
 ## What it owns
@@ -47,6 +48,27 @@ Orders, their milestones and balance are `webx-ui/module-orders`; the cart is `w
 - **HTTP client of satellites** `WebxUi\Payments\GatewayHttp`: `request()` (Laravel `Http` with
   the journal's middleware and the timeouts of `webx-payments.http`), `kind()`, `secret()`,
   `psr()` (PSR-18 for an SDK). Every attempt of a request is one event.
+- **Gateway contract** (spec §6.3–§6.4, §14.1): `Contracts\Gateway` (keys, settings, secret
+  headers and fields, `testConnection()`), registry `WebxUi\Payments\Gateways`; online types
+  implement `Contracts\ChargesOnline` (`start()` → `Handoff::redirect|post`, `fetchStatus()` →
+  `GatewayStatus` with `Reported`, `needs()` → `StartNeeds`, `trustsNotifications()`,
+  `readNotification()` → `Notification::status|poke|unrelated` or `InvalidNotification`, the
+  answers to the gateway) and, as they can, `CancelsPayments`, `CompletesApproval`,
+  `CapturesPayments` (`capturesPartially()`). Errors: `GatewayUnavailable`, `GatewayRefused` —
+  words, never a body. Amounts: `GatewayAmount::toDecimal()` / `fromDecimal()`, no float.
+- **Keys** `MethodCredentials::for(Method)`: the encrypted column, and over it the environment
+  `WEBX_PAYMENTS_<METHOD>_<FIELD>` (`MethodCredentials::variable()`).
+- **Online payment** `Payments::begin(order, method, source)` — an attempt `created` for
+  `balance()->due`, no network (`BeginRefused`); `GET /pay/go/{uuid}` (`Online\Handoffs`) calls
+  `start()` once under the attempt's lock, journals `browser/handoff`, redirects or posts the form
+  (`webx-payments::pay.handoff`); a failure makes the attempt `failed`. The page of payment
+  `GET /pay/{number}` (signed, `Online\PaymentLinks::page()`, view `webx-payments::pay.page`) with
+  «Pay» (`POST /pay/{number}/attempts`).
+- **Gateway A** `WebxUi\Payments\Testing\FakeGateway` (`gateway-a`) with `GatewayACard`,
+  `GatewayAForm`, `GatewayAUnsigned`; its API `FakeGatewayServer` answers `gateway-a.test` inside
+  the process (`Exchange\InProcessHosts`), its page is `GET /pay/fake/{uuid}`. Only with
+  `WEBX_PAYMENTS_FAKE_GATEWAY=true`, never in production (`FakeGatewaySite`; `::methods()` adds
+  its three methods with the test key). Contract test: trait `Testing\GatewayContract`.
 - **Command** `php artisan webx:payments:exchange-prune --days=N [--dry-run] [--force]` — the only
   removal of events; `N` at least 365, smaller is refused.
 - **Command** `webx:payments:selections-prune` — nightly: the choices of carts that are gone.
@@ -63,27 +85,35 @@ The theme's contract, in `resources/theme/payments.css`; restyle with the same c
 `webx-payments__method-title`, `webx-payments__method-note`, `webx-payments__save`, `webx-payments__nojs`,
 `webx-payments-instructions`, `webx-payments-instructions__title`, `webx-payments-instructions__list`,
 `webx-payments-instructions__row` (+ `webx-payments-instructions__row--<field>`), `webx-payments-instructions__label`,
-`webx-payments-instructions__value`, `webx-payments-status` (+ `webx-payments-status--<state>`), `webx-payments-status__pay`.
+`webx-payments-instructions__value`, `webx-payments-status` (+ `webx-payments-status--<state>`), `webx-payments-status__pay`,
+`webx-payments-pay`, `webx-payments-pay__title`, `webx-payments-pay__amount`, `webx-payments-pay__message` (+ `--error`),
+`webx-payments-pay__form`, `webx-payments-pay__button`, `webx-payments-pay__link`, `webx-payments-handoff`.
 
 ## Change it without forking
 
-| You want to                              | Do this                                                                                   |
-| ---------------------------------------- | ----------------------------------------------------------------------------------------- |
-| offer a method only with some deliveries | `delivery_rule` of the method: `{"mode": "methods", "methods": ["store-pickup"]}`         |
-| change the step or the bank details      | `vendor:publish --tag=webx-payments-views`, edit `step.blade.php` or `components/*`       |
-| add a type of your own                   | `callAfterResolving(MethodTypes::class, fn ($t) => $t->register(MyType::class))`          |
-| write the journal to another database    | `WEBX_PAYMENTS_EXCHANGE_CONNECTION=<connection>` (a connection of `config/database.php`)  |
-| keep more or less of a body              | `webx-payments.exchange.body_limit` in bytes, up to 16 MB                                 |
-| hear from the doctor at another size     | `webx-payments.exchange.warn_size` in bytes                                               |
-| give gateways more time                  | `webx-payments.http.timeout`, `webx-payments.http.connect_timeout` (seconds)              |
-| change the words                         | `php artisan vendor:publish --tag=webx-payments-lang`, edit `lang/vendor/webx-payments`   |
-| change the defaults above in one file    | `php artisan vendor:publish --tag=webx-payments-config`                                   |
-| remove events older than a year          | `php artisan webx:payments:exchange-prune --days=365 --dry-run`, then without `--dry-run` |
+| You want to                              | Do this                                                                                    |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------ |
+| offer a method only with some deliveries | `delivery_rule` of the method: `{"mode": "methods", "methods": ["store-pickup"]}`          |
+| change the step or the bank details      | `vendor:publish --tag=webx-payments-views`, edit `step.blade.php` or `components/*`        |
+| add a gateway                            | a satellite `payment-<gateway>`: `Gateways::register()`, its types, `GatewayContract` test |
+| keep live keys out of the database       | `WEBX_PAYMENTS_<METHOD>_<FIELD>` in the site's environment, stronger than the column       |
+| try online payment without a gateway     | `WEBX_PAYMENTS_FAKE_GATEWAY=true` (not in production), `FakeGatewaySite::methods()`        |
+| add a type of your own                   | `callAfterResolving(MethodTypes::class, fn ($t) => $t->register(MyType::class))`           |
+| write the journal to another database    | `WEBX_PAYMENTS_EXCHANGE_CONNECTION=<connection>` (a connection of `config/database.php`)   |
+| keep more or less of a body              | `webx-payments.exchange.body_limit` in bytes, up to 16 MB                                  |
+| hear from the doctor at another size     | `webx-payments.exchange.warn_size` in bytes                                                |
+| give gateways more time                  | `webx-payments.http.timeout`, `webx-payments.http.connect_timeout` (seconds)               |
+| change the words                         | `php artisan vendor:publish --tag=webx-payments-lang`, edit `lang/vendor/webx-payments`    |
+| change the defaults above in one file    | `php artisan vendor:publish --tag=webx-payments-config`                                    |
+| remove events older than a year          | `php artisan webx:payments:exchange-prune --days=365 --dry-run`, then without `--dry-run`  |
 
 ## Do not
 
 - Do not call a gateway with `Http::`, Guzzle or an SDK's own client from a satellite: the request
   never reaches the journal. Take the `GatewayHttp` the base passes, or its `psr()` for an SDK.
+- Do not believe the body of a notification of a type with `trustsNotifications() = false`:
+  answer `Notification::poke()` and let the base ask `fetchStatus()`.
+- Do not put a card field in `Handoff::post()` — it throws: the shop never takes a card.
 - Do not update or delete rows of `payment_gateway_events` — the model refuses (`AppendOnly`), and a
   raw query would destroy the evidence of a payment dispute. Prune with the command, older than a
   year.
@@ -107,4 +137,5 @@ The theme's contract, in `resources/theme/payments.css`; restyle with the same c
 
 - `README.md` next to this file.
 - Spec: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_PAYMENTS.md
-  (§5 tables, §7 methods, §10 the step, §12 built-in methods, §20 the journal, §23 the plan).
+  (§5 tables, §6 contracts, §7 methods, §8 online payment, §10 the step, §12 built-in methods,
+  §14 a gateway's satellite, §20 the journal, §21 gateway A, §23 the plan).

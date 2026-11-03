@@ -12,4 +12,5 @@ return [
     'delivery_pending' => 'Espera la elección del envío',
     'delivery_rule' => 'No disponible para el envío elegido',
     'no_credentials' => 'Las claves de la pasarela no están configuradas',
+    'gateway_missing' => 'La pasarela :gateway no está instalada',
 ];

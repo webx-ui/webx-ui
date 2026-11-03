@@ -26,4 +26,18 @@ return [
         'awaiting' => 'Wartet auf Zahlung',
         'pay' => 'Bezahlen',
     ],
+    'pay' => [
+        'title' => 'Zahlung für Bestellung :number',
+        'description' => 'Bestellung :number',
+        'due' => 'Zu zahlen: :amount',
+        'paid' => 'Bestellung :number ist bezahlt',
+        'cancelled' => 'Bestellung :number ist storniert',
+        'checking' => 'Wir prüfen die Zahlung. Das dauert meist bis zu einer Minute.',
+        'failed' => 'Die Zahlung ist nicht durchgegangen',
+        'unavailable' => 'Die Zahlung konnte nicht geöffnet werden. Versuchen Sie es erneut oder wählen Sie eine andere Zahlungsart.',
+        'on_receipt' => 'Die Bestellung wird bei Erhalt bezahlt',
+        'order_link' => 'Zur Bestellung',
+        'redirecting' => 'Weiter zur Zahlungsseite…',
+        'go' => 'Zur Zahlung',
+    ],
 ];

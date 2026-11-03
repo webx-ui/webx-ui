@@ -12,4 +12,5 @@ return [
     'delivery_pending' => 'Czeka na wybór dostawy',
     'delivery_rule' => 'Niedostępna dla wybranej dostawy',
     'no_credentials' => 'Klucze bramki nie są ustawione',
+    'gateway_missing' => 'Bramka :gateway nie jest zainstalowana',
 ];

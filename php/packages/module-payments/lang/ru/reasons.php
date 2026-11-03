@@ -12,4 +12,5 @@ return [
     'delivery_pending' => 'Ждёт выбора доставки',
     'delivery_rule' => 'Недоступен при выбранной доставке',
     'no_credentials' => 'Ключи шлюза не заданы',
+    'gateway_missing' => 'Шлюз :gateway не установлен',
 ];
