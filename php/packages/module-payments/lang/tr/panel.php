@@ -228,6 +228,7 @@ return [
         'capture-whole' => 'Bu ödeme geçidi yalnızca bloke edilen tutarın tamamını tahsil eder.',
         'capture-preview' => 'Bloke edilen :held içinden :amount tahsil edilecek; siparişe «Ödendi» işareti konur.',
         'capture-release' => ':amount alıcıya geri döner.',
+        'capture-short' => 'Sipariş :owes, tahsil edilen :amount — :left ödenmemiş kalır ve sipariş «Ödendi» işaretini almaz. Önce siparişin kalemlerini azaltın.',
         'captured' => 'Tutar tahsil edildi.',
         'void' => 'Blokeyi kaldır',
         'void-title' => 'Bloke edilen tutar serbest bırakılsın mı?',

@@ -15,6 +15,7 @@ use WebxUi\Orders\Tests\Checkout\VisitsCheckout;
 use WebxUi\Payments\Checkout\PaymentsCheckoutSlot;
 use WebxUi\Payments\Models\Payment;
 use WebxUi\Payments\Online\PaymentLinks;
+use WebxUi\Payments\Payments;
 use WebxUi\Payments\PaymentStatus;
 use WebxUi\Payments\Testing\FakeGatewaySite;
 use WebxUi\Payments\Tests\Online\OnlineCase;
@@ -128,8 +129,15 @@ final class OnlineCheckoutTest extends OnlineCase
         $this->assertSame(PaymentStatus::Authorized, $payment->refresh()->status);
         $this->visit($cart, '/checkout/thanks/'.$order->number)->assertOk()
             ->assertSee('Payment accepted')
+            // One state for the buyer (§8.3): accepted, not «waiting for payment» beside it.
+            ->assertDontSee('The order is waiting for payment.')
             ->assertDontSee(e($this->payPage($order)), false);
-        $this->assertNull($this->app->make(PaymentsCheckoutSlot::class)->payAgainUrl(OrderData::of($order->refresh())));
+        $this->assertTrue($order->refresh()->awaiting_payment);
+        $this->assertNull($this->app->make(PaymentsCheckoutSlot::class)->payAgainUrl(OrderData::of($order)));
+
+        // Let go by the shop, the money is no more in its hands: the order waits for payment again.
+        $this->app->make(Payments::class)->void($payment->refresh(), 'code');
+        $this->visit($cart, '/checkout/thanks/'.$order->number)->assertOk()->assertSee('The order is waiting for payment.');
     }
 
     #[Test]

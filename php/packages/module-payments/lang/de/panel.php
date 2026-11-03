@@ -228,6 +228,7 @@ return [
         'capture-whole' => 'Dieses Gateway zieht nur den gesamten reservierten Betrag ein.',
         'capture-preview' => ':amount von :held reserviert werden belastet; die Bestellung erhält die Markierung „Bezahlt“.',
         'capture-release' => ':amount geht an den Käufer zurück.',
+        'capture-short' => 'Die Bestellung kostet :owes, eingezogen werden :amount — :left bleiben unbezahlt, und die Bestellung erhält nicht die Marke «Bezahlt». Verringern Sie zuerst die Positionen der Bestellung.',
         'captured' => 'Der Betrag wurde eingezogen.',
         'void' => 'Reservierung aufheben',
         'void-title' => 'Reservierung aufheben?',

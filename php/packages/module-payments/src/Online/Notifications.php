@@ -145,7 +145,8 @@ final readonly class Notifications
                 signature: $e->reason === InvalidNotification::SIGNATURE ? SignatureCheck::Invalid : ($trusted ? SignatureCheck::None : SignatureCheck::Untrusted),
                 statusBefore: $claimed?->status->value,
                 statusAfter: $claimed?->status->value,
-                message: $claimed !== null ? $e->getMessage().'; claimed for this attempt — not believed, the status is unchanged' : $e->getMessage(),
+                // Short: the link to the attempt and the status unchanged are the event's mark, «claimed».
+                message: $e->getMessage(),
             ));
         } catch (Throwable $e) {
             return $answer(self::plain('Internal Server Error', 500), $this->error(null, $e, $trusted));

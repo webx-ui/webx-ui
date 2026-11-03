@@ -240,6 +240,13 @@ export interface HoldPreview {
   held_formatted: string
   released: number
   released_formatted: string
+  /** Whether the capture covers what the order owes — only then it gets the mark «Paid». */
+  covers?: boolean
+  owes?: number
+  owes_formatted?: string
+  /** What stays unpaid after a capture that does not cover the order. */
+  left?: number
+  left_formatted?: string
 }
 
 export interface MethodChoice {

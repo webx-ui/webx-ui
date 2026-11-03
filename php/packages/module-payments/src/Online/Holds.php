@@ -7,6 +7,8 @@ namespace WebxUi\Payments\Online;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Facades\Cache;
 use WebxUi\Cart\Money;
+use WebxUi\Orders\Balance;
+use WebxUi\Orders\Models\Order;
 use WebxUi\Payments\Contracts\CapturesPayments;
 use WebxUi\Payments\Exchange\ExchangeContext;
 use WebxUi\Payments\Exchange\ExchangeKind;
@@ -42,6 +44,7 @@ final readonly class Holds
         private Settlement $settlement,
         private InternalEvents $internal,
         private Money $money,
+        private Actors $actors,
     ) {}
 
     /**
@@ -63,10 +66,10 @@ final readonly class Holds
             default => null,
         };
 
-        $words = 'capture '.$this->money->format($amount, $payment->currency).' of '.$this->money->format($held, $payment->currency);
+        $words = $this->money->format($amount, $payment->currency).' of '.$this->money->format($held, $payment->currency);
 
         if ($dryRun) {
-            return new SettleResult(Outcome::Same, PaymentStatus::Authorized, PaymentStatus::Paid, Reported::Paid, $words.'; the order gets its milestone «paid» of '.$this->money->format($amount, $payment->currency), dryRun: true);
+            return new SettleResult(Outcome::Same, PaymentStatus::Authorized, PaymentStatus::Paid, Reported::Paid, 'capture '.$words.'; '.$this->consequence($payment, $amount), dryRun: true);
         }
 
         return $this->locked($payment, function () use ($payment, $type, $method, $amount, $source, $words): SettleResult {
@@ -81,13 +84,13 @@ final readonly class Holds
             } catch (GatewayRefused $refused) {
                 $because = 'The gateway refused to capture '.$this->money->format($amount, $payment->currency).': '.$refused->getMessage();
                 $this->settlement->flag($payment, SettleResult::CAPTURE_FAILED, $because);
-                $this->journal($payment, $source, Outcome::Rejected, PaymentStatus::Authorized, $words.' — refused by the gateway', $trace, $type->provider());
+                $this->journal(ExchangeKind::Captured, $payment, $source, Outcome::Rejected, PaymentStatus::Authorized, $words.' — refused by the gateway', $trace, $type->provider());
 
                 return new SettleResult(Outcome::Rejected, PaymentStatus::Authorized, PaymentStatus::Authorized, null, $because, SettleResult::CAPTURE_FAILED);
             }
 
-            $result = $this->settlement->settle($payment, $status);
-            $this->journal($payment, $source, $result->outcome, $result->after, $words, $trace, $type->provider());
+            $result = $this->settlement->settle($payment, $status, actor: $this->actor($source));
+            $this->journal(ExchangeKind::Captured, $payment, $source, $result->outcome, $result->after, $words, $trace, $type->provider());
 
             return $result;
         });
@@ -101,10 +104,10 @@ final readonly class Holds
     public function void(Payment $payment, string $source, bool $dryRun = false): SettleResult
     {
         [$type, $method] = $this->held($payment);
-        $words = 'release the hold of '.$this->money->format((int) ($payment->authorized_amount ?? $payment->amount), $payment->currency);
+        $words = $this->money->format((int) ($payment->authorized_amount ?? $payment->amount), $payment->currency).' back to the buyer';
 
         if ($dryRun) {
-            return new SettleResult(Outcome::Same, PaymentStatus::Authorized, PaymentStatus::Cancelled, Reported::Cancelled, $words, dryRun: true);
+            return new SettleResult(Outcome::Same, PaymentStatus::Authorized, PaymentStatus::Cancelled, Reported::Cancelled, 'release the hold: '.$words.'; the order awaits payment as before', dryRun: true);
         }
 
         return $this->locked($payment, function () use ($payment, $type, $method, $source, $words): SettleResult {
@@ -116,13 +119,13 @@ final readonly class Holds
             try {
                 $status = $type->void($method, $credentials, $payment, $http);
             } catch (GatewayRefused $refused) {
-                $this->journal($payment, $source, Outcome::Rejected, PaymentStatus::Authorized, $words.' — refused by the gateway: '.$refused->getMessage(), $trace, $type->provider());
+                $this->journal(ExchangeKind::Released, $payment, $source, Outcome::Rejected, PaymentStatus::Authorized, $words.' — refused by the gateway: '.$refused->getMessage(), $trace, $type->provider());
 
                 throw $refused;
             }
 
-            $result = $this->settlement->settle($payment, $status);
-            $this->journal($payment, $source, $result->outcome, $result->after, $words, $trace, $type->provider());
+            $result = $this->settlement->settle($payment, $status, actor: $this->actor($source));
+            $this->journal(ExchangeKind::Released, $payment, $source, $result->outcome, $result->after, $words, $trace, $type->provider());
 
             return $result;
         });
@@ -181,8 +184,35 @@ final readonly class Holds
         }
     }
 
-    private function journal(Payment $payment, string $source, Outcome $outcome, PaymentStatus $after, string $words, string $trace, string $gateway): void
+    /**
+     * What a capture of `$amount` does to the order (decision of 03.11.2026): the milestone «paid»
+     * only where it covers what the order owes; less — money in, and the rest still to pay.
+     */
+    public function consequence(Payment $payment, int $amount): string
     {
-        $this->internal->write(ExchangeKind::Manual, $payment, $source, $outcome, PaymentStatus::Authorized, $after, $words.' by '.$source, $trace, $gateway);
+        /** @var Order $order */
+        $order = Order::query()->findOrFail($payment->order_id);
+        $owes = max(0, Balance::stored($order));
+
+        if ($order->paid_at !== null || $amount >= $owes) {
+            return $order->paid_at !== null ? 'the order is paid already' : 'the order gets its milestone «paid»';
+        }
+
+        return sprintf(
+            'the order costs %s: %s stay unpaid and the order gets no milestone «paid» — lower its items first',
+            $this->money->format($owes, $payment->currency),
+            $this->money->format($owes - $amount, $payment->currency),
+        );
+    }
+
+    /** The order's history says the end of a hold in the name of a person, not of code. */
+    private function actor(string $source): ?string
+    {
+        return in_array($source, ['panel', 'mcp', 'api'], true) ? $source : null;
+    }
+
+    private function journal(ExchangeKind $kind, Payment $payment, string $source, Outcome $outcome, PaymentStatus $after, string $words, string $trace, string $gateway): void
+    {
+        $this->internal->write($kind, $payment, $source, $outcome, PaymentStatus::Authorized, $after, $words.' by '.$this->actors->who($source), $trace, $gateway);
     }
 }

@@ -15,7 +15,7 @@ import {
 import { useAdmin, useErrorText, WxDate, WxListScreen } from '@webx-ui/module-admin'
 import { createPaymentsApi } from './api'
 import AttemptDialog from './AttemptDialog.vue'
-import { statusTones } from './format'
+import { orderLink, statusTones } from './format'
 import { usePaymentsLines, usePaymentsWords } from './i18n'
 import type { AttemptRow, AttemptsPage } from './types'
 
@@ -148,7 +148,16 @@ function open(row: AttemptRow): void {
       <template #cell-created_at="{ row }">
         <wx-date :value="row.created_at" compact />
       </template>
-      <template #cell-order="{ row }">{{ row.order_number ?? row.order_id }}</template>
+      <template #cell-order="{ row }">
+        <router-link
+          :to="orderLink(row.order_id, row.uuid)"
+          class="wx-payments-attempts__order"
+          data-test="attempt-order"
+          @click.stop
+        >
+          {{ row.order_number ?? row.order_id }}
+        </router-link>
+      </template>
       <template #cell-amount="{ row }">
         <span class="wx-payments-attempts__money">{{ row.amount_formatted }}</span>
       </template>
@@ -187,5 +196,15 @@ function open(row: AttemptRow): void {
 
 .wx-payments-attempts__money {
   font-variant-numeric: tabular-nums;
+}
+
+.wx-payments-attempts__order {
+  color: var(--wx-text-link);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.wx-payments-attempts__order:hover {
+  text-decoration: underline;
 }
 </style>

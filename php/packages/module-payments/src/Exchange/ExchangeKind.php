@@ -22,13 +22,17 @@ enum ExchangeKind: string
     case Return = 'return';
     case Expire = 'expire';
     case Manual = 'manual';
+    /** A hold captured by the shop — the base's decision after the gateway's answer to `capture`. */
+    case Captured = 'captured';
+    /** A hold let go by the shop — the base's decision after the gateway's answer to `void`. */
+    case Released = 'released';
 
     public function direction(): Direction
     {
         return match ($this) {
             self::Notify => Direction::In,
             self::Handoff, self::Return => Direction::Browser,
-            self::Expire, self::Manual => Direction::Internal,
+            self::Expire, self::Manual, self::Captured, self::Released => Direction::Internal,
             default => Direction::Out,
         };
     }

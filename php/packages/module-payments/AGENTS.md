@@ -54,7 +54,7 @@ Orders, their milestones and balance are `webx-ui/module-orders`; the cart is `w
   «Pay online now» (`switchMethod()`). Checkout: `PaymentsCheckoutSlot::next()` opens the attempt of an online method
   after the order (no network, never throws) → `/pay/go`; `payAgainUrl()` — the page while the order awaits money.
 - **Hold** `Payments::capture(payment, ?amount, source, dryRun)` / `void()` (`HoldRefused`, problem
-  `capture_failed`); «Capture» / «Release the hold» on the order's tab with a `dry_run` line first. **Poll** `webx:payments:poll` every 5 minutes: unfinished attempts (backing off 10, 20, 40… min, `meta.poll`), `expired`,
+  `capture_failed`); «Capture» / «Release the hold» on the order's tab with a `dry_run` line first. Milestone «paid» only if the capture covers the order; less — `recordPayment(part: true)`, the rest due. Events `internal/captured` / `released`. **Poll** `webx:payments:poll` every 5 minutes: unfinished attempts (backing off 10, 20, 40… min, `meta.poll`), `expired`,
   `hold_expiring`. **Problems**: events `PaymentSucceeded`, `PaymentFailed`, `PaymentProblem`;
   `Payments::resolveProblem()` (`ProblemRefused`). `Payments::cashOnDelivery(OrderData)` — for a waybill.
 - **Settling** `Payments::settle(payment, GatewayStatus)` → `SettleResult`, the only door to the attempt

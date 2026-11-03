@@ -204,7 +204,8 @@ const source = computed(() =>
         <div v-if="lastNote" class="wx-orders-glance__note">
           <span class="wx-orders-glance__label">
             {{ t('panel.glance-last-note') }} ·
-            {{ authorOf(t, lastNote.source, lastNote.author?.name ?? null) }} ·
+            {{ authorOf(t, lastNote.source, lastNote.author?.name ?? null, lastNote.source_title) }}
+            ·
             <wx-date :value="lastNote.created_at" compact size="sm" />
           </span>
           <p class="wx-orders-glance__text">{{ lastNote.body }}</p>

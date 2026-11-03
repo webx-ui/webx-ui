@@ -73,7 +73,8 @@ final class NotifyTest extends OnlineCase
             $this->assertSame(['rejected', 'invalid', $payment->id, $payment->order_id, 'pending', 'pending', 400], [
                 $event->outcome, $event->signature, $event->payment_id, $event->order_id, $event->status_before, $event->status_after, $event->response_status,
             ], $variant);
-            $this->assertStringContainsString('not believed', (string) $event->message);
+            // The description is short; the claim is the event's mark, not words in it.
+            $this->assertStringNotContainsString('claimed', (string) $event->message);
         }
 
         // A claim of a payment nobody has links nothing.

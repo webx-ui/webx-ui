@@ -227,6 +227,8 @@ export interface TimelineLine {
   kind: string
   at: string | null
   source: string
+  /** The source in a person's words where its module names it — a payment method's title. */
+  source_title?: string | null
   admin: string | null
   note: string | null
   from?: string | null
@@ -282,6 +284,7 @@ export interface OrderNote {
   id: number
   body: string
   source: string
+  source_title?: string | null
   author: { id: number; name: string; avatar: string | null } | null
   created_at: string | null
 }

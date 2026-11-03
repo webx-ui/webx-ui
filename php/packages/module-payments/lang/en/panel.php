@@ -228,6 +228,7 @@ return [
         'capture-whole' => 'This gateway captures only the whole amount held.',
         'capture-preview' => ':amount will be charged of :held held; the order gets the mark «Paid».',
         'capture-release' => ':amount goes back to the buyer.',
+        'capture-short' => 'The order is :owes, :amount is captured — :left will stay unpaid, and the order does not get the mark «Paid». Lower the order’s items first.',
         'captured' => 'The money was captured.',
         'void' => 'Release the hold',
         'void-title' => 'Release the held money?',

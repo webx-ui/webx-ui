@@ -228,6 +228,7 @@ return [
         'capture-whole' => 'Ta bramka pobiera tylko całą zablokowaną kwotę.',
         'capture-preview' => 'Zostanie pobrane :amount z :held zablokowanych; zamówienie otrzyma oznaczenie „Opłacone”.',
         'capture-release' => ':amount wróci do kupującego.',
+        'capture-short' => 'Zamówienie jest na :owes, pobierane jest :amount — :left pozostanie nieopłacone, a zamówienie nie dostanie oznaczenia «Opłacone». Najpierw zmniejsz pozycje zamówienia.',
         'captured' => 'Środki zostały pobrane.',
         'void' => 'Zwolnij blokadę',
         'void-title' => 'Zwolnić zablokowane środki?',

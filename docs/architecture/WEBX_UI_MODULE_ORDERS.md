@@ -1169,6 +1169,14 @@ text}`), `price` (`{kind, amount, currency, in_total, …}` — у достав�
 - `patchBlock()` сливает `patch` в блок (`array_replace_recursive`), проверяет `validate`, пишет
   строку истории `kind = block` и бросает `OrderBlockUpdated`. Так доставка кладёт номер накладной
   (§11.2 её спеки), оплата — смену способа, которую менеджер сделал с покупателем по телефону.
+- **`held`** (`fn (array $value, Order $order): bool`, необязательно) — деньги покупателя уже у
+  магазина, хотя заказ ещё не оплачен: холд (§8.3 и решение 62 спеки оплаты). Страницы покупателя
+  («Спасибо», страница заказа) тогда не говорят «Заказ ждёт оплаты»; панель видит заказ ждущим
+  оплаты, как есть.
+- **Имена источников** (`WebxUi\Orders\Panel\SourceNames`): строку истории модуль пишет под своим
+  источником (`payment:<key>`); зарегистрировав префикс, он даёт ему имя для людей — карточка
+  отдаёт `source_title` у строк ленты и заметок, панель пишет его вместо ключа. Имя ищется раз на
+  запрос.
 
 ## 7. События и полезная нагрузка
 
@@ -2908,10 +2916,12 @@ final class Orders
      * Money that came in for an order that is paid already: a top-up after an edit (§37).
      * No milestone — `paid` is set once (decision 24); a history line `payment` and
      * OrderPaymentReceived. A Refusal: `not_paid` (the first payment is mark(paid)), `cancelled`.
+     * `part` — money of an order not paid yet that does not cover it: a hold captured in part
+     * (payments §9.5, decision 59 there) — no milestone, no move, the balance says the rest.
      */
     public function recordPayment(Order $order, int $amount, string $source,
         ?string $reference = null, ?CarbonInterface $at = null, ?string $note = null,
-        bool $dryRun = false): PaymentRecord;
+        bool $dryRun = false, bool $part = false): PaymentRecord;
 
     /**
      * The order starts waiting for payment again: its method was switched to one that awaits it

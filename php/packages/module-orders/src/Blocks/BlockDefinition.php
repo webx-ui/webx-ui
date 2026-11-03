@@ -30,6 +30,10 @@ final readonly class BlockDefinition
      *                                                                                 block under its line on the order's page and
      *                                                                                 «Thank you», as HTML — the bank details of a
      *                                                                                 transfer; null — the line says it all
+     * @param  (Closure(array<string, mixed>, Order): bool)|null  $held  the buyer's money is in the shop's hands though the
+     *                                                                   order is not paid yet — a hold the shop captures later
+     *                                                                   (§8.3 of payments): for the buyer it is paid, so their
+     *                                                                   pages do not say «waiting for payment»
      */
     public function __construct(
         public string $key,
@@ -40,5 +44,6 @@ final readonly class BlockDefinition
         public ?Closure $price = null,
         public ?string $view = null,
         public ?Closure $details = null,
+        public ?Closure $held = null,
     ) {}
 }

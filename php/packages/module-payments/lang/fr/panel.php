@@ -228,6 +228,7 @@ return [
         'capture-whole' => 'Cette passerelle n’encaisse que la totalité du montant bloqué.',
         'capture-preview' => ':amount seront débités sur :held bloqués ; la commande reçoit la marque « Payée ».',
         'capture-release' => ':amount est rendu à l’acheteur.',
+        'capture-short' => 'La commande est de :owes, :amount est capturé — :left resteront impayés et la commande ne reçoit pas la marque « Payée ». Réduisez d’abord les articles de la commande.',
         'captured' => 'Le montant a été encaissé.',
         'void' => 'Libérer le blocage',
         'void-title' => 'Libérer le montant bloqué ?',

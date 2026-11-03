@@ -23,6 +23,7 @@ use WebxUi\Orders\Checkout\Slots\CheckoutSlots;
 use WebxUi\Orders\Contracts\MarksPaidByHand;
 use WebxUi\Orders\Models\Order;
 use WebxUi\Orders\Panel\OrdersModule;
+use WebxUi\Orders\Panel\SourceNames;
 use WebxUi\Payments\Checkout\PaymentsCheckoutSlot;
 use WebxUi\Payments\Console\ExchangePruneCommand;
 use WebxUi\Payments\Console\PollCommand;
@@ -34,6 +35,7 @@ use WebxUi\Payments\Exchange\ExchangeJournal;
 use WebxUi\Payments\Exchange\ExchangeMasker;
 use WebxUi\Payments\Exchange\InProcessHosts;
 use WebxUi\Payments\Mcp\PaymentsModule;
+use WebxUi\Payments\Models\Payment;
 use WebxUi\Payments\Models\PaymentMethod;
 use WebxUi\Payments\Notifications\PaymentNotices;
 use WebxUi\Payments\Online\Checks;
@@ -165,6 +167,9 @@ class PaymentsServiceProvider extends ServiceProvider
                     PaymentSnapshot::summary(...),
                     // Its own view is the tab «Payment»: «Items» does not repeat the block.
                     view: PaymentsSection::VIEW,
+                    // Money held is paid for the buyer (§8.3): their pages do not say «waiting for payment».
+                    held: static fn (array $block, Order $order): bool => $order->awaiting_payment
+                        && Payment::query()->where('order_id', $order->id)->where('status', PaymentStatus::Authorized->value)->exists(),
                     details: static function (array $block, Order $order, string $locale): ?string {
                         if (! $order->awaiting_payment || $order->paid_at !== null || $order->cancelled_at !== null) {
                             return null;
@@ -230,6 +235,15 @@ class PaymentsServiceProvider extends ServiceProvider
     private function registerPanel(): void
     {
         $this->loadRoutesFrom(__DIR__.'/../routes/panel.php');
+
+        // The order's history names a line of `payment:<key>` by the method's title, not its key.
+        $this->callAfterResolving(SourceNames::class, static function (SourceNames $names): void {
+            $names->register('payment', static function (string $key): ?string {
+                $method = PaymentMethod::query()->where('key', $key)->first(['title']);
+
+                return $method !== null ? Words::pick($method->title, app()->getLocale()) : null;
+            });
+        });
 
         $config = $this->app->make('config');
         $groups = (array) $config->get('webx-admin.groups', []);

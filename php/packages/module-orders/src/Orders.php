@@ -396,8 +396,13 @@ final class Orders
      *
      * A dry run answers the balance after it, and a refusal in the answer; it writes nothing.
      *
+     * `$part` — money of an order not paid yet that does not cover it: a hold captured in part
+     * (payments §9.5, decision of 03.11.2026). `paid_total` grows, the milestone «paid» is not set
+     * and the status stays; the balance says what is still to pay, and the payment that covers it
+     * is `mark(paid)` as ever.
+     *
      * @throws ValidationException the amount is not a positive number of minor units
-     * @throws PaymentRefused `not_paid` — the first payment is `mark(paid)`; `cancelled`
+     * @throws PaymentRefused `not_paid` — the first payment is `mark(paid)`, unless `$part`; `cancelled`
      */
     public function recordPayment(
         Order $order,
@@ -407,6 +412,7 @@ final class Orders
         ?CarbonInterface $at = null,
         ?string $note = null,
         bool $dryRun = false,
+        bool $part = false,
     ): PaymentRecord {
         if ($amount < 1) {
             throw ValidationException::withMessages(['amount' => (string) __('webx-orders::panel.payment-amount-required')]);
@@ -417,13 +423,13 @@ final class Orders
         $at = $at !== null ? CarbonImmutable::instance($at) : CarbonImmutable::now();
 
         if ($dryRun) {
-            return $this->paymentPlan(Order::query()->findOrFail($order->id), $amount, $reference, $note, $at, true);
+            return $this->paymentPlan(Order::query()->findOrFail($order->id), $amount, $reference, $note, $at, true, $part);
         }
 
         $adminId = $this->adminId($source);
 
-        return $this->locked($order, function (Order $locked) use ($amount, $source, $reference, $note, $at, $adminId): PaymentRecord {
-            $plan = $this->paymentPlan($locked, $amount, $reference, $note, $at, false);
+        return $this->locked($order, function (Order $locked) use ($amount, $source, $reference, $note, $at, $adminId, $part): PaymentRecord {
+            $plan = $this->paymentPlan($locked, $amount, $reference, $note, $at, false, $part);
 
             if ($plan->refusal !== null) {
                 throw new PaymentRefused($plan);
@@ -431,6 +437,11 @@ final class Orders
 
             $locked->paid_total += $amount;
             $locked->balance = Balance::stored($locked);
+
+            // Money came in: an earlier try that did not go through is no longer the order's state.
+            if ($part) {
+                $locked->setAttribute('payment_failed_at', null);
+            }
             $locked->save();
 
             $this->line($locked, StatusChange::PAYMENT, $source, $adminId, $at, self::paymentNote($amount, $reference, $note));
@@ -2356,11 +2367,11 @@ final class Orders
     }
 
     /** What a payment would record, and the balance before and after it — the dry run's answer and the payment's plan. */
-    private function paymentPlan(Order $order, int $amount, ?string $reference, ?string $note, CarbonImmutable $at, bool $dryRun): PaymentRecord
+    private function paymentPlan(Order $order, int $amount, ?string $reference, ?string $note, CarbonImmutable $at, bool $dryRun, bool $part = false): PaymentRecord
     {
         $refusal = match (true) {
             $order->cancelled_at !== null => PaymentRecord::CANCELLED,
-            $order->paid_at === null => PaymentRecord::NOT_PAID,
+            $order->paid_at === null && ! $part => PaymentRecord::NOT_PAID,
             default => null,
         };
 

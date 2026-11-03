@@ -13,6 +13,21 @@ export const statusTones: Record<PaymentStatus, BadgeType> = {
 }
 
 /** The colour of a decision of the journal. */
+/**
+ * The order's card on its tab «Payment» with the attempt open (`?tab=payment&attempt=`): where a
+ * number of the journal or of the attempts leads.
+ */
+export function orderLink(
+  orderId: number,
+  attempt?: string | null,
+): { name: string; params: { id: string }; query: Record<string, string> } {
+  return {
+    name: 'webx.orders.show',
+    params: { id: String(orderId) },
+    query: attempt ? { tab: 'payment', attempt } : { tab: 'payment' },
+  }
+}
+
 export function outcomeTone(outcome: string | null): BadgeType {
   switch (outcome) {
     case 'applied':

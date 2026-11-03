@@ -228,6 +228,7 @@ return [
         'capture-whole' => 'Questo gateway incassa solo l’intero importo bloccato.',
         'capture-preview' => 'Verranno addebitati :amount su :held bloccati; l’ordine riceve il segno «Pagato».',
         'capture-release' => ':amount torna all’acquirente.',
+        'capture-short' => 'L’ordine è di :owes, si incassano :amount — :left resteranno da pagare e l’ordine non riceve il segno «Pagato». Riduci prima gli articoli dell’ordine.',
         'captured' => 'L’importo è stato incassato.',
         'void' => 'Sblocca l’importo',
         'void-title' => 'Sbloccare l’importo bloccato?',

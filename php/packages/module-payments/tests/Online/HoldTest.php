@@ -7,7 +7,9 @@ namespace WebxUi\Payments\Tests\Online;
 use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\Attributes\Test;
 use ReflectionProperty;
+use WebxUi\Orders\ItemsEdit;
 use WebxUi\Orders\Models\Order;
+use WebxUi\Orders\Models\OrderItem;
 use WebxUi\Orders\Orders;
 use WebxUi\Payments\Events\PaymentFailed;
 use WebxUi\Payments\Events\PaymentProblem;
@@ -28,7 +30,7 @@ use WebxUi\Payments\Tests\Fakes\WholeCaptureCard;
 
 /**
  * The hold of §9.5 on gateway A: money held by «Pay» of a method with `hold`, then captured whole
- * or in part — one milestone «paid» of what was taken — or let go; a refusal of the gateway is the
+ * or in part — one milestone «paid», only where what was taken covers the order — or let go; a refusal of the gateway is the
  * problem `capture_failed`, and the attempt stays held.
  */
 final class HoldTest extends OnlineCase
@@ -49,26 +51,66 @@ final class HoldTest extends OnlineCase
         $this->assertSame(1, $order->milestones()->where('milestone', 'paid')->count());
         $this->assertCount(1, $succeeded->events);
 
-        // The request and the decision are one trace of the journal; capturing again is refused.
+        // The request and the decision are one trace of the journal — a decision of its own kind,
+        // not a manual mark; the order's history answers the note «capture or release it».
         $capture = PaymentGatewayEvent::query()->where('kind', 'capture')->sole();
-        $decision = PaymentGatewayEvent::query()->where('kind', 'manual')->sole();
-        $this->assertSame([$capture->trace, 'applied', 'paid'], [$decision->trace, $decision->outcome, $decision->status_after]);
+        $decision = PaymentGatewayEvent::query()->where('kind', 'captured')->sole();
+        $this->assertSame([$capture->trace, 'internal', 'applied', 'paid'], [$decision->trace, $decision->direction, $decision->outcome, $decision->status_after]);
+        $this->assertSame(self::eur('49,99 € of 49,99 € by code'), $decision->message);
+        $this->assertSame(0, PaymentGatewayEvent::query()->where('kind', 'manual')->count());
+        $this->assertSame(self::eur('Held money captured: 49,99 € of 49,99 €'), $this->lastNote($order));
         $this->expectExceptionObject(new HoldRefused(HoldRefused::NOT_HELD));
         $this->payments()->capture($payment, null, 'code');
     }
 
+    /**
+     * A part that does not cover the order (decision of 03.11.2026, variant A): money in, no
+     * milestone «paid», the status as it was — the balance says what is still to pay.
+     */
     #[Test]
-    public function a_partial_capture_marks_what_was_taken_and_the_rest_is_due(): void
+    public function a_partial_capture_that_does_not_cover_the_order_sets_no_milestone_and_the_rest_is_due(): void
     {
+        $succeeded = $this->listen(PaymentSucceeded::class);
         [$order, $payment] = $this->held();
+        $status = $order->status_id;
+
+        $preview = $this->payments()->capture($payment, 3000, 'code', dryRun: true);
+        $this->assertStringContainsString(self::eur('19,99 € stay unpaid and the order gets no milestone «paid»'), (string) $preview->message);
 
         $this->payments()->capture($payment, 3000, 'code');
 
         $this->assertSame([PaymentStatus::Paid, 3000, 3000, null], [$payment->refresh()->status, $payment->capture_amount, $payment->paid_amount, $payment->problem]);
         $order->refresh();
+        $this->assertNull($order->paid_at);
+        $this->assertSame(0, $order->milestones()->where('milestone', 'paid')->count());
+        $this->assertSame($status, $order->status_id);
+        $this->assertTrue($order->awaiting_payment);
         $this->assertSame(3000, $order->paid_total);
-        $this->assertSame(1999, $this->app->make(Orders::class)->balance($order)->due);
+        $balance = $this->app->make(Orders::class)->balance($order);
+        $this->assertSame([1999, 'topup'], [$balance->due, $balance->kind()]);
         $this->assertSame(3000, $this->server()->payment($payment->uuid)['captured'] ?? null);
+        $this->assertCount(1, $succeeded->events);
+        $this->assertSame(self::eur('Held money captured: 30,00 € of 49,99 € — 19,99 € is still to pay'), $this->lastNote($order));
+    }
+
+    /** The manager lowers the items to what is captured first: the part covers the order, the milestone is set. */
+    #[Test]
+    public function a_partial_capture_after_the_items_are_lowered_pays_the_order(): void
+    {
+        [$order, $payment] = $this->attemptAtGateway(hold: true, items: [['type' => 'test.product', 'ref' => 1], ['type' => 'test.product', 'ref' => 3]]);
+        $this->post(route(FakeGatewaySite::ACTION, ['uuid' => $payment->uuid, 'action' => 'pay']));
+        $this->assertSame([PaymentStatus::Authorized, 5699], [$payment->refresh()->status, $payment->authorized_amount]);
+
+        $part = OrderItem::query()->where('order_id', $order->id)->where('ref_id', 3)->sole();
+        $this->app->make(Orders::class)->editItems($order->refresh(), new ItemsEdit($order->items_revision, remove: [$part->id], reason: 'Out of stock'));
+        $this->assertStringContainsString('the order gets its milestone «paid»', (string) $this->payments()->capture($payment, 4999, 'code', dryRun: true)->message);
+
+        $this->payments()->capture($payment, 4999, 'code');
+
+        $order->refresh();
+        $this->assertNotNull($order->paid_at);
+        $this->assertSame([1, 4999, 0], [$order->milestones()->where('milestone', 'paid')->count(), $order->paid_total, $this->app->make(Orders::class)->balance($order)->due]);
+        $this->assertSame(4999, $this->server()->payment($payment->uuid)['captured'] ?? null);
     }
 
     #[Test]
@@ -133,15 +175,19 @@ final class HoldTest extends OnlineCase
         $this->assertNull($order->refresh()->paid_at);
         $this->assertSame([SettleResult::CAPTURE_FAILED], array_map(static fn (PaymentProblem $e): string => $e->problem, $problems->events));
         $this->assertStringContainsString('refused to capture', $this->lastNote($order));
-        $this->assertSame('rejected', PaymentGatewayEvent::query()->where('kind', 'manual')->sole()->outcome);
+        $this->assertSame('rejected', PaymentGatewayEvent::query()->where('kind', 'captured')->sole()->outcome);
 
         // A capture that goes through puts the problem right.
         $this->payments()->capture($payment, null, 'panel');
         $this->assertSame([PaymentStatus::Paid, null], [$payment->refresh()->status, $payment->problem]);
     }
 
+    /**
+     * A hold the shop lets go is no payment that failed (decision of 03.11.2026): the order awaits
+     * payment as before, without «payment failed», and its history says the hold's end.
+     */
     #[Test]
-    public function a_void_releases_the_hold_and_the_order_hears_of_it(): void
+    public function a_void_releases_the_hold_and_the_order_awaits_payment_as_before(): void
     {
         $failed = $this->listen(PaymentFailed::class);
         [$order, $payment] = $this->held();
@@ -152,10 +198,14 @@ final class HoldTest extends OnlineCase
         $this->assertSame('The hold was released by the shop', $payment->refresh()->failure_reason);
         $this->assertSame('cancelled', $this->server()->payment($payment->uuid)['status'] ?? null);
         $order->refresh();
-        $this->assertNotNull($order->payment_failed_at);
+        $this->assertNull($order->payment_failed_at);
+        $this->assertTrue($order->awaiting_payment);
         $this->assertNull($order->paid_at);
+        $this->assertSame(self::eur('The hold of 49,99 € was released: the money goes back to the buyer'), $this->lastNote($order));
         $this->assertSame(['cancelled'], array_map(static fn (PaymentFailed $e): string => $e->status, $failed->events));
         $this->assertSame(1, PaymentGatewayEvent::query()->where('kind', 'void')->count());
+        $released = PaymentGatewayEvent::query()->where('kind', 'released')->sole();
+        $this->assertSame(['internal', 'applied', self::eur('49,99 € back to the buyer by code')], [$released->direction, $released->outcome, $released->message]);
 
         $this->expectExceptionObject(new HoldRefused(HoldRefused::NOT_HELD));
         $this->payments()->void($payment, 'code');
@@ -232,6 +282,12 @@ final class HoldTest extends OnlineCase
         });
 
         return $box;
+    }
+
+    /** Money as `Money` writes it: a no-break space before the sign. */
+    private static function eur(string $text): string
+    {
+        return str_replace(' €', "\u{00A0}€", $text);
     }
 
     private function lastNote(Order $order): string

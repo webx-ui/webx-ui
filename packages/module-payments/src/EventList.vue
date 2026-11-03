@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { WxBadge, WxTable, WxText, WxTooltip, type TableColumn } from '@webx-ui/core'
 import { useDates, WxDate } from '@webx-ui/module-admin'
-import { codeTone, foldKeys, localTimes, outcomeTone, type FoldedLine } from './format'
+import { codeTone, foldKeys, localTimes, orderLink, outcomeTone, type FoldedLine } from './format'
 import { usePaymentsLines, usePaymentsWords } from './i18n'
 import type { EventLine } from './types'
 
@@ -108,7 +108,15 @@ function signatureTone(row: EventLine) {
       </span>
     </template>
     <template #cell-order="{ row }">
-      <span v-if="row.order_number">{{ row.order_number }}</span>
+      <router-link
+        v-if="row.order_id"
+        :to="orderLink(row.order_id, row.payment_uuid)"
+        class="wx-payments-events__order"
+        data-test="event-order"
+        @click.stop
+      >
+        {{ row.order_number ?? row.order_id }}
+      </router-link>
     </template>
     <template #cell-status="{ row }">
       <wx-tooltip v-if="row.transport_error" :content="row.transport_error">
@@ -198,6 +206,16 @@ function signatureTone(row: EventLine) {
 
 .wx-payments-events__key:hover {
   color: var(--wx-text-link);
+  text-decoration: underline;
+}
+
+.wx-payments-events__order {
+  color: var(--wx-text-link);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.wx-payments-events__order:hover {
   text-decoration: underline;
 }
 

@@ -228,6 +228,7 @@ return [
         'capture-whole' => 'Este gateway captura apenas o valor retido completo.',
         'capture-preview' => 'Serão cobrados :amount de :held retidos; o pedido recebe a marca «Pago».',
         'capture-release' => ':amount volta para o comprador.',
+        'capture-short' => 'O pedido é de :owes, são capturados :amount — :left ficarão por pagar e o pedido não recebe a marca «Pago». Reduza primeiro os itens do pedido.',
         'captured' => 'O valor foi capturado.',
         'void' => 'Liberar a retenção',
         'void-title' => 'Liberar o valor retido?',

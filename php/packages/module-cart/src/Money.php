@@ -82,6 +82,12 @@ final class Money
         return $this->rules($currency)->exponent;
     }
 
+    /** The decimal sign the shop writes the currency with — «,» of «181,90 €»: a form's amount reads the same. */
+    public function decimalSign(string $currency): string
+    {
+        return $this->rules($currency)->decimal;
+    }
+
     private function rules(string $currency): CurrencyFormat
     {
         $currency = strtoupper($currency);

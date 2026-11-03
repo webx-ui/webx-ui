@@ -220,6 +220,33 @@ final class BalanceTest extends PlaceTestCase
         $this->orders()->recordPayment($order, 0, 'panel', dryRun: true);
     }
 
+    /**
+     * A part of an order not paid yet (payments §9.5, decision of 03.11.2026): a hold captured in
+     * part. Money in, no milestone, the status as it was; the balance says the rest, and the
+     * payment that covers it is `mark(paid)` — of the rest.
+     */
+    #[Test]
+    public function a_part_of_an_order_not_paid_yet_is_money_in_without_the_milestone(): void
+    {
+        $order = $this->order();
+        $status = $order->status_id;
+        $this->orders()->paymentFailed($order, 'payment:card-a', 'Declined');
+        $this->assertNotNull($order->refresh()->payment_failed_at);
+
+        $this->assertNull($this->orders()->recordPayment($order, 3000, 'payment:card-a', dryRun: true, part: true)->refusal);
+        $this->orders()->recordPayment($order, 3000, 'payment:card-a', 'ref-1', part: true);
+
+        $order->refresh();
+        $this->assertSame([3000, null, $status, null], [$order->paid_total, $order->paid_at, $order->status_id, $order->payment_failed_at]);
+        $this->assertSame(0, $order->milestones()->where('milestone', 'paid')->count());
+        $balance = $this->orders()->balance($order);
+        $this->assertSame([6998, 'topup'], [$balance->due, $balance->kind()]);
+        $this->assertSame(1, StatusChange::query()->where('order_id', $order->id)->where('kind', StatusChange::PAYMENT)->count());
+
+        $this->orders()->mark($order, Milestone::Paid, 'panel');
+        $this->assertSame([9998, 0], [$order->refresh()->paid_total, $this->orders()->balance($order)->due]);
+    }
+
     #[Test]
     public function an_overpayment_is_refunded_beyond_the_order_s_sum(): void
     {

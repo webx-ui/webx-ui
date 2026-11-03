@@ -109,6 +109,32 @@ final class OrderBlocks
     }
 
     /**
+     * Whether a block says the buyer's money is in the shop's hands though the order is not paid
+     * yet — a hold (§8.3 of payments): the buyer's pages then do not say «waiting for payment». An
+     * owner that throws says no.
+     */
+    public function held(Order $order): bool
+    {
+        foreach ($this->blocks as $key => $block) {
+            $value = $order->getAttribute($key);
+
+            if ($block->held === null || ! is_array($value)) {
+                continue;
+            }
+
+            try {
+                if (($block->held)($value, $order) === true) {
+                    return true;
+                }
+            } catch (Throwable $e) {
+                Log::warning("webx-orders: the hold of the block «{$key}» failed", ['exception' => $e]);
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * The block's price in words when no adjustment of the order carries it (§11.3 of the card):
      * null — its owner gave no words, or the block has no price.
      *

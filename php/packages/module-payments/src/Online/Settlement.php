@@ -9,6 +9,7 @@ use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Support\Carbon;
 use WebxUi\Cart\Money;
+use WebxUi\Orders\Balance;
 use WebxUi\Orders\Milestone;
 use WebxUi\Orders\Models\Order;
 use WebxUi\Orders\Orders;
@@ -48,13 +49,15 @@ final readonly class Settlement
     /**
      * @param  bool  $closing  the base closes an earlier attempt for a new one (§9.4): a
      *                         cancellation then is no failure of the order's payment
+     * @param  string|null  $actor  who asked for it — 'panel', 'mcp' of a capture or a release: the
+     *                              order's history says the end of a hold in their name
      */
-    public function settle(Payment $payment, GatewayStatus $status, bool $closing = false): SettleResult
+    public function settle(Payment $payment, GatewayStatus $status, bool $closing = false, ?string $actor = null): SettleResult
     {
-        return $this->db->transaction(function () use ($payment, $status, $closing): SettleResult {
+        return $this->db->transaction(function () use ($payment, $status, $closing, $actor): SettleResult {
             /** @var Payment $row */
             $row = Payment::query()->whereKey($payment->id)->lockForUpdate()->firstOrFail();
-            $result = $this->move($row, $status, $closing);
+            $result = $this->move($row, $status, $closing, $actor);
 
             $payment->setRawAttributes($row->getAttributes(), true);
 
@@ -83,7 +86,7 @@ final readonly class Settlement
         });
     }
 
-    private function move(Payment $row, GatewayStatus $status, bool $closing): SettleResult
+    private function move(Payment $row, GatewayStatus $status, bool $closing, ?string $actor): SettleResult
     {
         $before = $row->status;
 
@@ -96,10 +99,10 @@ final readonly class Settlement
                 ? $this->to($row, $status, PaymentStatus::Pending)
                 : $this->same($row, $status, $status->reason),
             Reported::Authorized => $this->authorized($row, $status),
-            Reported::Paid => $before === PaymentStatus::Paid ? $this->same($row, $status) : $this->paid($row, $status),
-            Reported::Failed => $this->failed($row, $status, PaymentStatus::Failed, $closing),
-            Reported::Cancelled => $this->failed($row, $status, PaymentStatus::Cancelled, $closing),
-            Reported::Expired => $this->failed($row, $status, PaymentStatus::Expired, $closing),
+            Reported::Paid => $before === PaymentStatus::Paid ? $this->same($row, $status) : $this->paid($row, $status, $actor),
+            Reported::Failed => $this->failed($row, $status, PaymentStatus::Failed, $closing, $actor),
+            Reported::Cancelled => $this->failed($row, $status, PaymentStatus::Cancelled, $closing, $actor),
+            Reported::Expired => $this->failed($row, $status, PaymentStatus::Expired, $closing, $actor),
             Reported::Refunded => $this->refunded($row, $status),
         };
     }
@@ -133,11 +136,40 @@ final readonly class Settlement
     }
 
     /**
+     * A hold captured (§9.5) says its end in the order's history — the note «Money held … capture
+     * or release it» gets its answer —, in the name of who captured it, and what is still to pay.
+     */
+    private function paid(Payment $row, GatewayStatus $status, ?string $actor): SettleResult
+    {
+        $held = $row->status === PaymentStatus::Authorized;
+        $hold = (int) ($row->authorized_amount ?? $row->amount);
+        $result = $this->paidNow($row, $status);
+
+        if ($held && $result->after === PaymentStatus::Paid && $result->problem === null) {
+            /** @var Order $order */
+            $order = Order::query()->findOrFail($row->order_id);
+            $due = $order->paid_at === null ? $this->orders->balance($order)->due : 0;
+            $this->note($row, sprintf(
+                'Held money captured: %s of %s%s',
+                $this->money->format((int) $row->paid_amount, $row->currency),
+                $this->money->format($hold, $row->currency),
+                $due > 0 ? ' — '.$this->money->format($due, $row->currency).' is still to pay' : '',
+            ), $actor);
+        }
+
+        return $result;
+    }
+
+    /**
      * Paid is stronger than anything (§8.1): from any unfinished or failed status. The order gets
      * its milestone, or a top-up when it is paid and owes more (decision 29); money for an order
      * that owes nothing, a cancelled one or not the sum asked is a problem for the manager (§9.4).
+     *
+     * A hold captured in part that does not cover the order (decision of 03.11.2026) is money in
+     * without the milestone: the order keeps its status and owes the rest by its balance — the
+     * manager lowers the items first where the rest is not to be paid.
      */
-    private function paid(Payment $row, GatewayStatus $status): SettleResult
+    private function paidNow(Payment $row, GatewayStatus $status): SettleResult
     {
         $held = $row->status === PaymentStatus::Authorized;
         $expected = $held ? ($row->capture_amount ?? $row->authorized_amount ?? $row->amount) : $row->amount;
@@ -170,6 +202,12 @@ final readonly class Settlement
             ));
         }
 
+        if ($order->paid_at === null && $held && $amount < Balance::stored($order)) {
+            $this->orders->recordPayment($order, $amount, $source, $row->gateway_ref ?? $row->uuid, $paidAt, part: true);
+
+            return $this->succeeded($row, $result);
+        }
+
         if ($order->paid_at === null) {
             $mark = $this->orders->mark($order, Milestone::Paid, $source, $paidAt, $row->gateway_ref ?? $row->uuid, null, $amount);
 
@@ -193,7 +231,7 @@ final readonly class Settlement
     }
 
     /** Failed, cancelled, expired: the order hears of it only when this is its last attempt and it is unpaid. */
-    private function failed(Payment $row, GatewayStatus $status, PaymentStatus $to, bool $closing): SettleResult
+    private function failed(Payment $row, GatewayStatus $status, PaymentStatus $to, bool $closing, ?string $actor = null): SettleResult
     {
         $before = $row->status;
 
@@ -226,7 +264,13 @@ final readonly class Settlement
         $order = Order::query()->findOrFail($row->order_id);
         $last = (int) Payment::query()->where('order_id', $row->order_id)->max('id') === $row->id;
 
-        if (! $closing && $last && $order->paid_at === null && $order->cancelled_at === null) {
+        // A hold the shop let go is no payment that failed (§9.5, decision of 03.11.2026): the
+        // money goes back, the order awaits payment as before, and its history says so.
+        $released = $held && $to === PaymentStatus::Cancelled;
+
+        if ($released) {
+            $this->note($row, 'The hold of '.$this->money->format((int) ($row->authorized_amount ?? $row->amount), $row->currency).' was released: the money goes back to the buyer', $actor);
+        } elseif (! $closing && $last && $order->paid_at === null && $order->cancelled_at === null) {
             $this->orders->paymentFailed($order, $this->source($row), $reason);
         }
 
@@ -311,11 +355,12 @@ final readonly class Settlement
         return $result;
     }
 
-    private function note(Payment $row, string $text): void
+    /** @param  string|null  $actor  'panel', 'mcp' — the line is the manager's; null — the method's */
+    private function note(Payment $row, string $text, ?string $actor = null): void
     {
         /** @var Order $order */
         $order = Order::query()->findOrFail($row->order_id);
-        $this->orders->note($order, $text, $this->source($row));
+        $this->orders->note($order, $text, $actor ?? $this->source($row));
     }
 
     private function source(Payment $row): string

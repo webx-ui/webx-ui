@@ -228,6 +228,7 @@ return [
         'capture-whole' => 'Esta pasarela solo cobra el importe retenido completo.',
         'capture-preview' => 'Se cobrarán :amount de :held retenidos; el pedido recibe la marca «Pagado».',
         'capture-release' => ':amount vuelve al comprador.',
+        'capture-short' => 'El pedido es de :owes y se cobran :amount: :left quedarán sin pagar y el pedido no recibe la marca «Pagado». Reduzca primero los artículos del pedido.',
         'captured' => 'Se cobró el dinero.',
         'void' => 'Liberar la retención',
         'void-title' => '¿Liberar el dinero retenido?',

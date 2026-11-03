@@ -52,7 +52,7 @@ function deliveryTone(row: OrderDelivery): 'danger' | 'success' | 'warning' | 'd
 }
 
 function who(line: TimelineLine): string {
-  return authorOf(t, line.source, line.admin)
+  return authorOf(t, line.source, line.admin, line.source_title)
 }
 
 function title(line: TimelineLine): string {

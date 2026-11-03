@@ -6,6 +6,7 @@ namespace WebxUi\Payments\Tests\Panel;
 
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Orders\Models\Order;
+use WebxUi\Orders\Models\StatusChange;
 use WebxUi\Payments\Models\Payment;
 use WebxUi\Payments\Models\PaymentGatewayEvent;
 use WebxUi\Payments\PaymentStatus;
@@ -30,7 +31,8 @@ final class HoldPanelTest extends PanelCase
             ->assertJsonPath('data.state', 'held')
             ->assertJsonPath('data.attempts.0.can_capture', false)
             ->assertJsonPath('data.attempts.0.partial', true)
-            ->assertJsonPath('data.attempts.0.amount_decimal', '49.99');
+            // The sum to capture as the shop writes its money: «49,99» beside «49,99 €».
+            ->assertJsonPath('data.attempts.0.amount_decimal', '49,99');
         $this->postJson($this->api('orders/'.$order->id.'/attempts/'.$payment->id.'/capture'), [])->assertForbidden();
         $this->postJson($this->api('orders/'.$order->id.'/attempts/'.$payment->id.'/void'), [])->assertForbidden();
 
@@ -49,7 +51,14 @@ final class HoldPanelTest extends PanelCase
             ->assertJsonPath('data.dry_run', true)
             ->assertJsonPath('data.amount', 3000)
             ->assertJsonPath('data.held', 4999)
-            ->assertJsonPath('data.released', 1999);
+            ->assertJsonPath('data.released', 1999)
+            // Less than the order costs: no milestone, and the dialog says what stays unpaid.
+            ->assertJsonPath('data.covers', false)
+            ->assertJsonPath('data.owes', 4999)
+            ->assertJsonPath('data.left', 1999);
+        $this->postJson($this->api('orders/'.$order->id.'/attempts/'.$payment->id.'/capture'), ['amount' => '', 'dry_run' => true])->assertOk()
+            ->assertJsonPath('data.covers', true)
+            ->assertJsonPath('data.left', 0);
         $this->postJson($this->api('orders/'.$order->id.'/attempts/'.$payment->id.'/void'), ['dry_run' => true])->assertOk()
             ->assertJsonPath('data.held', 4999);
 
@@ -64,31 +73,43 @@ final class HoldPanelTest extends PanelCase
         $this->assertNull($order->refresh()->paid_at);
     }
 
+    /** A part short of the order (decision of 03.11.2026): no milestone, the order owes the rest. */
     #[Test]
-    public function a_part_is_captured_and_the_order_is_paid_with_it(): void
+    public function a_part_is_captured_and_the_order_owes_the_rest(): void
     {
         [$order, $payment] = $this->held();
-        $this->signIn(['payments.view', 'orders.manage']);
+        $manager = $this->signIn(['payments.view', 'orders.manage']);
 
-        $this->postJson($this->api('orders/'.$order->id.'/attempts/'.$payment->id.'/capture'), ['amount' => '30.00'])->assertOk()
-            ->assertJsonPath('data.state', 'paid')
+        $this->postJson($this->api('orders/'.$order->id.'/attempts/'.$payment->id.'/capture'), ['amount' => '30,00'])->assertOk()
+            ->assertJsonPath('data.state', 'awaiting')
+            ->assertJsonPath('data.due', 1999)
+            ->assertJsonPath('data.paid', 3000)
             ->assertJsonPath('data.attempts.0.status', 'paid')
             ->assertJsonPath('data.attempts.0.can_capture', false);
 
         $this->assertSame([PaymentStatus::Paid, 3000, 'panel'], [$payment->refresh()->status, $payment->paid_amount, PaymentGatewayEvent::query()->where('kind', 'capture')->sole()->source]);
-        $this->assertSame(3000, $order->refresh()->paid_total);
+        $this->assertSame([3000, null], [$order->refresh()->paid_total, $order->paid_at]);
+
+        // The decision is «Captured» in the manager's name, and the order's history line is theirs.
+        $this->assertSame(["30,00\u{00A0}€ of 49,99\u{00A0}€ by {$manager->name}"], $this->messages($order, 'captured'));
+        $note = StatusChange::query()->where('order_id', $order->id)->where('kind', StatusChange::NOTE)->latest('id')->firstOrFail();
+        $this->assertSame(['panel', $manager->id], [$note->source, $note->admin_id]);
+        $this->assertStringStartsWith('Held money captured', (string) $note->note);
     }
 
     #[Test]
     public function the_hold_is_released(): void
     {
         [$order, $payment] = $this->held();
-        $this->signIn(['payments.view', 'orders.manage']);
+        $manager = $this->signIn(['payments.view', 'orders.manage']);
 
         $this->postJson($this->api('orders/'.$order->id.'/attempts/'.$payment->id.'/void'), [])->assertOk()
-            ->assertJsonPath('data.attempts.0.status', 'cancelled');
+            ->assertJsonPath('data.attempts.0.status', 'cancelled')
+            ->assertJsonPath('data.state', 'awaiting');
+        $this->assertSame(["49,99\u{00A0}€ back to the buyer by {$manager->name}"], $this->messages($order, 'released'));
         $this->assertSame(PaymentStatus::Cancelled, $payment->refresh()->status);
         $this->assertNull($order->refresh()->paid_at);
+        $this->assertNull($order->payment_failed_at);
 
         // Nothing is held any more: both actions say so.
         $this->postJson($this->api('orders/'.$order->id.'/attempts/'.$payment->id.'/void'), [])
@@ -117,6 +138,19 @@ final class HoldPanelTest extends PanelCase
         $this->signIn(['payments.view', 'orders.manage']);
 
         $this->postJson($this->api('orders/'.$other->id.'/attempts/'.$payment->id.'/capture'), [])->assertNotFound();
+    }
+
+    /**
+     * The tab's events of a kind as the panel reads them.
+     *
+     * @return list<string|null>
+     */
+    private function messages(Order $order, string $kind): array
+    {
+        /** @var list<array{kind: string, message: string|null}> $events */
+        $events = $this->getJson($this->api('orders/'.$order->id))->assertOk()->json('data.attempts.0.events');
+
+        return array_values(array_map(static fn (array $event): ?string => $event['message'], array_filter($events, static fn (array $event): bool => $event['kind'] === $kind)));
     }
 
     /** @return array{0: Order, 1: Payment} */

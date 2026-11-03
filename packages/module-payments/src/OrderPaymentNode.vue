@@ -458,15 +458,6 @@ const hasEvents = computed(
                   >
                     {{ w(`statuses.problems.${row.problem}`) }}
                   </wx-badge>
-                  <wx-badge
-                    v-if="row.events.some((event) => event.claimed)"
-                    type="danger"
-                    variant="outline"
-                    size="sm"
-                    data-test="attempt-claimed"
-                  >
-                    {{ t('exchange.claimed') }}
-                  </wx-badge>
                 </span>
                 <wx-date :value="row.created_at" compact />
               </span>
@@ -606,6 +597,22 @@ const hasEvents = computed(
           :description="previewError"
           data-test="hold-refused"
         />
+        <!-- Less than the order owes: no mark «Paid», the rest stays to pay (decision of 03.11.2026). -->
+        <wx-alert
+          v-else-if="preview && holding.action === 'capture' && preview.covers === false"
+          type="warning"
+          :description="
+            t('order.capture-short', {
+              owes: preview.owes_formatted ?? '',
+              amount: preview.amount_formatted,
+              left: preview.left_formatted ?? '',
+            }) +
+            (preview.released > 0
+              ? ' ' + t('order.capture-release', { amount: preview.released_formatted })
+              : '')
+          "
+          data-test="hold-short"
+        />
         <wx-text v-else-if="preview" size="sm" data-test="hold-preview">
           <template v-if="holding.action === 'capture'">
             {{
@@ -682,16 +689,18 @@ const hasEvents = computed(
   min-width: 0;
 }
 
+/* The head and what it opens are apart by a line and a gap, with the buttons of a hold or without. */
 .wx-payments-order__expanded {
-  padding: 0 var(--wx-space-12) var(--wx-space-12);
+  gap: var(--wx-space-12);
+  padding: var(--wx-space-12);
+  border-top: 1px solid var(--wx-border-muted);
 }
 
-/* The events sit inside the attempt's frame, edge to edge of its padding, never past it. */
+/* The events are the attempt's own rows: no frame of their own inside the attempt's frame, whose
+   corners would not meet its corners. */
 .wx-payments-order__events {
   min-width: 0;
   overflow: hidden;
-  border: 1px solid var(--wx-border-muted);
-  border-radius: var(--wx-radius-sm);
 }
 
 .wx-payments-order__attempts {

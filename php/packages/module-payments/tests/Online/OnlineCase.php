@@ -35,10 +35,14 @@ abstract class OnlineCase extends PaymentsCheckoutCase
         $app['config']->set('webx-payments.fake_gateway', true);
     }
 
-    /** An order placed with a method of gateway A: 'card', 'form' or 'unsigned'. */
-    protected function onlineOrder(string $kind = 'card'): Order
+    /**
+     * An order placed with a method of gateway A: 'card', 'form' or 'unsigned'.
+     *
+     * @param  list<array<string, mixed>>|null  $items  the cart's lines; null — one «Item A» of 49,99 €
+     */
+    protected function onlineOrder(string $kind = 'card', ?array $items = null): Order
     {
-        return $this->place($this->cart(), [
+        return $this->place($items !== null ? $this->cart($items) : $this->cart(), [
             'awaitPayment' => true,
             'blocks' => ['payment' => [
                 'method' => 'gateway-a-'.$kind,
@@ -54,15 +58,16 @@ abstract class OnlineCase extends PaymentsCheckoutCase
      * An attempt of a new order the buyer took to gateway A by the page's «Pay» and `/pay/go`;
      * the `card` payment is open at the gateway, the others are opened by hand as the page would.
      *
+     * @param  list<array<string, mixed>>|null  $items  the cart's lines; null — one «Item A»
      * @return array{0: Order, 1: Payment}
      */
-    protected function attemptAtGateway(string $kind = 'card', bool $hold = false): array
+    protected function attemptAtGateway(string $kind = 'card', bool $hold = false, ?array $items = null): array
     {
         if ($hold) {
             $this->app->make('db')->table('payment_methods')->where('key', 'gateway-a-card')->update(['settings' => json_encode(['hold' => true])]);
         }
 
-        $order = $this->onlineOrder($kind);
+        $order = $this->onlineOrder($kind, $items);
         $this->post($this->app->make(PaymentLinks::class)->attempts($order));
         $payment = Payment::query()->latest('id')->firstOrFail();
         $this->get($this->app->make(PaymentLinks::class)->go($payment));

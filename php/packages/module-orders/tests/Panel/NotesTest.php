@@ -7,6 +7,7 @@ namespace WebxUi\Orders\Tests\Panel;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Orders\Models\StatusChange;
 use WebxUi\Orders\Orders;
+use WebxUi\Orders\Panel\SourceNames;
 
 /**
  * «Notes» of the card (decision 90): a manager's note is a line of the order's history of the kind
@@ -26,6 +27,7 @@ final class NotesTest extends PanelTestCase
         $this->assertSame([[
             'body' => "Called the buyer.\nDeliver after six.",
             'source' => 'panel',
+            'source_title' => null,
             'author' => ['id' => $manager->id, 'name' => $manager->name, 'avatar' => null],
         ]], array_map(static fn (array $note): array => array_diff_key($note, ['id' => 1, 'created_at' => 1]), $answer->json('data.order.notes')));
         $this->assertTrue($answer->json('data.order.actions.note'));
@@ -57,6 +59,33 @@ final class NotesTest extends PanelTestCase
         $this->assertSame($manager->name, $notes[0]['author']['name']);
         // A module writes as nobody: the panel names it by its source.
         $this->assertNull($notes[1]['author']);
+    }
+
+    /** A source of a module's own — `payment:<key>` — is named by that module, never shown as a key. */
+    #[Test]
+    public function a_module_names_its_sources_for_the_notes_and_the_timeline(): void
+    {
+        $order = $this->order();
+        $this->signIn();
+        $asked = 0;
+        $this->app->make(SourceNames::class)->register('payment', static function (string $key) use (&$asked): ?string {
+            $asked++;
+
+            return $key === 'card-a' ? 'Card (gateway A)' : null;
+        });
+        $orders = $this->app->make(Orders::class);
+        $orders->note($order, 'Money held', 'payment:card-a');
+        $orders->note($order, 'Captured', 'payment:card-a');
+        $orders->note($order, 'Gone', 'payment:gone');
+
+        $card = $this->getJson($this->api($order->id))->assertOk();
+
+        $this->assertSame(['Card (gateway A)', 'Card (gateway A)', null], array_column($card->json('data.order.notes'), 'source_title'));
+        $this->assertSame(['payment:card-a', 'payment:card-a', 'payment:gone'], array_column($card->json('data.order.notes'), 'source'));
+        $timeline = array_values(array_filter($card->json('data.order.timeline'), static fn (array $line): bool => $line['kind'] === 'note'));
+        $this->assertSame(['Card (gateway A)', 'Card (gateway A)', null], array_column($timeline, 'source_title'));
+        // Named once a request, however many lines carry it.
+        $this->assertSame(2, $asked);
     }
 
     #[Test]

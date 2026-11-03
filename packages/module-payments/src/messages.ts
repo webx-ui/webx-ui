@@ -239,6 +239,8 @@ export const paymentsMessages: Record<string, Messages> = {
       'capture-whole': 'This gateway captures only the whole amount held.',
       'capture-preview': ':amount will be charged of :held held; the order gets the mark «Paid».',
       'capture-release': ':amount goes back to the buyer.',
+      'capture-short':
+        'The order is :owes, :amount is captured — :left will stay unpaid, and the order does not get the mark «Paid». Lower the order’s items first.',
       captured: 'The money was captured.',
       void: 'Release the hold',
       'void-title': 'Release the held money?',
@@ -303,8 +305,8 @@ export const paymentsMessages: Record<string, Messages> = {
       status: 'Status request',
       cancel: 'Cancellation',
       complete: 'Approval completed',
-      capture: 'Capture',
-      void: 'Hold released',
+      capture: 'Capture request',
+      void: 'Release request',
       connection: 'Connection check',
       key: 'Signing key',
       other: 'Other request',
@@ -313,6 +315,8 @@ export const paymentsMessages: Record<string, Messages> = {
       return: 'Back from the gateway',
       expire: 'Expired',
       manual: 'Marked by hand',
+      captured: 'Captured',
+      released: 'Hold released',
     },
     signature: {
       valid: 'Signature valid',

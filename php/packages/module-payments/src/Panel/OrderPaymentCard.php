@@ -64,8 +64,9 @@ final readonly class OrderPaymentCard
             // Money held (§9.5): captured — whole, or a part where the gateway takes one — or let go.
             'can_capture' => $manage && $payment->status === PaymentStatus::Authorized && $this->holds($payment) !== null,
             'partial' => $payment->status === PaymentStatus::Authorized && ($this->holds($payment)?->capturesPartially() ?? false),
+            // The sum to capture as the shop writes its money — «181,90» beside «181,90 €», not «181.90».
             'amount_decimal' => $payment->status === PaymentStatus::Authorized
-                ? GatewayAmount::toDecimal((int) ($payment->authorized_amount ?? $payment->amount), $payment->currency)
+                ? str_replace('.', $this->money->decimalSign($payment->currency), GatewayAmount::toDecimal((int) ($payment->authorized_amount ?? $payment->amount), $payment->currency))
                 : null,
         ])->reverse()->values()->all();
 

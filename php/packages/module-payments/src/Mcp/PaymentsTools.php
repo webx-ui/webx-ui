@@ -196,8 +196,11 @@ final class PaymentsTools
                 'Capture money held by an attempt (status `authorized`) — «Capture» of the order\'s tab «Payment». '
                 .'Without `amount` all of the hold; a part only where the gateway takes one (payments://catalog: '
                 .'`captures_partially`), never more than is held — what is not captured goes back to the buyer. The order '
-                .'gets the milestone «paid» of what was captured. A gateway that refuses leaves the money held with the problem '
-                .'«capture refused». A dry run says what would be captured and asks the gateway nothing.',
+                .'gets the milestone «paid» only where what is captured covers what it owes; less is money in without the '
+                .'milestone and the rest still to pay — lower the order\'s items first (orders_items_edit) where the rest is not '
+                .'to be paid. The journal gets an event `internal/captured`. A gateway that refuses leaves the money held with '
+                .'the problem «capture refused». A dry run says what would be captured, what it does to the order, and asks '
+                .'the gateway nothing.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->capture($arguments, $user)),
                 ['properties' => [
                     'payment' => $payment,
@@ -209,8 +212,9 @@ final class PaymentsTools
             Tool::mutating(
                 'void',
                 'Release money held by an attempt (status `authorized`) — «Release the hold» of the order\'s tab: the gateway '
-                .'lets the money go back to the buyer, the attempt becomes `cancelled` and the order\'s payment «did not go '
-                .'through». A dry run says what would be released and asks the gateway nothing.',
+                .'lets the money go back to the buyer, the attempt becomes `cancelled` and the order awaits payment as '
+                .'before — a release by the shop is no payment that failed. The journal gets an event `internal/released`. A '
+                .'dry run says what would be released and asks the gateway nothing.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->void($arguments, $user)),
                 ['properties' => ['payment' => $payment], 'required' => ['payment']],
                 permission: OrdersModule::MANAGE,

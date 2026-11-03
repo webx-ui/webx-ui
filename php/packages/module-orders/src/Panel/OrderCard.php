@@ -272,7 +272,7 @@ final readonly class OrderCard
      * with their photograph where one is known; otherwise only the source, which the panel names.
      *
      * @param  array<int, array{name: string, avatar: string|null}>  $people
-     * @return list<array{id: int, body: string, source: string, author: array{id: int, name: string, avatar: string|null}|null, created_at: string|null}>
+     * @return list<array{id: int, body: string, source: string, source_title: string|null, author: array{id: int, name: string, avatar: string|null}|null, created_at: string|null}>
      */
     private static function notes(Order $order, array $people): array
     {
@@ -282,6 +282,7 @@ final readonly class OrderCard
             'id' => $change->id,
             'body' => (string) $change->note,
             'source' => $change->source,
+            'source_title' => Container::getInstance()->make(SourceNames::class)->title($change->source),
             'author' => $change->admin_id !== null && isset($people[$change->admin_id])
                 ? ['id' => $change->admin_id, ...$people[$change->admin_id]]
                 : null,
@@ -605,8 +606,10 @@ final readonly class OrderCard
     private function timeline(Order $order, StatusChoices $statuses, string $locale, array $people, callable $money): array
     {
         $names = array_map(static fn (array $person): string => $person['name'], $people);
+        $sources = Container::getInstance()->make(SourceNames::class);
         $who = static fn (?int $adminId, string $source): array => [
             'source' => $source,
+            'source_title' => $sources->title($source),
             'admin' => $adminId !== null ? ($names[$adminId] ?? null) : null,
         ];
         $lines = [];

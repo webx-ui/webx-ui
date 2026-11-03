@@ -12,6 +12,7 @@ use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
 use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Cart\Money;
+use WebxUi\Orders\Balance;
 use WebxUi\Orders\Models\Order;
 use WebxUi\Payments\BeginRefused;
 use WebxUi\Payments\GatewayAmount;
@@ -128,7 +129,7 @@ final class OrderPaymentController
         $result = $this->hold(fn (): SettleResult => $payments->capture($row, $amount, 'panel', $dryRun));
 
         if ($dryRun) {
-            return ApiResponse::data($this->preview($row, $amount ?? (int) ($row->authorized_amount ?? $row->amount)));
+            return ApiResponse::data($this->preview($row, $amount ?? (int) ($row->authorized_amount ?? $row->amount), $model));
         }
 
         if ($result->problem === SettleResult::CAPTURE_FAILED) {
@@ -180,15 +181,24 @@ final class OrderPaymentController
     }
 
     /**
-     * What a capture or a release would move, for the dialog's line of consequences.
+     * What a capture or a release would move, for the dialog's line of consequences. A capture
+     * that does not cover what the order owes sets no milestone «paid» (decision of 03.11.2026):
+     * `covers` false, and `left` — what stays unpaid.
      *
      * @return array<string, mixed>
      */
-    private function preview(Payment $payment, int $amount): array
+    private function preview(Payment $payment, int $amount, ?Order $order = null): array
     {
         $held = (int) ($payment->authorized_amount ?? $payment->amount);
+        $owes = $order !== null && $order->paid_at === null ? max(0, Balance::stored($order)) : 0;
+        $left = max(0, $owes - $amount);
 
         return [
+            'covers' => $left === 0,
+            'owes' => $owes,
+            'owes_formatted' => $this->money->format($owes, $payment->currency),
+            'left' => $left,
+            'left_formatted' => $this->money->format($left, $payment->currency),
             'dry_run' => true,
             'amount' => $amount,
             'amount_formatted' => $this->money->format($amount, $payment->currency),
@@ -199,10 +209,10 @@ final class OrderPaymentController
         ];
     }
 
-    /** A capture's amount as typed, «120.50» in the order's currency; empty — all of the hold. */
+    /** A capture's amount as typed, «120.50» or «120,50» in the order's currency; empty — all of the hold. */
     private function amount(?string $typed, string $currency): ?int
     {
-        $typed = $typed !== null ? str_replace([' ', ','], ['', '.'], trim($typed)) : '';
+        $typed = $typed !== null ? str_replace([' ', "\u{00A0}", "\u{202F}", ','], ['', '', '', '.'], trim($typed)) : '';
 
         if ($typed === '') {
             return null;
