@@ -1974,7 +1974,7 @@ Lab — `https://webx-lab.dev.alexxgroup.top`, панель `/cms`. Сайт с 
 три способа шлюза A с тестовым ключом. Состояние фейка живёт в кеше сайта: холд — после
 `scripts/lab-site.sh refresh`, а не до (решение 55). Каждый шаг — затем «Payments → Gateway exchange».
 
-1. **Способы.** «Payments → Methods»: шесть способов; у «Card (gateway A)» ключ «set», «Test the
+1. **Способы.** «Payments → Methods»: пять способов (при получении, по реквизитам, три шлюза A); у «Card (gateway A)» ключ «set», «Test the
    connection» — успех и событие `out/connection`, ключ в журнале — `[secret:secret_key]`.
 2. **Успех.** Заказ картой → страница шлюза A → «Pay»: «Спасибо» — «Payment received», заказ вышел
    из «Awaiting payment», веха «Paid»; в журнале трасса `out/start` → `browser/handoff` →
@@ -1990,7 +1990,7 @@ Lab — `https://webx-lab.dev.alexxgroup.top`, панель `/cms`. Сайт с 
 8. **Неподписанное** («Gateway A (unsigned)» → «Pay»): событие уведомления `poke`, за ним
    `out/status`, статус — по ответу API; «Bad signature» у него — подменённый статус не применён.
 9. **Одобрение** («Gateway A page» → «Approve»): на возврате `complete`, затем «Paid».
-10. **Холд, полное списание.** Карта с холдом (в способе включён «Hold the money») → «Hold»: вкладка
+10. **Холд, полное списание.** В способе «Card (gateway A)» включить «Hold the money, capture later»; заказ картой → «Hold»: вкладка
     «Оплата» — «Money held … until …», кнопки «Capture» / «Release the hold»; «Capture» на всю сумму
     — веха «Paid», событие «Captured … by <имя>».
 11. **Холд, частичное.** Новый заказ с холдом → «Capture» меньше суммы: предупреждение «…will stay
