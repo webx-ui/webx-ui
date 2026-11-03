@@ -44,5 +44,9 @@ return [
         'order_link' => 'Ir al pedido',
         'redirecting' => 'Le llevamos a la página de pago…',
         'go' => 'Ir al pago',
+        'top_up' => 'Falta pagar: :amount',
+        'top_up_button' => 'Pagar la diferencia',
+        'online_now' => 'Pagar en línea ahora',
+        'wait' => 'Si ya ha pagado en otra pestaña, espere un minuto antes de volver a pagar.',
     ],
 ];

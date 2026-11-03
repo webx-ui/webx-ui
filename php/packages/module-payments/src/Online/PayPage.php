@@ -5,14 +5,17 @@ declare(strict_types=1);
 namespace WebxUi\Payments\Online;
 
 use WebxUi\Cart\Money;
+use WebxUi\Cart\Totals\Purpose;
 use WebxUi\Orders\Models\Order;
 use WebxUi\Orders\Orders;
 use WebxUi\Orders\Site\OrderLinks;
 use WebxUi\Payments\Instructions;
 use WebxUi\Payments\Kind;
 use WebxUi\Payments\Method;
+use WebxUi\Payments\MethodOption;
 use WebxUi\Payments\Methods;
 use WebxUi\Payments\Models\Payment;
+use WebxUi\Payments\PaymentContext;
 use WebxUi\Payments\PaymentStatus;
 use WebxUi\Payments\Types\BankTransfer;
 use WebxUi\Payments\Words;
@@ -23,6 +26,9 @@ use WebxUi\Payments\Words;
  * the last attempt is pending, the page asks the gateway itself, at most every 15 s, and refreshes
  * every 5 s for two minutes without JavaScript; after that — «you may close the page» and «Check
  * again», never a second «Pay»: that is how a payment gets made twice.
+ *
+ * A paid order that owes more after an edit offers «Top up» by any online method (decision 29);
+ * an order «on receipt» offers «Pay online now» (§8.5).
  */
 final readonly class PayPage
 {
@@ -39,6 +45,7 @@ final readonly class PayPage
         private OrderLinks $orderLinks,
         private Money $money,
         private Checks $checks,
+        private Closings $closings,
     ) {}
 
     /** @return array<string, mixed> */
@@ -62,17 +69,25 @@ final readonly class PayPage
             $due <= 0 => 'paid',
             $last?->status === PaymentStatus::Authorized => 'held',
             $last?->status === PaymentStatus::Pending => $last->updated_at !== null && $last->updated_at->diffInSeconds(now(), true) > self::CHECKING_SECONDS ? 'checking_long' : 'checking',
+            $order->paid_at !== null => 'top_up',
             ($block['kind'] ?? null) === Kind::Offline->value && ($block['type'] ?? null) === BankTransfer::KEY => 'transfer',
             ($block['kind'] ?? null) === Kind::Offline->value => 'on_receipt',
             default => 'pay',
         };
+
+        $online = in_array($state, ['top_up', 'on_receipt'], true) ? $this->onlineOptions($order, $due) : [];
 
         return [
             'number' => (string) $order->number,
             'state' => $state,
             'due' => $this->money->format(max(0, $due), (string) $order->currency),
             'method' => $method !== null ? ($method->title($locale) ?? Words::pick(is_array($block['title'] ?? null) ? $block['title'] : null, $locale) ?? $method->key) : null,
-            'attempts' => $state === 'pay' && $method !== null ? $this->links->attempts($order) : null,
+            'attempts' => ($state === 'pay' && $method !== null) || ($state === 'top_up' && $online !== []) ? $this->links->attempts($order) : null,
+            // «Top up» posts its method to the attempts; «Pay online now» switches the method first.
+            'online' => array_map(static fn (MethodOption $option): array => ['key' => $option->method->key, 'title' => $option->title], $online),
+            'switch' => $state === 'on_receipt' && $online !== [] ? $this->links->method($order) : null,
+            // An earlier attempt the gateway would not close may still take money (§9.4).
+            'wait' => $state === 'pay' && $this->closings->open($order, $last?->id),
             'failed' => in_array($last?->status, [PaymentStatus::Failed, PaymentStatus::Cancelled, PaymentStatus::Expired], true),
             'reason' => $last !== null && in_array($last->status, [PaymentStatus::Failed, PaymentStatus::Cancelled, PaymentStatus::Expired], true) ? $last->failure_reason : null,
             'error' => $error,
@@ -82,6 +97,23 @@ final readonly class PayPage
             'instructions' => $state === 'transfer' ? Instructions::of($block, (string) $order->number, $locale) : null,
             'order' => $this->orderLinks->page((string) $order->number, $locale) ?: null,
         ];
+    }
+
+    /**
+     * The online methods offered for what the order owes now (§8.5) — a top-up or «Pay online
+     * now». The delivery is the order's, so a rule by delivery has nothing to ask: the buyer's
+     * delivery is settled.
+     *
+     * @return list<MethodOption>
+     */
+    public function onlineOptions(Order $order, ?int $due = null): array
+    {
+        $context = new PaymentContext($due ?? $this->orders->balance($order)->due, (string) $order->currency, (string) $order->locale, null, Purpose::Order);
+
+        return array_values(array_filter(
+            $this->methods->available($context),
+            fn (MethodOption $option): bool => $option->kind === Kind::Online && $this->calls->type($option->method->type) !== null,
+        ));
     }
 
     /** The order's own method, if it is an enabled online one whose type is installed. */

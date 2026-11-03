@@ -44,5 +44,9 @@ return [
         'order_link' => 'Przejdź do zamówienia',
         'redirecting' => 'Przechodzimy do strony płatności…',
         'go' => 'Przejdź do płatności',
+        'top_up' => 'Do dopłaty: :amount',
+        'top_up_button' => 'Dopłać',
+        'online_now' => 'Zapłać teraz online',
+        'wait' => 'Jeśli już zapłaciłeś w innej karcie, poczekaj minutę, zanim zapłacisz ponownie.',
     ],
 ];

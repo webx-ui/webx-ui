@@ -19,6 +19,15 @@ final readonly class SettleResult
 
     public const string ORDER_CANCELLED = 'order_cancelled';
 
+    /** A hold ends within a day (§9.3): capture it or let it go. */
+    public const string HOLD_EXPIRING = 'hold_expiring';
+
+    /** The gateway refused a capture (§9.4): the attempt stays `authorized`. */
+    public const string CAPTURE_FAILED = 'capture_failed';
+
+    /** Problems of a hold: a capture or a void puts them right, not «resolved» (§9.4). */
+    public const array HOLD_PROBLEMS = [self::HOLD_EXPIRING, self::CAPTURE_FAILED];
+
     public function __construct(
         public Outcome $outcome,
         public PaymentStatus $before,
@@ -26,6 +35,8 @@ final readonly class SettleResult
         public ?Reported $reported = null,
         public ?string $message = null,
         public ?string $problem = null,
+        /** A dry run (§9.5): what would be, nothing written and the gateway not asked. */
+        public bool $dryRun = false,
     ) {}
 
     /** Nothing moved: the attempt is where it was, and nobody asked the gateway. */

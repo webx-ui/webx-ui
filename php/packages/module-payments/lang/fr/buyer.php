@@ -44,5 +44,9 @@ return [
         'order_link' => 'Voir la commande',
         'redirecting' => 'Redirection vers la page de paiement…',
         'go' => 'Aller au paiement',
+        'top_up' => 'Complément à payer : :amount',
+        'top_up_button' => 'Payer le complément',
+        'online_now' => 'Payer en ligne maintenant',
+        'wait' => 'Si vous avez déjà payé dans un autre onglet, attendez une minute avant de payer à nouveau.',
     ],
 ];

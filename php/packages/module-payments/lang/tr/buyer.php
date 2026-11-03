@@ -44,5 +44,9 @@ return [
         'order_link' => 'Siparişe git',
         'redirecting' => 'Ödeme sayfasına yönlendiriliyorsunuz…',
         'go' => 'Ödemeye geç',
+        'top_up' => 'Ek ödeme gerekli: :amount',
+        'top_up_button' => 'Ek ödeme yap',
+        'online_now' => 'Şimdi çevrimiçi öde',
+        'wait' => 'Başka bir sekmede zaten ödediyseniz, tekrar ödemeden önce bir dakika bekleyin.',
     ],
 ];

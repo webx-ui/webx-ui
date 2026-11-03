@@ -5,12 +5,17 @@ declare(strict_types=1);
 namespace WebxUi\Payments\Online;
 
 use Carbon\CarbonImmutable;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Support\Carbon;
 use WebxUi\Cart\Money;
 use WebxUi\Orders\Milestone;
 use WebxUi\Orders\Models\Order;
 use WebxUi\Orders\Orders;
+use WebxUi\Payments\Contracts\CapturesPayments;
+use WebxUi\Payments\Events\PaymentFailed;
+use WebxUi\Payments\Events\PaymentProblem;
+use WebxUi\Payments\Events\PaymentSucceeded;
 use WebxUi\Payments\Exchange\Outcome;
 use WebxUi\Payments\GatewayStatus;
 use WebxUi\Payments\Models\Payment;
@@ -26,6 +31,9 @@ use WebxUi\Payments\SettleResult;
  *
  * A notification and the buyer's return saying the same thing queue on the row's lock: the second
  * sees `same`, and the milestone «paid» is set once.
+ *
+ * The events of a payment (`PaymentSucceeded`, `PaymentFailed`, `PaymentProblem`) go after the
+ * commit; a rollback takes them with it.
  */
 final readonly class Settlement
 {
@@ -33,14 +41,20 @@ final readonly class Settlement
         private ConnectionInterface $db,
         private Orders $orders,
         private Money $money,
+        private Dispatcher $events,
+        private GatewayCalls $calls,
     ) {}
 
-    public function settle(Payment $payment, GatewayStatus $status): SettleResult
+    /**
+     * @param  bool  $closing  the base closes an earlier attempt for a new one (§9.4): a
+     *                         cancellation then is no failure of the order's payment
+     */
+    public function settle(Payment $payment, GatewayStatus $status, bool $closing = false): SettleResult
     {
-        return $this->db->transaction(function () use ($payment, $status): SettleResult {
+        return $this->db->transaction(function () use ($payment, $status, $closing): SettleResult {
             /** @var Payment $row */
             $row = Payment::query()->whereKey($payment->id)->lockForUpdate()->firstOrFail();
-            $result = $this->move($row, $status);
+            $result = $this->move($row, $status, $closing);
 
             $payment->setRawAttributes($row->getAttributes(), true);
 
@@ -48,7 +62,28 @@ final readonly class Settlement
         });
     }
 
-    private function move(Payment $row, GatewayStatus $status): SettleResult
+    /**
+     * A problem the base finds itself, not in an answer of the gateway (§9.3, §9.4): a hold about
+     * to expire, a capture refused. The row, a line in the order's history, `PaymentProblem`.
+     *
+     * @param  array<string, mixed>  $meta  merged into the row's meta
+     */
+    public function flag(Payment $payment, string $problem, string $words, array $meta = []): void
+    {
+        $this->db->transaction(function () use ($payment, $problem, $words, $meta): void {
+            /** @var Payment $row */
+            $row = Payment::query()->whereKey($payment->id)->lockForUpdate()->firstOrFail();
+
+            if ($meta !== []) {
+                $row->meta = [...($row->meta ?? []), ...$meta];
+            }
+
+            $this->problem($row, new SettleResult(Outcome::Same, $row->status, $row->status), $problem, $words);
+            $payment->setRawAttributes($row->getAttributes(), true);
+        });
+    }
+
+    private function move(Payment $row, GatewayStatus $status, bool $closing): SettleResult
     {
         $before = $row->status;
 
@@ -62,9 +97,9 @@ final readonly class Settlement
                 : $this->same($row, $status, $status->reason),
             Reported::Authorized => $this->authorized($row, $status),
             Reported::Paid => $before === PaymentStatus::Paid ? $this->same($row, $status) : $this->paid($row, $status),
-            Reported::Failed => $this->failed($row, $status, PaymentStatus::Failed),
-            Reported::Cancelled => $this->failed($row, $status, PaymentStatus::Cancelled),
-            Reported::Expired => $this->failed($row, $status, PaymentStatus::Expired),
+            Reported::Failed => $this->failed($row, $status, PaymentStatus::Failed, $closing),
+            Reported::Cancelled => $this->failed($row, $status, PaymentStatus::Cancelled, $closing),
+            Reported::Expired => $this->failed($row, $status, PaymentStatus::Expired, $closing),
             Reported::Refunded => $this->refunded($row, $status),
         };
     }
@@ -85,10 +120,13 @@ final readonly class Settlement
         $amount = $status->amount ?? $row->amount;
         $row->authorized_amount = $amount;
         $row->authorized_at = Carbon::now();
-        $row->hold_expires_at = $status->holdExpiresAt !== null ? Carbon::instance($status->holdExpiresAt) : null;
+        // A gateway that does not say how long it holds holds as long as its type says (§6.4).
+        $type = $this->calls->type($row->type);
+        $expires = $status->holdExpiresAt ?? ($type instanceof CapturesPayments ? CarbonImmutable::now()->addDays($type->maxHoldDays()) : null);
+        $row->hold_expires_at = $expires !== null ? Carbon::instance($expires) : null;
         $result = $this->to($row, $status, PaymentStatus::Authorized);
 
-        $until = $status->holdExpiresAt !== null ? ' until '.$status->holdExpiresAt->format('d.m.Y') : '';
+        $until = $expires !== null ? ' until '.$expires->format('d.m.Y') : '';
         $this->note($row, 'Money held: '.$this->money->format($amount, $row->currency).$until.' — capture or release it');
 
         return $result;
@@ -136,14 +174,15 @@ final readonly class Settlement
             $mark = $this->orders->mark($order, Milestone::Paid, $source, $paidAt, $row->gateway_ref ?? $row->uuid, null, $amount);
 
             if ($mark->marked()) {
-                return $result;
+                return $this->succeeded($row, $result);
             }
         }
 
+        // A top-up after an edit of a paid order (decision 29): money in, no second milestone.
         if ($this->orders->balance($order->refresh())->due > 0) {
             $this->orders->recordPayment($order, $amount, $source, $row->gateway_ref ?? $row->uuid, $paidAt);
 
-            return $result;
+            return $this->succeeded($row, $result);
         }
 
         return $this->problem($row, $result, SettleResult::DUPLICATE, sprintf(
@@ -154,7 +193,7 @@ final readonly class Settlement
     }
 
     /** Failed, cancelled, expired: the order hears of it only when this is its last attempt and it is unpaid. */
-    private function failed(Payment $row, GatewayStatus $status, PaymentStatus $to): SettleResult
+    private function failed(Payment $row, GatewayStatus $status, PaymentStatus $to, bool $closing): SettleResult
     {
         $before = $row->status;
 
@@ -172,9 +211,12 @@ final readonly class Settlement
             return $this->ignored($row, $status, "The attempt is {$before->value} already");
         }
 
-        $reason = $status->reason ?? match ($to) {
-            PaymentStatus::Cancelled => 'The payment was cancelled',
-            PaymentStatus::Expired => 'The payment expired',
+        $held = $before === PaymentStatus::Authorized;
+        $reason = $status->reason ?? match (true) {
+            $held && $to === PaymentStatus::Cancelled => 'The hold was released by the shop',
+            $held && $to === PaymentStatus::Expired => 'The hold expired',
+            $to === PaymentStatus::Cancelled => 'The payment was cancelled',
+            $to === PaymentStatus::Expired => 'The payment expired',
             default => 'The payment did not go through',
         };
         $row->failure_reason = mb_substr($reason, 0, 500);
@@ -184,9 +226,11 @@ final readonly class Settlement
         $order = Order::query()->findOrFail($row->order_id);
         $last = (int) Payment::query()->where('order_id', $row->order_id)->max('id') === $row->id;
 
-        if ($last && $order->paid_at === null && $order->cancelled_at === null) {
+        if (! $closing && $last && $order->paid_at === null && $order->cancelled_at === null) {
             $this->orders->paymentFailed($order, $this->source($row), $reason);
         }
+
+        $this->events->dispatch(new PaymentFailed($row->id, $row->uuid, $row->order_id, $row->method_key, $to->value, $row->failure_reason));
 
         return $result;
     }
@@ -211,6 +255,12 @@ final readonly class Settlement
     {
         $before = $row->status;
         $row->status = $to;
+
+        // A hold's problem is put right by its end — a capture, a release, an expiry (§9.4).
+        if ($before === PaymentStatus::Authorized && in_array($row->problem, SettleResult::HOLD_PROBLEMS, true)) {
+            $row->problem = null;
+        }
+
         $row->save();
 
         return new SettleResult(Outcome::Applied, $before, $to, $status->status, $status->reason);
@@ -239,8 +289,26 @@ final readonly class Settlement
         $row->problem = $problem;
         $row->save();
         $this->note($row, $words);
+        $this->events->dispatch(new PaymentProblem(
+            $row->id,
+            $row->uuid,
+            $row->order_id,
+            $row->method_key,
+            $problem,
+            $words,
+            $row->paid_amount ?? $row->authorized_amount ?? $row->amount,
+            $row->currency,
+            $row->gateway_ref,
+        ));
 
         return new SettleResult($result->outcome, $result->before, $result->after, $result->reported, $words, $problem);
+    }
+
+    private function succeeded(Payment $row, SettleResult $result): SettleResult
+    {
+        $this->events->dispatch(new PaymentSucceeded($row->id, $row->uuid, $row->order_id, $row->method_key, (int) $row->paid_amount, $row->currency, $row->gateway_ref));
+
+        return $result;
     }
 
     private function note(Payment $row, string $text): void

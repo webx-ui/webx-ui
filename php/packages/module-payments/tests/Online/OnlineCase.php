@@ -7,6 +7,7 @@ namespace WebxUi\Payments\Tests\Online;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Http;
 use WebxUi\Orders\Models\Order;
+use WebxUi\Payments\Models\Payment;
 use WebxUi\Payments\Models\PaymentGatewayEvent;
 use WebxUi\Payments\Online\PaymentLinks;
 use WebxUi\Payments\Testing\FakeGatewayServer;
@@ -47,6 +48,30 @@ abstract class OnlineCase extends PaymentsCheckoutCase
                 'price' => null,
             ]],
         ]);
+    }
+
+    /**
+     * An attempt of a new order the buyer took to gateway A by the page's «Pay» and `/pay/go`;
+     * the `card` payment is open at the gateway, the others are opened by hand as the page would.
+     *
+     * @return array{0: Order, 1: Payment}
+     */
+    protected function attemptAtGateway(string $kind = 'card', bool $hold = false): array
+    {
+        if ($hold) {
+            $this->app->make('db')->table('payment_methods')->where('key', 'gateway-a-card')->update(['settings' => json_encode(['hold' => true])]);
+        }
+
+        $order = $this->onlineOrder($kind);
+        $this->post($this->app->make(PaymentLinks::class)->attempts($order));
+        $payment = Payment::query()->latest('id')->firstOrFail();
+        $this->get($this->app->make(PaymentLinks::class)->go($payment));
+
+        if ($kind !== 'card') {
+            $this->server()->open($payment->uuid, $kind, 4999, 'EUR', $kind === 'form' ? 'wait' : 'CREATED', ['return_url' => $this->app->make(PaymentLinks::class)->returnUrl($payment)]);
+        }
+
+        return [$order, $payment->refresh()];
     }
 
     protected function server(): FakeGatewayServer

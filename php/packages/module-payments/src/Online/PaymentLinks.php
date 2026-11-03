@@ -25,6 +25,8 @@ final readonly class PaymentLinks
 
     public const string ATTEMPTS = 'webx.payments.attempts';
 
+    public const string METHOD = 'webx.payments.method';
+
     public const string GO = 'webx.payments.go';
 
     public const string RETURN = 'webx.payments.return';
@@ -48,6 +50,12 @@ final readonly class PaymentLinks
     public function attempts(Order $order): string
     {
         return $this->signed(self::ATTEMPTS, $order);
+    }
+
+    /** Where «Pay online now» posts another method (§8.5): signed like the page. */
+    public function method(Order $order): string
+    {
+        return $this->signed(self::METHOD, $order);
     }
 
     /** The step to the gateway (§8.2): the uuid is the key, nothing else is in the address. */

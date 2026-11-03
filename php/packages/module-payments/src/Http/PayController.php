@@ -14,6 +14,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use WebxUi\Orders\Models\Order;
 use WebxUi\Payments\BeginRefused;
+use WebxUi\Payments\Method;
 use WebxUi\Payments\Models\Payment;
 use WebxUi\Payments\Online\Checks;
 use WebxUi\Payments\Online\Handoffs;
@@ -48,12 +49,20 @@ final readonly class PayController
         ]);
     }
 
-    /** «Pay»: a new attempt with the order's own online method, then the step to the gateway. */
+    /**
+     * «Pay»: a new attempt with the order's own online method, then the step to the gateway. A
+     * top-up of a paid order (decision 29) may take another online method — the one posted, if it
+     * is offered; the order's block stays: it tells of the first payment.
+     */
     public function attempt(Request $request, Payments $payments): RedirectResponse
     {
         $order = $this->order($request);
         $block = is_array($order->payment) ? $order->payment : [];
         $method = is_string($block['method'] ?? null) ? $this->page->online((string) $block['method']) : null;
+
+        if ($order->paid_at !== null && $request->filled('method')) {
+            $method = $this->offered($order, $request->string('method')->toString());
+        }
 
         if ($method === null) {
             return $this->redirect->to($this->links->page($order), 303);
@@ -66,6 +75,25 @@ final readonly class PayController
         }
 
         return $this->redirect->to($this->links->go($payment), 303);
+    }
+
+    /** «Pay online now» of an order «on receipt» (§8.5): the method switched, then the gateway. */
+    public function method(Request $request, Payments $payments): RedirectResponse
+    {
+        $order = $this->order($request);
+        $method = $this->offered($order, $request->string('method')->toString());
+
+        if ($method === null) {
+            return $this->redirect->to($this->links->page($order), 303);
+        }
+
+        try {
+            $payment = $payments->switchMethod($order, $method, 'pay-page');
+        } catch (BeginRefused $refused) {
+            return $this->redirect->to($this->links->page($order), 303)->with(Handoffs::FLASH, $refused->getMessage());
+        }
+
+        return $this->redirect->to($payment !== null ? $this->links->go($payment) : $this->links->page($order), 303);
     }
 
     public function go(Request $request, Handoffs $handoffs, string $uuid): Response
@@ -95,6 +123,18 @@ final readonly class PayController
             'status' => $payment->status->value,
             'final' => ! in_array($payment->status, [PaymentStatus::Created, PaymentStatus::Pending], true),
         ]);
+    }
+
+    /** An online method the page offers this order now; null — anything else. */
+    private function offered(Order $order, string $key): ?Method
+    {
+        foreach ($this->page->onlineOptions($order) as $option) {
+            if ($option->method->key === $key) {
+                return $option->method;
+            }
+        }
+
+        return null;
     }
 
     private function order(Request $request): Order

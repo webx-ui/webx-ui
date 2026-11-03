@@ -2,7 +2,8 @@
     The page of payment of an order (spec §8.4) behind its signed link, in the site's layout with
     the handle `payments.pay` (the orders' layout, `webx-orders.layout`): paid, cancelled, held,
     «we are checking» (refreshes itself for two minutes, then «Check again»), «did not go through»
-    with the reason and «Pay» with an online method, the bank details of a transfer. Nobody but the
+    with the reason and «Pay» with an online method, «Top up» of a paid order that owes more, «Pay
+    online now» of an order on receipt, the bank details of a transfer. Nobody but the
     holder of the link reads it: `noindex`, `no-store`.
 
     Override: <layer>/views/vendor/webx-payments/pay/page.blade.php.
@@ -45,8 +46,28 @@
                 <p class="webx-payments-pay__message" role="status">{{ __('webx-payments::buyer.pay.checking_long') }}</p>
                 <p><a class="webx-payments-pay__link" href="{{ $page['check'] }}">{{ __('webx-payments::buyer.pay.check_again') }}</a></p>
                 @break
+            @case('top_up')
+                <p class="webx-payments-pay__amount">{{ __('webx-payments::buyer.pay.top_up', ['amount' => $page['due']]) }}</p>
+                @foreach ($page['online'] as $option)
+                    <form class="webx-payments-pay__form" method="post" action="{{ $page['attempts'] }}">
+                        @csrf
+                        <input type="hidden" name="method" value="{{ $option['key'] }}">
+                        <button class="webx-payments-pay__button" type="submit">{{ __('webx-payments::buyer.pay.top_up_button') }} — {{ $option['title'] }}</button>
+                    </form>
+                @endforeach
+                @break
             @case('on_receipt')
                 <p class="webx-payments-pay__message">{{ __('webx-payments::buyer.pay.on_receipt') }}</p>
+                @if ($page['switch'])
+                    <p class="webx-payments-pay__amount">{{ __('webx-payments::buyer.pay.due', ['amount' => $page['due']]) }}</p>
+                    @foreach ($page['online'] as $option)
+                        <form class="webx-payments-pay__form" method="post" action="{{ $page['switch'] }}">
+                            @csrf
+                            <input type="hidden" name="method" value="{{ $option['key'] }}">
+                            <button class="webx-payments-pay__button" type="submit">{{ __('webx-payments::buyer.pay.online_now') }} — {{ $option['title'] }}</button>
+                        </form>
+                    @endforeach
+                @endif
                 @break
             @case('transfer')
                 <p class="webx-payments-pay__amount">{{ __('webx-payments::buyer.pay.due', ['amount' => $page['due']]) }}</p>
@@ -57,6 +78,9 @@
                     <p class="webx-payments-pay__message webx-payments-pay__message--error">{{ __('webx-payments::buyer.pay.failed') }}@if ($page['reason']): {{ $page['reason'] }}@endif</p>
                 @endif
                 <p class="webx-payments-pay__amount">{{ __('webx-payments::buyer.pay.due', ['amount' => $page['due']]) }}</p>
+                @if ($page['wait'])
+                    <p class="webx-payments-pay__message" role="note">{{ __('webx-payments::buyer.pay.wait') }}</p>
+                @endif
                 @if ($page['attempts'])
                     <form class="webx-payments-pay__form" method="post" action="{{ $page['attempts'] }}">
                         @csrf

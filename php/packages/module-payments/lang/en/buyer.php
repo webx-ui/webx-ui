@@ -44,5 +44,9 @@ return [
         'order_link' => 'Go to the order',
         'redirecting' => 'Taking you to the payment page…',
         'go' => 'Go to payment',
+        'top_up' => 'A top-up of :amount is due',
+        'top_up_button' => 'Top up',
+        'online_now' => 'Pay online now',
+        'wait' => 'If you have already paid in another tab, wait a minute before paying again.',
     ],
 ];

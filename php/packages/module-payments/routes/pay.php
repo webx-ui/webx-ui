@@ -39,6 +39,9 @@ Route::group(['webx_service' => true], static function () use ($middleware, $pat
         Route::post($prefix.$path.'/{number}/attempts', [PayController::class, 'attempt'])
             ->middleware('throttle:webx-payments-write')
             ->name(PaymentLinks::ATTEMPTS.$suffix);
+        Route::post($prefix.$path.'/{number}/method', [PayController::class, 'method'])
+            ->middleware('throttle:webx-payments-write')
+            ->name(PaymentLinks::METHOD.$suffix);
     };
 
     Route::middleware($middleware)->group(static fn () => $pages('', ''));

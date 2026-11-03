@@ -44,5 +44,9 @@ return [
         'order_link' => 'Vai all’ordine',
         'redirecting' => 'Ti portiamo alla pagina di pagamento…',
         'go' => 'Vai al pagamento',
+        'top_up' => 'Da integrare: :amount',
+        'top_up_button' => 'Paga la differenza',
+        'online_now' => 'Paga online ora',
+        'wait' => 'Se hai già pagato in un’altra scheda, attendi un minuto prima di pagare di nuovo.',
     ],
 ];

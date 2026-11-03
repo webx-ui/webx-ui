@@ -44,5 +44,9 @@ return [
         'order_link' => 'Zur Bestellung',
         'redirecting' => 'Weiter zur Zahlungsseite…',
         'go' => 'Zur Zahlung',
+        'top_up' => 'Nachzahlung fällig: :amount',
+        'top_up_button' => 'Nachzahlen',
+        'online_now' => 'Jetzt online bezahlen',
+        'wait' => 'Wenn Sie bereits in einem anderen Tab bezahlt haben, warten Sie eine Minute, bevor Sie erneut bezahlen.',
     ],
 ];

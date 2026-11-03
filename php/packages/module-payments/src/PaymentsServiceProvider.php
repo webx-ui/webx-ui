@@ -18,6 +18,7 @@ use WebxUi\Orders\Checkout\Slots\CheckoutSlots;
 use WebxUi\Orders\Models\Order;
 use WebxUi\Payments\Checkout\PaymentsCheckoutSlot;
 use WebxUi\Payments\Console\ExchangePruneCommand;
+use WebxUi\Payments\Console\PollCommand;
 use WebxUi\Payments\Console\SelectionsPruneCommand;
 use WebxUi\Payments\Doctor\ExchangeSizeCheck;
 use WebxUi\Payments\Exchange\ExchangeConnection;
@@ -26,11 +27,15 @@ use WebxUi\Payments\Exchange\ExchangeMasker;
 use WebxUi\Payments\Exchange\InProcessHosts;
 use WebxUi\Payments\Models\PaymentMethod;
 use WebxUi\Payments\Online\Checks;
+use WebxUi\Payments\Online\Closings;
 use WebxUi\Payments\Online\GatewayCalls;
 use WebxUi\Payments\Online\Handoffs;
+use WebxUi\Payments\Online\Holds;
+use WebxUi\Payments\Online\InternalEvents;
 use WebxUi\Payments\Online\Notifications;
 use WebxUi\Payments\Online\PaymentLinks;
 use WebxUi\Payments\Online\PayPage;
+use WebxUi\Payments\Online\Poll;
 use WebxUi\Payments\Online\Returns;
 use WebxUi\Payments\Online\Settlement;
 use WebxUi\Payments\Online\StartRequests;
@@ -69,6 +74,10 @@ class PaymentsServiceProvider extends ServiceProvider
         $this->app->singleton(Handoffs::class);
         $this->app->singleton(Settlement::class);
         $this->app->singleton(Checks::class);
+        $this->app->singleton(InternalEvents::class);
+        $this->app->singleton(Holds::class);
+        $this->app->singleton(Closings::class);
+        $this->app->singleton(Poll::class);
         $this->app->singleton(Notifications::class);
         $this->app->singleton(Returns::class);
         $this->app->singleton(Methods::class);
@@ -147,6 +156,8 @@ class PaymentsServiceProvider extends ServiceProvider
 
         // The choices of carts the cart's own pruning took (§5).
         $this->callAfterResolving(Schedule::class, static function (Schedule $schedule): void {
+            // A lost notification, a closed tab, a hold about to end (§9.3).
+            $schedule->command('webx:payments:poll')->everyFiveMinutes()->withoutOverlapping()->onOneServer();
             $schedule->command('webx:payments:selections-prune')->dailyAt('03:40')->withoutOverlapping()->onOneServer();
         });
 
@@ -154,7 +165,7 @@ class PaymentsServiceProvider extends ServiceProvider
             return;
         }
 
-        $this->commands([ExchangePruneCommand::class, SelectionsPruneCommand::class]);
+        $this->commands([ExchangePruneCommand::class, PollCommand::class, SelectionsPruneCommand::class]);
 
         $this->publishes([
             __DIR__.'/../config/webx-payments.php' => config_path('webx-payments.php'),
