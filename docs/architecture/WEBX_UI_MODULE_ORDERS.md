@@ -1009,6 +1009,13 @@ now()`, событие `OrderPaymentFailed`. Заказ остаётся «ож�
 дело оформления и оплаты. Фильтр «оплата не прошла» = `awaiting_payment AND payment_failed_at IS
 NOT NULL`. Это не веха (решение 28): попыток бывает несколько, а веха — одна на заказ.
 
+**Деньги заблокированы (холд).** Попытка встала в холд после неудачной (§9.5 спеки оплаты, решение
+67 там) → `module-payments` зовёт `paymentHeld()`: `payment_failed_at = null` — неудачная попытка
+больше не состояние заказа, как после пришедшей оплаты. Заказ по-прежнему «ожидает оплаты»: вехи
+нет, `awaiting_payment` не меняется; строки истории и события нет — холд пишет в историю сама
+оплата. Без флага или у оплаченного заказа — тишина. Частично списанный холд снимает флаг тоже
+(`recordPayment(part: true)`, §36.3).
+
 Деньги, пришедшие на отменённый заказ: `mark(paid)` отказывает, а модуль оплаты пишет `note()` («Платёж
 … пришёл после отмены») — менеджер решает возвратом.
 
@@ -2501,6 +2508,22 @@ interface SummaryPart
 строка. Отправка — оболочкой форм `widgets`, своей нет. Без JavaScript страница работает: шаги
 раскрыты все, каждый — своя форма с перезагрузкой.
 
+**«Place the order» сначала сохраняет открытый шаг** (решение 68 спеки оплаты). Покупатель
+заполнил шаг, но не нажал его «Save», — без этого заказ ушёл бы со старыми данными шага или
+отказом. Скрипт ловит `webx:form:submit` формы подтверждения и ищет первый шаг со своей формой
+оболочки (форма слота сохраняет себя сама, §22), который не готов (нет `is-done`) или в котором
+печатали после отрисовки (`input`/`change`; перерисованный шаг — новая форма):
+
+- нашёл — отправка заказа отменяется, шаг отправляется, как его «Save»; сохранился — после
+  перерисовки колонки (§23.2) «Place the order» нажимается снова;
+- шаг не сохранился (сервер ответил ошибкой или оболочка не отправила форму — поле неверно) —
+  ошибки у полей шага, шаг раскрыт (`is-editing`) и прокручен к середине, заказ не отправлен;
+- каждый шаг — не больше раза за нажатие: шаг, который сервер держит открытым, не крутит кнопку
+  по кругу;
+- таких шагов нет — заказ уходит как обычно.
+
+Тесты — `resources/js/checkout.test.js`.
+
 ## 28. Антиспам
 
 Оформление — форма сайта, которая создаёт запись в базе и шлёт письма; боту интересна. Защита —
@@ -2887,7 +2910,7 @@ Orders::placeByManager(ManagerOrder, source = panel) → DB::transaction:
 | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
 | `place()`                                | `paid_total = 0`, `balance = payable`                                                                         |
 | `mark(paid, …, amount?)`                 | `paid_total += amount ?? max(0, balance)`: без суммы «Отметить оплату» значит «оплачен целиком» — как сегодня |
-| `recordPayment()` (§36.3)                | `paid_total += amount` — доплата у заказа, который уже оплачен                                                |
+| `recordPayment()` (§36.3)                | `paid_total += amount` — доплата у оплаченного заказа; `part: true` — часть долга неоплаченного (холд)        |
 | `refund()`                               | `refunded_total += amount`                                                                                    |
 | `reverseRefund()`                        | `refunded_total −= amount` записи                                                                             |
 | `cancel()` и перевод в отменяющий статус | `owed` → 0                                                                                                    |
@@ -2917,7 +2940,8 @@ final class Orders
      * No milestone — `paid` is set once (decision 24); a history line `payment` and
      * OrderPaymentReceived. A Refusal: `not_paid` (the first payment is mark(paid)), `cancelled`.
      * `part` — money of an order not paid yet that does not cover it: a hold captured in part
-     * (payments §9.5, decision 59 there) — no milestone, no move, the balance says the rest.
+     * (payments §9.5, decisions 59 and 66 there) — no milestone, no move, a history line
+     * `payment_part`, the flag «payment failed» down; the balance says the rest.
      */
     public function recordPayment(Order $order, int $amount, string $source,
         ?string $reference = null, ?CarbonInterface $at = null, ?string $note = null,
@@ -2936,6 +2960,17 @@ final class Orders
 - `mark()` получает необязательный `?int $amount` (последним параметром): шлюз передаёт
   подтверждённую сумму, менеджер — нет (тогда — весь остаток). Сумма в веху не пишется — только в
   `paid_total`; строка вехи `paid` остаётся одной (решение 24).
+- **Частичное списание — строка `payment_part`**, не доплата (решение 66 спеки оплаты).
+  `recordPayment(part: true)` у неоплаченного заказа: `paid_total += amount`, вехи `paid` и
+  перевода нет, `payment_failed_at = null` (деньги пришли — неудачная попытка больше не состояние
+  заказа), событие `OrderPaymentReceived` — как у доплаты. Строка истории — своего вида
+  `StatusChange::PAYMENT_PART` (`kind = payment_part`), примечание
+  `<сумма>/<долг до списания>[ [ref]][: note]` в минорных единицах (`Orders::paymentNote(…, $owed)`; `]` в ref → `)`). Долг — `Balance::stored()`
+  до списания. Панель читает примечание `OrderCard::paymentLine()` (`owed`) и подписывает строку
+  «Captured :amount of :total» (`timeline-payment_part`, тон success); MCP `orders_history` отдаёт
+  `amount` минорными и `amount_formatted`, как у `payment`. «Оплачено» в «Сводке» (§42.4) считает
+  доплатами только строки `payment`: частичное списание — часть первой оплаты, не «+ N».
+  Покрывающая оплата потом — `mark(paid)`, как всегда.
 - `Balance` — `owed`, `paid`, `refunded`, `due` (`max(0, balance)`), `over` (`max(0, −balance)`),
   `tendersOver` (§37.5), `currency`. Его же отдают `OrderData` (`paidTotal`, `balance`) и ответы
   панели и MCP — посчитанным, а не формулой у каждого.
