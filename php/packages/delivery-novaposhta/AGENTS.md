@@ -40,7 +40,9 @@ npm package of its own.
   `getCities` (`Directories\Localities`; the carrier leads `UA`), then the whole network of
   points from `getWarehouses` (`Directories\Points`). `Branch` and `Store` are `branch`,
   `Postomat` is `locker`. `DropOff`, `Fulfillment` and `DenyToSelect=1` are left out and
-  counted in the run's warnings. A locker `ForResidentsOfEntrance` is kept with the base's
+  counted in the run's warnings, said in words on the carriers screen (`NamesSkipReasons`,
+  `remarks.*` of the dictionary). A point's name carries its street, so lists put no address
+  under it (`NamesPointLines`: none after a colon, else the town). A locker `ForResidentsOfEntrance` is kept with the base's
   restriction `residents`: said beside it, listed after the others. The base fills a town's
   missing coordinates from its points.
 - **Streets**, weekly (`30 0 * * 0`), pages of 2 000: `getStreet` with an empty search for every

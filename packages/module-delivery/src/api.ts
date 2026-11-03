@@ -14,14 +14,13 @@ import type {
   Countries,
   LocalityBrief,
   LocalityDetail,
-  LocalityRow,
+  LocalityPage,
   MethodBlank,
   MethodDetail,
   MethodRow,
   MethodType,
   OrderDelivery,
   Option,
-  Page,
   PointDetail,
   PointsPage,
   RegionRow,
@@ -176,7 +175,7 @@ export function createDeliveryApi(admin: AdminContext) {
       region?: number | null
       source?: string
       state?: string
-    }) => http.get<Page<LocalityRow>>(`${base}/geography/localities${query(params)}`),
+    }) => http.get<LocalityPage>(`${base}/geography/localities${query(params)}`),
     suggest: (q: string, country?: string | null) =>
       http
         .get<{

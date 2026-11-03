@@ -100,13 +100,21 @@ class GeoLocality extends Model
     /** "Town D, District C, Region B" — the line two places of one name are told apart by. */
     public function label(?string $locale = null): string
     {
-        $parts = [
-            $this->name($locale),
-            Names::pick($this->district, $locale),
-            $this->region?->name($locale),
-        ];
+        $name = $this->name($locale);
+        $seen = [Normalizer::key($name)];
+        $parts = [$name];
 
-        return implode(', ', array_filter($parts, static fn (?string $part): bool => $part !== null && $part !== ''));
+        // «Kyiv, Kyiv» says nothing twice: a city that is its own region (or district) is named once.
+        foreach ([Names::pick($this->district, $locale), $this->region?->name($locale)] as $part) {
+            if ($part === null || $part === '' || in_array(Normalizer::key($part), $seen, true)) {
+                continue;
+            }
+
+            $seen[] = Normalizer::key($part);
+            $parts[] = $part;
+        }
+
+        return implode(', ', $parts);
     }
 
     /**

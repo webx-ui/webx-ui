@@ -7,6 +7,7 @@ namespace WebxUi\Delivery;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use WebxUi\Cache\CacheGroups;
+use WebxUi\Delivery\Contracts\NamesPointLines;
 use WebxUi\Delivery\Models\DeliveryPoint;
 use WebxUi\Delivery\Sync\Limits;
 use WebxUi\Delivery\Sync\Schedule;
@@ -108,7 +109,7 @@ final class Points
             : $load();
 
         return [
-            'points' => array_values(array_map(fn (array $row): array => $this->item($row, $locale), $found['rows'])),
+            'points' => array_values(array_map(fn (array $row): array => $this->item($row, $locale, $carrier), $found['rows'])),
             'total' => $found['total'],
             'page' => $page,
             'more' => $page * $perPage < $found['total'],
@@ -140,7 +141,7 @@ final class Points
                 'schedule' => $point->schedule,
                 'kind' => $point->kind,
                 'restriction' => $point->restriction,
-            ], $locale),
+            ], $locale, $point->carrier),
             'carrier' => $point->carrier,
             'locality_id' => $point->locality_id,
             'phone' => $point->phone,
@@ -155,9 +156,9 @@ final class Points
      * One row as the list shows it.
      *
      * @param  array<string, mixed>  $row
-     * @return array{id: int, number: string|null, kind: string, title: string, address: string, postcode: string|null, today: string|null, restriction: string|null, restricted: string|null}
+     * @return array{id: int, number: string|null, kind: string, title: string, address: string, line: string|null, postcode: string|null, today: string|null, restriction: string|null, restricted: string|null}
      */
-    private function item(array $row, ?string $locale): array
+    private function item(array $row, ?string $locale, ?string $carrier = null): array
     {
         $decode = static fn (mixed $value): ?array => is_array($value) ? $value : (is_string($value) ? json_decode($value, true) : null);
         $number = isset($row['number']) ? (string) $row['number'] : null;
@@ -165,18 +166,32 @@ final class Points
         $title = Names::pick($decode($row['titles'] ?? null), $locale);
         $schedule = Schedule::fromArray($decode($row['schedule'] ?? null));
         $restriction = isset($row['restriction']) && $row['restriction'] !== '' ? (string) $row['restriction'] : null;
+        $title = $title ?? trim(app(PointKinds::class)->label($kind, $locale).' '.$number);
+        $address = (string) Names::pick($decode($row['address'] ?? null), $locale);
 
         return [
             'id' => (int) $row['id'],
             'number' => $number,
             'kind' => $kind,
-            'title' => $title ?? trim(app(PointKinds::class)->label($kind, $locale).' '.$number),
-            'address' => (string) Names::pick($decode($row['address'] ?? null), $locale),
+            'title' => $title,
+            'address' => $address,
+            // What a list puts under the title: the address, unless the carrier's titles say it.
+            'line' => self::line($carrier, $title, $address),
             'postcode' => isset($row['postcode']) ? (string) $row['postcode'] : null,
             'today' => $schedule?->todayLabel($locale, null, (string) config('app.timezone', 'UTC')),
             'restriction' => $restriction,
             'restricted' => $restriction === null ? null : self::restriction($restriction, $locale),
         ];
+    }
+
+    /** The line under a point's title in a list: the carrier's own ({@see NamesPointLines}) or the address. */
+    public static function line(?string $carrier, string $title, string $address): ?string
+    {
+        $carriers = app(Carriers::class);
+        $one = $carrier !== null && $carriers->has($carrier) ? $carriers->get($carrier) : null;
+        $line = $one instanceof NamesPointLines ? $one->pointLine($title, $address) : $address;
+
+        return $line === null || trim($line) === '' ? null : $line;
     }
 
     /**

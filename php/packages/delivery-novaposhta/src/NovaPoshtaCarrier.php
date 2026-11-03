@@ -7,6 +7,8 @@ namespace WebxUi\Delivery\NovaPoshta;
 use WebxUi\Delivery\CarrierLocalities;
 use WebxUi\Delivery\ConnectionResult;
 use WebxUi\Delivery\Contracts\Carrier;
+use WebxUi\Delivery\Contracts\NamesPointLines;
+use WebxUi\Delivery\Contracts\NamesSkipReasons;
 use WebxUi\Delivery\Contracts\ProvidesSettingOptions;
 use WebxUi\Delivery\Contracts\SyncsDirectories;
 use WebxUi\Delivery\NovaPoshta\Api\AccountKey;
@@ -38,7 +40,7 @@ use WebxUi\Localization\Locales;
  * network page by page (§6.3); weekly, the streets of every town with a courier from `getStreet`,
  * town by town (§6.4) — the one directory a page of which is many requests.
  */
-final class NovaPoshtaCarrier implements Carrier, ProvidesSettingOptions, SyncsDirectories
+final class NovaPoshtaCarrier implements Carrier, NamesPointLines, NamesSkipReasons, ProvidesSettingOptions, SyncsDirectories
 {
     public const string KEY = 'novaposhta';
 
@@ -335,6 +337,31 @@ final class NovaPoshtaCarrier implements Carrier, ProvidesSettingOptions, SyncsD
     public function client(): Client
     {
         return $this->client;
+    }
+
+    /**
+     * The carrier writes the street into a point's name («Відділення №21: вул. Дмитра Луценка, 8»):
+     * under it the address only repeats it. A name without the street (no colon) gets the town —
+     * the part of the address before its first comma.
+     */
+    public function pointLine(string $title, string $address): ?string
+    {
+        if (str_contains($title, ':')) {
+            return null;
+        }
+
+        $town = trim(explode(',', $address, 2)[0]);
+
+        return $town === '' ? null : $town;
+    }
+
+    /** The reasons {@see Points} leaves a point out for, as the screen of the carriers says them. */
+    public function skipReason(string $reason, int $count, string $locale): ?string
+    {
+        $key = 'webx-delivery-novaposhta::novaposhta.remarks.'.$reason;
+        $line = __($key, ['count' => $count], $locale);
+
+        return is_string($line) && $line !== $key ? $line : null;
     }
 
     public static function word(string $key, ?string $locale = null): string

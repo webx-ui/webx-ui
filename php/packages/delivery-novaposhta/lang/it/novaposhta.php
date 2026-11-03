@@ -85,4 +85,9 @@ return [
         'no_ref' => 'L\'identificativo di questa lettera di vettura presso il corriere non è salvato: annullala nell\'account del corriere.',
         'carrier_said' => 'Il corriere ha rifiutato: :text',
     ],
+    'remarks' => [
+        'novaposhta_service_point' => 'Saltati, punti di servizio del corriere: :count',
+        'novaposhta_deny_to_select' => 'Saltati, non selezionabili: :count',
+        'novaposhta_invalid_point' => 'Saltati, con dati incompleti: :count',
+    ],
 ];

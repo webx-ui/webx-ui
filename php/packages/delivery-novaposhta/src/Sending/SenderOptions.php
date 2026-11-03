@@ -170,9 +170,13 @@ final class SenderOptions
         if (preg_match(self::REF, $query) === 1) {
             $point = $this->points->refOf(NovaPoshtaCarrier::KEY, $query);
 
-            return $point === null || $point->kind !== 'branch' || $point->localityId !== $locality || $point->removed || ! $point->active
-                ? []
-                : [new SettingOption($query, (string) ($point->title($locale) ?? $point->number), $point->address($locale))];
+            if ($point === null || $point->kind !== 'branch' || $point->localityId !== $locality || $point->removed || ! $point->active) {
+                return [];
+            }
+
+            $title = (string) ($point->title($locale) ?? $point->number);
+
+            return [new SettingOption($query, $title, Points::line(NovaPoshtaCarrier::KEY, $title, $point->address($locale)))];
         }
 
         $page = $this->points->page(NovaPoshtaCarrier::KEY, 'branch', $locality, $query, 1, $locale);
@@ -181,7 +185,7 @@ final class SenderOptions
 
         foreach ($page['points'] as $point) {
             if (isset($refs[$point['id']])) {
-                $options[] = new SettingOption($refs[$point['id']], $point['title'], $point['address']);
+                $options[] = new SettingOption($refs[$point['id']], $point['title'], $point['line']);
             }
         }
 

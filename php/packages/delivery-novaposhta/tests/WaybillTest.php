@@ -306,7 +306,9 @@ final class WaybillTest extends TestCase
         $this->assertSame([], $carrier->settingOptions('sender_point', [], [], ''));
         $branches = $carrier->settingOptions('sender_point', ['sender_city' => self::TOWN], [], '');
         $this->assertSame([self::BRANCH], array_map(static fn ($option): string => $option->value, $branches));
-        $this->assertNotSame('', (string) $branches[0]->hint);
+        // The name says the street already: no address repeated after it (NamesPointLines).
+        $this->assertStringContainsString(':', $branches[0]->label);
+        $this->assertNull($branches[0]->hint);
         $this->assertSame([self::BRANCH], array_map(static fn ($option): string => $option->value, $carrier->settingOptions('sender_point', ['sender_city' => self::TOWN], [], self::BRANCH)));
         $this->assertSame([], $carrier->settingOptions('sender_point', ['sender_city' => self::TOWN], [], self::LOCKER));
 

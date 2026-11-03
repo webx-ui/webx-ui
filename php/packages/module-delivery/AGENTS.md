@@ -23,7 +23,7 @@ binding) and `webx-ui/widgets`. `webx-ui/module-orders` gets the step as its che
 - **Contracts** `WebxUi\Delivery\Contracts\MethodType` (key `<carrier>.<kind>`, `asks()`,
   `pointKinds()`, `countries()`, `available()`, `quote()`, `validate()`), `Carrier`, optional
   `LabelledMethodType` (`title()`, `description()`; without it the panel names a type from its kind
-  or `asks()` and the carrier, never by key); `AbstractMethodType` — the price and default checks. Optional `ProvidesSettingOptions` (a settings field `options: 'carrier'`, `depends`, `search` — `Settings\SettingOptions` asks, caches 600 s, checks on save, keeps `settings._labels`) and `DescribesWaybill` (`waybillFields()` → `WaybillRequest::$extra`, `supportsCod()`).
+  or `asks()` and the carrier, never by key); `AbstractMethodType` — the price and default checks. Optional `ProvidesSettingOptions` (a settings field `options: 'carrier'`, `depends`, `search` — `Settings\SettingOptions` asks, caches 600 s, checks on save, keeps `settings._labels`), `DescribesWaybill` (`waybillFields()` → `WaybillRequest::$extra`, `supportsCod()`), `NamesSkipReasons` (`skipReason()` — the words of its `Page::$skipped` reasons on the carriers screen; else «Skipped, for another reason: N») and `NamesPointLines` (`pointLine()` — the line under a point title in lists, `Points` row `line`; else the address).
 - **Registries** (singletons): `Carriers` (`store` built in), `MethodTypes` (`store.pickup`, `store.courier` built in). A repeated or malformed key, a type of an unknown carrier — an exception.
 - **`Methods::forLocality(DeliveryContext)`** — the offered `MethodOption`s in the panel's order
   (price, points, `disabled` + `hint` for a carrier's courier without streets); `evaluate()` — every

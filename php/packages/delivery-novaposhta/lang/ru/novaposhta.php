@@ -85,4 +85,9 @@ return [
         'no_ref' => 'Идентификатор этой накладной в службе не сохранён: отмените её в кабинете службы.',
         'carrier_said' => 'Служба отказала: :text',
     ],
+    'remarks' => [
+        'novaposhta_service_point' => 'Пропущено служебных точек: :count',
+        'novaposhta_deny_to_select' => 'Пропущено закрытых для выбора: :count',
+        'novaposhta_invalid_point' => 'Пропущено с неполными данными: :count',
+    ],
 ];

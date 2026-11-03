@@ -178,6 +178,9 @@ return [
         'bindings' => 'Versanddienste',
         'empty' => 'Noch keine Orte.',
         'empty-help' => 'Fügen Sie sie von Hand hinzu, importieren Sie eine Datei oder verbinden Sie einen Versanddienst.',
+        'found-in' => 'Gefunden in :countries — wählen Sie das Land in den Filtern.',
+        'found-off' => 'Gefunden in ausgeschalteten Ländern: :countries. Schalten Sie das Land unter „Länder“ ein, um sie hier zu sehen.',
+        'any-country' => 'Jedes Land',
         'search' => 'Nach Namen suchen',
         'any-region' => 'Jede Region',
         'any-source' => 'Jede Quelle',
@@ -267,6 +270,7 @@ return [
         'remarks' => [
             'no_streets' => 'Orte mit Kurier und ohne Straßen: :count',
             'skipped-unknown_locality' => 'Übersprungen, von unbekannten Orten: :count',
+            'skipped-other' => 'Übersprungen, aus einem anderen Grund: :count',
         ],
         'directories' => [
             'localities' => 'Orte',

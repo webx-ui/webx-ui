@@ -94,6 +94,16 @@ function keyLabel(field: CarrierField, index: number, count: number): string {
   return count > 1 ? `${t('carrier.key')} ${index + 1}` : t('carrier.key')
 }
 
+/*
+ * A field left empty takes the carrier's default when it is used (the waybill's weight, the
+ * description of the cargo): the placeholder says which, without storing it as a choice.
+ */
+function defaultOf(field: CarrierField): string | undefined {
+  return typeof field.default === 'number' || typeof field.default === 'string'
+    ? String(field.default)
+    : undefined
+}
+
 function byName(name: string): CarrierField | undefined {
   return fields.value.find((one) => one.name === name)
 }
@@ -409,6 +419,7 @@ const statusType = {
               :precision="field.precision"
               :min="field.min"
               :max="field.max"
+              :placeholder="defaultOf(field)"
               :disabled="!canManage"
             />
             <wx-select
@@ -417,7 +428,12 @@ const statusType = {
               :options="Array.isArray(field.options) ? field.options : []"
               :disabled="!canManage"
             />
-            <wx-input v-else v-model="settings[field.name] as string" :disabled="!canManage" />
+            <wx-input
+              v-else
+              v-model="settings[field.name] as string"
+              :placeholder="defaultOf(field)"
+              :disabled="!canManage"
+            />
           </wx-form-item>
         </wx-form>
       </section>

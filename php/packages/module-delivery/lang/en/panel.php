@@ -178,6 +178,9 @@ return [
         'bindings' => 'Carriers',
         'empty' => 'No localities yet.',
         'empty-help' => 'Add them by hand, import a file or connect a carrier.',
+        'found-in' => 'Found in :countries — choose the country in the filters.',
+        'found-off' => 'Found in switched-off countries: :countries. Switch the country on in Countries to list them here.',
+        'any-country' => 'Any country',
         'search' => 'Search by name',
         'any-region' => 'Any region',
         'any-source' => 'Any source',
@@ -267,6 +270,7 @@ return [
         'remarks' => [
             'no_streets' => 'Localities with a courier and no streets: :count',
             'skipped-unknown_locality' => 'Skipped, of unknown localities: :count',
+            'skipped-other' => 'Skipped, for another reason: :count',
         ],
         'directories' => [
             'localities' => 'Localities',

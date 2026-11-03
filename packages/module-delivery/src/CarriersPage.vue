@@ -89,8 +89,14 @@ async function confirmRemoval(row: CarrierRow, directory: CarrierDirectory): Pro
   }
 }
 
-function remark(item: { key: string; count: number }): string {
-  return t(`carrier.remarks.${item.key.replace('.', '-')}`, { count: item.count })
+/* The server's words first; a reason nobody named is still said in words, never as its key. */
+function remark(item: { key: string; count: number; label?: string }): string {
+  if (item.label) return item.label
+
+  const key = `carrier.remarks.${item.key.replace('.', '-')}`
+  const line = t(key, { count: item.count })
+
+  return line.endsWith(key) ? t('carrier.remarks.skipped-other', { count: item.count }) : line
 }
 
 function open(key: string): void {
@@ -145,7 +151,9 @@ function open(key: string): void {
             }}</span>
             <span class="wx-delivery-dir__facts">
               {{ t('carrier.records') }}: {{ dir.records }} · {{ t('carrier.schedule') }}:
-              <code>{{ dir.cron ?? t('carrier.manual') }}</code>
+              <!-- A cron line is code; «By hand only» is words. -->
+              <code v-if="dir.cron">{{ dir.cron }}</code>
+              <template v-else>{{ t('carrier.manual') }}</template>
             </span>
             <span class="wx-delivery-dir__facts">
               {{ t('carrier.last-success') }}:

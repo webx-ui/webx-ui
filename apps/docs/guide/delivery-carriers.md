@@ -154,6 +154,15 @@ What the base does with the pages:
 Throw `WebxUi\Delivery\Sync\CarrierUnavailable` for an API that did not answer: the run tries the
 page again after a pause, the panel shows the failure in words.
 
+Records a page leaves out go to the third argument of `Page` — `['your_reason' => [ids…]]` — and the
+carriers screen counts them under the directory. Say the reasons in words with `NamesSkipReasons`
+(`skipReason($reason, $count, $locale)`, from your own dictionary); a reason nobody names reads
+«Skipped, for another reason: 12», never as its key.
+
+If your point names already carry the street («Branch 21: 8 Main St.»), implement `NamesPointLines`:
+`pointLine($title, $address)` is the line under the name in the checkout's list (and in your own
+pickers through `Points::line()`) — return `null` for none. Without it the line is the address.
+
 ## Method types
 
 A type is what a shop switches on as a method: «Carrier A branch», «Carrier A courier». It extends

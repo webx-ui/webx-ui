@@ -117,7 +117,8 @@ export interface CarrierDirectory {
   held: number | null
   stale: boolean
   records: number
-  remarks: { key: string; count: number }[]
+  /** `label` — the server's words, a satellite's own reasons among them; older servers send none. */
+  remarks: { key: string; count: number; label?: string }[]
 }
 
 export interface CarrierRow {
@@ -212,6 +213,14 @@ export interface LocalityRow extends LocalityBrief {
   created_by: string
   source: 'manual' | 'import' | 'carrier'
   bindings: { carrier: string; carrier_title: string; external_id: string; status: string }[]
+}
+
+/**
+ * A page of the geography's list. Empty, it says where the same search and filters do find
+ * localities: other countries, on or off.
+ */
+export interface LocalityPage extends Page<LocalityRow> {
+  elsewhere?: { code: string; name: string; active: boolean }[]
 }
 
 export interface LocalityDetail {

@@ -230,7 +230,7 @@ final class StepView
     }
 
     /**
-     * A point as an option of the list: the title, and under it the address, today's hours and who
+     * A point as an option of the list: the title, and under it its line (the address), today's hours and who
      * alone may use it, if not everybody.
      *
      * @param  array<string, mixed>  $point  a row of `Points::page()`
@@ -238,7 +238,9 @@ final class StepView
      */
     public static function pointOption(array $point): array
     {
-        $hint = implode(' · ', array_filter([$point['address'] ?? null, $point['today'] ?? null, $point['restricted'] ?? null], static fn (mixed $part): bool => is_string($part) && $part !== ''));
+        // `line` — the address, or less when the carrier's title already says it (NamesPointLines).
+        $where = array_key_exists('line', $point) ? $point['line'] : ($point['address'] ?? null);
+        $hint = implode(' · ', array_filter([$where, $point['today'] ?? null, $point['restricted'] ?? null], static fn (mixed $part): bool => is_string($part) && $part !== ''));
 
         return [
             'value' => (string) $point['id'],

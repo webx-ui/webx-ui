@@ -178,6 +178,9 @@ return [
         'bindings' => 'Transportadoras',
         'empty' => 'Ainda não há localidades.',
         'empty-help' => 'Adicione-as à mão, importe um ficheiro ou ligue uma transportadora.',
+        'found-in' => 'Encontrado em :countries — escolha o país nos filtros.',
+        'found-off' => 'Encontrado em países desativados: :countries. Ative o país em «Países» para vê-los aqui.',
+        'any-country' => 'Qualquer país',
         'search' => 'Pesquisar por nome',
         'any-region' => 'Qualquer região',
         'any-source' => 'Qualquer origem',
@@ -267,6 +270,7 @@ return [
         'remarks' => [
             'no_streets' => 'Localidades com estafeta e sem ruas: :count',
             'skipped-unknown_locality' => 'Ignorados, de localidades desconhecidas: :count',
+            'skipped-other' => 'Ignorados, por outro motivo: :count',
         ],
         'directories' => [
             'localities' => 'Localidades',

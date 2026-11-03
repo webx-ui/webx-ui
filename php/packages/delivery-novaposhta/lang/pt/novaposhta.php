@@ -85,4 +85,9 @@ return [
         'no_ref' => 'O identificador desta guia na transportadora não está guardado: anule-a na conta da transportadora.',
         'carrier_said' => 'A transportadora recusou: :text',
     ],
+    'remarks' => [
+        'novaposhta_service_point' => 'Ignorados, pontos de serviço da transportadora: :count',
+        'novaposhta_deny_to_select' => 'Ignorados, fechados à escolha: :count',
+        'novaposhta_invalid_point' => 'Ignorados, com dados incompletos: :count',
+    ],
 ];

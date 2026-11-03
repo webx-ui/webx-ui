@@ -178,6 +178,9 @@ return [
         'bindings' => 'Transporteurs',
         'empty' => 'Aucune localité pour l\'instant.',
         'empty-help' => 'Ajoutez-les à la main, importez un fichier ou connectez un transporteur.',
+        'found-in' => 'Trouvé dans : :countries — choisissez le pays dans les filtres.',
+        'found-off' => 'Trouvé dans des pays désactivés : :countries. Activez le pays dans « Pays » pour les voir ici.',
+        'any-country' => 'Tout pays',
         'search' => 'Rechercher par nom',
         'any-region' => 'Toute région',
         'any-source' => 'Toute source',
@@ -267,6 +270,7 @@ return [
         'remarks' => [
             'no_streets' => 'Localités avec coursier et sans rues : :count',
             'skipped-unknown_locality' => 'Ignorés, de localités inconnues : :count',
+            'skipped-other' => 'Ignorés, pour une autre raison : :count',
         ],
         'directories' => [
             'localities' => 'Localités',

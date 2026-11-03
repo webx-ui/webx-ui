@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Delivery\Panel;
 
 use WebxUi\Delivery\Contracts\Carrier;
+use WebxUi\Delivery\Contracts\NamesSkipReasons;
 use WebxUi\Delivery\Contracts\SyncsDirectories;
 use WebxUi\Delivery\Models\DeliveryCarrier;
 use WebxUi\Delivery\Models\DeliveryCarrierLocality;
@@ -39,7 +40,7 @@ final class CarrierRows
 
         if ($carrier instanceof SyncsDirectories) {
             foreach ($this->directories->schedules($key) as $schedule) {
-                $directories[] = $this->directory($key, $schedule);
+                $directories[] = $this->directory($carrier, $schedule, $locale);
             }
         }
 
@@ -74,8 +75,9 @@ final class CarrierRows
     }
 
     /** @return array<string, mixed> */
-    public function directory(string $carrier, DirectorySchedule $schedule): array
+    public function directory(Carrier $one, DirectorySchedule $schedule, string $locale): array
     {
+        $carrier = $one->key();
         $directory = $schedule->directory;
         $latest = $this->directories->latest($carrier, $directory);
         $success = $this->directories->lastSuccess($carrier, $directory);
@@ -83,12 +85,23 @@ final class CarrierRows
 
         // «Localities with a courier and no streets: N» — from the last pass of the streets.
         if ($directory === Directory::Streets && is_array($success?->warnings[Synchronizer::NO_STREETS] ?? null)) {
-            $remarks[] = ['key' => Synchronizer::NO_STREETS, 'count' => (int) ($success->warnings[Synchronizer::NO_STREETS]['count'] ?? 0)];
+            $count = (int) ($success->warnings[Synchronizer::NO_STREETS]['count'] ?? 0);
+            $remarks[] = ['key' => Synchronizer::NO_STREETS, 'count' => $count, 'label' => self::remark(Synchronizer::NO_STREETS, $count, $locale)];
         }
 
         if (is_array($success?->warnings['skipped'] ?? null)) {
             foreach ($success->warnings['skipped'] as $reason => $skipped) {
-                $remarks[] = ['key' => 'skipped.'.$reason, 'count' => (int) (is_array($skipped) ? ($skipped['count'] ?? 0) : $skipped)];
+                $count = (int) (is_array($skipped) ? ($skipped['count'] ?? 0) : $skipped);
+                $remarks[] = [
+                    'key' => 'skipped.'.$reason,
+                    'count' => $count,
+                    // The words come with the row: a satellite's reasons are in its own dictionary,
+                    // which the panel's does not carry.
+                    'label' => ($one instanceof NamesSkipReasons ? $one->skipReason((string) $reason, $count, $locale) : null)
+                        ?? self::remark('skipped-'.$reason, $count, $locale)
+                        ?? self::remark('skipped-other', $count, $locale)
+                        ?? (string) $count,
+                ];
             }
         }
 
@@ -103,6 +116,15 @@ final class CarrierRows
             'records' => $this->records($carrier, $directory),
             'remarks' => $remarks,
         ];
+    }
+
+    /** A remark in the base's words, or null when the base has none under that key. */
+    private static function remark(string $key, int $count, string $locale): ?string
+    {
+        $path = 'webx-delivery::panel.carrier.remarks.'.$key;
+        $line = trans($path, ['count' => $count], $locale);
+
+        return is_string($line) && $line !== $path ? $line : null;
     }
 
     public function records(string $carrier, Directory $directory): int

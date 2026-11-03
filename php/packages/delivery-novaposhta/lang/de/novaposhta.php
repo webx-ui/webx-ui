@@ -85,4 +85,9 @@ return [
         'no_ref' => 'Die Kennung dieses Frachtbriefs beim Versanddienst ist nicht gespeichert: stornieren Sie ihn im Konto des Versanddienstes.',
         'carrier_said' => 'Der Versanddienst hat abgelehnt: :text',
     ],
+    'remarks' => [
+        'novaposhta_service_point' => 'Übersprungen, Servicepunkte des Dienstes: :count',
+        'novaposhta_deny_to_select' => 'Übersprungen, nicht auswählbar: :count',
+        'novaposhta_invalid_point' => 'Übersprungen, mit unvollständigen Daten: :count',
+    ],
 ];

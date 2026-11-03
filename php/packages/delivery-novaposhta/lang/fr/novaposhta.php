@@ -85,4 +85,9 @@ return [
         'no_ref' => 'L\'identifiant de cette lettre de voiture chez le transporteur n\'est pas conservé : annulez-la dans le compte du transporteur.',
         'carrier_said' => 'Le transporteur a refusé : :text',
     ],
+    'remarks' => [
+        'novaposhta_service_point' => 'Ignorés, points de service du transporteur : :count',
+        'novaposhta_deny_to_select' => 'Ignorés, fermés au choix : :count',
+        'novaposhta_invalid_point' => 'Ignorés, données incomplètes : :count',
+    ],
 ];

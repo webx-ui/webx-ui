@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Delivery\Carriers;
 use WebxUi\Delivery\Models\DeliveryCarrierLocality;
 use WebxUi\Delivery\Testing\FakeCarrier;
+use WebxUi\Geography\Editor;
 use WebxUi\Geography\Models\GeoCountry;
 use WebxUi\Geography\Models\GeoLocality;
 
@@ -195,5 +196,66 @@ final class GeographyPanelTest extends PanelTestCase
 
         $this->getJson($this->api('geography/countries'))->assertOk()
             ->assertJsonPath('data.carriers', [['value' => FakeCarrier::KEY, 'label' => 'Carrier A']]);
+    }
+
+    /**
+     * The lab's case: a demo country first, then a carrier's country switched on — the list with
+     * no country names the towns of both, namesakes told apart by their districts; a search in the
+     * wrong country is «nothing» that says where the towns are.
+     */
+    #[Test]
+    public function the_list_without_a_country_shows_the_leading_carriers_towns_of_every_country_on(): void
+    {
+        $this->signIn();
+        $this->town('Town A');
+        $editor = $this->app->make(Editor::class);
+        $region = $editor->createRegion('XY', ['en' => 'Region Y']);
+
+        foreach (['District 1', 'District 2', 'District 3'] as $district) {
+            $town = $editor->createLocality(['country' => 'XY', 'region_id' => $region->id, 'kind' => 'village', 'names' => ['en' => 'Happy Village'], 'district' => ['en' => $district]], force: true);
+            $town->forceFill(['created_by' => 'carrier:'.FakeCarrier::KEY])->save();
+        }
+
+        $this->getJson($this->api('geography/localities'))->assertOk()
+            ->assertJsonPath('total', 4)
+            ->assertJsonPath('elsewhere', []);
+
+        $found = $this->getJson($this->api('geography/localities?q=happy'))->assertOk()
+            ->assertJsonPath('total', 3)
+            ->assertJsonPath('data.0.country', 'XY')
+            ->assertJsonPath('data.0.source', 'carrier');
+        $this->assertEqualsCanonicalizing(['District 1', 'District 2', 'District 3'], array_column($found->json('data'), 'district'));
+
+        // The demo country kept in the address: nothing there, and the answer says where.
+        $this->getJson($this->api('geography/localities?country=XX&q=happy'))->assertOk()
+            ->assertJsonPath('total', 0)
+            ->assertJsonPath('elsewhere.0.code', 'XY')
+            ->assertJsonPath('elsewhere.0.active', true)
+            ->assertJsonCount(1, 'elsewhere');
+
+        // Switched off, the country is out of the list with no country — and named as off.
+        $editor->disableCountry('XY');
+
+        $this->getJson($this->api('geography/localities?q=happy'))->assertOk()
+            ->assertJsonPath('total', 0)
+            ->assertJsonPath('elsewhere.0.code', 'XY')
+            ->assertJsonPath('elsewhere.0.active', false);
+
+        $this->getJson($this->api('geography/localities?country=XY&q=happy'))->assertOk()->assertJsonPath('total', 3);
+        $this->getJson($this->api('geography/localities?q=nowhere'))->assertOk()
+            ->assertJsonPath('total', 0)
+            ->assertJsonPath('elsewhere', []);
+    }
+
+    #[Test]
+    public function a_city_that_is_its_own_region_is_named_once(): void
+    {
+        $editor = $this->app->make(Editor::class);
+        $region = $editor->createRegion('XX', ['en' => 'Capital']);
+        $city = $editor->createLocality(['country' => 'XX', 'region_id' => $region->id, 'kind' => 'city', 'names' => ['en' => 'Capital']]);
+        $town = $this->town('Town A');
+
+        $this->assertSame('Capital', $city->load('region')->label('en'));
+        $this->assertSame('Town A, Region A', $town->load('region')->label('en'));
     }
 }

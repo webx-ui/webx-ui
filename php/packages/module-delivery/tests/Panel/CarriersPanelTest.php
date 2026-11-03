@@ -11,7 +11,9 @@ use WebxUi\Delivery\Carriers;
 use WebxUi\Delivery\Models\DeliveryCarrier;
 use WebxUi\Delivery\Models\DeliveryCarrierLocality;
 use WebxUi\Delivery\Models\DeliveryPopularLocality;
+use WebxUi\Delivery\Models\DeliverySyncRun;
 use WebxUi\Delivery\Sync\Directory;
+use WebxUi\Delivery\Sync\RunStatus;
 use WebxUi\Delivery\Sync\SyncDirectory;
 use WebxUi\Delivery\Sync\Synchronizer;
 use WebxUi\Delivery\Sync\Trigger;
@@ -132,5 +134,29 @@ final class CarriersPanelTest extends PanelTestCase
         $this->assertSame(2, DeliveryPopularLocality::query()->count());
 
         $this->postJson($this->api('popular'), ['locality_id' => 999999])->assertUnprocessable();
+    }
+
+    /** A reason the base knows by its words; one nobody names — still words, never its key. */
+    #[Test]
+    public function the_remarks_of_a_pass_are_said_in_words_whatever_the_reason(): void
+    {
+        $this->signIn();
+        DeliverySyncRun::query()->create([
+            'carrier' => FakeCarrier::KEY,
+            'directory' => Directory::Points,
+            'status' => RunStatus::Succeeded,
+            'trigger' => Trigger::Panel,
+            'warnings' => ['skipped' => ['unknown_locality' => ['count' => 2], 'carrier_a_odd_point' => ['count' => 5]]],
+            'started_at' => now(),
+            'finished_at' => now(),
+        ]);
+
+        $directories = $this->getJson($this->api('carriers'))->assertOk()->json('data.0.directories');
+        $this->assertIsArray($directories);
+
+        $this->assertSame([
+            ['key' => 'skipped.unknown_locality', 'count' => 2, 'label' => 'Skipped, of unknown localities: 2'],
+            ['key' => 'skipped.carrier_a_odd_point', 'count' => 5, 'label' => 'Skipped, for another reason: 5'],
+        ], array_column($directories, 'remarks', 'directory')['points'] ?? null);
     }
 }

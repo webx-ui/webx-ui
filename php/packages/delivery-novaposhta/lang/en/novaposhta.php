@@ -85,4 +85,9 @@ return [
         'no_ref' => 'The carrier\'s id of this waybill is not kept: cancel it in the carrier\'s account.',
         'carrier_said' => 'The carrier refused: :text',
     ],
+    'remarks' => [
+        'novaposhta_service_point' => 'Skipped, service points of the carrier: :count',
+        'novaposhta_deny_to_select' => 'Skipped, closed for choosing: :count',
+        'novaposhta_invalid_point' => 'Skipped, with incomplete data: :count',
+    ],
 ];

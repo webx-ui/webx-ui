@@ -85,4 +85,9 @@ return [
         'no_ref' => 'Bu irsaliyenin kargo şirketindeki kimliği saklanmadı: kargo şirketinin hesabından iptal edin.',
         'carrier_said' => 'Kargo şirketi reddetti: :text',
     ],
+    'remarks' => [
+        'novaposhta_service_point' => 'Atlandı, kargo şirketinin hizmet noktaları: :count',
+        'novaposhta_deny_to_select' => 'Atlandı, seçime kapalı: :count',
+        'novaposhta_invalid_point' => 'Atlandı, eksik verili: :count',
+    ],
 ];

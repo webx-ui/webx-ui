@@ -226,4 +226,20 @@ final class SettingOptionsTest extends McpTestCase
             ->assertHasErrors(['Could not get the list from the carrier\'s account: The carrier did not answer'])
             ->assertDontSee('secret-123');
     }
+
+    /** «Clear» of the key sends the settings on screen too: unchanged, they are not asked again. */
+    #[Test]
+    public function the_key_is_cleared_with_the_senders_settings_kept(): void
+    {
+        $this->signIn();
+        $values = ['sender' => 'sender-a', 'contact' => 'contact-a2', 'sender_city' => 'L2', 'sender_point' => 'P8', 'weight' => 1.5];
+        $this->putJson($this->api('carriers/carrier-a'), ['settings' => $values])->assertOk();
+
+        $this->putJson($this->api('carriers/carrier-a'), ['settings' => $values, 'credentials' => [], 'clear' => ['api_key']])
+            ->assertOk()
+            ->assertJsonPath('data.credentials.0.set', false);
+
+        $this->assertNull(DeliveryCarrier::query()->find(FakeCarrier::KEY)?->credentials);
+        $this->assertSame('sender-a', DeliveryCarrier::query()->find(FakeCarrier::KEY)?->settings['sender']);
+    }
 }

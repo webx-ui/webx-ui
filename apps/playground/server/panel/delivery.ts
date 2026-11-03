@@ -1149,7 +1149,12 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
         precision: 1,
         label: label('settings.weight'),
       },
-      { name: 'description', type: 'text', label: label('settings.description') },
+      {
+        name: 'description',
+        type: 'text',
+        default: novaposhta('uk', 'settings.description_default'),
+        label: label('settings.description'),
+      },
       ...LOCKER_SIZE.map(([name, max]) => ({
         name,
         type: 'number',
@@ -1246,8 +1251,8 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
 
       for (let number = 1; number <= 3 && town.startsWith('np-town-'); number++) {
         const value = `${town}-branch-${number}`
-        const label = `Відділення №${number}`
-        if (found(value, label)) list.push({ value, label, hint: `вул. Прикладна, ${number}` })
+        const label = `Відділення №${number}: вул. Прикладна, ${number}`
+        if (found(value, label)) list.push({ value, label, hint: null })
       }
     }
 
@@ -1719,9 +1724,10 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
   on('GET', '/delivery/geography/localities', ({ query, locale }) => {
     const q = key(query.get('q') ?? '')
     const country = (query.get('country') ?? '').toUpperCase()
-    const rows = state.localities
-      .filter((one) => country === '' || one.country === country)
-      .filter((one) => !query.get('region') || one.region_id === Number(query.get('region')))
+    // No country — every country that is on, as the server does.
+    const on = new Set(state.countries.filter((one) => one.active).map((one) => one.code))
+    const inScope = (code: string) => (country === '' ? on.has(code) : code === country)
+    const matching = state.localities
       .filter((one) => !query.get('source') || source(one) === query.get('source'))
       .filter((one) => query.get('state') !== 'active' || one.active)
       .filter((one) => query.get('state') !== 'inactive' || !one.active)
@@ -1734,6 +1740,10 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
               .some((_, at, words) => words.slice(at).join(' ').startsWith(q)),
           ),
       )
+    const rows = matching
+      .filter((one) => inScope(one.country))
+      .filter((one) => !query.get('region') || one.region_id === Number(query.get('region')))
+      .filter((one) => !query.get('source') || source(one) === query.get('source'))
       .sort((a, b) => b.weight - a.weight || a.id - b.id)
       .map((one) => ({
         ...brief(one, locale),
@@ -1754,7 +1764,21 @@ export function registerDelivery(on: On, fail: Fail, line: Line): void {
           })),
       }))
 
-    return paginate(rows, query)
+    // An empty page says where the same search does find towns: another country, or one off.
+    const codes = new Set(
+      rows.length > 0 || query.get('region')
+        ? []
+        : matching.filter((one) => !inScope(one.country)).map((one) => one.country),
+    )
+    const elsewhere = state.countries
+      .filter((one) => codes.has(one.code))
+      .map((one) => ({
+        code: one.code,
+        name: countryName(one, one.code, locale),
+        active: one.active,
+      }))
+
+    return { ...paginate(rows, query), elsewhere }
   })
 
   on('GET', '/delivery/geography/localities/suggest', ({ query, locale }) => {

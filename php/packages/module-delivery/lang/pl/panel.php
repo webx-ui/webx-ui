@@ -178,6 +178,9 @@ return [
         'bindings' => 'Przewoźnicy',
         'empty' => 'Brak miejscowości.',
         'empty-help' => 'Dodaj ręcznie, zaimportuj plik lub podłącz przewoźnika.',
+        'found-in' => 'Znaleziono w: :countries — wybierz kraj w filtrach.',
+        'found-off' => 'Znaleziono w wyłączonych krajach: :countries. Włącz kraj w „Krajach”, aby widzieć je tutaj.',
+        'any-country' => 'Dowolny kraj',
         'search' => 'Szukaj po nazwie',
         'any-region' => 'Dowolny region',
         'any-source' => 'Dowolne źródło',
@@ -267,6 +270,7 @@ return [
         'remarks' => [
             'no_streets' => 'Miejscowości z kurierem i bez ulic: :count',
             'skipped-unknown_locality' => 'Pominięto, z nieznanych miejscowości: :count',
+            'skipped-other' => 'Pominięto z innego powodu: :count',
         ],
         'directories' => [
             'localities' => 'Miejscowości',

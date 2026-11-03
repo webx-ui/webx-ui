@@ -85,4 +85,9 @@ return [
         'no_ref' => 'Identyfikator tego listu u przewoźnika nie jest zapisany: anuluj go na koncie przewoźnika.',
         'carrier_said' => 'Przewoźnik odmówił: :text',
     ],
+    'remarks' => [
+        'novaposhta_service_point' => 'Pominięto, punkty serwisowe przewoźnika: :count',
+        'novaposhta_deny_to_select' => 'Pominięto, niedostępne do wyboru: :count',
+        'novaposhta_invalid_point' => 'Pominięto, z niepełnymi danymi: :count',
+    ],
 ];

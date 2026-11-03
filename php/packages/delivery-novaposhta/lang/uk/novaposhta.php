@@ -85,4 +85,9 @@ return [
         'no_ref' => 'Ідентифікатор цієї накладної в службі не збережено: скасуйте її в кабінеті служби.',
         'carrier_said' => 'Служба відмовила: :text',
     ],
+    'remarks' => [
+        'novaposhta_service_point' => 'Пропущено службових точок: :count',
+        'novaposhta_deny_to_select' => 'Пропущено закритих для вибору: :count',
+        'novaposhta_invalid_point' => 'Пропущено з неповними даними: :count',
+    ],
 ];

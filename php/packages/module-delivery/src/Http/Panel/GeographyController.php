@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Delivery\Http\Panel;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -218,45 +219,58 @@ final class GeographyController
     // Localities
 
     /**
-     * The localities, a page at a time: by country, region, source and a prefix of any of their
-     * names. Switched-off ones are listed too — this is where they are switched back on.
+     * The localities, a page at a time: by country (none — every country that is on), region,
+     * source and a prefix of any of their names. Switched-off localities are listed too — this is
+     * where they are switched back on.
+     *
+     * An empty page says where the same search and filters do find something
+     * (`elsewhere`: the countries, on or off) — a town in a country that is off, or in another
+     * country than the one chosen, is not «nothing».
      */
     public function localities(Request $request, Carriers $carriers): JsonResponse
     {
         $locale = $this->locales->current();
         $country = strtoupper((string) $request->query('country', ''));
         $key = Normalizer::key((string) $request->query('q', ''));
+        $source = (string) $request->query('source', '');
+        $state = (string) $request->query('state', '');
 
-        $query = GeoLocality::query()->with('region');
+        // The same filters for these countries — the chosen one, those on, or the others. The names
+        // are asked by country too: the index of the search rows starts with it.
+        $filtered = static function (array $countries) use ($key, $source, $state): Builder {
+            $query = GeoLocality::query()->whereIn('country_code', $countries);
 
-        if ($country !== '') {
-            $query->where('country_code', $country);
-        }
+            match ($source) {
+                'manual' => $query->where('created_by', GeoLocality::MANUAL),
+                'import' => $query->where('created_by', GeoLocality::IMPORT),
+                'carrier' => $query->where('created_by', 'like', 'carrier:%'),
+                default => null,
+            };
+
+            match ($state) {
+                'active' => $query->where('active', true),
+                'inactive' => $query->where('active', false),
+                default => null,
+            };
+
+            if ($key !== '') {
+                $query->whereIn('id', static function ($names) use ($key, $countries): void {
+                    $names->select('locality_id')
+                        ->from('geo_locality_names')
+                        ->whereIn('country_code', $countries)
+                        ->whereRaw("name_key like ? escape '!'", [Normalizer::likePrefix($key)]);
+                });
+            }
+
+            return $query;
+        };
+
+        $all = GeoCountry::query()->get(['code', 'active']);
+        $scope = $country !== '' ? [$country] : $all->where('active', true)->pluck('code')->all();
+        $query = $filtered($scope)->with('region');
 
         if ($request->filled('region')) {
             $query->where('region_id', (int) $request->query('region'));
-        }
-
-        match ((string) $request->query('source', '')) {
-            'manual' => $query->where('created_by', GeoLocality::MANUAL),
-            'import' => $query->where('created_by', GeoLocality::IMPORT),
-            'carrier' => $query->where('created_by', 'like', 'carrier:%'),
-            default => null,
-        };
-
-        match ((string) $request->query('state', '')) {
-            'active' => $query->where('active', true),
-            'inactive' => $query->where('active', false),
-            default => null,
-        };
-
-        if ($key !== '') {
-            $query->whereIn('id', static function ($names) use ($key, $country): void {
-                $names->select('locality_id')
-                    ->from('geo_locality_names')
-                    ->when($country !== '', static fn ($inner) => $inner->where('country_code', $country))
-                    ->whereRaw("name_key like ? escape '!'", [Normalizer::likePrefix($key)]);
-            });
         }
 
         $page = $query->orderByDesc('weight')->orderBy('id')->paginate(min(100, max(10, (int) $request->query('per_page', 25))));
@@ -274,7 +288,24 @@ final class GeographyController
             static fn (GeoLocality $locality): array => LocalityRows::row($locality, $locale, $bindings->get($locality->id) ?? collect(), $title),
         ));
 
-        return new JsonResponse($page);
+        $elsewhere = [];
+
+        // A region belongs to one country: elsewhere it finds nothing, so it is not asked.
+        if ($page->total() === 0 && ! $request->filled('region')) {
+            $others = array_values(array_diff($all->pluck('code')->all(), $scope));
+            $codes = $others === [] ? [] : $filtered($others)
+                ->distinct()
+                ->limit(10)
+                ->pluck('country_code')
+                ->all();
+
+            $elsewhere = GeoCountry::query()->whereIn('code', $codes)->orderByDesc('active')->orderBy('position')->orderBy('code')->get()
+                ->map(static fn (GeoCountry $one): array => ['code' => $one->code, 'name' => $one->name($locale), 'active' => $one->active])
+                ->values()
+                ->all();
+        }
+
+        return new JsonResponse([...$page->toArray(), 'elsewhere' => $elsewhere]);
     }
 
     /**

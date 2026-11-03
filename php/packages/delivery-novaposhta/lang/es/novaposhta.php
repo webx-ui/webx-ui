@@ -85,4 +85,9 @@ return [
         'no_ref' => 'No se guarda el identificador de esta guía en el transportista: anúlala en la cuenta del transportista.',
         'carrier_said' => 'El transportista se negó: :text',
     ],
+    'remarks' => [
+        'novaposhta_service_point' => 'Omitidos, puntos de servicio del transportista: :count',
+        'novaposhta_deny_to_select' => 'Omitidos, cerrados a la elección: :count',
+        'novaposhta_invalid_point' => 'Omitidos, con datos incompletos: :count',
+    ],
 ];

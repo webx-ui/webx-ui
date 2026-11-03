@@ -178,6 +178,9 @@ return [
         'bindings' => 'Corrieri',
         'empty' => 'Ancora nessuna località.',
         'empty-help' => 'Aggiungile a mano, importa un file o collega un corriere.',
+        'found-in' => 'Trovato in :countries — scegli il paese nei filtri.',
+        'found-off' => 'Trovato in paesi disattivati: :countries. Attiva il paese in «Paesi» per vederli qui.',
+        'any-country' => 'Qualsiasi paese',
         'search' => 'Cerca per nome',
         'any-region' => 'Qualsiasi regione',
         'any-source' => 'Qualsiasi origine',
@@ -267,6 +270,7 @@ return [
         'remarks' => [
             'no_streets' => 'Località con corriere e senza vie: :count',
             'skipped-unknown_locality' => 'Saltati, di località sconosciute: :count',
+            'skipped-other' => 'Saltati, per un altro motivo: :count',
         ],
         'directories' => [
             'localities' => 'Località',

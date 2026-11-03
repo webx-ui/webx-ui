@@ -34,7 +34,7 @@ import { createDeliveryApi } from './api'
 import { useDeliveryWords } from './i18n'
 import LocalityDialog from './LocalityDialog.vue'
 import RegionDialog from './RegionDialog.vue'
-import type { Countries, CountryRow, LocalityRow, Page, RegionRow } from './types'
+import type { Countries, CountryRow, LocalityPage, LocalityRow, RegionRow } from './types'
 
 /**
  * The shared geography by hand (decision 42, §14.2), three views of one screen:
@@ -99,12 +99,6 @@ async function loadCountries(): Promise<void> {
 
   try {
     data.value = await api.countries()
-
-    // The first country on is where the other views start.
-    if (country.value === '' && data.value.countries.length > 0) {
-      country.value = (data.value.countries.find((one) => one.active) ??
-        data.value.countries[0])!.code
-    }
   } catch (error) {
     toast.danger(message(error))
   } finally {
@@ -113,6 +107,23 @@ async function loadCountries(): Promise<void> {
 }
 
 void loadCountries()
+
+/*
+ * The regions are of one country: they start at the first one on. The localities do not — there
+ * no country is every country that is on, and a country picked for them once and kept in the
+ * address would hide the towns of one switched on later.
+ */
+watch(
+  [view, data],
+  () => {
+    const list = data.value?.countries ?? []
+
+    if (view.value === 'regions' && country.value === '' && list.length > 0) {
+      country.value = (list.find((one) => one.active) ?? list[0])!.code
+    }
+  },
+  { immediate: true },
+)
 
 const countries = ref<Countries['countries']>([])
 watch(data, (now) => (countries.value = now?.countries ?? []))
@@ -324,7 +335,7 @@ function regionActions(region: RegionRow): RowAction[] {
 
 /* ------------------------------------------------------------------------- localities ----- */
 
-const page = ref<Page<LocalityRow> | null>(null)
+const page = ref<LocalityPage | null>(null)
 const loadingLocalities = ref(false)
 const region = ref<number | null>(null)
 const source = ref('')
@@ -387,6 +398,26 @@ watch([country, region, source, state], () => {
   if (view.value === 'localities') void loadLocalities({ ...last, page: 1 })
 })
 watch(country, () => (region.value = null))
+
+/*
+ * «No localities yet» only when there are none: a search or a filter finds «nothing», and says
+ * where the same search does find towns — another country, or one switched off.
+ */
+const emptyText = computed(() => {
+  const elsewhere = page.value?.elsewhere ?? []
+  const names = (list: typeof elsewhere) => list.map((one) => one.name).join(', ')
+  const on = elsewhere.filter((one) => one.active)
+  const off = elsewhere.filter((one) => !one.active)
+  const filtered =
+    last.search !== '' || !!country.value || !!region.value || !!source.value || !!state.value
+  const lines = [
+    filtered ? t('locality.nothing-found') : t('locality.empty'),
+    on.length > 0 ? t('locality.found-in', { countries: names(on) }) : '',
+    off.length > 0 ? t('locality.found-off', { countries: names(off) }) : '',
+  ]
+
+  return lines.filter((line) => line !== '').join(' ')
+})
 
 function edit(id: number | null): void {
   editing.value = id
@@ -507,14 +538,20 @@ const actions = computed<ScreenAction[]>(() => {
         flush
         :loading="loadingLocalities"
         :search-placeholder="t('locality.search')"
-        :empty-text="t('locality.empty')"
-        :filters-count="(region ? 1 : 0) + (source ? 1 : 0) + (state ? 1 : 0)"
+        :empty-text="emptyText"
+        :filters-count="(country ? 1 : 0) + (region ? 1 : 0) + (source ? 1 : 0) + (state ? 1 : 0)"
         @row-click="(row: LocalityRow) => edit(row.id)"
         @state-change="loadLocalities"
       >
         <template #filters>
           <wx-form-item :label="t('locality.country')">
-            <wx-select v-model="country" :options="countryOptions" size="sm" filterable />
+            <wx-select
+              v-model="country"
+              :options="[{ value: '', label: t('locality.any-country') }, ...countryOptions]"
+              size="sm"
+              filterable
+              data-test="locality-country"
+            />
           </wx-form-item>
           <wx-form-item :label="t('locality.region')">
             <wx-select
@@ -539,7 +576,11 @@ const actions = computed<ScreenAction[]>(() => {
           <span v-if="row.district" class="wx-delivery-geo__muted"> · {{ row.district }}</span>
         </template>
         <template #cell-kind="{ row }">{{ row.kind_label }}</template>
-        <template #cell-region="{ row }">{{ row.region?.name ?? '' }}</template>
+        <template #cell-region="{ row }">
+          {{ row.region?.name ?? '' }}
+          <!-- Every country that is on: the code tells two of one name apart. -->
+          <span v-if="!country" class="wx-delivery-geo__muted"> · {{ row.country }}</span>
+        </template>
         <template #cell-source="{ row }">
           <wx-badge size="sm">{{ t(`locality.sources.${row.source}`) }}</wx-badge>
         </template>

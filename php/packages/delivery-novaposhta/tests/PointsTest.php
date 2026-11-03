@@ -18,6 +18,7 @@ use WebxUi\Delivery\NovaPoshta\Api\Client;
 use WebxUi\Delivery\NovaPoshta\Api\Pace;
 use WebxUi\Delivery\NovaPoshta\Directories\Points;
 use WebxUi\Delivery\NovaPoshta\NovaPoshtaCarrier;
+use WebxUi\Delivery\Panel\CarrierRows;
 use WebxUi\Delivery\Points as BasePoints;
 use WebxUi\Delivery\Sync\Directory;
 use WebxUi\Delivery\Sync\PointRecord;
@@ -327,5 +328,44 @@ final class PointsTest extends TestCase
 
         // The branch is a kind of its own.
         $this->assertSame(['1'], array_column($points->page(NovaPoshtaCarrier::KEY, 'branch', $town, '', 1, 'uk')['points'], 'number'));
+    }
+
+    #[Test]
+    public function a_points_line_does_not_repeat_the_street_its_name_already_says(): void
+    {
+        $this->night();
+        $town = (int) DeliveryCarrierLocality::query()->where('carrier', NovaPoshtaCarrier::KEY)->where('external_id', self::TOWN)->value('locality_id');
+        $branch = $this->app->make(BasePoints::class)->page(NovaPoshtaCarrier::KEY, 'branch', $town, '', 1, 'uk')['points'][0];
+
+        $this->assertStringContainsString(':', $branch['title']);
+        $this->assertNotSame('', $branch['address']);
+        $this->assertNull($branch['line']);
+        // The checkout's option: today's hours stay, the address repeated after the name does not.
+        $this->assertStringNotContainsString($branch['address'], (string) StepView::pointOption($branch)['hint']);
+
+        // A name without the street gets the town only.
+        $carrier = $this->app->make(NovaPoshtaCarrier::class);
+        $this->assertSame('Town A', $carrier->pointLine('Branch 1', 'Town A, Main St., 1'));
+        $this->assertNull($carrier->pointLine('Branch 1: Main St., 1', 'Town A, Main St., 1'));
+    }
+
+    #[Test]
+    public function the_points_left_out_are_said_in_words_on_the_screen_of_the_carriers(): void
+    {
+        $this->night();
+        $rows = $this->app->make(CarrierRows::class);
+        $carrier = $this->app->make(NovaPoshtaCarrier::class);
+
+        foreach (['uk' => 'Пропущено службових точок: 1', 'en' => 'Skipped, service points of the carrier: 1'] as $locale => $words) {
+            $directories = $rows->summary($carrier, $locale)['directories'];
+            $this->assertIsArray($directories);
+            $this->assertSame([['key' => 'skipped.'.Points::SKIP_KIND, 'count' => 1, 'label' => $words]], array_column($directories, 'remarks', 'directory')['points'] ?? null);
+        }
+
+        foreach (['novaposhta_service_point', 'novaposhta_deny_to_select', 'novaposhta_invalid_point'] as $reason) {
+            $this->assertStringEndsWith(': 3', (string) $carrier->skipReason($reason, 3, 'uk'));
+        }
+
+        $this->assertNull($carrier->skipReason('something_new', 3, 'uk'));
     }
 }

@@ -178,6 +178,9 @@ return [
         'bindings' => 'Kargo firmaları',
         'empty' => 'Henüz yerleşim yeri yok.',
         'empty-help' => 'Elle ekleyin, bir dosya içe aktarın ya da bir kargo firması bağlayın.',
+        'found-in' => ':countries içinde bulundu — ülkeyi filtrelerden seçin.',
+        'found-off' => 'Kapalı ülkelerde bulundu: :countries. Burada görmek için ülkeyi «Ülkeler» bölümünden açın.',
+        'any-country' => 'Herhangi bir ülke',
         'search' => 'Ada göre ara',
         'any-region' => 'Herhangi bir bölge',
         'any-source' => 'Herhangi bir kaynak',
@@ -267,6 +270,7 @@ return [
         'remarks' => [
             'no_streets' => 'Kuryesi olup sokağı olmayan yerleşim yerleri: :count',
             'skipped-unknown_locality' => 'Atlandı, bilinmeyen yerleşim yerlerinden: :count',
+            'skipped-other' => 'Atlandı, başka bir nedenle: :count',
         ],
         'directories' => [
             'localities' => 'Yerleşim yerleri',

@@ -137,14 +137,17 @@ const actions = computed<ScreenAction[]>(() =>
 
 /*
  * The carrier under the method's name, unless the type's name already says it: a type named by
- * the panel reads «Carrier A branch», and «Carrier A branch · Carrier A» says it twice.
+ * the panel reads «Carrier A branch», and «Carrier A branch · Carrier A» says it twice. Nor the
+ * type when the method is named after it: «Carrier A branch» under «Carrier A branch» is an echo.
  */
 function line(row: MethodRow): string {
   const carrier = row.carrier !== 'store' ? (row.carrier_title ?? '') : ''
+  const echo = row.type_title.trim().toLowerCase() === row.title.trim().toLowerCase()
+  const said = row.type_title.includes(carrier) || row.title.includes(carrier)
 
-  return carrier === '' || row.type_title.includes(carrier)
-    ? row.type_title
-    : `${row.type_title} · ${carrier}`
+  return [echo ? '' : row.type_title, carrier === '' || said ? '' : carrier]
+    .filter((part) => part !== '')
+    .join(' · ')
 }
 
 function created(method: MethodRow): void {
@@ -211,7 +214,7 @@ const paneKey = computed(() => String(route.query.method ?? ''))
                   @click="choose(String(item.id))"
                 >
                   <span class="wx-delivery-method__title">{{ item.title }}</span>
-                  <span class="wx-delivery-method__line">{{ line(item) }}</span>
+                  <span v-if="line(item)" class="wx-delivery-method__line">{{ line(item) }}</span>
                   <span class="wx-delivery-method__facts">
                     <span class="wx-delivery-method__price">{{
                       item.price_text ?? t('method.free')
