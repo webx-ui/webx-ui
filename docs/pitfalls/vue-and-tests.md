@@ -192,6 +192,13 @@ addAttributes })` с `parseHTML`/`renderHTML`. Видно только если 
   `WxCodeEditor`, редактор получает чужой экземпляр и отвечает «Unrecognized extension value».
   Поэтому `/^@codemirror\//` стоит в `external` сборки пакета, а версии — в его `dependencies`
   теми же диапазонами, что у ядра. У нас: автокомплит `module-blocks`.
+- **Календарь в модальном диалоге закрывается по клику на день, даты нет.** Меню
+  `@vuepic/vue-datepicker` — не слой Reka: с `teleport` оно уходит в `body`, а модальный диалог
+  Reka ставит `body` `pointer-events: none` и возвращает их только своим слоям. Меню наследует
+  `none`, клик проваливается в поле диалога под ним (`elementFromPoint` — textarea), календарь
+  видит «клик снаружи» и закрывается. `WxDatePicker` и `WxDateRangePicker` переносят меню в
+  `[role="dialog"]`, внутри которого стоят (`useLayerTeleport`). Своё всплывающее не на Reka —
+  туда же. jsdom не ловит: проверять настоящим кликом в браузере.
 - **Календарь говорит по-английски, пока ему не дадут язык.** `@vuepic/vue-datepicker` несёт
   одну локаль, `en-US`, а `locale` у него — объект-локаль date-fns, не тег: строка `locale="ru"`
   молча не делает ничего. `WxDatePicker` принимает и тег и собирает объект из `Intl`

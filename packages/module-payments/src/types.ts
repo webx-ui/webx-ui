@@ -223,6 +223,23 @@ export type OrderPaymentState = 'awaiting' | 'paid' | 'failed' | 'held' | 'cance
 export type OrderAttempt = AttemptRow & {
   events: EventLine[]
   can_resolve: boolean
+  /** Money held that this reader may capture or let go (spec §9.5). */
+  can_capture: boolean
+  /** The gateway takes a part of the hold too (decision 52). */
+  partial: boolean
+  /** What is held, as a decimal of the currency: the dialog's starting amount. */
+  amount_decimal: string | null
+}
+
+/** What a capture or a release of a hold would move (`dry_run`). */
+export interface HoldPreview {
+  dry_run: true
+  amount: number
+  amount_formatted: string
+  held: number
+  held_formatted: string
+  released: number
+  released_formatted: string
 }
 
 export interface MethodChoice {

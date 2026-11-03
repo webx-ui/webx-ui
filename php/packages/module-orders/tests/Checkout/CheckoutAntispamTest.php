@@ -72,6 +72,21 @@ final class CheckoutAntispamTest extends CheckoutTestCase
     }
 
     #[Test]
+    public function a_column_drawn_again_does_not_start_the_clock_again(): void
+    {
+        // The buyer opened the page, filled the steps and chose the payment: the script drew the
+        // column again, with its mark — and «Place the order» at once is the first click that works.
+        $cart = $this->cart();
+        $this->visit($cart, '/checkout')->assertOk();
+        $this->fill($cart);
+        $this->travel(5)->seconds();
+        $fields = $this->hidden($cart);
+
+        $this->visit($cart, '/checkout/place', $fields, json: true)->assertOk();
+        $this->assertSame(1, Order::query()->count());
+    }
+
+    #[Test]
     public function another_sites_page_is_turned_away(): void
     {
         $cart = $this->cart();

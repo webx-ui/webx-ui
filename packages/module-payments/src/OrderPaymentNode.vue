@@ -10,6 +10,7 @@ import {
   WxDialog,
   WxEmpty,
   WxFormItem,
+  WxInput,
   WxRadio,
   WxRadioGroup,
   WxSkeleton,
@@ -25,7 +26,7 @@ import EventDialog from './EventDialog.vue'
 import EventList from './EventList.vue'
 import { statusTones } from './format'
 import { usePaymentsLines, usePaymentsWords } from './i18n'
-import type { EventLine, OrderAttempt, OrderPayment, OrderPaymentState } from './types'
+import type { EventLine, HoldPreview, OrderAttempt, OrderPayment, OrderPaymentState } from './types'
 
 /**
  * `wx-payments-order` — the tab «Payment» of the order's card (spec §13.4), patched onto
@@ -34,7 +35,9 @@ import type { EventLine, OrderAttempt, OrderPayment, OrderPaymentState } from '.
  * by time; an event opens its headers and bodies for whoever may read them.
  *
  * The actions are the order's, for whoever works the orders: «Check with the gateway», «Change
- * the method», «Payment link», «Problem resolved». After one the card reads the order again: its
+ * the method», «Payment link», «Problem resolved» — and, for money held, «Capture» (all, or a part
+ * where the gateway takes one) and «Release the hold», each saying first what it would move
+ * (`dry_run`). After one the card reads the order again: its
  * milestones and history have moved. «Mark as paid» is the card's own button in its head — one
  * action, which the server makes this module's mark — and the tab reads itself again after it.
  *
@@ -86,6 +89,9 @@ async function load(): Promise<void> {
 
   try {
     state.value = await api.orderPayment(id.value)
+    // Money held waits for a decision: its attempt opens with the buttons in sight.
+    const held = state.value.attempts.filter((row) => row.can_capture).map((row) => row.id)
+    expanded.value = [...new Set([...expanded.value, ...held])]
   } catch {
     failed.value = true
   } finally {
@@ -192,6 +198,71 @@ async function confirmResolve(): Promise<void> {
   )
 
   if (done) resolving.value = null
+}
+
+const holding = ref<{ attempt: OrderAttempt; action: 'capture' | 'void' } | null>(null)
+const amount = ref('')
+const preview = ref<HoldPreview | null>(null)
+const previewError = ref<string | null>(null)
+let previewTimer: ReturnType<typeof setTimeout> | undefined
+let asked = 0
+
+/** What the action would move, from the server's `dry_run`: its refusal stands for the button. */
+async function ask(): Promise<void> {
+  const one = state.value
+  const hold = holding.value
+
+  if (!one || !hold) return
+
+  const mine = ++asked
+
+  try {
+    const answer =
+      hold.action === 'capture'
+        ? await api.capture(one.order_id, hold.attempt.id, amount.value || null, true)
+        : await api.release(one.order_id, hold.attempt.id, true)
+
+    if (mine !== asked) return
+    preview.value = answer
+    previewError.value = null
+  } catch (error) {
+    if (mine !== asked) return
+    preview.value = null
+    previewError.value = message(error)
+  }
+}
+
+function startHold(attempt: OrderAttempt, action: 'capture' | 'void'): void {
+  holding.value = { attempt, action }
+  amount.value = attempt.amount_decimal ?? ''
+  preview.value = null
+  previewError.value = null
+  void ask()
+}
+
+watch(amount, () => {
+  if (holding.value?.action !== 'capture') return
+  clearTimeout(previewTimer)
+  previewTimer = setTimeout(() => void ask(), 300)
+})
+
+async function confirmHold(): Promise<void> {
+  const one = state.value
+  const hold = holding.value
+
+  if (!one || !hold) return
+
+  const done =
+    hold.action === 'capture'
+      ? await run(
+          () => api.capture(one.order_id, hold.attempt.id, amount.value || null),
+          t('order.captured'),
+        )
+      : await run(() => api.release(one.order_id, hold.attempt.id), t('order.voided'))
+
+  if (done) holding.value = null
+  // A refusal of the gateway changed the attempt too (its problem): read it again.
+  else void load()
 }
 
 async function copyLink(): Promise<void> {
@@ -417,6 +488,26 @@ const hasEvents = computed(
                   })
                 }}
               </wx-text>
+              <wx-space v-if="row.can_capture" size="sm" wrap data-test="attempt-hold">
+                <wx-button
+                  size="sm"
+                  type="primary"
+                  :disabled="busy"
+                  data-test="attempt-capture"
+                  @click="startHold(row, 'capture')"
+                >
+                  {{ t('order.capture') }}
+                </wx-button>
+                <wx-button
+                  size="sm"
+                  variant="outline"
+                  :disabled="busy"
+                  data-test="attempt-void"
+                  @click="startHold(row, 'void')"
+                >
+                  {{ t('order.void') }}
+                </wx-button>
+              </wx-space>
               <wx-text v-if="row.failure_reason" size="sm" tone="muted">
                 {{ t('attempts.failure') }}: {{ row.failure_reason }}
               </wx-text>
@@ -479,6 +570,70 @@ const hasEvents = computed(
             @click="confirmSwitch"
           >
             {{ t('order.switch') }}
+          </wx-button>
+        </wx-space>
+      </template>
+    </wx-dialog>
+
+    <wx-dialog
+      :open="holding !== null"
+      :title="t(holding?.action === 'void' ? 'order.void-title' : 'order.capture-title')"
+      :width="480"
+      data-test="hold-dialog"
+      @update:open="(value: boolean) => !value && (holding = null)"
+    >
+      <div v-if="holding" class="wx-payments-order__form">
+        <template v-if="holding.action === 'capture'">
+          <wx-text size="sm" tone="muted">{{ t('order.capture-help') }}</wx-text>
+          <wx-form-item
+            :label="t('order.capture-amount')"
+            :help="holding.attempt.partial ? undefined : t('order.capture-whole')"
+          >
+            <wx-input
+              v-model="amount"
+              inputmode="decimal"
+              autocomplete="off"
+              :disabled="!holding.attempt.partial"
+              data-test="hold-amount"
+            >
+              <template #suffix>{{ holding.attempt.currency }}</template>
+            </wx-input>
+          </wx-form-item>
+        </template>
+        <wx-alert
+          v-if="previewError"
+          type="danger"
+          :description="previewError"
+          data-test="hold-refused"
+        />
+        <wx-text v-else-if="preview" size="sm" data-test="hold-preview">
+          <template v-if="holding.action === 'capture'">
+            {{
+              t('order.capture-preview', {
+                amount: preview.amount_formatted,
+                held: preview.held_formatted,
+              })
+            }}
+            <template v-if="preview.released > 0">
+              {{ t('order.capture-release', { amount: preview.released_formatted }) }}
+            </template>
+          </template>
+          <template v-else>
+            {{ t('order.void-preview', { amount: preview.held_formatted }) }}
+          </template>
+        </wx-text>
+      </div>
+      <template #footer>
+        <wx-space size="sm">
+          <wx-button variant="outline" @click="holding = null">{{ t('common.cancel') }}</wx-button>
+          <wx-button
+            :type="holding?.action === 'void' ? 'danger' : 'primary'"
+            :loading="busy"
+            :disabled="preview === null"
+            data-test="hold-confirm"
+            @click="confirmHold"
+          >
+            {{ t(holding?.action === 'void' ? 'order.void' : 'order.capture') }}
           </wx-button>
         </wx-space>
       </template>

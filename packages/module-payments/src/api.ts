@@ -10,6 +10,7 @@ import type {
   MethodRow,
   MethodSave,
   MethodType,
+  HoldPreview,
   OrderPayment,
 } from './types'
 
@@ -82,6 +83,26 @@ export function createPaymentsApi(admin: AdminContext) {
       http.post<{ data: OrderPayment }>(`${base}/orders/${order}/check`, {}).then(data),
     switchMethod: (order: number, method: string) =>
       http.post<{ data: OrderPayment }>(`${base}/orders/${order}/method`, { method }).then(data),
+    /** A hold (§9.5): all of it when `amount` is empty; `dry_run` answers what would move. */
+    capture: <T extends boolean = false>(
+      order: number,
+      payment: number,
+      amount: string | null,
+      dryRun?: T,
+    ) =>
+      http
+        .post<{ data: T extends true ? HoldPreview : OrderPayment }>(
+          `${base}/orders/${order}/attempts/${payment}/capture`,
+          { amount, dry_run: dryRun === true },
+        )
+        .then(data),
+    release: <T extends boolean = false>(order: number, payment: number, dryRun?: T) =>
+      http
+        .post<{ data: T extends true ? HoldPreview : OrderPayment }>(
+          `${base}/orders/${order}/attempts/${payment}/void`,
+          { dry_run: dryRun === true },
+        )
+        .then(data),
     resolve: (order: number, payment: number, note: string | null) =>
       http
         .post<{

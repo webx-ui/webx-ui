@@ -10,9 +10,12 @@ use WebxUi\Cart\Totals\Purpose;
 use WebxUi\Orders\Balance;
 use WebxUi\Orders\Models\Order;
 use WebxUi\Orders\Panel\OrdersModule;
+use WebxUi\Payments\Contracts\CapturesPayments;
+use WebxUi\Payments\GatewayAmount;
 use WebxUi\Payments\Instructions;
 use WebxUi\Payments\Kind;
 use WebxUi\Payments\Methods;
+use WebxUi\Payments\MethodTypes;
 use WebxUi\Payments\Models\Payment;
 use WebxUi\Payments\Models\PaymentGatewayEvent;
 use WebxUi\Payments\Online\PaymentLinks;
@@ -35,6 +38,7 @@ final readonly class OrderPaymentCard
         private PaymentLinks $links,
         private Methods $methods,
         private EventNames $names,
+        private MethodTypes $types,
     ) {}
 
     /** @return array<string, mixed> */
@@ -57,6 +61,12 @@ final readonly class OrderPaymentCard
             'events' => ($events[$payment->id] ?? collect())->values()->all(),
             'can_resolve' => $manage && $payment->problem !== null && ! isset(($payment->meta ?? [])['resolved_at'])
                 && ! in_array($payment->problem, SettleResult::HOLD_PROBLEMS, true),
+            // Money held (§9.5): captured — whole, or a part where the gateway takes one — or let go.
+            'can_capture' => $manage && $payment->status === PaymentStatus::Authorized && $this->holds($payment) !== null,
+            'partial' => $payment->status === PaymentStatus::Authorized && ($this->holds($payment)?->capturesPartially() ?? false),
+            'amount_decimal' => $payment->status === PaymentStatus::Authorized
+                ? GatewayAmount::toDecimal((int) ($payment->authorized_amount ?? $payment->amount), $payment->currency)
+                : null,
         ])->reverse()->values()->all();
 
         $closed = $order->cancelled_at !== null;
@@ -172,10 +182,20 @@ final readonly class OrderPaymentCard
         $lines = [];
 
         foreach (Instructions::of($block, $number, $locale) ?? [] as $field => $text) {
-            $lines[] = ['label' => (string) __('webx-payments::methods.bank_transfer.settings.'.$field), 'text' => $text];
+            // The form's label of the purpose explains its {number}; the order shows it filled in, so the buyer's word.
+            $label = $field === 'purpose' ? 'webx-payments::buyer.instructions.purpose' : 'webx-payments::methods.bank_transfer.settings.'.$field;
+            $lines[] = ['label' => (string) __($label), 'text' => $text];
         }
 
         return $lines;
+    }
+
+    /** The type of a held attempt that can capture it, or null. */
+    private function holds(Payment $payment): ?CapturesPayments
+    {
+        $type = $this->types->has($payment->type) ? $this->types->get($payment->type) : null;
+
+        return $type instanceof CapturesPayments ? $type : null;
     }
 
     /**

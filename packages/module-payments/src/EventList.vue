@@ -43,7 +43,7 @@ const columns = computed<TableColumn<FoldedLine>[]>(() => [
     ? [{ key: 'order', label: t('attempts.order'), width: 96, hideBelow: 720 }]
     : []),
   { key: 'status', label: t('exchange.code'), width: 96 },
-  { key: 'signature', label: t('exchange.signature'), width: 128, hideBelow: 600 },
+  { key: 'signature', label: t('exchange.signature'), width: 168, hideBelow: 600 },
   { key: 'outcome', label: t('exchange.outcome'), width: 120, hideBelow: 480 },
   { key: 'duration', label: t('exchange.duration'), width: 96, align: 'right', hideBelow: 840 },
 ])
@@ -126,7 +126,7 @@ function signatureTone(row: EventLine) {
         :type="signatureTone(row)"
         size="sm"
         dot
-        class="wx-payments-events__badge"
+        class="wx-payments-events__signature"
       >
         {{ w(`exchange.signature.${row.signature}`) }}
       </wx-badge>
@@ -179,6 +179,11 @@ function signatureTone(row: EventLine) {
   height: auto;
   white-space: normal;
   text-align: start;
+}
+
+/* «Signature invalid» reads as one word: its column is wide enough for it on one line. */
+.wx-payments-events__signature {
+  white-space: nowrap;
 }
 
 .wx-payments-events__key {

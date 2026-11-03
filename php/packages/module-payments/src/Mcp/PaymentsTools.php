@@ -10,6 +10,7 @@ use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use InvalidArgumentException;
 use WebxUi\Admin\Contracts\HasPermissions;
 use WebxUi\Cache\CacheGroups;
 use WebxUi\Cart\Contracts\CurrencySource;
@@ -29,7 +30,10 @@ use WebxUi\Orders\Panel\OrdersModule;
 use WebxUi\Payments\BeginRefused;
 use WebxUi\Payments\Checkout\PaymentsCheckoutSlot;
 use WebxUi\Payments\DeliveryRule;
+use WebxUi\Payments\GatewayAmount;
+use WebxUi\Payments\GatewayRefused;
 use WebxUi\Payments\GatewayUnavailable;
+use WebxUi\Payments\HoldRefused;
 use WebxUi\Payments\Kind;
 use WebxUi\Payments\MarkRefused;
 use WebxUi\Payments\Methods;
@@ -184,6 +188,31 @@ final class PaymentsTools
                 .'would change, writing nothing of the attempt or the order.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->check($arguments, $user)),
                 ['properties' => ['payment' => $payment, 'order' => $order]],
+                permission: OrdersModule::MANAGE,
+            ),
+
+            Tool::mutating(
+                'capture',
+                'Capture money held by an attempt (status `authorized`) — «Capture» of the order\'s tab «Payment». '
+                .'Without `amount` all of the hold; a part only where the gateway takes one (payments://catalog: '
+                .'`captures_partially`), never more than is held — what is not captured goes back to the buyer. The order '
+                .'gets the milestone «paid» of what was captured. A gateway that refuses leaves the money held with the problem '
+                .'«capture refused». A dry run says what would be captured and asks the gateway nothing.',
+                fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->capture($arguments, $user)),
+                ['properties' => [
+                    'payment' => $payment,
+                    'amount' => ['type' => 'string', 'description' => 'A decimal in the attempt\'s currency, "120.50"; all of the hold when omitted.'],
+                ], 'required' => ['payment']],
+                permission: OrdersModule::MANAGE,
+            ),
+
+            Tool::mutating(
+                'void',
+                'Release money held by an attempt (status `authorized`) — «Release the hold» of the order\'s tab: the gateway '
+                .'lets the money go back to the buyer, the attempt becomes `cancelled` and the order\'s payment «did not go '
+                .'through». A dry run says what would be released and asks the gateway nothing.',
+                fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->void($arguments, $user)),
+                ['properties' => ['payment' => $payment], 'required' => ['payment']],
                 permission: OrdersModule::MANAGE,
             ),
 
@@ -603,6 +632,63 @@ final class PaymentsTools
 
         if ($result === null) {
             throw new ToolFailure("Payment {$payment->uuid} is being checked by another request right now; read it again in a moment.");
+        }
+
+        return [
+            ...$this->settled($result),
+            'payment' => $this->attemptCard($payment->refresh(), $user),
+            'dry_run' => $dryRun,
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function capture(array $arguments, ?Authenticatable $user): array
+    {
+        $payment = $this->payment($arguments['payment'] ?? null);
+        $typed = is_string($arguments['amount'] ?? null) ? trim($arguments['amount']) : '';
+
+        try {
+            $amount = $typed !== '' ? GatewayAmount::fromDecimal($typed, $payment->currency) : null;
+        } catch (InvalidArgumentException) {
+            throw new ToolFailure("\`amount\` is a decimal in {$payment->currency}, like \"120.50\".");
+        }
+
+        return $this->held($payment, $user, fn (bool $dryRun): SettleResult => $this->container->make(Payments::class)->capture($payment, $amount, self::SOURCE, $dryRun), $arguments);
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function void(array $arguments, ?Authenticatable $user): array
+    {
+        $payment = $this->payment($arguments['payment'] ?? null);
+
+        return $this->held($payment, $user, fn (bool $dryRun): SettleResult => $this->container->make(Payments::class)->void($payment, self::SOURCE, $dryRun), $arguments);
+    }
+
+    /**
+     * A capture or a release, with the base's and the gateway's refusals in words.
+     *
+     * @param  Closure(bool): SettleResult  $action
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function held(Payment $payment, ?Authenticatable $user, Closure $action, array $arguments): array
+    {
+        $dryRun = $this->dryRun($arguments);
+
+        try {
+            $result = $action($dryRun);
+        } catch (HoldRefused $refused) {
+            throw new ToolFailure("Payment {$payment->uuid}: {$refused->getMessage()}.");
+        } catch (GatewayRefused $refused) {
+            throw new ToolFailure("The gateway refused to release the hold of payment {$payment->uuid}: {$refused->getMessage()}. The money is still held; the exchange journal has the answer.");
+        } catch (GatewayUnavailable) {
+            throw new ToolFailure("The gateway did not answer about payment {$payment->uuid}; the attempt is as it was. The exchange journal has the request.");
         }
 
         return [

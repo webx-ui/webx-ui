@@ -6,6 +6,7 @@ namespace WebxUi\Orders\Checkout;
 
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\Encryption\Encrypter;
+use Illuminate\Contracts\Session\Session;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\ValidationException;
@@ -18,7 +19,10 @@ use WebxUi\Widgets\Captcha;
  * The limits are the routes' (`throttle:webx-orders-checkout`), the captcha is the site's.
  *
  * The page is never cached (`no-store`), so unlike the inbox's forms the mark is always the
- * moment the buyer opened it: one too fresh, missing or unreadable is refused.
+ * moment the buyer opened it: one too fresh, missing or unreadable is refused. «Opened» is the
+ * first drawing of the checkout in the session, not of the column: the script draws the column
+ * again after every step and choice, and a buyer who picks the payment and presses «Place the
+ * order» at once is not a bot.
  */
 final readonly class CheckoutAntispam
 {
@@ -27,6 +31,9 @@ final readonly class CheckoutAntispam
 
     /** When the confirmation was drawn, encrypted. */
     public const string TIMESTAMP = 'webx_ts';
+
+    /** The session's first drawing of a confirmation, as a Unix time. */
+    public const string DRAWN = 'webx-orders.checkout.drawn';
 
     /** The v3 actions of the two forms: a token asked for one is no answer for the other. */
     public const string PLACE_ACTION = 'webx_checkout';
@@ -38,6 +45,7 @@ final readonly class CheckoutAntispam
         private Encrypter $encrypter,
         private CheckoutSettings $settings,
         private Captcha $captcha,
+        private Session $session,
     ) {}
 
     /** Whether the forms draw the site's captcha (`orders.checkout.captcha`). */
@@ -73,10 +81,20 @@ final readonly class CheckoutAntispam
         return trim((string) $request->input(self::HONEYPOT, '')) !== '';
     }
 
-    /** The value of the mark of a confirmation drawn now. */
+    /**
+     * The value of the mark of a confirmation drawn now: when this session first drew one — a
+     * column drawn again does not start the clock again.
+     */
     public function timestamp(): string
     {
-        return $this->encrypter->encrypt((string) Carbon::now()->getTimestamp());
+        $now = Carbon::now()->getTimestamp();
+        $drawn = $this->session->get(self::DRAWN);
+
+        if (! is_int($drawn) || $drawn > $now) {
+            $this->session->put(self::DRAWN, $drawn = $now);
+        }
+
+        return $this->encrypter->encrypt((string) $drawn);
     }
 
     /** Sooner than `min_seconds` after the page was drawn, or no mark of one at all. */

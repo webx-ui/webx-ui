@@ -54,6 +54,9 @@ Route::prefix((string) config('webx-admin.api_path'))
                 Route::post('orders/{order}/mark-paid', [OrderPaymentController::class, 'markPaid'])->whereNumber('order')->name('orders.mark-paid');
                 Route::post('orders/{order}/check', [OrderPaymentController::class, 'check'])->whereNumber('order')->name('orders.check');
                 Route::post('orders/{order}/method', [OrderPaymentController::class, 'switchMethod'])->whereNumber('order')->name('orders.method');
+                // A hold (§9.5, decision 32): capture all or a part of it, or let it go; `dry_run` says what would be.
+                Route::post('orders/{order}/attempts/{payment}/capture', [OrderPaymentController::class, 'capture'])->whereNumber('order')->whereNumber('payment')->name('orders.capture');
+                Route::post('orders/{order}/attempts/{payment}/void', [OrderPaymentController::class, 'void'])->whereNumber('order')->whereNumber('payment')->name('orders.void');
                 Route::post('orders/{order}/attempts/{payment}/resolve', [OrderPaymentController::class, 'resolve'])->whereNumber('order')->whereNumber('payment')->name('orders.resolve');
             });
         });

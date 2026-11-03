@@ -47,14 +47,14 @@ Orders, their milestones and balance are `webx-ui/module-orders`; the cart is `w
   `readNotification()` → `Notification::status|poke|unrelated` or `InvalidNotification` (a bad signature may claim `uuid`/`gatewayRef`: linked, not believed), the
   answers to the gateway) and, as they can, `CancelsPayments`, `CompletesApproval`,
   `CapturesPayments` (`capturesPartially()`). Errors: `GatewayUnavailable`, `GatewayRefused` —
-  words, never a body. Amounts: `GatewayAmount::toDecimal()` / `fromDecimal()`, no float.
-- **Keys** `MethodCredentials::for(Method)`: the column, over it `WEBX_PAYMENTS_<METHOD>_<FIELD>`.
-- **Online payment** `Payments::begin(order, method, source)` — an attempt `created` for the debt, earlier
-  `pending` ones asked and closed first (`BeginRefused`); `GET /pay/go/{uuid}` (`Online\Handoffs`) calls
-  `start()` once and journals `browser/handoff`; the signed page `GET /pay/{number}` (`PaymentLinks::page()`)
-  with «Pay», «we are checking», «Top up» and «Pay online now» (`Payments::switchMethod()`).
+  words, never a body. Amounts: `GatewayAmount::toDecimal()` / `fromDecimal()`, no float. **Keys** `MethodCredentials::for(Method)`: the column, over it `WEBX_PAYMENTS_<METHOD>_<FIELD>`.
+- **Online payment** `Payments::begin(order, method, source)` — an attempt `created` for the debt, earlier `pending` ones
+  asked and closed first (`BeginRefused`); `GET /pay/go/{uuid}` (`Online\Handoffs`) calls `start()` once, journals
+  `browser/handoff`; the signed page `GET /pay/{number}` (`PaymentLinks::page()`) — «Pay», «we are checking», «Top up»,
+  «Pay online now» (`switchMethod()`). Checkout: `PaymentsCheckoutSlot::next()` opens the attempt of an online method
+  after the order (no network, never throws) → `/pay/go`; `payAgainUrl()` — the page while the order awaits money.
 - **Hold** `Payments::capture(payment, ?amount, source, dryRun)` / `void()` (`HoldRefused`, problem
-  `capture_failed`). **Poll** `webx:payments:poll` every 5 minutes: unfinished attempts (backing off 10, 20, 40… min, `meta.poll`), `expired`,
+  `capture_failed`); «Capture» / «Release the hold» on the order's tab with a `dry_run` line first. **Poll** `webx:payments:poll` every 5 minutes: unfinished attempts (backing off 10, 20, 40… min, `meta.poll`), `expired`,
   `hold_expiring`. **Problems**: events `PaymentSucceeded`, `PaymentFailed`, `PaymentProblem`;
   `Payments::resolveProblem()` (`ProblemRefused`). `Payments::cashOnDelivery(OrderData)` — for a waybill.
 - **Settling** `Payments::settle(payment, GatewayStatus)` → `SettleResult`, the only door to the attempt
@@ -72,7 +72,7 @@ Orders, their milestones and balance are `webx-ui/module-orders`; the cart is `w
   no route writes an event; the tab «Payment» of `orders.show` (node `wx-payments-order`). The panel's lists and the
   tab are `Panel\AttemptQuery`, `Panel\ExchangeQuery`, `Panel\OrderPaymentCard` — the agent's tools read the same.
 - **MCP** (with `webx-ui/mcp`, `Mcp\PaymentsModule`): `payments_methods_list`, `_methods_save`, `_methods_reorder`,
-  `_available`, `_list`, `_get`, `_check`, `_mark_paid`, `_switch_method`, `_pay_link`, `_problems`, `_resolve_problem`,
+  `_available`, `_list`, `_get`, `_check`, `_capture`, `_void`, `_mark_paid`, `_switch_method`, `_pay_link`, `_problems`, `_resolve_problem`,
   `_exchange_list`, `_exchange_get` (read only, bodies ≤ 64 KB); resource `payments://catalog`. Keys never shown nor taken.
 - **Letters** (with `webx-ui/module-notifications`, `Notifications\PaymentNotices`): `orders.*` get `payment_url`,
   `payment_instructions`, `payment_method`; event `payments.problem`, channels — setting `payments.notify.problem`
@@ -87,7 +87,7 @@ Orders, their milestones and balance are `webx-ui/module-orders`; the cart is `w
 | `payments.manage`   | methods: on, order, words, rules, limits, settings, the gateway's keys and their test      |
 | `payments.exchange` | raw headers and bodies of the exchange, «Download»; only the super-admin by default        |
 
-Actions on an order (mark paid, check, change the method, payment link, problem resolved) — `orders.manage`, in the
+Actions on an order (mark paid, check, capture or release a hold, change the method, payment link, problem resolved) — `orders.manage`, in the
 panel and as tools; `payments_exchange_get` — `payments.exchange`; the other tools read with `payments.view`.
 
 ### Classes

@@ -209,8 +209,14 @@ const actions = computed<ScreenAction[]>(() => [
           <wx-checkbox v-model="flags.errors" data-test="filter-errors">
             {{ t('exchange.errors') }}
           </wx-checkbox>
-          <wx-button v-if="count > 0" size="sm" variant="text" @click="reset">
-            {{ t('common.cancel') }}
+          <wx-button
+            v-if="count > 0"
+            size="sm"
+            variant="text"
+            data-test="filters-reset"
+            @click="reset"
+          >
+            {{ t('exchange.reset-filters') }}
           </wx-button>
         </div>
       </div>

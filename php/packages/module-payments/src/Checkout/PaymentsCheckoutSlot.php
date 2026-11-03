@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Payments\Checkout;
 
 use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\HtmlString;
 use LogicException;
 use Throwable;
@@ -18,8 +19,12 @@ use WebxUi\Orders\Checkout\Steps\CheckoutSteps;
 use WebxUi\Orders\Checkout\Steps\NamesErrors;
 use WebxUi\Orders\Checkout\Steps\StepError;
 use WebxUi\Orders\Data\OrderData;
+use WebxUi\Orders\Models\Order;
+use WebxUi\Payments\Kind;
 use WebxUi\Payments\Methods;
+use WebxUi\Payments\Online\PaymentLinks;
 use WebxUi\Payments\PaymentContext;
+use WebxUi\Payments\Payments;
 use WebxUi\Payments\Rendering\Assets;
 use WebxUi\Payments\Selections;
 
@@ -110,16 +115,49 @@ final class PaymentsCheckoutSlot implements NamesErrors, PaymentSlot
         return $this->state($context)->chosen?->type->awaitsPayment() ?? false;
     }
 
-    /** No online method yet: «Thank you» for everything (§10.1; the gateway's door comes with them). */
+    /**
+     * An online method opens its attempt right after the order (§8.2, §10.1): a row `created`, no
+     * network — the gateway is called on `/pay/go/{uuid}`, where a failure has a page of its own.
+     * Anything else is «Thank you». Never throws: a failure is logged, and «Thank you» has «Pay».
+     */
     public function next(OrderData $order): ?string
     {
-        return null;
+        try {
+            $model = Order::query()->find($order->id);
+            $block = $model !== null && is_array($model->payment) ? $model->payment : null;
+
+            if ($model === null || $block === null || ($block['kind'] ?? null) !== Kind::Online->value
+                || ! $model->awaiting_payment || $model->cancelled_at !== null || ! is_string($block['method'] ?? null)) {
+                return null;
+            }
+
+            $method = $this->methods->any($block['method']);
+
+            if ($method === null) {
+                return null;
+            }
+
+            return $this->links()->go(app(Payments::class)->begin($model, $method, 'checkout'));
+        } catch (Throwable $e) {
+            Log::warning('webx-payments: the attempt of a placed order was not opened', ['order' => $order->number, 'exception' => $e]);
+
+            return null;
+        }
     }
 
-    /** The pay page comes with the online methods (§8.4); until then «Thank you» shows the details. */
+    /**
+     * «Pay» on «Thank you» and the order's page (§8.4): the signed page of payment of an order that
+     * still awaits its money and is not cancelled; null otherwise, or while the site has no page.
+     */
     public function payAgainUrl(OrderData $order): ?string
     {
-        return null;
+        $model = Order::query()->find($order->id);
+
+        if ($model === null || ! $model->awaiting_payment || $model->cancelled_at !== null) {
+            return null;
+        }
+
+        return $this->links()->page($model) ?: null;
     }
 
     /** The context the methods are asked against for this checkout. */
@@ -196,6 +234,11 @@ final class PaymentsCheckoutSlot implements NamesErrors, PaymentSlot
         } catch (Throwable) {
             return false;
         }
+    }
+
+    private function links(): PaymentLinks
+    {
+        return app(PaymentLinks::class);
     }
 
     private function selections(): Selections
