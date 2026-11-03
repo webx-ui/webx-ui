@@ -1,6 +1,9 @@
 # `webx-ui/module-payments` — оплата — спецификация
 
-Статус: спроектировано, ждёт приёмки (webx-ui#60, этап 1); пакет не начат. Карта семейства —
+Статус: принята 27.10.2026 (webx-ui#60); дополнена по обзору шлюзов
+[`WEBX_UI_PAYMENT_GATEWAYS.md`](WEBX_UI_PAYMENT_GATEWAYS.md) и журналом обмена со шлюзом (webx-ui#105,
+этап 2) — дополнение ждёт приёмки; пакет не начат. Что изменилось — решения 30–45 (§2), журнал — §20,
+подставной шлюз и контрактный тест — §21, сверка с кодом — §22, план — §23. Карта семейства —
 [`WEBX_UI_COMMERCE.md`](WEBX_UI_COMMERCE.md): принципы, цепочка итогов, события заказа. Соседи:
 заказы — [`WEBX_UI_MODULE_ORDERS.md`](WEBX_UI_MODULE_ORDERS.md) (вехи §5, блоки снимка §6.4, возврат
 §9), оформление — часть II [`WEBX_UI_MODULE_ORDERS.md`](WEBX_UI_MODULE_ORDERS.md) (слот `PaymentSlot`
@@ -28,7 +31,10 @@
 - реестры типов способов и шлюзов, способы сайта и их настройки (§6, §7);
 - доступность способа: сумма, валюта, выбранная доставка (§7.3);
 - выбор покупателя по корзине и реализация слота оформления `PaymentSlot` (§10);
-- попытки платежа (`payments`), их статусы, журнал событий шлюза (§5, §8);
+- попытки платежа (`payments`) и их статусы (§5, §8);
+- **журнал обмена со шлюзом** (`payment_gateway_events`, §20): каждый запрос и ответ в обе стороны
+  сырым телом, с маскированием секретов; пишет база — одинаково для любого спутника;
+- холд и списание — необязательная возможность контракта (§6.4, §9.5, решение 32);
 - процесс онлайн-оплаты: переход в шлюз, адрес возврата, проверка статуса по API, приём
   server-to-server уведомлений с проверкой подписи, идемпотентная обработка (§8, §9);
 - страница оплаты заказа: «в обработке», «не прошла», «оплатить повторно», «сменить способ» (§8.4);
@@ -36,7 +42,8 @@
 - событие уведомлений менеджеру `payments.problem` (§11.5);
 - встроенные способы: при получении и по реквизитам (§12);
 - шаблон спутника шлюза и контрактный тест (§14); хранение ключей шлюзов (§15);
-- раздел панели, вкладка «Оплата» в карточке заказа (§13), MCP (§16), словарь (§17).
+- раздел панели, вкладка «Оплата» в карточке заказа (§13), MCP (§16), словарь (§17);
+- подставной шлюз для тестов, плейграунда и lab (§21).
 
 **Рядом, но в чужом пакете:**
 
@@ -61,8 +68,8 @@
 - фискальные чеки, счета в PDF, поля юрлица, налоги — не в базе (решение 8; чеки зависят от страны
   — дело спутника или отдельного модуля);
 - возврат денег через шлюз и автоотмена неоплаченного заказа — не в v1 (решения 13, 15);
-- холдирование (двухстадийная оплата), рассрочка, подписки и рекуррентные платежи — отложены
-  (§21.2);
+- рассрочка банка напрямую, подписки и рекуррентные платежи — отложены (§24.2); холд — в базе
+  (решение 32), а не здесь;
 - комиссия за способ («+2 % за оплату картой») — в v1 нет (§22.3 спеки заказов).
 
 ### 1.1. Без соседей
@@ -97,7 +104,7 @@
    («шлюз A», «шлюз B»); контракт обязан покрыть оба. Пакеты спутников — отдельные задачи.
 5. **Оплата получает итоговую сумму к списанию** («к оплате») и не знает, откуда она. Бонусы,
    промокоды, сертификаты, кешбек — отдельные модули, в оплате не учитываются и не показываются.
-   **Сумма к оплате 0 — способ оплаты не нужен** (ставить ли тогда веху «оплачен» — вопрос 1 §21.1).
+   **Сумма к оплате 0 — способ оплаты не нужен** (ставить ли тогда веху «оплачен» — вопрос 1 §24.1).
 6. **Процесс онлайн-оплаты:** выбор способа и подтверждение → страница шлюза (карта и 3-D Secure
    там) → возврат на сайт, где сайт **сам спрашивает статус у шлюза по API**, не доверяя параметрам
    возврата → параллельно шлюз шлёт **server-to-server POST** с подписанным пакетом: проверка
@@ -129,7 +136,7 @@
 12. **`module-payments` требует `module-orders`** (§1.1). Карту коммерции §3.1 правят отдельно.
 13. **Возврата через шлюз в v1 нет** — ни контракта, ни этапа. Возврат — только ручной (`manual`) в
     заказе, как в решении 27 спеки заказов. «Возвраты через способ, которым платили» (решение 1)
-    отложено до первого клиента: сразу списание или холдирование — у каждого своё (§21.2).
+    отложено до первого клиента: сразу списание или холдирование — у каждого своё (§24.2).
 14. **`ShippingChoice` — через оформление** (§7.3): `ShippingSlot::choice()` и
     `CheckoutContext::shippingChoice()`; контракт оформления приводится к этой спеке.
 15. **Автоотмены нет нигде** — ни в заказах, ни в оплате (меняет решение 8). Неоплаченный заказ
@@ -176,6 +183,64 @@
     `/pay/{number}` служит и доплате после правки состава, и оплате онлайн заказа, оформленного «при
     получении» (§8.4, §8.5).
 
+Решения человека от 03.11.2026 (webx-ui#105: спецификация задачи и приёмка обзора шлюзов); при
+расхождении сильнее решений выше:
+
+30. **Первый спутник — LiqPay**, отдельной задачей после базы (меняет решение 4: «два шлюза A и B»).
+    Дальше — по обзору: mono → WayForPay → NovaPay → Portmone → iPay / Tranzzo; Stripe и PayPal — по
+    запросу; Fondy исключён (§5 обзора). Другие шлюзы — платная опция для клиентов, поэтому
+    **контракт базы общий**, без особенностей LiqPay: новый шлюз — новый спутник без правки базы
+    (§6.5).
+31. **Журнал обмена со шлюзом обязателен** — главное требование задачи (§20): всё, что ушло шлюзу и
+    пришло от него, — отдельной записью, сырым телом как есть, с заголовками, адресом, кодом, временем,
+    длительностью, направлением, связью с попыткой и заказом, итогом подписи и решением базы.
+    **Только дописывается**; автоочистки нет, чистка старше N дней — только явной командой.
+    **Секреты не хранятся открыто** (маскирование §20.5); маска карты от шлюза — как прислана.
+    Ошибка записи журнала не роняет оплату; колбэк не теряет запись — журнал пишется до разбора и вне
+    транзакции статуса. Просмотр — вкладка «Оплата» заказа, общий список раздела с фильтрами, MCP
+    только на чтение.
+32. **Холд — вариант А:** двухстадийная оплата заложена в контракт и базу сейчас как необязательная
+    возможность (`CapturesPayments`, статус `Authorized`, списание полное и частичное, отмена, срок
+    холда; §6.4, §9.5), чтобы рассрочка банка через прямой API и NovaPay с оплатой при доставке
+    пришли спутниками без правки базы. База и подставной шлюз холд поддерживают и тестируют; кнопки
+    «Списать» / «Отменить холд» в панели — поздним этапом плана (§23).
+33. **Неподписанное уведомление — вариант А:** у типа с `trustsNotifications() = false` (Portmone,
+    iPay и подобные) уведомление — только повод: база пишет его в журнал целиком, находит попытку и
+    сама спрашивает статус по API; статус меняется только по ответу API. Опрос статуса для таких
+    шлюзов обязателен (он и так обязателен у всех — `fetchStatus()`); шлюз без подписи и без опроса
+    не поддерживается.
+34. **Повторный колбэк идемпотентен:** статус не прыгает, событие всё равно пишется в журнал (§9.2).
+35. **Расхождения §6 обзора устраняются в этой спеке** по решению 31: сырое тело вместо обрезанного
+    json, без автоочистки по умолчанию.
+36. **Алгоритм подписи LiqPay** (SHA3-256 в доках или SHA1 в SDK) решает задача спутника проверкой в
+    песочнице; контракт базы от алгоритма подписи не зависит.
+
+Решения этой правки (webx-ui#105, этап 2; спорное — в §24.1):
+
+37. **Сырой обмен ловит база, а не спутник.** Исходящие запросы спутник делает только через
+    `GatewayHttp` базы (§20.3), входящее база пишет сама до вызова спутника. Так журнал одинаков у
+    любого спутника и не зависит от его аккуратности; контрактный тест (§21.3) ловит запрос мимо
+    `GatewayHttp`.
+38. **Журнал — своё соединение с базой** (`webx-payments.exchange.connection`, по умолчанию копия
+    основного): вставка журнала коммитится сама и не откатывается вместе с транзакцией `settle()`.
+39. **Сеть — никогда внутри транзакции.** Запрос к шлюзу идёт под атомарным замком попытки
+    (`Cache::lock`), статус меняет короткая транзакция `settle()` после ответа (§9.1).
+40. **Маскирование — по значениям ключей способа, а не по именам полей** (§20.5): каждое вхождение
+    значения из `Credentials` во всех кодировках, заголовки авторизации, производные секреты, которые
+    объявил спутник. **Подпись не затирается** — она не секрет и нужна для разбора.
+41. **Идемпотентность уведомления — `settle()`, а не уникальный индекс журнала:** повтор пишется в
+    журнал отдельной записью с итогом `duplicate` (решение 34), уникального индекса по `event_key`
+    нет.
+42. **Персональные данные шлюзу — только тем, кто требует:** тип объявляет, какие поля покупателя ему
+    нужны (`StartNeeds`, §6.3), база кладёт в `StartRequest` только их (вопрос 4 §7 обзора).
+43. **Позиции заказа в запросе** — снимок строк заказа; не сходятся с суммой попытки — одна строка
+    «Order 1024» на сумму (вопрос 3 §7 обзора).
+44. **Холд не заводит вехи заказа:** заблокированные деньги — состояние попытки; заказ остаётся
+    «ожидает оплаты» со строкой истории «Деньги заблокированы до …», веха `paid` — по списанию (§9.5;
+    §18 спеки заказов предлагал новую веху — правка соседа, §22.2).
+45. **Подставной шлюз — «шлюз A» (`gateway-a`)** по образцу «службы A» доставки: несколько типов с
+    разным набором возможностей, страница «оплаты» с кнопками, внутрипроцессный API (§21).
+
 ## 3. Слова
 
 | Слово               | Что значит                                                                                    |
@@ -188,6 +253,9 @@
 | **уведомление**     | server-to-server POST шлюза (callback, webhook) с подписанным пакетом о попытке               |
 | **возврат на сайт** | браузер покупателя вернулся со страницы шлюза на адрес возврата (return URL)                  |
 | **проблема**        | попытка подтверждена, но заказ оплаченным не стал: двойная оплата, сумма не та, заказ отменён |
+| **холд**            | шлюз заблокировал деньги на карте, списание — отдельным запросом магазина (§9.5)              |
+| **событие обмена**  | одна запись журнала обмена: запрос и ответ одной стороны сырыми телами (§20)                  |
+| **трасса**          | общий ULID событий одного действия: уведомление → запрос статуса → решение (§20.2)            |
 
 ## 4. Адреса
 
@@ -199,13 +267,17 @@ GET  /pay/{number}?signature=…      страница оплаты заказа
 POST /pay/{number}/attempts         новая попытка выбранным онлайн-способом → redirect на /go
 POST /pay/{number}/method           сменить способ (§8.5); подпись — та же
 GET  /pay/go/{uuid}                 переход в шлюз: start() → 302 или автоотправка формы (§8.2)
-GET  /pay/return/{uuid}             возврат со страницы шлюза (§8.3); success и fail — один адрес
+GET|POST /pay/return/{uuid}         возврат со страницы шлюза (§8.3); success и fail — один адрес;
+                                    POST — без CSRF (шлюз возвращает формой)
 GET  /api/payments/{uuid}/status    JSON для страницы «в обработке» (§8.4)
 
 GET  /api/payments/methods          способы для шага оформления (§10.2)
 PUT  /api/payments/selection        выбор покупателя по корзине (§10.2)
 
 POST /payments/notify/{method}      уведомление шлюза (§9.2): без сессии, без CSRF, без {locale}
+
+GET  /pay/fake/{uuid}               «страница шлюза A» (§21.2) — только с WEBX_PAYMENTS_FAKE_GATEWAY
+POST /pay/fake/{uuid}/{action}      кнопки страницы шлюза A
 ```
 
 - **Страница оплаты — подписанная ссылка без срока,** как страница заказа (решение 32 спеки
@@ -216,7 +288,9 @@ POST /payments/notify/{method}      уведомление шлюза (§9.2): �
 - **Уведомление — без `{locale}` и без сессии,** маршрут в группе `api` без `web`: CSRF и cookie
   ему не нужны, а редирект на язык сломал бы POST. Адрес уведомлений способа показывается в форме
   способа для копирования в кабинет шлюза (§13.3). Ограничение частоты — `throttle:payments-notify`
-  (по IP, 120 в минуту), тело — не больше 64 КБ.
+  (по IP, 120 в минуту). Тело — до `webx-payments.notify.max_body` (1 МБ): больше — 413, но
+  событие журнала всё равно пишется (тело обрезано с пометкой, §20.4). Отказ троттлинга журнал не
+  пишет: до контроллера запрос не доходит (§24.1, вопрос 5).
 - Все маршруты сайта — в списке открытых `AccessCoverageTest` с причиной «оплата покупателя» и
   «уведомление шлюза».
 
@@ -257,26 +331,32 @@ POST /payments/notify/{method}      уведомление шлюза (§9.2): �
 
 ### `payments` — попытки
 
-| Колонка                    | Тип                     | Примечание                                                                     |
-| -------------------------- | ----------------------- | ------------------------------------------------------------------------------ |
-| `id`                       | bigint                  |                                                                                |
-| `uuid`                     | char(26), **unique**    | ULID — в адресах и у шлюза (§4)                                                |
-| `order_id`                 | FK `orders`, restrict   | index                                                                          |
-| `method_key`               | string(64)              | ключ способа на момент попытки                                                 |
-| `type`                     | string(64)              | ключ типа — какой спутник отвечает за попытку                                  |
-| `amount`                   | bigint unsigned         | сколько просим: `Orders::balance()->due` на момент создания (решение 29)       |
-| `currency`                 | char(3)                 | валюта заказа                                                                  |
-| `status`                   | string(16), index       | §8.1                                                                           |
-| `problem`                  | string(24), null, index | `duplicate`, `order_cancelled`, `amount_mismatch` (§9.4); `null` — проблем нет |
-| `gateway_ref`              | string(190), null       | идентификатор платежа у шлюза; unique `(type, gateway_ref)`                    |
-| `paid_amount`              | bigint unsigned, null   | сколько подтвердил шлюз                                                        |
-| `paid_at`                  | timestamp, null         | время оплаты по шлюзу                                                          |
-| `failure_reason`           | string(500), null       | причина отказа словами шлюза, без данных карты                                 |
-| `expires_at`               | timestamp, null         | когда ссылка шлюза перестаёт работать (если шлюз её задаёт)                    |
-| `source`                   | string(64)              | `checkout`, `pay-page`, `panel`, `mcp`, `api`                                  |
-| `admin_id`                 | bigint unsigned, null   | если попытку создал или отметил человек (§12.2)                                |
-| `meta`                     | json, null              | несекретное от спутника: маска карты `**** 1234`, способ внутри шлюза          |
-| `created_at`, `updated_at` | timestamp               |                                                                                |
+| Колонка                    | Тип                     | Примечание                                                                                                |
+| -------------------------- | ----------------------- | --------------------------------------------------------------------------------------------------------- |
+| `id`                       | bigint                  |                                                                                                           |
+| `uuid`                     | char(26), **unique**    | ULID — в адресах и у шлюза (§4)                                                                           |
+| `order_id`                 | FK `orders`, restrict   | index                                                                                                     |
+| `method_key`               | string(64)              | ключ способа на момент попытки                                                                            |
+| `type`                     | string(64)              | ключ типа — какой спутник отвечает за попытку                                                             |
+| `amount`                   | bigint unsigned         | сколько просим: `Orders::balance()->due` на момент создания (решение 29)                                  |
+| `currency`                 | char(3)                 | валюта заказа                                                                                             |
+| `status`                   | string(16), index       | §8.1                                                                                                      |
+| `problem`                  | string(24), null, index | `duplicate`, `order_cancelled`, `amount_mismatch`, `hold_expiring`, `capture_failed` (§9.4); `null` — нет |
+| `gateway_ref`              | string(190), null       | идентификатор платежа у шлюза; unique `(type, gateway_ref)`                                               |
+| `paid_amount`              | bigint unsigned, null   | сколько подтвердил шлюз                                                                                   |
+| `paid_at`                  | timestamp, null         | время оплаты по шлюзу                                                                                     |
+| `failure_reason`           | string(500), null       | причина отказа словами шлюза, без данных карты                                                            |
+| `expires_at`               | timestamp, null         | когда ссылка шлюза перестаёт работать (если шлюз её задаёт)                                               |
+| `hold`                     | bool, default false     | попытка открыта с холдом (§9.5): настройка способа на момент `begin()`                                    |
+| `authorized_amount`        | bigint unsigned, null   | сколько шлюз заблокировал (`Authorized`)                                                                  |
+| `authorized_at`            | timestamp, null         |                                                                                                           |
+| `hold_expires_at`          | timestamp, null, index  | до когда держится холд (от шлюза или по `maxHoldDays()` типа)                                             |
+| `capture_amount`           | bigint unsigned, null   | сколько попросили списать (`Payments::capture()`); сверка суммы — с ним                                   |
+| `refunded_amount`          | bigint unsigned, null   | сколько шлюз сообщил возвращённым (из кабинета шлюза); сведения, не баланс                                |
+| `source`                   | string(64)              | `checkout`, `pay-page`, `panel`, `mcp`, `api`                                                             |
+| `admin_id`                 | bigint unsigned, null   | если попытку создал или отметил человек (§12.2)                                                           |
+| `meta`                     | json, null              | несекретное от спутника: маска карты `**** 1234`, способ внутри шлюза                                     |
+| `created_at`, `updated_at` | timestamp               |                                                                                                           |
 
 - **Индексы:** `order_id` — вкладка заказа; `(status, created_at)` — опрос незавершённых (§9.3) и
   журнал; `problem` — фильтр проблем; unique `(type, gateway_ref)` — уведомление находит попытку по
@@ -284,24 +364,13 @@ POST /payments/notify/{method}      уведомление шлюза (§9.2): �
   MariaDB в этапе 2.
 - Попытка не удаляется: это след денег.
 
-### `payment_events` — журнал общения со шлюзом
+- Индекс `hold_expires_at` — опрос холдов, срок которых подходит (§9.3).
 
-| Колонка      | Тип                 | Примечание                                                                               |
-| ------------ | ------------------- | ---------------------------------------------------------------------------------------- |
-| `id`         | bigint              |                                                                                          |
-| `payment_id` | FK `payments`, null | index; `null` — уведомление не нашло попытку                                             |
-| `method_key` | string(64)          |                                                                                          |
-| `kind`       | string(16)          | `start`, `return`, `notify`, `poll`, `check` (кнопка или MCP), `manual`, `expire`        |
-| `event_key`  | char(64), null      | sha256 идентификатора уведомления у шлюза или тела; unique `(method_key, event_key)`     |
-| `reported`   | string(16), null    | статус, который сообщил шлюз, переведённый в §8.1                                        |
-| `outcome`    | string(16)          | `applied`, `same`, `ignored`, `duplicate`, `rejected`, `unmatched`, `error`              |
-| `message`    | string(500), null   | «подпись не сошлась», «сумма 9900 вместо 12000», текст ошибки транспорта без тела        |
-| `payload`    | json, null          | пакет шлюза после маскирования (§15.3), обрезан до `webx-payments.events.payload_length` |
-| `created_at` | timestamp           | index — чистка                                                                           |
+### `payment_gateway_events` — журнал обмена со шлюзом
 
-- Журнал — для разбора «почему заказ не оплачен», а не источник правды: статус попытки меняет только
-  `settle()`. Хранение — `webx-payments.events.days` (180), чистит `webx:payments:prune` ночью.
-- Unique `(method_key, event_key)` — первый рубеж идемпотентности уведомлений (§9.2).
+Таблица, поля, индексы и правила — §20 (решение 31). Прежняя `payment_events` (обрезанный json после
+маскирования, хранение 180 дней и ночная чистка) этой правкой **заменена**: она противоречила
+решению 31 (§6, п. 1 обзора).
 
 ## 6. Контракт способа и реестр
 
@@ -374,9 +443,10 @@ final readonly class Availability
 - **Тип не трогает базу и модели,** как тип доставки (§6.1 её спеки): способ ему даёт база
   неизменяемым `Method` (ключ, тип, названия, настройки, правило доставки, границы суммы).
 - **Новые возможности — только необязательными интерфейсами** поверх `MethodType`: онлайн-платёж
-  (`ChargesOnline`, §6.3), отмена незавершённой попытки (`CancelsPayments`), проверка подключения
-  у шлюза (§14.1). Старые спутники не ломаются: возврат через шлюз, когда до него дойдёт (§21.2),
-  добавится так же.
+  (`ChargesOnline`, §6.3), отмена незавершённой попытки (`CancelsPayments`), серверный шаг после
+  одобрения (`CompletesApproval`), холд и списание (`CapturesPayments`) — §6.4; проверка
+  подключения у шлюза (§14.1). Старые спутники не ломаются: возврат через шлюз, когда до него
+  дойдёт (§24.2), добавится так же.
 
 ### 6.2. Реестры `MethodTypes` и `Gateways`
 
@@ -410,6 +480,9 @@ final class Gateways
 
 ### 6.3. `ChargesOnline` — онлайн-платёж
 
+Обязательный минимум любого онлайн-типа — то, что умеют все шлюзы обзора (§3.1 обзора): страница
+шлюза, наш номер платежа, запрос статуса по API, серверное уведомление, адрес возврата.
+
 ```php
 namespace WebxUi\Payments\Contracts;
 
@@ -417,25 +490,40 @@ interface ChargesOnline extends MethodType
 {
     /**
      * Opens a payment at the gateway for this attempt and tells where the buyer goes.
-     * Called on GET /pay/go/{uuid}, never at order commit (§8.2). May throw GatewayUnavailable.
+     * Called on GET /pay/go/{uuid}, once per attempt, never at order commit (§8.2).
+     * Every call to the gateway goes through $http — the base journals it (§20.3).
+     * May throw GatewayUnavailable.
      */
-    public function start(Method $method, Credentials $credentials, StartRequest $request): Handoff;
+    public function start(Method $method, Credentials $credentials, StartRequest $request, GatewayHttp $http): Handoff;
 
-    /** Asks the gateway's API what happened to the payment. The only truth on return (§8.3). */
-    public function fetchStatus(Method $method, Credentials $credentials, Payment $payment): GatewayStatus;
+    /** Asks the gateway's API what happened to the payment. Reads only: never captures or charges. */
+    public function fetchStatus(Method $method, Credentials $credentials, Payment $payment, GatewayHttp $http): GatewayStatus;
 
     /**
-     * Reads a server-to-server notification: checks the signature with the credentials,
-     * finds the gateway's payment id and status. Throws InvalidNotification (bad signature,
-     * malformed body) — the base answers with rejectResponse() and journals it (§9.2).
+     * What the type needs of the buyer and the order for start(): the base fills only these
+     * (decision 42). Email, phone, name; the order's lines (decision 43).
      */
-    public function readNotification(Method $method, Credentials $credentials, Request $request): Notification;
+    public function needs(): StartNeeds;
 
-    /** The answer the gateway expects for an accepted notification ('OK', JSON, an empty 200). */
-    public function acceptResponse(Notification $notification): Response;
+    /**
+     * False — the gateway's notifications are not signed, or the signature does not cover the data
+     * (decision 33): a notification is only a reason to ask fetchStatus(); its status is never applied.
+     */
+    public function trustsNotifications(): bool;
+
+    /**
+     * Reads a server-to-server notification the base has journaled already (§9.2): checks the
+     * signature with the credentials, finds our attempt and the gateway's status. Throws
+     * InvalidNotification — bad signature, malformed body. A type that does not trust its
+     * notifications answers Notification::poke(); one about something else — ::unrelated().
+     */
+    public function readNotification(Method $method, Credentials $credentials, Request $request, GatewayHttp $http): Notification;
+
+    /** The answer the gateway expects for an accepted notification ('OK', a signed JSON, an empty 200). */
+    public function acceptResponse(Method $method, Credentials $credentials, Notification $notification): Response;
 
     /** The answer for a rejected one; most gateways retry on non-2xx. */
-    public function rejectResponse(InvalidNotification $e): Response;
+    public function rejectResponse(Method $method, Credentials $credentials, InvalidNotification $e): Response;
 }
 ```
 
@@ -445,14 +533,43 @@ namespace WebxUi\Payments;
 final readonly class StartRequest
 {
     public function __construct(
-        public string $uuid,           // our attempt id: the gateway's order id / merchant reference
-        public int $amount,            // minor units; the satellite converts to the gateway's format without float
+        public string $uuid,             // our attempt id: the gateway's order id / merchant reference
+        public string $orderNumber,      // '1024' — what a manager searches by in the gateway's cabinet
+        public int $amount,              // minor units; the satellite converts without float (GatewayAmount)
         public string $currency,
-        public string $description,    // "Order 1024" in the order's locale
-        public string $returnUrl,      // /pay/return/{uuid} — absolute
-        public string $notifyUrl,      // /payments/notify/{method} — absolute
-        public string $locale,         // the gateway page's language, if it can
-        public ?string $customerEmail, // only if the gateway needs it for its own receipt
+        public string $description,      // "Order 1024" in the order's locale
+        public string $returnUrl,        // /pay/return/{uuid} — absolute
+        public string $notifyUrl,        // /payments/notify/{method} — absolute
+        public string $locale,           // the gateway page's language, if it can
+        public bool $hold,               // open with a hold (§9.5); true only for CapturesPayments
+        public ?CarbonImmutable $expiresAt, // the method's own term of a payment; null — the gateway's default
+        public ?string $customerEmail,   // only what needs() asked for (decision 42)
+        public ?string $customerPhone,
+        public ?string $customerName,
+        /** @var list<PaymentLine> */
+        public array $lines,             // empty unless needs()->lines; never empty when asked (decision 43)
+    ) {}
+}
+
+final readonly class StartNeeds
+{
+    public function __construct(
+        public bool $email = false,
+        public bool $phone = false,
+        public bool $name = false,
+        public bool $lines = false,
+    ) {}
+}
+
+/** One line for the gateway's receipt: what the order's snapshot says, nothing counted here. */
+final readonly class PaymentLine
+{
+    public function __construct(
+        public string $name,
+        public int $qty,
+        public int $unitPrice,           // minor units, after the line's discounts
+        public int $total,               // qty × unitPrice as the order keeps it
+        public ?string $sku,
     ) {}
 }
 
@@ -461,55 +578,145 @@ final readonly class Handoff
 {
     public static function redirect(string $url, ?string $gatewayRef = null, ?CarbonInterface $expiresAt = null): self;
     /** @param array<string, string> $fields  auto-submitted by a tiny page; no card fields, ever */
-    public static function post(string $url, array $fields, ?string $gatewayRef = null): self;
+    public static function post(string $url, array $fields, ?string $gatewayRef = null, ?CarbonInterface $expiresAt = null): self;
+}
+
+enum Reported: string
+{
+    case Pending = 'pending';
+    case Authorized = 'authorized';      // money held, waits for a capture (§9.5)
+    case Paid = 'paid';                  // money taken: never «completed» without the charge
+    case Failed = 'failed';
+    case Cancelled = 'cancelled';
+    case Expired = 'expired';
+    case Refunded = 'refunded';          // given back from the gateway's cabinet; refundedAmount says how much
 }
 
 final readonly class GatewayStatus
 {
     public function __construct(
-        public Reported $status,       // Pending | Paid | Failed | Cancelled | Expired | Refunded
+        public Reported $status,
         public ?string $gatewayRef,
-        public ?int $amount,           // what the gateway took, minor units; null — not said
+        public ?int $amount,             // what the gateway took (Paid) or holds (Authorized), minor units
         public ?string $currency,
         public ?CarbonImmutable $paidAt,
-        public ?string $reason,        // gateway's words for a failure; no card data
-        public array $meta = [],       // masked card '**** 1234', payment kind — non-secret
+        public ?string $reason,          // gateway's words for a failure; no card data
+        public ?int $refundedAmount = null,
+        public ?CarbonImmutable $holdExpiresAt = null,
+        public array $meta = [],         // masked card as sent '4444****1111', payment kind, fee — non-secret
     ) {}
 }
 
 final readonly class Notification
 {
-    public function __construct(
-        public string $eventKey,       // the gateway's notification id, or sha256 of the raw body
-        public ?string $uuid,          // our attempt id, if the gateway echoes it
-        public ?string $gatewayRef,
-        public GatewayStatus $status,
-        public array $payload,         // the parsed body for the journal; masked by the base again (§15.3)
-    ) {}
+    /** A status the base may apply (a signed notification of a trusted type). */
+    public static function status(string $eventKey, ?string $uuid, ?string $gatewayRef, GatewayStatus $status): self;
+    /** Only a reason to ask the gateway (decision 33): which attempt, nothing more is believed. */
+    public static function poke(string $eventKey, ?string $uuid, ?string $gatewayRef): self;
+    /** Not about an attempt's status: a dispute, a card token, an event type we do not take. */
+    public static function unrelated(string $eventKey, string $reason, ?string $uuid = null, ?string $gatewayRef = null): self;
 }
 ```
 
 - **Обе формы передачи покупателя** — `redirect` (шлюз создал платёж по API и дал адрес) и `post`
-  (шлюз принимает форму с подписанными полями на своей странице). Так контракт покрывает оба вида
-  hosted-страниц; полей карты в форме нет и быть не может (решение 3), страница автоотправки
-  проверяет это тестом: имя поля из списка `card|pan|cvv|cvc|expiry|exp_` — исключение.
-- **Подпись проверяет спутник,** ключами из `Credentials` (§15). База не знает алгоритма, но
-  контрактный тест (§14.3) требует: неверная подпись → `InvalidNotification`, сравнение — за
-  постоянное время (`hash_equals`).
-- **Сумму спутник переводит без `float`:** `Money::toDecimalString(int, currency)` и обратно
-  (`Money::fromDecimalString`) — общий помощник `module-cart`; экспонента — из ISO 4217.
-- **Статус шлюза переводит спутник** в закрытый список `Reported`; неизвестное — `Pending` с
-  `reason` (база дождётся окончательного или истечения, §9.3).
+  (шлюз принимает форму с подписанными полями на своей странице). Полей карты в форме нет и быть не
+  может (решение 3): страница автоотправки проверяет это тестом — имя поля из списка
+  `card|pan|cvv|cvc|expiry|exp_` — исключение. Виджет на сайте (`embed`) — не в v1 (решение 3).
+- **`eventKey`** — id события у шлюза (если он есть) или sha256 сырого тела; повтор того же
+  уведомления даёт тот же ключ.
+- **Подпись проверяет спутник,** ключами из `Credentials` (§15). База не знает алгоритма (решение 36),
+  но контрактный тест (§21.3) требует: у доверенного типа неверная подпись → `InvalidNotification`,
+  сравнение — за постоянное время (`hash_equals`); у недоверенного — статус из тела не применяется
+  никогда. Ключ подписи из API шлюза (mono) или сертификат (PayPal) спутник получает через тот же
+  `$http` и кеширует сам.
+- **Ответ шлюзу получает ключи:** подписанный ответ (WayForPay) иначе не собрать. Тело и код ответа
+  база пишет в журнал (§20.3).
+- **Сумму спутник переводит без `float`:** `WebxUi\Payments\GatewayAmount::toDecimal(int, currency)`
+  и `::fromDecimal(string, currency)` — помощник базы на экспоненте ISO 4217 из `Money::exponent()`
+  `module-cart` (там есть только `toMinor()`, десятичной строки наружу нет — §22.1). Сумма в подписи
+  бывает другого вида, чем в теле, — это забота спутника и строка контрактного теста.
+- **Статус шлюза переводит спутник** в закрытый список `Reported` (таблица соответствия — §3.3
+  обзора). Правила, общие для всех, держит контрактный тест: неизвестное — `Pending` с `reason`;
+  `Paid` — только при подтверждённом списании («завершено» ≠ «оплачено»); неоднозначный отказ во
+  время 3-D Secure — `Pending`; порядок событий не выдумывать.
+- **`start()` один раз на попытку:** база не зовёт его повторно (`status ≠ created` → страница
+  оплаты, §8.2). Таймаут после того, как шлюз мог создать платёж, — попытка `failed` с причиной
+  «шлюз не ответил»; спутник шлюза, у которого повтор номера создаёт второй платёж (mono, NovaPay),
+  перед ошибкой спрашивает `fetchStatus()` — так советует SDK NovaPay.
+- **Валюта** — `currencies()` типа: у шлюзов, где её нет в запросе, — `['UAH']`; числовой код ISO 4217
+  (mono) переводит спутник.
 
 ### 6.4. Необязательные возможности
+
+Тип реализует интерфейс — база показывает действие и зовёт его; нет — не показывает. Новая
+возможность — новый интерфейс, старые спутники не ломаются (как `CreatesWaybills` у доставки).
 
 ```php
 interface CancelsPayments extends ChargesOnline
 {
     /** Closes a pending payment so it cannot be paid any more (§9.4). False — the gateway refused. */
-    public function cancel(Method $method, Credentials $credentials, Payment $payment): bool;
+    public function cancel(Method $method, Credentials $credentials, Payment $payment, GatewayHttp $http): bool;
+}
+
+/**
+ * The gateway approved, the shop must still confirm on its server (PayPal: approve ≠ paid).
+ * Called by the base on return and from the poll before fetchStatus(), under the attempt's lock;
+ * idempotent: a second call for the same attempt does not charge twice (the attempt's uuid as the key).
+ */
+interface CompletesApproval extends ChargesOnline
+{
+    public function complete(Method $method, Credentials $credentials, Payment $payment, GatewayHttp $http): GatewayStatus;
+}
+
+/** Two-stage payment (decision 32): hold, then capture all or a part, or let it go. */
+interface CapturesPayments extends ChargesOnline
+{
+    /** Days the gateway keeps a hold when it does not say itself; the poll warns before (§9.3). */
+    public function maxHoldDays(): int;
+
+    /** Whether a capture may take less than was held. */
+    public function capturesPartially(): bool;
+
+    /** Takes $amount (≤ authorized) of a held payment. Paid on success, Pending if the gateway is slow. */
+    public function capture(Method $method, Credentials $credentials, Payment $payment, int $amount, GatewayHttp $http): GatewayStatus;
+
+    /** Lets the hold go. Cancelled on success. */
+    public function void(Method $method, Credentials $credentials, Payment $payment, GatewayHttp $http): GatewayStatus;
 }
 ```
+
+| Возможность                        | Контракт                                      | v1                                                         |
+| ---------------------------------- | --------------------------------------------- | ---------------------------------------------------------- |
+| онлайн-платёж через страницу шлюза | `ChargesOnline`                               | да, обязателен                                             |
+| закрыть незавершённую попытку      | `CancelsPayments`                             | да                                                         |
+| серверный шаг после одобрения      | `CompletesApproval`                           | да (база и подставной шлюз)                                |
+| холд и списание                    | `CapturesPayments`                            | да в базе и подставном шлюзе; кнопки панели — поздно (§23) |
+| неподписанное уведомление          | `trustsNotifications() = false`               | да (решение 33)                                            |
+| позиции и данные покупателя        | `needs()`                                     | да                                                         |
+| возврат через шлюз                 | `RefundsPayments` — имя занято, контракта нет | нет (решение 13)                                           |
+| виджет на сайте                    | `Handoff::embed()` — не заводится             | нет (решение 3)                                            |
+| рассрочка через агрегатор          | ничего: настройка способа у спутника          | да, без базы                                               |
+
+### 6.5. Каждый шлюз обзора ложится без правки базы
+
+Проверка контракта §6.3–§6.4 по шлюзам обзора (§4 обзора — против прежней спеки):
+
+| Шлюз               | Ложится | Чем                                                                                                                            |
+| ------------------ | ------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| LiqPay             | да      | `Handoff::post()`, подпись по base64-строке — сырое тело в журнале; алгоритм хеша — настройка спутника (решение 36)            |
+| mono (plata)       | да      | `redirect`; ECDSA-ключ из API через `GatewayHttp`; `expired` без вебхука — опрос §9.3; холд — `CapturesPayments` (только UAH)  |
+| WayForPay          | да      | `post`; подписанный ответ — `acceptResponse()` с ключами; позиции в подписи — `needs()->lines`                                 |
+| Portmone           | да      | `trustsNotifications() = false` — опрос; возврат покупателя POST; пароль в теле — маскирование по значению (§20.5)             |
+| NovaPay            | да      | телефон — `needs()`; PEM-ключ — многострочный секрет (§14.1); с доставкой — `CapturesPayments`, списание по вехе зовёт спутник |
+| iPay               | да      | подпись не покрывает данные — `trustsNotifications() = false`; холд — по режиму мерчанта, без него работает одностадийно       |
+| Tranzzo            | да      | e-mail и телефон — `needs()`                                                                                                   |
+| Приват «Частинами» | да      | `needs()` (позиции, телефон); подтверждение магазином — `CapturesPayments`                                                     |
+| mono «Частинами»   | да      | обязательное подтверждение после выдачи — `CapturesPayments` (отдельный тип `mono.parts`)                                      |
+| Stripe             | да      | `redirect`; `line_items` — `needs()->lines`; события не о платеже — `Notification::unrelated()`                                |
+| PayPal             | да      | одобрение ≠ оплата — `CompletesApproval`; OAuth-токен — производный секрет (`Gateway::secretFields()`, §14.1)                  |
+
+Не ложится ничего из обзора. Остаются за рамками контракта и не мешают спутникам: возврат через шлюз
+(решение 13), виджет (решение 3), токены карт и регулярные платежи (§24.2).
 
 ## 7. Способы для покупателя
 
@@ -587,19 +794,22 @@ final readonly class ShippingChoice
 
 ### 8.1. Статусы попытки
 
-| Статус      | Что значит                                                         | Куда может перейти                                       |
-| ----------- | ------------------------------------------------------------------ | -------------------------------------------------------- |
-| `created`   | строка есть, покупатель ещё не ушёл в шлюз                         | `pending`, `failed` (шлюз не открыл платёж), `cancelled` |
-| `pending`   | платёж открыт у шлюза, результата нет                              | `paid`, `failed`, `cancelled`, `expired`                 |
-| `paid`      | шлюз подтвердил оплату                                             | — (конечный)                                             |
-| `failed`    | шлюз отказал (отклонено банком, 3-D Secure не пройден)             | `paid` (запоздалое подтверждение шлюза)                  |
-| `cancelled` | покупатель отменил на странице шлюза или мы закрыли попытку (§9.4) | `paid` (запоздалое подтверждение шлюза)                  |
-| `expired`   | срок ссылки шлюза вышел или шлюз не ответил до срока опроса (§9.3) | `paid` (запоздалое подтверждение шлюза)                  |
+| Статус       | Что значит                                                         | Куда может перейти                                                                    |
+| ------------ | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------- |
+| `created`    | строка есть, покупатель ещё не ушёл в шлюз                         | `pending`, `failed` (шлюз не открыл платёж), `cancelled`                              |
+| `pending`    | платёж открыт у шлюза, результата нет                              | `authorized`, `paid`, `failed`, `cancelled`, `expired`                                |
+| `authorized` | деньги заблокированы (холд, §9.5), ждут списания                   | `paid` (списание), `cancelled` (отмена холда), `expired` (срок холда вышел), `failed` |
+| `paid`       | шлюз подтвердил оплату                                             | — (конечный)                                                                          |
+| `failed`     | шлюз отказал (отклонено банком, 3-D Secure не пройден)             | `paid` (запоздалое подтверждение шлюза)                                               |
+| `cancelled`  | покупатель отменил на странице шлюза или мы закрыли попытку (§9.4) | `paid` (запоздалое подтверждение шлюза)                                               |
+| `expired`    | срок ссылки шлюза вышел или шлюз не ответил до срока опроса (§9.3) | `paid` (запоздалое подтверждение шлюза)                                               |
 
 - **`paid` сильнее всего.** Подтверждение оплаты от шлюза применяется из любого незавершённого и
   неудачного статуса: деньги списаны — значит, списаны. Обратного нет: «отказ» или «отмена» после
   `paid` — `ignored` в журнале и строка «шлюз сообщил отказ уже оплаченной попытки» для менеджера.
-- **Повтор того же статуса** — `same`, ничего не меняется и событий нет.
+- **Повтор того же статуса** — `same`, ничего не меняется и событий нет; запись журнала обмена
+  остаётся (решение 34).
+- **`authorized` → `pending` не бывает:** «в обработке» от шлюза у попытки с холдом — `same`.
 - `Reported::Refunded` от шлюза у попытки `paid` (вернули из кабинета шлюза) — не меняет заказ сам:
   строка истории заказа «Шлюз сообщил о возврате … — отметьте возврат» и `problem` нет; запись
   возврата `manual` в заказе — менеджер (§9.4 спеки заказов, решение 13).
@@ -614,7 +824,8 @@ final readonly class ShippingChoice
         → '/pay/go/{uuid}'                                             ни одного запроса к шлюзу
   → браузер: GET /pay/go/{uuid}
         status ≠ created → страница оплаты заказа (§8.4): повторный «Назад» не открывает второй платёж
-        start() → Handoff; gateway_ref, expires_at; status = pending; журнал kind = start
+        замок попытки; start() → Handoff; gateway_ref, expires_at; status = pending
+        журнал: запросы спутника через GatewayHttp (kind = start), передача покупателя (handoff)
         redirect → 302 на страницу шлюза
         post     → маленькая страница с формой и автоотправкой (кнопка «Перейти к оплате» без JS)
         GatewayUnavailable → status = failed, paymentFailed(), страница оплаты «Не удалось открыть
@@ -625,19 +836,28 @@ final readonly class ShippingChoice
   оформления), а запрос к шлюзу может упасть или зависнуть. Строка попытки и адрес `/pay/go` — без
   сети; сеть — на следующем запросе, где у ошибки есть своя страница.
 - **Таймауты:** `start()` и `fetchStatus()` — `webx-payments.http.timeout` (10 с), без повторов в
-  запросе покупателя.
+  запросе покупателя. Таймаут — событие журнала с `transport_error` (§20.2) и правило «`start()` один
+  раз» (§6.3).
+- **Передача покупателя — тоже событие журнала** (`direction = browser`, `kind = handoff`): адрес и
+  поля формы, как ушли в браузер; у форм (LiqPay, WayForPay, Portmone) это и есть запрос шлюзу.
 
 ### 8.3. Возврат на сайт
 
-`GET /pay/return/{uuid}` — один адрес и для «успеха», и для «отказа»: какие параметры добавил шлюз,
-база не читает (решение 26).
+`GET|POST /pay/return/{uuid}` — один адрес и для «успеха», и для «отказа»: какие параметры добавил
+шлюз, база для статуса не читает (решение 26), но **пишет в журнал как есть** (`direction = browser`,
+`kind = return`: метод, строка запроса, тело, без cookie). POST — потому что Portmone возвращает
+покупателя формой.
 
 ```
+0. журнал: возврат покупателя (до всего, даже до поиска попытки)
 1. попытка по uuid; нет — 404
 2. статус уже окончательный (уведомление пришло раньше) → сразу шаг 4
-3. fetchStatus() → settle(kind = return)        таймаут или ошибка шлюза — статус не трогаем
+3. замок попытки; CompletesApproval → complete(); fetchStatus() → settle(kind = return)
+                                                таймаут или ошибка шлюза — статус не трогаем
 4. paid                → успех: «Спасибо» оформления, если номер в сессии (§26 спеки заказов),
                          иначе подписанная страница заказа; flash «Оплата получена»
+   authorized            → то же, что paid, для покупателя: «Оплата принята» (деньги заблокированы,
+                           списание — дело магазина, §9.5)
    failed / cancelled / expired → страница оплаты заказа с причиной и кнопками (§8.4)
    pending / created     → страница оплаты заказа в состоянии «в обработке» (§8.4)
 ```
@@ -707,11 +927,18 @@ final class Payments
     public function begin(Order $order, Method $method, string $source): Payment;
 
     /**
-     * The only door from "the gateway says" to our state. One transaction:
-     * SELECT … FOR UPDATE on the payments row, transition by §8.1, journal line,
-     * then the order through Orders (mark / paymentFailed / note) in the same transaction.
+     * The only door from "the gateway says" to our state. One short transaction, no network inside:
+     * SELECT … FOR UPDATE on the payments row, transition by §8.1, then the order through Orders
+     * (mark / recordPayment / paymentFailed / note) in the same transaction. The decision goes to
+     * the exchange journal after the commit or the rollback (§20.2), from the journal's own connection.
      */
-    public function settle(Payment $payment, GatewayStatus $status, string $kind): SettleResult;
+    public function settle(Payment $payment, GatewayStatus $status, string $kind, ?string $trace = null): SettleResult;
+
+    /** Takes a held payment (§9.5): all of it, or a part when the type captures partially. */
+    public function capture(Payment $payment, ?int $amount, string $source, bool $dryRun = false): SettleResult;
+
+    /** Lets a hold go (§9.5). */
+    public function void(Payment $payment, string $source, bool $dryRun = false): SettleResult;
 
     /** Asks the gateway and settles; the panel's and MCP's «Check with the gateway» (§13.4). */
     public function check(Payment $payment, bool $dryRun = false): SettleResult;
@@ -727,16 +954,25 @@ final class Payments
 
 `settle()` по новому статусу:
 
-| Шлюз сообщил                       | Попытка                               | Заказ                                                                                                                                                                                                                                                                                                                                                                 |
-| ---------------------------------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Paid`, сумма и валюта сошлись     | → `paid`, `paid_amount`, `paid_at`    | вехи `paid` нет — `Orders::mark(paid, source: 'payment:<method>', at: paidAt, reference: gateway_ref, amount: paid_amount)`; веха есть и `due > 0` — доплата `Orders::recordPayment(paid_amount, 'payment:<method>', gateway_ref, paidAt)` (решение 29); веха есть и `due = 0` — `problem = duplicate` (§9.4); заказ отменён — `problem = order_cancelled` и `note()` |
-| `Paid`, сумма не та                | → `paid`, `problem = amount_mismatch` | веха **не** ставится; `note()` «Шлюз подтвердил 99,00 вместо 120,00 — проверьте и отметьте оплату вручную»                                                                                                                                                                                                                                                            |
-| `Failed` / `Cancelled` / `Expired` | → соответствующий                     | `Orders::paymentFailed(source, reason)` — только если это последняя попытка заказа и заказ не оплачен                                                                                                                                                                                                                                                                 |
-| `Pending`                          | без изменений (`created` → `pending`) | —                                                                                                                                                                                                                                                                                                                                                                     |
+| Шлюз сообщил                       | Попытка                                                                                      | Заказ                                                                                                                                                                                                                                                                                                                                                                 |
+| ---------------------------------- | -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Paid`, сумма и валюта сошлись     | → `paid`, `paid_amount`, `paid_at`                                                           | вехи `paid` нет — `Orders::mark(paid, source: 'payment:<method>', at: paidAt, reference: gateway_ref, amount: paid_amount)`; веха есть и `due > 0` — доплата `Orders::recordPayment(paid_amount, 'payment:<method>', gateway_ref, paidAt)` (решение 29); веха есть и `due = 0` — `problem = duplicate` (§9.4); заказ отменён — `problem = order_cancelled` и `note()` |
+| `Paid`, сумма не та                | → `paid`, `problem = amount_mismatch`                                                        | веха **не** ставится; `note()` «Шлюз подтвердил 99,00 вместо 120,00 — проверьте и отметьте оплату вручную»                                                                                                                                                                                                                                                            |
+| `Failed` / `Cancelled` / `Expired` | → соответствующий                                                                            | `Orders::paymentFailed(source, reason)` — только если это последняя попытка заказа и заказ не оплачен                                                                                                                                                                                                                                                                 |
+| `Authorized`                       | → `authorized`, `authorized_amount`, `hold_expires_at`                                       | `note()` «Деньги заблокированы: 120,00 до 10.11» — заказ остаётся «ожидает оплаты» (решение 44); у попытки без `hold` (шлюз заблокировал сам) — то же и `PaymentProblem` не нужен: менеджер видит кнопку «Списать»                                                                                                                                                    |
+| `Paid` после `authorized`          | → `paid`; сумма сверяется с `capture_amount` (или `authorized_amount`, если списал сам шлюз) | как `Paid` выше                                                                                                                                                                                                                                                                                                                                                       |
+| `Refunded`                         | `refunded_amount`; статус не меняется                                                        | строка истории «Шлюз сообщил о возврате … — отметьте возврат» (§8.1)                                                                                                                                                                                                                                                                                                  |
+| `Pending`                          | без изменений (`created` → `pending`)                                                        | —                                                                                                                                                                                                                                                                                                                                                                     |
 
 - **Порядок «возврат раньше уведомления» и наоборот** — одинаков: оба зовут `settle()` с одним и
   тем же статусом, замок строки ставит их в очередь, второй видит `same`. Веха `paid` повторно не
-  ставится (`AlreadyMarked` от своей же попытки — не проблема: база сравнивает `reference`).
+  ставится: `Orders::mark()` не бросает, а отвечает `MilestoneMark` с состоянием `ALREADY_MARKED` и
+  `reference` первой отметки — своя ли это попытка, база решает по `reference` (сверено с кодом,
+  §22.1).
+- **Сеть — до транзакции** (решение 39): `check()`, возврат и опрос сначала спрашивают шлюз под
+  атомарным замком попытки `Cache::lock("webx-payments:{uuid}", 30)`, потом зовут `settle()` с
+  ответом. Замок держит и «не чаще раза в 15 с» страницы «в обработке» (§8.4); занят — ответ из
+  строки попытки без запроса к шлюзу.
 - **Сумма сверяется с попыткой**, а не с заказом: `amount_mismatch` — шлюз подтвердил не ту сумму,
   на которую открыта попытка. Если долг заказа изменился, пока попытка ждала (менеджер правил
   состав), подтверждённая сумма всё равно входит в `paid_total`, а баланс заказа показывает остаток
@@ -754,23 +990,35 @@ final class Payments
 `POST /payments/notify/{method}`:
 
 ```
-1. способ по ключу, онлайн-тип, ключи заданы; иначе 404 и journal(rejected) без тела
-2. readNotification() — подпись и разбор; InvalidNotification → journal(rejected, «подпись не сошлась»),
-   rejectResponse() (обычно 400 — шлюз повторит; наш журнал покажет, что ключи не те)
-3. дубль: insert payment_events (method_key, event_key) — нарушение unique → acceptResponse(), outcome = duplicate
-4. попытка: по uuid из уведомления, иначе по (type, gateway_ref); нет → journal(unmatched),
+0. журнал: событие in/notify — метод, адрес, заголовки, сырое тело ($request->getContent()), IP,
+   трасса; вставка своим соединением и коммит ДО разбора и до любой транзакции (решения 31, 38).
+   Вставка не удалась → 503 без разбора (шлюз повторит), ошибка — в лог (§20.6)
+1. способ по ключу, онлайн-тип, ключи заданы; иначе 404, решение rejected «способ не найден»
+2. readNotification() — подпись и разбор; InvalidNotification → решение rejected, signature = invalid,
+   rejectResponse() (обычно 400 — шлюз повторит; журнал покажет, что ключи не те)
+3. unrelated → решение ignored с причиной, acceptResponse(); settle() нет
+4. попытка: по uuid из уведомления, иначе по (type, gateway_ref); нет → решение unmatched,
    acceptResponse() — чужой платёж повторами не исправить, менеджер видит его в журнале
-5. settle(kind = notify) → journal(applied | same | ignored), acceptResponse()
-6. исключение на шаге 5 → откат, journal(error) отдельной транзакцией, 500 — шлюз повторит
+5. уже был такой event_key с решением applied | same → пометка duplicate (статус не трогаем)
+6. poke (недоверенный тип, решение 33) → замок попытки, fetchStatus() через GatewayHttp — своё
+   событие журнала с той же трассой — и settle() по ответу API; тело уведомления статусом не служит
+   status (доверенный тип)          → settle(kind = notify) по статусу из уведомления
+7. решение applied | same | ignored | duplicate, статус до и после; acceptResponse()
+8. исключение на шаге 6 → откат settle(), решение error, 500 — шлюз повторит
+9. ответ шлюзу (код и тело) — в то же событие журнала (§20.2)
 ```
 
-- **Доверяем только подписанному пакету.** IP-список шлюза — необязательная настройка способа
-  (`notify_ips`), дополнительная, а не вместо подписи.
-- **Статус в уведомлении** — не единственный путь: спутник может в `readNotification()` дозапросить
-  `fetchStatus`, если шлюз шлёт только «что-то изменилось» (у некоторых шлюзов так); контракт это
-  допускает.
-- **Повторы шлюза** (тот же `event_key`) отсекаются на шаге 3 до замков и запросов к заказу;
-  **запоздалое уведомление** (другой `event_key`, тот же статус) доходит до `settle()` и даёт `same`.
+- **Доверяем только подписанному пакету доверенного типа.** IP-список шлюза — необязательная
+  настройка способа (`notify_ips`), дополнительная, а не вместо подписи. Не из списка — 403 и
+  решение `rejected`, событие в журнале есть.
+- **Статус в уведомлении** — не единственный путь: доверенный спутник может в `readNotification()`
+  дозапросить `fetchStatus` (шлюз шлёт «что-то изменилось»); запрос идёт через `$http` и попадает в
+  журнал той же трассой.
+- **Повторы шлюза** (тот же `event_key`) доходят до шага 5: каждый — своя запись журнала с
+  `duplicate`; дубль без замков заказа. Гонка двух одинаковых уведомлений в одну секунду: оба дойдут
+  до `settle()`, замок строки сделает второе `same` (решение 41). **Запоздалое уведомление** (другой
+  `event_key`, тот же статус) даёт `same`.
+- **Шаги 1–9 не меняют уже записанное** тело события: дописываются только поля решения (§20.2).
 
 ### 9.3. Фоновый опрос
 
@@ -778,7 +1026,14 @@ final class Payments
 моложе `expires_at` (или 48 часов, если шлюз срока не дал) — `check()` пачкой по 50, не больше
 одного запроса к шлюзу на попытку за запуск. Уведомление потерялось, покупатель закрыл вкладку —
 опрос всё равно приведёт попытку к окончательному статусу. Попытка старше срока без ответа шлюза —
-`expired` с `reason` «шлюз не ответил».
+`expired` с `reason` «шлюз не ответил» (событие журнала `direction = internal`, `kind = expire`).
+
+- **Холды:** попытки `authorized`, у которых до `hold_expires_at` меньше суток, — `check()` и, раз в
+  сутки на попытку, `PaymentProblem` вида `hold_expiring` (уведомление менеджеру «Холд по заказу 1024
+  истекает завтра — спишите или отпустите»). Срок вышел, шлюз сказал «отпущено» — `expired`,
+  `paymentFailed()` с причиной «холд истёк».
+- **`CompletesApproval`:** опрос зовёт `complete()` перед `fetchStatus()` у попыток, вернувшихся
+  «одобрено» (покупатель закрыл вкладку до возврата).
 
 ### 9.4. Двойная оплата и проблемы
 
@@ -797,6 +1052,32 @@ final class Payments
 - **Менеджер видит проблемы** вкладкой «Проблемы» журнала оплат (§13.2), отметкой в карточке
   заказа и в MCP `payments_problems`; «проблема решена» — кнопка с заметкой (попытка остаётся
   `paid`, `problem` не сбрасывается, рядом — `resolved_at` и автор в `meta`).
+- **Холд истекает** — `hold_expiring` (§9.3): вид проблемы без `paid`, «решена» снимается списанием
+  или отменой холда.
+- **Списание не прошло** (шлюз отказал в `capture`) — попытка остаётся `authorized`, `PaymentProblem`
+  вида `capture_failed` с причиной шлюза.
+
+### 9.5. Холд и списание
+
+Решения 32 и 44. Есть только у типов `CapturesPayments`.
+
+- **Включает способ:** настройка `hold` (bool, по умолчанию выключена) появляется в форме способа,
+  только если тип умеет холд. `begin()` копирует её в `payments.hold`, `StartRequest::$hold` говорит
+  спутнику открыть платёж с холдом.
+- **Оплата с холдом** проходит тот же путь §8.2–§9.2; шлюз сообщает `Authorized` → попытка
+  `authorized`, заказ «ожидает оплаты» со строкой истории (§9.1), покупатель видит «Оплата принята».
+- **`Payments::capture(payment, amount, source)`:** `amount = null` — всё заблокированное;
+  меньше — только если `capturesPartially()`, больше — отказ словами. Под замком попытки:
+  `capture_amount`, `capture()` спутника через `GatewayHttp` (`kind = capture`), затем `settle()` по
+  ответу → `paid` и веха `paid` с `amount = paid_amount` (оставшееся шлюз отпускает сам). Шлюз ответил
+  `Pending` — ждём уведомления или опроса.
+- **`Payments::void(payment, source)`:** `void()` спутника (`kind = void`) → `cancelled`,
+  `paymentFailed()` с причиной «холд отменён магазином», если это последняя попытка.
+- **Кто зовёт:** код сайта и спутника (NovaPay — по вехе `received`; связь «получен → списать» —
+  дело спутника, не базы), MCP `payments_capture` / `payments_void` и кнопки вкладки «Оплата» —
+  поздним этапом (§23). Права — `orders.manage`, как у остальных действий с заказом (§13.1).
+- **`dry_run`:** что спишется или отпустится, какая веха поставится; шлюз не вызывается.
+- **Подставной шлюз** умеет холд (тип `gateway-a.card`, §21.1) — база проверена и с холдом, и без.
 
 ## 10. Шаг оформления — `PaymentSlot`
 
@@ -805,20 +1086,20 @@ final class Payments
 `WebxUi\Payments\Checkout\PaymentsCheckoutSlot` реализует `PaymentSlot` (§22.3 спеки заказов) и
 регистрируется в `boot()`, если стоит оформление:
 
-| Метод             | Что делает                                                                                                                                  |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `needed()`        | `payable > 0` и `Methods::available()` не пуст (решение 5)                                                                                  |
-| `render()`        | `<x-webx-payments::step>` — радиокнопки: значок, название, описание; один способ — свёрнутая строка с названием                             |
-| `summary()`       | название выбранного способа; `null` — не выбран                                                                                             |
-| `check(Order)`    | выбор есть, способ включён и доступен для `ShippingChoice` и суммы прямо сейчас; иначе — «Способ оплаты больше недоступен, выберите другой» |
-| `snapshot()`      | блок `payment` (§10.4)                                                                                                                      |
-| `awaitsPayment()` | `awaitsPayment()` типа выбранного способа                                                                                                   |
-| `next()`          | онлайн — `begin()` и `/pay/go/{uuid}`; иначе `null` («Спасибо»). Не бросает: ошибка → лог и `null`, на «Спасибо» есть «Оплатить»            |
-| `payAgainUrl()`   | подписанная `/pay/{number}`, если заказ ждёт оплаты и не отменён                                                                            |
+| Метод                            | Что делает                                                                                                                                                     |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `needed()`                       | `payable > 0` и `Methods::available()` не пуст (решение 5)                                                                                                     |
+| `render()`                       | `<x-webx-payments::step>` — радиокнопки: значок, название, описание; один способ — свёрнутая строка с названием                                                |
+| `summary()`                      | название выбранного способа; `null` — не выбран                                                                                                                |
+| `check(context, Purpose::Order)` | выбор есть, способ включён и доступен для `ShippingChoice` и суммы прямо сейчас; иначе — «Способ оплаты больше недоступен, выберите другой»                    |
+| `snapshot()`                     | блок `payment` (§10.4)                                                                                                                                         |
+| `awaitsPayment()`                | `awaitsPayment()` типа выбранного способа                                                                                                                      |
+| `next(OrderData)`                | онлайн — `begin()` (заказ — по `OrderData::$id`) и `/pay/go/{uuid}`; иначе `null` («Спасибо»). Не бросает: ошибка → лог и `null`, на «Спасибо» есть «Оплатить» |
+| `payAgainUrl()`                  | подписанная `/pay/{number}`, если заказ ждёт оплаты и не отменён                                                                                               |
 
 - **Сумма 0 в момент подтверждения** (зачёт кошелька погасил всё после выбора способа) — `needed()`
   ложно, шаг скрыт, `awaitPayment = false`, блок `payment` — `null`, заказ оплаты не ждёт; веху
-  `paid` ставит менеджер. Ставить ли её сразу — вопрос 1 §21.1.
+  `paid` ставит менеджер. Ставить ли её сразу — вопрос 1 §24.1.
 
 ### 10.2. API шага
 
@@ -961,7 +1242,7 @@ final class NotificationEvents
 - Настройки: `title_pickup`, `cod_note` (подпись про комиссию службы, по языкам; пусто — по
   умолчанию из словаря).
 - Оплату отмечает менеджер («Отметить оплату» карточки заказа) или учётная программа через API;
-  автоматической связи «получен → оплачен» в v1 нет (§21.2).
+  автоматической связи «получен → оплачен» в v1 нет (§24.2).
 - Сумма для накладной — §11.3.
 
 ### 12.2. `store.bank_transfer` — по реквизитам
@@ -989,13 +1270,16 @@ npm-пара `@webx-ui/module-payments` регистрирует раздел, �
 
 ### 13.1. Права
 
-| Право             | Что даёт                                                                         |
-| ----------------- | -------------------------------------------------------------------------------- |
-| `payments.view`   | способы (без ключей), журнал попыток и событий, вкладка «Оплата» заказа — чтение |
-| `payments.manage` | способы: включить, порядок, тексты, реквизиты, правила, границы; ключи шлюзов    |
+| Право             | Что даёт                                                                                                      |
+| ----------------- | ------------------------------------------------------------------------------------------------------------- |
+| `payments.view`   | способы (без ключей), журнал попыток, журнал обмена с сырыми телами (§20.7), вкладка «Оплата» заказа — чтение |
+| `payments.manage` | способы: включить, порядок, тексты, реквизиты, правила, границы; ключи шлюзов                                 |
 
 - Действия с заказом на вкладке «Оплата» — **права заказов**: «Отметить оплату по реквизитам»,
-  «Сменить способ», «Проверить у шлюза», «Ссылка на оплату», «Проблема решена» — `orders.manage`.
+  «Сменить способ», «Проверить у шлюза», «Ссылка на оплату», «Проблема решена», «Списать» и
+  «Отменить холд» (§9.5) — `orders.manage`.
+- **Журнал обмена правом не меняется:** ни у одного права нет правки или удаления событий — таких
+  маршрутов и инструментов нет вовсе (решение 31). Отдельное право на сырые тела — вопрос 3 §24.1.
   Оплата не заводит второго права на те же действия.
 - Ключи — `payments.manage`; отдельного права на секреты нет (решение 20).
 - Права — в `PaymentsModule::permissions()` и `### Permissions` `AGENTS.md`; маршруты — `cms.can`;
@@ -1004,12 +1288,14 @@ npm-пара `@webx-ui/module-payments` регистрирует раздел, �
 
 ### 13.2. Экраны раздела
 
-| Экран                   | Что                                                                                                                                                                                                      |
-| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `payments.methods`      | способы ручного порядка (перетаскивание): значок, название, тип, шлюз, режим (тест / боевой), ключи заданы ли, включён; «Добавить способ» — выбор типа; предупреждения «нет ключей», «тип не установлен» |
-| `payments.methods.form` | §13.3                                                                                                                                                                                                    |
-| `payments.index`        | журнал попыток (`->paginate()`): дата, заказ (ссылка), способ, сумма, статус, проблема; вкладки «Все», «В обработке», «Не прошли», **«Проблемы»**; фильтры по способу, периоду                           |
-| `payments.show`         | попытка: статусы, суммы, `gateway_ref`, события журнала (`wx-payments-events`: вид, что сообщил шлюз, итог, пакет свёрнутым JSON после маскирования), «Проверить у шлюза»                                |
+| Экран                    | Что                                                                                                                                                                                                      |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `payments.methods`       | способы ручного порядка (перетаскивание): значок, название, тип, шлюз, режим (тест / боевой), ключи заданы ли, включён; «Добавить способ» — выбор типа; предупреждения «нет ключей», «тип не установлен» |
+| `payments.methods.form`  | §13.3                                                                                                                                                                                                    |
+| `payments.index`         | журнал попыток (`->paginate()`): дата, заказ (ссылка), способ, сумма, статус, проблема; вкладки «Все», «В обработке», «Не прошли», **«Проблемы»**; фильтры по способу, периоду                           |
+| `payments.show`          | попытка: статусы, суммы, холд, `gateway_ref`, события обмена попытки по времени (`wx-payments-events`, §20.7), «Проверить у шлюза»                                                                       |
+| `payments.exchange`      | журнал обмена (§20.7): все события по времени, фильтры — шлюз, способ, попытка / заказ, вид, направление, ошибки подписи, решение, период; без правки и удаления                                         |
+| `payments.exchange.show` | одно событие: запрос и ответ — заголовки, сырое тело (текстом или «скачать»), размер, sha256, «обрезано»; решение; трасса — соседние события того же действия                                            |
 
 ### 13.3. Форма способа
 
@@ -1021,8 +1307,10 @@ npm-пара `@webx-ui/module-payments` регистрирует раздел, �
 - Границы суммы.
 - Поля типа (`settings()`): реквизиты у «по реквизитам», режим и параметры шлюза у онлайн-способа.
 - **Ключи шлюза** (`credentials()` шлюза, §15): каждое поле — «задано · заменить» или пустое поле
-  ввода; значение не возвращается в браузер никогда. «Проверить подключение» — `testConnection()`
-  шлюза с введёнными или сохранёнными ключами, ответ словами.
+  ввода; значение не возвращается в браузер никогда. Поле бывает многострочным (`multiline`:
+  PEM-ключ NovaPay). «Проверить подключение» — `testConnection()` шлюза с введёнными или
+  сохранёнными ключами, ответ словами; запрос — событие журнала `kind = connection`.
+- **Холд** (§9.5) — переключатель, только у типа `CapturesPayments`.
 - **Адрес уведомлений** способа (`/payments/notify/{key}`, абсолютный) и адрес возврата — только
   чтение, с кнопкой «Копировать»: их вписывают в кабинет шлюза.
 
@@ -1033,7 +1321,10 @@ npm-пара `@webx-ui/module-payments` регистрирует раздел, �
 - блок способа (название, реквизиты для «по реквизитам»), состояние: ждёт оплаты · оплачен · не
   прошла;
 - попытки заказа таблицей: дата, способ, сумма, статус, проблема, `gateway_ref`; раскрытие —
-  события журнала;
+  события обмена попытки по времени (направление, вид, код, подпись, решение), сырое тело
+  раскрывается по клику (§20.7); ссылка «Все события заказа» — общий журнал с фильтром по заказу;
+- у попытки `authorized` — «Заблокировано 120,00 до 10.11» и (поздним этапом) «Списать» /
+  «Отменить холд» с `dry_run`-последствиями;
 - действия: «Отметить оплату по реквизитам» (§12.2), «Проверить у шлюза» (последняя незавершённая),
   «Сменить способ» (диалог со способами §7.1 с `Purpose::Order` и последствиями из `dry_run`),
   «Ссылка на оплату» (копировать подписанную ссылку или «Отправить покупателю» — письмо
@@ -1062,11 +1353,19 @@ interface Gateway
     /** Non-secret settings of the gateway shared by its methods: shop id, test mode. */
     public function settings(): array;                // list<Field>
 
-    /** Secret fields: stored encrypted (§15), never shown back. */
+    /** Secret fields: stored encrypted (§15), never shown back; `multiline: true` for a PEM key. */
     public function credentials(): array;             // list<Field>, each secret: true
 
+    /**
+     * Derived secrets the journal must mask besides the credentials' values (§20.5):
+     * header names ('X-Token'), and names of fields whose values are secrets made at run time
+     * ('access_token' of an OAuth answer). Empty for most gateways.
+     */
+    public function secretHeaders(): array;           // list<string>
+    public function secretFields(): array;            // list<string>
+
     /** The cheapest authenticated API call; words for the panel on failure, never the raw body. */
-    public function testConnection(Credentials $credentials, array $settings): ConnectionResult;
+    public function testConnection(Credentials $credentials, array $settings, GatewayHttp $http): ConnectionResult;
 }
 ```
 
@@ -1077,8 +1376,9 @@ $this->callAfterResolving(Gateways::class, fn (Gateways $g) => $g->register(Gate
 $this->callAfterResolving(MethodTypes::class, fn (MethodTypes $t) => $t->register(CardType::class)); // gateway-a.card
 ```
 
-Тип спутника реализует `ChargesOnline` и, если шлюз умеет, `CancelsPayments`. Миграция спутника создаёт способ на тип выключенным. Шлюзы A и B из решения 4
-покрываются так:
+Тип спутника реализует `ChargesOnline` и необязательные интерфейсы §6.4 по возможностям шлюза.
+Миграция спутника создаёт способ на тип выключенным. Что умеют шлюзы обзора, покрывается так (по
+шлюзам — §6.5):
 
 | Что умеет шлюз                                | Чем закрыто в контракте                                        |
 | --------------------------------------------- | -------------------------------------------------------------- |
@@ -1088,36 +1388,42 @@ $this->callAfterResolving(MethodTypes::class, fn (MethodTypes $t) => $t->registe
 | уведомление без статуса («изменилось»)        | `readNotification()` дозапрашивает `fetchStatus()`             |
 | API статуса платежа                           | `fetchStatus()`                                                |
 | отмена незавершённого                         | `CancelsPayments`                                              |
+| уведомление без подписи или со слабой         | `trustsNotifications() = false` — повод для `fetchStatus()`    |
+| ждёт подписанного ответа на уведомление       | `acceptResponse(Method, Credentials, …)`                       |
+| события не о платеже (споры, токены)          | `Notification::unrelated()`                                    |
+| одобрение ≠ оплата, нужен серверный шаг       | `CompletesApproval`                                            |
+| холд, списание, отмена холда                  | `CapturesPayments`                                             |
+| нужны телефон, имя, позиции чека              | `needs()` → поля `StartRequest`                                |
+| возврат покупателя POST-ом                    | `/pay/return/{uuid}` принимает GET и POST                      |
+| ключ подписи или токен из API                 | запрос через `GatewayHttp`, токен — `secretFields()`           |
 | возврат                                       | не в v1 (решение 13): менеджер возвращает в кабинете шлюза     |
 | тестовый режим с отдельными ключами           | `settings()` шлюза (`mode`) и отдельные поля `credentials()`   |
 
 ### 14.2. Ключи и адреса
 
 - Адрес API шлюза — из конфига спутника (тестовый и боевой), не ввод человека: `RemoteFetcher` не
-  нужен («Правило: скачивание по адресу»). HTTP — через `Http` Laravel с таймаутом базы (§8.2).
+  нужен («Правило: скачивание по адресу»). HTTP — **только через `GatewayHttp`**, который база
+  передаёт в каждый метод (решение 37, §20.3): прямой `Http` или свой клиент SDK мимо него —
+  событие без журнала, контрактный тест такое ловит. SDK шлюза, если он нужен, получает
+  PSR-18-клиент `GatewayHttp::psr()`.
 - Ключи — `Credentials` от базы (§15); спутник не читает `payment_methods` и `env()` сам.
 
 ### 14.3. Что спутник сдаёт
 
-- контрактный тест `WebxUi\Payments\Testing\GatewayContractTest` (абстрактный, из базы) на
-  записанных ответах и уведомлениях шлюза: верная подпись принимается, неверная и подменённая сумма
-  — `InvalidNotification`; повтор уведомления даёт тот же `eventKey`; статусы шлюза переведены в
-  `Reported` полностью (неизвестный — `Pending`); суммы туда и обратно без потерь для валют с
-  экспонентой 0, 2 и 3; `Handoff::post()` без полей карты; ответы на ошибки шлюза — словами, без
-  тела;
+- контрактный тест на трейте базы `WebxUi\Payments\Testing\GatewayContract` (§21.3) на записанных
+  ответах и уведомлениях шлюза — как `CarrierContract` у доставки;
 - `AGENTS.md` по формату, словарь `webx-payment-<шлюз>` (слова только своего шлюза: статусы,
   причины отказов);
-- своя спека — `WEBX_UI_PAYMENT_<ШЛЮЗ>.md` в репозитории спутника (§8 карты);
+- пакет — в монорепе `php/packages/payment-<шлюз>` (без `module-`: своего раздела панели нет — как
+  `delivery-novaposhta`), своя спека — `docs/architecture/WEBX_UI_PAYMENT_<ШЛЮЗ>.md` (§8 карты);
 - проверку на тестовом контуре шлюза: оплата, отказ, отмена на странице шлюза, уведомление раньше
-  и позже возврата.
+  и позже возврата, холд и списание (если умеет) — и каждое из них в журнале обмена с
+  замаскированными ключами.
 
 ### 14.4. Подставной шлюз
 
-`WebxUi\Payments\Testing\FakeGateway` (тип `fake.card`) — в пакете базы для тестов, плейграунда и
-демо-сайта: «страница шлюза» — маршрут базы, доступный только при `app.debug` и `fake` в списке
-`webx-payments.fake`, с кнопками «Оплатить», «Отказ», «Отменить», «Оплатить, но уведомление
-позже», «Уведомление дважды»; подпись — HMAC с тестовым ключом. Им проверяются все сценарии §8–§9
-до первого настоящего спутника.
+«Шлюз A» (`gateway-a`) базы — §21: на нём база проверяет все сценарии §8–§9 и холд до первого
+настоящего спутника, а спутник — видит образец.
 
 ## 15. Ключи шлюзов
 
@@ -1142,15 +1448,16 @@ $this->callAfterResolving(MethodTypes::class, fn (MethodTypes $t) => $t->registe
 - **MCP:** не показываются и не задаются никогда — `credentials: ["secret_key: set"]` в ответах;
   `payments_methods_save` с полем ключа отказывает словами «Gateway keys are set in the panel only»
   (§16).
-- **Журнал:** ни `payment_events`, ни `mcp_calls`, ни история заказа ключей не содержат.
-- **Логи:** ошибки шлюза пишутся без заголовков авторизации и тела запроса.
+- **Журнал:** ни `payment_gateway_events` (маскирование §20.5), ни `mcp_calls`, ни история заказа
+  ключей не содержат.
+- **Логи:** ошибки шлюза пишутся без заголовков авторизации и тела запроса — тело есть в журнале
+  обмена, в лог оно не дублируется.
 
-### 15.3. Маскирование пакетов
+### 15.3. Маскирование
 
-Перед записью в `payment_events.payload` база затирает ключи
-`password|secret|token|api_key|key|signature|sign|hash|authorization|cookie` (как журнал MCP, §10
-спеки доступа) и всё, что похоже на номер карты (13–19 цифр подряд — кроме последних четырёх),
-даже если шлюз не должен такое присылать. Спутник маскирует своё до базы; база — второй рубеж.
+Правило одно для журнала обмена и любых ответов панели и MCP — §20.5 (решение 40). Прежнее правило
+«по именам полей, включая `signature|sign|hash`» заменено: имена полей у шлюзов разные, а значение
+ключа способа база знает точно; подпись хранится.
 
 ## 16. MCP
 
@@ -1173,13 +1480,21 @@ $this->callAfterResolving(MethodTypes::class, fn (MethodTypes $t) => $t->registe
 | `payments_pay_link`        | подписанная ссылка на страницу оплаты заказа и сумма `due`, которую покупатель увидит (`orders.manage`: ссылка открывает оплату чужого заказа); долга нет — ссылка и «заказ оплачен» |
 | `payments_problems`        | сводка: проблемы по видам, попытки «в обработке» дольше часа, заказы «оплата не прошла», способы без ключей                                                                          |
 | `payments_resolve_problem` | «проблема решена» с заметкой (`orders.manage`)                                                                                                                                       |
+| `payments_exchange_list`   | журнал обмена страницами (`payments:read`): фильтры как у экрана §13.2; строка — время, шлюз, способ, попытка, заказ, направление, вид, код, подпись, решение, размеры тел; без тел  |
+| `payments_exchange_get`    | одно событие (`payments:read`) или все события трассы: заголовки и тела после маскирования — текстом UTF-8 до 64 КБ на тело (`truncated`, `size`, `sha256`), двоичное — base64       |
+| `payments_capture`         | списать холд целиком или частью (`orders.manage`, §9.5); `dry_run` — сумма, веха; поздним этапом                                                                                     |
+| `payments_void`            | отпустить холд (`orders.manage`, §9.5); поздним этапом                                                                                                                               |
 
 - **Ресурс `payments://catalog`:** типы (ключ, шлюз, вид, ждёт ли оплаты, умеет ли отмену),
   режимы правила доставки, статусы попыток и переходы §8.1, виды проблем, адреса уведомлений
   способов — из реестров и enum'ов.
 - Отказ — `ToolFailure` словами: «Order 1024 is paid already», «Method gateway-a-card has no keys»,
   «Gateway keys are set in the panel only».
-- `payments_list`, `payments_problems`, `payments_methods_list` — в `PerformanceTest` тёплыми.
+- **Журнал обмена в MCP — только чтение** (решение 31): инструментов правки и удаления событий нет;
+  область `payments:read`, право `payments.view` (в решении задачи — «`payments.read`»: в проекте
+  право чтения модуля — `.view`, §6 спеки доступа).
+- `payments_list`, `payments_problems`, `payments_methods_list`, `payments_exchange_list` — в
+  `PerformanceTest` тёплыми.
 
 ## 17. Словарь `webx-payments`
 
@@ -1194,7 +1509,9 @@ $this->callAfterResolving(MethodTypes::class, fn (MethodTypes $t) => $t->registe
 - `statuses.php` — статусы попыток, виды проблем, исходы журнала;
 - `reasons.php` — причины недоступности (§7.2) и общие причины отказа («The bank declined the
   payment», «The payment page could not be opened»);
-- `errors.php` — отказы API и MCP.
+- `errors.php` — отказы API и MCP;
+- `exchange.php` — журнал обмена: направления, виды, итоги подписи, решения, «обрезано», «скачать»;
+- `fake.php` — страница «шлюза A» (§21.2): кнопки и подписи.
 
 Слова покупателя — английские дефолты в словаре, перевод — тема и сайт; слова шлюза — словарь
 спутника.
@@ -1210,6 +1527,9 @@ $this->callAfterResolving(MethodTypes::class, fn (MethodTypes $t) => $t->registe
 - **Уведомление:** постоянное число запросов (журнал, попытка с замком, заказ с замком, веха);
   дубль отсекается одной вставкой.
 - **Опрос** — пачками по индексу `(status, created_at)` попыток; `EXPLAIN` на MariaDB.
+- **Журнал обмена:** одна вставка на событие и одно обновление полей решения своим соединением;
+  список панели и MCP — keyset по `id` с индексами §20.2, тела в список не читаются (только
+  размеры); `EXPLAIN` на каждый фильтр. Кеша у журнала нет: он только растёт и читается редко.
 - `PerformanceTest`: шаг оплаты, страница оплаты, уведомление, списки панели и MCP тёплыми с
   `assertNoRepeatedQueries`.
 
@@ -1224,51 +1544,355 @@ $this->callAfterResolving(MethodTypes::class, fn (MethodTypes $t) => $t->registe
   не поставлена; смена способа на «при получении» снимает «ожидает оплаты» без вехи; ни одного
   ключа в ответах панели, MCP, журнале (`assertNoSecrets` по всем ответам набора); форма
   `Handoff::post()` без полей карты.
+- Журнал обмена (§20): у каждого сценария подставного шлюза — ожидаемый набор событий с трассой;
+  сырое тело уведомления байт в байт равно отправленному (кроме секретов); откат `settle()` не
+  уносит событие; падение вставки журнала не роняет `start()` и `check()`, а уведомление — 503;
+  маскирование во всех кодировках; тело больше лимита — обрезано, `size` и `sha256` полные; ни
+  маршрута, ни инструмента, ни метода модели на правку и удаление события (`ExchangeAppendOnlyTest`).
+- Холд (§9.5): `authorized` → списание полное и частичное, отмена, истечение; веха `paid` одна и по
+  списанию; без `CapturesPayments` переключателя холда нет.
+- Недоверенный тип: статус из тела уведомления не применяется ни при каком теле.
 
-## 20. Этапы реализации
+## 20. Журнал обмена со шлюзом
 
-Задача webx-ui#60, этапы 2–9 (этап 1 — эта спека). Каждый — один проверяемый результат, гейты JS
-и PHP зелёные. Все — после выпуска `module-orders` (нужны `Orders::mark`, `paymentFailed`,
-`patchBlock`, `stopAwaitingPayment`, блоки снимка); этапы 3 и дальше — после оформления `module-orders`
-(слот, `ShippingChoice`).
+Решение 31 — главное требование задачи webx-ui#105. Журнал отвечает на вопрос «что именно мы
+отправили шлюзу и что он нам ответил» — байт в байт, кроме секретов. Источник правды о статусе — по-
+прежнему попытка (`settle()`); журнал — улики для разбора.
 
-| Этап | Что                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Проверка                                                                                                                                                                                                                                                                                                                                                               |
-| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2    | **Пакет, таблицы, реестры, встроенные способы** (§5, §6, §7, §12): миграции, модели, `MethodTypes`, `Gateways`, `Methods::available`, правило доставки, `store.on_receipt`, `store.bank_transfer`, `Credentials`, словарь, `AGENTS.md`, регистрации                                                                                                                                                                                                                                                                      | миграции накатываются и откатываются; `EXPLAIN`; таблица доступности §7.3 тестами; ключ не сериализуется ни одним способом                                                                                                                                                                                                                                             |
-| 3    | **Слот оформления** (§10): `PaymentsCheckoutSlot`, `payment_selections`, API шага, компоненты, блок `payment`, реквизиты на «Спасибо» и странице заказа, `ShippingChoice` из оформления (решение 14), шов `cashOnDelivery()`                                                                                                                                                                                                                                                                                             | контрактный `SlotContractTest` оформления; сумма 0 — шага нет; смена доставки сбрасывает недоступный способ; браузер 360 px, тёмная тема                                                                                                                                                                                                                               |
-| 4    | **Попытки и онлайн-процесс** (§8, §9.1): `payments`, `payment_events`, `Payments::begin/settle/check/switchMethod`, `/pay/go`, `/pay/return`, страница оплаты со всеми состояниями, `ChargesOnline`, `FakeGateway`                                                                                                                                                                                                                                                                                                       | на `FakeGateway`: оплата, отказ, отмена, «в обработке» → оплачен; параметры возврата подменены — статус не меняется; «Назад» после шлюза не открывает второй платёж; смена на «при получении» снимает «ожидает оплаты»                                                                                                                                                 |
-| 5    | **Уведомления шлюза** (§9.2): маршрут, подпись через спутник, дубль, `unmatched`, ответы шлюзу, маскирование (§15.3), `throttle`, `GatewayContractTest`                                                                                                                                                                                                                                                                                                                                                                  | гонка возврата и уведомления — одна веха; повтор — `duplicate`; неверная подпись — `rejected`; номер карты в пакете затёрт                                                                                                                                                                                                                                             |
-| 6    | **Фон и проблемы** (§9.3, §9.4): `webx:payments:poll`, закрытие прежних попыток, двойная оплата, сумма не та, деньги на отменённый, «проблема решена», `webx:payments:prune`                                                                                                                                                                                                                                                                                                                                             | потерянное уведомление доводит опрос; двойная оплата — `problem = duplicate`; деньги на отменённый — `order_cancelled` и строка истории                                                                                                                                                                                                                                |
-| 7    | **Панель** (§13): npm-пара, экраны способов, формы с ключами «задано / заменить», «Проверить подключение», журнал и попытка, вкладка заказа, права, `AccessCoverageTest`, фикстуры плейграунда                                                                                                                                                                                                                                                                                                                           | `/panel/` плейграунда; ключ не приходит в JSON экрана; действия вкладки — по правам заказов; тёмная тема                                                                                                                                                                                                                                                               |
-| 8    | **MCP и письма** (§16, §11.5): инструменты, `payments://catalog`, `dry_run`, шов `NotificationEvents::extend()` в `module-notifications` (решение 19), переменные оплаты, событие `payments.problem`, `PerformanceTest`                                                                                                                                                                                                                                                                                                  | паритет панели и MCP; ни одного ключа в ответах; `payments_methods_save` с ключом — отказ; переменные оплаты видны в редакторе канала `orders.*`; проблема доходит каналом `payments.problem`                                                                                                                                                                          |
-| 9    | **Демо, гайды, сквозная проверка**: `ProvidesDemo` (оба встроенных способа и `FakeGateway` на демо), `apps/docs/guide/payments.md` и `guide/payment-gateways.md` (как написать спутник, контрактный тест), строка в реестре пакетов                                                                                                                                                                                                                                                                                      | живой сайт на `site up`: заказ по реквизитам с отметкой, онлайн через `FakeGateway` со всеми кнопками, письмо «оплата получена»; гейты PHP и JS                                                                                                                                                                                                                        |
-| 10   | **Доплата и онлайн после «при получении»** (решение 29; после этапа 23 задачи `module-orders` — баланс, `recordPayment()`, `awaitPayment()` — и этапов 4 и 8 этой задачи): сумма попытки — `due`, `settle()` по §9.1 (первая оплата, доплата, дубль), состояния страницы «Нужна доплата» и «Оплатить онлайн сейчас», смена способа с `awaitPayment()`, `cashOnDelivery()` по долгу, «Отправить покупателю» на вкладке, `payments_pay_link` с суммой, `payment_url` в `orders.items_changed` и `orders.payment_requested` | на `FakeGateway`: доплата после правки — `recordPayment`, веха одна, `OrderPaid` один; оплата при долге 0 — `duplicate`; правка во время ожидающей попытки — попытка закрыта, запоздалая оплата входит в `paid_total`; «при получении» → онлайн: заказ «ожидает оплаты», оплата ставит веху; старая ссылка после правки берёт новую сумму; браузер 360 px, тёмная тема |
+### 20.1. Что пишется
 
-**Вне этой задачи:** спутники шлюза A и шлюза B — отдельные задачи по шаблону §14 после утверждения
-спеки (решение 4); правки соседей, которые требует спека: `ShippingChoice` в оформлении `module-orders`
-(решение 14), `Orders::stopAwaitingPayment()` и канал покупателю на `orders.paid` в наборе по
-умолчанию в `module-orders` (решения 16, 18), зависимость на карте коммерции (решение 12).
+Каждое событие — отдельной записью. Направление (`direction`) и вид (`kind`):
 
-## 21. Открытые вопросы и отложенное
+| `direction` | `kind`                                                                                                               | Кто пишет                                           | Запрос / ответ в записи                                                    |
+| ----------- | -------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- | -------------------------------------------------------------------------- |
+| `out`       | `start`, `status`, `cancel`, `complete`, `capture`, `void`, `connection`, `key` (ключ подписи, токен OAuth), `other` | `GatewayHttp` (§20.3) — каждый HTTP-запрос спутника | что ушло шлюзу / что он ответил; таймаут — без ответа, с `transport_error` |
+| `in`        | `notify`                                                                                                             | контроллер уведомления, до разбора (§9.2)           | что прислал шлюз / что мы ему ответили                                     |
+| `browser`   | `handoff`                                                                                                            | `/pay/go` (§8.2)                                    | — / адрес редиректа или форма автоотправки                                 |
+| `browser`   | `return`                                                                                                             | `/pay/return` до поиска попытки (§8.3)              | с чем покупатель вернулся (без cookie) / —                                 |
+| `internal`  | `expire`, `manual`                                                                                                   | опрос (§9.3), ручная отметка (§12.2)                | без тел: только решение (статус до и после, кто)                           |
 
-### 21.1. Открыто (решает человек)
+- **Ошибки — тоже события:** неверная подпись, уведомление о неизвестной или чужой попытке,
+  неизвестный способ в адресе, 4xx/5xx шлюза, таймаут, DNS и TLS, повтор уведомления.
+- **Один HTTP-обмен — одна запись** (запрос и ответ вместе); действие из нескольких обменов
+  (уведомление → запрос статуса → решение) связано **трассой** (`trace`).
+- Опрос «в обработке» страницы покупателя (`/api/payments/{uuid}/status`) событием не является: он
+  читает строку попытки; запрос к шлюзу, если он был, — событие `out/status`.
+
+### 20.2. Таблица `payment_gateway_events`
+
+Имя — по правилу `CLAUDE.md` (раздел под своим именем, `payment_*`). Своё соединение (решение 38).
+
+| Колонка                            | Тип                     | Примечание                                                                                                            |
+| ---------------------------------- | ----------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `id`                               | bigint                  |                                                                                                                       |
+| `trace`                            | char(26)                | ULID действия; index                                                                                                  |
+| `direction`                        | string(8)               | `out`, `in`, `browser`, `internal`                                                                                    |
+| `kind`                             | string(16)              | §20.1                                                                                                                 |
+| `gateway`                          | string(64), null        | ключ шлюза; `null` — способ в адресе уведомления не найден                                                            |
+| `method_key`                       | string(64), null        | ключ способа как пришёл в адресе или у попытки                                                                        |
+| `payment_id`                       | bigint unsigned, null   | попытка, если найдена; без FK (событие переживает любую ошибку связи)                                                 |
+| `order_id`                         | bigint unsigned, null   | заказ попытки — для вкладки и фильтра; без FK                                                                         |
+| `source`                           | string(32), null        | `checkout`, `pay-page`, `poll`, `panel`, `mcp`, `notify`, `return`, `cli`                                             |
+| `http_method`                      | string(8), null         |                                                                                                                       |
+| `url`                              | text, null              | полный адрес со строкой запроса, после маскирования                                                                   |
+| `ip`                               | string(45), null        | у `in` и `browser`                                                                                                    |
+| `request_headers`                  | json, null              | все заголовки как есть, кроме маскированных (§20.5)                                                                   |
+| `request_body`                     | mediumblob, null        | сырое тело как отправлено / как пришло                                                                                |
+| `request_size`, `request_sha256`   | int unsigned, char(64)  | исходный размер и sha256 тела после маскирования, до обрезки                                                          |
+| `request_truncated`                | bool                    | тело больше лимита §20.4                                                                                              |
+| `response_status`                  | smallint unsigned, null | HTTP-код                                                                                                              |
+| `response_headers`                 | json, null              |                                                                                                                       |
+| `response_body`                    | mediumblob, null        |                                                                                                                       |
+| `response_size`, `response_sha256` | int unsigned, char(64)  |                                                                                                                       |
+| `response_truncated`               | bool                    |                                                                                                                       |
+| `transport_error`                  | string(500), null       | «timeout after 10 s», «could not resolve host» — без тела                                                             |
+| `started_at`                       | timestamp(3)            | начало обмена                                                                                                         |
+| `duration_ms`                      | int unsigned, null      |                                                                                                                       |
+| `masked`                           | json, null              | что затёрто: `{"secret:secret_key": 2, "header:authorization": 1, "pan": 0}` — без значений                           |
+| `event_key`                        | char(64), null          | ключ уведомления (§6.3); index `(method_key, event_key)` — не уникальный (решение 41)                                 |
+| `signature`                        | string(12), null        | `valid`, `invalid`, `untrusted` (недоверенный тип), `none` (не проверялась)                                           |
+| `reported`                         | string(16), null        | что сообщил шлюз, в словаре `Reported`                                                                                |
+| `status_before`, `status_after`    | string(16), null        | статус попытки до и после решения                                                                                     |
+| `outcome`                          | string(16), null        | `applied`, `same`, `ignored`, `duplicate`, `rejected`, `unmatched`, `error`; `null` у `out` — ответ шлюза и есть итог |
+| `message`                          | string(500), null       | почему: «подпись не сошлась», «сумма 9900 вместо 12000», «уведомление не о платеже: dispute»                          |
+| `created_at`                       | timestamp               |                                                                                                                       |
+
+**Индексы:** `trace`; `(payment_id, id)` — вкладка заказа и экран попытки; `(order_id, id)`;
+`(gateway, created_at)`; `(kind, created_at)`; `(signature, created_at)` — фильтр «ошибки подписи»;
+`(outcome, created_at)` — «ошибки»; `(method_key, event_key)` — дубли (§9.2, шаг 5); `created_at` —
+период и чистка. Каждый — `EXPLAIN` на MariaDB в первом этапе (§23).
+
+**Две части записи.** Сырьё (направление, адрес, заголовки, тела, размеры, время) пишется одной
+вставкой **до** разбора и больше не меняется. Поля решения (`payment_id`, `order_id`, `signature`,
+`reported`, `status_*`, `outcome`, `message`, ответ шлюзу у `in`) дописываются **один раз**:
+`UPDATE … WHERE id = ? AND outcome IS NULL`. Модель не даёт поменять сырьё и не умеет `delete()`
+(исключение). Одна строка или две — вопрос 2 §24.1.
+
+### 20.3. `GatewayHttp` — исходящие запросы
+
+```php
+namespace WebxUi\Payments;
+
+/**
+ * The only HTTP client a satellite uses (decision 37). Laravel's Http with the base's timeout and a
+ * middleware that journals every exchange: the request as sent, the answer as it came, or the
+ * transport error — the same for every gateway. Bound by the base to the call: gateway, method,
+ * attempt, kind, source, trace.
+ */
+final class GatewayHttp
+{
+    public function request(): PendingRequest;              // Http::… with the journal middleware
+    public function kind(string $kind): self;               // 'key' for a signing key, 'status' inside readNotification()
+    public function secret(string $value, string $name): self; // a secret made at run time (an OAuth token)
+    public function psr(): ClientInterface;                 // PSR-18 for a gateway SDK, journaled the same
+}
+```
+
+- Тело запроса пишется как ушло (после сериализации `Http`), ответ — `getBody()` до разбора.
+- Ошибка вставки журнала **не роняет запрос** — лог `webx-payments: journal write failed` и дальше
+  (решение 31).
+- Спутник не получает `Http` из контейнера — только `GatewayHttp` в аргументе. Контрактный тест
+  (§21.3) включает `Http::preventStrayRequests()` и сверяет: число событий `out` = числу запросов.
+
+### 20.4. Объём
+
+- **Тело хранится целиком** до `webx-payments.exchange.body_limit` — **1 МБ** на тело (настройка,
+  потолок 16 МБ — `mediumblob`). Больше — первые `body_limit` байт, `*_truncated = true`, `*_size` и
+  `*_sha256` — от полного тела после маскирования. Уведомления шлюзов — единицы КБ, так что обрезка —
+  признак ошибки, а не норма.
+- **Оценка:** онлайн-оплата — 6–12 событий (передача, создание, возврат, 1–2 статуса, 1–3
+  уведомления, опрос), 1–4 КБ с заголовками — **≈ 30–50 КБ на оплату**. 1 000 оплат в месяц — ≈ 50 МБ
+  в месяц, 600 МБ в год; 10 000 — ≈ 6 ГБ в год.
+- **Предупреждение, а не чистка:** `webx:doctor` предупреждает, когда таблица больше
+  `webx-payments.exchange.warn_size` (1 ГБ), и подсказывает команду §20.6.
+
+### 20.5. Маскирование
+
+Решение 40. Единственное изменение тела перед записью; выполняет база (`ExchangeMasker`) для всех
+спутников одинаково, до вставки, — секрет не попадает в базу ни на миг.
+
+1. **Значения ключей способа** (`Credentials`, из базы или окружения): каждое вхождение — как есть,
+   url-кодированным, json-экранированным, в base64 — заменяется на `[secret:<имя поля>]`. Значения
+   короче 8 знаков не маскируются (ложные совпадения), такие ключи `webx:doctor` называет слабыми.
+2. **Заголовки** `Authorization`, `Proxy-Authorization`, `Cookie`, `Set-Cookie` и объявленные
+   спутником (`Gateway::secretHeaders()`) — значение целиком `[secret:header]`.
+3. **Производные секреты:** значения полей `Gateway::secretFields()` в json и form-телах (токен
+   OAuth) и всё, что спутник отметил `GatewayHttp::secret()`, — дальше маскируются как п. 1 во всех
+   последующих событиях трассы.
+4. **Номер карты:** 13–19 цифр подряд, не часть более длинного числа, проходящие Луна, — цифры, кроме
+   последних четырёх, — `*`. Маска шлюза (`4444****1111`) не трогается — она уже маска. Данных карт
+   быть не должно (страница шлюза), правило — второй рубеж; ложное срабатывание видно в `masked.pan`.
+5. **Не маскируется:** подпись (решение 40), идентификаторы платежа, суммы, e-mail и телефон
+   покупателя (они нужны для разбора; доступ — правом §20.7, вопрос 3 §24.1).
+
+Маскирование меняет тело, поэтому подпись по сохранённому телу сходится только у тела без секретов —
+у входящих уведомлений так и есть (шлюз не присылает наши ключи).
+
+### 20.6. Только дописывание и чистка
+
+- **Нет правки и удаления** ни в панели, ни в MCP, ни в API модели (решение 31); тест держит.
+- **Автоочистки нет.** Ни расписания, ни конфигурации срока по умолчанию.
+- **Явная чистка:** `php artisan webx:payments:exchange-prune --days=N` — обязательный `N` (≥ 30),
+  без `--force` спрашивает подтверждение и показывает число записей и объём; `--dry-run` — только
+  счёт. Удаляет пачками по `created_at`; запись о чистке — в лог и строкой журнала аудита
+  (`module-audit`, если стоит).
+- **Ошибка записи журнала:** исходящий запрос и решение — лог и дальше; входящее уведомление — 503
+  без разбора, шлюз повторит (§9.2, шаг 0): уведомление без записи не обрабатывается. Это толкование
+  двух требований решения 31 — вопрос 4 §24.1.
+
+### 20.7. Просмотр и права
+
+- **Вкладка «Оплата» заказа** (§13.4): события попыток по времени; строка — время, направление,
+  вид, код, подпись, решение, длительность; раскрытие — заголовки и тело запроса и ответа: текст
+  моноширинно (json и xml — с отступами только при показе, хранится как пришло), двоичное или
+  больше 256 КБ — «скачать».
+- **Раздел «Оплата» → «Журнал обмена»** (`payments.exchange`, §13.2): все события, фильтры — шлюз,
+  способ, попытка (uuid) или заказ (номер), вид, направление, «ошибки подписи», «ошибки» (`rejected`,
+  `unmatched`, `error`, код ≥ 400, `transport_error`), период; keyset-страницы.
+- **MCP** — `payments_exchange_list`, `payments_exchange_get` (§16), только чтение.
+- **Права:** чтение — `payments.view` (область `payments:read`); маршруты `cms.can:payments.view`,
+  `AccessCoverageTest`. Скачать тело — тот же `payments.view`, ответ `Content-Disposition:
+attachment`, `X-Content-Type-Options: nosniff` (тело шлюза не исполняется в браузере панели).
+
+## 21. Подставной шлюз и контрактный тест
+
+По образцу «службы A» доставки (`FakeCarrier`, `FakeCarrierSite`, `CarrierContract`; решение 45).
+
+### 21.1. «Шлюз A» — `WebxUi\Payments\Testing\FakeGateway`
+
+Шлюз `gateway-a` и три типа, чтобы база была проверена **и с необязательными возможностями, и без
+них** (интерфейс — свойство класса, поэтому наборы — разные типы):
+
+| Тип                  | Возможности                                                                                               | Передача   | Уведомление                                     |
+| -------------------- | --------------------------------------------------------------------------------------------------------- | ---------- | ----------------------------------------------- |
+| `gateway-a.card`     | `ChargesOnline`, `CancelsPayments`, `CapturesPayments` (частичное списание), `needs()` — e-mail и позиции | `redirect` | подписанный JSON (HMAC-SHA256 тестовым ключом)  |
+| `gateway-a.form`     | только `ChargesOnline`; `CompletesApproval` (одобрение ≠ оплата)                                          | `post`     | подписанная форма, ждёт **подписанного ответа** |
+| `gateway-a.unsigned` | только `ChargesOnline`, `trustsNotifications() = false`, `needs()` — телефон                              | `post`     | без подписи — повод для опроса                  |
+
+- **API шлюза — в процессе, без сети:** спутник ходит через `GatewayHttp` на хост `gateway-a.test`,
+  ответы даёт `FakeGatewayServer` (обработчик стека `Http`, как `Http::fake`): журнал видит запрос и
+  ответ как настоящие, а сайт не зовёт сам себя по сети. Состояние платежей шлюза — в кеше сайта
+  (ключ `webx-payments:fake:{uuid}`, 7 дней); после очистки кеша шлюз «забывает» платёж и отвечает
+  «не найден» — это тоже сценарий.
+- **Ключи** — тестовые, видимые (`fake-secret-key-0001`), заданы в фикстурах плейграунда и демо;
+  маскирование их всё равно затирает — так проверяется §20.5.
+- **Сбои по запросу** (для тестов): таймаут создания, 500 на статус, «не найден», неизвестный
+  статус, сумма не та, отказ списания — методами `FakeGateway::failNext(…)` в тестах и кнопками на
+  странице сайта.
+
+### 21.2. Страница «оплаты» шлюза A
+
+`GET /pay/fake/{uuid}` — «страница шлюза», куда уходит покупатель с `/pay/go`. Только при
+`webx-payments.fake_gateway` (`WEBX_PAYMENTS_FAKE_GATEWAY=true`, `FakeGatewaySite`) и не в
+`production` — иначе 404. Наверху — плашка «Test gateway — no money moves».
+
+| Кнопка                          | Что делает «шлюз»                                                          | Что видно в базе                                                                     |
+| ------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| **Оплатить**                    | платёж `paid`; уведомление сразу; покупатель — на адрес возврата           | `paid`, веха; в журнале — `in/notify` и `browser/return` одной оплаты                |
+| **Отказ**                       | `failed` «Card declined (test)»; уведомление; возврат                      | `failed`, страница «не прошла»                                                       |
+| **Отменить**                    | `cancelled`; возврат без уведомления                                       | статус по `fetchStatus` на возврате                                                  |
+| **Оплатить, уведомление позже** | `paid`; возврат сразу, уведомление — заданием очереди через 30 с           | «в обработке» → оплачен; уведомление — `same`                                        |
+| **Повтор уведомления**          | то же уведомление ещё раз (тот же `event_key`)                             | второе событие `duplicate`, статус не прыгнул                                        |
+| **Неверная подпись**            | уведомление с испорченной подписью (у `unsigned` — с подменённым статусом) | `rejected`, `signature = invalid` (у `unsigned` — опрос, статус из тела не применён) |
+| **Чужой платёж**                | уведомление с `uuid`, которого нет                                         | `unmatched`                                                                          |
+| **Заблокировать** (холд)        | `authorized` (только способ с холдом)                                      | `authorized`, «Деньги заблокированы»                                                 |
+| **Одобрить** (`form`)           | одобрено, без списания до `complete()`                                     | `complete()` на возврате, затем `paid`                                               |
+
+- Уведомление «шлюз» отправляет в процессе: внутренний запрос к `POST /payments/notify/{method}`
+  через ядро приложения с сырым телом и заголовками, как прислал бы настоящий шлюз, — журнал пишет
+  его тем же путём §9.2.
+- Сценарий человека на lab — §23, этап П9.
+
+### 21.3. Контрактный тест — `WebxUi\Payments\Testing\GatewayContract`
+
+Трейт базы (как `CarrierContract` доставки); спутник подключает его к своему тесту на записанных
+ответах шлюза, база гоняет на трёх типах шлюза A (`tests/GatewayContractTest.php`). Проверяет:
+
+- ключ шлюза и типов, `<провайдер>.<вид>`; онлайн-тип — с зарегистрированным шлюзом;
+- **все запросы — через `GatewayHttp`:** `Http::preventStrayRequests()`, событий `out` столько же,
+  сколько запросов; в журнале нет ни одного значения из `Credentials` и `secretFields()`;
+- доверенный тип: верная подпись принимается; неверная, подменённая сумма и подменённый статус —
+  `InvalidNotification`; недоверенный: из любого тела — `poke`, статус не применяется;
+- повтор уведомления — тот же `eventKey`; уведомление не о платеже — `unrelated`, не исключение;
+- `acceptResponse()` и `rejectResponse()` — ответы, которых ждёт шлюз (записанные образцы);
+- статусы шлюза переведены в `Reported` полностью по таблице спутника; неизвестный — `Pending`;
+  «завершено без списания» — не `Paid`;
+- суммы туда и обратно без потерь для экспонент 0, 2 и 3, сумма в подписи — в формате шлюза;
+- `Handoff::post()` без полей карты; `start()` с `needs()` получает ровно объявленные поля;
+- `CapturesPayments`: полное и частичное списание (если `capturesPartially()`), больше
+  заблокированного — отказ, отмена; `CompletesApproval`: два вызова — одно списание;
+- ошибки шлюза — словами для панели, без тела.
+
+## 22. Сверка с кодом и правки соседей
+
+Сверено 03.11.2026 с веткой `hot/2026-11-02` (`module-orders`, `module-delivery`, `module-cart`,
+`module-notifications`).
+
+### 22.1. Что сверено и поправлено в этой спеке
+
+| Что                                                | Код                                                                                                                                   | Спека                                                                   |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| вехи                                               | `Milestone`: `placed`, `awaiting_payment`, `paid`, `received`, `cancelled`, `refunded`; `paid` ставит `mark()`                        | совпадает; холд вехи не заводит (решение 44)                            |
+| повторная отметка `paid`                           | `mark()` не бросает: `MilestoneMark::ALREADY_MARKED` с `reference` первой отметки                                                     | §9.1 поправлен (было «`AlreadyMarked`»)                                 |
+| первая оплата и доплата                            | `mark(…, amount)` прибавляет к `paid_total`; без `amount` — весь долг; `recordPayment()` — `PaymentRefused` `not_paid` / `cancelled`  | совпадает с решением 29 и §9.1                                          |
+| баланс                                             | `Orders::balance()` → `Balance`: `owed`, `paid`, `refunded`, `due`, `over`, `kind()` (`topup`, `unpaid`, `over`)                      | совпадает; сумма попытки — `due`                                        |
+| «ожидает оплаты»                                   | `awaitPayment()`, `stopAwaitingPayment()` — есть; `paymentFailed()` ставит `payment_failed_at`, пока не оплачен                       | совпадает (решения 16, 29)                                              |
+| слот оплаты                                        | `PaymentSlot`: `awaitsPayment(CheckoutContext)`, `next(OrderData)`, `payAgainUrl(OrderData)`; `Slot::check(CheckoutContext, Purpose)` | §10.1 поправлен (было `check(Order)`, `next()` без типа)                |
+| `ShippingChoice`                                   | есть в `Checkout\Slots`, `ShippingSlot::choice()`, `CheckoutContext::shippingChoice()`                                                | совпадает (решение 14 выполнено)                                        |
+| письмо «оплата получена»                           | канал `paid-customer` на `orders.paid` в наборе по умолчанию                                                                          | совпадает (решение 18 выполнено)                                        |
+| `orders.payment_requested`, `orders.items_changed` | события есть; `payment_url` в них пока не кладёт никто                                                                                | шов §11.5 нужен (правка `module-notifications`, §22.2)                  |
+| блок `payment`                                     | `OrderBlocks::KEYS = ['delivery', 'payment']`; вкладку владельца карточка показывает по `view` определения блока                      | совпадает с §10.4, §13.4                                                |
+| вкладка заказа                                     | доставка патчит `orders.show`: `op: add`, `target: tabs`, `position: after:items`, узел `wx-tab` с `can`                              | §13.4 делает так же (`after:delivery`)                                  |
+| сумма шлюзу                                        | `Money` `module-cart`: `toMinor()`, `exponent()`; десятичной строки наружу нет                                                        | §6.3: свой помощник `GatewayAmount` на `exponent()`, без правки корзины |
+| позиции заказа                                     | накладная доставки строит строки из `order_items` (`name`, `sku`, `qty − refunded_qty`, `price`, без удалённых)                       | `PaymentLine` — так же (решение 43)                                     |
+| образец: реестр                                    | `Carriers`, `MethodTypes` — singleton в `register()`, спутник — `callAfterResolving`                                                  | совпадает (§6.2)                                                        |
+| образец: подставная служба                         | `FakeCarrier` (`carrier-a`), `FakeCarrierSite` по `WEBX_DELIVERY_FAKE_CARRIER`, трейт `CarrierContract`                               | §21 сделан так же; было `fake.card` и абстрактный тест                  |
+| карта коммерции                                    | `module-payments` требует `module-orders` (§3 карты)                                                                                  | выполнено (решение 12); из «вне задачи» убрано                          |
+
+### 22.2. Правки соседних спек и пакетов (в их спеки отсюда не пишется)
+
+1. **`module-delivery` — наложенный платёж в `ShippingChoice`.** `DeliveryCheckoutSlot::choice()`
+   всегда отдаёт `cashOnDelivery: false` («спутники принесут»). Пока так, «при получении» с правилом
+   `on_hand` доступен только при самовывозе. Нужно: признак из типа способа (`DescribesWaybill::supportsCod()`)
+   и точки (`Limits::cod`) — спека доставки §11, §12.
+2. **`module-delivery` — сумма наложенного платежа в накладной.** Сейчас её вводит менеджер
+   (`changes['cod']`); шов `Payments::cashOnDelivery()` (§11.3) доставка не зовёт. Нужно: подставлять
+   по умолчанию через `class_exists(Payments::class)` — спека доставки §11.2.
+3. **`module-notifications` — `NotificationEvents::extend()`** (решение 19, §11.5) в коде нет;
+   спека уведомлений — описать шов.
+4. **Спека заказов §18 (отложенное)** предлагает холд «новой вехой между `awaiting_payment` и `paid`»
+   — решение 44 обходится без вехи; пункт §18 там — сослаться сюда.
+5. **Спека заказов, часть I (границы, решение 27)** — «холдирование отложено»: теперь холд в оплате
+   (решение 32), заказы не меняются.
+6. **Карта коммерции, строка `payment-<шлюз>`** — первый спутник LiqPay (решение 30), спутники — в
+   монорепе `php/packages/payment-<шлюз>` (§14.3).
+
+## 23. План этапов реализации
+
+Задача webx-ui#105, этапы реализации после принятия этой правки. Каждый этап — один проверяемый
+результат; гейт `pnpm gate:affected <BASE>` и `scripts/lab-site.sh refresh`; changeset — `@webx-ui/php`
+minor, `@webx-ui/module-payments` minor, когда меняется npm-пара. Все этапы — после `module-orders` (уже
+выпущен: баланс, `mark(amount)`, `recordPayment`, `awaitPayment`, слоты). «Агент» — что проверяется
+тестами и замерами в этапе; «человек» — что смотрит человек на lab
+(`https://webx-lab.dev.alexxgroup.top`) при приёмке.
+
+| Этап | Что                                                                                                                                                                                                                                                                                                                                                    | Агент                                                                                                                                                                                                                                                                                                        | Человек                                                                                                                                                                                    |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| П1   | **Пакет, схема и журнал обмена** (§5, §20): `module-payments`, четыре места в `php/` и четыре места раздела, миграции всех таблиц, модели, `Credentials`, своё соединение журнала, `ExchangeJournal`, `ExchangeMasker`, `GatewayHttp`, обрезка и хеш, `webx:payments:exchange-prune`, проверка `webx:doctor` размера, `AGENTS.md`, словарь — заготовка | миграции вперёд и назад; `EXPLAIN` каждого индекса; маскирование во всех кодировках и номер карты; обрезка, `size` и `sha256`; откат транзакции не уносит событие; падение вставки не роняет запрос; модель не правит сырьё и не удаляет (`ExchangeAppendOnlyTest`); чистка — только с `--days`, `--dry-run` | — (видимого нет; приёмка по отчёту)                                                                                                                                                        |
+| П2   | **«При получении» и «по реквизитам»** (§6.1–§6.2, §7, §10, §12): реестры, `Methods::available`, правило доставки, встроенные типы, `PaymentsCheckoutSlot` с `payment_selections`, блок `payment`, реквизиты на «Спасибо» и странице заказа, `markPaid()`, демо-способы                                                                                 | таблица доступности §7.3; `SlotContractTest` оформления; сумма 0 — шага нет; смена доставки сбрасывает способ; `markPaid()` — веха и событие `internal/manual` в журнале; браузер 360 px, тёмная тема                                                                                                        | на lab: заказ самовывозом — «Оплата на кассе»; заказ «по реквизитам» — реквизиты на «Спасибо», заказ «ожидает оплаты»                                                                      |
+| П3   | **Контракт шлюза и подставной шлюз** (§6.3–§6.5, §14, §21): интерфейсы и значения, `GatewayAmount`, `Gateways`, «шлюз A» с тремя типами, `FakeGatewayServer`, `FakeGatewaySite`, `GatewayContract` и `GatewayContractTest`; `Payments::begin()`, `/pay/go`, передача покупателя, страница шлюза A                                                      | `GatewayContract` зелёный на трёх типах; запрос мимо `GatewayHttp` — тест падает; `start()` один раз; форма без полей карты; `needs()` — ровно объявленные поля; события `out/start` и `browser/handoff` в журнале                                                                                           | на lab (`WEBX_PAYMENTS_FAKE_GATEWAY=true`): из страницы оплаты заказа «Оплатить» → страница шлюза A с кнопками                                                                             |
+| П4   | **Колбэк и возврат** (§8.3, §9.1–§9.2): `settle()`, `check()`, замки, уведомление по шагам §9.2 (доверенный и недоверенный), `GET`/`POST /pay/return`, `CompletesApproval`, страница оплаты со всеми состояниями, `/api/payments/{uuid}/status`                                                                                                        | гонка возврата и уведомления — одна веха; повтор — `duplicate` и событие в журнале; неверная подпись — `rejected`; чужой — `unmatched`; недоверенный — статус только из API; подменённые параметры возврата не меняют статус; ошибка в `settle()` — 500 и событие `error`                                    | на lab, шлюз A: «Оплатить», «Отказ», «Отменить», «Оплатить, уведомление позже», «Повтор уведомления», «Неверная подпись», «Чужой платёж» — каждый с ожидаемым исходом                      |
+| П5   | **Холд, опрос, проблемы, доплата** (§9.3–§9.5, решение 29): `capture()`, `void()`, `authorized`, `webx:payments:poll`, закрытие прежних попыток, `duplicate`, `amount_mismatch`, `order_cancelled`, `hold_expiring`, `capture_failed`, «проблема решена», доплата и «Оплатить онлайн сейчас», `cashOnDelivery()`                                       | полное и частичное списание, отмена, истечение холда; веха `paid` одна; потерянное уведомление доводит опрос; доплата — `recordPayment`; оплата при долге 0 — `duplicate`                                                                                                                                    | на lab: способ шлюза A с холдом — «Заблокировать» → «Деньги заблокированы» в истории заказа (списание — через MCP/код до П6)                                                               |
+| П6   | **Панель** (§13): npm-пара, экраны способов с ключами «задано / заменить» и «Проверить подключение», журнал попыток и попытка, **журнал обмена** с фильтрами и событием, вкладка «Оплата» с событиями и сырым телом, действия вкладки, права, `AccessCoverageTest`, фикстуры плейграунда                                                               | ключ не приходит в JSON экрана; маршрутов правки и удаления событий нет; действия — по правам заказов; `PerformanceTest` списков; тёмная тема, 360 px                                                                                                                                                        | на lab: вкладка «Оплата» заказа после сценариев П4 — события по времени, тело раскрывается, ключи `[secret:…]`; «Журнал обмена» — фильтр «ошибки подписи» находит «Неверную подпись»       |
+| П7   | **MCP и письма** (§16, §11.5): инструменты, `payments_exchange_list` / `_get`, `payments://catalog`, `dry_run`, шов `NotificationEvents::extend()`, переменные оплаты, `payments.problem`                                                                                                                                                              | паритет панели и MCP; журнал в MCP только чтение; ни одного ключа в ответах; переменные видны в редакторе канала; проблема доходит каналом                                                                                                                                                                   | агентом на lab: «покажи журнал обмена заказа 1024» — те же события, что во вкладке                                                                                                         |
+| П8   | **Онлайн в оформлении** (§8.2, §10): `next()` → `/pay/go` сразу после заказа, `payAgainUrl()`, перерисовка шага при смене доставки, «при получении» по `ShippingChoice`, сумма 0; кнопки холда на вкладке и `payments_capture` / `payments_void` (решение 32 — «поздним этапом»)                                                                       | `SlotContractTest`; `next()` не бросает при недоступном шлюзе; «Назад» после шлюза не открывает второй платёж; списание и отмена холда из панели с `dry_run`                                                                                                                                                 | на lab: оформление со шлюзом A — сразу на страницу шлюза, оплата, «Спасибо»; холд → «Списать» частично на вкладке                                                                          |
+| П9   | **Доки, AGENTS, lab-сценарий человека**: `apps/docs/guide/payments.md`, `guide/payment-gateways.md` (как написать спутник, `GatewayHttp`, контрактный тест), строка в реестре пакетов, `AGENTS.md` полный, `ProvidesDemo`, сценарий человека в спеке                                                                                                   | `AgentDocsCoverageTest`; `pnpm docs:build`; полный гейт `--full` перед релизом дня                                                                                                                                                                                                                           | весь сценарий на lab по списку: карта — успех, отказ, повторный колбэк, неверная подпись; при получении; по реквизитам с отметкой; каждое событие — в журнале с телом, ключи замаскированы |
+
+- **Первым — схема и журнал** (П1): всё дальше пишет журнал, и тесты этапов опираются на него.
+- Спутник LiqPay — отдельная задача после П4 (решение 30): к тому времени контракт, журнал и
+  контрактный тест готовы.
+
+## 24. Открытые вопросы и отложенное
+
+### 24.1. Открыто (решает человек)
 
 1. **Сумма к оплате 0** (всё погасили зачёты): ставить ли сразу веху `paid` — от неё зависит выпуск
    купленных сертификатов (§6 карты). Связано с лимитом «зачётом можно оплатить не более N % суммы»:
    где он живёт (настройки кошелька или конфиг сайта) и бывает ли вообще 100 % зачётом. Решится со
    спекой кошелька. До решения: шага оплаты нет, блок `payment = null`, заказ не ждёт оплаты, `paid`
    ставит менеджер (§10.1).
+2. **Журнал: одна строка или две на событие.** Предложено (§20.2): одна строка, сырьё неизменно,
+   поля решения дописываются один раз. Альтернатива — строго только вставки: сырьё и решение
+   отдельными строками той же трассы (проще доказать «только дописывание», вдвое больше строк и
+   сложнее экран).
+3. **Право на сырые тела.** В телах — e-mail, телефон, имя покупателя, позиции заказа. Предложено:
+   хватает `payments.view` (как вкладка заказа уже показывает контакты по `orders.view`).
+   Альтернатива — отдельное `payments.exchange` для тел (список без тел — `payments.view`).
+4. **Журнал не записался — что с уведомлением.** Предложено (§20.6): 503 без обработки — шлюз
+   повторит, уведомление без записи не обрабатывается. Альтернатива — обработать и записать в лог
+   (оплата не ждёт, но событие теряется).
+5. **Отказы до контроллера** (троттлинг 429, тело больше лимита веб-сервера) в журнал не попадают —
+   приемлемо ли? Иначе — middleware журнала раньше троттлинга.
+6. **Лимит тела** — 1 МБ на тело (§20.4) и потолок 16 МБ: хватит ли или задать другое `N`?
+7. **Чистка** — минимальный срок `--days ≥ 30` и запись в аудит (§20.6): так или без нижней границы?
+8. **Частичная оплата холдом** — частичное списание закрывает заказ вехой `paid` с меньшей суммой;
+   остаток долга — `due > 0`, «Нужна доплата». Так или частичное списание допускается только при
+   правке состава вниз (чтобы не было долга)?
+9. **Холд без кнопок до П8:** до поздних этапов списать холд можно только кодом и MCP. Годится ли,
+   или кнопки нужны вместе с П5?
 
-### 21.2. Отложено (не v1, по первому запросу клиента — решение 11)
+### 24.2. Отложено (не v1, по первому запросу клиента — решение 11)
 
-- **Возврат через шлюз** («через способ, которым платили», решение 1) — до первого клиента: сразу
-  списание или холдирование — у каждого своё (решение 13).
+- **Возврат через шлюз** («через способ, которым платили», решение 1) — до первого клиента
+  (решение 13); имя `RefundsPayments` занято (§6.4), `Reported::Refunded` и `refundedAmount` уже
+  сообщаются.
 - **Автоотмена неоплаченного** (решение 15). Если вернёмся: команда оплаты поверх `Orders::cancel()`,
   срок — у способа.
-- Холдирование и списание при завершении заказа (новая веха между `awaiting_payment` и `paid`,
-  §18 спеки заказов); частичная оплата и предоплата (в том числе по реквизитам, решение 23). Доплата
-  после правки состава (решение 29) — не частичная оплата: первая оплата закрывает весь долг на
-  тот момент, доплата — разницу, которую создала правка.
-- Связь «получен → оплачен» у оплаты при получении.
-- Рассрочка, подписки, сохранённые карты (только у шлюза, никогда на сайте); комиссия способа;
-  фискальные чеки.
+- Частичная оплата и предоплата (в том числе по реквизитам, решение 23). Доплата после правки
+  состава (решение 29) — не частичная оплата: первая оплата закрывает весь долг на тот момент,
+  доплата — разницу, которую создала правка.
+- Связь «получен → оплачен» у оплаты при получении; «получен → списать холд» — дело спутника
+  (§9.5).
+- Виджет шлюза на сайте (решение 3); рассрочка банка напрямую без холда не бывает — придёт
+  спутником на `CapturesPayments`; подписки, сохранённые карты (только у шлюза, никогда на сайте);
+  комиссия способа; фискальные чеки (позиции уже уходят шлюзу — `needs()->lines`).
