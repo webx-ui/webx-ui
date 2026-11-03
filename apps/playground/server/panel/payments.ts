@@ -70,7 +70,12 @@ interface Attempt {
   reference: string | null
   source: string
   created_at: string
+  /** Who marked it paid by hand. */
+  admin_id?: number
 }
+
+/* The playground's one administrator, as the journal's «admin #1» reads on screen. */
+const ADMIN_NAME = 'Admin'
 
 interface Event {
   id: number
@@ -498,8 +503,11 @@ event({
   duration_ms: 9,
   signature: 'invalid',
   reported: 'paid',
+  status_before: 'failed',
+  status_after: 'failed',
   outcome: 'rejected',
-  message: 'The signature does not match',
+  message:
+    'The signature does not match; claimed for this attempt — not believed, the status is unchanged',
 })
 
 /* «Someone else's payment»: no attempt, no order — the journal keeps it all the same. */
@@ -609,6 +617,60 @@ const ORDERS: Record<
   4: { total: 3750, paid: 3750, block: 'gateway-a-card', awaiting: false },
   5: { total: 15000, paid: 0, block: 'gateway-a-card', awaiting: true },
   6: { total: 4999, paid: 0, block: 'gateway-a-unsigned', awaiting: true },
+}
+
+/**
+ * «Mark as paid» by hand (spec §12.2): an attempt \`paid\` for what the order owes and the event
+ * \`internal/manual\` — what the server writes for the card's button, which \`orders.ts\` calls too.
+ * False — the order is paid already, or not one of the fixtures.
+ */
+export function recordManualPayment(order: number, reference: string | null): boolean {
+  const record = ORDERS[order]
+
+  if (!record || record.paid >= record.total) return false
+
+  const id = Math.max(...attempts.map((one) => one.id)) + 1
+  const due = record.total - record.paid
+
+  attempts.push({
+    id,
+    uuid: ulid(id),
+    order_id: order,
+    method_key: record.block ?? 'bank-transfer',
+    type: 'store.bank_transfer',
+    amount: due,
+    status: 'paid',
+    problem: null,
+    gateway_ref: null,
+    paid_amount: due,
+    paid_at: new Date().toISOString(),
+    hold: false,
+    authorized_amount: null,
+    hold_expires_at: null,
+    failure_reason: null,
+    reference: reference,
+    source: 'panel',
+    admin_id: 1,
+    created_at: new Date().toISOString(),
+  })
+  event({
+    trace: `MANUAL${String(id).padStart(20, '0')}`,
+    direction: 'internal',
+    kind: 'manual',
+    gateway: null,
+    method_key: record.block,
+    payment_id: id,
+    order_id: order,
+    source: 'panel',
+    at: new Date().toISOString(),
+    status_after: 'paid',
+    outcome: 'applied',
+    message: `marked paid by admin #1${reference ? `, document ${reference}` : ''}`,
+  })
+  record.paid = record.total
+  record.awaiting = false
+
+  return true
 }
 
 export function registerPayments(on: On, fail: Fail, line: Line): void {
@@ -737,7 +799,6 @@ export function registerPayments(on: On, fail: Fail, line: Line): void {
       testable: online,
       notify_url:
         online && method ? `https://shop.example.com/payments/notify/${method.key}` : null,
-      return_url: online ? 'https://shop.example.com/pay/return/{payment}' : null,
     }
   }
 
@@ -920,6 +981,8 @@ export function registerPayments(on: On, fail: Fail, line: Line): void {
 
   const attemptLine = (one: Attempt, locale: string) => ({
     ...one,
+    admin_id: one.admin_id ?? null,
+    admin_name: one.admin_id ? ADMIN_NAME : null,
     order_number: number(one.order_id),
     method_title: methodTitle(one.method_key, locale),
     amount_formatted: money(one.amount),
@@ -931,6 +994,24 @@ export function registerPayments(on: On, fail: Fail, line: Line): void {
     unfinished: ['created', 'pending'].includes(one.status),
   })
 
+  /** The attempt that took the money — method, document, date and who. */
+  const paidBy = (mine: Attempt[], locale: string) => {
+    const one = [...mine].reverse().find((attempt) => attempt.status === 'paid')
+
+    return one
+      ? {
+          id: one.id,
+          method_title: methodTitle(one.method_key, locale),
+          reference: one.reference,
+          paid_at: one.paid_at,
+          amount_formatted: money(one.paid_amount ?? one.amount),
+          source: one.source,
+          admin_name: one.admin_id ? ADMIN_NAME : null,
+          gateway_ref: one.gateway_ref,
+        }
+      : null
+  }
+
   const size = (body: string | null) =>
     body === null ? null : new TextEncoder().encode(body).length
 
@@ -940,7 +1021,9 @@ export function registerPayments(on: On, fail: Fail, line: Line): void {
     direction: one.direction,
     kind: one.kind,
     gateway: one.gateway,
+    gateway_title: one.gateway === GATEWAY ? GATEWAY_TITLE : null,
     method_key: one.method_key,
+    method_title: one.method_key ? methodTitle(one.method_key, 'en') : null,
     payment_id: one.payment_id,
     order_id: one.order_id,
     order_number: one.order_id === null ? null : number(one.order_id),
@@ -962,7 +1045,8 @@ export function registerPayments(on: On, fail: Fail, line: Line): void {
     status_before: one.status_before,
     status_after: one.status_after,
     outcome: one.outcome,
-    message: one.message,
+    message: one.message?.replace(/\badmin #1\b/, ADMIN_NAME) ?? null,
+    claimed: one.outcome === 'rejected' && one.signature === 'invalid' && one.payment_id !== null,
     error:
       ['rejected', 'unmatched', 'error'].includes(one.outcome ?? '') ||
       (one.status ?? 0) >= 400 ||
@@ -1192,6 +1276,7 @@ export function registerPayments(on: On, fail: Fail, line: Line): void {
         other_events: events
           .filter((e) => e.order_id === order && e.payment_id === null)
           .map(eventLine),
+        paid_by: paidBy(mine, locale),
         bodies: true,
         can_manage: true,
         pay_link:
@@ -1223,54 +1308,17 @@ export function registerPayments(on: On, fail: Fail, line: Line): void {
 
   on('POST', '/payments/orders/(\\d+)/mark-paid', ({ params, body, locale }) => {
     const order = Number(params[0])
-    const record = ORDERS[order]
 
-    if (!record || record.paid >= record.total) {
+    if (
+      !recordManualPayment(
+        order,
+        typeof body.reference === 'string' && body.reference !== '' ? body.reference : null,
+      )
+    ) {
       const text = words(locale, 'errors.mark.paid')
 
       throw fail(422, text, undefined, { order: [text] })
     }
-
-    const id = Math.max(...attempts.map((one) => one.id)) + 1
-    const due = record.total - record.paid
-
-    attempts.push({
-      id,
-      uuid: ulid(id),
-      order_id: order,
-      method_key: record.block ?? 'bank-transfer',
-      type: 'store.bank_transfer',
-      amount: due,
-      status: 'paid',
-      problem: null,
-      gateway_ref: null,
-      paid_amount: due,
-      paid_at: new Date().toISOString(),
-      hold: false,
-      authorized_amount: null,
-      hold_expires_at: null,
-      failure_reason: null,
-      reference:
-        typeof body.reference === 'string' && body.reference !== '' ? body.reference : null,
-      source: 'panel',
-      created_at: new Date().toISOString(),
-    })
-    event({
-      trace: `MANUAL${String(id).padStart(20, '0')}`,
-      direction: 'internal',
-      kind: 'manual',
-      gateway: null,
-      method_key: record.block,
-      payment_id: id,
-      order_id: order,
-      source: 'panel',
-      at: new Date().toISOString(),
-      status_after: 'paid',
-      outcome: 'applied',
-      message: 'Marked as paid by the playground',
-    })
-    record.paid = record.total
-    record.awaiting = false
 
     return new Reply(200, orderCard(order, locale))
   })

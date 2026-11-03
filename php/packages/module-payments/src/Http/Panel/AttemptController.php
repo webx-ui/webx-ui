@@ -17,6 +17,7 @@ use WebxUi\Payments\Models\Payment;
 use WebxUi\Payments\Models\PaymentGatewayEvent;
 use WebxUi\Payments\Models\PaymentMethod;
 use WebxUi\Payments\Panel\AttemptRows;
+use WebxUi\Payments\Panel\EventNames;
 use WebxUi\Payments\Panel\EventRows;
 use WebxUi\Payments\Payments;
 use WebxUi\Payments\PaymentStatus;
@@ -35,7 +36,10 @@ final class AttemptController
         'failed' => [PaymentStatus::Failed, PaymentStatus::Cancelled, PaymentStatus::Expired],
     ];
 
-    public function __construct(private readonly AttemptRows $rows) {}
+    public function __construct(
+        private readonly AttemptRows $rows,
+        private readonly EventNames $names,
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -119,11 +123,11 @@ final class AttemptController
         $user = $request->user();
 
         return [
-            ...$this->rows->line($payment),
-            'events' => EventRows::query()->where('payment_id', $payment->id)->orderBy('id')->limit(200)->get()
+            ...$this->rows->named([$this->rows->line($payment)], $user)[0],
+            'events' => $this->names->apply(EventRows::query()->where('payment_id', $payment->id)->orderBy('id')->limit(200)->get()
                 ->map(static fn (PaymentGatewayEvent $event): array => EventRows::line($event))
                 ->values()
-                ->all(),
+                ->all(), $user),
             'can_check' => $user instanceof HasPermissions && $user->hasPermission(OrdersModule::MANAGE)
                 && in_array($payment->status, [PaymentStatus::Pending, PaymentStatus::Authorized], true),
         ];

@@ -20,7 +20,7 @@ grouped into public ones. Dictionary `webx-orders` (`module`, `statuses`, `panel
   - every other method is one transaction with the order's row locked, events after the commit, and refreshes the model passed
     in. `mark(order, Milestone, source, at?, reference?, note?, amount?)` — `paid`, `received`, `cancelled` once (`MilestoneMark`:
     `marked`, `already_marked` with the first mark, `refunded`); others — `MilestoneRefused`; paid or received of a cancelled
-    order — `OrderCancelledAlready`; `cancelled` marks the tenders left given back;
+    order — `OrderCancelledAlready`; `cancelled` marks the tenders left given back; `paid` moves an order still in the awaiting status to `InitialStatuses::afterPayment()`; the panel's and `orders_mark`'s «paid» go through `Contracts\MarksPaidByHand` when bound (payments);
   - `paymentFailed(order, source, reason?)` — a history line and `payment_failed_at`; `stopAwaitingPayment(order, source)` / `awaitPayment(order, source)` — the flag down / up, a line, no event (`OrderPaidAlready`, `OrderCancelledAlready`);
   - **balance** (§36, decision 102): `balance(order)` → `Balance` (`due`, `over`, `kind()` — `topup`, `unpaid`, `over`); `orders.paid_total` and the stored `balance = due − over` (a refund never makes it owe), written by each method that moves a term; `recordPayment(order, amount, source, reference?, at?, note?, dryRun?)` → `PaymentRecord` — a top-up of a paid order, line `payment`, `OrderPaymentReceived` (`PaymentRefused`: `not_paid`, `cancelled`); a refund's limit is `max(payable, paid_total) − refunded_total`;
   - `moveTo(order, OrderStatus, source, note?, dryRun?)` → `StatusMove` (`from`, `to`, `publicFrom`, `publicTo`,
@@ -51,7 +51,7 @@ grouped into public ones. Dictionary `webx-orders` (`module`, `statuses`, `panel
   «New order» to the first contacts e-mail. `{{status}}` is `internal`. By hand (§10.3): `Orders::notify()`, `orders_notify`; `NotifyRefused::label()` — the words.
 - **Journal** `orders.order`: what `updateDetails()` and the links changed. **Blocks** `OrderBlocks` —
   `register(new BlockDefinition('delivery'|'payment', module, validate, summary, charge?, price?, view?))` in `boot()`: `charge` — a row of its own in «Summary»; `view` — its own tab, no raw data under «Items».
-- **Config** `webx-orders`: `number` (`prefix`, `start` = 1000, `pad`), `initial_status`, `initial_status_awaiting_payment`
+- **Config** `webx-orders`: `number` (`prefix`, `start` = 1000, `pad`), `initial_status`, `initial_status_awaiting_payment`, `status_after_payment`
   (ids; null — «New» and «Awaiting payment» of the default set), `notify.*`, `layout`, `middleware`, `account_per_page`,
   `checkout.*`. `OrderSettings` reads what `orders.settings` saved in `module-settings`, then the config. `webx:doctor`:
   `Doctor\OrdersNotificationsCheck`.

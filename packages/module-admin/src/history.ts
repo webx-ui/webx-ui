@@ -102,6 +102,11 @@ export interface HistorySubject {
    * tab «Delivery» of an order changes its total. The host keeps what is being typed.
    */
   reload?: () => Promise<void>
+  /**
+   * Counts the host's reads of the record: a node patched onto the screen that shows something of
+   * its own reads it again when this moves — the head of an order's card marked it paid.
+   */
+  version?: Ref<number>
 }
 
 export const historySubjectKey: InjectionKey<HistorySubject> = Symbol('wx-history-subject')

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, nextTick, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import {
   toast,
   WxAlert,
@@ -10,8 +10,6 @@ import {
   WxDialog,
   WxEmpty,
   WxFormItem,
-  WxDatePicker,
-  WxInput,
   WxRadio,
   WxRadioGroup,
   WxSkeleton,
@@ -35,14 +33,19 @@ import type { EventLine, OrderAttempt, OrderPayment, OrderPaymentState } from '.
  * bank details of a transfer, the state, and the attempts — each opening its events of the exchange
  * by time; an event opens its headers and bodies for whoever may read them.
  *
- * The actions are the order's, for whoever works the orders: «Mark as paid», «Check with the
- * gateway», «Change the method», «Payment link», «Problem resolved». After one the card reads the
- * order again: its milestones and history have moved.
+ * The actions are the order's, for whoever works the orders: «Check with the gateway», «Change
+ * the method», «Payment link», «Problem resolved». After one the card reads the order again: its
+ * milestones and history have moved. «Mark as paid» is the card's own button in its head — one
+ * action, which the server makes this module's mark — and the tab reads itself again after it.
+ *
+ * `?attempt=` in the address — the link of «Summary» — opens the attempt it names, by the
+ * gateway's reference, the attempt's id or the document.
  */
 defineOptions({ name: 'WxPaymentsOrder' })
 
 const admin = useAdmin()
 const api = createPaymentsApi(admin)
+const route = useRoute()
 const router = useRouter()
 const t = usePaymentsWords()
 const w = usePaymentsLines()
@@ -64,8 +67,6 @@ function toggle(id: number): void {
 const eventId = ref<number | null>(null)
 const eventOpen = ref(false)
 
-const marking = ref(false)
-const mark = ref({ reference: '', paid_at: '', note: '' })
 const switching = ref(false)
 const picked = ref<string | null>(null)
 const resolving = ref<OrderAttempt | null>(null)
@@ -94,6 +95,40 @@ async function load(): Promise<void> {
 
 watch(id, () => void load(), { immediate: true })
 
+// The head of the card changed the order — «Mark as paid»: what this tab says has moved too.
+watch(
+  () => subject?.version?.value,
+  (now, before) => {
+    if (before !== undefined && now !== before) void load()
+  },
+)
+
+/** The attempt the address names (`?attempt=`), open and in sight once the tab has it. */
+watch(
+  () => [state.value, route.query.attempt] as const,
+  async ([one, asked]) => {
+    if (!one || typeof asked !== 'string' || asked === '') return
+
+    const found = one.attempts.find(
+      (row) => row.gateway_ref === asked || row.uuid === asked || row.reference === asked,
+    )
+
+    if (!found) return
+    if (!expanded.value.includes(found.id)) expanded.value = [...expanded.value, found.id]
+
+    await nextTick()
+    document
+      .querySelector(`[data-test="attempt-${found.id}"]`)
+      ?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  },
+  { immediate: true },
+)
+
+/** Who marked it by hand, or where it came from. */
+function marker(source: string, name: string | null | undefined): string {
+  return name ? name : w(`statuses.sources.${source}`)
+}
+
 const tones: Record<OrderPaymentState, BadgeType> = {
   awaiting: 'warning',
   paid: 'success',
@@ -121,29 +156,6 @@ async function run(action: () => Promise<OrderPayment>, done: string): Promise<b
   } finally {
     busy.value = false
   }
-}
-
-function startMark(): void {
-  mark.value = { reference: '', paid_at: new Date().toISOString().slice(0, 10), note: '' }
-  marking.value = true
-}
-
-async function confirmMark(): Promise<void> {
-  const one = state.value
-
-  if (!one) return
-
-  const done = await run(
-    () =>
-      api.markPaid(one.order_id, {
-        reference: mark.value.reference || null,
-        paid_at: mark.value.paid_at || null,
-        note: mark.value.note || null,
-      }),
-    t('order.marked'),
-  )
-
-  if (done) marking.value = false
 }
 
 const check = () => run(() => api.checkOrder(state.value!.order_id), t('order.checked'))
@@ -227,16 +239,6 @@ const hasEvents = computed(
         <template v-if="state.can_manage" #extra>
           <wx-space size="sm" wrap>
             <wx-button
-              v-if="state.can_mark_paid"
-              size="sm"
-              type="primary"
-              :disabled="busy"
-              data-test="order-mark-paid"
-              @click="startMark"
-            >
-              {{ t('order.mark-paid') }}
-            </wx-button>
-            <wx-button
               v-if="state.can_check"
               size="sm"
               variant="outline"
@@ -260,8 +262,38 @@ const hasEvents = computed(
           </wx-space>
         </template>
 
+        <div
+          v-if="!state.block && state.paid_by"
+          class="wx-payments-order__block"
+          data-test="order-paid-by"
+        >
+          <div class="wx-payments-order__line">
+            <span class="wx-payments-order__title" data-test="order-method">{{
+              state.paid_by.method_title
+            }}</span>
+            <wx-badge :type="tones[state.state]" data-test="order-state">
+              {{ t(`order.states.${state.state}`) }}
+            </wx-badge>
+          </div>
+          <dl class="wx-payments-order__details">
+            <dt>{{ t('attempts.paid') }}</dt>
+            <dd>
+              {{ state.paid_by.amount_formatted }}
+              <template v-if="state.paid_by.paid_at">
+                · {{ dates.short(state.paid_by.paid_at) }}</template
+              >
+            </dd>
+            <template v-if="state.paid_by.reference">
+              <dt>{{ t('attempts.reference') }}</dt>
+              <dd>{{ state.paid_by.reference }}</dd>
+            </template>
+            <dt>{{ t('attempts.marked-by') }}</dt>
+            <dd>{{ marker(state.paid_by.source, state.paid_by.admin_name) }}</dd>
+          </dl>
+        </div>
+
         <wx-empty
-          v-if="!state.block"
+          v-else-if="!state.block"
           :title="t('order.none')"
           :description="t('order.none-help')"
         />
@@ -278,6 +310,12 @@ const hasEvents = computed(
 
           <wx-text v-if="state.paid_at" size="sm" tone="muted">
             {{ t('attempts.paid') }}: {{ state.paid_formatted }} · {{ dates.short(state.paid_at) }}
+            <template v-if="state.paid_by?.reference">
+              · {{ t('attempts.reference') }} {{ state.paid_by.reference }}
+            </template>
+            <template v-if="state.paid_by && !state.paid_by.gateway_ref">
+              · {{ marker(state.paid_by.source, state.paid_by.admin_name) }}
+            </template>
           </wx-text>
           <wx-text v-if="state.due > 0 && state.state !== 'cancelled'" size="sm">
             {{
@@ -349,6 +387,15 @@ const hasEvents = computed(
                   >
                     {{ w(`statuses.problems.${row.problem}`) }}
                   </wx-badge>
+                  <wx-badge
+                    v-if="row.events.some((event) => event.claimed)"
+                    type="danger"
+                    variant="outline"
+                    size="sm"
+                    data-test="attempt-claimed"
+                  >
+                    {{ t('exchange.claimed') }}
+                  </wx-badge>
                 </span>
                 <wx-date :value="row.created_at" compact />
               </span>
@@ -376,12 +423,21 @@ const hasEvents = computed(
               <wx-text v-if="row.reference" size="sm" tone="muted">
                 {{ t('attempts.reference') }}: {{ row.reference }}
               </wx-text>
+              <wx-text v-if="row.admin_id" size="sm" tone="muted">
+                {{ t('attempts.marked-by') }}: {{ marker(row.source, row.admin_name) }}
+              </wx-text>
               <div v-if="row.can_resolve">
                 <wx-button size="sm" variant="outline" :disabled="busy" @click="startResolve(row)">
                   {{ t('order.resolve') }}
                 </wx-button>
               </div>
-              <event-list :events="row.events" :empty-text="t('attempts.no-events')" @open="show" />
+              <div class="wx-payments-order__events">
+                <event-list
+                  :events="row.events"
+                  :empty-text="t('attempts.no-events')"
+                  @open="show"
+                />
+              </div>
             </div>
           </li>
         </ul>
@@ -393,31 +449,6 @@ const hasEvents = computed(
     </template>
 
     <event-dialog :id="eventId" v-model:open="eventOpen" />
-
-    <wx-dialog v-model:open="marking" :title="t('order.mark-paid-title')" :width="480">
-      <div class="wx-payments-order__form">
-        <wx-text size="sm" tone="muted">
-          {{ t('order.mark-paid-help', { amount: state?.due_formatted ?? '' }) }}
-        </wx-text>
-        <wx-form-item :label="t('order.reference')">
-          <wx-input v-model="mark.reference" :maxlength="190" data-test="mark-reference" />
-        </wx-form-item>
-        <wx-form-item :label="t('order.paid-at')">
-          <wx-date-picker v-model="mark.paid_at" />
-        </wx-form-item>
-        <wx-form-item :label="t('order.note')">
-          <wx-textarea v-model="mark.note" :rows="2" :maxlength="1000" />
-        </wx-form-item>
-      </div>
-      <template #footer>
-        <wx-space size="sm">
-          <wx-button variant="outline" @click="marking = false">{{ t('common.cancel') }}</wx-button>
-          <wx-button type="primary" :loading="busy" data-test="mark-confirm" @click="confirmMark">
-            {{ t('order.mark-paid') }}
-          </wx-button>
-        </wx-space>
-      </template>
-    </wx-dialog>
 
     <wx-dialog v-model:open="switching" :title="t('order.switch-title')" :width="520">
       <div class="wx-payments-order__form">
@@ -498,6 +529,14 @@ const hasEvents = computed(
 
 .wx-payments-order__expanded {
   padding: 0 var(--wx-space-12) var(--wx-space-12);
+}
+
+/* The events sit inside the attempt's frame, edge to edge of its padding, never past it. */
+.wx-payments-order__events {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--wx-border-muted);
+  border-radius: var(--wx-radius-sm);
 }
 
 .wx-payments-order__attempts {

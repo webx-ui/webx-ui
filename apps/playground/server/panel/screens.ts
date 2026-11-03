@@ -151,6 +151,7 @@ const SCREENS: Record<string, { base: string; patches: (string | Patch)[] }> = {
       [
         { op: 'set', target: 'initial-status', props: { options: ORDER_STATUS_OPTIONS } },
         { op: 'set', target: 'initial-awaiting', props: { options: ORDER_STATUS_OPTIONS } },
+        { op: 'set', target: 'after-payment', props: { options: ORDER_STATUS_OPTIONS } },
       ],
     ],
   },

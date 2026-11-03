@@ -17,6 +17,7 @@ use WebxUi\Cache\CacheGroups;
 use WebxUi\Orders\Blocks\BlockDefinition;
 use WebxUi\Orders\Blocks\OrderBlocks;
 use WebxUi\Orders\Checkout\Slots\CheckoutSlots;
+use WebxUi\Orders\Contracts\MarksPaidByHand;
 use WebxUi\Orders\Models\Order;
 use WebxUi\Orders\Panel\OrdersModule;
 use WebxUi\Payments\Checkout\PaymentsCheckoutSlot;
@@ -42,6 +43,7 @@ use WebxUi\Payments\Online\Poll;
 use WebxUi\Payments\Online\Returns;
 use WebxUi\Payments\Online\Settlement;
 use WebxUi\Payments\Online\StartRequests;
+use WebxUi\Payments\Orders\PaymentsMarkPaid;
 use WebxUi\Payments\Panel\AttemptRows;
 use WebxUi\Payments\Panel\MethodForm;
 use WebxUi\Payments\Panel\PaymentsHome;
@@ -78,6 +80,8 @@ class PaymentsServiceProvider extends ServiceProvider
         $this->app->singleton(PaymentLinks::class);
         $this->app->singleton(StartRequests::class);
         $this->app->singleton(PayPage::class);
+        // The card's «Mark as paid» is this module's mark: the attempt and the journal with the milestone.
+        $this->app->bind(MarksPaidByHand::class, PaymentsMarkPaid::class);
         $this->app->singleton(Handoffs::class);
         $this->app->singleton(Settlement::class);
         $this->app->singleton(Checks::class);
@@ -144,6 +148,8 @@ class PaymentsServiceProvider extends ServiceProvider
                     'payments',
                     PaymentSnapshot::validate(...),
                     PaymentSnapshot::summary(...),
+                    // Its own view is the tab «Payment»: «Items» does not repeat the block.
+                    view: PaymentsSection::VIEW,
                     details: static function (array $block, Order $order, string $locale): ?string {
                         if (! $order->awaiting_payment || $order->paid_at !== null || $order->cancelled_at !== null) {
                             return null;

@@ -95,6 +95,31 @@ final class PollTest extends OnlineCase
     }
 
     #[Test]
+    public function a_payment_the_gateway_does_not_know_is_asked_less_and_less_often(): void
+    {
+        [, $payment] = $this->attemptAtGateway();
+        // The gateway forgot it — what the journal shows as «Status request → 404».
+        $this->server()->forget($payment->uuid);
+        $asked = static fn (): int => PaymentGatewayEvent::query()->where('kind', 'status')->where('source', 'poll')->count();
+
+        // Every five minutes until its hour at the gateway is nearly out: eleven runs.
+        for ($minute = 5; $minute <= 55; $minute += 5) {
+            $this->travel(5)->minutes();
+            $this->artisan('webx:payments:poll')->assertSuccessful();
+        }
+
+        // Asked at 5, 15 (+10) and 35 (+20) minutes; the next is at 75 (+40).
+        $this->assertSame(3, $asked());
+        $this->assertSame(PaymentStatus::Pending, $payment->refresh()->status);
+        $this->assertSame(3, $payment->meta['poll']['asked'] ?? null);
+
+        // The deadline still expires it.
+        $this->travel(49)->hours();
+        $this->artisan('webx:payments:poll')->expectsOutputToContain('expired 1')->assertSuccessful();
+        $this->assertSame(PaymentStatus::Expired, $payment->refresh()->status);
+    }
+
+    #[Test]
     public function one_gateway_down_does_not_stop_the_others(): void
     {
         [, $first] = $this->attemptAtGateway();

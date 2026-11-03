@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { WxBadge, WxTable, WxText, WxTooltip, type TableColumn } from '@webx-ui/core'
-import { WxDate } from '@webx-ui/module-admin'
-import { codeTone, outcomeTone } from './format'
+import { useDates, WxDate } from '@webx-ui/module-admin'
+import { codeTone, foldKeys, localTimes, outcomeTone, type FoldedLine } from './format'
 import { usePaymentsLines, usePaymentsWords } from './i18n'
 import type { EventLine } from './types'
 
@@ -10,6 +10,10 @@ import type { EventLine } from './types'
  * Events of the exchange by time (spec §20.7): direction and kind, the code, the signature, the
  * decision and how long it took. A line is never a body: a click opens the event, where the
  * headers and bodies are — for whoever may read them.
+ *
+ * The widths are fixed and the event's column takes the rest, its words wrapping: the list never
+ * scrolls sideways, in a dialog or on a tab. A signing key fetched for a request is folded under
+ * it; a notification that named the attempt under a bad signature says so in red.
  */
 const props = withDefaults(
   defineProps<{
@@ -28,17 +32,20 @@ const emit = defineEmits<{ open: [event: EventLine] }>()
 
 const t = usePaymentsWords()
 const w = usePaymentsLines()
+const dates = useDates()
 
-const columns = computed<TableColumn<EventLine>[]>(() => [
-  { key: 'at', label: t('exchange.time'), width: 170 },
-  { key: 'kind', label: t('exchange.event'), minWidth: 180 },
+const lines = computed(() => foldKeys(props.events))
+
+const columns = computed<TableColumn<FoldedLine>[]>(() => [
+  { key: 'at', label: t('exchange.time'), width: 88 },
+  { key: 'kind', label: t('exchange.event') },
   ...(props.context
-    ? [{ key: 'order', label: t('attempts.order'), width: 130, hideBelow: 720 }]
+    ? [{ key: 'order', label: t('attempts.order'), width: 96, hideBelow: 720 }]
     : []),
-  { key: 'status', label: t('exchange.code'), width: 90 },
-  { key: 'signature', label: t('exchange.signature'), width: 150, hideBelow: 560 },
-  { key: 'outcome', label: t('exchange.outcome'), width: 140, hideBelow: 460 },
-  { key: 'duration', label: t('exchange.duration'), width: 100, align: 'right', hideBelow: 840 },
+  { key: 'status', label: t('exchange.code'), width: 96 },
+  { key: 'signature', label: t('exchange.signature'), width: 128, hideBelow: 600 },
+  { key: 'outcome', label: t('exchange.outcome'), width: 120, hideBelow: 480 },
+  { key: 'duration', label: t('exchange.duration'), width: 96, align: 'right', hideBelow: 840 },
 ])
 
 function kind(row: EventLine): string {
@@ -49,6 +56,10 @@ function direction(row: EventLine): string {
   return w(`exchange.directions.${row.direction}`)
 }
 
+function message(row: EventLine): string {
+  return row.message ? localTimes(row.message, (value) => dates.short(value)) : ''
+}
+
 function signatureTone(row: EventLine) {
   return row.signature === 'invalid' ? 'danger' : row.signature === 'valid' ? 'success' : 'default'
 }
@@ -57,8 +68,9 @@ function signatureTone(row: EventLine) {
 <template>
   <wx-table
     class="wx-payments-events"
-    :data="events"
+    :data="lines"
     :columns="columns"
+    layout="fixed"
     row-key="id"
     :pagination="false"
     clickable
@@ -67,18 +79,32 @@ function signatureTone(row: EventLine) {
     size="sm"
     :loading="loading"
     :empty-text="emptyText ?? t('exchange.empty')"
-    :row-class="(row: EventLine) => (row.id === current ? 'is-current' : undefined)"
-    @row-click="(row: EventLine) => emit('open', row)"
+    :row-class="(row: FoldedLine) => (row.id === current ? 'is-current' : undefined)"
+    @row-click="(row: FoldedLine) => emit('open', row)"
   >
     <template #cell-at="{ row }">
-      <wx-date :value="row.at" />
+      <wx-date :value="row.at" compact class="wx-payments-events__time" />
     </template>
     <template #cell-kind="{ row }">
       <span class="wx-payments-events__kind">
         <span class="wx-payments-events__name">{{ kind(row) }}</span>
         <wx-text size="sm" tone="muted" class="wx-payments-events__direction">
-          {{ direction(row) }}<template v-if="row.message"> · {{ row.message }}</template>
+          {{ direction(row) }}<template v-if="row.message"> · {{ message(row) }}</template>
         </wx-text>
+        <wx-badge v-if="row.claimed" type="danger" size="sm" class="wx-payments-events__claimed">
+          {{ t('exchange.claimed') }}
+        </wx-badge>
+        <button
+          v-for="key in row.keys"
+          :key="key.id"
+          type="button"
+          class="wx-payments-events__key"
+          data-test="event-key"
+          @click.stop="emit('open', key)"
+        >
+          + {{ t('exchange.signing-key') }}
+          <template v-if="key.status !== null"> · {{ key.status }}</template>
+        </button>
       </span>
     </template>
     <template #cell-order="{ row }">
@@ -86,19 +112,32 @@ function signatureTone(row: EventLine) {
     </template>
     <template #cell-status="{ row }">
       <wx-tooltip v-if="row.transport_error" :content="row.transport_error">
-        <wx-badge type="danger" size="sm">{{ t('exchange.transport-error') }}</wx-badge>
+        <wx-badge type="danger" size="sm" class="wx-payments-events__badge">{{
+          t('exchange.transport-error')
+        }}</wx-badge>
       </wx-tooltip>
       <wx-badge v-else-if="row.status !== null" :type="codeTone(row)" size="sm">
         {{ row.status }}
       </wx-badge>
     </template>
     <template #cell-signature="{ row }">
-      <wx-badge v-if="row.signature" :type="signatureTone(row)" size="sm" dot>
+      <wx-badge
+        v-if="row.signature"
+        :type="signatureTone(row)"
+        size="sm"
+        dot
+        class="wx-payments-events__badge"
+      >
         {{ w(`exchange.signature.${row.signature}`) }}
       </wx-badge>
     </template>
     <template #cell-outcome="{ row }">
-      <wx-badge v-if="row.outcome" :type="outcomeTone(row.outcome)" size="sm">
+      <wx-badge
+        v-if="row.outcome"
+        :type="outcomeTone(row.outcome)"
+        size="sm"
+        class="wx-payments-events__badge"
+      >
         {{ w(`exchange.outcomes.${row.outcome}`) }}
       </wx-badge>
     </template>
@@ -111,9 +150,15 @@ function signatureTone(row: EventLine) {
 </template>
 
 <style scoped>
+.wx-payments-events__time {
+  white-space: nowrap;
+}
+
 .wx-payments-events__kind {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
+  gap: var(--wx-space-2);
   min-width: 0;
 }
 
@@ -121,14 +166,39 @@ function signatureTone(row: EventLine) {
   font-weight: var(--wx-font-weight-medium);
 }
 
+/* A decision is read whole: it wraps rather than ends in «…». */
 .wx-payments-events__direction {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+/* A badge that does not fit its column goes to a second line instead of out of the cell. */
+.wx-payments-events__badge,
+.wx-payments-events__claimed {
+  max-width: 100%;
+  height: auto;
+  white-space: normal;
+  text-align: start;
+}
+
+.wx-payments-events__key {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--wx-text-muted);
+  font: inherit;
+  font-size: var(--wx-font-size-xs);
+  cursor: pointer;
+}
+
+.wx-payments-events__key:hover {
+  color: var(--wx-text-link);
+  text-decoration: underline;
 }
 
 .wx-payments-events__number {
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .wx-payments-events :deep(tr.is-current) > td {

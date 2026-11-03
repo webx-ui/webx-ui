@@ -92,7 +92,9 @@ final class GatewayAForm extends GatewayAType implements CompletesApproval
         $signature = is_string($fields['signature'] ?? null) ? $fields['signature'] : '';
 
         if ($data === '' || ! hash_equals(self::sign($data, $credentials), $signature)) {
-            throw InvalidNotification::signature();
+            $claim = json_decode((string) base64_decode($data, true), true);
+
+            throw InvalidNotification::signature(uuid: is_array($claim) && is_string($claim['order_id'] ?? null) ? $claim['order_id'] : null);
         }
 
         $payload = json_decode((string) base64_decode($data, true), true);

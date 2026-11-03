@@ -241,12 +241,17 @@ const actions = computed<ScreenAction[]>(() => [
   container-type: inline-size;
 }
 
-/* As many filters to a row as the screen has room for; one under the other on a phone. */
+/*
+ * As many filters to a row as the screen has room for; one under the other on a phone. The card
+ * already pads its content, so the filters add none above and keep the form's gap below — the
+ * table does not start right under the checkboxes.
+ */
 .wx-payments-exchange__filters {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: var(--wx-space-8) var(--wx-space-12);
-  padding: var(--wx-space-12) var(--wx-space-16);
+  gap: var(--wx-space-12);
+  padding: 0 0 var(--wx-space-16);
+  margin-bottom: var(--wx-space-16);
   border-bottom: 1px solid var(--wx-border-muted);
 }
 

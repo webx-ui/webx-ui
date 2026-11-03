@@ -94,8 +94,10 @@ export const paymentsMessages: Record<string, Messages> = {
       'key-set': 'Set',
       'key-missing': 'Not set',
       'key-replace': 'Replace',
-      'key-keep': 'Keep',
       'key-remove': 'Remove key',
+      'key-remove-title': 'Remove the key «:name»?',
+      'key-remove-text':
+        'The key goes when the method is saved. Without its keys the method is not offered in the checkout.',
       'key-removed': 'Removed on save',
       'key-environment': 'Set in the environment of the site: change it there.',
       'key-placeholder': 'Type the key',
@@ -111,8 +113,9 @@ export const paymentsMessages: Record<string, Messages> = {
       addresses: 'For the gateway account',
       'addresses-help': 'Copy these addresses to the account of the gateway.',
       'notify-url': 'Notifications address',
-      'return-url': 'Return address',
       'notify-after-save': 'Appears after the first save.',
+      'return-note':
+        'The return address goes with every payment: there is nothing to enter for it in the account.',
     },
     attempts: {
       intro:
@@ -144,6 +147,7 @@ export const paymentsMessages: Record<string, Messages> = {
       check: 'Check with the gateway',
       checked: 'The gateway was asked.',
       resolved: 'Resolved',
+      'marked-by': 'Marked by',
     },
     exchange: {
       intro:
@@ -189,6 +193,8 @@ export const paymentsMessages: Record<string, Messages> = {
       open: 'Open',
       'status-change': ':before → :after',
       reported: 'Gateway said',
+      'signing-key': 'signing key',
+      claimed: 'Claimed for this attempt — signature did not match',
     },
     order: {
       tab: 'Payment',
@@ -209,13 +215,7 @@ export const paymentsMessages: Record<string, Messages> = {
       attempts: 'Attempts',
       'no-attempts': 'No attempts yet',
       'other-events': 'Events without an attempt',
-      'mark-paid': 'Mark as paid',
-      'mark-paid-title': 'Mark the order as paid',
-      'mark-paid-help': 'The order gets the milestone «paid» for :amount.',
-      reference: 'Document number',
-      'paid-at': 'Paid on',
       note: 'Note',
-      marked: 'Marked as paid.',
       check: 'Check with the gateway',
       checked: 'The gateway was asked.',
       switch: 'Change the method',

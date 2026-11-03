@@ -104,10 +104,6 @@ function open(row: AttemptRow): void {
       <wx-text class="wx-payments-intro" tone="muted" size="sm">{{ t('attempts.intro') }}</wx-text>
     </template>
 
-    <div class="wx-payments-attempts__tabs">
-      <wx-segmented v-model="tab" size="sm" :options="tabs" data-test="attempt-tabs" />
-    </div>
-
     <wx-table
       :data="page"
       :columns="columns"
@@ -123,6 +119,13 @@ function open(row: AttemptRow): void {
       @row-click="open"
       @state-change="load"
     >
+      <!-- The tabs of the list on the line of the search, not a strip of their own above it. -->
+      <template #title>
+        <div class="wx-payments-attempts__tabs">
+          <wx-segmented v-model="tab" size="sm" :options="tabs" data-test="attempt-tabs" />
+        </div>
+      </template>
+
       <template #filters>
         <wx-form-item :label="t('attempts.method')">
           <wx-select
@@ -172,7 +175,7 @@ function open(row: AttemptRow): void {
 }
 
 .wx-payments-attempts__tabs {
-  padding: var(--wx-space-12) var(--wx-space-16) 0;
+  max-width: 100%;
   overflow-x: auto;
 }
 

@@ -57,6 +57,34 @@ final class OrderTabTest extends PanelCase
     }
 
     #[Test]
+    public function the_cards_mark_as_paid_is_the_payments_own_mark(): void
+    {
+        $order = $this->transferOrder();
+        $this->signIn(['payments.view', 'orders.view', 'orders.manage']);
+
+        // The button in the head of the card: the orders' route, one action with the tab's.
+        $this->postJson('/api/cms/orders/'.$order->id.'/milestones', ['milestone' => 'paid', 'reference' => 'PD-0009', 'paid_at' => '2026-11-02', 'note' => 'By phone'])->assertOk();
+
+        $payment = Payment::query()->where('order_id', $order->id)->sole();
+        $this->assertSame([PaymentStatus::Paid, 'panel', 'PD-0009', '2026-11-02'], [$payment->status, $payment->source, $payment->meta['reference'] ?? null, $payment->paid_at?->toDateString()]);
+        $this->assertNotNull($payment->admin_id);
+        $event = PaymentGatewayEvent::query()->where('payment_id', $payment->id)->sole();
+        $this->assertSame(['internal', 'manual', 'applied'], [$event->direction, $event->kind, $event->outcome]);
+        $this->assertSame('PD-0009', $order->refresh()->milestones()->where('milestone', 'paid')->value('reference'));
+
+        // The tab says how and by whom; the journal's «admin #N» reads as a name.
+        $tab = $this->getJson($this->api('orders/'.$order->id))->assertOk()
+            ->assertJsonPath('data.paid_by.reference', 'PD-0009')
+            ->assertJsonPath('data.paid_by.method_title', 'Bank transfer');
+        $this->assertNotNull($tab->json('data.paid_by.admin_name'));
+        $this->assertStringNotContainsString('admin #', (string) $tab->json('data.attempts.0.events.0.message'));
+
+        // A second press is the first mark: no second attempt.
+        $this->postJson('/api/cms/orders/'.$order->id.'/milestones', ['milestone' => 'paid'])->assertOk();
+        $this->assertSame(1, Payment::query()->where('order_id', $order->id)->count());
+    }
+
+    #[Test]
     public function a_reader_cannot_act_and_a_manager_of_orders_can(): void
     {
         $order = $this->transferOrder();

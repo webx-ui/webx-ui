@@ -93,3 +93,55 @@ export function formattable(body: string | null): boolean {
 
   return pretty(body) !== body
 }
+
+/** A moment as the journal writes it into a decision: ISO 8601 with its offset, UTC as often as not. */
+const ISO = /\b\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})\b/g
+
+/**
+ * A decision of the journal with its moments in the reader's time and words — «by today at 14:29»
+ * rather than «by 2026-11-03T12:29:21+00:00». Only the screen changes: the event keeps its text.
+ */
+export function localTimes(text: string, short: (value: string) => string): string {
+  return text.replace(ISO, (moment) => short(moment) || moment)
+}
+
+/** A line of the list: an event, and the signing keys fetched for it, folded under it. */
+export type FoldedLine = EventLine & { keys: EventLine[] }
+
+/**
+ * «Signing key» before every request of a gateway that signs with a token says nothing on its own:
+ * a list folds each one under the request of the same action that follows it (§20.7). The journal
+ * keeps the line; an event opened shows it in its trace, and a key with no request after it — or a
+ * list of keys alone — stays a line of its own.
+ */
+export function foldKeys(events: EventLine[]): FoldedLine[] {
+  const byTrace = new Map<string, EventLine[]>()
+
+  for (const event of events) {
+    const one = byTrace.get(event.trace) ?? []
+    one.push(event)
+    byTrace.set(event.trace, one)
+  }
+
+  const folded = new Map<number, EventLine[]>()
+  const hidden = new Set<number>()
+
+  for (const trace of byTrace.values()) {
+    const ordered = [...trace].sort((a, b) => a.id - b.id)
+
+    ordered.forEach((event, index) => {
+      if (event.kind !== 'key') return
+
+      const next = ordered.slice(index + 1).find((one) => one.kind !== 'key')
+
+      if (!next) return
+
+      folded.set(next.id, [...(folded.get(next.id) ?? []), event])
+      hidden.add(event.id)
+    })
+  }
+
+  return events
+    .filter((event) => !hidden.has(event.id))
+    .map((event) => ({ ...event, keys: folded.get(event.id) ?? [] }))
+}

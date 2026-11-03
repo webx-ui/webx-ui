@@ -68,6 +68,7 @@ final readonly class SettingsScreen
         return [
             ['op' => 'set', 'target' => 'initial-status', 'props' => ['options' => $options]],
             ['op' => 'set', 'target' => 'initial-awaiting', 'props' => ['options' => $options]],
+            ['op' => 'set', 'target' => 'after-payment', 'props' => ['options' => $options]],
             // The channels of the milestones (§10.1) are chosen only where there are channels.
             ...($this->container->make(OrderChannels::class)->available() ? [] : [['op' => 'remove', 'target' => 'notify-card']]),
             ...$checkout,

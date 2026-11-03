@@ -23,8 +23,9 @@ use WebxUi\Payments\SettleResult;
  * the attempt still comes to its final status. Attempts `created` / `pending` older than five
  * minutes are asked once a run (`check()`, an approval completed first); past their deadline —
  * the gateway's `expires_at`, or 48 hours — without an answer they expire, with an internal
- * event of the journal. Holds that end within a day are asked too, and the manager is told once
- * a day per attempt (`hold_expiring`).
+ * event of the journal. An attempt that stays unfinished is asked less and less often
+ * (`backOff()`). Holds that end within a day are asked too, and the manager is told once a day
+ * per attempt (`hold_expiring`).
  */
 final readonly class Poll
 {
@@ -33,6 +34,9 @@ final readonly class Poll
     public const int DEADLINE_HOURS = 48;
 
     public const int BATCH = 50;
+
+    /** The longest pause between two questions about one unfinished attempt. */
+    public const int MAX_PAUSE_MINUTES = 360;
 
     public const string SOURCE = 'poll';
 
@@ -78,8 +82,9 @@ final readonly class Poll
     {
         // A `created` attempt that never reached the gateway has nothing to ask: the buyer may
         // still go — until the deadline.
-        if ($payment->status === PaymentStatus::Pending || $payment->gateway_ref !== null) {
+        if (($payment->status === PaymentStatus::Pending || $payment->gateway_ref !== null) && $this->due($payment, $now)) {
             $this->ask($payment, $report, complete: true);
+            $this->backOff($payment, $now);
         }
 
         $payment->refresh();
@@ -107,6 +112,34 @@ final readonly class Poll
         } finally {
             $lock->release();
         }
+    }
+
+    /** The attempt's next question is due: never asked, or its pause is over. */
+    private function due(Payment $payment, CarbonImmutable $now): bool
+    {
+        $next = $payment->meta['poll']['next_at'] ?? null;
+
+        return ! is_string($next) || CarbonImmutable::parse($next)->lessThanOrEqualTo($now);
+    }
+
+    /**
+     * An attempt still unfinished after the question waits twice as long before the next one —
+     * 5, 10, 20… minutes, at most MAX_PAUSE_MINUTES: a payment the gateway does not know, or one
+     * the buyer left, is not asked about every five minutes until its deadline (the journal keeps
+     * every question). The pause sits in `meta.poll`; a final status ends the polling anyway.
+     */
+    private function backOff(Payment $payment, CarbonImmutable $now): void
+    {
+        $payment->refresh();
+
+        if (! in_array($payment->status, [PaymentStatus::Created, PaymentStatus::Pending], true)) {
+            return;
+        }
+
+        $asked = (int) ($payment->meta['poll']['asked'] ?? 0) + 1;
+        $pause = min(self::AFTER_MINUTES * 2 ** $asked, self::MAX_PAUSE_MINUTES);
+        $payment->meta = [...($payment->meta ?? []), 'poll' => ['asked' => $asked, 'next_at' => $now->addMinutes($pause)->toIso8601String()]];
+        $payment->save();
     }
 
     /** @param  array{checked: int, expired: int, warned: int, errors: int}  $report */

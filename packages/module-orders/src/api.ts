@@ -102,11 +102,13 @@ export interface OrdersApi {
   /** The line of consequences under the choice of a status — nothing is written. */
   previewStatus(id: number, statusId: number): Promise<MoveConsequences>
   moveTo(id: number, statusId: number, note: string): Promise<OrderDetail>
+  /** `paidAt` — the day the money came (`YYYY-MM-DD`), today when null; «paid» only. */
   mark(
     id: number,
     milestone: 'paid' | 'received',
     reference: string,
     note: string,
+    paidAt?: string | null,
   ): Promise<OrderDetail>
   /** A top-up of a paid order (§36.3): the balance after it, then the card. */
   previewPayment(id: number, input: PaymentInput): Promise<PaymentPreview>
@@ -198,12 +200,13 @@ export function createOrdersApi(admin: AdminContext): OrdersApi {
           note: note || null,
         })
         .then(data),
-    mark: (id, milestone, reference, note) =>
+    mark: (id, milestone, reference, note, paidAt) =>
       admin.http
         .post<{ data: OrderDetail }>(`${base}/${id}/milestones`, {
           milestone,
           reference: reference || null,
           note: note || null,
+          ...(milestone === 'paid' && paidAt ? { paid_at: paidAt } : {}),
         })
         .then(data),
     previewPayment: (id, input) =>

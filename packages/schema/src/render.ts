@@ -21,6 +21,15 @@ export interface RenderContext {
 export const screenErrorsKey: InjectionKey<Ref<ValidationErrors | undefined>> =
   Symbol('wx-screen-errors')
 
+/**
+ * The tab a host opens from outside the description: a page links to «?tab=payment», a node in
+ * the side column sends the reader to the tab that explains it. Provided by the page as a ref the
+ * outermost `wx-tabs` takes for its own selection — both ways, so the page also reads which one is
+ * open. Tabs nested inside a tab keep their own.
+ */
+export const screenTabKey: InjectionKey<Ref<string | number | undefined> | null> =
+  Symbol('wx-screen-tab')
+
 /** Whether a node would draw anything at all for this administrator and these values. */
 function shown(node: ScreenNode, context: RenderContext): boolean {
   if (node.can && !context.can(node.can)) return false

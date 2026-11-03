@@ -15,7 +15,7 @@ import { useAdmin, useDates, useErrorText, WxDate } from '@webx-ui/module-admin'
 import { createPaymentsApi } from './api'
 import EventDialog from './EventDialog.vue'
 import EventList from './EventList.vue'
-import { statusTones } from './format'
+import { localTimes, statusTones } from './format'
 import { usePaymentsLines, usePaymentsWords } from './i18n'
 import type { AttemptDetail, EventLine } from './types'
 
@@ -138,10 +138,13 @@ function show(line: EventLine): void {
           {{ attempt.reference }}
         </wx-descriptions-item>
         <wx-descriptions-item v-if="attempt.failure_reason" :label="t('attempts.failure')">
-          {{ attempt.failure_reason }}
+          {{ localTimes(attempt.failure_reason, (value) => dates.short(value)) }}
         </wx-descriptions-item>
         <wx-descriptions-item :label="t('attempts.source')">
           {{ w(`statuses.sources.${attempt.source}`) }}
+        </wx-descriptions-item>
+        <wx-descriptions-item v-if="attempt.admin_id" :label="t('attempts.marked-by')">
+          {{ attempt.admin_name ?? w(`statuses.sources.${attempt.source}`) }}
         </wx-descriptions-item>
         <wx-descriptions-item :label="t('attempts.date')">
           <wx-date :value="attempt.created_at" />

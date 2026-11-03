@@ -173,7 +173,14 @@ class GatewayACard extends GatewayAType implements CancelsPayments, CapturesPaym
         $expected = hash_hmac('sha256', $raw, (string) $credentials->get('secret_key'));
 
         if ($signature === '' || ! hash_equals($expected, $signature)) {
-            throw InvalidNotification::signature();
+            // What the body claims, for the journal's link only (§6.3): nothing of it is believed.
+            $claim = json_decode($raw, true);
+            $data = is_array($claim) && is_array($claim['data'] ?? null) ? $claim['data'] : [];
+
+            throw InvalidNotification::signature(
+                uuid: is_string($data['order_id'] ?? null) ? $data['order_id'] : null,
+                gatewayRef: is_string($data['id'] ?? null) ? $data['id'] : null,
+            );
         }
 
         $event = json_decode($raw, true);

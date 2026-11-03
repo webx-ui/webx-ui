@@ -49,6 +49,7 @@ final class SettingsTest extends PanelTestCase
                 'orders.number.pad' => 0,
                 'orders.initial_status' => null,
                 'orders.initial_status_awaiting_payment' => null,
+                'orders.status_after_payment' => null,
                 // Read from the config: the site has no notifications module, nothing is told.
                 'orders.notify.placed' => [],
                 'orders.notify.paid' => [],

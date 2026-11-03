@@ -25,6 +25,7 @@ use WebxUi\Payments\Models\Payment;
 use WebxUi\Payments\Models\PaymentGatewayEvent;
 use WebxUi\Payments\Online\PaymentLinks;
 use WebxUi\Payments\Panel\AttemptRows;
+use WebxUi\Payments\Panel\EventNames;
 use WebxUi\Payments\Panel\EventRows;
 use WebxUi\Payments\Panel\PaymentsSection;
 use WebxUi\Payments\PaymentContext;
@@ -50,6 +51,7 @@ final class OrderPaymentController
         private readonly Money $money,
         private readonly PaymentLinks $links,
         private readonly Methods $methods,
+        private readonly EventNames $names,
     ) {}
 
     public function show(Request $request, int $order): JsonResponse
@@ -148,12 +150,14 @@ final class OrderPaymentController
         $block = is_array($order->payment) ? $order->payment : null;
 
         $payments = Payment::query()->where('order_id', $order->id)->orderBy('id')->get();
-        $events = EventRows::query()->where('order_id', $order->id)->orderBy('id')->limit(500)->get()
-            ->groupBy(static fn (PaymentGatewayEvent $event): int => (int) $event->payment_id);
+        $lines = $this->names->apply(EventRows::query()->where('order_id', $order->id)->orderBy('id')->limit(500)->get()
+            ->map(static fn (PaymentGatewayEvent $event): array => EventRows::line($event))->values()->all(), $user);
+        $events = collect($lines)->groupBy(static fn (array $line): int => (int) $line['payment_id']);
+        $named = collect($this->rows->named($this->rows->lines($payments), $user))->keyBy('id');
 
         $attempts = $payments->map(fn (Payment $payment): array => [
-            ...$this->rows->line($payment),
-            'events' => ($events[$payment->id] ?? collect())->map(static fn (PaymentGatewayEvent $event): array => EventRows::line($event))->values()->all(),
+            ...$named[$payment->id],
+            'events' => ($events[$payment->id] ?? collect())->values()->all(),
             'can_resolve' => $manage && $payment->problem !== null && ! isset(($payment->meta ?? [])['resolved_at'])
                 && ! in_array($payment->problem, SettleResult::HOLD_PROBLEMS, true),
         ])->reverse()->values()->all();
@@ -190,7 +194,10 @@ final class OrderPaymentController
             // A paid order whose items grew owes the difference (decision 29).
             'top_up' => $paid && $balance->due > 0,
             'attempts' => $attempts,
-            'other_events' => ($events[0] ?? collect())->map(static fn (PaymentGatewayEvent $event): array => EventRows::line($event))->values()->all(),
+            'other_events' => ($events[0] ?? collect())->values()->all(),
+            // How it was paid, for a card without a method of its own (a mark of an order placed
+            // without one): the attempt that took the money — method, document, date and who.
+            'paid_by' => $paid ? $this->paidBy($payments->all(), $named->all()) : null,
             'bodies' => $bodies,
             'can_manage' => $manage,
             'pay_link' => $manage && ! $closed && $balance->due > 0 && ! $held ? ($this->links->page($order) ?: null) : null,
@@ -199,6 +206,35 @@ final class OrderPaymentController
             'can_switch' => $manage && ! $closed && $balance->due > 0 && ! $held,
             'methods' => $manage && ! $closed && $balance->due > 0 && ! $held ? $this->choices($order, $balance->due, $block['method'] ?? null) : [],
         ];
+    }
+
+    /**
+     * The latest attempt that took money.
+     *
+     * @param  list<Payment>  $payments
+     * @param  array<int, array<string, mixed>>  $lines  by the attempt's id
+     * @return array<string, mixed>|null
+     */
+    private function paidBy(array $payments, array $lines): ?array
+    {
+        foreach (array_reverse($payments) as $payment) {
+            if ($payment->status === PaymentStatus::Paid) {
+                $line = $lines[$payment->id];
+
+                return [
+                    'id' => $payment->id,
+                    'method_title' => $line['method_title'],
+                    'reference' => $line['reference'],
+                    'paid_at' => $line['paid_at'],
+                    'amount_formatted' => $line['paid_amount_formatted'] ?? $line['amount_formatted'],
+                    'source' => $payment->source,
+                    'admin_name' => $line['admin_name'],
+                    'gateway_ref' => $payment->gateway_ref,
+                ];
+            }
+        }
+
+        return null;
     }
 
     /**

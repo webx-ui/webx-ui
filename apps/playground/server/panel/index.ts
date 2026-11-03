@@ -272,9 +272,9 @@ import {
 } from './catalog'
 import { registerAudit } from './audit'
 import { registerCache } from './cache'
-import { registerOrders } from './orders'
+import { onPaidByHand, registerOrders } from './orders'
 import { registerDelivery } from './delivery'
-import { registerPayments } from './payments'
+import { recordManualPayment, registerPayments } from './payments'
 import { registerTasks, tasksBadge } from './tasks'
 import { registerConfigurators } from './configurators'
 import {
@@ -2727,6 +2727,7 @@ registerPayments(
   (status, message, data, errors, extra) => new HttpFailure(status, message, data, errors, extra),
   line,
 )
+onPaidByHand((order, reference) => void recordManualPayment(order, reference))
 /* A product built to size, priced by the engine (WEBX_UI_MODULE_CONFIGURATOR.md): «Configurators». */
 registerConfigurators(
   on,

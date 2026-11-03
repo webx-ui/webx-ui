@@ -12,10 +12,10 @@ import {
   WxSkeleton,
   WxText,
 } from '@webx-ui/core'
-import { useAdmin, useErrorText, WxDate } from '@webx-ui/module-admin'
+import { useAdmin, useDates, useErrorText, WxDate } from '@webx-ui/module-admin'
 import { createPaymentsApi } from './api'
 import EventList from './EventList.vue'
-import { codeTone, formattable, outcomeTone, pretty, size } from './format'
+import { codeTone, formattable, localTimes, outcomeTone, pretty, size } from './format'
 import { usePaymentsLines, usePaymentsWords } from './i18n'
 import type { EventDetail, EventHalf, EventLine } from './types'
 
@@ -33,6 +33,7 @@ const api = createPaymentsApi(admin)
 const t = usePaymentsWords()
 const w = usePaymentsLines()
 const message = useErrorText()
+const dates = useDates()
 
 const current = ref<number | null>(null)
 const event = ref<EventDetail | null>(null)
@@ -124,10 +125,14 @@ function pick(line: EventLine): void {
           {{ w(`exchange.directions.${event.direction}`) }}
         </wx-descriptions-item>
         <wx-descriptions-item v-if="event.gateway" :label="t('exchange.gateway')">
-          {{ event.gateway }}
+          {{ event.gateway_title ?? event.gateway }}
+          <span v-if="event.gateway_title" class="wx-payments-event__key">{{ event.gateway }}</span>
         </wx-descriptions-item>
         <wx-descriptions-item v-if="event.method_key" :label="t('exchange.method')">
-          {{ event.method_key }}
+          {{ event.method_title ?? event.method_key }}
+          <span v-if="event.method_title" class="wx-payments-event__key">{{
+            event.method_key
+          }}</span>
         </wx-descriptions-item>
         <wx-descriptions-item v-if="event.order_number" :label="t('attempts.order')">
           {{ event.order_number }}
@@ -156,7 +161,12 @@ function pick(line: EventLine): void {
           <wx-badge :type="outcomeTone(event.outcome)" size="sm">
             {{ w(`exchange.outcomes.${event.outcome}`) }}
           </wx-badge>
-          <wx-text v-if="event.message" size="sm" tone="muted">{{ event.message }}</wx-text>
+          <wx-badge v-if="event.claimed" type="danger" variant="outline" size="sm">
+            {{ t('exchange.claimed') }}
+          </wx-badge>
+          <wx-text v-if="event.message" size="sm" tone="muted" class="wx-payments-event__message">{{
+            localTimes(event.message, (value) => dates.short(value))
+          }}</wx-text>
         </wx-descriptions-item>
         <wx-descriptions-item
           v-if="event.status_before || event.status_after"
@@ -315,6 +325,18 @@ function pick(line: EventLine): void {
   font-size: var(--wx-font-size-sm);
   line-height: 1.5;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.wx-payments-event__key {
+  margin-inline-start: var(--wx-space-6);
+  color: var(--wx-text-muted);
+  font-family: var(--wx-font-family-mono);
+  font-size: var(--wx-font-size-xs);
+}
+
+.wx-payments-event__message {
+  display: block;
   overflow-wrap: anywhere;
 }
 

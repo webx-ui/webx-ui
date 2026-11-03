@@ -29,7 +29,7 @@ Orders, their milestones and balance are `webx-ui/module-orders`; the cart is `w
   payment». `Instructions::of()` / `text()` read the details with the order's number.
 - **Mark as paid** `Payments::markPaid(order, source, reference, paidAt, note)`: an attempt `paid` for
   the debt, the milestone «paid», an event `internal/manual` in the journal; `MarkRefused` if paid or
-  cancelled.
+  cancelled. Bound as orders' `MarksPaidByHand` (`Orders\PaymentsMarkPaid`): the card's button is this mark.
 - **Tables** `payment_methods` (`WebxUi\Payments\Models\PaymentMethod`, keys in the encrypted
   column `credentials`, hidden from arrays and JSON), `payment_selections` (`PaymentSelection`),
   `payments` (`Payment`, statuses `WebxUi\Payments\PaymentStatus`) and `payment_gateway_events`
@@ -47,7 +47,7 @@ Orders, their milestones and balance are `webx-ui/module-orders`; the cart is `w
   headers and fields, `testConnection()`), registry `WebxUi\Payments\Gateways`; online types
   implement `Contracts\ChargesOnline` (`start()` → `Handoff::redirect|post`, `fetchStatus()` →
   `GatewayStatus` with `Reported`, `needs()` → `StartNeeds`, `trustsNotifications()`,
-  `readNotification()` → `Notification::status|poke|unrelated` or `InvalidNotification`, the
+  `readNotification()` → `Notification::status|poke|unrelated` or `InvalidNotification` (a bad signature may claim `uuid`/`gatewayRef`: linked, not believed), the
   answers to the gateway) and, as they can, `CancelsPayments`, `CompletesApproval`,
   `CapturesPayments` (`capturesPartially()`). Errors: `GatewayUnavailable`, `GatewayRefused` —
   words, never a body. Amounts: `GatewayAmount::toDecimal()` / `fromDecimal()`, no float.
@@ -57,7 +57,7 @@ Orders, their milestones and balance are `webx-ui/module-orders`; the cart is `w
   `start()` once and journals `browser/handoff`; the signed page `GET /pay/{number}` (`PaymentLinks::page()`)
   with «Pay», «we are checking», «Top up» and «Pay online now» (`Payments::switchMethod()`).
 - **Hold** `Payments::capture(payment, ?amount, source, dryRun)` / `void()` (`HoldRefused`, problem
-  `capture_failed`). **Poll** `webx:payments:poll` every 5 minutes: unfinished attempts, `expired`,
+  `capture_failed`). **Poll** `webx:payments:poll` every 5 minutes: unfinished attempts (backing off 10, 20, 40… min, `meta.poll`), `expired`,
   `hold_expiring`. **Problems**: events `PaymentSucceeded`, `PaymentFailed`, `PaymentProblem`;
   `Payments::resolveProblem()` (`ProblemRefused`). `Payments::cashOnDelivery(OrderData)` — for a waybill.
 - **Settling** `Payments::settle(payment, GatewayStatus)` → `SettleResult`, the only door to the attempt

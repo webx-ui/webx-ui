@@ -1075,7 +1075,9 @@ function card(record: OrderRecord, locale: string, line: Line) {
               {
                 key: index === 0 ? 'delivery' : 'payment',
                 summary: block.summary,
-                value: { method: block.method },
+                // The payment has the tab «Payment» of its own: «Items» does not repeat it.
+                value: index === 0 ? { method: block.method } : null,
+                own: index === 1,
               },
             ]
           : [],
@@ -1274,8 +1276,41 @@ function mark(
   if (key === 'paid') {
     record.awaiting = false
     record.paid_total += balanceOf(record).due
+    leaveAwaiting(record)
   }
   if (key === 'cancelled') for (const tender of record.tenders) tender.refunded = tender.amount
+}
+
+/**
+ * The money is in: an order still in the status of one awaiting payment goes to the status after
+ * payment — the setting's, else the status of a new order. One a manager moved on stays.
+ */
+function leaveAwaiting(record: OrderRecord): void {
+  const [fresh, awaiting] = initial()
+  const chosen = alive().find(
+    (one) => one.active && one.id === Number(settings['orders.status_after_payment']),
+  )?.id
+  const after = chosen ?? fresh
+
+  if (
+    awaiting === undefined ||
+    after === undefined ||
+    record.status !== awaiting ||
+    after === awaiting
+  )
+    return
+
+  record.history.push({
+    key: `h${record.id}-${record.history.length}`,
+    kind: 'status',
+    at: new Date().toISOString(),
+    source: 'panel',
+    admin: 'Demo admin',
+    note: null,
+    from: record.status,
+    to: after,
+  })
+  record.status = after
 }
 
 /* ---------------------------------------------------------------------------- new order ----- */
@@ -1790,6 +1825,13 @@ function recently(log: DeliveryRecord[], test: (one: DeliveryRecord) => boolean)
   )
 }
 
+/** What the payments write for «Mark as paid» of the card — set by `index.ts` when they are on. */
+let paidByHand: ((order: number, reference: string | null) => void) | null = null
+
+export function onPaidByHand(hook: (order: number, reference: string | null) => void): void {
+  paidByHand = hook
+}
+
 export function registerOrders(on: On, fail: Fail, line: Line): void {
   const find = (id: string) => {
     const record = orders.find((one) => one.id === Number(id))
@@ -1866,7 +1908,11 @@ export function registerOrders(on: On, fail: Fail, line: Line): void {
       throw fail(422, said, undefined, { milestone: [said] })
     }
 
-    if (!record.marks[key]) mark(record, key, text(body.reference), text(body.note))
+    if (!record.marks[key]) {
+      mark(record, key, text(body.reference), text(body.note))
+      // The card's «Mark as paid» is the payments' mark: their attempt and journal beside it.
+      if (key === 'paid') paidByHand?.(record.id, text(body.reference) ?? null)
+    }
 
     return { data: card(record, locale, line) }
   })
@@ -2678,6 +2724,8 @@ const settings: Record<string, unknown> = {
   'orders.number.pad': 0,
   'orders.initial_status': null,
   'orders.initial_status_awaiting_payment': null,
+  // Where a payment takes an order still awaiting it; null — the status of a new order.
+  'orders.status_after_payment': null,
   // The channels of the milestones (§10.1): the set a site starts with has none in the playground.
   'orders.notify.placed': [],
   'orders.notify.paid': [],

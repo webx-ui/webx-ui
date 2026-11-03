@@ -69,11 +69,19 @@ final class NotifyTest extends OnlineCase
         foreach (['signature', 'amount', 'status'] as $variant) {
             $this->notify($payment, $variant)->assertStatus(400)->assertExactJson(['error' => 'signature']);
             $event = $this->last();
-            $this->assertSame(['rejected', 'invalid', null, 400], [$event->outcome, $event->signature, $event->payment_id, $event->response_status], $variant);
+            // Linked to the attempt the body claims, for the manager — the status stays.
+            $this->assertSame(['rejected', 'invalid', $payment->id, $payment->order_id, 'pending', 'pending', 400], [
+                $event->outcome, $event->signature, $event->payment_id, $event->order_id, $event->status_before, $event->status_after, $event->response_status,
+            ], $variant);
+            $this->assertStringContainsString('not believed', (string) $event->message);
         }
 
+        // A claim of a payment nobody has links nothing.
+        $this->call('POST', $this->app->make(PaymentLinks::class)->notifyUrl('gateway-a-card'), [], [], [], ['CONTENT_TYPE' => 'application/json', 'HTTP_X_GATEWAY_A_SIGNATURE' => 'bad'], '{"data":{"id":"nope","order_id":"nope"}}')->assertStatus(400);
+        $this->assertSame([null, null], [$this->last()->payment_id, $this->last()->order_id]);
+
         $this->assertSame(PaymentStatus::Pending, $payment->refresh()->status);
-        $this->assertSame(3, PaymentGatewayEvent::query()->where('kind', 'notify')->where('signature', 'invalid')->count());
+        $this->assertSame(4, PaymentGatewayEvent::query()->where('kind', 'notify')->where('signature', 'invalid')->count());
     }
 
     #[Test]

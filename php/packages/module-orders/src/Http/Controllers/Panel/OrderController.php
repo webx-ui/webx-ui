@@ -14,6 +14,7 @@ use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Cart\Money;
 use WebxUi\Orders\Contact;
+use WebxUi\Orders\Contracts\MarksPaidByHand;
 use WebxUi\Orders\Milestone;
 use WebxUi\Orders\Models\Order;
 use WebxUi\Orders\Notifications\OrderChannels;
@@ -154,18 +155,21 @@ final readonly class OrderController
         $validated = $request->validate([
             'milestone' => ['required', Rule::in([Milestone::Paid->value, Milestone::Received->value])],
             'reference' => ['nullable', 'string', 'max:190'],
+            'paid_at' => ['nullable', 'date_format:Y-m-d'],
             'note' => ['nullable', 'string', 'max:500'],
         ]);
 
         $found = self::find($order);
+        $milestone = Milestone::from((string) $validated['milestone']);
+        // A day alone is that day at this hour: the history keeps the order the lines were written in.
+        $at = $milestone === Milestone::Paid && isset($validated['paid_at'])
+            ? CarbonImmutable::parse((string) $validated['paid_at'])->setTimeFrom(CarbonImmutable::now())
+            : null;
+        $marker = $milestone === Milestone::Paid && app()->bound(MarksPaidByHand::class) ? app(MarksPaidByHand::class) : null;
 
-        $this->refusing(fn () => $this->orders->mark(
-            $found,
-            Milestone::from((string) $validated['milestone']),
-            'panel',
-            reference: $validated['reference'] ?? null,
-            note: $validated['note'] ?? null,
-        ), 'milestone');
+        $this->refusing(fn () => $marker instanceof MarksPaidByHand
+            ? $marker->markPaid($found, 'panel', $validated['reference'] ?? null, $at, $validated['note'] ?? null)
+            : $this->orders->mark($found, $milestone, 'panel', $at, $validated['reference'] ?? null, $validated['note'] ?? null), 'milestone');
 
         return $this->describe($request, $found);
     }

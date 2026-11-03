@@ -135,10 +135,17 @@ final readonly class Notifications
         try {
             $notification = $type->readNotification($method, $credentials, $request, $http);
         } catch (InvalidNotification $e) {
+            // A claim is a link for the manager, not a fact: the status stays as it is.
+            $claimed = $e->claims() ? $this->claimed($e, $type) : null;
+
             return $answer($type->rejectResponse($method, $credentials, $e), new ExchangeDecision(
                 Outcome::Rejected,
+                paymentId: $claimed?->id,
+                orderId: $claimed?->order_id,
                 signature: $e->reason === InvalidNotification::SIGNATURE ? SignatureCheck::Invalid : ($trusted ? SignatureCheck::None : SignatureCheck::Untrusted),
-                message: $e->getMessage(),
+                statusBefore: $claimed?->status->value,
+                statusAfter: $claimed?->status->value,
+                message: $claimed !== null ? $e->getMessage().'; claimed for this attempt — not believed, the status is unchanged' : $e->getMessage(),
             ));
         } catch (Throwable $e) {
             return $answer(self::plain('Internal Server Error', 500), $this->error(null, $e, $trusted));
@@ -233,6 +240,18 @@ final readonly class Notifications
         }
 
         return null;
+    }
+
+    /** The attempt a rejected body claims to be about — within the method's own type, as `attempt()`. */
+    private function claimed(InvalidNotification $e, ChargesOnline $type): ?Payment
+    {
+        try {
+            $byUuid = $e->claimedUuid !== null ? Payment::query()->where('type', $type->key())->where('uuid', $e->claimedUuid)->first() : null;
+
+            return $byUuid ?? ($e->claimedGatewayRef !== null ? Payment::query()->where('type', $type->key())->where('gateway_ref', $e->claimedGatewayRef)->first() : null);
+        } catch (Throwable) {
+            return null;
+        }
     }
 
     /** The same event of the gateway applied — or found the same — before (decision 41: not a unique key). */

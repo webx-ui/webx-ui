@@ -254,9 +254,24 @@ final class Orders
 
             [$mark, $event] = $this->setMilestone($locked, $milestone, $source, $adminId, $at, self::cut($reference, 190), self::cut($note, 500), $amount);
 
-            if ($event !== null) {
-                $this->events->dispatch($event($this->snapshot($locked)));
+            if ($event === null) {
+                return $mark;
             }
+
+            $move = $milestone === Milestone::Paid ? $this->paidMove($locked, $source, $adminId) : null;
+
+            // The order of §7.2: the status, the public one, the milestone — one snapshot after all.
+            $data = $this->snapshot($locked);
+
+            if ($move !== null) {
+                $this->events->dispatch(new OrderStatusChanged($data, $move->from, $move->to, $move->publicChanged, null, $source, $adminId, $at));
+
+                if ($move->publicChanged) {
+                    $this->events->dispatch(new OrderPublicStatusChanged($data, $move->publicFrom, $move->publicTo, $source, $adminId, $at));
+                }
+            }
+
+            $this->events->dispatch($event($data));
 
             return $mark;
         });
@@ -1597,6 +1612,47 @@ final class Orders
 
         // Silence gives nothing back, and moves nothing.
         return $mark->cancelling($wasPaid, $money, $mark->marked() ? $tenders : [], $dryRun, $move);
+    }
+
+    /**
+     * A payment takes the order out of «awaiting payment» (decision 38 as revised by payments): an
+     * order that still stands in the status a new order awaiting payment comes into moves to
+     * `InitialStatuses::afterPayment()`, with a history line under the payment's source. An order
+     * a manager moved on by hand, or a site whose two statuses are one, stays where it is.
+     */
+    private function paidMove(Order $order, string $source, ?int $adminId): ?StatusMove
+    {
+        $awaiting = $this->statuses->for(true);
+        $to = $this->statuses->afterPayment();
+
+        if ($order->status_id !== $awaiting->id || $to->id === $awaiting->id) {
+            return null;
+        }
+
+        $move = $this->plan($order, $to, false);
+
+        if (! $move->moved || $move->refusal !== null) {
+            return null;
+        }
+
+        $move = $move->without();
+        $order->status_id = $move->to->id;
+        $order->save();
+
+        StatusChange::query()->insert([
+            'order_id' => $order->id,
+            'kind' => StatusChange::STATUS,
+            'from_status_id' => $move->from->id,
+            'to_status_id' => $move->to->id,
+            'from_public_id' => $move->publicFrom->id,
+            'to_public_id' => $move->publicTo->id,
+            'source' => (string) self::cut($source, 64),
+            'admin_id' => $adminId,
+            'note' => null,
+            'created_at' => CarbonImmutable::now(),
+        ]);
+
+        return $move;
     }
 
     /**

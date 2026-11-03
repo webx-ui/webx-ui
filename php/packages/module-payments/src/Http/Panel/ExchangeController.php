@@ -18,6 +18,7 @@ use WebxUi\Payments\Gateways;
 use WebxUi\Payments\Models\Payment;
 use WebxUi\Payments\Models\PaymentGatewayEvent;
 use WebxUi\Payments\Models\PaymentMethod;
+use WebxUi\Payments\Panel\EventNames;
 use WebxUi\Payments\Panel\EventRows;
 use WebxUi\Payments\Panel\PaymentsSection;
 use WebxUi\Payments\Words;
@@ -33,6 +34,8 @@ use WebxUi\Payments\Words;
 final class ExchangeController
 {
     public const int PER_PAGE = 50;
+
+    public function __construct(private readonly EventNames $names) {}
 
     public function index(Request $request, Gateways $gateways): JsonResponse
     {
@@ -55,7 +58,7 @@ final class ExchangeController
         $page = $rows->take($perPage);
 
         return ApiResponse::data([
-            'data' => $this->withNumbers($page->map(static fn (PaymentGatewayEvent $event): array => EventRows::line($event))->values()->all()),
+            'data' => $this->names->apply($page->map(static fn (PaymentGatewayEvent $event): array => EventRows::line($event))->values()->all(), $request->user()),
             'next' => $more ? (int) $page->last()?->id : null,
             'filters' => $this->filters($gateways),
         ]);
@@ -69,8 +72,8 @@ final class ExchangeController
         $trace = EventRows::query()->where('trace', $row->trace)->orderBy('id')->limit(100)->get();
 
         return ApiResponse::data([
-            ...$this->withNumbers([EventRows::detail($row, $this->bodies($request))])[0],
-            'trace_events' => $this->withNumbers($trace->map(static fn (PaymentGatewayEvent $one): array => EventRows::line($one))->values()->all()),
+            ...$this->names->apply([EventRows::detail($row, $this->bodies($request))], $request->user())[0],
+            'trace_events' => $this->names->apply($trace->map(static fn (PaymentGatewayEvent $one): array => EventRows::line($one))->values()->all(), $request->user()),
         ]);
     }
 
@@ -163,26 +166,6 @@ final class ExchangeController
         }
 
         return true;
-    }
-
-    /**
-     * The numbers of the orders the lines name, by one query.
-     *
-     * @param  list<array<string, mixed>>  $lines
-     * @return list<array<string, mixed>>
-     */
-    private function withNumbers(array $lines): array
-    {
-        $ids = array_values(array_unique(array_filter(array_column($lines, 'order_id'))));
-        $numbers = $ids === [] ? [] : Order::query()->whereKey($ids)->pluck('number', 'id')->all();
-        $payments = array_values(array_unique(array_filter(array_column($lines, 'payment_id'))));
-        $uuids = $payments === [] ? [] : Payment::query()->whereKey($payments)->pluck('uuid', 'id')->all();
-
-        return array_map(static fn (array $line): array => [
-            ...$line,
-            'order_number' => $numbers[$line['order_id']] ?? null,
-            'payment_uuid' => $uuids[$line['payment_id']] ?? null,
-        ], $lines);
     }
 
     /** @return array<string, mixed> what the filters offer */

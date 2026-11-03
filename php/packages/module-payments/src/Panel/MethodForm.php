@@ -297,7 +297,6 @@ final readonly class MethodForm
             'online' => $type instanceof ChargesOnline,
             'testable' => $type instanceof ChargesOnline && $gateway !== null,
             'notify_url' => $type instanceof ChargesOnline && $method !== null ? $this->links->notifyUrl($method->key) : null,
-            'return_url' => $type instanceof ChargesOnline ? url($this->links->path().'/return/{payment}') : null,
         ];
     }
 

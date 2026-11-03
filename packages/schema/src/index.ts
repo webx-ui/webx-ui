@@ -24,6 +24,7 @@ export { validatePatch, validateScreen } from './validate'
 export { coreTypes, defineTypes, describeTypes, typesTable, type TypeDescription } from './registry'
 export {
   screenErrorsKey,
+  screenTabKey,
   translateDeep,
   withFieldDefaults,
   words,

@@ -67,7 +67,6 @@ export interface TypeParts {
   online: boolean
   testable: boolean
   notify_url: string | null
-  return_url: string | null
 }
 
 export interface MethodDetail extends TypeParts {
@@ -115,6 +114,9 @@ export type AttemptRow = {
   failure_reason: string | null
   reference: string | null
   source: string
+  /** Who marked it paid by hand, and their name. */
+  admin_id?: number | null
+  admin_name?: string | null
   created_at: string | null
   unfinished: boolean
 }
@@ -147,6 +149,9 @@ export type EventLine = {
   order_id: number | null
   order_number?: string | null
   payment_uuid?: string | null
+  /** The titles beside the keys, where the server knows them. */
+  gateway_title?: string | null
+  method_title?: string | null
   source: string | null
   http_method: string | null
   status: number | null
@@ -163,6 +168,8 @@ export type EventLine = {
   outcome: string | null
   message: string | null
   error: boolean
+  /** A body that named this attempt under a signature that did not match: linked, not believed. */
+  claimed?: boolean
 }
 
 export interface EventHalf {
@@ -246,6 +253,17 @@ export interface OrderPayment {
   top_up: boolean
   attempts: OrderAttempt[]
   other_events: EventLine[]
+  /** The attempt that took the money: method, document, date and who — a paid order. */
+  paid_by: {
+    id: number
+    method_title: string
+    reference: string | null
+    paid_at: string | null
+    amount_formatted: string
+    source: string
+    admin_name: string | null
+    gateway_ref: string | null
+  } | null
   bodies: boolean
   can_manage: boolean
   pay_link: string | null

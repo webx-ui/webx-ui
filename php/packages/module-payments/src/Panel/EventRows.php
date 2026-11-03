@@ -64,6 +64,9 @@ final class EventRows
             'status_after' => $event->status_after,
             'outcome' => $event->outcome,
             'message' => $event->message,
+            // A body that named this attempt under a signature that did not match (§9.2): linked
+            // for the manager to see, believed in nothing.
+            'claimed' => $event->outcome === 'rejected' && $event->signature === 'invalid' && $event->payment_id !== null,
             'error' => in_array($event->outcome, self::ERRORS, true)
                 || ($event->response_status !== null && $event->response_status >= 400)
                 || $event->transport_error !== null

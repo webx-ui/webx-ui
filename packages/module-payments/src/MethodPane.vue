@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import {
+  confirm,
   localizedValue,
   toast,
   useLocales,
@@ -281,7 +282,18 @@ function keep(field: KeyField): void {
   delete typed.value[field.name]
 }
 
-function remove(field: KeyField): void {
+/** A gateway's key gone is a method that is no longer offered: asked first, then gone on save. */
+async function remove(field: KeyField): Promise<void> {
+  const agreed = await confirm({
+    title: t('method.key-remove-title', { name: field.label }),
+    message: t('method.key-remove-text'),
+    confirmText: t('method.key-remove'),
+    cancelText: t('common.cancel'),
+    tone: 'danger',
+  })
+
+  if (!agreed) return
+
   clear.value = [...clear.value, field.name]
   replacing.value = replacing.value.filter((name) => name !== field.name)
   delete typed.value[field.name]
@@ -386,12 +398,12 @@ async function copy(text: string): Promise<void> {
                   size="sm"
                   variant="text"
                   danger
-                  @click="remove(field)"
+                  @click="void remove(field)"
                 >
                   {{ t('method.key-remove') }}
                 </wx-button>
                 <wx-button v-else size="sm" variant="text" @click="keep(field)">
-                  {{ t('method.key-keep') }}
+                  {{ t('common.cancel') }}
                 </wx-button>
               </template>
             </div>
@@ -416,7 +428,7 @@ async function copy(text: string): Promise<void> {
                 :data-test="`key-input-${field.name}`"
               />
               <wx-button v-if="field.set" size="sm" variant="text" @click="keep(field)">
-                {{ t('method.key-keep') }}
+                {{ t('common.cancel') }}
               </wx-button>
             </div>
           </wx-form-item>
@@ -462,14 +474,10 @@ async function copy(text: string): Promise<void> {
             </div>
             <wx-text v-else size="sm" tone="muted">{{ t('method.notify-after-save') }}</wx-text>
           </wx-form-item>
-          <wx-form-item v-if="parts.return_url" :label="t('method.return-url')">
-            <div class="wx-payments-keys__copy">
-              <code class="wx-payments-keys__url">{{ parts.return_url }}</code>
-              <wx-button size="sm" variant="text" icon="copy" @click="copy(parts.return_url)">
-                {{ t('common.copy') }}
-              </wx-button>
-            </div>
-          </wx-form-item>
+          <!-- The return address goes with every payment: no gateway takes it in its account. -->
+          <wx-text size="sm" tone="muted" data-test="return-note">{{
+            t('method.return-note')
+          }}</wx-text>
         </div>
       </wx-card>
 
