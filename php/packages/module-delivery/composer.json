@@ -1,0 +1,88 @@
+{
+    "name": "webx-ui/module-delivery",
+    "description": "Delivery for a WebX UI shop: the registry of method types and carriers, the shop's own pick-up points and courier, the methods a locality has with their prices, and the popular towns of the checkout.",
+    "license": "MIT",
+    "type": "library",
+    "keywords": [
+        "webx-ui",
+        "laravel",
+        "cms",
+        "delivery",
+        "shipping",
+        "commerce"
+    ],
+    "homepage": "https://github.com/webx-ui/webx-ui",
+    "authors": [
+        {
+            "name": "WebX UI",
+            "homepage": "https://github.com/webx-ui"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/webx-ui/webx-ui/issues",
+        "source": "https://github.com/webx-ui/webx-ui/tree/main/php/packages/module-delivery"
+    },
+    "require": {
+        "php": "^8.4",
+        "illuminate/bus": "^13.0",
+        "illuminate/console": "^13.0",
+        "illuminate/contracts": "^13.0",
+        "illuminate/database": "^13.0",
+        "illuminate/http": "^13.0",
+        "illuminate/queue": "^13.0",
+        "illuminate/routing": "^13.0",
+        "illuminate/support": "^13.0",
+        "illuminate/view": "^13.0",
+        "webx-ui/cache": "^0.91.0",
+        "webx-ui/geography": "^0.91.0",
+        "webx-ui/localization": "^0.91.0",
+        "webx-ui/module-cart": "^0.91.0",
+        "webx-ui/widgets": "^0.91.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^11.0",
+        "phpunit/phpunit": "^12.0 || ^13.0",
+        "webx-ui/mcp": "^0.91.0",
+        "webx-ui/module-admin": "^0.91.0",
+        "webx-ui/module-auth": "^0.91.0",
+        "webx-ui/module-orders": "^0.91.0"
+    },
+    "suggest": {
+        "webx-ui/mcp": "Agents run the delivery: methods, a trial quote that says why a method is not offered, points, the geography by hand, the popular towns, the binding queue, the sync, waybills and tracking — delivery_* tools and delivery://catalog behind delivery:read and delivery:write.",
+        "webx-ui/module-admin": "The section «Delivery» of the panel: methods, the shop's points, carriers, the geography by hand, the popular towns and the binding queue.",
+        "webx-ui/module-orders": "The checkout asks for delivery, the order keeps what was chosen, and its card gets the tab «Delivery» with waybills and tracking."
+    },
+    "autoload": {
+        "psr-4": {
+            "WebxUi\\Delivery\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "WebxUi\\Delivery\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "WebxUi\\Delivery\\DeliveryServiceProvider"
+            ]
+        },
+        "webx": {
+            "module": "delivery",
+            "npm": {
+                "@webx-ui/module-delivery": "^0.0.0"
+            },
+            "panel": {
+                "import": "import { delivery } from '@webx-ui/module-delivery'",
+                "style": "@webx-ui/module-delivery/style.css",
+                "register": "...delivery()"
+            }
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

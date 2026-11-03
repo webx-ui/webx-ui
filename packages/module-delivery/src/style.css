@@ -1,0 +1,16 @@
+/*
+ * The section's own styles live in its components (scoped); this file is the entry the panel
+ * imports (`@webx-ui/module-delivery/style.css`), which the build fills with them.
+ */
+
+/*
+ * Latitude and longitude of a point or a locality (the row `coordinates` of their screens): two
+ * short numbers, side by side once the row has room for both — a dialog's form is far narrower
+ * than the 640px the grid's `sm` waits for, so they stood one under the other on any screen.
+ * The row is the `wx-row` container `WxRow` makes, so this reads the dialog, not the window.
+ */
+@container wx-row (min-width: 400px) {
+  .wx-row.wx-delivery-coordinates > .wx-col {
+    width: 50%;
+  }
+}

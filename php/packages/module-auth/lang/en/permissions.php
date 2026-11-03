@@ -12,6 +12,7 @@ return [
     'reset' => 'Reset',
     'review' => 'Review',
     'work' => 'Work',
+    'ship' => 'Ship',
     'admins-view' => 'See administrators',
     'admins-manage' => 'Manage administrators',
     'admins-audit' => 'Sign-ins and agent calls',
@@ -23,4 +24,5 @@ return [
     'inbox-manage' => 'Set up forms',
     'snippets-manage' => 'Edit code on the site',
     'media-manage' => 'Rename, move, delete',
+    'payments-exchange' => 'Raw exchange bodies',
 ];

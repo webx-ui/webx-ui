@@ -1,0 +1,83 @@
+{
+    "name": "webx-ui/module-payments",
+    "description": "Payments for a WebX UI shop: the methods of the site, the attempts to pay an order, and the journal of every exchange with a payment gateway — raw bodies as sent and received, the shop's keys masked, append-only.",
+    "license": "MIT",
+    "type": "library",
+    "keywords": [
+        "webx-ui",
+        "laravel",
+        "cms",
+        "payments",
+        "payment-gateway",
+        "commerce"
+    ],
+    "homepage": "https://github.com/webx-ui/webx-ui",
+    "authors": [
+        {
+            "name": "WebX UI",
+            "homepage": "https://github.com/webx-ui"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/webx-ui/webx-ui/issues",
+        "source": "https://github.com/webx-ui/webx-ui/tree/main/php/packages/module-payments"
+    },
+    "require": {
+        "php": "^8.4",
+        "guzzlehttp/guzzle": "^7.8 || ^8.0",
+        "illuminate/console": "^13.0",
+        "illuminate/contracts": "^13.0",
+        "illuminate/database": "^13.0",
+        "illuminate/http": "^13.0",
+        "illuminate/support": "^13.0",
+        "psr/http-client": "^1.0",
+        "webx-ui/module-orders": "^0.91.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^11.0",
+        "phpunit/phpunit": "^12.0 || ^13.0",
+        "webx-ui/mcp": "^0.91.0",
+        "webx-ui/module-admin": "^0.91.0",
+        "webx-ui/module-auth": "^0.91.0",
+        "webx-ui/module-notifications": "^0.91.0",
+        "webx-ui/module-settings": "^0.91.0"
+    },
+    "suggest": {
+        "webx-ui/mcp": "The agent's tools `payments_*` and the resource `payments://catalog`: methods, attempts, marking paid, checking with the gateway, the exchange journal read only.",
+        "webx-ui/module-admin": "The section «Payments» of the panel — methods with their keys and a connection test, the journal of attempts, the gateway exchange journal — the tab «Payment» of an order, and the size of the journal in `webx:doctor`.",
+        "webx-ui/module-notifications": "The pay link, the bank details and the method in the order's letters, and the manager's notice `payments.problem`."
+    },
+    "autoload": {
+        "psr-4": {
+            "WebxUi\\Payments\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "WebxUi\\Payments\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "WebxUi\\Payments\\PaymentsServiceProvider"
+            ]
+        },
+        "webx": {
+            "module": "payments",
+            "npm": {
+                "@webx-ui/module-payments": "^0.0.0"
+            },
+            "panel": {
+                "import": "import { payments } from '@webx-ui/module-payments'",
+                "style": "@webx-ui/module-payments/style.css",
+                "register": "...payments()"
+            }
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

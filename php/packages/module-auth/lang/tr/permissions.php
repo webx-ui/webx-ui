@@ -12,6 +12,7 @@ return [
     'reset' => 'Sıfırlama',
     'review' => 'İnceleme',
     'work' => 'Yürütme',
+    'ship' => 'Gönderim',
     'admins-view' => 'Yöneticileri görme',
     'admins-manage' => 'Yöneticileri yönetme',
     'admins-audit' => 'Girişler ve ajan çağrıları',
@@ -23,4 +24,5 @@ return [
     'inbox-manage' => 'Formları ayarlama',
     'snippets-manage' => 'Sitedeki kod',
     'media-manage' => 'Yeniden adlandırma, taşıma, silme',
+    'payments-exchange' => 'Alışverişin ham gövdeleri',
 ];

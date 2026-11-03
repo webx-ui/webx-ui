@@ -27,7 +27,7 @@ plug into. No page, no panel section: a JSON API, `cart()` and a buy button for 
 - **The chain** `WebxUi\Cart\Totals\Calculator::calculate($cart, $locale, Purpose)` → `CartState`
   (`toArray()` puts `*_formatted` beside every amount). Five registries, empty here:
   `LineSources`, `AdjustmentSources`, `TenderSources`, `BenefitSources`, `HintSources`, each
-  `register($source, int $priority = 0)` — lower runs first.
+  `register($source, int $priority = 0)` — lower runs first. Benefit keys for the rules' list — `WebxUi\Cart\BenefitKeys`: `register('shipping.paid_by_store', [locale => label] | 'pkg::key')` from the owner's `boot()`, `has()`, `options($locale)`; a repeat throws, an unregistered key still works.
 - **Writes** go through `WebxUi\Cart\CartService`: `add()` (a batch, all or nothing; `key` and `parent` for
   a bundle), `update()`, `remove()`, `clear()` (the row too), `empty()` (lines and declined rules go, row and
   token stay) — each under `lock()` of the cart's row. A refusal is a `ValidationException`; a batch's a `CartRefusal` (`atLimit`).

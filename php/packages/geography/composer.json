@@ -1,0 +1,60 @@
+{
+    "name": "webx-ui/geography",
+    "description": "The shared geography of a WebX UI site: countries, regions and localities in the site's languages, the key their names are matched by, and the search a checkout picks a town with.",
+    "keywords": [
+        "laravel",
+        "eloquent",
+        "geography",
+        "localities",
+        "delivery",
+        "webx-ui"
+    ],
+    "homepage": "https://github.com/webx-ui/webx-ui",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "WebX UI",
+            "homepage": "https://github.com/webx-ui"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/webx-ui/webx-ui/issues",
+        "source": "https://github.com/webx-ui/webx-ui/tree/main/php/packages/geography"
+    },
+    "require": {
+        "php": "^8.4",
+        "ext-intl": "*",
+        "ext-mbstring": "*",
+        "illuminate/console": "^13.0",
+        "illuminate/database": "^13.0",
+        "illuminate/support": "^13.0",
+        "symfony/intl": "^7.4 || ^8.0",
+        "webx-ui/localization": "^0.91.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^11.0",
+        "phpunit/phpunit": "^12.0 || ^13.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "WebxUi\\Geography\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "WebxUi\\Geography\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "WebxUi\\Geography\\GeographyServiceProvider"
+            ]
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

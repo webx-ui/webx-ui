@@ -12,6 +12,7 @@ use Illuminate\Http\Response;
 use Laravel\Passport\Client;
 use WebxUi\Admin\Contracts\BrandingSource;
 use WebxUi\Admin\Manifest\Branding;
+use WebxUi\Admin\ModuleNames;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Mcp\Contracts\ProvidesMcpTools;
@@ -120,7 +121,7 @@ final class ConsentScreen
             }
 
             $rights[] = [
-                'module' => $module->title(),
+                'module' => $this->container->make(ModuleNames::class)->of($module),
                 'level' => self::edits($mine) ? 'edit' : 'view',
             ];
         }

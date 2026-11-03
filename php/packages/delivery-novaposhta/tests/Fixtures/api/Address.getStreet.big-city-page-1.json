@@ -1,0 +1,134 @@
+{
+  "success": true,
+  "data": [
+    {
+      "Description": "1-а Вишнева",
+      "Ref": "ef905acd-e1f4-11e5-899e-005056887b8d",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "1-а Дамбова",
+      "Ref": "0c2b2d0a-650a-11e6-a9f2-005056887b8d",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "1-а Лінія",
+      "Ref": "cd335133-f2ff-11dd-a18e-001d92f78697",
+      "StreetsTypeRef": "Line",
+      "StreetsType": "лінія"
+    },
+    {
+      "Description": "1-а Лінія (Берковець)",
+      "Ref": "1bcb8bf2-c82d-11e6-8886-005056887b8d",
+      "StreetsTypeRef": "Line",
+      "StreetsType": "лінія"
+    },
+    {
+      "Description": "1-а Поперечна (Оболонь-2)",
+      "Ref": "b7267743-9f42-11e6-b5da-005056887b8d",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "1-а Продольна ",
+      "Ref": "059cf88b-e125-11e5-899e-005056887b8d",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "1-а Садова (Осокорки)",
+      "Ref": "5487e33e-9dc0-11eb-80fb-b8830365bd04",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "1-ий Шлюз (Осокорки)",
+      "Ref": "705ca185-03eb-11ef-a361-48df37b92096",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "1-й Крилова",
+      "Ref": "d04edbf8-8979-11e7-ab8b-005056b2fc3d",
+      "StreetsTypeRef": "Lane",
+      "StreetsType": "пров."
+    },
+    {
+      "Description": "1-й Лісо-Степовий",
+      "Ref": "98ed9861-67c1-11e8-aa3a-0025b501a04b",
+      "StreetsTypeRef": "Lane",
+      "StreetsType": "пров."
+    },
+    {
+      "Description": "1-й Польовий ",
+      "Ref": "563c5d82-0240-11e6-899e-005056887b8d",
+      "StreetsTypeRef": "Lane",
+      "StreetsType": "пров."
+    },
+    {
+      "Description": "1-й Східно-Дальній ",
+      "Ref": "9a4c0a61-f999-11ea-80fb-b8830365bd04",
+      "StreetsTypeRef": "Lane",
+      "StreetsType": "пров."
+    },
+    {
+      "Description": "1-й Франка Івана",
+      "Ref": "563c5dd9-0240-11e6-899e-005056887b8d",
+      "StreetsTypeRef": "Lane",
+      "StreetsType": "пров."
+    },
+    {
+      "Description": "10-а Абрикосова",
+      "Ref": "e61a01d6-c067-11e6-8b12-005056887b8d",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "10-а Лінія (Берковець)",
+      "Ref": "a059edb5-f514-11de-b82a-000c2965ae0e",
+      "StreetsTypeRef": "Line",
+      "StreetsType": "лінія"
+    },
+    {
+      "Description": "10-а Садова",
+      "Ref": "d31cd006-d155-11e5-8478-005056887b8d",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "10-й Північно-Озерний",
+      "Ref": "13eca148-ef6c-11e6-95d1-005056887b8d",
+      "StreetsTypeRef": "Lane",
+      "StreetsType": "пров."
+    },
+    {
+      "Description": "11-а Лінія (Берковець)",
+      "Ref": "a059edb7-f514-11de-b82a-000c2965ae0e",
+      "StreetsTypeRef": "Line",
+      "StreetsType": "лінія"
+    },
+    {
+      "Description": "11-а Садова (Русанівські сади)",
+      "Ref": "2ecdaf4f-da1a-11e9-91ff-0025b501a04b",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "11-й Північно-Озерний ",
+      "Ref": "b5b00b45-bbc9-11eb-80fb-b8830365bd04",
+      "StreetsTypeRef": "Lane",
+      "StreetsType": "пров."
+    }
+  ],
+  "errors": [],
+  "warnings": [],
+  "info": {
+    "totalCount": 2829
+  },
+  "messageCodes": [],
+  "errorCodes": [],
+  "warningCodes": [],
+  "infoCodes": []
+}

@@ -76,7 +76,8 @@ final readonly class OrderPage
                 $order->cancelled_at !== null ? ['key' => 'cancelled', 'label' => __('webx-orders::site.marks.cancelled')] : null,
                 $order->refunded_total > 0 ? ['key' => 'refunded', 'label' => __('webx-orders::site.marks.refunded', ['amount' => $money($order->refunded_total)])] : null,
             ])),
-            'awaiting_payment' => $order->awaiting_payment && $order->paid_at === null && $order->cancelled_at === null,
+            // Money held is paid for the buyer (§8.3 of payments): the shop captures it, nothing to wait for.
+            'awaiting_payment' => $order->awaiting_payment && $order->paid_at === null && $order->cancelled_at === null && ! $this->blocks->held($order),
             'changed_at' => $order->items_changed_at,
             'items' => $this->items($order->items, $locale, $money),
             'adjustments' => $order->adjustments->map(static fn (OrderAdjustment $adjustment): array => [
@@ -94,7 +95,13 @@ final readonly class OrderPage
                 $value = $order->getAttribute($key);
                 $line = is_array($value) ? $this->blocks->summary($key, $value, $locale) : null;
 
-                return $line !== null && $line !== '' ? ['key' => $key, 'label' => __('webx-orders::site.blocks.'.$key), 'line' => $line] : null;
+                return $line !== null && $line !== '' ? [
+                    'key' => $key,
+                    'label' => __('webx-orders::site.blocks.'.$key),
+                    'line' => $line,
+                    // The owner's word under the line, as HTML: the bank details of a transfer.
+                    'details' => $this->blocks->details($key, $value, $order, $locale),
+                ] : null;
             }, OrderBlocks::KEYS))),
             'customer' => [
                 'name' => $order->customerName(),

@@ -920,6 +920,11 @@ wxtest-manticore`.
 
 ## Прочее
 
+- **`->map(intval(...))` после `pluck('x', 'key')` падает TypeError «intval(): Argument #2 ($base)».**
+  `Collection::map()` отдаёт колбэку и значение, и ключ, а второй аргумент `intval()` — основание
+  системы счисления: строковый ключ (`'store-pickup'`, `'carrier-a'`) не проходит по типу, а
+  целый ключ молча становится основанием для строки-значения (`intval('12', 3)` — 5). Целые значения
+  основание не трогает, поэтому на `pluck('id')` не видно. С ключами — `static fn (mixed $v): int => (int) $v`.
 - **`__PHP_Incomplete_Class` из кеша на втором запросе — `TypeError` и 500.** Первый запрос
   (промах) отдаёт 200, со второго страница падает: «Return value must be of type ?FacetResult,
   __PHP_Incomplete_Class returned». В `config/cache.php` скелета Laravel 12+ стоит

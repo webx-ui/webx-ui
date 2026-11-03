@@ -133,7 +133,7 @@ const SCREENS: Record<string, { base: string; patches: (string | Patch)[] }> = {
     base: 'php/packages/module-team/resources/screens/form.json',
     patches: [],
   },
-  // The project patch is a neighbour as it would add itself: a tab «Delivery» after «Items» (§11.3).
+  // The tab «Delivery» after «Items», as module-delivery patches it on the server (§11.3).
   'orders.show': {
     base: 'php/packages/module-orders/resources/screens/show.json',
     // `required` is what the real server reads off `ContactRules::screen()` when it hands the
@@ -151,6 +151,7 @@ const SCREENS: Record<string, { base: string; patches: (string | Patch)[] }> = {
       [
         { op: 'set', target: 'initial-status', props: { options: ORDER_STATUS_OPTIONS } },
         { op: 'set', target: 'initial-awaiting', props: { options: ORDER_STATUS_OPTIONS } },
+        { op: 'set', target: 'after-payment', props: { options: ORDER_STATUS_OPTIONS } },
       ],
     ],
   },
@@ -166,6 +167,82 @@ const SCREENS: Record<string, { base: string; patches: (string | Patch)[] }> = {
   'banners.form': {
     base: 'php/packages/module-banners/resources/screens/form.json',
     patches: [],
+  },
+  'payments.method-form': {
+    base: 'php/packages/module-payments/resources/screens/method.json',
+    // Without module-delivery the server would ask for the keys as text; the fixture has the list.
+    patches: [
+      [
+        {
+          op: 'set',
+          target: 'delivery_methods',
+          props: {
+            options: [
+              { value: 'pickup', label: 'Pick-up at the shop' },
+              { value: 'courier', label: "The shop's courier" },
+            ],
+          },
+        },
+      ],
+    ],
+  },
+  'delivery.method-form': {
+    base: 'php/packages/module-delivery/resources/screens/method.json',
+    patches: [
+      [
+        {
+          op: 'set',
+          target: 'countries',
+          props: { options: [{ value: 'XX', label: 'Demo country (XX)' }] },
+        },
+        {
+          op: 'set',
+          target: 'point_kind',
+          props: {
+            options: [
+              { value: 'store', label: 'Store' },
+              { value: 'pickup', label: 'Pick-up point' },
+            ],
+          },
+        },
+      ],
+    ],
+  },
+  'delivery.point-form': {
+    base: 'php/packages/module-delivery/resources/screens/point.json',
+    patches: [
+      [
+        {
+          op: 'set',
+          target: 'kind',
+          props: {
+            options: [
+              { value: 'store', label: 'Store' },
+              { value: 'pickup', label: 'Pick-up point' },
+            ],
+          },
+        },
+      ],
+    ],
+  },
+  'delivery.locality-form': {
+    base: 'php/packages/module-delivery/resources/screens/locality.json',
+    patches: [
+      [
+        {
+          op: 'set',
+          target: 'kind',
+          props: {
+            options: ['city', 'town', 'township', 'village', 'settlement', 'other'].map(
+              (value) => ({
+                value,
+                label: `trans::webx-delivery::delivery.locality_kinds.${value}`,
+              }),
+            ),
+          },
+        },
+      ],
+    ],
   },
   'tariffs.form': {
     base: 'php/packages/module-tariffs/resources/screens/form.json',

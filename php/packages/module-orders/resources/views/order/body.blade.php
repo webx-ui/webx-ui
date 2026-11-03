@@ -1,7 +1,8 @@
 {{--
     An order as the buyer reads it (spec §13.1) — the signed page and «My orders» print the same:
     the date, the public status with its description, the marks, the scale of the public statuses,
-    the lines, the money, the delivery and the payment as one line each, the contacts. After an edit
+    the lines, the money, the delivery and the payment as one line each — with what their owner adds
+    under it, such as the bank details of a transfer — the contacts. After an edit
     (§40.1) — «Items changed» with its date and the balance under the money. Never the internal
     status, never the manager's note, never the reason of an edit.
 
@@ -11,7 +12,7 @@
     Classes: webx-order, __head, __date, __status (--<code>), __description, __marks, __mark (--<key>),
     __scale, __step (is-done, is-current), __notice, __section, __heading, __items, __item, __image,
     __changed, __name, __options, __parts, __qty, __total, __sums, __sum (is-strong),
-    __balance (--due, --over), __facts, __fact.
+    __balance (--due, --over), __facts, __fact, __details (--<block>).
 --}}
 <div class="webx-order">
     <div class="webx-order__head">
@@ -103,6 +104,11 @@
                     </div>
                 @endforeach
             </dl>
+            @foreach ($order['blocks'] as $block)
+                @if (($block['details'] ?? null) !== null)
+                    <div class="webx-order__details webx-order__details--{{ $block['key'] }}">{!! $block['details'] !!}</div>
+                @endif
+            @endforeach
         </section>
     @endif
 

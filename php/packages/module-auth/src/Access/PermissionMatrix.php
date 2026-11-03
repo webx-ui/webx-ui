@@ -6,12 +6,14 @@ namespace WebxUi\Auth\Access;
 
 use Illuminate\Contracts\Translation\Translator;
 use WebxUi\Admin\Access\AccessPolicy;
+use WebxUi\Admin\ModuleNames;
 use WebxUi\Admin\ModuleRegistry;
 
 /**
  * The permissions a role may list, laid out for the form that ticks them: one row per module in
  * the order of the menu, each permission under the module that declares it first
- * (WEBX_UI_PERMISSIONS.md §11).
+ * (WEBX_UI_PERMISSIONS.md §11). A row is called what the module is called ({@see ModuleNames}):
+ * «Delivery», not the title of its first menu entry.
  *
  * A permission declared by two modules — rubrics and tags share `blog.taxonomy.manage` — is
  * listed once, under the first; a module left with nothing of its own has no row.
@@ -26,6 +28,7 @@ final class PermissionMatrix
         private readonly ModuleRegistry $modules,
         private readonly AccessPolicy $policy,
         private readonly Translator $translator,
+        private readonly ModuleNames $names,
     ) {}
 
     /**
@@ -54,7 +57,7 @@ final class PermissionMatrix
             }
 
             if ($permissions !== []) {
-                $rows[] = ['module' => $module->id(), 'title' => $module->title(), 'permissions' => $permissions];
+                $rows[] = ['module' => $module->id(), 'title' => $this->names->of($module), 'permissions' => $permissions];
             }
         }
 

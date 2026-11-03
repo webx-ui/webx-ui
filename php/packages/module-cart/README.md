@@ -73,7 +73,9 @@ app(\WebxUi\Cart\CartService::class)->add($cart, [
 `Calculator` counts lines → generated lines → subtotal → adjustments → total → tenders → payable,
 with benefits and hints beside them. The five registries (`Totals\LineSources`,
 `AdjustmentSources`, `TenderSources`, `BenefitSources`, `HintSources`) are empty here: discount
-rules, coupons and wallets add their sources. Amounts are integers; every one has a
+rules, coupons and wallets add their sources. A module that understands a benefit registers its
+key in `WebxUi\Cart\BenefitKeys` (delivery — `shipping.paid_by_store`), so that cart rules offer it
+from a list; the chain itself never asks the registry. Amounts are integers; every one has a
 `*_formatted` string from `Money::format()`, written by the currency's rules, never the
 language's: `"2 500,00 €"` for every visitor.
 

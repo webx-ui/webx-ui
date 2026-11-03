@@ -6,9 +6,15 @@ const KNOWN = ['panel', 'api', 'mcp', 'checkout', 'quick', 'command']
 /**
  * Who wrote a line of the order's history — the timeline's and the notes' alike: the
  * administrator's name where one is known; otherwise the source in the panel's words («Site
- * API», «Agent»), or as the module that wrote it named itself.
+ * API», «Agent»), or as the module that wrote it names it — a payment method's title for
+ * `payment:<key>` —, or the source as it is.
  */
-export function authorOf(t: Translate, source: string, admin: string | null): string {
+export function authorOf(
+  t: Translate,
+  source: string,
+  admin: string | null,
+  title: string | null = null,
+): string {
   if (source === 'mcp') {
     return admin ? t('panel.source-mcp-admin', { name: admin }) : t('panel.source-mcp')
   }
@@ -17,5 +23,5 @@ export function authorOf(t: Translate, source: string, admin: string | null): st
   if (source.startsWith('status#')) return t('panel.source-status')
   if (KNOWN.includes(source)) return t(`panel.source-${source}`)
 
-  return source
+  return title ?? source
 }

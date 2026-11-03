@@ -55,7 +55,8 @@ final class Notifications
         $queued = [];
         $skipped = [];
         $failed = [];
-        $values = self::values($variables);
+        // What another module adds to the event, from the subject; the consumer's own values win.
+        $values = self::values([...$this->events->extraValues($event, $subject), ...$variables]);
         $ids = [];
 
         foreach ($channels as $id) {
@@ -241,7 +242,7 @@ final class Notifications
      */
     public function sendByHand(string $event, iterable $channels, string $variable, array $variables, Model $subject, ?string $locale = null, ?int $by = null, bool $dryRun = false): array
     {
-        $values = self::values($variables);
+        $values = self::values([...$this->events->extraValues($event, $subject), ...$variables]);
 
         return Delivery::query()->getConnection()->transaction(function () use ($event, $channels, $variable, $values, $subject, $locale, $by, $dryRun): array {
             $found = $this->addressed($channels, $event, $variable, lock: true);
@@ -328,15 +329,18 @@ final class Notifications
 
     /**
      * A channel's message for these values, as it would go now — what «send it by hand» shows
-     * before it sends: the subject, the body as the provider gets it, its plain text.
+     * before it sends: the subject, the body as the provider gets it, its plain text. Given the
+     * record and the event, the values other modules add to the event are in, as `send()` puts them.
      *
      * @param  array<string, mixed>  $variables
      * @return array{subject: string|null, body: string, plain: string, html: bool, truncated: bool}
      */
-    public function render(Channel $channel, array $variables, ?string $locale = null): array
+    public function render(Channel $channel, array $variables, ?string $locale = null, ?Model $subject = null, ?string $event = null): array
     {
         $provider = $this->providers->find($channel->provider) ?? throw new Refusal((string) __('webx-notifications::errors.resend-channel-off', ['channel' => $channel->name]));
-        $message = $this->renderer->render($channel, $provider, self::values($variables), $locale, $this->eventOf($channel))['message'];
+        $event ??= $channel->event;
+        $extra = $subject !== null && $event !== null ? $this->events->extraValues($event, $subject) : [];
+        $message = $this->renderer->render($channel, $provider, self::values([...$extra, ...$variables]), $locale, $this->eventOf($channel))['message'];
 
         return [
             'subject' => $message->subject,

@@ -1,0 +1,134 @@
+{
+  "success": true,
+  "data": [
+    {
+      "Description": "Гаспринського Ісмаїла",
+      "Ref": "be349b8e-414a-11dd-9198-001d60451983",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "Гастелло Миколи",
+      "Ref": "7c84fd53-414c-11dd-9198-001d60451983",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "Гатна",
+      "Ref": "dfccda80-9b80-11dd-9f19-001d92f78697",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "Гашека Ярослава",
+      "Ref": "8add59e1-414b-11dd-9198-001d60451983",
+      "StreetsTypeRef": "Boulevard",
+      "StreetsType": "бульвар"
+    },
+    {
+      "Description": "Гвардійський",
+      "Ref": "02cb409f-6fde-11e4-acce-0050568002cf",
+      "StreetsTypeRef": "Lane",
+      "StreetsType": "пров."
+    },
+    {
+      "Description": "Гедройця Єжи",
+      "Ref": "1e25ff07-312e-11e9-91ff-0025b501a04b",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "Генерала Алмазова (Кутузова)",
+      "Ref": "0bc6bd00-4149-11dd-9198-001d60451983",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "Генерала Воробйова Геннадія",
+      "Ref": "fc33a268-4149-11dd-9198-001d60451983",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "Генерала Грекова",
+      "Ref": "d72816b0-28cd-11eb-80fb-b8830365bd04",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "Генерала Павленка",
+      "Ref": "48532b5c-9539-11f0-92ca-48df37b91f4a",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "Генерала Шаповала",
+      "Ref": "3d099acb-39e4-11e9-91ff-0025b501a04b",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "Геннадія Афанасьєва(Заслонова Костянтина)",
+      "Ref": "d7ea48cc-9b80-11dd-9f19-001d92f78697",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "Георгіївський",
+      "Ref": "8c1558ce-414c-11dd-9198-001d60451983",
+      "StreetsTypeRef": "Lane",
+      "StreetsType": "пров."
+    },
+    {
+      "Description": "Геофізиків",
+      "Ref": "1aea7281-0a3e-11de-b6f5-001d92f78697",
+      "StreetsTypeRef": "Lane",
+      "StreetsType": "пров."
+    },
+    {
+      "Description": "Геофізиків (Бортничі)",
+      "Ref": "6f6a5b08-4154-11dd-9198-001d60451983",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "Герасименка Костянтина",
+      "Ref": "b1096691-f514-11de-b82a-000c2965ae0e",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "Героїв Бреста",
+      "Ref": "e6f5bfdb-9b80-11dd-9f19-001d92f78697",
+      "StreetsTypeRef": "Square",
+      "StreetsType": "площа"
+    },
+    {
+      "Description": "Героїв Великої Вітчизняної Війни",
+      "Ref": "c9915915-9b80-11dd-9f19-001d92f78697",
+      "StreetsTypeRef": "Square",
+      "StreetsType": "площа"
+    },
+    {
+      "Description": "Героїв Війни (Жуляни)",
+      "Ref": "ae44927a-64e9-11dd-a7b7-001d92f78698",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "Героїв Дніпра",
+      "Ref": "4047af33-4149-11dd-9198-001d60451983",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    }
+  ],
+  "errors": [],
+  "warnings": [],
+  "info": {
+    "totalCount": 2829
+  },
+  "messageCodes": [],
+  "errorCodes": [],
+  "warningCodes": [],
+  "infoCodes": []
+}

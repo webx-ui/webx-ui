@@ -12,6 +12,8 @@
 // - The sticky «To pay · Confirm» of a narrow container hides while the column's own button is
 //   in sight or a field has the focus (the keyboard of a phone).
 // - «Thank you» says `webx:checkout:placed` with the number, the amount and the currency (§30).
+// - «Place the order» saves a step not done or typed in first, as its «Save» would, and goes on
+//   after the redraw; a step refused keeps its errors at its fields and no order is sent.
 
 const ROOT = '.webx-orders-checkout'
 const STEP = '.webx-orders-checkout__step'
@@ -108,6 +110,31 @@ function towardError(root, errors) {
   return null
 }
 
+/** A step's own form of the shell; a slot's saves itself (§22). */
+function stepForm(step) {
+  return (
+    Array.from(step.querySelectorAll('form.webx-form')).find(
+      (form) => form.closest(STEP) === step,
+    ) ?? null
+  )
+}
+
+/** The first step to save before the order: not done or typed in, not saved in this press. */
+function unsaved(root, typed, passed) {
+  for (const step of root.querySelectorAll(STEP)) {
+    const key = step.getAttribute('data-step')
+    const form = stepForm(step)
+    if (!form || passed.has(key)) continue
+    if (!step.classList.contains('is-done') || typed.has(form)) return { step, key, form }
+  }
+  return null
+}
+
+function reveal(step) {
+  step.classList.add('is-editing')
+  step.scrollIntoView?.({ block: 'center', behavior: 'smooth' })
+}
+
 function say(form, message) {
   const box = form?.querySelector('.webx-form__error')
   if (!box || !message) return
@@ -190,16 +217,66 @@ export function start(doc = document) {
     step?.querySelector(FIELD)?.focus({ preventScroll: true })
   })
 
+  // Typed in since drawn: a redrawn step is a new form.
+  const typed = new WeakSet()
+  const typing = (event) => {
+    const form = event.target instanceof Element ? event.target.closest('form') : null
+    if (form?.closest(STEP)) typed.add(form)
+  }
+  root.addEventListener('input', typing)
+  root.addEventListener('change', typing)
+
+  // Each step once a press: one the server keeps open must not go round in circles.
+  let passed = null
+  let pressing = null
+
+  root.addEventListener('webx:form:submit', (event) => {
+    const place = event.target instanceof Element ? event.target : null
+    if (place?.id !== PLACE) return
+    passed ??= new Set()
+    const next = unsaved(root, typed, passed)
+    if (!next) {
+      passed = null
+      return
+    }
+    event.preventDefault()
+    passed.add(next.key)
+
+    // The shell says `webx:form:submit` during the dispatch; silence — a field is wrong, said.
+    let sent = false
+    const went = () => (sent = true)
+    next.form.addEventListener('webx:form:submit', went)
+    next.form.requestSubmit()
+    next.form.removeEventListener('webx:form:submit', went)
+    if (!sent) {
+      passed = null
+      reveal(next.step)
+      return
+    }
+    pressing = next.form
+  })
+
   root.addEventListener('webx:form:success', (event) => {
     const form = event.target instanceof Element ? event.target : null
     const step = form?.closest(STEP)
     if (!step || event.detail?.response?.redirect) return
     step.classList.remove('is-editing')
-    keep(redrawPage(root, [step.getAttribute('data-step')]))
+    const redraw = keep(redrawPage(root, [step.getAttribute('data-step')]))
+    if (pressing === form) {
+      pressing = null
+      redraw.then(() => root.querySelector(`#${PLACE}`)?.requestSubmit())
+    }
   })
 
   root.addEventListener('webx:form:error', (event) => {
     const form = event.target instanceof Element ? event.target : null
+    if (form && pressing === form) {
+      pressing = null
+      passed = null
+      const step = form.closest(STEP)
+      if (step) reveal(step)
+      return
+    }
     if (form?.id !== PLACE) return
     const { status, errors, message } = event.detail ?? {}
     if (status === 422) {

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { WxBadge, WxButton, WxDivider, WxText } from '@webx-ui/core'
+import { RouterLink } from 'vue-router'
+import { WxBadge, WxButton, WxDivider, WxText, WxTooltip } from '@webx-ui/core'
 import { useTranslate, WxDate } from '@webx-ui/module-admin'
 import { useOrderCard } from './card'
 import { NAMESPACE, useOrdersMessages } from './i18n'
@@ -14,6 +15,7 @@ import type { MilestoneKey } from './types'
  * What came in, the top-ups apart, and the balance when it says more than «to pay» (§42.4): a
  * plate «Top-up due» with «Record a top-up», or «Give back». The lines edited (§42.4): how many
  * edits and when the last one was; «History» has each of them.
+ * A block's price — delivery — is a row of its own between the discounts and the total.
  * Money comes written by the server in the currency of the order; nothing is counted here.
  */
 defineOptions({ name: 'WxOrdersSummary' })
@@ -23,6 +25,18 @@ useOrdersMessages()
 const t = useTranslate(NAMESPACE)
 const card = useOrderCard()
 const order = computed(() => card?.order.value ?? null)
+
+/**
+ * A gateway's id of the payment is long and says nothing at a glance: its two ends, the whole in
+ * the tip. With the tab «Payment» on the card it is a link to it, the attempt open.
+ */
+function shortRef(reference: string): string {
+  return reference.length > 16 ? `${reference.slice(0, 7)}…${reference.slice(-5)}` : reference
+}
+
+const paymentTab = computed(() =>
+  (order.value?.blocks ?? []).some((block) => block.key === 'payment' && block.own),
+)
 
 const ORDER: MilestoneKey[] = ['placed', 'paid', 'received', 'cancelled', 'refunded']
 
@@ -125,6 +139,10 @@ const dates = computed(() =>
         <dt>{{ t('panel.adjustments') }}</dt>
         <dd>{{ order.totals.adjustments }}</dd>
       </template>
+      <template v-for="charge in order.totals.charges ?? []" :key="charge.key">
+        <dt>{{ t(`panel.block-${charge.key}`) }}</dt>
+        <dd :data-test="`summary-${charge.key}`">{{ charge.amount ?? '—' }}</dd>
+      </template>
       <dt class="is-strong">{{ t('panel.total') }}</dt>
       <dd class="is-strong">{{ order.totals.total }}</dd>
       <template v-if="order.totals.tenders">
@@ -219,7 +237,27 @@ const dates = computed(() =>
         <dt>{{ t(`module.milestones.${mark.key}`) }}</dt>
         <dd>
           <wx-date :value="mark.at" size="sm" />
-          <wx-text v-if="mark.reference" size="sm" tone="muted" class="wx-orders-summary__ref">
+          <wx-tooltip
+            v-if="mark.reference && mark.key === 'paid' && paymentTab"
+            :content="mark.reference"
+          >
+            <router-link
+              class="wx-orders-summary__ref wx-orders-summary__link"
+              :to="{ query: { tab: 'payment', attempt: mark.reference } }"
+              data-test="summary-paid-ref"
+            >
+              {{ shortRef(mark.reference) }}
+            </router-link>
+          </wx-tooltip>
+          <wx-tooltip
+            v-else-if="mark.reference && mark.reference !== shortRef(mark.reference)"
+            :content="mark.reference"
+          >
+            <wx-text size="sm" tone="muted" class="wx-orders-summary__ref">
+              {{ shortRef(mark.reference) }}
+            </wx-text>
+          </wx-tooltip>
+          <wx-text v-else-if="mark.reference" size="sm" tone="muted" class="wx-orders-summary__ref">
             {{ mark.reference }}
           </wx-text>
         </dd>
@@ -284,6 +322,16 @@ const dates = computed(() =>
 
 .wx-orders-summary__ref {
   display: block;
+}
+
+.wx-orders-summary__link {
+  color: var(--wx-text-link);
+  font-size: var(--wx-font-size-sm);
+  text-decoration: none;
+}
+
+.wx-orders-summary__link:hover {
+  text-decoration: underline;
 }
 
 /* Lines of their own, across both columns: under the date, not squeezed beside it. */

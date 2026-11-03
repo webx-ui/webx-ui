@@ -20,14 +20,14 @@ grouped into public ones. Dictionary `webx-orders` (`module`, `statuses`, `panel
   - every other method is one transaction with the order's row locked, events after the commit, and refreshes the model passed
     in. `mark(order, Milestone, source, at?, reference?, note?, amount?)` — `paid`, `received`, `cancelled` once (`MilestoneMark`:
     `marked`, `already_marked` with the first mark, `refunded`); others — `MilestoneRefused`; paid or received of a cancelled
-    order — `OrderCancelledAlready`; `cancelled` marks the tenders left given back;
+    order — `OrderCancelledAlready`; `cancelled` marks the tenders left given back; `paid` moves an order still in the awaiting status to `InitialStatuses::afterPayment()`; the panel's and `orders_mark`'s «paid» go through `Contracts\MarksPaidByHand` when bound (payments);
   - `paymentFailed(order, source, reason?)` — a history line and `payment_failed_at`; `stopAwaitingPayment(order, source)` / `awaitPayment(order, source)` — the flag down / up, a line, no event (`OrderPaidAlready`, `OrderCancelledAlready`);
   - **balance** (§36, decision 102): `balance(order)` → `Balance` (`due`, `over`, `kind()` — `topup`, `unpaid`, `over`); `orders.paid_total` and the stored `balance = due − over` (a refund never makes it owe), written by each method that moves a term; `recordPayment(order, amount, source, reference?, at?, note?, dryRun?)` → `PaymentRecord` — a top-up of a paid order, line `payment`, `OrderPaymentReceived` (`PaymentRefused`: `not_paid`, `cancelled`); a refund's limit is `max(payable, paid_total) − refunded_total`;
   - `moveTo(order, OrderStatus, source, note?, dryRun?)` → `StatusMove` (`from`, `to`, `publicFrom`, `publicTo`,
     `publicChanged`, `moved`, `milestone`, `notifications`, `refusal`); a refusal (`inactive`, `deleted`, `cancelled`) throws
     `StatusMoveRefused`, a dry run answers it; into a status that sets `cancelled`, `panel` and `mcp` give the reason in `note`
     (`ValidationException` under `note`, on a dry run too);
-  - `patchBlock(order, block, patch, source)`, `note(order, text, source)`, `updateDetails(order, OrderDetails, source)` — contacts, recipient, comment, manager note;
+  - `patchBlock(order, block, patch, source)`; `changeBlock(order, Blocks\BlockChange, dryRun?)` → `BlockChangeResult` — a block replaced whole by a manager, its price (the adjustment of the block's `charge` source) in place of the old one, total, payable and balance counted again; `BlockChangeRefused`: `state`, `nothing`; history line `block_changed` (JSON: `block`, `from`, `to`, `total_from`, `total_to`, `reason`); `note(order, text, source)`, `updateDetails(order, OrderDetails, source)` — contacts, recipient, comment, manager note;
   - **lines** (§37, decision 101 — variant A): `editItems(order, ItemsEdit, dryRun?)` → `ItemsEditResult` (`changes` — `added()`, `changed()`, `removed()`; `before`, `after`, `balance`, `warnings`, `revision`). `ItemsEdit`: `revision` seen, `add` (as `CartService::add()`, a service cart like `placeByManager()`), `qty` (id → qty, 0 takes it out), `remove`, `reason` (optional, decision 103), `message`, `notify`, `source`. The lines placed keep price and their discount in proportion, a line added — the price now, no rules; order discounts, delivery, benefits, milestones stay; a line taken out keeps `qty = refunded_qty` and `removed_at`; a bundle scales whole. `ItemsEditRefused`: `stale`, `nothing`, `empty`, `state` (received, cancelled, refunded), `child`, `generated`, `below_refunded`, `foreign`; a line added — `ValidationException` under `add.N.*`, `CartNotOrderable`. Row `order_revisions`, history line `items` (`revision#N[: reason]`);
   - `cancel(order, source, reason?, dryRun?)` → `MilestoneMark` (`wasPaid`, `moneyToRefund`, `tendersReturned`, `move`): tenders
     given back, money not, the order into the first active cancelling status (`move`, null — none); `panel`/`mcp` give a reason;
@@ -50,8 +50,8 @@ grouped into public ones. Dictionary `webx-orders` (`module`, `statuses`, `panel
   a move inside a group tells nobody. `migrate` makes the starting set once (`DefaultChannels`, the edits' two apart): «Order accepted», «Payment received», «Order changed» (`items_changed` — only with `ItemsEdit::notify`; `changes`, `previous_total`, `balance*`, `amount_due|over`, `message`, never `reason`), «Payment due» (`payment_requested`, by hand only, while `due > 0`) to `customer_email`,
   «New order» to the first contacts e-mail. `{{status}}` is `internal`. By hand (§10.3): `Orders::notify()`, `orders_notify`; `NotifyRefused::label()` — the words.
 - **Journal** `orders.order`: what `updateDetails()` and the links changed. **Blocks** `OrderBlocks` —
-  `register(new BlockDefinition('delivery'|'payment', module, validate, summary))` in `boot()`.
-- **Config** `webx-orders`: `number` (`prefix`, `start` = 1000, `pad`), `initial_status`, `initial_status_awaiting_payment`
+  `register(new BlockDefinition('delivery'|'payment', module, validate, summary, charge?, price?, view?))` in `boot()`: `charge` — a row of its own in «Summary»; `view` — its own tab, no raw data under «Items».
+- **Config** `webx-orders`: `number` (`prefix`, `start` = 1000, `pad`), `initial_status`, `initial_status_awaiting_payment`, `status_after_payment`
   (ids; null — «New» and «Awaiting payment» of the default set), `notify.*`, `layout`, `middleware`, `account_per_page`,
   `checkout.*`. `OrderSettings` reads what `orders.settings` saved in `module-settings`, then the config. `webx:doctor`:
   `Doctor\OrdersNotificationsCheck`.

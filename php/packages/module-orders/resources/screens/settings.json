@@ -89,6 +89,17 @@
                     "clearable": true,
                     "placeholder": "trans::webx-orders::screen.initial-first"
                   }
+                },
+                {
+                  "id": "after-payment",
+                  "type": "wx-select",
+                  "name": "orders.status_after_payment",
+                  "label": "trans::webx-orders::screen.after-payment",
+                  "help": "trans::webx-orders::screen.after-payment-help",
+                  "props": {
+                    "clearable": true,
+                    "placeholder": "trans::webx-orders::screen.after-payment-new"
+                  }
                 }
               ]
             },

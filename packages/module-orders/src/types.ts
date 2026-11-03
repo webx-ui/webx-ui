@@ -227,6 +227,8 @@ export interface TimelineLine {
   kind: string
   at: string | null
   source: string
+  /** The source in a person's words where its module names it — a payment method's title. */
+  source_title?: string | null
   admin: string | null
   note: string | null
   from?: string | null
@@ -238,6 +240,8 @@ export interface TimelineLine {
   amount?: string
   /** A top-up's money in minor units (§36.3), and a refund's. */
   amount_minor?: number
+  /** A part of the money (`payment_part`): what was owed before it, written. */
+  total?: string
   units?: number
   /** A refund's line and a reversal's: the record it is about (decision 98). */
   refund_id?: number
@@ -248,6 +252,10 @@ export interface TimelineLine {
   event_label?: string
   /** An edit of the lines (§38.2): each line before → after, the total, the balance it left. */
   revision?: TimelineRevision
+  /** A block replaced by a manager: which, its line was → is (`from`, `to`), the total when it moved. */
+  block?: string | null
+  total_from?: string | null
+  total_to?: string | null
 }
 
 /** An edit of the lines as the timeline shows it; the money is written. */
@@ -278,6 +286,7 @@ export interface OrderNote {
   id: number
   body: string
   source: string
+  source_title?: string | null
   author: { id: number; name: string; avatar: string | null } | null
   created_at: string | null
 }
@@ -319,12 +328,26 @@ export interface OrderCardData {
     paid_first: string | null
     paid_topups: string | null
     balance: OrderBalanceLine | null
+    /**
+     * The blocks' prices as rows of their own — «Delivery» between the discounts and the total:
+     * the money in the total, or the owner's words when nothing is («Free», «By carrier rates»).
+     */
+    charges: { key: string; amount: string | null; amount_minor: number }[]
   }
   /** The lines and their units; a set is one line, its parts are not counted apart. */
   count: { lines: number; units: number; refunded_units: number }
   /** The refunds recorded, oldest first, each with its reason and the reference of the operation. */
   refunds: OrderRefundEntry[]
-  blocks: { key: string; summary: string | null; value: Record<string, unknown> }[]
+  /**
+   * Each block with its owner's line; `value` — its raw data, null for a block its owner draws on
+   * a tab of its own; `own` — the reader opens that tab, and «Items» leaves the block to it.
+   */
+  blocks: {
+    key: string
+    summary: string | null
+    value: Record<string, unknown> | null
+    own: boolean
+  }[]
   timeline: TimelineLine[]
   /** The note pinned over the feed «Notes» (decision 91); null — none. */
   manager_note: string | null

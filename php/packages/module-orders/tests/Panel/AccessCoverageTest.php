@@ -44,4 +44,28 @@ final class AccessCoverageTest extends PanelTestCase
         $this->postJson($this->api($order->id).'/cancel', ['reason' => 'x'])->assertForbidden();
         $this->postJson($this->api($order->id).'/notes', ['body' => 'Called'])->assertForbidden();
     }
+
+    /** A right of another section — the payments, the delivery — opens no entry, no read, no write. */
+    #[Test]
+    public function another_sections_right_opens_nothing_of_the_orders(): void
+    {
+        $order = $this->order();
+
+        $this->signIn(['payments.view', 'delivery.view']);
+
+        $allowed = null;
+
+        foreach ((array) $this->getJson('/api/cms/manifest')->assertOk()->json('data.modules') as $module) {
+            if (is_array($module) && $module['id'] === 'orders') {
+                $allowed = $module['allowed'];
+            }
+        }
+
+        $this->assertFalse($allowed);
+        $this->getJson($this->api())->assertForbidden();
+        $this->getJson($this->api($order->id))->assertForbidden();
+        $this->getJson($this->api('statuses'))->assertForbidden();
+        $this->getJson($this->api('settings'))->assertForbidden();
+        $this->postJson($this->api($order->id).'/notes', ['body' => 'Called'])->assertForbidden();
+    }
 }

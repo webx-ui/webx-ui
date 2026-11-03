@@ -10,6 +10,8 @@ parameters:
         - packages/cache/tests
         - packages/compositions/src
         - packages/compositions/tests
+        - packages/geography/src
+        - packages/geography/tests
         - packages/localization/src
         - packages/localization/tests
         - packages/mcp/src
@@ -40,6 +42,12 @@ parameters:
         - packages/module-catalog-stock/tests
         - packages/module-configurator/src
         - packages/module-configurator/tests
+        - packages/module-delivery/src
+        - packages/module-delivery/tests
+        - packages/delivery-novaposhta/src
+        - packages/delivery-novaposhta/tests
+        - packages/module-payments/src
+        - packages/module-payments/tests
         - packages/module-events/src
         - packages/module-events/tests
         - packages/module-faq/src
@@ -108,7 +116,7 @@ parameters:
         # is written. All of these are `<package>::<view>` names of views that exist.
         -
             identifier: argument.type
-            message: '#expects view-string, string given#'
+            message: '#expects view-string(\|null)?, string given#'
             paths:
                 - packages/module-admin/src/Http/Controllers/ShellController.php
                 - packages/module-seo/src/Rendering/Seo.php
@@ -120,6 +128,14 @@ parameters:
                 - packages/module-orders/src/Checkout/Slots/SlotStep.php
                 - packages/module-orders/src/Checkout/Steps/CommentStep.php
                 - packages/module-orders/src/Checkout/Steps/ContactsStep.php
+                - packages/module-delivery/src/Checkout/DeliveryCheckoutSlot.php
+                - packages/module-delivery/src/Http/DeliveryController.php
+                - packages/module-delivery/src/View/Components/Step.php
+                - packages/module-delivery/tests/StepTest.php
+                - packages/module-payments/src/Checkout/PaymentsCheckoutSlot.php
+                - packages/module-payments/src/Http/FakeGatewayController.php
+                - packages/module-payments/src/Http/PayController.php
+                - packages/module-payments/src/Online/Handoffs.php
                 - packages/module-users/src/Http/Controllers/RegisterController.php
                 - packages/module-users/src/Http/Controllers/EmailController.php
                 - packages/module-users/src/Http/Controllers/ForgotController.php

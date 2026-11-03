@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { VueDatePicker } from '@vuepic/vue-datepicker'
 import { useFormField } from '../../composables/useFormField'
 import '../../styles/datepicker.css'
 import type { DateRangePickerEmits, DateRangePickerModelValue, DateRangePickerProps } from './types'
 import { useControlAttrs } from '../../composables/useControlAttrs'
 import { useDateLocale } from '../../composables/useDateLocale'
+import { useLayerTeleport } from '../../composables/useLayerTeleport'
 
 defineOptions({ name: 'WxDateRangePicker', inheritAttrs: false })
 
@@ -33,6 +34,10 @@ const props = withDefaults(defineProps<DateRangePickerProps>(), {
   name: undefined,
   ariaLabel: undefined,
 })
+
+/* Inside a dialog or a popover the calendar is teleported into it: `body` takes no clicks there. */
+const root = ref<HTMLElement | null>(null)
+const teleportTo = useLayerTeleport(root, () => props.teleport)
 
 const emit = defineEmits<DateRangePickerEmits>()
 
@@ -101,7 +106,7 @@ function onCleared() {
 </script>
 
 <template>
-  <div :class="classes" v-bind="rootAttrs">
+  <div ref="root" :class="classes" v-bind="rootAttrs">
     <vue-date-picker
       range
       :model-value="model"
@@ -118,7 +123,7 @@ function onCleared() {
       :week-start="weekStart"
       :auto-apply="autoApply"
       :text-input="textInput"
-      :teleport="teleport"
+      :teleport="teleportTo"
       :disabled="field.disabled.value"
       :readonly="readonly"
       v-bind="controlAttrs"

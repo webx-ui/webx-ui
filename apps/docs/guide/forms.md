@@ -14,8 +14,8 @@ that a module draws its form from the same parts and a theme paints one set of c
 | **Inbox**                      | the form builder in the panel, intake, spam protection, captcha, letters            |
 | **sign-in, account, checkout** | their own forms in Blade from the same fields                                       |
 
-Below: the fields, the form, the checks in the browser, suggestions while typing, then three forms
-written out in full — a sign-in, a checkout step and a form of the Inbox.
+Below: the fields, the form, the checks in the browser, suggestions while typing, a list with a
+search, then three forms written out in full — a sign-in, a checkout step and a form of the Inbox.
 
 The specification is §17 of
 [`docs/architecture/WEBX_UI_WIDGETS.md`](https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_WIDGETS.md).
@@ -545,6 +545,61 @@ is not on the site is not found, a correction is said — and answers the view
 «Products (52)», five cards with a picture and a price, «See all results: 52» — every card and
 «see all» an option. `suggest.limit` (`WEBX_CATALOG_SUGGEST_LIMIT`, 6) is how many cards. A header
 of the site puts the same box anywhere — the tag at the top of this section.
+
+## A list with a search
+
+```blade
+<x-webx-select name="point" :options="$points" :value="$chosen" searchable
+               :source="route('webx-delivery.points', ['method' => 'store-pickup', 'locality' => $town])"
+               :label="__('shop.branch')" :show-label="true" :placeholder="__('shop.choose_branch')" />
+```
+
+`<x-webx-select>` is a select the visitor can type into — a branch among two thousand, a street of
+a city (`dist/select.js`, claimed only by the component). Without JavaScript it is exactly a
+`<select>` of the options given, and it stays one with the script: hidden, it holds the value, and
+every choice sets it and fires its `change` — a form, its checks and an owner's script listen to
+the select as to any field.
+
+The script puts a combobox over it: the options already loaded are filtered at once as the visitor
+types (accents and apostrophes folded, anywhere in the label or the hint); with `source` the server
+is asked as well, after a pause (`delay`, 250 ms) and `min` characters (2), the stale request
+cancelled. An empty field shows the loaded options, or no list at all; fewer than `min` characters
+ask nothing and say nothing; while the server is asked the list says «Searching…», and «Nothing
+found» only once an answer came back empty. The answer is JSON:
+
+```json
+{
+  "options": [{ "value": "12", "label": "Branch 12", "hint": "12 Example street · Until 18:00" }],
+  "more": true
+}
+```
+
+`more` adds «Show more» at the end of the list — the next `page`. An option chosen from the server
+is added to the select, so a form sent without the script still carries it.
+
+| Prop                                 | What                                                                                     |
+| ------------------------------------ | ---------------------------------------------------------------------------------------- |
+| `name`, `value`, `id`                | the field; `old()` wins after a form came back                                           |
+| `options`                            | `value => label`, or a list of `['value', 'label', 'hint', 'disabled']`                  |
+| `searchable`                         | the combobox over the select; with `source` it is on by itself                           |
+| `source`, `param`                    | the server's search, this site's; the query parameter (`q`)                              |
+| `strict`                             | on: only an option is the value; `:strict="false"` — a text field with suggestions       |
+| `min`, `delay`                       | characters before asking (2; 0 — the list opens with the server's first page), 250 ms    |
+| `inline`                             | the list opens in the flow, not over the page — inside a dialog, whose edge would cut it |
+| `label`, `show-label`, `placeholder` | the name of the field (hidden for a screen reader unless shown); the empty option's text |
+| `nothing-label`, `more-label`, …     | the words, the dictionary's `widgets.select.*` behind them                               |
+
+**Keys** — ↓/↑ open the list and walk it, Home/End jump, Enter takes the option, Escape closes the
+list and puts the chosen label back, Tab leaves. Leaving the field puts the chosen label back as
+well: a strict list never keeps half a word.
+
+**Not strict** — `:strict="false"` prints a text field and no select: an option only fills it, and
+whatever is typed is the value. The shop's courier takes a street like that, with the streets the
+carriers know as suggestions; a carrier's courier takes only a street of its directory — strict.
+
+Classes: `webx-select` (`--searchable`, `--free`), `__label`, `__native`, `__box`, `__input`,
+`__list` (`--inline`), `__option` (`is-chosen`), `__hint`, `__more`, `__empty`, `__status`; states `is-open`,
+`is-loading`. Tokens `--webx-select-*` on `:root`.
 
 ## Example: a sign-in
 

@@ -13,6 +13,8 @@ use WebxUi\Orders\Models\OrderStatus;
  * one after it in that group, which is how the set a site starts with has «New» and «Awaiting
  * payment».
  *
+ * The status a payment takes an order awaiting it into (decision 38, revised by payments).
+ *
  * And the status a cancellation comes into (§9.1, decision 88): the first active one that sets
  * «cancelled», in the same order.
  */
@@ -23,6 +25,25 @@ final class InitialStatuses
     public function for(bool $awaitPayment): OrderStatus
     {
         return $this->pick($awaitPayment, $this->active());
+    }
+
+    /**
+     * Where a payment takes an order that stands in the status of one awaiting payment: the one
+     * the setting `orders.status_after_payment` names — active and not deleted — else the status of a
+     * new order that does not await payment («New» of the set a site starts with).
+     */
+    public function afterPayment(): OrderStatus
+    {
+        $active = $this->active();
+        $chosen = $this->settings->get('orders.status_after_payment');
+
+        foreach ($active as $status) {
+            if (is_numeric($chosen) && $status->id === (int) $chosen) {
+                return $status;
+            }
+        }
+
+        return $this->pick(false, $active);
     }
 
     /** The first active status of a live group that sets «cancelled», or null: the site has none. */

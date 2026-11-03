@@ -1,0 +1,297 @@
+import type { AdminContext } from '@webx-ui/module-admin'
+import type { ScreenModel } from '@webx-ui/schema'
+import type {
+  ChangeInput,
+  ChangeMethod,
+  ChangeOption,
+  ChangeOutcome,
+  ChangeTown,
+  BatchResult,
+  BindingsPage,
+  CarrierDetail,
+  CarrierRow,
+  SettingOption,
+  Countries,
+  LocalityBrief,
+  LocalityDetail,
+  LocalityPage,
+  MethodBlank,
+  MethodDetail,
+  MethodRow,
+  MethodType,
+  OrderDelivery,
+  Option,
+  PointDetail,
+  PointsPage,
+  RegionRow,
+  ShipmentLabel,
+  WaybillChanges,
+  WaybillDraft,
+} from './types'
+
+/** Only what was asked for: an empty filter is no filter. */
+function query(params: Record<string, string | number | boolean | null | undefined>): string {
+  const search = new URLSearchParams()
+
+  for (const [key, value] of Object.entries(params)) {
+    if (value === null || value === undefined || value === '' || value === false) continue
+    search.set(key, String(value === true ? 1 : value))
+  }
+
+  return search.size > 0 ? `?${search}` : ''
+}
+
+/** Everything under `/delivery`, below the panel's API path (spec §14). */
+export function createDeliveryApi(admin: AdminContext) {
+  const base = `${admin.apiPath}/delivery`
+  const http = admin.http
+  const data = <T>(body: { data: T }): T => body.data
+
+  return {
+    methods: () =>
+      http
+        .get<{ data: { methods: MethodRow[]; types: MethodType[] } }>(`${base}/methods`)
+        .then(data),
+    method: (id: number) => http.get<{ data: MethodDetail }>(`${base}/methods/${id}`).then(data),
+    blank: (type: string) =>
+      http.get<{ data: MethodBlank }>(`${base}/methods/blank${query({ type })}`).then(data),
+    createMethod: (type: string, values: ScreenModel) =>
+      http.post<{ data: MethodDetail }>(`${base}/methods`, { type, values }).then(data),
+    saveMethod: (id: number, values: ScreenModel) =>
+      http.put<{ data: MethodDetail }>(`${base}/methods/${id}`, { values }).then(data),
+    removeMethod: (id: number) => http.delete<void>(`${base}/methods/${id}`).then(() => undefined),
+    orderMethods: (ids: number[]) =>
+      http.put<void>(`${base}/methods/order`, { ids }).then(() => undefined),
+    defineKind: (kind: string, names: Record<string, string>) =>
+      http.post<{ data: Option[] }>(`${base}/methods/point-kinds`, { kind, names }).then(data),
+
+    points: (params: {
+      page?: number
+      per_page?: number
+      q?: string
+      kind?: string
+      state?: string
+      /** `title`, `kind`, `locality` or `active`; a minus — the other way round. */
+      sort?: string
+    }) => http.get<PointsPage>(`${base}/points${query(params)}`),
+    point: (id: number) => http.get<{ data: PointDetail }>(`${base}/points/${id}`).then(data),
+    createPoint: (values: ScreenModel) =>
+      http.post<{ data: PointDetail }>(`${base}/points`, { values }).then(data),
+    savePoint: (id: number, values: ScreenModel) =>
+      http.put<{ data: PointDetail }>(`${base}/points/${id}`, { values }).then(data),
+    removePoint: (id: number) => http.delete<void>(`${base}/points/${id}`).then(() => undefined),
+
+    carriers: () => http.get<{ data: CarrierRow[] }>(`${base}/carriers`).then(data),
+    carrier: (key: string) =>
+      http.get<{ data: CarrierDetail }>(`${base}/carriers/${key}`).then(data),
+    saveCarrier: (
+      key: string,
+      body: {
+        enabled?: boolean
+        settings?: Record<string, unknown>
+        credentials?: Record<string, string>
+        clear?: string[]
+      },
+    ) => http.put<{ data: CarrierDetail }>(`${base}/carriers/${key}`, body).then(data),
+    /**
+     * The options of a settings field from the carrier's account (§5.2 of a satellite's spec): the
+     * values of what it depends on, what was typed, and `fresh` past the cache. No key travels.
+     */
+    carrierOptions: (
+      key: string,
+      field: string,
+      params: { values?: Record<string, unknown>; q?: string; fresh?: boolean } = {},
+    ) => {
+      const values: Record<string, string> = {}
+
+      for (const [name, value] of Object.entries(params.values ?? {})) {
+        if (value !== null && value !== undefined && value !== '')
+          values[`values[${name}]`] = String(value)
+      }
+
+      return http
+        .get<{ data: SettingOption[] }>(
+          `${base}/carriers/${key}/options/${field}${query({
+            ...values,
+            q: params.q || undefined,
+            fresh: params.fresh ? 1 : undefined,
+          })}`,
+        )
+        .then(data)
+    },
+    testCarrier: (key: string, credentials: Record<string, string>) =>
+      http
+        .post<{
+          data: { ok: boolean; message: string | null }
+        }>(`${base}/carriers/${key}/test`, { credentials })
+        .then(data),
+    runSync: (key: string, directory: string) =>
+      http
+        .post<{ data: { queued: string[] } }>(`${base}/carriers/${key}/sync/${directory}`, {})
+        .then(data),
+    confirmRemoval: (key: string, directory: string) =>
+      http.post<{ data: unknown }>(`${base}/carriers/${key}/confirm/${directory}`, {}).then(data),
+
+    countries: () => http.get<{ data: Countries }>(`${base}/geography/countries`).then(data),
+    enableCountry: (code: string) =>
+      http.post<void>(`${base}/geography/countries`, { code }).then(() => undefined),
+    disableCountry: (code: string) =>
+      http.delete<void>(`${base}/geography/countries/${code}`).then(() => undefined),
+    /** Gone when nothing is in it, switched off otherwise — the answer says which. */
+    removeCountry: (code: string) =>
+      http
+        .post<{ data: { removal: 'deleted' | 'deactivated' } }>(
+          `${base}/geography/countries/${code}/remove`,
+          {},
+        )
+        .then(data)
+        .then((answer) => answer.removal),
+    orderCountries: (codes: string[]) =>
+      http.put<void>(`${base}/geography/countries/order`, { codes }).then(() => undefined),
+    lead: (code: string, carrier: string | null) =>
+      http
+        .put<void>(`${base}/geography/countries/${code}/leader`, { carrier })
+        .then(() => undefined),
+
+    regions: (country: string) =>
+      http.get<{ data: RegionRow[] }>(`${base}/geography/regions${query({ country })}`).then(data),
+    createRegion: (country: string, names: Record<string, string>, code?: string | null) =>
+      http
+        .post<{ data: { id: number } }>(`${base}/geography/regions`, { country, names, code })
+        .then(data),
+    saveRegion: (id: number, changes: { names?: Record<string, string>; code?: string | null }) =>
+      http.put<void>(`${base}/geography/regions/${id}`, changes).then(() => undefined),
+    /** The country's regions in the order dragged to: the selects and the list read them so. */
+    orderRegions: (country: string, ids: number[]) =>
+      http.put<void>(`${base}/geography/regions/order`, { country, ids }).then(() => undefined),
+    removeRegion: (id: number) =>
+      http.delete<void>(`${base}/geography/regions/${id}`).then(() => undefined),
+
+    localities: (params: {
+      page?: number
+      per_page?: number
+      q?: string
+      country?: string
+      region?: number | null
+      source?: string
+      state?: string
+    }) => http.get<LocalityPage>(`${base}/geography/localities${query(params)}`),
+    suggest: (q: string, country?: string | null) =>
+      http
+        .get<{
+          data: LocalityBrief[]
+        }>(`${base}/geography/localities/suggest${query({ q, country })}`)
+        .then(data),
+    brief: (ids: number[]) => {
+      const search = new URLSearchParams()
+
+      for (const id of ids) search.append('ids[]', String(id))
+
+      return http
+        .get<{ data: LocalityBrief[] }>(`${base}/geography/localities/brief?${search}`)
+        .then(data)
+    },
+    locality: (id: number) =>
+      http.get<{ data: LocalityDetail }>(`${base}/geography/localities/${id}`).then(data),
+    createLocality: (values: ScreenModel, force = false) =>
+      http
+        .post<{ data: LocalityDetail }>(`${base}/geography/localities`, { values, force })
+        .then(data),
+    saveLocality: (id: number, values: ScreenModel, force = false) =>
+      http
+        .put<{ data: LocalityDetail }>(`${base}/geography/localities/${id}`, { values, force })
+        .then(data),
+    removeLocality: (id: number) =>
+      http
+        .delete<{
+          data: { removal: 'deleted' | 'deactivated' }
+        }>(`${base}/geography/localities/${id}`)
+        .then(data),
+    activateLocality: (id: number) =>
+      http.post<void>(`${base}/geography/localities/${id}/activate`, {}).then(() => undefined),
+    deactivateLocality: (id: number) =>
+      http.post<void>(`${base}/geography/localities/${id}/deactivate`, {}).then(() => undefined),
+
+    popular: () => http.get<{ data: LocalityBrief[] }>(`${base}/popular`).then(data),
+    setPopular: (ids: number[]) =>
+      http.put<{ data: LocalityBrief[] }>(`${base}/popular`, { ids }).then(data),
+    addPopular: (id: number) =>
+      http.post<{ data: LocalityBrief[] }>(`${base}/popular`, { locality_id: id }).then(data),
+    removePopular: (id: number) =>
+      http.delete<{ data: LocalityBrief[] }>(`${base}/popular/${id}`).then(data),
+
+    bindings: (params: { page?: number; per_page?: number; carrier?: string; reason?: string }) =>
+      http.get<BindingsPage>(`${base}/bindings${query(params)}`),
+    batch: (body: {
+      action: 'bind' | 'create' | 'ignore'
+      ids?: number[]
+      all?: boolean
+      carrier?: string
+      reason?: string
+      locality_id?: number
+    }) => http.post<{ data: BatchResult }>(`${base}/bindings/batch`, body).then(data),
+
+    /** The tab «Delivery» of an order's card (§14.2). */
+    orderDelivery: (order: number) =>
+      http.get<{ data: OrderDelivery }>(`${base}/orders/${order}`).then(data),
+    createWaybill: (order: number, changes: WaybillChanges) =>
+      http.post<{ data: OrderDelivery }>(`${base}/orders/${order}/waybill`, changes).then(data),
+    previewWaybill: (order: number, changes: WaybillChanges) =>
+      http
+        .post<{ data: { request: WaybillDraft } }>(`${base}/orders/${order}/waybill`, {
+          ...changes,
+          dry_run: true,
+        })
+        .then((body) => body.data.request),
+    /** «Change delivery» (decision of 02.11.2026): the checkout's search, for the order's lines. */
+    changeTowns: (order: number, q: string) =>
+      http
+        .get<{
+          data: { localities: ChangeTown[]; popular: ChangeTown[] }
+        }>(`${base}/orders/${order}/change/localities${query({ q })}`)
+        .then(data),
+    changeMethods: (order: number, locality: number) =>
+      http
+        .get<{
+          data: { locality: { id: number; label: string }; methods: ChangeMethod[] }
+        }>(`${base}/orders/${order}/change/methods${query({ locality })}`)
+        .then(data),
+    changePoints: (order: number, locality: number, method: number, q: string, page = 1) =>
+      http
+        .get<{
+          data: { options: ChangeOption[]; total: number; page: number; more: boolean }
+        }>(`${base}/orders/${order}/change/points${query({ locality, method, q, page })}`)
+        .then(data),
+    changeStreets: (order: number, locality: number, method: number, q: string) =>
+      http
+        .get<{
+          data: { options: ChangeOption[] }
+        }>(`${base}/orders/${order}/change/streets${query({ locality, method, q })}`)
+        .then(data),
+    changeDelivery: (order: number, input: ChangeInput) =>
+      http
+        .post<{
+          data: { change: ChangeOutcome; delivery?: OrderDelivery }
+        }>(`${base}/orders/${order}/change`, input)
+        .then(data),
+    trackOrder: (order: number) =>
+      http.post<{ data: OrderDelivery }>(`${base}/orders/${order}/track`, {}).then(data),
+    cancelShipment: (shipment: number) =>
+      http.post<{ data: OrderDelivery }>(`${base}/shipments/${shipment}/cancel`, {}).then(data),
+    shipmentLabel: (shipment: number) =>
+      http.get<{ data: ShipmentLabel }>(`${base}/shipments/${shipment}/label`).then(data),
+  }
+}
+
+export type DeliveryApi = ReturnType<typeof createDeliveryApi>
+
+/** The body of a refusal, when the panel's HTTP client kept one. */
+export function bodyOf<T>(error: unknown): T | null {
+  return ((error as { body?: T } | null)?.body ?? null) as T | null
+}
+
+export function statusOf(error: unknown): number | null {
+  const status = (error as { status?: number } | null)?.status
+
+  return typeof status === 'number' ? status : null
+}

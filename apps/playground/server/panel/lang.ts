@@ -16,6 +16,7 @@ import { fileURLToPath } from 'node:url'
  */
 
 const NAMESPACES: Record<string, string> = {
+  'delivery-novaposhta': 'webx-delivery-novaposhta',
   'module-admin': 'webx-admin',
   'module-auth': 'webx-auth',
   'module-audit': 'webx-audit',
@@ -30,6 +31,7 @@ const NAMESPACES: Record<string, string> = {
   'module-catalog-properties': 'webx-catalog-properties',
   'module-catalog-stock': 'webx-catalog-stock',
   'module-configurator': 'webx-configurator',
+  'module-delivery': 'webx-delivery',
   'module-events': 'webx-events',
   'module-faq': 'webx-faq',
   'module-inbox': 'webx-inbox',
@@ -38,6 +40,7 @@ const NAMESPACES: Record<string, string> = {
   'module-notifications': 'webx-notifications',
   'module-orders': 'webx-orders',
   'module-pages': 'webx-pages',
+  'module-payments': 'webx-payments',
   'module-press': 'webx-press',
   'module-recipes': 'webx-recipes',
   'module-reviews': 'webx-reviews',

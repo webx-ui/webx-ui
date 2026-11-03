@@ -300,6 +300,7 @@ final readonly class CheckoutController
             'order' => $page->of($order, app()->getLocale()),
             'email' => $order->customer_email !== null && $channels->reachesBuyer(OrderEvents::PLACED) ? $order->customer_email : null,
             'decrease' => $decrease !== null ? $this->format($decrease, $order->currency) : null,
+            'notice' => is_string($notice = $request->session()->get(PlacedOrders::NOTICE)) && $notice !== '' ? $notice : null,
             'link' => $orderLinks->page($number, $order->locale),
             'pay' => $order->awaiting_payment ? $this->payAgain($order) : null,
             'analytics' => ['number' => $number, 'payable' => $order->payable, 'currency' => $order->currency],

@@ -7,9 +7,12 @@ namespace WebxUi\Orders\Tests\Site;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use PHPUnit\Framework\Attributes\Test;
+use RuntimeException;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Testing\CountsQueries;
 use WebxUi\Cart\Money;
+use WebxUi\Orders\Blocks\BlockDefinition;
+use WebxUi\Orders\Blocks\OrderBlocks;
 use WebxUi\Orders\ItemsEdit;
 use WebxUi\Orders\Milestone;
 use WebxUi\Orders\Models\Order;
@@ -114,6 +117,32 @@ final class OrderPageTest extends PlaceTestCase
         $this->get($this->link($order))->assertOk()
             ->assertSee('We will give you back '.$this->app->make(Money::class)->format(700, 'EUR'))
             ->assertDontSee('Left to pay');
+    }
+
+    #[Test]
+    public function a_block_owner_adds_its_words_under_the_line_and_a_failing_one_says_nothing(): void
+    {
+        $blocks = $this->app->make(OrderBlocks::class);
+        $blocks->register(new BlockDefinition(
+            'payment',
+            'payments',
+            static fn (array $value): array => [],
+            static fn (array $value): string => 'Bank transfer',
+            details: static fn (array $value, Order $order): string => '<p class="bank">Payment for order '.e($order->number).'</p>',
+        ));
+        $blocks->register(new BlockDefinition(
+            'delivery',
+            'delivery',
+            static fn (array $value): array => [],
+            static fn (array $value): string => 'Courier',
+            details: static fn (): string => throw new RuntimeException('down'),
+        ));
+        $order = $this->place($this->cart(), ['blocks' => ['payment' => ['method' => 'bank-transfer'], 'delivery' => ['method' => 'courier']]]);
+
+        $this->get($this->link($order))->assertOk()
+            ->assertSee('Courier')
+            ->assertSee('<div class="webx-order__details webx-order__details--payment"><p class="bank">Payment for order '.$order->number.'</p></div>', false)
+            ->assertDontSee('webx-order__details--delivery', false);
     }
 
     #[Test]

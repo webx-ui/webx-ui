@@ -1,0 +1,121 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "delivery.point-form",
+  "model": "point",
+  "root": [
+    {
+      "id": "kind",
+      "type": "wx-select",
+      "name": "kind",
+      "label": "trans::webx-delivery::panel.point.kind",
+      "help": "trans::webx-delivery::panel.point.kind-help",
+      "props": {
+        "options": []
+      }
+    },
+    {
+      "id": "titles",
+      "type": "wx-input",
+      "name": "titles",
+      "label": "trans::webx-delivery::panel.point.titles",
+      "localized": true,
+      "props": {
+        "maxlength": 160
+      }
+    },
+    {
+      "id": "locality_id",
+      "type": "wx-delivery-locality",
+      "name": "locality_id",
+      "label": "trans::webx-delivery::panel.point.locality"
+    },
+    {
+      "id": "address",
+      "type": "wx-textarea",
+      "name": "address",
+      "label": "trans::webx-delivery::panel.point.address",
+      "localized": true,
+      "props": {
+        "rows": 2,
+        "maxlength": 255
+      }
+    },
+    {
+      "id": "coordinates",
+      "type": "wx-row",
+      "children": [
+        {
+          "id": "lat-col",
+          "type": "wx-col",
+          "props": {
+            "span": 24,
+            "sm": 12
+          },
+          "children": [
+            {
+              "id": "lat",
+              "type": "wx-input-number",
+              "name": "lat",
+              "label": "trans::webx-delivery::panel.point.lat",
+              "props": {
+                "min": -90,
+                "max": 90,
+                "precision": 6,
+                "step": 0.000001
+              }
+            }
+          ]
+        },
+        {
+          "id": "lng-col",
+          "type": "wx-col",
+          "props": {
+            "span": 24,
+            "sm": 12
+          },
+          "children": [
+            {
+              "id": "lng",
+              "type": "wx-input-number",
+              "name": "lng",
+              "label": "trans::webx-delivery::panel.point.lng",
+              "props": {
+                "min": -180,
+                "max": 180,
+                "precision": 6,
+                "step": 0.000001
+              }
+            }
+          ]
+        }
+      ],
+      "props": {
+        "class": "wx-delivery-coordinates"
+      }
+    },
+    {
+      "id": "phone",
+      "type": "wx-input",
+      "name": "phone",
+      "label": "trans::webx-delivery::panel.point.phone",
+      "props": {
+        "type": "tel",
+        "maxlength": 40
+      }
+    },
+    {
+      "id": "active",
+      "type": "wx-switch",
+      "name": "active",
+      "label": "trans::webx-delivery::panel.point.active",
+      "help": "trans::webx-delivery::panel.point.active-help"
+    },
+    {
+      "id": "schedule",
+      "type": "wx-delivery-schedule",
+      "name": "schedule",
+      "help": "trans::webx-delivery::panel.point.schedule-help",
+      "label": "trans::webx-delivery::panel.point.schedule"
+    }
+  ]
+}

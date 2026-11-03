@@ -1,0 +1,4 @@
+/*
+ * The section's own styles live in its components (scoped); this file is the entry the panel
+ * imports (`@webx-ui/module-payments/style.css`), which the build fills with them.
+ */

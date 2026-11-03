@@ -166,6 +166,7 @@ Packagist ([`WEBX_UI_PHP_RELEASE.md`](WEBX_UI_PHP_RELEASE.md)). Версия у 
 | `cache`                     | кеш на версионных ключах: группы, версии, `remember` с зависимостями  | — (экран «Кеш» в `module-admin`)     |
 | `compositions`              | составные виды деревом с id: слои, патчи темы, компиляция в Blade     | —                                    |
 | `localization`              | языки сайта, переводимые атрибуты, словарь панели                     | — (i18n в `module-admin`)            |
+| `geography`                 | общая география: страны, регионы, пункты, ключ имён, подсказки        | — (экраны в `module-delivery`)       |
 | `mcp`                       | контракт инструментов модуля, MCP-сервер, OAuth и ключи агентов       | экраны в `module-auth`               |
 | `routing`                   | плоский реестр публичных адресов и резолвер                           | —                                    |
 | `themes`                    | темы слоями: порядок вьюх, токены, ассеты                             | —                                    |
@@ -211,6 +212,9 @@ Packagist ([`WEBX_UI_PHP_RELEASE.md`](WEBX_UI_PHP_RELEASE.md)). Версия у 
 | **Разделы: коммерция**      |                                                                       |                                      |
 | `module-cart`               | гостевая корзина: контракт `Purchasable`, цепочка итогов, `cart()`    | —                                    |
 | `module-orders`             | заказы и оформление: снимок корзины, статусы и вехи, `/checkout`      | `@webx-ui/module-orders`             |
+| `module-delivery`           | доставка: реестры служб и типов, свои точки и курьер, способы пункта  | `@webx-ui/module-delivery`           |
+| `delivery-novaposhta`       | спутник доставки: «Нова пошта» — справочники, накладная, трекинг      | —                                    |
+| `module-payments`           | оплата: способы, онлайн-шлюзы спутниками, холд, журнал обмена         | `@webx-ui/module-payments`           |
 | **Разделы: работа**         |                                                                       |                                      |
 | `module-tasks`              | очередь работы между людьми и агентами                                | `@webx-ui/module-tasks`              |
 
@@ -233,6 +237,19 @@ Blueprint-макрос `nestedSet()`, мягкое удаление веткой
 
 Решено: собственная реализация; `kalnoy/nestedset` — только ориентир по API. Отдельный
 JSON-ресурс не нужен — форму для `wx-tree` даёт `toTree()`.
+
+### `webx-ui/geography` — общая география
+
+Статус: в работе (webx-ui#99, этап 2); не выпущена.
+
+Библиотека доставки и всего, что стоит на населённом пункте: таблицы `geo_*` (страны, регионы с
+псевдонимами, пункты, строки поиска), `Normalizer::key()` (NFKC, апострофы и тире, без языковых
+правил), подсказки `LocalitySearch` префиксом по названию, псевдониму и любому следующему слову,
+имена стран из `symfony/intl`, импорт `webx:geo:import`. Ручное ведение (решение 42 webx-ui#99) —
+`Editor`: страны, регионы и пункты руками (`created_by = manual`), проверка на дубль тем же ключом,
+отметка правленных вручную полей записи службы (`manual_fields`), удаление без ссылок или
+деактивация со ссылками (`LocalityReferences`). Экранов нет — они в `module-delivery`
+([`WEBX_UI_MODULE_DELIVERY.md`](WEBX_UI_MODULE_DELIVERY.md) §4).
 
 ### `webx-ui/localization` — языки
 
@@ -675,6 +692,63 @@ httpOnly-cookie (в базе — хеш). Что лежит в строке и �
 (`CheckoutSummaryParts`), черновик `order_checkout_drafts`, сверка суммы и ключ повтора, композиция
 `checkout.page`, вкладка «Оформление» с правом `orders.checkout.settings`, MCP `orders_checkout_*`.
 Выключается `WEBX_ORDERS_CHECKOUT=false` — заказ тогда только из кода через `Orders::place()`.
+
+### `webx-ui/module-delivery` — доставка
+
+Статус: сделан (webx-ui#99), выходит с релизом дня; первую версию npm-пакета `@webx-ui/module-delivery`
+публикует человек. Спека — [`WEBX_UI_MODULE_DELIVERY.md`](WEBX_UI_MODULE_DELIVERY.md), гайды —
+`apps/docs/guide/delivery.md` (магазин без служб, панель, MCP) и `apps/docs/guide/delivery-carriers.md`
+(как написать спутник службы и его контрактный тест).
+Куда, как и почём: реестры `Carriers` (магазин `store` встроен) и `MethodTypes` (встроены
+`store.pickup` — свои точки, вид точек у каждого способа свой, и `store.courier` — свой курьер в
+своих пунктах по одной цене способа); таблицы способов, служб, привязок, точек, улиц, журнала
+синхронизации, выбора покупателя, отправлений и популярных городов диалога «Куда доставить заказ?»;
+синхронизация справочников служб страницами с порогом снятия; шаг оформления (слот `delivery` в
+`module-orders`), снимок в заказе, накладная и трекинг; панель из шести экранов с ручной географией;
+MCP `delivery_*`. Требует `module-cart` и `geography`; работает на ручной географии без единой
+службы. Демо `webx:demo --module=delivery` — страна `XX`, города руками, свои точки двух видов,
+свой курьер, популярные города; с `WEBX_DELIVERY_FAKE_CARRIER=true` на dev-сайте — и подставная
+служба A. По умолчанию выключен в `webx:setup`.
+
+### `webx-ui/module-payments` — оплата
+
+Статус: сделан (webx-ui#106), выходит с релизом дня; **первую версию обоих пакетов публикует
+человек** — composer `webx-ui/module-payments` (пустое зеркало и Packagist руками,
+[`WEBX_UI_PHP_RELEASE.md`](WEBX_UI_PHP_RELEASE.md)) и npm `@webx-ui/module-payments`
+(`docs/pitfalls/release-and-ci.md`). Спека — [`WEBX_UI_MODULE_PAYMENTS.md`](WEBX_UI_MODULE_PAYMENTS.md),
+обзор шлюзов — [`WEBX_UI_PAYMENT_GATEWAYS.md`](WEBX_UI_PAYMENT_GATEWAYS.md), гайды —
+`apps/docs/guide/payments.md` (магазин: способы, онлайн-оплата, холд, журнал, права, MCP) и
+`apps/docs/guide/payment-gateways.md` (как написать спутник шлюза и его контрактный тест).
+Как платят за заказ: реестры `MethodTypes` (встроены `store.on_receipt` и `store.bank_transfer`) и
+`Gateways`; способы с правилами суммы и доставки; шаг оформления (слот `payment` в `module-orders`),
+блок `payment` заказа, реквизиты на «Спасибо», «Отметить оплату» (контракт заказов
+`MarksPaidByHand`). Онлайн — контракт `ChargesOnline` и необязательные `CancelsPayments`,
+`CompletesApproval`, `CapturesPayments` (холд, частичное списание): шлюз — спутник
+`payment-<шлюз>` без правки базы. Попытки `payments`, `Payments::settle()` — единственная дверь к
+статусу; уведомления `POST /payments/notify/{method}` без middleware, неподписанным не верит —
+опрашивает API; опрос `webx:payments:poll` раз в 5 минут, проблемные платежи. **Журнал обмена**
+`payment_gateway_events`: сырьё до разбора, ключи замаскированы, только дописывание, своё соединение,
+чистка только командой и не младше 365 дней. Панель «Payments» (способы, попытки, журнал), вкладка
+«Оплата» заказа, право `payments.exchange` на сырые тела, MCP `payments_*`, письма. Подставной
+«шлюз A» с контрактным тестом `GatewayContract` — с `WEBX_PAYMENTS_FAKE_GATEWAY=true` на dev-сайте,
+никогда в production. Демо `webx:demo --module=payments` — оба встроенных способа с фейковыми
+реквизитами, со шлюзом A — и три его способа. Требует `module-orders`. По умолчанию выключен в
+`webx:setup`.
+
+### `webx-ui/delivery-novaposhta` — служба «Нова пошта»
+
+Статус: сделан (webx-ui#103), выходит с релизом дня; **первую версию выпускает человек** — пустое
+зеркало `webx-ui/delivery-novaposhta` и отправка на Packagist руками
+([`WEBX_UI_PHP_RELEASE.md`](WEBX_UI_PHP_RELEASE.md), «Что остаётся руками на каждый новый пакет»).
+Спека — [`WEBX_UI_DELIVERY_NOVAPOSHTA.md`](WEBX_UI_DELIVERY_NOVAPOSHTA.md), гайд для магазина —
+`apps/docs/guide/delivery-novaposhta.md`.
+Первый спутник `module-delivery` (имя без `module-`, правило выше): служба `novaposhta`, страна
+`UA`, тонкий клиент JSON API со списками методов чтения и записи и журналом вызовов; справочники
+пунктов (ведущая служба `UA`), отделений и почтоматов, улиц по пунктам с курьером; отправитель из
+кабинета выпадашками (контракт `ProvidesSettingOptions` базы); три типа способов «по тарифам
+перевозчика»; накладная без наложенного платежа и её отмена; трекинг пачкой 100. Режим
+`NOVAPOSHTA_READ_ONLY` — для чужого ключа: клиент отказывает в любом методе записи до запроса, трекинг
+выключен, улицы — выборка 20 пунктов вручную. Своего раздела, экранов, npm-пары и маршрутов нет.
 
 ---
 

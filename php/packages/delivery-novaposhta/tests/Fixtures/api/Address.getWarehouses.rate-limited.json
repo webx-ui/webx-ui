@@ -1,0 +1,11 @@
+{
+  "success": false,
+  "data": [],
+  "errors": ["To many requests"],
+  "warnings": [],
+  "info": ["Try again after 0.5 seconds"],
+  "messageCodes": [],
+  "errorCodes": ["20000401501"],
+  "warningCodes": [],
+  "infoCodes": []
+}

@@ -7,6 +7,7 @@ namespace WebxUi\Orders\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
+use WebxUi\Orders\Orders;
 
 /**
  * A line of the order's history (spec §3, §8): a move between statuses, a module's note, a
@@ -43,7 +44,19 @@ class StatusChange extends Model
     /** Money in for an order paid already — a top-up (§36.3); `note` is «<minor>[ [reference]][: note]». */
     public const string PAYMENT = 'payment';
 
+    /**
+     * Money in for an order not paid yet that does not cover it — a hold captured in part (§36.3,
+     * payments §9.5); `note` is «<minor>/<owed minor>[ [reference]][: note]», owed — before it.
+     */
+    public const string PAYMENT_PART = 'payment_part';
+
     public const string BLOCK = 'block';
+
+    /**
+     * A block replaced whole by a manager ({@see Orders::changeBlock()}); `note` is JSON:
+     * `block`, `from` and `to` — its lines then, `total_from`, `total_to`, `reason`.
+     */
+    public const string BLOCK_CHANGED = 'block_changed';
 
     /** The lines edited (§38.2); `note` is «revision#<N>: <reason>». */
     public const string ITEMS = 'items';

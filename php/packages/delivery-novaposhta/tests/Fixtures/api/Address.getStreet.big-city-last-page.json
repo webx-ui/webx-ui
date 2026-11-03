@@ -1,0 +1,134 @@
+{
+  "success": true,
+  "data": [
+    {
+      "Description": "Теліги Олени",
+      "Ref": "cfe5562c-4148-11dd-9198-001d60451983",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "Теплична",
+      "Ref": "a775036c-4147-11dd-9198-001d60451983",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "Тепловозна",
+      "Ref": "e45be524-4148-11dd-9198-001d60451983",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "Теремківська",
+      "Ref": "8c1558ad-414c-11dd-9198-001d60451983",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "Теремківський",
+      "Ref": "dfccda3d-9b80-11dd-9f19-001d92f78697",
+      "StreetsTypeRef": "Lane",
+      "StreetsType": "пров."
+    },
+    {
+      "Description": "Терешкової 2-Й (Бортничі)",
+      "Ref": "d4450b80-0a58-11de-b6f5-001d92f78697",
+      "StreetsTypeRef": "Lane",
+      "StreetsType": "пров."
+    },
+    {
+      "Description": "Терешкової Валентини ",
+      "Ref": "fbf6987b-fb36-11e5-899e-005056887b8d",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "Терешкової Валентини (Бортничі)",
+      "Ref": "124def95-80e0-11dd-96a9-001d92f78698",
+      "StreetsTypeRef": "Lane",
+      "StreetsType": "пров."
+    },
+    {
+      "Description": "Терещенка Миколи",
+      "Ref": "fade1962-856c-11dd-96a9-001d92f78698",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "Терещенківська",
+      "Ref": "eaf40fb2-4148-11dd-9198-001d60451983",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "Територіальної оборони (Жуляни)",
+      "Ref": "122ccd2f-3b8d-11e5-add9-005056887b8d",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "Тернопільська",
+      "Ref": "37d62dbb-414f-11dd-9198-001d60451983",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "Терьохіна Олексія",
+      "Ref": "1378edec-f515-11de-b82a-000c2965ae0e",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "Теслярська",
+      "Ref": "93940fe7-8c36-11de-9467-001ec9d9f7b7",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "Тетерівська (Іртишська)",
+      "Ref": "e109ca26-4150-11dd-9198-001d60451983",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "Тиврівський (Тихвінський)",
+      "Ref": "6a794d13-7f86-11dd-89d6-001d92f78698",
+      "StreetsTypeRef": "Lane",
+      "StreetsType": "пров."
+    },
+    {
+      "Description": "Тимірязєвська",
+      "Ref": "f1a4122b-4148-11dd-9198-001d60451983",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "Тимірязєвський",
+      "Ref": "fe196166-4153-11dd-9198-001d60451983",
+      "StreetsTypeRef": "Lane",
+      "StreetsType": "пров."
+    },
+    {
+      "Description": "Тираспольська",
+      "Ref": "0698a41a-414a-11dd-9198-001d60451983",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    },
+    {
+      "Description": "Тиха",
+      "Ref": "d7ea4900-9b80-11dd-9f19-001d92f78697",
+      "StreetsTypeRef": "Street",
+      "StreetsType": "вул."
+    }
+  ],
+  "errors": [],
+  "warnings": [],
+  "info": {
+    "totalCount": 2829
+  },
+  "messageCodes": [],
+  "errorCodes": [],
+  "warningCodes": [],
+  "infoCodes": []
+}

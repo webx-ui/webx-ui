@@ -1,0 +1,115 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "delivery.locality-form",
+  "model": "locality",
+  "root": [
+    {
+      "id": "names",
+      "type": "wx-input",
+      "name": "names",
+      "label": "trans::webx-delivery::panel.locality.names",
+      "help": "trans::webx-delivery::panel.locality.names-help",
+      "localized": true,
+      "props": {
+        "maxlength": 120
+      }
+    },
+    {
+      "id": "kind",
+      "type": "wx-select",
+      "name": "kind",
+      "label": "trans::webx-delivery::panel.locality.kind",
+      "props": {
+        "options": []
+      }
+    },
+    {
+      "id": "country",
+      "type": "wx-delivery-country",
+      "name": "country",
+      "label": "trans::webx-delivery::panel.locality.country"
+    },
+    {
+      "id": "region_id",
+      "type": "wx-delivery-region",
+      "name": "region_id",
+      "label": "trans::webx-delivery::panel.locality.region",
+      "help": "trans::webx-delivery::panel.locality.region-help",
+      "props": {
+        "countryField": "country"
+      }
+    },
+    {
+      "id": "coordinates",
+      "type": "wx-row",
+      "children": [
+        {
+          "id": "lat-col",
+          "type": "wx-col",
+          "props": {
+            "span": 24,
+            "sm": 12
+          },
+          "children": [
+            {
+              "id": "lat",
+              "type": "wx-input-number",
+              "name": "lat",
+              "label": "trans::webx-delivery::panel.locality.lat",
+              "props": {
+                "min": -90,
+                "max": 90,
+                "precision": 6,
+                "step": 0.000001
+              }
+            }
+          ]
+        },
+        {
+          "id": "lng-col",
+          "type": "wx-col",
+          "props": {
+            "span": 24,
+            "sm": 12
+          },
+          "children": [
+            {
+              "id": "lng",
+              "type": "wx-input-number",
+              "name": "lng",
+              "label": "trans::webx-delivery::panel.locality.lng",
+              "props": {
+                "min": -180,
+                "max": 180,
+                "precision": 6,
+                "step": 0.000001
+              }
+            }
+          ]
+        }
+      ],
+      "props": {
+        "class": "wx-delivery-coordinates"
+      }
+    },
+    {
+      "id": "weight",
+      "type": "wx-input-number",
+      "name": "weight",
+      "label": "trans::webx-delivery::panel.locality.weight",
+      "help": "trans::webx-delivery::panel.locality.weight-help",
+      "props": {
+        "min": 0,
+        "max": 1000000,
+        "precision": 0
+      }
+    },
+    {
+      "id": "active",
+      "type": "wx-switch",
+      "name": "active",
+      "label": "trans::webx-delivery::panel.locality.active",
+      "help": "trans::webx-delivery::panel.locality.active-help"
+    }
+  ]
+}

@@ -114,6 +114,25 @@ function card(node: object, data: OrderCardData) {
 }
 
 describe('WxOrdersSummary', () => {
+  it('puts the delivery in a row of its own, just before the total', () => {
+    const base = order()
+    const { wrapper } = card(
+      OrderSummaryNode,
+      order({
+        totals: {
+          ...base.totals,
+          adjustments: '-$5.00',
+          total: '$47.00',
+          charges: [{ key: 'delivery', amount: '$2.00', amount_minor: 200 }],
+        },
+      }),
+    )
+
+    const terms = wrapper.findAll('.wx-orders-summary__rows dt').map((dt) => dt.text())
+    expect(terms.slice(0, 4)).toEqual(['Items', 'Discounts and charges', 'Delivery', 'Total'])
+    expect(wrapper.find('[data-test="summary-delivery"]').text()).toBe('$2.00')
+  })
+
   it('counts the lines and the units, and the source is a line of its own under «Placed»', () => {
     const { wrapper } = card(OrderSummaryNode, order())
 

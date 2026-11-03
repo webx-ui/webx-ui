@@ -334,7 +334,7 @@ final readonly class OrderChannels
                     'channel' => $channel->name,
                     'provider' => $channel->provider,
                     'recipient' => (string) $values['customer_email'],
-                    ...$notifications->render($channel, $values, $order->locale),
+                    ...$notifications->render($channel, $values, $order->locale, $order, $event),
                 ];
             }
         }

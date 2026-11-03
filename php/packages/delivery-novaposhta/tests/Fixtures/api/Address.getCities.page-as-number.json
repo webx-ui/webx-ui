@@ -1,0 +1,11 @@
+{
+  "success": false,
+  "data": [],
+  "errors": ["Page is invalid format"],
+  "warnings": [],
+  "info": [],
+  "messageCodes": [],
+  "errorCodes": [],
+  "warningCodes": [],
+  "infoCodes": []
+}

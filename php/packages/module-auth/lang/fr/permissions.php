@@ -12,6 +12,7 @@ return [
     'reset' => 'Réinitialiser',
     'review' => 'Relire',
     'work' => 'Exécuter',
+    'ship' => 'Expédition',
     'admins-view' => 'Voir les administrateurs',
     'admins-manage' => 'Gérer les administrateurs',
     'admins-audit' => 'Connexions et appels d’agents',
@@ -23,4 +24,5 @@ return [
     'inbox-manage' => 'Configurer les formulaires',
     'snippets-manage' => 'Code sur le site',
     'media-manage' => 'Renommer, déplacer, supprimer',
+    'payments-exchange' => 'Corps bruts des échanges',
 ];

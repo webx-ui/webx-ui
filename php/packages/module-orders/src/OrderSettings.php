@@ -32,6 +32,7 @@ final readonly class OrderSettings
         'orders.number.pad' => 'webx-orders.number.pad',
         'orders.initial_status' => 'webx-orders.initial_status',
         'orders.initial_status_awaiting_payment' => 'webx-orders.initial_status_awaiting_payment',
+        'orders.status_after_payment' => 'webx-orders.status_after_payment',
         'orders.notify.placed' => 'webx-orders.notify.placed',
         'orders.notify.paid' => 'webx-orders.notify.paid',
         'orders.notify.payment_failed' => 'webx-orders.notify.payment_failed',
@@ -186,11 +187,11 @@ final readonly class OrderSettings
             $errors['orders.number.prefix'] = (string) __('webx-orders::screen.number-taken', ['number' => $sample]);
         }
 
-        foreach (['orders.initial_status', 'orders.initial_status_awaiting_payment'] as $key) {
+        foreach (['orders.initial_status' => 'initial-status', 'orders.initial_status_awaiting_payment' => 'initial-awaiting', 'orders.status_after_payment' => 'after-payment'] as $key => $label) {
             $id = $values[$key] ?? null;
 
             if ($id !== null && $id !== '' && ! OrderStatus::query()->whereKey($id)->where('is_active', true)->whereHas('publicStatus', static fn ($group) => $group->whereNull('deleted_at'))->exists()) {
-                $errors[$key] = (string) __('validation.in', ['attribute' => (string) __('webx-orders::screen.'.($key === 'orders.initial_status' ? 'initial-status' : 'initial-awaiting'))]);
+                $errors[$key] = (string) __('validation.in', ['attribute' => (string) __('webx-orders::screen.'.$label)]);
             }
         }
 

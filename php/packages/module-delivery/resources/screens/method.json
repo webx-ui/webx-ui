@@ -1,0 +1,76 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "delivery.method-form",
+  "model": "method",
+  "root": [
+    {
+      "id": "method",
+      "type": "wx-card",
+      "label": "trans::webx-delivery::panel.method.card",
+      "children": [
+        {
+          "id": "titles",
+          "type": "wx-input",
+          "name": "titles",
+          "label": "trans::webx-delivery::panel.method.titles",
+          "localized": true,
+          "props": { "maxlength": 120 }
+        },
+        {
+          "id": "descriptions",
+          "type": "wx-textarea",
+          "name": "descriptions",
+          "label": "trans::webx-delivery::panel.method.descriptions",
+          "help": "trans::webx-delivery::panel.method.descriptions-help",
+          "localized": true,
+          "props": { "rows": 2, "maxlength": 500 }
+        },
+        {
+          "id": "price",
+          "type": "wx-input-number",
+          "name": "price",
+          "label": "trans::webx-delivery::panel.method.price",
+          "help": "trans::webx-delivery::panel.method.price-help",
+          "props": { "min": 0, "max": 1000000, "precision": 2, "step": 1 }
+        },
+        {
+          "id": "point_kind",
+          "type": "wx-delivery-point-kind",
+          "name": "point_kind",
+          "label": "trans::webx-delivery::panel.method.point-kind",
+          "help": "trans::webx-delivery::panel.method.point-kind-help",
+          "props": { "options": [] }
+        },
+        {
+          "id": "localities",
+          "type": "wx-delivery-localities",
+          "name": "localities",
+          "label": "trans::webx-delivery::panel.method.localities",
+          "help": "trans::webx-delivery::panel.method.localities-help"
+        },
+        {
+          "id": "countries",
+          "type": "wx-checkbox-group",
+          "name": "countries",
+          "label": "trans::webx-delivery::panel.method.countries",
+          "help": "trans::webx-delivery::panel.method.countries-help",
+          "props": { "options": [] }
+        },
+        {
+          "id": "honours_paid_by_store",
+          "type": "wx-switch",
+          "name": "honours_paid_by_store",
+          "label": "trans::webx-delivery::panel.method.paid-by-store",
+          "help": "trans::webx-delivery::panel.method.paid-by-store-help"
+        },
+        {
+          "id": "enabled",
+          "type": "wx-switch",
+          "name": "enabled",
+          "label": "trans::webx-delivery::panel.method.enabled",
+          "help": "trans::webx-delivery::panel.method.enabled-help"
+        }
+      ]
+    }
+  ]
+}

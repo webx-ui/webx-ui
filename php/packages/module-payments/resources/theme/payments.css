@@ -1,0 +1,201 @@
+/*
+ * The payment step (spec §10.1) and the bank details of an order (§12.2): the methods as rows with
+ * the line under the title, «Choose delivery first», the details on «Thank you» and the order's
+ * page, the order's line «Paid» / «Awaiting payment». Site tokens only; the width of the step
+ * decides, not the window's. A theme restyles any part by the same class later in the cascade.
+ *
+ * `is-live` — the script runs: «Save» steps aside, every choice is written at once.
+ */
+.webx-payments {
+  --webx-payments-icon-size: 32px;
+
+  container: webx-payments / inline-size;
+  display: grid;
+  gap: var(--site-space-4);
+  min-width: 0;
+  color: var(--site-color-text);
+}
+
+.webx-payments.is-loading {
+  cursor: progress;
+}
+
+.webx-payments__form {
+  display: grid;
+  gap: var(--site-space-3);
+  min-width: 0;
+  margin: 0;
+}
+
+.webx-payments.is-live .webx-payments__nojs {
+  display: none;
+}
+
+.webx-payments__hint,
+.webx-payments__notice {
+  margin: 0;
+  padding: var(--site-space-3) var(--site-space-4);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-surface-muted);
+  color: var(--site-color-text);
+}
+
+.webx-payments__notice {
+  border: 1px solid var(--site-color-highlight);
+}
+
+.webx-payments__error {
+  margin: 0;
+  color: var(--site-color-danger);
+  font-size: var(--site-font-size-6);
+}
+
+.webx-payments__methods {
+  display: grid;
+  gap: var(--site-space-2);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.webx-payments__methods-title {
+  margin-block-end: var(--site-space-2);
+  padding: 0;
+  font-weight: 600;
+}
+
+.webx-payments__method {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--site-space-3);
+  min-width: 0;
+  min-height: 44px;
+  padding: var(--site-space-3) var(--site-space-4);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-surface);
+  cursor: pointer;
+}
+
+.webx-payments__method.is-chosen {
+  border-color: var(--site-color-accent);
+}
+
+/* With an icon the row has one column more; the text keeps the room that is left. */
+.webx-payments__method:has(.webx-payments__icon) {
+  grid-template-columns: auto var(--webx-payments-icon-size) minmax(0, 1fr);
+}
+
+/* One method is one line: nothing to choose between, no radio to tick. */
+.webx-payments__methods.is-single .webx-payments__method {
+  grid-template-columns: minmax(0, 1fr);
+  cursor: default;
+}
+
+.webx-payments__methods.is-single .webx-payments__method:has(.webx-payments__icon) {
+  grid-template-columns: var(--webx-payments-icon-size) minmax(0, 1fr);
+}
+
+.webx-payments__methods.is-single .webx-payments__radio {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.webx-payments__radio {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--site-color-accent);
+}
+
+.webx-payments__icon {
+  width: var(--webx-payments-icon-size);
+  height: var(--webx-payments-icon-size);
+  object-fit: contain;
+}
+
+.webx-payments__method-text {
+  display: grid;
+  gap: var(--site-space-1);
+  min-width: 0;
+}
+
+.webx-payments__method-title {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.webx-payments__method-note {
+  color: var(--site-color-text-muted);
+  font-size: var(--site-font-size-6);
+  overflow-wrap: anywhere;
+}
+
+.webx-payments__save {
+  justify-self: start;
+  min-height: 44px;
+  padding: var(--site-space-2) var(--site-space-4);
+  border: 1px solid var(--site-color-accent);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-accent);
+  color: var(--site-color-accent-contrast);
+  font: inherit;
+  cursor: pointer;
+}
+
+/* The bank details: a label over its value, the account kept as written, line by line. */
+.webx-payments-instructions {
+  display: grid;
+  gap: var(--site-space-3);
+  min-width: 0;
+  padding: var(--site-space-4);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-surface);
+  color: var(--site-color-text);
+}
+
+.webx-payments-instructions__title {
+  margin: 0;
+  font-weight: 600;
+}
+
+.webx-payments-instructions__list {
+  display: grid;
+  gap: var(--site-space-3);
+  margin: 0;
+}
+
+.webx-payments-instructions__row {
+  display: grid;
+  gap: var(--site-space-1);
+  min-width: 0;
+}
+
+.webx-payments-instructions__label {
+  color: var(--site-color-text-muted);
+  font-size: var(--site-font-size-6);
+}
+
+.webx-payments-instructions__value {
+  margin: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.webx-payments-status {
+  margin: 0;
+  font-weight: 600;
+}
+
+.webx-payments-status.webx-payments-status--paid {
+  color: var(--site-color-success);
+}
+
+.webx-payments-status__pay {
+  margin-inline-start: var(--site-space-2);
+  color: var(--site-color-accent);
+}

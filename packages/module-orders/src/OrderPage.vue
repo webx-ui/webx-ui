@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import {
   confirm,
@@ -17,6 +17,7 @@ import {
   useAdmin,
   useBodyKeys,
   useDates,
+  provideHistorySubject,
   useErrorText,
   useTranslate,
   WxSaveState,
@@ -24,7 +25,7 @@ import {
   WxScreenHead,
   type ScreenAction,
 } from '@webx-ui/module-admin'
-import type { ScreenModel } from '@webx-ui/schema'
+import { screenTabKey, type ScreenModel } from '@webx-ui/schema'
 import { createOrdersApi } from './api'
 import { provideOrderCard } from './card'
 import CancelDialog from './CancelDialog.vue'
@@ -71,6 +72,22 @@ const loading = ref(true)
 const saving = ref(false)
 const busy = ref(false)
 const errors = ref<Record<string, string[]>>({})
+// How many times the card was read: the tabs a neighbour patched on read theirs again after it.
+const version = ref(0)
+
+// The tab of the card is in the address (`?tab=payment`): «Summary» links to the tab that
+// explains a line of it, and a link sent to a colleague opens the same tab.
+const tab = ref<string | number | undefined>(
+  typeof route.query.tab === 'string' ? route.query.tab : undefined,
+)
+provide(screenTabKey, tab)
+
+watch(
+  () => route.query.tab,
+  (asked) => {
+    if (typeof asked === 'string' && asked !== '') tab.value = asked
+  },
+)
 
 const canEdit = computed(() => order.value?.actions.details ?? false)
 const locked = computed(() => !canEdit.value || saving.value)
@@ -124,6 +141,7 @@ const visitorDialog = createModal<OrderDetail, { order: OrderCardData; email: st
 /** A new answer of the server; what is being typed in the contacts stays unless asked. */
 function take(detail: OrderDetail, withValues = true): void {
   order.value = detail.order
+  version.value++
 
   if (withValues || !dirty.value) {
     values.value = { ...detail.values }
@@ -461,6 +479,21 @@ async function pin(text: string | null): Promise<boolean> {
     return false
   }
 }
+
+// The order's id for the nodes its neighbours patch onto the card (the tab «Delivery»): they
+// read it the way a node on any editor does, without knowing this module.
+provideHistorySubject({
+  id,
+  version,
+  // A neighbour changed the order (the delivery and its price): the head, the totals, the history again.
+  reload: async () => {
+    try {
+      take(await api.get(id.value), false)
+    } catch (error) {
+      toast.danger(message(error))
+    }
+  },
+})
 
 provideOrderCard({
   order,

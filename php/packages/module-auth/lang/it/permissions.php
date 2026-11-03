@@ -12,6 +12,7 @@ return [
     'reset' => 'Azzerare',
     'review' => 'Revisionare',
     'work' => 'Eseguire',
+    'ship' => 'Spedizione',
     'admins-view' => 'Vedere gli amministratori',
     'admins-manage' => 'Gestire gli amministratori',
     'admins-audit' => 'Accessi e chiamate degli agenti',
@@ -23,4 +24,5 @@ return [
     'inbox-manage' => 'Configurare i moduli',
     'snippets-manage' => 'Codice sul sito',
     'media-manage' => 'Rinominare, spostare, eliminare',
+    'payments-exchange' => 'Corpi grezzi dello scambio',
 ];

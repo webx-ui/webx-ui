@@ -33,6 +33,8 @@ import { seo } from '@webx-ui/module-seo'
 import { services } from '@webx-ui/module-services'
 import { snippets } from '@webx-ui/module-snippets'
 import { tariffs } from '@webx-ui/module-tariffs'
+import { delivery } from '@webx-ui/module-delivery'
+import { payments } from '@webx-ui/module-payments'
 import { team } from '@webx-ui/module-team'
 import { users } from '@webx-ui/module-users'
 import { tasks } from '@webx-ui/module-tasks'
@@ -96,6 +98,8 @@ const admin = createAdmin({
     team(),
     ...users(),
     orders(),
+    ...delivery(),
+    ...payments(),
     ...recipes(),
     press(),
     banners(),

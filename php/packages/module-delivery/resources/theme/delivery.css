@@ -1,0 +1,405 @@
+/*
+ * The delivery step (spec §12.3–§12.4): the card of the town, the methods with the price on the
+ * right, the point or the address opened under the chosen one, the line «Delivery cost», and the
+ * dialog «Where to deliver the order?». Site tokens only; the width of the step decides, not the
+ * window's — the step stands in a column of the checkout. A theme restyles any part by the same
+ * class later in the cascade.
+ *
+ * `is-live` — the script runs: the fields of the form without JavaScript («Show delivery
+ * methods», «Save», the field of the town) step aside, every change is written at once.
+ */
+.webx-delivery {
+  --webx-delivery-gap: var(--site-space-3);
+  --webx-delivery-icon-size: 32px;
+
+  container: webx-delivery / inline-size;
+  display: grid;
+  gap: var(--site-space-4);
+  min-width: 0;
+  color: var(--site-color-text);
+}
+
+.webx-delivery.is-loading {
+  cursor: progress;
+}
+
+.webx-delivery__form {
+  display: grid;
+  gap: var(--site-space-4);
+  min-width: 0;
+  margin: 0;
+}
+
+.webx-delivery.is-live .webx-delivery__nojs {
+  display: none;
+}
+
+.webx-delivery__label {
+  display: block;
+  margin-block-end: var(--site-space-1);
+  font-weight: 600;
+}
+
+.webx-delivery__control {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  margin: 0;
+  padding: var(--site-space-2) var(--site-space-3);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-bg);
+  color: var(--site-color-text);
+  font: inherit;
+  font-size: var(--site-font-size-base);
+}
+
+.webx-delivery__control:focus-visible {
+  outline: 2px solid var(--site-color-accent);
+  outline-offset: -1px;
+}
+
+.webx-delivery__control[aria-invalid='true'] {
+  border-color: var(--site-color-danger);
+}
+
+.webx-delivery__error {
+  margin: var(--site-space-1) 0 0;
+  color: var(--site-color-danger);
+  font-size: var(--site-font-size-6);
+}
+
+.webx-delivery__error[hidden] {
+  display: none;
+}
+
+/* The town: «City or town» over «Town D, Region B», «Change» at the end of the row. */
+.webx-delivery__locality {
+  display: grid;
+  gap: var(--site-space-2);
+}
+
+.webx-delivery__card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0 var(--site-space-3);
+  margin: 0;
+  padding: var(--site-space-3) var(--site-space-4);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-surface);
+}
+
+.webx-delivery__card-label {
+  grid-column: 1;
+  color: var(--site-color-text-muted);
+  font-size: var(--site-font-size-6);
+}
+
+.webx-delivery__card-value {
+  grid-column: 1;
+  min-width: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.webx-delivery__card.is-empty .webx-delivery__card-value {
+  color: var(--site-color-text-muted);
+  font-weight: 400;
+}
+
+.webx-delivery__change {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  color: var(--site-color-accent);
+  font-weight: 600;
+}
+
+.webx-delivery__locality-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--site-space-2);
+}
+
+.webx-delivery__show,
+.webx-delivery__save {
+  justify-self: start;
+  min-height: 44px;
+  padding: var(--site-space-2) var(--site-space-4);
+  border: 1px solid var(--site-color-accent);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-accent);
+  color: var(--site-color-accent-contrast);
+  font: inherit;
+  cursor: pointer;
+}
+
+/* The methods: a row a method, the price on the right; the chosen one opens under itself. */
+.webx-delivery__methods {
+  display: grid;
+  gap: var(--site-space-2);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.webx-delivery__methods-title {
+  margin-block-end: var(--site-space-2);
+  padding: 0;
+  font-weight: 600;
+}
+
+.webx-delivery__method {
+  min-width: 0;
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-surface);
+}
+
+.webx-delivery__method.is-chosen {
+  border-color: var(--site-color-accent);
+}
+
+.webx-delivery__method.is-disabled {
+  background: var(--site-color-surface-muted);
+  color: var(--site-color-text-muted);
+}
+
+.webx-delivery__method-label {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--webx-delivery-gap);
+  min-height: 44px;
+  padding: var(--site-space-3) var(--site-space-4);
+  cursor: pointer;
+}
+
+.webx-delivery__method.is-disabled .webx-delivery__method-label {
+  cursor: default;
+}
+
+.webx-delivery__radio {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--site-color-accent);
+}
+
+.webx-delivery__icon {
+  width: var(--webx-delivery-icon-size);
+  height: var(--webx-delivery-icon-size);
+  object-fit: contain;
+}
+
+/* With an icon the row has one column more; the text keeps the room that is left. */
+.webx-delivery__method-label:has(.webx-delivery__icon) {
+  grid-template-columns: auto var(--webx-delivery-icon-size) minmax(0, 1fr) auto;
+}
+
+.webx-delivery__method-text {
+  display: grid;
+  gap: var(--site-space-1);
+  min-width: 0;
+}
+
+.webx-delivery__method-title {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.webx-delivery__method-description,
+.webx-delivery__method-hint {
+  color: var(--site-color-text-muted);
+  font-size: var(--site-font-size-6);
+}
+
+.webx-delivery__price {
+  display: grid;
+  justify-items: end;
+  font-weight: 600;
+  text-align: end;
+  white-space: nowrap;
+}
+
+.webx-delivery__price.webx-delivery__price--free {
+  color: var(--site-color-success);
+}
+
+.webx-delivery__price.webx-delivery__price--carrier_rates {
+  color: var(--site-color-text-muted);
+  font-weight: 400;
+  font-size: var(--site-font-size-6);
+  white-space: normal;
+}
+
+.webx-delivery__price-was {
+  color: var(--site-color-text-muted);
+  font-weight: 400;
+  font-size: var(--site-font-size-6);
+}
+
+.webx-delivery__price-estimate {
+  color: var(--site-color-text-muted);
+  font-weight: 400;
+  font-size: var(--site-font-size-6);
+}
+
+.webx-delivery__method-body {
+  display: grid;
+  gap: var(--site-space-3);
+  padding: 0 var(--site-space-4) var(--site-space-4);
+}
+
+.webx-delivery__empty {
+  margin: 0;
+  color: var(--site-color-text-muted);
+}
+
+/* The point: the list, and the card of the chosen one under it. */
+.webx-delivery__point {
+  display: grid;
+  gap: var(--site-space-2);
+  min-width: 0;
+}
+
+.webx-delivery__point-card {
+  display: grid;
+  gap: var(--site-space-1);
+  padding: var(--site-space-3);
+  border-radius: var(--site-radius-sm);
+  background: var(--site-color-surface-muted);
+}
+
+.webx-delivery__point-title,
+.webx-delivery__point-address,
+.webx-delivery__point-today,
+.webx-delivery__point-restricted,
+.webx-delivery__point-phone {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.webx-delivery__point-title {
+  font-weight: 600;
+}
+
+.webx-delivery__point-today,
+.webx-delivery__point-restricted {
+  color: var(--site-color-text-muted);
+  font-size: var(--site-font-size-6);
+}
+
+/* The address: the street across, the house and the apartment side by side when there is room. */
+.webx-delivery__address {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--site-space-3);
+  min-width: 0;
+}
+
+.webx-delivery__field {
+  min-width: 0;
+}
+
+@container webx-delivery (min-width: 28rem) {
+  .webx-delivery__address {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .webx-delivery__field.webx-delivery__field--street,
+  .webx-delivery__field.webx-delivery__field--note {
+    grid-column: 1 / -1;
+  }
+
+  .webx-delivery__locality-form {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+  }
+
+  .webx-delivery__locality-form .webx-delivery__label {
+    grid-column: 1 / -1;
+  }
+}
+
+/* «Delivery cost» — the same line the checkout's column shows. */
+.webx-delivery__summary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--site-space-2);
+  margin: 0;
+  padding-block-start: var(--site-space-3);
+  border-block-start: 1px solid var(--site-color-border);
+}
+
+.webx-delivery__summary-label {
+  color: var(--site-color-text-muted);
+}
+
+.webx-delivery__summary-value {
+  font-weight: 600;
+  text-align: end;
+}
+
+/* The dialog: the search on top, the popular towns as buttons that wrap. */
+.webx-delivery__dialog {
+  --webx-delivery-dialog-width: 32rem;
+
+  width: min(var(--webx-delivery-dialog-width), 100%);
+}
+
+.webx-delivery__search {
+  min-width: 0;
+}
+
+.webx-delivery__popular {
+  display: grid;
+  gap: var(--site-space-2);
+  margin-block-start: var(--site-space-4);
+}
+
+.webx-delivery__popular-title {
+  margin: 0;
+  color: var(--site-color-text-muted);
+  font-size: var(--site-font-size-6);
+  font-weight: 600;
+}
+
+.webx-delivery__popular-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--site-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The prose of a theme spaces list items one under another; these stand in a row. */
+.webx-delivery__popular-item {
+  margin: 0;
+}
+
+.webx-delivery__town {
+  min-height: 44px;
+  padding: var(--site-space-2) var(--site-space-3);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-full);
+  background: var(--site-color-surface);
+  color: var(--site-color-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.webx-delivery__town:hover,
+.webx-delivery__town[aria-pressed='true'] {
+  border-color: var(--site-color-accent);
+  color: var(--site-color-accent);
+}
+
+.webx-delivery__country {
+  min-width: 0;
+}

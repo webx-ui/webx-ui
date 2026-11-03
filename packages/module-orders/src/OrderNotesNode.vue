@@ -46,7 +46,7 @@ const notes = computed<NoteEntry[]>(() =>
     created_at: note.created_at,
     author: {
       id: note.author?.id ?? 0,
-      name: authorOf(t, note.source, note.author?.name ?? null),
+      name: authorOf(t, note.source, note.author?.name ?? null, note.source_title),
       avatar: note.author?.avatar ?? null,
     },
   })),

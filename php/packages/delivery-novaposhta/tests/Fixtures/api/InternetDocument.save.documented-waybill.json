@@ -1,0 +1,20 @@
+{
+  "_source": "After the carrier's documentation, not recorded: writing methods are never called on a client's key (decision 19). Made-up data.",
+  "success": true,
+  "data": [
+    {
+      "Ref": "00000000-0000-4000-8000-000000000106",
+      "CostOnSite": 75,
+      "EstimatedDeliveryDate": "05.11.2026",
+      "IntDocNumber": "20450000000001",
+      "TypeDocument": "InternetDocument"
+    }
+  ],
+  "errors": [],
+  "warnings": [],
+  "info": [],
+  "messageCodes": [],
+  "errorCodes": [],
+  "warningCodes": [],
+  "infoCodes": []
+}

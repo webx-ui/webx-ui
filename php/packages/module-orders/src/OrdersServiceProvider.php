@@ -26,6 +26,7 @@ use WebxUi\Orders\Notifications\OrderEvents;
 use WebxUi\Orders\Notifications\SendOrderNotifications;
 use WebxUi\Orders\Panel\OrdersModule;
 use WebxUi\Orders\Panel\SettingsScreen;
+use WebxUi\Orders\Panel\SourceNames;
 use WebxUi\Orders\Site\OrderPage;
 use WebxUi\Orders\Site\VisitorOrders;
 
@@ -45,6 +46,7 @@ class OrdersServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(__DIR__.'/../config/webx-orders.php', 'webx-orders');
 
         $this->app->singleton(OrderBlocks::class);
+        $this->app->singleton(SourceNames::class);
         $this->app->singleton(Orders::class);
         Checkout::bind($this->app);
 

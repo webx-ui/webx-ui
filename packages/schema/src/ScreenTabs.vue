@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, inject, ref, watch } from 'vue'
+import { computed, inject, provide, ref, watch } from 'vue'
 import { WxTabs, type TabValue } from '@webx-ui/core'
-import { screenErrorsKey } from './render'
+import { screenErrorsKey, screenTabKey } from './render'
 
 /**
  * The tabs of a described screen: `WxTabs`, and the one thing a form of tabs needs that a strip
@@ -14,6 +14,9 @@ import { screenErrorsKey } from './render'
  *
  * The tab being looked at wins when it has a failing field of its own: the editor is already
  * where the problem is, and moving them would be moving them away from it.
+ *
+ * A page may hold the selection itself (`screenTabKey`): the outermost tabs of the screen take
+ * its ref, so a link or a node elsewhere on the page opens a tab. Tabs inside a tab keep their own.
  */
 defineOptions({ name: 'WxScreenTabs', inheritAttrs: false })
 
@@ -27,7 +30,11 @@ const props = withDefaults(
 
 const errors = inject(screenErrorsKey, null)
 
-const active = ref<TabValue | undefined>(undefined)
+const hosted = inject(screenTabKey, null)
+const active = hosted ?? ref<TabValue | undefined>(undefined)
+
+// The tabs inside a tab are not the page's.
+provide(screenTabKey, null)
 
 /** The tabs holding a failing field, in the order they are read. The renderer has already put
     `slug.en` under `slug`, so a name is looked up as it is. */

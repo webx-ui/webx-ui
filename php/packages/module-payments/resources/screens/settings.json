@@ -1,0 +1,30 @@
+[
+  {
+    "op": "add",
+    "target": "tabs",
+    "node": {
+      "id": "payments",
+      "type": "wx-tab",
+      "label": "trans::webx-payments::notifications.settings.tab",
+      "children": [
+        {
+          "id": "payments-notify-card",
+          "type": "wx-card",
+          "label": "trans::webx-payments::notifications.settings.card",
+          "children": [
+            {
+              "id": "payments-notify-problem",
+              "type": "wx-notifications-channels",
+              "name": "payments.notify.problem",
+              "label": "trans::webx-payments::notifications.problem",
+              "help": "trans::webx-payments::notifications.settings.help",
+              "props": {
+                "event": "payments.problem"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

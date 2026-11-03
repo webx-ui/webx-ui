@@ -15,6 +15,7 @@
             <directory>packages/module-admin/tests</directory>
             <directory>packages/cache/tests</directory>
             <directory>packages/compositions/tests</directory>
+            <directory>packages/geography/tests</directory>
             <directory>packages/localization/tests</directory>
             <directory>packages/mcp/tests</directory>
             <directory>packages/module-audit/tests</directory>
@@ -30,6 +31,9 @@
             <directory>packages/module-catalog-properties/tests</directory>
             <directory>packages/module-catalog-stock/tests</directory>
             <directory>packages/module-configurator/tests</directory>
+            <directory>packages/module-delivery/tests</directory>
+            <directory>packages/delivery-novaposhta/tests</directory>
+            <directory>packages/module-payments/tests</directory>
             <directory>packages/module-events/tests</directory>
             <directory>packages/module-faq/tests</directory>
             <directory>packages/module-inbox/tests</directory>
@@ -64,6 +68,7 @@
             <directory>packages/module-admin/src</directory>
             <directory>packages/cache/src</directory>
             <directory>packages/compositions/src</directory>
+            <directory>packages/geography/src</directory>
             <directory>packages/localization/src</directory>
             <directory>packages/mcp/src</directory>
             <directory>packages/module-audit/src</directory>
@@ -79,6 +84,9 @@
             <directory>packages/module-catalog-properties/src</directory>
             <directory>packages/module-catalog-stock/src</directory>
             <directory>packages/module-configurator/src</directory>
+            <directory>packages/module-delivery/src</directory>
+            <directory>packages/delivery-novaposhta/src</directory>
+            <directory>packages/module-payments/src</directory>
             <directory>packages/module-events/src</directory>
             <directory>packages/module-faq/src</directory>
             <directory>packages/module-inbox/src</directory>

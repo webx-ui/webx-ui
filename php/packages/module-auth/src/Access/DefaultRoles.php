@@ -74,8 +74,9 @@ final class DefaultRoles
             'catalog' => ['catalog.view', 'catalog.manage', 'search-index.view', 'media.view', 'media.upload'],
             // Works the orders; the money given back and the statuses stay with the owner (decision
             // 33 of the orders spec). `users.view` only where the visitors are installed — and only
-            // beside the orders: a site with the visitors alone has no order manager to make.
-            ...($this->policy->isDeclared('orders.view') ? ['orders' => ['orders.view', 'orders.manage', 'users.view']] : []),
+            // beside the orders: a site with the visitors alone has no order manager to make. The
+            // payments of the order are read too (§13.1 of the payments spec), never their raw bodies.
+            ...($this->policy->isDeclared('orders.view') ? ['orders' => ['orders.view', 'orders.manage', 'users.view', 'payments.view']] : []),
             'developer' => [
                 'blocks.view', 'blocks.manage', 'blocks.regions', 'snippets.manage', 'menu.view',
                 'menu.manage', 'settings.view', 'settings.manage', 'cache.view', 'cache.reset',

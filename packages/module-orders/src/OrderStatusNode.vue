@@ -75,14 +75,24 @@ const marks = computed(() =>
       </div>
 
       <div v-if="marks.length > 0 || order.awaiting_payment" class="wx-orders-status__marks">
-        <wx-badge v-if="order.awaiting_payment" type="warning" variant="outline" size="sm">
-          {{ t('module.milestones.awaiting_payment') }}
-        </wx-badge>
-        <wx-tooltip v-if="order.payment_failed_at" :content="dates.short(order.payment_failed_at)">
+        <!-- One state of the payment, never two: a try that did not go through still awaits it. -->
+        <wx-tooltip
+          v-if="order.awaiting_payment && order.payment_failed_at"
+          :content="dates.short(order.payment_failed_at)"
+        >
           <wx-badge type="danger" variant="outline" size="sm">
             {{ t('panel.payment-failed') }}
           </wx-badge>
         </wx-tooltip>
+        <wx-badge
+          v-else-if="order.awaiting_payment"
+          type="warning"
+          variant="outline"
+          size="sm"
+          data-test="status-awaiting"
+        >
+          {{ t('module.milestones.awaiting_payment') }}
+        </wx-badge>
         <wx-tooltip v-for="mark in marks" :key="mark.key" :content="dates.short(mark.at)">
           <wx-badge :type="mark.tone" size="sm">
             {{ t(`module.milestones.${mark.key}`) }}

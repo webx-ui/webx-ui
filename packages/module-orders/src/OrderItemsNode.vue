@@ -10,7 +10,8 @@ import type { OrderLine } from './types'
  * `wx-orders-items` — «Items» of the card (spec §11.3): the lines as the cart had them, a set
  * with its parts under it, each line's discounts beside it; then what applies to the order as a
  * whole — its discounts and charges, the tenders, the privileges as marks. A block whose owner
- * has no tab of its own on this card is here too, its line and the block itself folded.
+ * has no tab of its own on this card is here too, its line and the block itself folded; one the
+ * reader opens on its own tab (delivery) is left to it, and its price is a row of «Summary».
  *
  * Over the lines, «Change the lines» (§42.1) for whoever works the order — greyed with why once
  * the order is past editing (§37.2) — and a line added by an edit is marked so.
@@ -39,6 +40,9 @@ const lines = computed(() => {
 })
 
 const json = (value: unknown) => JSON.stringify(value, null, 2)
+
+/** The blocks without a tab of their own for this reader: theirs is the only place they are seen. */
+const blocks = computed(() => (order.value?.blocks ?? []).filter((block) => !block.own))
 
 const editable = computed(() => Boolean(order.value?.actions.edit_items))
 const editReason = computed(() => order.value?.actions.edit_items_reason ?? null)
@@ -147,9 +151,14 @@ const editReason = computed(() => order.value?.actions.edit_items_reason ?? null
       </div>
     </wx-card>
 
-    <wx-card v-for="block in order.blocks" :key="block.key" :title="t(`panel.block-${block.key}`)">
+    <wx-card
+      v-for="block in blocks"
+      :key="block.key"
+      :title="t(`panel.block-${block.key}`)"
+      data-test="items-block"
+    >
       <wx-text>{{ block.summary ?? '—' }}</wx-text>
-      <details class="wx-orders-items__raw">
+      <details v-if="block.value" class="wx-orders-items__raw">
         <summary>{{ t('panel.block-raw') }}</summary>
         <pre>{{ json(block.value) }}</pre>
       </details>

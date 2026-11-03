@@ -49,6 +49,51 @@ final class MilestonesTest extends PlaceTestCase
     }
 
     #[Test]
+    public function a_payment_takes_the_order_out_of_the_status_awaiting_it_unless_a_manager_moved_it_on(): void
+    {
+        /** @var \ArrayObject<int, OrderStatusChanged> $moves */
+        $moves = new \ArrayObject;
+        Event::listen(OrderStatusChanged::class, static function (OrderStatusChanged $event) use ($moves): void {
+            $moves->append($event);
+        });
+        $order = $this->awaiting();
+        $this->assertSame('Awaiting payment', $order->status->getTranslation('name', 'en'));
+
+        $this->orders()->mark($order, Milestone::Paid, 'payment:gateway-a');
+
+        // Into the status of a new order, with a line of history under the payment's source.
+        $this->assertSame('New', $order->fresh()?->status->getTranslation('name', 'en'));
+        $line = StatusChange::query()->where('order_id', $order->id)->where('kind', StatusChange::STATUS)->orderByDesc('id')->firstOrFail();
+        $this->assertSame(['payment:gateway-a', $order->refresh()->status_id], [$line->source, $line->to_status_id]);
+        $this->assertCount(1, $moves);
+        $moved = $moves->getArrayCopy()[0];
+        $this->assertInstanceOf(OrderStatusChanged::class, $moved);
+        $this->assertSame('New', $moved->to->name);
+
+        // The setting names another status.
+        $taken = $order->status->newQuery()->get()->first(fn ($status) => $status->getTranslation('name', 'en') === 'Taken into work');
+        $this->assertNotNull($taken);
+        config(['webx-orders.status_after_payment' => $taken->id]);
+        $second = $this->awaiting();
+        $this->orders()->mark($second, Milestone::Paid, 'admin#1');
+        $this->assertSame($taken->id, $second->fresh()?->status_id);
+
+        // A manager moved it on by hand: a payment does not touch the status.
+        $third = $this->awaiting();
+        $new = $order->status->newQuery()->get()->first(fn ($status) => $status->getTranslation('name', 'en') === 'New');
+        $this->assertNotNull($new);
+        $this->orders()->moveTo($third, $new, 'admin#1');
+        $moves->exchangeArray([]);
+        $this->orders()->mark($third, Milestone::Paid, 'payment:gateway-a');
+        $this->assertSame($new->id, $third->fresh()?->status_id);
+        $this->assertCount(0, $moves);
+
+        // A repeat mark is silence: nothing moves.
+        $this->orders()->mark($order, Milestone::Paid, 'payment:gateway-a');
+        $this->assertCount(0, $moves);
+    }
+
+    #[Test]
     public function paid_is_set_once_takes_the_flags_down_and_says_so_after_the_commit(): void
     {
         $events = [];
@@ -220,6 +265,30 @@ final class MilestonesTest extends PlaceTestCase
         $this->orders()->mark($order, Milestone::Paid, 'payment:gateway-a');
         $this->orders()->paymentFailed($order, 'payment:gateway-a', 'Late');
         $this->assertNull(Order::query()->findOrFail($order->id)->payment_failed_at);
+    }
+
+    #[Test]
+    public function money_held_takes_the_flag_of_a_failed_payment_down_and_the_order_still_awaits_payment(): void
+    {
+        $order = $this->awaiting();
+        $this->orders()->paymentFailed($order, 'payment:gateway-a', 'Declined');
+        $this->assertNotNull($order->payment_failed_at);
+        Event::fake(self::EVENTS);
+        $lines = StatusChange::query()->where('order_id', $order->id)->count();
+
+        $this->orders()->paymentHeld($order);
+        // Nothing to take down: silence.
+        $this->orders()->paymentHeld($order);
+
+        $this->assertNull($order->payment_failed_at);
+        $fresh = Order::query()->findOrFail($order->id);
+        $this->assertNull($fresh->payment_failed_at);
+        $this->assertTrue($fresh->awaiting_payment);
+        $this->assertNull($fresh->paid_at);
+        $this->assertSame($lines, StatusChange::query()->where('order_id', $order->id)->count());
+        foreach (self::EVENTS as $event) {
+            Event::assertNotDispatched($event);
+        }
     }
 
     #[Test]

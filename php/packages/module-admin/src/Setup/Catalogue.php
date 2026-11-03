@@ -278,6 +278,23 @@ final class Catalogue
             'requires' => ['cart'],
             'demo' => [],
         ],
+        'delivery' => [
+            'package' => 'webx-ui/module-delivery',
+            'npm' => '@webx-ui/module-delivery',
+            'label' => 'Delivery — the shop\'s own pick-up points and courier, and carriers\' branches and lockers, priced in the town the buyer picks (needs the cart)',
+            'default' => false,
+            'requires' => ['cart'],
+            'demo' => ['en', 'pl', 'ru', 'uk'],
+        ],
+        // The demo is language-free: the two built-in methods switched on, fake bank details.
+        'payments' => [
+            'package' => 'webx-ui/module-payments',
+            'npm' => '@webx-ui/module-payments',
+            'label' => 'Payments — on receipt, by bank transfer and through a gateway\'s page, with a journal of every exchange with the gateway (needs the orders)',
+            'default' => false,
+            'requires' => ['orders'],
+            'demo' => [],
+        ],
         'users' => [
             'package' => 'webx-ui/module-users',
             'npm' => '@webx-ui/module-users',

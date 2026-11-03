@@ -22,6 +22,7 @@ use WebxUi\Orders\Balance;
 use WebxUi\Orders\CartNotOrderable;
 use WebxUi\Orders\Checkout\CheckoutPreview;
 use WebxUi\Orders\Contact;
+use WebxUi\Orders\Contracts\MarksPaidByHand;
 use WebxUi\Orders\Events\OrderPaid;
 use WebxUi\Orders\Events\OrderReceived;
 use WebxUi\Orders\Http\Controllers\Panel\MassController;
@@ -567,7 +568,7 @@ final readonly class OrdersTools
             'number' => $order->number,
             // A refund's money as every amount here is: an integer and the string beside it.
             'timeline' => array_map(static function (array $line): array {
-                if (in_array($line['kind'], ['refund', 'refund_reversed', 'payment'], true) && array_key_exists('amount_minor', $line)) {
+                if (in_array($line['kind'], ['refund', 'refund_reversed', 'payment', 'payment_part'], true) && array_key_exists('amount_minor', $line)) {
                     $line['amount_formatted'] = $line['amount'];
                     $line['amount'] = $line['amount_minor'];
                     unset($line['amount_minor']);
@@ -750,7 +751,10 @@ final readonly class OrdersTools
         }
 
         try {
-            $mark = $this->orders->mark($order, $milestone, self::SOURCE, reference: $reference, note: $note);
+            // The module of the payments writes its attempt and journal beside the milestone.
+            $mark = $milestone === Milestone::Paid && app()->bound(MarksPaidByHand::class)
+                ? app(MarksPaidByHand::class)->markPaid($order, self::SOURCE, $reference, null, $note)
+                : $this->orders->mark($order, $milestone, self::SOURCE, reference: $reference, note: $note);
         } catch (Refusal $refused) {
             throw new ToolFailure($this->refusal($order, $refused->reason));
         }

@@ -52,7 +52,7 @@ function deliveryTone(row: OrderDelivery): 'danger' | 'success' | 'warning' | 'd
 }
 
 function who(line: TimelineLine): string {
-  return authorOf(t, line.source, line.admin)
+  return authorOf(t, line.source, line.admin, line.source_title)
 }
 
 function title(line: TimelineLine): string {
@@ -69,12 +69,21 @@ function title(line: TimelineLine): string {
       return t('panel.timeline-refund_reversed', { amount: line.amount ?? '' })
     case 'payment':
       return t('panel.timeline-payment', { amount: line.amount ?? '' })
+    case 'payment_part':
+      return t('panel.timeline-payment_part', {
+        amount: line.amount ?? '',
+        total: line.total ?? '',
+      })
     case 'notification_sent':
       return t('panel.timeline-notification_sent', { event: line.event_label ?? line.event ?? '' })
     case 'milestone_removed':
       return t('panel.timeline-milestone_removed', { milestone: line.milestone?.label ?? '' })
     case 'block':
       return t('panel.timeline-block', { block: line.note ?? '' })
+    case 'block_changed':
+      return t('panel.timeline-block_changed', {
+        block: line.block ? t(`panel.block-${line.block}`) : '',
+      })
     case 'items':
       return t('panel.timeline-items', { number: line.revision?.number ?? '' })
     default:
@@ -85,8 +94,8 @@ function title(line: TimelineLine): string {
 function tone(line: TimelineLine): TimelineItemType {
   if (line.kind === 'status') return toneOf(line.to_color)
   if (line.kind === 'payment_failed') return 'danger'
-  if (line.kind === 'payment') return 'success'
-  if (line.kind === 'items') return 'primary'
+  if (line.kind === 'payment' || line.kind === 'payment_part') return 'success'
+  if (line.kind === 'items' || line.kind === 'block_changed') return 'primary'
   if (line.kind === 'refund') return line.reversed ? 'default' : 'warning'
   if (line.kind === 'refund_reversed' || line.kind === 'milestone_removed') return 'warning'
   if (line.kind === 'milestone') {
@@ -110,7 +119,8 @@ function reason(line: TimelineLine): string | null {
   return (cancels ||
     line.kind === 'refund' ||
     line.kind === 'refund_reversed' ||
-    line.kind === 'items') &&
+    line.kind === 'items' ||
+    line.kind === 'block_changed') &&
     line.note
     ? line.note
     : null
@@ -163,6 +173,13 @@ function details(line: TimelineLine): string[] {
   }
   if (line.reference) parts.push(t('panel.timeline-reference', { reference: line.reference }))
   if (line.revision) parts.push(...edited(line.revision))
+  if (line.kind === 'block_changed') {
+    if (line.from) parts.push(t('panel.timeline-block-from', { value: line.from }))
+    if (line.to) parts.push(t('panel.timeline-block-to', { value: line.to }))
+    if (line.total_from && line.total_to) {
+      parts.push(t('panel.timeline-items-total', { from: line.total_from, to: line.total_to }))
+    }
+  }
   // A block's line names the block in its title already; the note is that name.
   if (line.note && line.kind !== 'block' && reason(line) === null) parts.push(line.note)
 
@@ -197,7 +214,9 @@ function details(line: TimelineLine): string[] {
             v-if="reason(line)"
             class="wx-orders-timeline__reason"
             :class="
-              (line.kind === 'refund' && line.reversed) || line.kind === 'items'
+              (line.kind === 'refund' && line.reversed) ||
+              line.kind === 'items' ||
+              line.kind === 'block_changed'
                 ? 'wx-orders-timeline__reason--muted'
                 : line.kind === 'refund' || line.kind === 'refund_reversed'
                   ? 'wx-orders-timeline__reason--warning'

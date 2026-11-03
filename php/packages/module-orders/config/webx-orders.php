@@ -40,6 +40,10 @@ return [
 
     'initial_status_awaiting_payment' => null,
 
+    // Where a payment takes an order that still stands in the status of one awaiting payment;
+    // null — the status of a new order. An order a manager moved on by hand stays where it is.
+    'status_after_payment' => null,
+
     /*
     |--------------------------------------------------------------------------
     | Notifications

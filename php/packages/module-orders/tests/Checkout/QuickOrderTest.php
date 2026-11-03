@@ -160,6 +160,8 @@ final class QuickOrderTest extends CheckoutTestCase
         $this->quick(['phone' => '+800 1234 0008', CheckoutAntispam::HONEYPOT => 'bot'])->assertOk()->assertJsonPath('heading', fn (?string $heading): bool => str_contains((string) $heading, 'call you back'));
         // No mark, a mark too fresh, somebody else's page.
         $this->quick(['phone' => '+800 1234 0008', CheckoutAntispam::TIMESTAMP => ''])->assertUnprocessable()->assertJsonValidationErrors('quick');
+        // A visitor the site has never drawn a form for: the mark is the moment of this one.
+        $this->app['session.store']->forget(CheckoutAntispam::DRAWN);
         $this->quick(['phone' => '+800 1234 0008'], wait: 0)->assertUnprocessable();
         $this->quick(['phone' => '+800 1234 0008'], headers: ['Origin' => 'https://elsewhere.example.test'])->assertUnprocessable();
 

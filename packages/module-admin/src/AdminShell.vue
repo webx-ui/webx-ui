@@ -586,6 +586,17 @@ body:has(> #webx-app) {
   --wx-gap: var(--wx-space-8);
 }
 
+/*
+ * A toast over an open dialog goes to the top. At the bottom centre it lay on the dialog's
+ * footer — over the very buttons («Check the connection», «Save») whose answer it brings.
+ * Unscoped: the toaster and the dialog are both teleported to the end of the document.
+ */
+body:has(.wx-dialog__viewport[data-state='open']) .wx-toaster--bottom-center {
+  top: 0;
+  bottom: auto;
+  flex-direction: column;
+}
+
 :root[data-wx-shell='rail'] {
   --wx-gap: var(--wx-space-12);
 }

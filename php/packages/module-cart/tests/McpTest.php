@@ -6,6 +6,7 @@ namespace WebxUi\Cart\Tests;
 
 use Illuminate\Support\Carbon;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Cart\BenefitKeys;
 use WebxUi\Cart\CartService;
 use WebxUi\Cart\Models\Cart;
 use WebxUi\Cart\Models\CartItem;
@@ -234,6 +235,7 @@ final class McpTest extends McpTestCase
     public function the_catalogue_is_read_from_the_registries_and_the_constants(): void
     {
         $this->app->make(AdjustmentSources::class)->register(new FakeSources(static fn (): array => []), 20);
+        $this->app->make(BenefitKeys::class)->register('gift.wrap', ['en' => 'Gift wrapping', 'pl' => 'Pakowanie na prezent']);
 
         $catalog = ($this->resource('cart://catalog')->handler)();
 
@@ -243,6 +245,7 @@ final class McpTest extends McpTestCase
         ], $catalog['types']);
         $this->assertSame([['source' => FakeSources::class, 'priority' => 20]], $catalog['chain']['adjustments']);
         $this->assertSame([], $catalog['chain']['tenders']);
+        $this->assertSame([['key' => 'gift.wrap', 'label' => 'Gift wrapping']], $catalog['benefit_keys']);
         $this->assertSame('EUR', $catalog['settings']['currency']);
         $this->assertSame(20, $catalog['settings']['batch_max']);
         $this->assertContains('payable_formatted', $catalog['state_fields']);
