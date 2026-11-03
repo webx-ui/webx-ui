@@ -1,6 +1,6 @@
 {
   "name": "@webx-ui/module-delivery",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Delivery for the WebX UI admin panel: methods in the checkout order, the shop's own points, carriers with their directories and keys, the shared geography by hand, the popular towns and the binding queue.",
   "license": "MIT",
   "type": "module",

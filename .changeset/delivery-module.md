@@ -1,5 +1,0 @@
----
-'@webx-ui/php': minor
----
-
-New module `webx-ui/module-delivery` (delivery spec §5, §6, §10): tables of methods, carriers, carrier bindings, points, the sync journal and the popular towns; the registries `Carriers` (the shop, `store`, built in) and `MethodTypes`, a type made on first use, a repeated or malformed key and a type without its carrier refused; the built-in `store.pickup` (a point of the method's own kind — `store`, `pickup` or one the shop names with `PointKinds::define()`) and `store.courier` (only in the method's localities, at its one price); `Methods::forLocality()` — the methods a locality offers in the panel's order with their `Quote`, points counted and carrier bindings read once for all of them, a carrier's courier without streets shown disabled with a hint, and `evaluate()` with the reason each other method is left out; `Delivery::needed()` — no shippable line, no delivery step; the default check of a point or an address in `AbstractMethodType`; `PopularLocalities` — the site's ordered list of popular towns for the checkout dialog (decision 40); the dictionary `webx-delivery` in ten languages.

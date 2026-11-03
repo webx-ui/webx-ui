@@ -31,16 +31,16 @@
         "illuminate/http": "^13.0",
         "illuminate/support": "^13.0",
         "psr/http-client": "^1.0",
-        "webx-ui/module-orders": "^0.91.0"
+        "webx-ui/module-orders": "^0.92.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
         "phpunit/phpunit": "^12.0 || ^13.0",
-        "webx-ui/mcp": "^0.91.0",
-        "webx-ui/module-admin": "^0.91.0",
-        "webx-ui/module-auth": "^0.91.0",
-        "webx-ui/module-notifications": "^0.91.0",
-        "webx-ui/module-settings": "^0.91.0"
+        "webx-ui/mcp": "^0.92.0",
+        "webx-ui/module-admin": "^0.92.0",
+        "webx-ui/module-auth": "^0.92.0",
+        "webx-ui/module-notifications": "^0.92.0",
+        "webx-ui/module-settings": "^0.92.0"
     },
     "suggest": {
         "webx-ui/mcp": "The agent's tools `payments_*` and the resource `payments://catalog`: methods, attempts, marking paid, checking with the gateway, the exchange journal read only.",
@@ -66,7 +66,7 @@
         "webx": {
             "module": "payments",
             "npm": {
-                "@webx-ui/module-payments": "^0.0.0"
+                "@webx-ui/module-payments": "^0.1.0"
             },
             "panel": {
                 "import": "import { payments } from '@webx-ui/module-payments'",
