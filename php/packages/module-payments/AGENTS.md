@@ -43,7 +43,7 @@ Orders, their milestones and balance are `webx-ui/module-orders`; the cart is `w
 - **Gateway contract** (spec §6.3–§6.4, §14.1): `Contracts\Gateway` (keys, settings, secret
   headers and fields, `testConnection()`), registry `WebxUi\Payments\Gateways`; online types
   implement `Contracts\ChargesOnline` (`start()` → `Handoff::redirect|post`, `fetchStatus()` →
-  `GatewayStatus` with `Reported` (`notStarted`: Pending, the buyer never began — «Payment not completed»), `needs()` → `StartNeeds`, `trustsNotifications()`,
+  `GatewayStatus` with `Reported` (Pending only: `notStarted` — the buyer never began, «Payment not completed»; `declined` — the bank declined, another try is open), `needs()` → `StartNeeds`, `trustsNotifications()`,
   `readNotification()` → `Notification::status|poke|unrelated` or `InvalidNotification` (a bad signature may claim `uuid`/`gatewayRef`: linked, not believed), the
   answers to the gateway) and, as they can, `CancelsPayments`, `CompletesApproval`,
   `CapturesPayments` (`capturesPartially()`). Errors: `GatewayUnavailable`, `GatewayRefused` —
@@ -101,7 +101,7 @@ The theme's contract, in `resources/theme/payments.css`; restyle with the same c
 `webx-payments-instructions__row` (+ `webx-payments-instructions__row--<field>`), `webx-payments-instructions__label`,
 `webx-payments-instructions__value`, `webx-payments-status` (+ `webx-payments-status--<state>`), `webx-payments-status__pay`,
 `webx-payments-pay`, `webx-payments-pay__title`, `webx-payments-pay__amount`, `webx-payments-pay__message` (+ `--error`),
-`webx-payments-pay__form`, `webx-payments-pay__button`, `webx-payments-pay__link`, `webx-payments-handoff`.
+`webx-payments-pay__form`, `webx-payments-pay__button`, `webx-payments-pay__link`, `webx-payments-handoff`, `webx-payments-prompt`, `webx-payments-prompt__form`, `webx-payments-prompt__message`, `webx-payments-others`, `webx-payments-others__toggle`, `webx-payments-others__list`, `webx-payments-others__form`.
 
 ## Change it without forking
 

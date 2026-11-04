@@ -38,6 +38,9 @@ use WebxUi\Payments\SettleResult;
  */
 final readonly class Settlement
 {
+    /** How the order's note of a hold begins: it leaves the notes when the hold is over. */
+    private const string HELD_NOTE = 'Money held: ';
+
     public function __construct(
         private ConnectionInterface $db,
         private Orders $orders,
@@ -94,7 +97,7 @@ final readonly class Settlement
             $row->gateway_ref = mb_substr($status->gatewayRef, 0, 190);
         }
 
-        $this->rememberNotStarted($row, $status);
+        $this->rememberLastWord($row, $status);
 
         return match ($status->status) {
             Reported::Pending => $before === PaymentStatus::Created
@@ -110,16 +113,23 @@ final readonly class Settlement
     }
 
     /** Only the gateway's last word counts (§8.4): any other answer takes the mark off. */
-    private function rememberNotStarted(Payment $row, GatewayStatus $status): void
+    private function rememberLastWord(Payment $row, GatewayStatus $status): void
     {
-        $meta = $row->meta ?? [];
+        $was = $row->meta ?? [];
+        $meta = $was;
+        unset($meta[Payment::NOT_STARTED], $meta[Payment::DECLINED]);
 
-        if ($status->notStarted === isset($meta[Payment::NOT_STARTED])) {
-            return;
+        if ($status->notStarted) {
+            $meta[Payment::NOT_STARTED] = true;
         }
 
-        unset($meta[Payment::NOT_STARTED]);
-        $row->meta = $status->notStarted ? [...$meta, Payment::NOT_STARTED => true] : $meta;
+        if ($status->declined) {
+            $meta[Payment::DECLINED] = $status->reason ?? true;
+        }
+
+        if ($meta != $was) {
+            $row->meta = $meta;
+        }
     }
 
     /** Money held (§9.5): the order keeps awaiting payment, its history says how much and till when. */
@@ -145,7 +155,7 @@ final readonly class Settlement
         $result = $this->to($row, $status, PaymentStatus::Authorized);
 
         $until = $expires !== null ? ' until '.$expires->format('d.m.Y') : '';
-        $this->note($row, 'Money held: '.$this->money->format($amount, $row->currency).$until.' — capture or release it');
+        $this->note($row, self::HELD_NOTE.$this->money->format($amount, $row->currency).$until.' — capture or release it');
         // The money is held: a try that failed before is not the order's state any more.
         $this->orders->paymentHeld(Order::query()->findOrFail($row->order_id));
 
@@ -161,6 +171,10 @@ final readonly class Settlement
         $held = $row->status === PaymentStatus::Authorized;
         $hold = (int) ($row->authorized_amount ?? $row->amount);
         $result = $this->paidNow($row, $status);
+
+        if ($held && $result->after === PaymentStatus::Paid) {
+            $this->closeHeldNote($row);
+        }
 
         if ($held && $result->after === PaymentStatus::Paid && $result->problem === null) {
             /** @var Order $order */
@@ -277,6 +291,10 @@ final readonly class Settlement
         $row->failure_reason = mb_substr($reason, 0, 500);
         $result = $this->to($row, $status, $to);
 
+        if ($held) {
+            $this->closeHeldNote($row);
+        }
+
         /** @var Order $order */
         $order = Order::query()->findOrFail($row->order_id);
         $last = (int) Payment::query()->where('order_id', $row->order_id)->max('id') === $row->id;
@@ -373,6 +391,12 @@ final readonly class Settlement
     }
 
     /** @param  string|null  $actor  'panel', 'mcp' — the line is the manager's; null — the method's */
+    /** The hold is over: «capture or release it» has its answer and leaves the order's notes (§9.5). */
+    private function closeHeldNote(Payment $row): void
+    {
+        $this->orders->closeNote(Order::query()->findOrFail($row->order_id), $this->source($row), self::HELD_NOTE);
+    }
+
     private function note(Payment $row, string $text, ?string $actor = null): void
     {
         /** @var Order $order */

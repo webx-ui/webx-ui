@@ -6,8 +6,8 @@
 
     $order — `WebxUi\Orders\Site\OrderPage::of()`; $email — null when no letter goes to the buyer;
     $notice — a line flashed by whoever sent the buyer here («Payment received» back from a gateway), or null;
-    $pay — «Pay» of the payment slot for an order that awaits payment (§22.3), null — none; the
-    order's body says it awaits payment either way.
+    $pay — «Pay» of the payment slot for an order that awaits payment (§22.3), null — none, or the
+    order's body brings the way to pay itself; the body says it awaits payment either way.
     The stack `checkout.thanks` is the place of a counter's code (`module-snippets`); the order is in
     the `data-*` of its block; `checkout.js` dispatches `webx:checkout:placed` with them (§30).
     $register — the order's e-mail for «Save your orders in an account» of a guest, where visitors

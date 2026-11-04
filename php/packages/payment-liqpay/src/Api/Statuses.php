@@ -84,6 +84,8 @@ final class Statuses
                 array_intersect_key($answer->fields, array_flip(self::META)),
                 static fn (mixed $value): bool => is_scalar($value),
             ),
+            // The page keeps the payment open for another card, the buyer who left it is told now.
+            declined: $status === 'try_again',
         );
     }
 

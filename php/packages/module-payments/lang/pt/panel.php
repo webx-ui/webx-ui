@@ -246,8 +246,8 @@ return [
         'test_failed' => 'Não foi possível contatar o gateway: veja o registro de troca.',
         'gateway_unavailable' => 'O gateway não respondeu. Tente mais tarde.',
         'nothing_to_check' => 'O pedido não tem tentativa para verificar.',
-        'capture_refused' => 'O gateway recusou a captura: o valor continua retido. A resposta está no registro de trocas.',
-        'void_refused' => 'O gateway recusou liberar a retenção. A resposta está no registro de trocas.',
+        'capture_refused' => 'O gateway recusou a captura, o dinheiro continua retido: :reason',
+        'void_refused' => 'O gateway recusou liberar a retenção: :reason',
         'amount' => 'Digite um valor como 120.50.',
     ],
 ];

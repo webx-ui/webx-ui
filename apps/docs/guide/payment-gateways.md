@@ -149,6 +149,10 @@ final class CardType implements ChargesOnline, CancelsPayments
   and a late payment counts, but the buyer sees «Payment not completed» with «Pay again» and
   «Choose another method», not an endless «We are checking». Any status but `Pending` with
   `notStarted` throws.
+- **A payment the bank declined that the gateway keeps open for another card** answers
+  `new GatewayStatus(Reported::Pending, reason: …, declined: true)`. The attempt stays open and a late
+  payment counts; the buyer reads «The bank declined the card» with `reason` and the same two buttons,
+  and the page stops refreshing itself. A status that is not `Pending`, or `notStarted` beside it, throws.
 - **`start()`** is called once per attempt, when the buyer goes to `GET /pay/go/{uuid}` — never when
   the order is placed. `Handoff::redirect()` sends the buyer to the gateway's page; `Handoff::post()`
   posts a signed form to it — and throws on a card field: the shop never takes a card.

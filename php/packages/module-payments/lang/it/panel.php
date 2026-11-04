@@ -246,8 +246,8 @@ return [
         'test_failed' => 'Il gateway non è raggiungibile: vedi il registro degli scambi.',
         'gateway_unavailable' => 'Il gateway non ha risposto. Riprova più tardi.',
         'nothing_to_check' => 'L’ordine non ha tentativi da verificare.',
-        'capture_refused' => 'Il gateway ha rifiutato l’incasso: l’importo resta bloccato. La sua risposta è nel registro degli scambi.',
-        'void_refused' => 'Il gateway ha rifiutato di sbloccare l’importo. La sua risposta è nel registro degli scambi.',
+        'capture_refused' => 'Il gateway ha rifiutato l’addebito, il denaro resta bloccato: :reason',
+        'void_refused' => 'Il gateway ha rifiutato di svincolare il blocco: :reason',
         'amount' => 'Inserisci un importo come 120.50.',
     ],
 ];

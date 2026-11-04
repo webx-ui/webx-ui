@@ -246,8 +246,8 @@ return [
         'test_failed' => 'La passerelle est injoignable : voir le journal des échanges.',
         'gateway_unavailable' => 'La passerelle n’a pas répondu. Réessayez plus tard.',
         'nothing_to_check' => 'La commande n’a aucune tentative à vérifier.',
-        'capture_refused' => 'La passerelle a refusé l’encaissement : le montant reste bloqué. Sa réponse est dans le journal des échanges.',
-        'void_refused' => 'La passerelle a refusé de libérer le blocage. Sa réponse est dans le journal des échanges.',
+        'capture_refused' => 'La passerelle a refusé l’encaissement, l’argent reste bloqué : :reason',
+        'void_refused' => 'La passerelle a refusé de libérer le blocage : :reason',
         'amount' => 'Saisissez un montant comme 120.50.',
     ],
 ];

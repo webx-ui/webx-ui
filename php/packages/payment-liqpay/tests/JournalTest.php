@@ -266,6 +266,29 @@ final class JournalTest extends PaymentsCheckoutCase
         $payment->refresh();
         $this->assertSame(PaymentStatus::Pending, $payment->status);
         $this->assertFalse($payment->notStarted());
+        $this->assertTrue($payment->declined());
+        $this->assertSame('The bank refused: a limit of the card was reached', $payment->declineReason());
+    }
+
+    #[Test]
+    public function a_buyer_refused_by_the_bank_is_told_so_and_the_page_stops_asking(): void
+    {
+        [$order, $payment] = $this->openAttempt();
+        Http::fake(['www.liqpay.ua/*' => Http::response([
+            ...self::fixture('api/page.decline.status-after-return')['response']['json'],
+            'order_id' => $payment->uuid,
+        ])]);
+        $links = $this->app->make(PaymentLinks::class);
+
+        $this->get($links->returnUrl($payment))->assertRedirect();
+
+        $this->get($links->page($order))
+            ->assertOk()
+            ->assertSee('the bank declined the card')
+            ->assertSee('The bank refused: a limit of the card was reached')
+            ->assertSee('Pay again')
+            ->assertDontSee('We are checking')
+            ->assertDontSee('http-equiv="refresh"', false);
     }
 
     #[Test]

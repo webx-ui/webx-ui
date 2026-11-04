@@ -141,16 +141,17 @@ there: only a hash made with it travels.
 | `wait_accept`      | paid; the journal says LiqPay has not checked the shop yet |
 | `hold_wait`        | held                                                       |
 | `failure`, `error` | not paid, with the reason in words                         |
-| `try_again`        | still in progress, see below                               |
+| `try_again`        | the bank declined, another try is open: see below          |
 | `reversed`         | a hold released, or the money returned                     |
 | no such payment    | the buyer has not sent a card: «Payment not completed»     |
 
 - **The buyer cancelled on the page or closed it.** LiqPay has no record of that payment, so the
   buyer sees «Payment not completed» with «Pay again» and «Choose another method». The attempt stays
   open until its term, and a late `success` still counts.
-- **The bank declined and the page offers another try.** The attempt stays in progress until its
-  term: a buyer who returned reads «We are checking the payment» and has no button to pay. A try
-  with another card on the same page pays the same attempt.
+- **The bank declined and the page offers another try.** A buyer who returned reads «The payment did
+  not go through: the bank declined the card» with the bank's reason, «Pay again» and «Choose another
+  method». The attempt stays open until its term: a try with another card on the old tab still pays
+  it. The page does not refresh itself.
 - **Two tabs.** LiqPay cannot close a page from outside. A new attempt warns about the open one, and
   a double payment shows up as the problem `duplicate`.
 

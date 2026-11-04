@@ -34,6 +34,9 @@ class StatusChange extends Model
 
     public const string NOTE = 'note';
 
+    /** A module's note that got its answer ({@see Orders::closeNote()}): the history keeps it, the notes do not. */
+    public const string NOTE_CLOSED = 'note_closed';
+
     public const string PAYMENT_FAILED = 'payment_failed';
 
     public const string PAYMENT_AWAITING_STOPPED = 'payment_awaiting_stopped';

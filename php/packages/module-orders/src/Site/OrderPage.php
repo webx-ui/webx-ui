@@ -22,7 +22,8 @@ use WebxUi\Orders\Models\PublicStatus;
  * the number and the date, the public status with its description and the scale of the public
  * statuses in their order, the marks «Paid», «Received», «Cancelled», «Refunded», the lines, the
  * money, the delivery and the payment as their owners' one line, the contacts. The internal status
- * and the manager's note never.
+ * and the manager's note never. An order the buyer can pay now says so over the status, with the
+ * way to pay — its payment block's owner brings both.
  *
  * After an edit (§40.1): «Items changed» with the date over the lines, the lines as they are — one
  * taken out is not there — and a line of the balance under the money when it says more than «to
@@ -60,6 +61,8 @@ final readonly class OrderPage
         $money = fn (int $minor): string => $this->money->format($minor, $order->currency);
         $statuses = $this->statuses();
         $current = $statuses['groups'][$statuses['internal'][$order->status_id] ?? 0] ?? null;
+        // Money held is paid for the buyer (§8.3 of payments): the shop captures it, nothing to wait for.
+        $awaiting = $order->awaiting_payment && $order->paid_at === null && $order->cancelled_at === null && ! $this->blocks->held($order);
 
         return [
             'number' => (string) $order->number,
@@ -76,8 +79,9 @@ final readonly class OrderPage
                 $order->cancelled_at !== null ? ['key' => 'cancelled', 'label' => __('webx-orders::site.marks.cancelled')] : null,
                 $order->refunded_total > 0 ? ['key' => 'refunded', 'label' => __('webx-orders::site.marks.refunded', ['amount' => $money($order->refunded_total)])] : null,
             ])),
-            // Money held is paid for the buyer (§8.3 of payments): the shop captures it, nothing to wait for.
-            'awaiting_payment' => $order->awaiting_payment && $order->paid_at === null && $order->cancelled_at === null && ! $this->blocks->held($order),
+            'awaiting_payment' => $awaiting,
+            // The owner of the payment says it over the status, with the way to pay (§13.1).
+            'prompt' => $awaiting ? $this->blocks->prompt($order, $locale) : null,
             'changed_at' => $order->items_changed_at,
             'items' => $this->items($order->items, $locale, $money),
             'adjustments' => $order->adjustments->map(static fn (OrderAdjustment $adjustment): array => [

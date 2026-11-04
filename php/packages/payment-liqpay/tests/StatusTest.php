@@ -133,6 +133,7 @@ final class StatusTest extends TestCase
 
             $this->assertSame(Reported::Pending, $status->status, $fixture);
             $this->assertFalse($status->notStarted, $fixture);
+            $this->assertTrue($status->declined, $fixture);
             $this->assertSame('The bank refused: a limit of the card was reached', $status->reason, $fixture);
         }
     }

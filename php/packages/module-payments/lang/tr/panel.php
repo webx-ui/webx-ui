@@ -246,8 +246,8 @@ return [
         'test_failed' => 'Ağ geçidine ulaşılamadı: alışveriş günlüğüne bakın.',
         'gateway_unavailable' => 'Ağ geçidi yanıt vermedi. Daha sonra tekrar deneyin.',
         'nothing_to_check' => 'Siparişin sorulacak denemesi yok.',
-        'capture_refused' => 'Ağ geçidi tahsilatı reddetti: tutar hâlâ bloke. Yanıtı ağ geçidi alışverişi günlüğünde.',
-        'void_refused' => 'Ağ geçidi blokeyi kaldırmayı reddetti. Yanıtı ağ geçidi alışverişi günlüğünde.',
+        'capture_refused' => 'Ağ geçidi tahsilatı reddetti, para hâlâ bloke: :reason',
+        'void_refused' => 'Ağ geçidi blokeyi kaldırmayı reddetti: :reason',
         'amount' => '120.50 gibi bir tutar girin.',
     ],
 ];

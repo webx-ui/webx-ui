@@ -25,9 +25,18 @@ final readonly class GatewayStatus
         public array $meta = [],
         /** The gateway knows no such payment because the buyer never began it (§8.4): Pending only. */
         public bool $notStarted = false,
+        /**
+         * The bank turned the card down, yet the gateway keeps the payment open for another try on
+         * its page (§8.4): Pending only, `$reason` says why. The buyer is told at once.
+         */
+        public bool $declined = false,
     ) {
         if ($notStarted && $status !== Reported::Pending) {
             throw new InvalidArgumentException('A payment that is not started can only be Pending, not '.$status->value.'.');
+        }
+
+        if ($declined && ($status !== Reported::Pending || $notStarted)) {
+            throw new InvalidArgumentException('A declined payment is Pending and was started, not '.$status->value.'.');
         }
     }
 }

@@ -65,9 +65,10 @@ the gateway's signed notification or from its API.
   journal before anything reads it; a bad signature changes nothing. A gateway whose notifications
   are not signed is never believed: its notification is only a reason for the shop to ask the
   gateway's API itself.
-- **Pay again.** A payment that did not go through leaves the order awaiting payment; the buyer's
-  page of the order and the letter carry a link «Pay» to a new attempt, and the buyer may switch to
-  another method there.
+- **Pay again.** A payment that did not go through leaves the order awaiting payment. The buyer's
+  page of the order says «Awaiting payment» with «Pay» and «Choose another method», and the letter
+  carries a link. The list holds every method the order may take by its sum and delivery, on receipt
+  and bank transfer too; the buyer changes the method, never the items.
 - **Problems.** Money for a cancelled order, a second payment for a paid one, a sum that does not
   match — the attempt is marked a problem in **Payments → Attempts → Problems**; a manager settles
   it with the gateway and presses «Resolved».

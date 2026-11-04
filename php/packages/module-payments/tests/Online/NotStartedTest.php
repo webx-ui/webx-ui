@@ -47,7 +47,8 @@ final class NotStartedTest extends OnlineCase
             ->assertSee('Payment not completed')
             ->assertSee('To pay: 49,99')
             ->assertSee('Pay again — ')
-            ->assertSee('Choose another method — ')
+            ->assertSee('Choose another method')
+            ->assertSee('webx-payments-others', false)
             ->assertSee('wait a minute before paying again')
             ->assertDontSee('We are checking')
             ->assertDontSee('http-equiv="refresh"', false);
@@ -60,7 +61,7 @@ final class NotStartedTest extends OnlineCase
 
         $this->getJson(route('webx-payments.status', ['uuid' => $payment->uuid]))
             ->assertOk()
-            ->assertExactJson(['status' => 'pending', 'final' => false, 'not_started' => true]);
+            ->assertExactJson(['status' => 'pending', 'final' => false, 'not_started' => true, 'declined' => false]);
     }
 
     #[Test]
@@ -149,8 +150,9 @@ final class NotStartedTest extends OnlineCase
     {
         [$order] = $this->left();
         $this->get($this->payPage($order))
-            ->assertSee('Choose another method — Gateway A page')
-            ->assertDontSee('Choose another method — Card (gateway A)');
+            ->assertSee('Choose another method')
+            ->assertSee('>Gateway A page</button>', false)
+            ->assertDontSee('>Card (gateway A)</button>', false);
 
         $this->chooseForm($order);
     }
@@ -164,16 +166,16 @@ final class NotStartedTest extends OnlineCase
         $this->get($this->payPage($order->refresh()))
             ->assertSee('The payment did not go through')
             ->assertSee('Pay — Card (gateway A)')
-            ->assertSee('Choose another method — Gateway A page')
-            ->assertDontSee('Choose another method — Card (gateway A)');
+            ->assertSee('Choose another method')->assertSee('>Gateway A page</button>', false)
+            ->assertDontSee('>Card (gateway A)</button>', false);
 
         $this->chooseForm($order);
     }
 
     #[Test]
-    public function an_order_never_tried_is_offered_nothing_else(): void
+    public function an_order_never_tried_may_go_over_to_another_method_too(): void
     {
-        $this->get($this->payPage($this->onlineOrder()))->assertSee('Pay — Card (gateway A)')->assertDontSee('Choose another method');
+        $this->get($this->payPage($this->onlineOrder()))->assertSee('Pay — Card (gateway A)')->assertSee('Choose another method');
     }
 
     #[Test]
@@ -184,7 +186,7 @@ final class NotStartedTest extends OnlineCase
             'blocks' => ['payment' => ['method' => BankTransfer::METHOD, 'type' => BankTransfer::KEY, 'kind' => 'offline', 'title' => ['en' => 'Bank transfer'], 'price' => null]],
         ]);
 
-        $this->get($this->payPage($order))->assertSee('Choose another method — Gateway A page');
+        $this->get($this->payPage($order))->assertSee('Choose another method')->assertSee('>Gateway A page</button>', false);
         $this->chooseForm($order);
     }
 

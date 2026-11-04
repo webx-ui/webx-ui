@@ -137,7 +137,7 @@ final class OnlineCheckoutTest extends OnlineCase
 
         // Let go by the shop, the money is no more in its hands: the order waits for payment again.
         $this->app->make(Payments::class)->void($payment->refresh(), 'code');
-        $this->visit($cart, '/checkout/thanks/'.$order->number)->assertOk()->assertSee('The order is waiting for payment.');
+        $this->visit($cart, '/checkout/thanks/'.$order->number)->assertOk()->assertSee('Awaiting payment');
     }
 
     #[Test]

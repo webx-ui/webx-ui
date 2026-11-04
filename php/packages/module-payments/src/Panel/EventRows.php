@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Payments\Panel;
 
 use Illuminate\Database\Eloquent\Builder;
+use WebxUi\Payments\Exchange\ExchangeKind;
 use WebxUi\Payments\Models\PaymentGatewayEvent;
 
 /**
@@ -25,6 +26,10 @@ final class EventRows
         'status_before', 'status_after', 'outcome', 'message', 'created_at',
     ];
 
+    public const string CAPTURE_REFUSED = 'capture_refused';
+
+    public const string RELEASE_REFUSED = 'release_refused';
+
     /** Bodies larger than this are offered for download, not drawn (§20.7). */
     public const int SHOWN = 262144;
 
@@ -37,6 +42,20 @@ final class EventRows
         return PaymentGatewayEvent::query()->select(self::LINE);
     }
 
+    /**
+     * A capture or a release the gateway refused did not happen, and its line does not say it did.
+     * The event keeps what it stored: only the screen changes.
+     */
+    private static function kind(PaymentGatewayEvent $event): string
+    {
+        return match (true) {
+            $event->outcome !== 'rejected' => (string) $event->kind,
+            $event->kind === ExchangeKind::Captured->value => self::CAPTURE_REFUSED,
+            $event->kind === ExchangeKind::Released->value => self::RELEASE_REFUSED,
+            default => (string) $event->kind,
+        };
+    }
+
     /** @return array<string, mixed> */
     public static function line(PaymentGatewayEvent $event): array
     {
@@ -44,7 +63,7 @@ final class EventRows
             'id' => (int) $event->id,
             'trace' => $event->trace,
             'direction' => $event->direction,
-            'kind' => $event->kind,
+            'kind' => self::kind($event),
             'gateway' => $event->gateway,
             'method_key' => $event->method_key,
             'payment_id' => $event->payment_id,

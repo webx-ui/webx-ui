@@ -28,6 +28,8 @@ return [
         'manual' => 'Marcado a mano',
         'captured' => 'Cobrado',
         'released' => 'Retención liberada',
+        'capture_refused' => 'Cobro rechazado',
+        'release_refused' => 'Liberación rechazada',
     ],
     'signature' => [
         'valid' => 'Firma válida',

@@ -10,6 +10,7 @@ use WebxUi\Orders\Models\StatusChange;
 use WebxUi\Orders\Panel\OrderCard;
 use WebxUi\Payments\Models\Payment;
 use WebxUi\Payments\Models\PaymentGatewayEvent;
+use WebxUi\Payments\Panel\EventRows;
 use WebxUi\Payments\PaymentStatus;
 use WebxUi\Payments\SettleResult;
 use WebxUi\Payments\Testing\FakeGatewayServer;
@@ -132,9 +133,30 @@ final class HoldPanelTest extends PanelCase
 
         $this->postJson($this->api('orders/'.$order->id.'/attempts/'.$payment->id.'/capture'), [])
             ->assertUnprocessable()
-            ->assertJsonPath('errors.payment.0', 'The gateway refused the capture: the money is still held. The exchange journal has its answer.');
+            ->assertJsonPath('errors.payment.0', 'The gateway refused the capture, the money is still held: The gateway refused the capture');
 
         $this->assertSame([PaymentStatus::Authorized, SettleResult::CAPTURE_FAILED], [$payment->refresh()->status, $payment->problem]);
+
+        // The line of the journal does not read as money taken, the event keeps what it stored.
+        $event = PaymentGatewayEvent::query()->where('kind', 'captured')->sole();
+        $this->assertSame('rejected', $event->outcome);
+        $this->assertSame('capture_refused', EventRows::line($event)['kind']);
+    }
+
+    #[Test]
+    public function the_note_of_the_hold_leaves_the_notes_when_the_hold_is_over(): void
+    {
+        foreach (['capture', 'void'] as $action) {
+            [$order, $payment] = $this->held();
+            $this->signIn(['payments.view', 'orders.manage']);
+            $notes = fn (): array => StatusChange::query()->where('order_id', $order->id)->where('kind', StatusChange::NOTE)->pluck('note')->all();
+            $this->assertStringStartsWith('Money held', $notes()[0], $action);
+
+            $this->postJson($this->api('orders/'.$order->id.'/attempts/'.$payment->id.'/'.$action), [])->assertOk();
+
+            $this->assertSame([], array_values(array_filter($notes(), static fn (string $note): bool => str_starts_with($note, 'Money held'))), $action);
+            $this->assertSame(1, StatusChange::query()->where('order_id', $order->id)->where('kind', StatusChange::NOTE_CLOSED)->count(), $action);
+        }
     }
 
     #[Test]

@@ -246,8 +246,8 @@ return [
         'test_failed' => 'Das Gateway war nicht erreichbar: siehe Austauschjournal.',
         'gateway_unavailable' => 'Das Gateway hat nicht geantwortet. Später erneut versuchen.',
         'nothing_to_check' => 'Die Bestellung hat keinen Versuch zum Prüfen.',
-        'capture_refused' => 'Das Gateway hat das Einziehen abgelehnt: Der Betrag bleibt reserviert. Die Antwort steht im Austauschprotokoll.',
-        'void_refused' => 'Das Gateway hat das Aufheben der Reservierung abgelehnt. Die Antwort steht im Austauschprotokoll.',
+        'capture_refused' => 'Das Gateway hat den Einzug abgelehnt, das Geld bleibt reserviert: :reason',
+        'void_refused' => 'Das Gateway hat die Freigabe der Reservierung abgelehnt: :reason',
         'amount' => 'Geben Sie einen Betrag wie 120.50 ein.',
     ],
 ];

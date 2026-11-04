@@ -28,6 +28,8 @@ return [
         'manual' => 'Позначено вручну',
         'captured' => 'Списано',
         'released' => 'Холд відпущено',
+        'capture_refused' => 'Списання відхилено',
+        'release_refused' => 'Скасування холду відхилено',
     ],
     'signature' => [
         'valid' => 'Підпис правильний',

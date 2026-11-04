@@ -34,6 +34,10 @@ final readonly class BlockDefinition
      *                                                                   order is not paid yet — a hold the shop captures later
      *                                                                   (§8.3 of payments): for the buyer it is paid, so their
      *                                                                   pages do not say «waiting for payment»
+     * @param  (Closure(array<string, mixed>, Order, string): ?array{title: string, html: string})|null  $prompt  an order that
+     *                                                                                                            awaits payment and the buyer can pay now: its page
+     *                                                                                                            says `title` over the public status and shows `html`,
+     *                                                                                                            the way to pay; null — the order just waits
      */
     public function __construct(
         public string $key,
@@ -45,5 +49,6 @@ final readonly class BlockDefinition
         public ?string $view = null,
         public ?Closure $details = null,
         public ?Closure $held = null,
+        public ?Closure $prompt = null,
     ) {}
 }

@@ -9,7 +9,6 @@ use Carbon\CarbonInterface;
 use Illuminate\Contracts\Auth\Factory as Auth;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Database\ConnectionInterface;
-use WebxUi\Cart\Totals\Purpose;
 use WebxUi\Orders\Blocks\BlockChange;
 use WebxUi\Orders\Blocks\BlockChangeRefused;
 use WebxUi\Orders\Blocks\BlockChangeResult;
@@ -31,6 +30,7 @@ use WebxUi\Payments\Online\Checks;
 use WebxUi\Payments\Online\Closings;
 use WebxUi\Payments\Online\GatewayCalls;
 use WebxUi\Payments\Online\Holds;
+use WebxUi\Payments\Online\OrderContext;
 use WebxUi\Payments\Online\Settlement;
 use WebxUi\Payments\Types\BankTransfer;
 use WebxUi\Payments\Types\OnReceipt;
@@ -169,7 +169,7 @@ final readonly class Payments
             throw new BeginRefused(BeginRefused::PAID);
         }
 
-        $context = new PaymentContext($this->orders->balance($order)->due, (string) $order->currency, (string) $order->locale, null, Purpose::Order);
+        $context = OrderContext::of($order, $this->orders->balance($order)->due);
 
         try {
             $this->orders->changeBlock($order, new BlockChange('payment', $type->snapshot($method, $context)->toArray(), source: $source));

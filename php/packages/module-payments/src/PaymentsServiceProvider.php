@@ -170,6 +170,15 @@ class PaymentsServiceProvider extends ServiceProvider
                     // Money held is paid for the buyer (§8.3): their pages do not say «waiting for payment».
                     held: static fn (array $block, Order $order): bool => $order->awaiting_payment
                         && Payment::query()->where('order_id', $order->id)->where('status', PaymentStatus::Authorized->value)->exists(),
+                    // What the buyer may do while the order waits for an online payment (§8.4).
+                    prompt: static function (array $block, Order $order, string $locale): ?array {
+                        $prompt = app(PayPage::class)->prompt($order);
+
+                        return $prompt === null ? null : [
+                            'title' => (string) trans('webx-payments::buyer.status.awaiting', [], $locale),
+                            'html' => view('webx-payments::pay.prompt', ['prompt' => $prompt])->render(),
+                        ];
+                    },
                     details: static function (array $block, Order $order, string $locale): ?string {
                         if (! $order->awaiting_payment || $order->paid_at !== null || $order->cancelled_at !== null) {
                             return null;

@@ -109,6 +109,37 @@ final class OrderBlocks
     }
 
     /**
+     * The way to pay an order that awaits payment (§13.1): the first owner that has one; an owner
+     * that throws says nothing.
+     *
+     * @return array{title: string, html: string}|null
+     */
+    public function prompt(Order $order, string $locale): ?array
+    {
+        foreach ($this->blocks as $key => $block) {
+            $value = $order->getAttribute($key);
+
+            if ($block->prompt === null || ! is_array($value)) {
+                continue;
+            }
+
+            try {
+                $prompt = ($block->prompt)($value, $order, $locale);
+            } catch (Throwable $e) {
+                Log::warning("webx-orders: the prompt of the block «{$key}» failed", ['exception' => $e]);
+
+                continue;
+            }
+
+            if ($prompt !== null) {
+                return $prompt;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Whether a block says the buyer's money is in the shop's hands though the order is not paid
      * yet — a hold (§8.3 of payments): the buyer's pages then do not say «waiting for payment». An
      * owner that throws says no.

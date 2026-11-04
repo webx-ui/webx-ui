@@ -26,7 +26,7 @@ hold`, and `validateSettings()` refuses the pair on the server. It also refuses 
   `order_id` is our uuid of the attempt. `expired_date` goes always, 60 minutes when the method is silent.
 - **Statuses** `Api\Statuses`: the table of §9.2. In a notification `reversed` and `refund_amount` are a
   poke, because their meaning depends on the attempt: `fetchStatus()` sees it, `Cancelled` at
-  `authorized` and `Refunded` elsewhere. `try_again` is Pending everywhere, `wait_accept` is Paid with a
+  `authorized` and `Refunded` elsewhere. `try_again` is Pending with `declined`, `wait_accept` is Paid with a
   reason, and an answer without `payment_id` is a failed request, not a payment. `payment_not_found`
   is Pending with `notStarted`: the buyer has not sent a card, a late `success` still counts.
 - **Hold** `CapturesPayments`: the base's switch `hold` sends `action=hold` to the page. `capture()` is

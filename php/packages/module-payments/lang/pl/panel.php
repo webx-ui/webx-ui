@@ -246,8 +246,8 @@ return [
         'test_failed' => 'Nie udało się połączyć z bramką: zobacz dziennik wymiany.',
         'gateway_unavailable' => 'Bramka nie odpowiedziała. Spróbuj później.',
         'nothing_to_check' => 'Zamówienie nie ma próby do sprawdzenia.',
-        'capture_refused' => 'Bramka odmówiła pobrania: środki są nadal zablokowane. Jej odpowiedź jest w dzienniku wymiany.',
-        'void_refused' => 'Bramka odmówiła zwolnienia blokady. Jej odpowiedź jest w dzienniku wymiany.',
+        'capture_refused' => 'Bramka odrzuciła pobranie, pieniądze są nadal zablokowane: :reason',
+        'void_refused' => 'Bramka odmówiła zwolnienia blokady: :reason',
         'amount' => 'Wpisz kwotę, np. 120.50.',
     ],
 ];

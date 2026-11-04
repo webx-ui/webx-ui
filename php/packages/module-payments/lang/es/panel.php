@@ -246,8 +246,8 @@ return [
         'test_failed' => 'No se pudo contactar con la pasarela: vea el registro de intercambio.',
         'gateway_unavailable' => 'La pasarela no respondió. Inténtelo más tarde.',
         'nothing_to_check' => 'El pedido no tiene intento que consultar.',
-        'capture_refused' => 'La pasarela rechazó el cobro: el dinero sigue retenido. Su respuesta está en el registro de intercambio.',
-        'void_refused' => 'La pasarela rechazó liberar la retención. Su respuesta está en el registro de intercambio.',
+        'capture_refused' => 'La pasarela ha rechazado el cobro, el dinero sigue retenido: :reason',
+        'void_refused' => 'La pasarela ha rechazado liberar la retención: :reason',
         'amount' => 'Escriba un importe como 120.50.',
     ],
 ];

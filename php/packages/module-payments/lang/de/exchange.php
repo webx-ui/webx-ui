@@ -28,6 +28,8 @@ return [
         'manual' => 'Manuell markiert',
         'captured' => 'Eingezogen',
         'released' => 'Reservierung freigegeben',
+        'capture_refused' => 'Einzug abgelehnt',
+        'release_refused' => 'Freigabe abgelehnt',
     ],
     'signature' => [
         'valid' => 'Signatur gültig',

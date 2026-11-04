@@ -772,6 +772,21 @@ final class Orders
     }
 
     /**
+     * A module's note that asked for something and got its answer (§8): it stays in the history and
+     * leaves the notes, which are what the next manager still has to read. Only the module's own
+     * lines, by how they begin.
+     */
+    public function closeNote(Order $order, string $source, string $beginning): void
+    {
+        StatusChange::query()
+            ->where('order_id', $order->id)
+            ->where('kind', StatusChange::NOTE)
+            ->where('source', self::cut($source, 64))
+            ->where('note', 'like', addcslashes($beginning, '\\%_').'%')
+            ->update(['kind' => StatusChange::NOTE_CLOSED]);
+    }
+
+    /**
      * Cancel the order (§9.1): the milestone «cancelled» with its reason — one the panel and the
      * agent must give — and the tenders left on it marked given back in the same transaction.
      * The order comes into the first active status that cancels (decision 88), as a move does:

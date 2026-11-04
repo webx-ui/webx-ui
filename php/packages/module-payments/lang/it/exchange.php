@@ -28,6 +28,8 @@ return [
         'manual' => 'Segnato a mano',
         'captured' => 'Incassato',
         'released' => 'Preautorizzazione rilasciata',
+        'capture_refused' => 'Addebito rifiutato',
+        'release_refused' => 'Svincolo rifiutato',
     ],
     'signature' => [
         'valid' => 'Firma valida',

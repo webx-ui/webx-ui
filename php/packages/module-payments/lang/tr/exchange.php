@@ -28,6 +28,8 @@ return [
         'manual' => 'Elle işaretlendi',
         'captured' => 'Tahsil edildi',
         'released' => 'Provizyon serbest bırakıldı',
+        'capture_refused' => 'Tahsilat reddedildi',
+        'release_refused' => 'Serbest bırakma reddedildi',
     ],
     'signature' => [
         'valid' => 'İmza geçerli',
