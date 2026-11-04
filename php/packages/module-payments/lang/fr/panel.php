@@ -103,6 +103,7 @@ return [
         'hold' => 'Bloquer l’argent, encaisser plus tard',
         'hold-help' => 'La banque bloque le montant sur la carte ; la commande est payée quand l’argent est encaissé. Un blocage dure jusqu’à :days jours.',
         'hold-partial' => 'Une partie du montant peut être encaissée.',
+        'off-with' => 'Indisponible tant que «:name» est activé.',
         'addresses' => 'Pour le compte de la passerelle',
         'addresses-help' => 'Copiez ces adresses dans le compte de la passerelle.',
         'notify-url' => 'Adresse des notifications',

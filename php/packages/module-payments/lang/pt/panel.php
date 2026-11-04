@@ -103,6 +103,7 @@ return [
         'hold' => 'Reservar o dinheiro, capturar depois',
         'hold-help' => 'O banco reserva o valor no cartão; o pedido fica pago quando o dinheiro é capturado. Uma reserva dura até :days dias.',
         'hold-partial' => 'Pode-se capturar parte do valor.',
+        'off-with' => 'Indisponível enquanto «:name» estiver ativado.',
         'addresses' => 'Para a conta do gateway',
         'addresses-help' => 'Copie estes endereços para a conta do gateway.',
         'notify-url' => 'Endereço das notificações',

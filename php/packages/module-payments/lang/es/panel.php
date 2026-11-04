@@ -103,6 +103,7 @@ return [
         'hold' => 'Retener el dinero, cobrarlo después',
         'hold-help' => 'El banco bloquea el importe en la tarjeta; el pedido queda pagado cuando se cobra el dinero. Una retención dura hasta :days días.',
         'hold-partial' => 'Se puede cobrar una parte del importe.',
+        'off-with' => 'No disponible mientras «:name» esté activado.',
         'addresses' => 'Para la cuenta de la pasarela',
         'addresses-help' => 'Copie estas direcciones en la cuenta de la pasarela.',
         'notify-url' => 'Dirección de notificaciones',

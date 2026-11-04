@@ -103,6 +103,7 @@ return [
         'hold' => 'Parayı bloke et, sonra çek',
         'hold-help' => 'Banka tutarı kartta bloke eder; para çekildiğinde sipariş ödenmiş olur. Bloke en fazla :days gün sürer.',
         'hold-partial' => 'Tutarın bir kısmı çekilebilir.',
+        'off-with' => '«:name» açıkken kullanılamaz.',
         'addresses' => 'Ağ geçidi hesabı için',
         'addresses-help' => 'Bu adresleri ağ geçidinin hesabına kopyalayın.',
         'notify-url' => 'Bildirim adresi',

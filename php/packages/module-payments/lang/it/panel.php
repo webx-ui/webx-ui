@@ -103,6 +103,7 @@ return [
         'hold' => 'Blocca il denaro, incassalo dopo',
         'hold-help' => 'La banca blocca l’importo sulla carta; l’ordine è pagato quando il denaro viene incassato. Un blocco dura fino a :days giorni.',
         'hold-partial' => 'Si può incassare una parte dell’importo.',
+        'off-with' => 'Non disponibile finché «:name» è attivo.',
         'addresses' => 'Per l’account del gateway',
         'addresses-help' => 'Copia questi indirizzi nell’account del gateway.',
         'notify-url' => 'Indirizzo delle notifiche',

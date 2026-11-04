@@ -110,6 +110,7 @@ export const paymentsMessages: Record<string, Messages> = {
       'hold-help':
         'The bank blocks the amount on the card; the order is paid when the money is taken. A hold lasts up to :days days.',
       'hold-partial': 'Part of the amount can be taken.',
+      'off-with': 'Not available while «:name» is on.',
       addresses: 'For the gateway account',
       'addresses-help': 'Copy these addresses to the account of the gateway.',
       'notify-url': 'Notifications address',

@@ -115,7 +115,7 @@ final class PaymentsTools
                 .'titles and descriptions (a string — the default language — or { "en": "…" }), enabled, delivery_mode '
                 .'(any, on_hand, methods, except) with delivery_methods (keys of delivery methods), min_amount and '
                 .'max_amount in major units (4.5 is 4.50; null — no limit), settings (the fields of the type: the bank '
-                .'details of a transfer by language, the gateway\'s settings, `hold`). A field left out keeps what it '
+                .'details of a transfer by language, the gateway\'s settings, `hold`; a pair the type does not allow is refused). A field left out keeps what it '
                 .'had; a new method is switched off until `enabled: true`. The gateway\'s keys are set in the panel only.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->saveMethod($arguments, $user)),
                 ['properties' => [

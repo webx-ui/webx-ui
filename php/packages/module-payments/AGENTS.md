@@ -10,7 +10,7 @@ Orders, their milestones and balance are `webx-ui/module-orders`; the cart is `w
 ## What it owns
 
 - **Types** `WebxUi\Payments\MethodTypes` (`register()`, `get()`, `all()`; contract
-  `Contracts\MethodType`, key `<provider>.<kind>`): `store.on_receipt` (`Types\OnReceipt`, does not
+  `Contracts\MethodType`, key `<provider>.<kind>`; optional `Contracts\ValidatesSettings`: `validateSettings()` refuses a pair of settings on every save, a field's `off_with`, `off_help` take it away in the form): `store.on_receipt` (`Types\OnReceipt`, does not
   await payment, «Pay at the counter» at the shop's point) and `store.bank_transfer`
   (`Types\BankTransfer`, awaits payment; settings `recipient`, `account`, `purpose` with `{number}`,
   `note` by language). The migration adds the methods `on-receipt` (rule `on_hand`) and `bank-transfer` switched off.
@@ -60,7 +60,7 @@ Orders, their milestones and balance are `webx-ui/module-orders`; the cart is `w
 - **Settling** `Payments::settle(payment, GatewayStatus)` → `SettleResult`, the only door to the attempt
   and the order; `check()` asks `fetchStatus()` under the lock first. `POST /payments/notify/{method}` (no
   middleware) journals `in/notify` before parsing (503 if it cannot); `GET|POST /pay/return/{uuid}` asks the API.
-- **Gateway A** `Testing\FakeGateway` (`gateway-a`; `GatewayANotCards` — with `DeclaresNotCardFields`): `GatewayACard`, `GatewayAForm`, `GatewayAUnsigned`;
+- **Gateway A** `Testing\FakeGateway` (`gateway-a`, card: `instalments` a hold rules out; `GatewayANotCards` — with `DeclaresNotCardFields`): `GatewayACard`, `GatewayAForm`, `GatewayAUnsigned`;
   API `FakeGatewayServer` on `gateway-a.test` in the process, page `GET /pay/fake/{uuid}`; only with `WEBX_PAYMENTS_FAKE_GATEWAY=true`, never in production
   (`FakeGatewaySite::methods()` adds its methods). Contract test: trait `Testing\GatewayContract`.
 - **Commands** `webx:payments:exchange-prune --days=N [--dry-run] [--force]` — the only removal of

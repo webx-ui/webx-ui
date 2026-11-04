@@ -109,6 +109,7 @@ interface Event {
 
 const GATEWAY = 'gateway-a'
 const GATEWAY_TITLE = 'Gateway A'
+const HOLD_ONLY_CARDS = 'A hold works for card payments only'
 const CURRENCY = 'EUR'
 
 const now = Date.now()
@@ -768,6 +769,21 @@ export function registerPayments(on: On, fail: Fail, line: Line): void {
                 options: [{ value: 'test', label: 'Test' }],
                 default: 'test',
               },
+              ...(type === 'gateway-a.card'
+                ? [
+                    {
+                      name: 'instalments',
+                      type: 'switch',
+                      label: 'Instalments',
+                      help: null,
+                      localized: false,
+                      options: [],
+                      default: false,
+                      off_with: 'hold',
+                      off_help: HOLD_ONLY_CARDS,
+                    },
+                  ]
+                : []),
             ]
 
     return {
@@ -853,7 +869,14 @@ export function registerPayments(on: On, fail: Fail, line: Line): void {
     }
     method.min_amount = min
     method.max_amount = max
-    method.settings = { ...method.settings, ...((body.settings ?? {}) as Record<string, unknown>) }
+    const settings = { ...method.settings, ...((body.settings ?? {}) as Record<string, unknown>) }
+
+    // `GatewayACard::validateSettings()`: the form takes the field away, the server still refuses.
+    if (method.type === 'gateway-a.card' && settings.hold && settings.instalments) {
+      throw fail(422, HOLD_ONLY_CARDS, undefined, { 'settings.instalments': [HOLD_ONLY_CARDS] })
+    }
+
+    method.settings = settings
 
     // A key typed is «set» from now on; its value goes nowhere, here as on the server.
     for (const [name, value] of Object.entries(

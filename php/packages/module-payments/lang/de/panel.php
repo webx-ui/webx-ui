@@ -103,6 +103,7 @@ return [
         'hold' => 'Geld reservieren, später einziehen',
         'hold-help' => 'Die Bank reserviert den Betrag auf der Karte; die Bestellung ist bezahlt, wenn das Geld eingezogen ist. Eine Reservierung hält bis zu :days Tage.',
         'hold-partial' => 'Ein Teil des Betrags kann eingezogen werden.',
+        'off-with' => 'Nicht verfügbar, solange «:name» aktiv ist.',
         'addresses' => 'Für das Gateway-Konto',
         'addresses-help' => 'Kopieren Sie diese Adressen in das Konto des Gateways.',
         'notify-url' => 'Adresse für Benachrichtigungen',

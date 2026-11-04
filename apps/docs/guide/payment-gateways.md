@@ -204,11 +204,30 @@ it again.
 | approve first, charge on the shop's confirm    | `CompletesApproval::complete()` — idempotent, the attempt's uuid is the key |
 | hold the money and capture it later, or let go | `CapturesPayments`: `capture()`, `void()`, `maxHoldDays()`                  |
 | capture less than it held                      | `CapturesPayments::capturesPartially()` — true; false: always the whole     |
+| refuse settings that do not go together        | `ValidatesSettings::validateSettings()` — fields and words, empty: saves    |
 
 A hold is a method's setting — the type adds a switch to its `settings()` and starts with
 `capture: false` when `$request->hold`. The base then shows «Capture» and «Release the hold» on the
 order and asks the type; a capture the gateway refuses leaves the money held and the attempt a
 problem.
+
+Some settings are fine alone and wrong together: a hold and instalments, say. The type implements
+`ValidatesSettings`, and the base asks it on every save, from the panel and from an agent alike:
+
+```php
+public function validateSettings(array $settings): array
+{
+    return ($settings['hold'] ?? false) && ($settings['instalments'] ?? false)
+        ? ['instalments' => 'webx-payment-gateway-b::settings.hold_only_cards']
+        : [];
+}
+```
+
+It gets the settings as they will be stored, what was sent over what is kept, and answers field and
+words: nothing is written, and the words appear under the field. To spare the shop the refusal, the
+field in `settings()` can also carry `'off_with' => 'hold'` and `'off_help' => '…'`: while that switch
+is on, the form turns the field off, empties it and says why. That is only a convenience: the check
+is `validateSettings()`.
 
 The journal stars anything that looks like a card number, and a date in milliseconds or a long
 payment id can pass that check by chance. If the gateway's answers carry such numbers, the **gateway**

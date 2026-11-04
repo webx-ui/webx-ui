@@ -103,6 +103,7 @@ return [
         'hold' => 'Zablokuj pieniądze, pobierz później',
         'hold-help' => 'Bank blokuje kwotę na karcie; zamówienie jest opłacone, gdy pieniądze zostaną pobrane. Blokada trwa do :days dni.',
         'hold-partial' => 'Można pobrać część kwoty.',
+        'off-with' => 'Niedostępne, gdy włączone jest «:name».',
         'addresses' => 'Do konta bramki',
         'addresses-help' => 'Skopiuj te adresy do konta bramki.',
         'notify-url' => 'Adres powiadomień',
