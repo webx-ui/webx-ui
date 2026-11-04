@@ -1,7 +1,0 @@
----
-'@webx-ui/php': minor
-'@webx-ui/module-payments': minor
-'@webx-ui/module-orders': minor
----
-
-Payments, stage P8 after the check on lab. A hold captured in part sets the milestone «paid» only where it covers what the order owes; less is money in without the milestone (`Orders::recordPayment(…, part: true)`), the rest to pay — the capture dialog and its `dry_run` say so. A hold released by the shop is no failed payment: the order awaits payment as before, and the order's strip shows one mark of the payment, never «Awaiting payment» beside «Payment failed». The journal names the base's decisions `internal/captured` («Captured») and `internal/released` («Hold released») with the manager's name; the requests are «Capture request» / «Release request»; the order's history answers «Money held … capture or release it» in the manager's name. «Thank you» and the order's page do not say «waiting for payment» while the money is held (`BlockDefinition::$held`). The order's history names `payment:<key>` by the method's title (`SourceNames`, `source_title`). A rejected notification's description is short; its claim is the event's mark only, not on the attempt's head. The order's number in the journal and the attempts links to the order's tab «Payment» with the attempt open. The sum to capture is prefilled as the panel's language writes it; the attempt's events have no frame of their own and a gap under the head.
