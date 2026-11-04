@@ -48,5 +48,9 @@ return [
         'top_up_button' => 'Payer le complément',
         'online_now' => 'Payer en ligne maintenant',
         'wait' => 'Si vous avez déjà payé dans un autre onglet, attendez une minute avant de payer à nouveau.',
+        'declined' => 'Le paiement n’a pas abouti : la banque a refusé la carte',
+        'unfinished' => 'Paiement non terminé',
+        'pay_again' => 'Payer à nouveau',
+        'other_method' => 'Choisir un autre moyen',
     ],
 ];

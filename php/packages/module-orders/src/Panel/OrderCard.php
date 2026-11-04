@@ -621,7 +621,8 @@ final readonly class OrderCard
             /** @var StatusChange $change */
             $line = [
                 'key' => 'history-'.$change->id,
-                'kind' => $change->kind,
+                // In the history a closed note is a note like any other.
+                'kind' => $change->kind === StatusChange::NOTE_CLOSED ? StatusChange::NOTE : $change->kind,
                 'at' => $change->created_at?->toAtomString(),
                 ...$who($change->admin_id, $change->source),
                 'note' => $change->note,

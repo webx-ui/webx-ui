@@ -47,6 +47,10 @@
 
 ### 2.1. LiqPay
 
+Проверено на песочнице, вопросы карточки закрыты в спеке спутника —
+[`WEBX_UI_PAYMENT_LIQPAY.md`](WEBX_UI_PAYMENT_LIQPAY.md) §3. Ниже — обзор по документации, как он был
+собран.
+
 Источники: checkout — <https://www.liqpay.ua/en/doc/api/internet_acquiring/checkout>; callback —
 <https://www.liqpay.ua/uk/doc/api/callback>; двухстадийная — <https://www.liqpay.ua/uk/doc/api/internet_acquiring/two_step?tab=0>;
 возврат — <https://www.liqpay.ua/uk/doc/api/internet_acquiring/refund?tab=0>; виджет —
@@ -694,7 +698,8 @@ NovaPay с доставкой ждут холда (§21.2 спеки), что с
 
 ## 7. Открытые вопросы
 
-1. **LiqPay: SHA3-256 или SHA1?** Доки и SDK расходятся (§2.1). Предложение: алгоритм — настройка
+1. **LiqPay: SHA3-256 или SHA1?** Для запросов решено: алгоритм следует за `version`
+   ([`WEBX_UI_PAYMENT_LIQPAY.md`](WEBX_UI_PAYMENT_LIQPAY.md) §3). Доки и SDK расходятся (§2.1). Предложение: алгоритм — настройка
    спутника LiqPay с проверкой на песочнице в его задаче; уведомление принимать, если сошёлся любой из
    двух (оба по секрету, подделка не проще). Решает задача спутника, но стоит подтвердить у поддержки
    LiqPay.

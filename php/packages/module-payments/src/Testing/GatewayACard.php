@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use WebxUi\Payments\Contracts\CancelsPayments;
 use WebxUi\Payments\Contracts\CapturesPayments;
+use WebxUi\Payments\Contracts\ValidatesSettings;
 use WebxUi\Payments\Credentials;
 use WebxUi\Payments\Exchange\ExchangeKind;
 use WebxUi\Payments\GatewayAmount;
@@ -29,13 +30,15 @@ use WebxUi\Payments\StartRequest;
 /**
  * `gateway-a.card` (spec §21.1) — everything a gateway may have: a payment made by API and a
  * redirect to its page, the e-mail and the lines of the receipt, closing an unpaid payment, a hold
- * with a full or a partial capture and a void; notifications in signed JSON (HMAC-SHA256 of the raw
- * body, hex, `X-Gateway-A-Signature`) answered `{"received": true}`. Not final: a test spoils it
- * on purpose (a request past GatewayHttp).
+ * with a full or a partial capture and a void, instalments a hold rules out; notifications in
+ * signed JSON (HMAC-SHA256 of the raw body, hex, `X-Gateway-A-Signature`) answered
+ * `{"received": true}`. Not final: a test spoils it on purpose (a request past GatewayHttp).
  */
-class GatewayACard extends GatewayAType implements CancelsPayments, CapturesPayments
+class GatewayACard extends GatewayAType implements CancelsPayments, CapturesPayments, ValidatesSettings
 {
     public const string SIGNATURE_HEADER = 'X-Gateway-A-Signature';
+
+    private const string HOLD_ONLY_CARDS = 'A hold works for card payments only';
 
     public function statuses(): array
     {
@@ -55,8 +58,16 @@ class GatewayACard extends GatewayAType implements CancelsPayments, CapturesPaym
     {
         return [
             ...parent::settings(),
+            ['name' => 'instalments', 'type' => 'switch', 'label' => 'Instalments', 'default' => false, 'off_with' => 'hold', 'off_help' => self::HOLD_ONLY_CARDS],
             ['name' => 'hold', 'type' => 'switch', 'label' => 'Hold the money, capture later', 'default' => false],
         ];
+    }
+
+    public function validateSettings(array $settings): array
+    {
+        return ($settings['hold'] ?? false) && ($settings['instalments'] ?? false)
+            ? ['instalments' => self::HOLD_ONLY_CARDS]
+            : [];
     }
 
     public function needs(): StartNeeds
@@ -122,7 +133,7 @@ class GatewayACard extends GatewayAType implements CancelsPayments, CapturesPaym
         $answer = self::call(static fn () => $http->request()->withToken($token)->get(FakeGateway::API.'/v1/payments/'.self::ref($payment)));
 
         if ($answer->status() === 404) {
-            return new GatewayStatus(Reported::Pending, $payment->gateway_ref, reason: 'The gateway does not know the payment');
+            return self::unknownPayment($answer->json('error'), $payment->gateway_ref);
         }
 
         if (! $answer->successful()) {

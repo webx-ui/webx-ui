@@ -1,7 +1,8 @@
 {{--
     «My orders» (spec §13.2): the visitor's orders, newest first — the number, the date, the public
-    status, the amount and how many lines; an order opens as the signed page shows it. Orders made
-    as a guest are not here until a manager links them.
+    status — or the words of the payment's owner while the buyer can pay, with the code
+    `awaiting-payment` —, the amount and how many lines; an order opens as the signed page shows it.
+    Orders made as a guest are not here until a manager links them.
 
     $rows — `WebxUi\Orders\Site\OrderPage::rows()` with `url`; $pages — the paginator.
 

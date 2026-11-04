@@ -1,0 +1,27 @@
+{
+  "checked": "2026-11-04T08:18:31.376Z",
+  "signed_with": "sha3-256",
+  "request": {
+    "url": "https://www.liqpay.ua/api/request",
+    "json": {
+      "version": 7,
+      "public_key": "sandbox_FAKEpublic00000000",
+      "action": "refund",
+      "order_id": "cb1a266b-ead4-4c11-857f-c47de6b90211",
+      "amount": "12.34",
+      "currency": "UAH"
+    },
+    "data": "eyJ2ZXJzaW9uIjo3LCJwdWJsaWNfa2V5Ijoic2FuZGJveF9GQUtFcHVibGljMDAwMDAwMDAiLCJhY3Rpb24iOiJyZWZ1bmQiLCJvcmRlcl9pZCI6ImNiMWEyNjZiLWVhZDQtNGMxMS04NTdmLWM0N2RlNmI5MDIxMSIsImFtb3VudCI6IjEyLjM0IiwiY3VycmVuY3kiOiJVQUgifQ==",
+    "signature": "z8tNl4rdRknGSIC2ScOojDZOCksSoO+epU/tWQi5jCA="
+  },
+  "response": {
+    "status": 200,
+    "json": {
+      "result": "error",
+      "action": "refund",
+      "status": "error",
+      "err_code": "payment_not_found",
+      "err_description": "Платіж не знайдено"
+    }
+  }
+}

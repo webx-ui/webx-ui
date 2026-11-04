@@ -103,6 +103,7 @@ return [
         'hold' => 'Blocca il denaro, incassalo dopo',
         'hold-help' => 'La banca blocca l’importo sulla carta; l’ordine è pagato quando il denaro viene incassato. Un blocco dura fino a :days giorni.',
         'hold-partial' => 'Si può incassare una parte dell’importo.',
+        'off-with' => 'Non disponibile finché «:name» è attivo.',
         'addresses' => 'Per l’account del gateway',
         'addresses-help' => 'Copia questi indirizzi nell’account del gateway.',
         'notify-url' => 'Indirizzo delle notifiche',
@@ -245,8 +246,8 @@ return [
         'test_failed' => 'Il gateway non è raggiungibile: vedi il registro degli scambi.',
         'gateway_unavailable' => 'Il gateway non ha risposto. Riprova più tardi.',
         'nothing_to_check' => 'L’ordine non ha tentativi da verificare.',
-        'capture_refused' => 'Il gateway ha rifiutato l’incasso: l’importo resta bloccato. La sua risposta è nel registro degli scambi.',
-        'void_refused' => 'Il gateway ha rifiutato di sbloccare l’importo. La sua risposta è nel registro degli scambi.',
+        'capture_refused' => 'Il gateway ha rifiutato l’addebito, il denaro resta bloccato: :reason',
+        'void_refused' => 'Il gateway ha rifiutato di svincolare il blocco: :reason',
         'amount' => 'Inserisci un importo come 120.50.',
     ],
 ];

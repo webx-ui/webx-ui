@@ -34,6 +34,7 @@
             <directory>packages/module-delivery/tests</directory>
             <directory>packages/delivery-novaposhta/tests</directory>
             <directory>packages/module-payments/tests</directory>
+            <directory>packages/payment-liqpay/tests</directory>
             <directory>packages/module-events/tests</directory>
             <directory>packages/module-faq/tests</directory>
             <directory>packages/module-inbox/tests</directory>
@@ -87,6 +88,7 @@
             <directory>packages/module-delivery/src</directory>
             <directory>packages/delivery-novaposhta/src</directory>
             <directory>packages/module-payments/src</directory>
+            <directory>packages/payment-liqpay/src</directory>
             <directory>packages/module-events/src</directory>
             <directory>packages/module-faq/src</directory>
             <directory>packages/module-inbox/src</directory>

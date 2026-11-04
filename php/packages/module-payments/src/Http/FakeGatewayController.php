@@ -31,9 +31,9 @@ use WebxUi\Payments\Testing\FakeGatewaySite;
 final readonly class FakeGatewayController
 {
     /** The buttons after which the buyer leaves the gateway's page for the shop's return address. */
-    public const array BACK = ['pay', 'decline', 'cancel', 'pay-later', 'hold', 'approve'];
+    public const array BACK = ['pay', 'decline', 'cancel', 'abandon', 'pay-later', 'hold', 'approve'];
 
-    public const array ACTIONS = ['pay', 'decline', 'cancel', 'pay-later', 'repeat-notify', 'bad-signature', 'foreign', 'hold', 'approve'];
+    public const array ACTIONS = ['pay', 'decline', 'cancel', 'abandon', 'pay-later', 'repeat-notify', 'bad-signature', 'foreign', 'hold', 'approve'];
 
     public function __construct(
         private Container $app,
@@ -133,7 +133,7 @@ final readonly class FakeGatewayController
      */
     private function buttons(array $state): array
     {
-        $buttons = ['pay', 'decline', 'cancel', 'pay-later', 'repeat-notify', 'bad-signature', 'foreign'];
+        $buttons = ['pay', 'decline', 'cancel', 'abandon', 'pay-later', 'repeat-notify', 'bad-signature', 'foreign'];
 
         if ($state['type'] === 'card' && ! $state['capture']) {
             $buttons[] = 'hold';

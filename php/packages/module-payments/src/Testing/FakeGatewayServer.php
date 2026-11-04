@@ -53,6 +53,12 @@ final class FakeGatewayServer
 
     public const string CAPTURE_REFUSED = 'capture_refused';
 
+    /** The buyer left the gateway's page without beginning: as far as the API says, no payment yet. */
+    public const string ABANDONED = 'abandoned';
+
+    /** How the API says it, apart from a payment it has lost. */
+    public const string NOT_STARTED = 'payment_not_started';
+
     public const array FAILURES = [self::TIMEOUT, self::SERVER_ERROR, self::NOT_FOUND, self::UNKNOWN_STATUS, self::WRONG_AMOUNT, self::CAPTURE_REFUSED];
 
     /** What the 500 of `server_error` says: a test checks the words for the panel do not carry it. */
@@ -173,6 +179,7 @@ final class FakeGatewayServer
             'approve' => [...$state, 'status' => 'approved'],
             'decline' => [...$state, 'status' => ['card' => 'declined', 'form' => 'failure', 'unsigned' => 'REJECTED'][$state['type']], 'reason' => 'Card declined (test)'],
             'cancel' => [...$state, 'status' => ['card' => 'cancelled', 'form' => 'cancelled', 'unsigned' => 'CANCELLED'][$state['type']]],
+            'abandon' => [...$state, 'status' => self::ABANDONED],
             default => $state,
         };
 
@@ -317,6 +324,10 @@ final class FakeGatewayServer
 
         $state = $this->byId($id);
 
+        if (($state['status'] ?? null) === self::ABANDONED) {
+            return self::json(404, ['error' => self::NOT_STARTED]);
+        }
+
         if ($state === null || $this->take(self::NOT_FOUND)) {
             return self::json(404, ['error' => 'payment not found']);
         }
@@ -433,6 +444,10 @@ final class FakeGatewayServer
         $asked = json_decode((string) base64_decode($data, true), true);
         $state = is_array($asked) && is_string($asked['order_id'] ?? null) ? $this->payment($asked['order_id']) : null;
 
+        if (($state['status'] ?? null) === self::ABANDONED) {
+            return self::signedJson(['status' => 'error', 'err_code' => self::NOT_STARTED]);
+        }
+
         if ($state === null || $this->take(self::NOT_FOUND)) {
             return self::signedJson(['status' => 'error', 'err_code' => 'payment_not_found']);
         }
@@ -496,6 +511,10 @@ final class FakeGatewayServer
         }
 
         $state = is_string($query['order_id'] ?? null) ? $this->payment($query['order_id']) : null;
+
+        if (($state['status'] ?? null) === self::ABANDONED) {
+            return self::json(404, ['error' => self::NOT_STARTED]);
+        }
 
         if ($state === null || $this->take(self::NOT_FOUND)) {
             return self::json(404, ['error' => 'payment not found']);

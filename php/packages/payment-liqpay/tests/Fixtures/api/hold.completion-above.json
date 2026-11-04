@@ -1,0 +1,28 @@
+{
+  "checked": "2026-11-04T08:18:02.875Z",
+  "signed_with": "sha3-256",
+  "request": {
+    "url": "https://www.liqpay.ua/api/request",
+    "json": {
+      "version": 7,
+      "public_key": "sandbox_FAKEpublic00000000",
+      "action": "hold_completion",
+      "order_id": "91a7093e-33de-41ab-bcf7-dbf0a5557fed",
+      "amount": "99.00"
+    },
+    "data": "eyJ2ZXJzaW9uIjo3LCJwdWJsaWNfa2V5Ijoic2FuZGJveF9GQUtFcHVibGljMDAwMDAwMDAiLCJhY3Rpb24iOiJob2xkX2NvbXBsZXRpb24iLCJvcmRlcl9pZCI6IjkxYTcwOTNlLTMzZGUtNDFhYi1iY2Y3LWRiZjBhNTU1N2ZlZCIsImFtb3VudCI6Ijk5LjAwIn0=",
+    "signature": "0xknl5B88MtZG90sqHzApeTeIKpBQK01vcMKxfsLacw="
+  },
+  "response": {
+    "status": 200,
+    "json": {
+      "code": "err_amount_hold",
+      "err_code": "err_amount_hold",
+      "err_description": "Сума не може бути більше суми платежу",
+      "is_3ds": false,
+      "result": "error",
+      "status": "error",
+      "type": "buy"
+    }
+  }
+}

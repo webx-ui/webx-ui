@@ -109,6 +109,63 @@ final class OrderBlocks
     }
 
     /**
+     * The way to pay an order that awaits payment (§13.1): the first owner that has one; an owner
+     * that throws says nothing.
+     *
+     * @return array{title: string, html: string}|null
+     */
+    public function prompt(Order $order, string $locale): ?array
+    {
+        foreach ($this->blocks as $key => $block) {
+            $value = $order->getAttribute($key);
+
+            if ($block->prompt === null || ! is_array($value)) {
+                continue;
+            }
+
+            try {
+                $prompt = ($block->prompt)($value, $order, $locale);
+            } catch (Throwable $e) {
+                Log::warning("webx-orders: the prompt of the block «{$key}» failed", ['exception' => $e]);
+
+                continue;
+            }
+
+            if ($prompt !== null) {
+                return $prompt;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * What «My orders» says over the public status (§13.2): the words of `prompt()` for a whole
+     * list, order id => title. An owner that throws says nothing.
+     *
+     * @param  list<Order>  $orders  the ones that await payment
+     * @return array<int, string>
+     */
+    public function awaiting(array $orders, string $locale): array
+    {
+        $titles = [];
+
+        foreach ($orders === [] ? [] : $this->blocks as $key => $block) {
+            if ($block->awaiting === null) {
+                continue;
+            }
+
+            try {
+                $titles += ($block->awaiting)($orders, $locale);
+            } catch (Throwable $e) {
+                Log::warning("webx-orders: the list of the block «{$key}» failed", ['exception' => $e]);
+            }
+        }
+
+        return $titles;
+    }
+
+    /**
      * Whether a block says the buyer's money is in the shop's hands though the order is not paid
      * yet — a hold (§8.3 of payments): the buyer's pages then do not say «waiting for payment». An
      * owner that throws says no.

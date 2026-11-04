@@ -61,7 +61,7 @@ final readonly class PayController
         $method = is_string($block['method'] ?? null) ? $this->page->online((string) $block['method']) : null;
 
         if ($order->paid_at !== null && $request->filled('method')) {
-            $method = $this->offered($order, $request->string('method')->toString());
+            $method = $this->offered($order, $request->string('method')->toString(), online: true);
         }
 
         if ($method === null) {
@@ -77,11 +77,15 @@ final readonly class PayController
         return $this->redirect->to($this->links->go($payment), 303);
     }
 
-    /** «Pay online now» of an order «on receipt» (§8.5): the method switched, then the gateway. */
+    /**
+     * «Pay online now», «Choose another method» (§8.5): the method switched, then the gateway — an
+     * offline one has none, the page says what comes next. The block of a paid order tells of its
+     * first payment and stays.
+     */
     public function method(Request $request, Payments $payments): RedirectResponse
     {
         $order = $this->order($request);
-        $method = $this->offered($order, $request->string('method')->toString());
+        $method = $order->paid_at === null ? $this->offered($order, $request->string('method')->toString()) : null;
 
         if ($method === null) {
             return $this->redirect->to($this->links->page($order), 303);
@@ -122,13 +126,16 @@ final readonly class PayController
         return new JsonResponse([
             'status' => $payment->status->value,
             'final' => ! in_array($payment->status, [PaymentStatus::Created, PaymentStatus::Pending], true),
+            // Nothing is coming: a script stops waiting, the page says what the buyer may do now.
+            'not_started' => $payment->notStarted(),
+            'declined' => $payment->declined(),
         ]);
     }
 
-    /** An online method the page offers this order now; null — anything else. */
-    private function offered(Order $order, string $key): ?Method
+    /** A method the page offers this order now; null — anything else. */
+    private function offered(Order $order, string $key, bool $online = false): ?Method
     {
-        foreach ($this->page->onlineOptions($order) as $option) {
+        foreach ($online ? $this->page->onlineOptions($order) : $this->page->options($order) as $option) {
             if ($option->method->key === $key) {
                 return $option->method;
             }

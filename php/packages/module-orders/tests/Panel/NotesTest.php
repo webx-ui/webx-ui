@@ -88,6 +88,25 @@ final class NotesTest extends PanelTestCase
         $this->assertSame(2, $asked);
     }
 
+    /** A module's note answered leaves the notes, the history keeps it as a note. */
+    #[Test]
+    public function a_note_closed_by_its_module_stays_in_the_timeline_only(): void
+    {
+        $order = $this->order();
+        $this->signIn();
+        $orders = $this->app->make(Orders::class);
+        $orders->note($order, 'Money held: 5,00', 'payment:card-a');
+        $orders->note($order, 'Money held: by another', 'payment:card-b');
+        $orders->note($order, 'Called', 'payment:card-a');
+
+        $orders->closeNote($order, 'payment:card-a', 'Money held: ');
+
+        $card = $this->getJson($this->api($order->id))->assertOk();
+        $this->assertSame(['Money held: by another', 'Called'], array_column($card->json('data.order.notes'), 'body'));
+        $timeline = array_filter($card->json('data.order.timeline'), static fn (array $line): bool => $line['kind'] === 'note');
+        $this->assertCount(3, $timeline);
+    }
+
     #[Test]
     public function a_reader_sees_the_notes_and_may_not_write_one(): void
     {

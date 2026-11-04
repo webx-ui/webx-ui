@@ -297,12 +297,13 @@ final readonly class CheckoutController
         $visitor = $container->bound(Visitors::class) ? $container->make(Visitors::class)->current() : null;
 
         return $this->views->make('webx-orders::checkout.thanks', [
-            'order' => $page->of($order, app()->getLocale()),
+            'order' => $body = $page->of($order, app()->getLocale()),
             'email' => $order->customer_email !== null && $channels->reachesBuyer(OrderEvents::PLACED) ? $order->customer_email : null,
             'decrease' => $decrease !== null ? $this->format($decrease, $order->currency) : null,
             'notice' => is_string($notice = $request->session()->get(PlacedOrders::NOTICE)) && $notice !== '' ? $notice : null,
             'link' => $orderLinks->page($number, $order->locale),
-            'pay' => $order->awaiting_payment ? $this->payAgain($order) : null,
+            // The order's body has its own way to pay: one «Pay» on the page.
+            'pay' => $order->awaiting_payment && $body['prompt'] === null ? $this->payAgain($order) : null,
             'analytics' => ['number' => $number, 'payable' => $order->payable, 'currency' => $order->currency],
             // «Save your orders in an account» — a guest, where visitors can register (§26).
             'register' => $visitor === null && $order->customer_email !== null && VisitorOrders::installed() && SignIn::registrationOpen()

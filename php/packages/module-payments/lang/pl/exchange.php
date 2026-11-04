@@ -28,6 +28,8 @@ return [
         'manual' => 'Oznaczono ręcznie',
         'captured' => 'Pobrano',
         'released' => 'Blokada zwolniona',
+        'capture_refused' => 'Pobranie odrzucone',
+        'release_refused' => 'Zwolnienie odrzucone',
     ],
     'signature' => [
         'valid' => 'Podpis poprawny',

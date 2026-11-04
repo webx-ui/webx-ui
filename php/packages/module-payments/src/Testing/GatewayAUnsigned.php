@@ -74,7 +74,7 @@ final class GatewayAUnsigned extends GatewayAType
         ]));
 
         if ($answer->status() === 404) {
-            return new GatewayStatus(Reported::Pending, null, reason: 'The gateway does not know the payment');
+            return self::unknownPayment($answer->json('error'));
         }
 
         if (! $answer->successful()) {

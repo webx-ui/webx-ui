@@ -152,12 +152,12 @@ final class ReturnTest extends OnlineCase
         $this->get($this->payPage($order))->assertOk()->assertSee('We are checking the payment')->assertSee('http-equiv="refresh"', false)->assertDontSee('Pay — ');
         $served = $this->server()->served();
         $this->get($this->payPage($order))->assertOk();
-        $this->getJson(route('webx-payments.status', ['uuid' => $payment->uuid]))->assertExactJson(['status' => 'pending', 'final' => false]);
+        $this->getJson(route('webx-payments.status', ['uuid' => $payment->uuid]))->assertExactJson(['status' => 'pending', 'final' => false, 'not_started' => false, 'declined' => false]);
         $this->assertSame($served, $this->server()->served(), 'Within 15 s the row answers.');
 
         $this->travel(16)->seconds();
         $this->server()->act($payment->uuid, 'pay');
-        $this->getJson(route('webx-payments.status', ['uuid' => $payment->uuid]))->assertExactJson(['status' => 'paid', 'final' => true]);
+        $this->getJson(route('webx-payments.status', ['uuid' => $payment->uuid]))->assertExactJson(['status' => 'paid', 'final' => true, 'not_started' => false, 'declined' => false]);
         $this->assertSame(0, PaymentGatewayEvent::query()->whereIn('kind', ['notify', 'return'])->count(), 'The poll is not an event; its question to the API is.');
 
         // Another attempt the bank never confirms: after two minutes no refresh and no «Pay».

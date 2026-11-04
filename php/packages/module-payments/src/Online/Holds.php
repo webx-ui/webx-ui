@@ -82,11 +82,11 @@ final readonly class Holds
             try {
                 $status = $type->capture($method, $credentials, $payment, $amount, $http);
             } catch (GatewayRefused $refused) {
-                $because = 'The gateway refused to capture '.$this->money->format($amount, $payment->currency).': '.$refused->getMessage();
+                $because = Settlement::CAPTURE_REFUSED_NOTE.$this->money->format($amount, $payment->currency).': '.$refused->getMessage();
                 $this->settlement->flag($payment, SettleResult::CAPTURE_FAILED, $because);
                 $this->journal(ExchangeKind::Captured, $payment, $source, Outcome::Rejected, PaymentStatus::Authorized, $words.' — refused by the gateway', $trace, $type->provider());
 
-                return new SettleResult(Outcome::Rejected, PaymentStatus::Authorized, PaymentStatus::Authorized, null, $because, SettleResult::CAPTURE_FAILED);
+                return new SettleResult(Outcome::Rejected, PaymentStatus::Authorized, PaymentStatus::Authorized, null, $because, SettleResult::CAPTURE_FAILED, refusal: $refused->getMessage());
             }
 
             $result = $this->settlement->settle($payment, $status, actor: $this->actor($source));

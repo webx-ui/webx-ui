@@ -28,6 +28,8 @@ return [
         'manual' => 'Marked by hand',
         'captured' => 'Captured',
         'released' => 'Hold released',
+        'capture_refused' => 'Capture refused',
+        'release_refused' => 'Release refused',
     ],
     'signature' => [
         'valid' => 'Signature valid',

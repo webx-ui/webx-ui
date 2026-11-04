@@ -38,6 +38,12 @@ use WebxUi\Payments\SettleResult;
  */
 final readonly class Settlement
 {
+    /** How the order's note of a hold begins: it leaves the notes when the hold is over. */
+    private const string HELD_NOTE = 'Money held: ';
+
+    /** How the order's note of a refused capture begins: it asks to try again, and leaves with the hold. */
+    public const string CAPTURE_REFUSED_NOTE = 'The gateway refused to capture ';
+
     public function __construct(
         private ConnectionInterface $db,
         private Orders $orders,
@@ -94,6 +100,8 @@ final readonly class Settlement
             $row->gateway_ref = mb_substr($status->gatewayRef, 0, 190);
         }
 
+        $this->rememberLastWord($row, $status);
+
         return match ($status->status) {
             Reported::Pending => $before === PaymentStatus::Created
                 ? $this->to($row, $status, PaymentStatus::Pending)
@@ -105,6 +113,26 @@ final readonly class Settlement
             Reported::Expired => $this->failed($row, $status, PaymentStatus::Expired, $closing, $actor),
             Reported::Refunded => $this->refunded($row, $status),
         };
+    }
+
+    /** Only the gateway's last word counts (§8.4): any other answer takes the mark off. */
+    private function rememberLastWord(Payment $row, GatewayStatus $status): void
+    {
+        $was = $row->meta ?? [];
+        $meta = $was;
+        unset($meta[Payment::NOT_STARTED], $meta[Payment::DECLINED]);
+
+        if ($status->notStarted) {
+            $meta[Payment::NOT_STARTED] = true;
+        }
+
+        if ($status->declined) {
+            $meta[Payment::DECLINED] = $status->reason ?? true;
+        }
+
+        if ($meta != $was) {
+            $row->meta = $meta;
+        }
     }
 
     /** Money held (§9.5): the order keeps awaiting payment, its history says how much and till when. */
@@ -130,7 +158,7 @@ final readonly class Settlement
         $result = $this->to($row, $status, PaymentStatus::Authorized);
 
         $until = $expires !== null ? ' until '.$expires->format('d.m.Y') : '';
-        $this->note($row, 'Money held: '.$this->money->format($amount, $row->currency).$until.' — capture or release it');
+        $this->note($row, self::HELD_NOTE.$this->money->format($amount, $row->currency).$until.' — capture or release it');
         // The money is held: a try that failed before is not the order's state any more.
         $this->orders->paymentHeld(Order::query()->findOrFail($row->order_id));
 
@@ -146,6 +174,10 @@ final readonly class Settlement
         $held = $row->status === PaymentStatus::Authorized;
         $hold = (int) ($row->authorized_amount ?? $row->amount);
         $result = $this->paidNow($row, $status);
+
+        if ($held && $result->after === PaymentStatus::Paid) {
+            $this->closeHeldNote($row);
+        }
 
         if ($held && $result->after === PaymentStatus::Paid && $result->problem === null) {
             /** @var Order $order */
@@ -262,6 +294,10 @@ final readonly class Settlement
         $row->failure_reason = mb_substr($reason, 0, 500);
         $result = $this->to($row, $status, $to);
 
+        if ($held) {
+            $this->closeHeldNote($row);
+        }
+
         /** @var Order $order */
         $order = Order::query()->findOrFail($row->order_id);
         $last = (int) Payment::query()->where('order_id', $row->order_id)->max('id') === $row->id;
@@ -358,6 +394,20 @@ final readonly class Settlement
     }
 
     /** @param  string|null  $actor  'panel', 'mcp' — the line is the manager's; null — the method's */
+    /**
+     * The hold is over: «capture or release it» has its answer, and so has a capture the gateway
+     * refused on the way — both leave the order's notes (§9.5). A refused release leaves no note:
+     * the manager reads it in the toast and the journal.
+     */
+    private function closeHeldNote(Payment $row): void
+    {
+        $order = Order::query()->findOrFail($row->order_id);
+
+        foreach ([self::HELD_NOTE, self::CAPTURE_REFUSED_NOTE] as $beginning) {
+            $this->orders->closeNote($order, $this->source($row), $beginning);
+        }
+    }
+
     private function note(Payment $row, string $text, ?string $actor = null): void
     {
         /** @var Order $order */

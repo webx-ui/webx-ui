@@ -133,7 +133,7 @@ final class OrderPaymentController
         }
 
         if ($result->problem === SettleResult::CAPTURE_FAILED) {
-            throw ValidationException::withMessages(['payment' => [__('webx-payments::panel.errors.capture_refused')]]);
+            throw ValidationException::withMessages(['payment' => [__('webx-payments::panel.errors.capture_refused', ['reason' => (string) $result->refusal])]]);
         }
 
         return ApiResponse::data($this->card($request, $model->refresh()));
@@ -236,8 +236,8 @@ final class OrderPaymentController
             return $action();
         } catch (HoldRefused $refused) {
             throw ValidationException::withMessages([$refused->reason === HoldRefused::AMOUNT || $refused->reason === HoldRefused::TOO_MUCH || $refused->reason === HoldRefused::PARTIAL ? 'amount' : 'payment' => [$refused->getMessage()]]);
-        } catch (GatewayRefused) {
-            throw ValidationException::withMessages(['payment' => [__('webx-payments::panel.errors.void_refused')]]);
+        } catch (GatewayRefused $refused) {
+            throw ValidationException::withMessages(['payment' => [__('webx-payments::panel.errors.void_refused', ['reason' => $refused->getMessage()])]]);
         } catch (GatewayUnavailable) {
             throw ValidationException::withMessages(['payment' => [__('webx-payments::panel.errors.gateway_unavailable')]]);
         }

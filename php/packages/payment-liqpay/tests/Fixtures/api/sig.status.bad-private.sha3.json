@@ -1,0 +1,25 @@
+{
+  "checked": "2026-11-04T08:17:41.629Z",
+  "signed_with": "sha3-256 (spoiled: sig)",
+  "request": {
+    "url": "https://www.liqpay.ua/api/request",
+    "json": {
+      "version": 3,
+      "public_key": "sandbox_FAKEpublic00000000",
+      "action": "status",
+      "order_id": "6badbc2a-ac44-4302-9cfc-a25a2b713cda"
+    },
+    "data": "eyJ2ZXJzaW9uIjozLCJwdWJsaWNfa2V5Ijoic2FuZGJveF9GQUtFcHVibGljMDAwMDAwMDAiLCJhY3Rpb24iOiJzdGF0dXMiLCJvcmRlcl9pZCI6IjZiYWRiYzJhLWFjNDQtNDMwMi05Y2ZjLWEyNWEyYjcxM2NkYSJ9",
+    "signature": "UIl2rhdTyE8wZ6tDTRC67mukG1A5zLPHeJQZ8HQkeJ0="
+  },
+  "response": {
+    "status": 200,
+    "json": {
+      "code": "invalid_signature",
+      "err_code": "invalid_signature",
+      "err_description": "Помилка при формуванні запиту до API LiqPay. Невірний підпис signature",
+      "result": "error",
+      "status": "error"
+    }
+  }
+}

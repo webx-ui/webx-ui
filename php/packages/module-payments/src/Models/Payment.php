@@ -43,6 +43,12 @@ use WebxUi\Payments\PaymentStatus;
  */
 final class Payment extends Model
 {
+    /** The key of `meta`: the gateway's last word was «the buyer never began this payment» (§8.4). */
+    public const string NOT_STARTED = 'not_started';
+
+    /** The key of `meta`: the gateway's last word was «the bank declined, try again» (§8.4); the reason or `true`. */
+    public const string DECLINED = 'declined';
+
     protected $table = 'payments';
 
     protected $guarded = ['id'];
@@ -59,6 +65,24 @@ final class Payment extends Model
                 $payment->uuid = (string) Str::ulid();
             }
         });
+    }
+
+    public function notStarted(): bool
+    {
+        return $this->status === PaymentStatus::Pending && isset(($this->meta ?? [])[self::NOT_STARTED]);
+    }
+
+    public function declined(): bool
+    {
+        return $this->status === PaymentStatus::Pending && isset(($this->meta ?? [])[self::DECLINED]);
+    }
+
+    /** What the bank said of the card, as the gateway's words have it; null — it said nothing. */
+    public function declineReason(): ?string
+    {
+        $reason = $this->declined() ? ($this->meta ?? [])[self::DECLINED] : null;
+
+        return is_string($reason) ? $reason : null;
     }
 
     /** @return BelongsTo<Order, $this> */

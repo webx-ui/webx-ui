@@ -20,7 +20,7 @@ use WebxUi\Payments\GatewayUnavailable;
  * Registered in tests and the playground; on a development site only by
  * `WEBX_PAYMENTS_FAKE_GATEWAY=true` ({@see FakeGatewaySite}), never in production.
  */
-final readonly class FakeGateway implements Gateway
+readonly class FakeGateway implements Gateway
 {
     public const string KEY = 'gateway-a';
 

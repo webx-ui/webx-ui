@@ -22,7 +22,8 @@ use WebxUi\Orders\Models\PublicStatus;
  * the number and the date, the public status with its description and the scale of the public
  * statuses in their order, the marks «Paid», «Received», «Cancelled», «Refunded», the lines, the
  * money, the delivery and the payment as their owners' one line, the contacts. The internal status
- * and the manager's note never.
+ * and the manager's note never. An order the buyer can pay now says so over the status, with the
+ * way to pay — its payment block's owner brings both.
  *
  * After an edit (§40.1): «Items changed» with the date over the lines, the lines as they are — one
  * taken out is not there — and a line of the balance under the money when it says more than «to
@@ -60,6 +61,8 @@ final readonly class OrderPage
         $money = fn (int $minor): string => $this->money->format($minor, $order->currency);
         $statuses = $this->statuses();
         $current = $statuses['groups'][$statuses['internal'][$order->status_id] ?? 0] ?? null;
+        // Money held is paid for the buyer (§8.3 of payments): the shop captures it, nothing to wait for.
+        $awaiting = self::unpaid($order) && ! $this->blocks->held($order);
 
         return [
             'number' => (string) $order->number,
@@ -76,8 +79,9 @@ final readonly class OrderPage
                 $order->cancelled_at !== null ? ['key' => 'cancelled', 'label' => __('webx-orders::site.marks.cancelled')] : null,
                 $order->refunded_total > 0 ? ['key' => 'refunded', 'label' => __('webx-orders::site.marks.refunded', ['amount' => $money($order->refunded_total)])] : null,
             ])),
-            // Money held is paid for the buyer (§8.3 of payments): the shop captures it, nothing to wait for.
-            'awaiting_payment' => $order->awaiting_payment && $order->paid_at === null && $order->cancelled_at === null && ! $this->blocks->held($order),
+            'awaiting_payment' => $awaiting,
+            // The owner of the payment says it over the status, with the way to pay (§13.1).
+            'prompt' => $awaiting ? $this->blocks->prompt($order, $locale) : null,
             'changed_at' => $order->items_changed_at,
             'items' => $this->items($order->items, $locale, $money),
             'adjustments' => $order->adjustments->map(static fn (OrderAdjustment $adjustment): array => [
@@ -118,23 +122,26 @@ final readonly class OrderPage
 
     /**
      * The rows of «My orders»: number, date, public status, amount, how many lines — the items
-     * counted by the query, the statuses read from the cache.
+     * counted by the query, the statuses read from the cache. An order the buyer can pay now says
+     * so instead of its public status, as its page does (§13.2): one question for the whole list.
      *
-     * @param  iterable<Order>  $orders
+     * @param  list<Order>  $orders
      * @return list<array<string, mixed>>
      */
-    public function rows(iterable $orders): array
+    public function rows(array $orders): array
     {
         $statuses = $this->statuses();
+        $awaiting = $this->blocks->awaiting(array_values(array_filter($orders, self::unpaid(...))), app()->getLocale());
         $rows = [];
 
         foreach ($orders as $order) {
             $group = $statuses['groups'][$statuses['internal'][$order->status_id] ?? 0] ?? null;
+            $title = $awaiting[$order->id] ?? null;
             $rows[] = [
                 'number' => (string) $order->number,
                 'placed_at' => $order->placed_at,
-                'status' => $group['name'] ?? null,
-                'status_code' => $group['code'] ?? null,
+                'status' => $title ?? $group['name'] ?? null,
+                'status_code' => $title !== null ? 'awaiting-payment' : $group['code'] ?? null,
                 'cancelled' => $order->cancelled_at !== null,
                 'payable' => $this->money->format($order->payable, $order->currency),
                 'lines' => (int) ($order->getAttribute('lines_count') ?? 0),
@@ -142,6 +149,12 @@ final readonly class OrderPage
         }
 
         return $rows;
+    }
+
+    /** The order still owes its payment, whoever holds the money: a hold is the owner's to say. */
+    private static function unpaid(Order $order): bool
+    {
+        return $order->awaiting_payment && $order->paid_at === null && $order->cancelled_at === null;
     }
 
     /**

@@ -32,18 +32,24 @@ final class ExchangeSecrets
     /** @var list<string> */
     private readonly array $fields;
 
+    /** @var list<string> */
+    private readonly array $notCardFields;
+
     /**
      * @param  list<string>  $headers  `Gateway::secretHeaders()`
      * @param  list<string>  $fields  `Gateway::secretFields()`
+     * @param  list<string>  $notCardFields  `DeclaresNotCardFields::notCardFields()`
      */
     public function __construct(
         ?Credentials $credentials = null,
         array $headers = [],
         array $fields = [],
+        array $notCardFields = [],
     ) {
         $this->credentials = $credentials ?? Credentials::none();
         $this->headers = array_values(array_unique([...self::HEADERS, ...array_map(strtolower(...), $headers)]));
         $this->fields = array_values(array_unique($fields));
+        $this->notCardFields = array_values(array_unique($notCardFields));
     }
 
     public static function none(): self
@@ -68,6 +74,16 @@ final class ExchangeSecrets
     public function fields(): array
     {
         return $this->fields;
+    }
+
+    /**
+     * Fields the card rule leaves alone (§20.5, rule 4); nothing else here reads them.
+     *
+     * @return list<string>
+     */
+    public function notCardFields(): array
+    {
+        return $this->notCardFields;
     }
 
     /**

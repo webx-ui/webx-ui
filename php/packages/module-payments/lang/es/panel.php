@@ -103,6 +103,7 @@ return [
         'hold' => 'Retener el dinero, cobrarlo después',
         'hold-help' => 'El banco bloquea el importe en la tarjeta; el pedido queda pagado cuando se cobra el dinero. Una retención dura hasta :days días.',
         'hold-partial' => 'Se puede cobrar una parte del importe.',
+        'off-with' => 'No disponible mientras «:name» esté activado.',
         'addresses' => 'Para la cuenta de la pasarela',
         'addresses-help' => 'Copie estas direcciones en la cuenta de la pasarela.',
         'notify-url' => 'Dirección de notificaciones',
@@ -245,8 +246,8 @@ return [
         'test_failed' => 'No se pudo contactar con la pasarela: vea el registro de intercambio.',
         'gateway_unavailable' => 'La pasarela no respondió. Inténtelo más tarde.',
         'nothing_to_check' => 'El pedido no tiene intento que consultar.',
-        'capture_refused' => 'La pasarela rechazó el cobro: el dinero sigue retenido. Su respuesta está en el registro de intercambio.',
-        'void_refused' => 'La pasarela rechazó liberar la retención. Su respuesta está en el registro de intercambio.',
+        'capture_refused' => 'La pasarela ha rechazado el cobro, el dinero sigue retenido: :reason',
+        'void_refused' => 'La pasarela ha rechazado liberar la retención: :reason',
         'amount' => 'Escriba un importe como 120.50.',
     ],
 ];

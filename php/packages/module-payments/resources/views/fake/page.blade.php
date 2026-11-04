@@ -42,6 +42,7 @@
                         'pay' => 'Pay',
                         'decline' => 'Decline',
                         'cancel' => 'Cancel',
+                        'abandon' => 'Leave without paying',
                         'pay-later' => 'Pay, notify later',
                         'repeat-notify' => 'Repeat the notification',
                         'bad-signature' => 'Bad signature',

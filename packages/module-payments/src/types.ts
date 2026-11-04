@@ -48,6 +48,10 @@ export interface SettingField {
   localized: boolean
   options: Option[]
   default: unknown
+  /** The switch that takes this field away while it is on; the server has the last word. */
+  off_with: string | null
+  /** Why it is away; null — the panel's own words. */
+  off_help: string | null
 }
 
 /** A key of the gateway: whether it is there, never what it is. */

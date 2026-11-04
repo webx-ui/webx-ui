@@ -103,6 +103,7 @@ return [
         'hold' => 'Reservar o dinheiro, capturar depois',
         'hold-help' => 'O banco reserva o valor no cartão; o pedido fica pago quando o dinheiro é capturado. Uma reserva dura até :days dias.',
         'hold-partial' => 'Pode-se capturar parte do valor.',
+        'off-with' => 'Indisponível enquanto «:name» estiver ativado.',
         'addresses' => 'Para a conta do gateway',
         'addresses-help' => 'Copie estes endereços para a conta do gateway.',
         'notify-url' => 'Endereço das notificações',
@@ -245,8 +246,8 @@ return [
         'test_failed' => 'Não foi possível contatar o gateway: veja o registro de troca.',
         'gateway_unavailable' => 'O gateway não respondeu. Tente mais tarde.',
         'nothing_to_check' => 'O pedido não tem tentativa para verificar.',
-        'capture_refused' => 'O gateway recusou a captura: o valor continua retido. A resposta está no registro de trocas.',
-        'void_refused' => 'O gateway recusou liberar a retenção. A resposta está no registro de trocas.',
+        'capture_refused' => 'O gateway recusou a captura, o dinheiro continua retido: :reason',
+        'void_refused' => 'O gateway recusou liberar a retenção: :reason',
         'amount' => 'Digite um valor como 120.50.',
     ],
 ];

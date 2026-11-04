@@ -81,6 +81,23 @@ final class PaymentsMcpTest extends McpCase
     }
 
     #[Test]
+    public function a_pair_the_type_refuses_is_refused_by_field_and_a_dry_run_says_so_too(): void
+    {
+        $pair = ['key' => 'gateway-a-card', 'values' => ['settings' => ['hold' => true, 'instalments' => true]]];
+
+        $this->refused('payments_methods_save', $pair, 'settings.instalments: A hold works for card payments only');
+        $this->refused('payments_methods_save', [...$pair, 'dry_run' => true], 'settings.instalments: A hold works for card payments only');
+        $this->assertArrayNotHasKey('hold', PaymentMethod::query()->where('key', 'gateway-a-card')->firstOrFail()->settings);
+
+        // The half that is stored counts: the tool sends only what changes.
+        $this->use('payments_methods_save', ['key' => 'gateway-a-card', 'values' => ['settings' => ['instalments' => true]]]);
+        $this->refused('payments_methods_save', ['key' => 'gateway-a-card', 'values' => ['settings' => ['hold' => true]]], 'settings.instalments');
+
+        $this->use('payments_methods_save', ['key' => 'gateway-a-form', 'values' => ['settings' => ['expires_minutes' => 15]]]);
+        $this->assertSame(15, PaymentMethod::query()->where('key', 'gateway-a-form')->firstOrFail()->settings['expires_minutes']);
+    }
+
+    #[Test]
     public function another_sections_right_is_refused_reads_and_writes(): void
     {
         $this->agent('payments_methods_list', [], ['delivery.view'])->assertHasErrors(['[payments.view]']);

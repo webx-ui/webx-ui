@@ -103,6 +103,7 @@ return [
         'hold' => 'Hold the money, take it later',
         'hold-help' => 'The bank blocks the amount on the card; the order is paid when the money is taken. A hold lasts up to :days days.',
         'hold-partial' => 'Part of the amount can be taken.',
+        'off-with' => 'Not available while «:name» is on.',
         'addresses' => 'For the gateway account',
         'addresses-help' => 'Copy these addresses to the account of the gateway.',
         'notify-url' => 'Notifications address',
@@ -245,8 +246,8 @@ return [
         'test_failed' => 'The gateway could not be reached: see the exchange journal.',
         'gateway_unavailable' => 'The gateway did not answer. Try again later.',
         'nothing_to_check' => 'The order has no attempt to check.',
-        'capture_refused' => 'The gateway refused the capture: the money is still held. The exchange journal has its answer.',
-        'void_refused' => 'The gateway refused to release the hold. The exchange journal has its answer.',
+        'capture_refused' => 'The gateway refused the capture, the money is still held: :reason',
+        'void_refused' => 'The gateway refused to release the hold: :reason',
         'amount' => 'Type an amount like 120.50.',
     ],
 ];

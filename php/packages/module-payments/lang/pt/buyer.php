@@ -48,5 +48,9 @@ return [
         'top_up_button' => 'Pagar a diferença',
         'online_now' => 'Pagar online agora',
         'wait' => 'Se já pagou noutro separador, aguarde um minuto antes de pagar novamente.',
+        'declined' => 'O pagamento não foi concluído: o banco recusou o cartão',
+        'unfinished' => 'Pagamento não concluído',
+        'pay_again' => 'Pagar novamente',
+        'other_method' => 'Escolher outro método',
     ],
 ];

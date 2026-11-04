@@ -143,6 +143,16 @@ final class CardType implements ChargesOnline, CancelsPayments
 }
 ```
 
+- **`fetchStatus()` of a payment the gateway does not have because the buyer never began it** —
+  they cancelled on the gateway's page or closed it — answers
+  `new GatewayStatus(Reported::Pending, notStarted: true)`. The attempt stays open to its deadline
+  and a late payment counts, but the buyer sees «Payment not completed» with «Pay again» and
+  «Choose another method», not an endless «We are checking». Any status but `Pending` with
+  `notStarted` throws.
+- **A payment the bank declined that the gateway keeps open for another card** answers
+  `new GatewayStatus(Reported::Pending, reason: …, declined: true)`. The attempt stays open and a late
+  payment counts; the buyer reads «The bank declined the card» with `reason` and the same two buttons,
+  and the page stops refreshing itself. A status that is not `Pending`, or `notStarted` beside it, throws.
 - **`start()`** is called once per attempt, when the buyer goes to `GET /pay/go/{uuid}` — never when
   the order is placed. `Handoff::redirect()` sends the buyer to the gateway's page; `Handoff::post()`
   posts a signed form to it — and throws on a card field: the shop never takes a card.
@@ -204,11 +214,43 @@ it again.
 | approve first, charge on the shop's confirm    | `CompletesApproval::complete()` — idempotent, the attempt's uuid is the key |
 | hold the money and capture it later, or let go | `CapturesPayments`: `capture()`, `void()`, `maxHoldDays()`                  |
 | capture less than it held                      | `CapturesPayments::capturesPartially()` — true; false: always the whole     |
+| refuse settings that do not go together        | `ValidatesSettings::validateSettings()` — fields and words, empty: saves    |
 
 A hold is a method's setting — the type adds a switch to its `settings()` and starts with
 `capture: false` when `$request->hold`. The base then shows «Capture» and «Release the hold» on the
 order and asks the type; a capture the gateway refuses leaves the money held and the attempt a
 problem.
+
+Some settings are fine alone and wrong together: a hold and instalments, say. The type implements
+`ValidatesSettings`, and the base asks it on every save, from the panel and from an agent alike:
+
+```php
+public function validateSettings(array $settings): array
+{
+    return ($settings['hold'] ?? false) && ($settings['instalments'] ?? false)
+        ? ['instalments' => 'webx-payment-gateway-b::settings.hold_only_cards']
+        : [];
+}
+```
+
+It gets the settings as they will be stored, what was sent over what is kept, and answers field and
+words: nothing is written, and the words appear under the field. To spare the shop the refusal, the
+field in `settings()` can also carry `'off_with' => 'hold'` and `'off_help' => '…'`: while that switch
+is on, the form turns the field off, empties it and says why. That is only a convenience: the check
+is `validateSettings()`.
+
+The journal stars anything that looks like a card number, and a date in milliseconds or a long
+payment id can pass that check by chance. If the gateway's answers carry such numbers, the **gateway**
+class implements `DeclaresNotCardFields`:
+
+```php
+/** Fields that are never a card: the journal leaves their numbers alone. */
+public function notCardFields(): array { return ['create_date', 'payment_id']; }
+```
+
+Name only the fields you are sure of. The exception covers the value of such a field in a JSON or
+form body and nothing else: the same number in another field is still starred, and a key is wiped
+from these fields like from any other.
 
 ## Every request through `GatewayHttp`
 

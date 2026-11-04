@@ -48,5 +48,9 @@ return [
         'top_up_button' => 'Nachzahlen',
         'online_now' => 'Jetzt online bezahlen',
         'wait' => 'Wenn Sie bereits in einem anderen Tab bezahlt haben, warten Sie eine Minute, bevor Sie erneut bezahlen.',
+        'declined' => 'Die Zahlung ist nicht durchgegangen: Die Bank hat die Karte abgelehnt',
+        'unfinished' => 'Zahlung nicht abgeschlossen',
+        'pay_again' => 'Erneut bezahlen',
+        'other_method' => 'Andere Zahlungsart wählen',
     ],
 ];

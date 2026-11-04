@@ -23,12 +23,65 @@ permissions:
   id-token: write
 
 jobs:
+  # Composer has no registry to publish to: a version exists once the tag exists. The npm packages
+  # get their tags from changesets, the PHP ones share a single version carried by the private
+  # php/package.json, so the tag for them is cut here.
+  #
+  # A job of its own, next to `release` and not inside it: one npm package that cannot publish
+  # must not hold the whole Composer half back, and that half needs nothing from npm. It reads
+  # the tree that was pushed, which also keeps it away from the version commit changesets/action
+  # makes when it has work to do — tagging that would announce a release nobody has merged.
+  #
+  # Whether this push is a release is the tag itself: only a merged version PR changes
+  # php/package.json, so an ordinary push and a re-run both find the tag and answer nothing.
+  php-tag:
+    name: Tag the PHP packages
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.tag.outputs.version }}
+    steps:
+      - name: Mint a token for the tag
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.PHP_SPLIT_APP_CLIENT_ID }}
+          private-key: ${{ secrets.PHP_SPLIT_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: webx-ui
+          permission-contents: write
+
+      - uses: actions/checkout@v5
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Tag a version that has no tag yet
+        id: tag
+        run: |
+          version=$(jq -r .version php/package.json)
+
+          if [ "$version" = "0.0.0" ]; then
+            echo "No PHP release has been cut yet — skipping."
+            exit 0
+          fi
+
+          # Asked of the remote: a shallow checkout carries no tags.
+          if [ -n "$(git ls-remote --tags origin "refs/tags/php-v$version")" ]; then
+            echo "php-v$version already exists — nothing to do."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "php-v$version" -m "php-v$version"
+          git push origin "php-v$version"
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
   release:
     name: Version or publish
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    outputs:
-      php_version: ${{ steps.php_tag.outputs.version }}
     steps:
       # The organisation's App rather than GITHUB_TOKEN: a branch pushed with GITHUB_TOKEN starts
       # no workflows, so the version PR's CI used to wait in `action_required` for somebody to
@@ -62,36 +115,6 @@ jobs:
 
       # No build here: opening the version PR needs none, and `pnpm release` builds before it
       # publishes — building twice cost a minute on every run.
-
-      # Composer has no registry to publish to: a version exists once the tag exists. The npm
-      # packages get their tags from changesets, the PHP ones share a single version carried by
-      # the private php/package.json, so the tag for them is cut here.
-      #
-      # Before changesets/action on purpose. When changesets has work to do it bumps the version
-      # and commits it, so afterwards neither the working tree nor HEAD is what was pushed to
-      # main any more — and tagging that announces a release nobody has merged, on a commit that
-      # may never land.
-      - name: Tag the PHP packages
-        id: php_tag
-        run: |
-          version=$(node -p "require('./php/package.json').version")
-
-          if [ "$version" = "0.0.0" ]; then
-            echo "No PHP release has been cut yet — skipping."
-            exit 0
-          fi
-
-          if git rev-parse -q --verify "refs/tags/php-v$version" >/dev/null; then
-            echo "php-v$version already exists — nothing to do."
-            exit 0
-          fi
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -a "php-v$version" -m "php-v$version"
-          git push origin "php-v$version"
-
-          echo "version=$version" >> "$GITHUB_OUTPUT"
 
       # Opens (or updates) the "Version packages" PR when changesets are pending;
       # publishes to npm when that PR is merged.
@@ -160,12 +183,15 @@ jobs:
     secrets: inherit
 
   # Mirrors every PHP package into its own repository and tags it there as v<version>, which
-  # is the form Composer and Packagist understand.
+  # is the form Composer and Packagist understand. Hangs off `php-tag` alone: re-running a failed
+  # npm job must not repeat this — a run on a commit main has moved past would write the old
+  # tree over the mirrors. A failed split re-runs by itself and keeps the version from the first
+  # attempt; "Re-run all jobs" finds the tag and skips it.
   php-split:
     name: Publish PHP packages
-    needs: release
-    if: github.event_name == 'push' && needs.release.outputs.php_version != ''
+    needs: php-tag
+    if: github.event_name == 'push' && needs.php-tag.outputs.version != ''
     uses: ./.github/workflows/php-split.yml
     with:
-      tag: v${{ needs.release.outputs.php_version }}
+      tag: v${{ needs.php-tag.outputs.version }}
     secrets: inherit

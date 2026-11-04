@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import {
   confirm,
   localizedValue,
@@ -88,27 +88,44 @@ const title = computed(
     ) || typeTitle.value,
 )
 
+/** Whether the switch the field names is on: the hold, or another field of the type. */
+function isOff(field: SettingField): boolean {
+  return Boolean(field.off_with && values.value[`${SETTING}${field.off_with}`])
+}
+
+function offHelp(field: SettingField): string {
+  const name =
+    field.off_with === 'hold'
+      ? t('method.hold')
+      : (parts.value?.settings.fields.find((one) => one.name === field.off_with)?.label ?? '')
+
+  return field.off_help ?? t('method.off-with', { name })
+}
+
 /** A field of the type as a node of the screen: its value lives under `settings.<name>`. */
 function node(field: SettingField): ScreenNode {
+  const off = isOff(field)
+  const help = off ? offHelp(field) : field.help
+  const state = off ? { disabled: true } : {}
   const base = {
     id: `setting-${field.name}`,
     name: `${SETTING}${field.name}`,
     label: field.label,
-    ...(field.help ? { help: field.help } : {}),
+    ...(help ? { help } : {}),
     ...(field.localized ? { localized: true } : {}),
   }
 
   switch (field.type) {
     case 'textarea':
-      return { ...base, type: 'wx-textarea', props: { rows: 3, maxlength: 2000 } }
+      return { ...base, type: 'wx-textarea', props: { rows: 3, maxlength: 2000, ...state } }
     case 'select':
-      return { ...base, type: 'wx-select', props: { options: field.options } }
+      return { ...base, type: 'wx-select', props: { options: field.options, ...state } }
     case 'number':
-      return { ...base, type: 'wx-input-number', props: {} }
+      return { ...base, type: 'wx-input-number', props: { ...state } }
     case 'switch':
-      return { ...base, type: 'wx-switch' }
+      return { ...base, type: 'wx-switch', props: { ...state } }
     default:
-      return { ...base, type: 'wx-input', props: { maxlength: 2000 } }
+      return { ...base, type: 'wx-input', props: { maxlength: 2000, ...state } }
   }
 }
 
@@ -144,6 +161,27 @@ const patch = computed<Patch>(() => {
         ...children.map((child) => ({ op: 'add' as const, target: 'settings', node: child })),
       ]
 })
+
+// A field taken away is emptied too: left on, it would come back as the server's refusal, on a
+// field nobody can touch. Compared as a string: only a change of what is off gets here.
+watch(
+  () =>
+    (parts.value?.settings.fields ?? [])
+      .filter(isOff)
+      .map((field) => field.name)
+      .join(),
+  () => {
+    const emptied: ScreenModel = {}
+
+    for (const field of parts.value?.settings.fields ?? []) {
+      const key = `${SETTING}${field.name}`
+
+      if (isOff(field) && values.value[key]) emptied[key] = field.type === 'switch' ? false : null
+    }
+
+    if (Object.keys(emptied).length > 0) values.value = { ...values.value, ...emptied }
+  },
+)
 
 function take(detail: TypeParts, own: ScreenModel): void {
   parts.value = detail

@@ -167,7 +167,7 @@ final class GatewayAForm extends GatewayAType implements CompletesApproval
         }
 
         if (($payload['status'] ?? null) === 'error') {
-            return new GatewayStatus(Reported::Pending, null, reason: 'The gateway does not know the payment');
+            return self::unknownPayment($payload['err_code'] ?? null);
         }
 
         return $this->status($payload);

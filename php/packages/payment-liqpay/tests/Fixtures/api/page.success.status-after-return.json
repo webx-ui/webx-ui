@@ -1,0 +1,61 @@
+{
+  "checked": "2026-11-04T08:21:40.209Z",
+  "signed_with": "sha3-256",
+  "request": {
+    "url": "https://www.liqpay.ua/api/request",
+    "json": {
+      "version": 7,
+      "public_key": "sandbox_FAKEpublic00000000",
+      "action": "status",
+      "order_id": "f21b0233-01b4-4ef9-948b-fa54c2a299dd"
+    },
+    "data": "eyJ2ZXJzaW9uIjo3LCJwdWJsaWNfa2V5Ijoic2FuZGJveF9GQUtFcHVibGljMDAwMDAwMDAiLCJhY3Rpb24iOiJzdGF0dXMiLCJvcmRlcl9pZCI6ImYyMWIwMjMzLTAxYjQtNGVmOS05NDhiLWZhNTRjMmEyOTlkZCJ9",
+    "signature": "cnaJADoykgFIf/r8PTzLDqm3BHMrjq7EpuEBxzXm/DI="
+  },
+  "response": {
+    "status": 200,
+    "json": {
+      "result": "ok",
+      "payment_id": 2950756317,
+      "action": "pay",
+      "status": "success",
+      "version": 7,
+      "type": "buy",
+      "paytype": "card",
+      "public_key": "sandbox_FAKEpublic00000000",
+      "acq_id": 100000,
+      "order_id": "f21b0233-01b4-4ef9-948b-fa54c2a299dd",
+      "liqpay_order_id": "091IZH7Q1793780477617881",
+      "description": "Order 1024",
+      "sender_first_name": "Buyer",
+      "sender_last_name": "Example",
+      "sender_card_mask2": "424242*42",
+      "sender_card_bank": "Test",
+      "sender_card_type": "visa",
+      "sender_card_country": 804,
+      "ip": "203.0.113.10",
+      "amount": 12.34,
+      "currency": "UAH",
+      "sender_commission": 0,
+      "receiver_commission": 0.16,
+      "agent_commission": 0,
+      "amount_debit": 12.34,
+      "amount_credit": 12.34,
+      "commission_debit": 0,
+      "commission_credit": 0.16,
+      "currency_debit": "UAH",
+      "currency_credit": "UAH",
+      "sender_bonus": 0,
+      "amount_bonus": 0,
+      "mpi_eci": "7",
+      "is_3ds": false,
+      "reserve_refund_id": 33883284,
+      "reserve_payment_id": 2950754540,
+      "reserve_amount": 10.21,
+      "reserve_date": 1793780487087,
+      "create_date": 1793780477619,
+      "end_date": 1793780487123,
+      "transaction_id": 2950756317
+    }
+  }
+}

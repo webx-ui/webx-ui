@@ -1,0 +1,47 @@
+{
+  "checked": "2026-11-04T08:18:02.109Z",
+  "signed_with": "sha3-256",
+  "request": {
+    "url": "https://www.liqpay.ua/api/request",
+    "json": {
+      "version": 7,
+      "public_key": "sandbox_FAKEpublic00000000",
+      "action": "pay",
+      "order_id": "95e32f50-0b6c-4748-8760-2ea1633530cd",
+      "amount": "12.34",
+      "currency": "UAH",
+      "description": "Order 1024",
+      "card": "[test-card]",
+      "card_exp_month": "12",
+      "card_exp_year": "30",
+      "card_cvv": "[test-cvv]",
+      "phone": "+800 1234 5678",
+      "ip": "203.0.113.10"
+    },
+    "data": "eyJ2ZXJzaW9uIjo3LCJwdWJsaWNfa2V5Ijoic2FuZGJveF9GQUtFcHVibGljMDAwMDAwMDAiLCJhY3Rpb24iOiJwYXkiLCJvcmRlcl9pZCI6Ijk1ZTMyZjUwLTBiNmMtNDc0OC04NzYwLTJlYTE2MzM1MzBjZCIsImFtb3VudCI6IjEyLjM0IiwiY3VycmVuY3kiOiJVQUgiLCJkZXNjcmlwdGlvbiI6Ik9yZGVyIDEwMjQiLCJjYXJkIjoiW3Rlc3QtY2FyZF0iLCJjYXJkX2V4cF9tb250aCI6IjEyIiwiY2FyZF9leHBfeWVhciI6IjMwIiwiY2FyZF9jdnYiOiJbdGVzdC1jdnZdIiwicGhvbmUiOiIrODAwIDEyMzQgNTY3OCIsImlwIjoiMjAzLjAuMTEzLjEwIn0=",
+    "signature": "iyTxMBdUHkM3tS5vIMckZdBF4Ih6NutGqdEPKDAM064="
+  },
+  "response": {
+    "status": 200,
+    "json": {
+      "result": "error",
+      "action": "pay",
+      "prev_payment_id": 2950754213,
+      "status": "failure",
+      "err_code": "order_id_duplicate",
+      "err_description": "Duplicate order_id",
+      "version": 7,
+      "type": "buy",
+      "public_key": "sandbox_FAKEpublic00000000",
+      "acq_id": 100000,
+      "order_id": "95e32f50-0b6c-4748-8760-2ea1633530cd",
+      "liqpay_order_id": "8TJTATQS1793780282074138",
+      "description": "Order 1024",
+      "amount": 12.34,
+      "currency": "UAH",
+      "mpi_eci": "7",
+      "is_3ds": false,
+      "code": "order_id_duplicate"
+    }
+  }
+}

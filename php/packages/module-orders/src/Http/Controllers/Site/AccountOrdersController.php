@@ -34,7 +34,7 @@ final readonly class AccountOrdersController
     {
         $perPage = max(1, (int) $config->get('webx-orders.account_per_page', 20));
         $orders = $this->mine()
-            ->select(['id', 'number', 'currency', 'status_id', 'payable', 'placed_at', 'cancelled_at'])
+            ->select(['id', 'number', 'locale', 'currency', 'status_id', 'payable', 'placed_at', 'cancelled_at', 'paid_at', 'awaiting_payment', 'payment'])
             ->withCount(['items as lines_count' => static fn (Builder $items) => $items->whereNull('parent_id')])
             ->orderByDesc('placed_at')
             ->orderByDesc('id')
@@ -44,7 +44,7 @@ final readonly class AccountOrdersController
         $rows = array_map(fn (array $row): array => [
             ...$row,
             'url' => $this->urls->named(OrderLinks::ACCOUNT_ORDER, ['number' => $row['number']]),
-        ], $this->page->rows($orders->items()));
+        ], $this->page->rows(array_values($orders->items())));
 
         return $views->make('webx-orders::account.index', ['rows' => $rows, 'pages' => $orders]);
     }

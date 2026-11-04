@@ -48,5 +48,9 @@ return [
         'top_up_button' => 'Ek ödeme yap',
         'online_now' => 'Şimdi çevrimiçi öde',
         'wait' => 'Başka bir sekmede zaten ödediyseniz, tekrar ödemeden önce bir dakika bekleyin.',
+        'declined' => 'Ödeme gerçekleşmedi: banka kartı reddetti',
+        'unfinished' => 'Ödeme tamamlanmadı',
+        'pay_again' => 'Yeniden öde',
+        'other_method' => 'Başka bir yöntem seç',
     ],
 ];

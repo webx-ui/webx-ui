@@ -37,6 +37,8 @@ final readonly class SettleResult
         public ?string $problem = null,
         /** A dry run (§9.5): what would be, nothing written and the gateway not asked. */
         public bool $dryRun = false,
+        /** A capture refused: the gateway's own words, without what was asked. */
+        public ?string $refusal = null,
     ) {}
 
     /** Nothing moved: the attempt is where it was, and nobody asked the gateway. */

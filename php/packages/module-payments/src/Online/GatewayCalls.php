@@ -6,6 +6,7 @@ namespace WebxUi\Payments\Online;
 
 use Illuminate\Contracts\Config\Repository;
 use WebxUi\Payments\Contracts\ChargesOnline;
+use WebxUi\Payments\Contracts\DeclaresNotCardFields;
 use WebxUi\Payments\Contracts\Gateway;
 use WebxUi\Payments\Credentials;
 use WebxUi\Payments\Exchange\ExchangeContext;
@@ -23,7 +24,8 @@ use WebxUi\Payments\UnknownGateway;
 /**
  * What the base hands a satellite for one call (spec §20.3): its type, its gateway, the method's
  * keys and a `GatewayHttp` bound to the gateway, the method, the attempt and the trace — with the
- * secrets the journal wipes: the keys, the gateway's secret headers and fields.
+ * secrets the journal wipes: the keys, the gateway's secret headers and fields — and the fields it
+ * said are not card numbers.
  */
 final readonly class GatewayCalls
 {
@@ -79,7 +81,12 @@ final readonly class GatewayCalls
                 source: $source,
                 trace: $trace,
             ),
-            new ExchangeSecrets($credentials, $gateway->secretHeaders(), $gateway->secretFields()),
+            new ExchangeSecrets(
+                $credentials,
+                $gateway->secretHeaders(),
+                $gateway->secretFields(),
+                $gateway instanceof DeclaresNotCardFields ? $gateway->notCardFields() : [],
+            ),
             $kind,
             $this->hosts,
         );

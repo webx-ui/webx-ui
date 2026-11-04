@@ -1,0 +1,28 @@
+{
+  "checked": "2026-11-04T12:09:18.000Z",
+  "signed_with": "sha3-256",
+  "request": {
+    "url": "https://www.liqpay.ua/api/request",
+    "json": {
+      "version": 7,
+      "public_key": "sandbox_FAKEpublic00000000",
+      "action": "hold_completion",
+      "order_id": "5b0c8f0e-6a55-4a57-9c0e-2f6d3c1a7e11",
+      "amount": "5.00"
+    },
+    "data": "eyJ2ZXJzaW9uIjo3LCJwdWJsaWNfa2V5Ijoic2FuZGJveF9GQUtFcHVibGljMDAwMDAwMDAiLCJhY3Rpb24iOiJob2xkX2NvbXBsZXRpb24iLCJvcmRlcl9pZCI6IjViMGM4ZjBlLTZhNTUtNGE1Ny05YzBlLTJmNmQzYzFhN2UxMSIsImFtb3VudCI6IjUuMDAifQ==",
+    "signature": "3EgZ148S7cYbV40Nk18vhghoUAwmiDl5T0WcLFDO16g="
+  },
+  "response": {
+    "status": 200,
+    "json": {
+      "code": "wrong_amount_currency",
+      "err_code": "wrong_amount_currency",
+      "err_description": "Валюта платежу не збігається з валютою debit",
+      "is_3ds": false,
+      "result": "error",
+      "status": "error",
+      "type": "buy"
+    }
+  }
+}

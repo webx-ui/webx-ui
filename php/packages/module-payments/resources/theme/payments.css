@@ -199,3 +199,55 @@
   margin-inline-start: var(--site-space-2);
   color: var(--site-color-accent);
 }
+
+/*
+ * The way on from the page of payment and the order's page (§8.4, §8.5): «Pay», and every other
+ * method of the order behind one button — `details`, so it opens without the script.
+ */
+.webx-payments-prompt {
+  display: grid;
+  gap: var(--site-space-3);
+  min-width: 0;
+}
+
+.webx-payments-prompt__form,
+.webx-payments-others__form {
+  margin: 0;
+}
+
+.webx-payments-prompt__message {
+  margin: 0;
+}
+
+.webx-payments-prompt__button,
+.webx-payments-others__choice {
+  justify-self: start;
+  min-height: 44px;
+  max-width: 100%;
+  padding: var(--site-space-2) var(--site-space-4);
+  border: 1px solid var(--site-color-accent);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-accent);
+  color: var(--site-color-accent-contrast);
+  font: inherit;
+  cursor: pointer;
+}
+
+.webx-payments-others__choice {
+  background: transparent;
+  color: var(--site-color-text);
+}
+
+.webx-payments-others {
+  min-width: 0;
+}
+
+.webx-payments-others__toggle {
+  cursor: pointer;
+}
+
+.webx-payments-others__list {
+  display: grid;
+  gap: var(--site-space-2);
+  margin-top: var(--site-space-3);
+}

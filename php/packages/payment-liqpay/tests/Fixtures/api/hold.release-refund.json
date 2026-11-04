@@ -1,0 +1,25 @@
+{
+  "checked": "2026-11-04T08:18:03.829Z",
+  "signed_with": "sha3-256",
+  "request": {
+    "url": "https://www.liqpay.ua/api/request",
+    "json": {
+      "version": 7,
+      "public_key": "sandbox_FAKEpublic00000000",
+      "action": "refund",
+      "order_id": "85870e94-a87c-48e2-b6a3-cf9dd4186dcb",
+      "amount": "12.34"
+    },
+    "data": "eyJ2ZXJzaW9uIjo3LCJwdWJsaWNfa2V5Ijoic2FuZGJveF9GQUtFcHVibGljMDAwMDAwMDAiLCJhY3Rpb24iOiJyZWZ1bmQiLCJvcmRlcl9pZCI6Ijg1ODcwZTk0LWE4N2MtNDhlMi1iNmEzLWNmOWRkNDE4NmRjYiIsImFtb3VudCI6IjEyLjM0In0=",
+    "signature": "628IQmyWxWK8zSrYjkfrGd8ciCTnZVCiNQ5+O2hKKEs="
+  },
+  "response": {
+    "status": 200,
+    "json": {
+      "result": "ok",
+      "action": "refund",
+      "payment_id": 2950754237,
+      "status": "reversed"
+    }
+  }
+}

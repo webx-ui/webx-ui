@@ -5,15 +5,19 @@ declare(strict_types=1);
 namespace WebxUi\Payments\Tests\Panel;
 
 use PHPUnit\Framework\Attributes\Test;
+use ReflectionProperty;
+use WebxUi\Payments\MethodTypes;
 use WebxUi\Payments\Models\PaymentGatewayEvent;
 use WebxUi\Payments\Models\PaymentMethod;
 use WebxUi\Payments\Testing\FakeGateway;
+use WebxUi\Payments\Tests\Fakes\DictionaryCard;
 
 /**
  * The methods of the panel (spec §13.2, §13.3, §15.2): the list and a method say only whether a key
  * is set — the value never reaches the browser; a typed key replaces it, a blank field keeps it,
  * «Remove key» clears it; the environment wins and is not offered for replacing; the type's
- * settings are checked by their fields; «Test the connection» is an event of the journal.
+ * settings are checked by their fields and, where the type says so, together; «Test the connection»
+ * is an event of the journal.
  */
 final class MethodsPanelTest extends PanelCase
 {
@@ -111,6 +115,93 @@ final class MethodsPanelTest extends PanelCase
         $this->putJson($this->api('methods/'.$transfer->id), ['values' => [], 'settings' => ['hold' => true, 'recipient' => ['en' => 'Shop A Ltd']]])->assertOk();
         $this->assertArrayNotHasKey('hold', $transfer->refresh()->settings);
         $this->assertSame(['en' => 'Shop A Ltd'], $transfer->settings['recipient']);
+    }
+
+    #[Test]
+    public function a_pair_the_type_refuses_is_not_stored_and_the_answer_names_the_field(): void
+    {
+        $this->signIn();
+        $card = PaymentMethod::query()->where('key', 'gateway-a-card')->firstOrFail();
+
+        $this->putJson($this->api('methods/'.$card->id), ['values' => ['titles' => ['en' => 'Never']], 'settings' => ['hold' => true, 'instalments' => true]])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['settings.instalments' => 'A hold works for card payments only']);
+
+        $card->refresh();
+        $this->assertArrayNotHasKey('hold', $card->settings);
+        $this->assertNotSame(['en' => 'Never'], $card->title);
+
+        // Either alone is fine; the second half of the pair is checked against what is stored.
+        $this->putJson($this->api('methods/'.$card->id), ['values' => [], 'settings' => ['instalments' => true]])->assertOk();
+        $this->putJson($this->api('methods/'.$card->id), ['values' => [], 'settings' => ['hold' => true]])
+            ->assertUnprocessable()->assertJsonValidationErrors('settings.instalments');
+        $this->putJson($this->api('methods/'.$card->id), ['values' => [], 'settings' => ['hold' => true, 'instalments' => false]])->assertOk();
+        $this->assertSame([true, false], [$card->refresh()->settings['hold'], $card->settings['instalments']]);
+    }
+
+    #[Test]
+    public function a_new_method_is_checked_like_a_stored_one(): void
+    {
+        $this->signIn();
+
+        $this->postJson($this->api('methods'), ['type' => 'gateway-a.card', 'values' => ['titles' => ['en' => 'Second card']], 'settings' => ['hold' => true, 'instalments' => true]])
+            ->assertUnprocessable()->assertJsonValidationErrors('settings.instalments');
+
+        $this->assertFalse(PaymentMethod::query()->where('title->en', 'Second card')->exists());
+    }
+
+    #[Test]
+    public function a_pair_stored_before_the_rule_does_not_stop_a_save_that_leaves_the_settings_alone(): void
+    {
+        $this->signIn();
+        $card = PaymentMethod::query()->where('key', 'gateway-a-card')->firstOrFail();
+        $card->forceFill(['settings' => ['hold' => true, 'instalments' => true]])->save();
+
+        $this->putJson($this->api('methods/'.$card->id), ['values' => ['titles' => ['en' => 'Renamed']]])->assertOk();
+
+        $this->assertSame(['en' => 'Renamed'], $card->refresh()->title);
+    }
+
+    #[Test]
+    public function the_refusal_may_be_a_key_of_the_types_dictionary(): void
+    {
+        $this->signIn();
+        $types = $this->app->make(MethodTypes::class);
+        $types->has('gateway-a.card');
+        $property = new ReflectionProperty(MethodTypes::class, 'types');
+        /** @var array<string, mixed> $all */
+        $all = $property->getValue($types);
+        $all['gateway-a.card'] = $this->app->make(DictionaryCard::class);
+        $property->setValue($types, $all);
+        $card = PaymentMethod::query()->where('key', 'gateway-a-card')->firstOrFail();
+
+        $this->putJson($this->api('methods/'.$card->id), ['values' => [], 'settings' => ['hold' => true, 'instalments' => true]])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['settings.hold' => (string) __('webx-payments::panel.errors.amounts')]);
+    }
+
+    #[Test]
+    public function a_type_without_the_contract_saves_as_it_did(): void
+    {
+        $this->signIn();
+        $form = PaymentMethod::query()->where('key', 'gateway-a-form')->firstOrFail();
+
+        $this->putJson($this->api('methods/'.$form->id), ['values' => [], 'settings' => ['expires_minutes' => 15, 'hold' => true, 'instalments' => true]])->assertOk();
+
+        $this->assertSame(15, $form->refresh()->settings['expires_minutes']);
+        $this->assertArrayNotHasKey('instalments', $form->settings);
+    }
+
+    #[Test]
+    public function a_field_says_which_switch_takes_it_away_and_why(): void
+    {
+        $this->signIn();
+        $card = PaymentMethod::query()->where('key', 'gateway-a-card')->firstOrFail();
+
+        $fields = $this->getJson($this->api('methods/'.$card->id))->assertOk()->collect('data.settings.fields')->keyBy('name');
+
+        $this->assertSame(['hold', 'A hold works for card payments only'], [$fields['instalments']['off_with'], $fields['instalments']['off_help']]);
+        $this->assertSame([null, null], [$fields['expires_minutes']['off_with'], $fields['expires_minutes']['off_help']]);
     }
 
     #[Test]

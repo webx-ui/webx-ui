@@ -8,9 +8,13 @@ use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Orders\Models\Order;
 use WebxUi\Orders\Models\StatusChange;
 use WebxUi\Orders\Panel\OrderCard;
+use WebxUi\Payments\GatewayStatus;
 use WebxUi\Payments\Models\Payment;
 use WebxUi\Payments\Models\PaymentGatewayEvent;
+use WebxUi\Payments\Online\Settlement;
+use WebxUi\Payments\Panel\EventRows;
 use WebxUi\Payments\PaymentStatus;
+use WebxUi\Payments\Reported;
 use WebxUi\Payments\SettleResult;
 use WebxUi\Payments\Testing\FakeGatewayServer;
 use WebxUi\Payments\Testing\FakeGatewaySite;
@@ -132,9 +136,70 @@ final class HoldPanelTest extends PanelCase
 
         $this->postJson($this->api('orders/'.$order->id.'/attempts/'.$payment->id.'/capture'), [])
             ->assertUnprocessable()
-            ->assertJsonPath('errors.payment.0', 'The gateway refused the capture: the money is still held. The exchange journal has its answer.');
+            ->assertJsonPath('errors.payment.0', 'The gateway refused the capture, the money is still held: The gateway refused the capture');
 
         $this->assertSame([PaymentStatus::Authorized, SettleResult::CAPTURE_FAILED], [$payment->refresh()->status, $payment->problem]);
+
+        // The line of the journal does not read as money taken, the event keeps what it stored.
+        $event = PaymentGatewayEvent::query()->where('kind', 'captured')->sole();
+        $this->assertSame('rejected', $event->outcome);
+        $this->assertSame('capture_refused', EventRows::line($event)['kind']);
+    }
+
+    #[Test]
+    public function the_note_of_the_hold_leaves_the_notes_when_the_hold_is_over(): void
+    {
+        foreach (['capture', 'void'] as $action) {
+            [$order, $payment] = $this->held();
+            $this->signIn(['payments.view', 'orders.manage']);
+            $notes = fn (): array => StatusChange::query()->where('order_id', $order->id)->where('kind', StatusChange::NOTE)->pluck('note')->all();
+            $this->assertStringStartsWith('Money held', $notes()[0], $action);
+
+            $this->postJson($this->api('orders/'.$order->id.'/attempts/'.$payment->id.'/'.$action), [])->assertOk();
+
+            $this->assertSame([], array_values(array_filter($notes(), static fn (string $note): bool => str_starts_with($note, 'Money held'))), $action);
+            $this->assertSame(1, StatusChange::query()->where('order_id', $order->id)->where('kind', StatusChange::NOTE_CLOSED)->count(), $action);
+        }
+    }
+
+    #[Test]
+    public function the_note_of_a_refused_capture_leaves_with_the_hold(): void
+    {
+        $ends = [
+            'capture' => fn (Order $order, Payment $payment) => $this->postJson($this->api('orders/'.$order->id.'/attempts/'.$payment->id.'/capture'), [])->assertOk(),
+            'release' => fn (Order $order, Payment $payment) => $this->postJson($this->api('orders/'.$order->id.'/attempts/'.$payment->id.'/void'), [])->assertOk(),
+            'expiry' => fn (Order $order, Payment $payment) => $this->app->make(Settlement::class)->settle($payment, new GatewayStatus(Reported::Expired)),
+        ];
+
+        foreach ($ends as $end => $finish) {
+            [$order, $payment] = $this->held();
+            $this->signIn(['payments.view', 'orders.manage']);
+            $refused = fn (string $kind): array => StatusChange::query()->where('order_id', $order->id)->where('kind', $kind)->where('note', 'like', 'The gateway refused to capture%')->pluck('note')->all();
+
+            $this->server()->failNext(FakeGatewayServer::CAPTURE_REFUSED);
+            $this->postJson($this->api('orders/'.$order->id.'/attempts/'.$payment->id.'/capture'), [])->assertUnprocessable();
+            $this->assertCount(1, $refused(StatusChange::NOTE), $end);
+
+            $finish($order, $payment->refresh());
+
+            $this->assertSame([], $refused(StatusChange::NOTE), $end);
+            $this->assertCount(1, $refused(StatusChange::NOTE_CLOSED), $end);
+        }
+    }
+
+    #[Test]
+    public function a_refused_capture_stays_in_the_notes_while_the_money_is_held(): void
+    {
+        [$order, $payment] = $this->held();
+        $this->signIn(['payments.view', 'orders.manage']);
+        $this->server()->failNext(FakeGatewayServer::CAPTURE_REFUSED);
+        $this->postJson($this->api('orders/'.$order->id.'/attempts/'.$payment->id.'/capture'), [])->assertUnprocessable();
+
+        $notes = StatusChange::query()->where('order_id', $order->id)->where('kind', StatusChange::NOTE)->pluck('note')->all();
+
+        $this->assertCount(2, $notes);
+        $this->assertStringStartsWith('Money held', $notes[0]);
+        $this->assertStringStartsWith('The gateway refused to capture', $notes[1]);
     }
 
     #[Test]

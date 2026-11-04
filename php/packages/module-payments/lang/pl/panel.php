@@ -103,6 +103,7 @@ return [
         'hold' => 'Zablokuj pieniądze, pobierz później',
         'hold-help' => 'Bank blokuje kwotę na karcie; zamówienie jest opłacone, gdy pieniądze zostaną pobrane. Blokada trwa do :days dni.',
         'hold-partial' => 'Można pobrać część kwoty.',
+        'off-with' => 'Niedostępne, gdy włączone jest «:name».',
         'addresses' => 'Do konta bramki',
         'addresses-help' => 'Skopiuj te adresy do konta bramki.',
         'notify-url' => 'Adres powiadomień',
@@ -245,8 +246,8 @@ return [
         'test_failed' => 'Nie udało się połączyć z bramką: zobacz dziennik wymiany.',
         'gateway_unavailable' => 'Bramka nie odpowiedziała. Spróbuj później.',
         'nothing_to_check' => 'Zamówienie nie ma próby do sprawdzenia.',
-        'capture_refused' => 'Bramka odmówiła pobrania: środki są nadal zablokowane. Jej odpowiedź jest w dzienniku wymiany.',
-        'void_refused' => 'Bramka odmówiła zwolnienia blokady. Jej odpowiedź jest w dzienniku wymiany.',
+        'capture_refused' => 'Bramka odrzuciła pobranie, pieniądze są nadal zablokowane: :reason',
+        'void_refused' => 'Bramka odmówiła zwolnienia blokady: :reason',
         'amount' => 'Wpisz kwotę, np. 120.50.',
     ],
 ];

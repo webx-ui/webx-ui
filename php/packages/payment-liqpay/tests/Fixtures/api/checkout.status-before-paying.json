@@ -1,0 +1,25 @@
+{
+  "checked": "2026-11-04T08:18:30.924Z",
+  "signed_with": "sha3-256",
+  "request": {
+    "url": "https://www.liqpay.ua/api/request",
+    "json": {
+      "version": 7,
+      "public_key": "sandbox_FAKEpublic00000000",
+      "action": "status",
+      "order_id": "cb1a266b-ead4-4c11-857f-c47de6b90211"
+    },
+    "data": "eyJ2ZXJzaW9uIjo3LCJwdWJsaWNfa2V5Ijoic2FuZGJveF9GQUtFcHVibGljMDAwMDAwMDAiLCJhY3Rpb24iOiJzdGF0dXMiLCJvcmRlcl9pZCI6ImNiMWEyNjZiLWVhZDQtNGMxMS04NTdmLWM0N2RlNmI5MDIxMSJ9",
+    "signature": "fRRXAAi6+aUm8cinHPn7CFeJ6Qn3kHTEq+pr4UNNShY="
+  },
+  "response": {
+    "status": 200,
+    "json": {
+      "code": "payment_not_found",
+      "err_code": "payment_not_found",
+      "err_description": "Платіж не знайдено",
+      "result": "error",
+      "status": "error"
+    }
+  }
+}

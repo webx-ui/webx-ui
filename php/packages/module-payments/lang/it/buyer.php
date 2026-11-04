@@ -48,5 +48,9 @@ return [
         'top_up_button' => 'Paga la differenza',
         'online_now' => 'Paga online ora',
         'wait' => 'Se hai già pagato in un’altra scheda, attendi un minuto prima di pagare di nuovo.',
+        'declined' => 'Il pagamento non è andato a buon fine: la banca ha rifiutato la carta',
+        'unfinished' => 'Pagamento non completato',
+        'pay_again' => 'Paga di nuovo',
+        'other_method' => 'Scegli un altro metodo',
     ],
 ];

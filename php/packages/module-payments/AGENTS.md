@@ -10,7 +10,7 @@ Orders, their milestones and balance are `webx-ui/module-orders`; the cart is `w
 ## What it owns
 
 - **Types** `WebxUi\Payments\MethodTypes` (`register()`, `get()`, `all()`; contract
-  `Contracts\MethodType`, key `<provider>.<kind>`): `store.on_receipt` (`Types\OnReceipt`, does not
+  `Contracts\MethodType`, key `<provider>.<kind>`; optional `Contracts\ValidatesSettings`: `validateSettings()` refuses a pair of settings on every save, a field's `off_with`, `off_help` take it away in the form): `store.on_receipt` (`Types\OnReceipt`, does not
   await payment, «Pay at the counter» at the shop's point) and `store.bank_transfer`
   (`Types\BankTransfer`, awaits payment; settings `recipient`, `account`, `purpose` with `{number}`,
   `note` by language). The migration adds the methods `on-receipt` (rule `on_hand`) and `bank-transfer` switched off.
@@ -37,13 +37,13 @@ Orders, their milestones and balance are `webx-ui/module-orders`; the cart is `w
   `JournalUnavailable` (a notification gets 503), `decide()` adds the decision once. Its own
   connection (`ExchangeConnection`, `webx-payments-exchange`): a rollback never takes an event.
 - **Masking** `ExchangeMasker`: key values in every encoding, `Authorization`, cookies, the gateway's secret
-  headers and fields, run-time secrets, Luhn card numbers; signatures kept. Bodies over 1 MB are cut.
+  headers and fields, run-time secrets, Luhn card numbers (except in a body's fields of `Contracts\DeclaresNotCardFields`, a gateway's option; secrets are wiped there too); signatures kept. Bodies over 1 MB are cut.
 - **HTTP client of satellites** `WebxUi\Payments\GatewayHttp`: `request()` (Laravel `Http` with the journal's middleware
   and the timeouts of `webx-payments.http`), `kind()`, `secret()`, `psr()` (PSR-18). Every attempt of a request is one event.
 - **Gateway contract** (spec §6.3–§6.4, §14.1): `Contracts\Gateway` (keys, settings, secret
   headers and fields, `testConnection()`), registry `WebxUi\Payments\Gateways`; online types
   implement `Contracts\ChargesOnline` (`start()` → `Handoff::redirect|post`, `fetchStatus()` →
-  `GatewayStatus` with `Reported`, `needs()` → `StartNeeds`, `trustsNotifications()`,
+  `GatewayStatus` with `Reported` (Pending only: `notStarted` — the buyer never began, «Payment not completed»; `declined` — the bank declined, another try is open), `needs()` → `StartNeeds`, `trustsNotifications()`,
   `readNotification()` → `Notification::status|poke|unrelated` or `InvalidNotification` (a bad signature may claim `uuid`/`gatewayRef`: linked, not believed), the
   answers to the gateway) and, as they can, `CancelsPayments`, `CompletesApproval`,
   `CapturesPayments` (`capturesPartially()`). Errors: `GatewayUnavailable`, `GatewayRefused` —
@@ -60,12 +60,12 @@ Orders, their milestones and balance are `webx-ui/module-orders`; the cart is `w
 - **Settling** `Payments::settle(payment, GatewayStatus)` → `SettleResult`, the only door to the attempt
   and the order; `check()` asks `fetchStatus()` under the lock first. `POST /payments/notify/{method}` (no
   middleware) journals `in/notify` before parsing (503 if it cannot); `GET|POST /pay/return/{uuid}` asks the API.
-- **Gateway A** `Testing\FakeGateway` (`gateway-a`): `GatewayACard`, `GatewayAForm`, `GatewayAUnsigned`;
+- **Gateway A** `Testing\FakeGateway` (`gateway-a`, card: `instalments` a hold rules out; `GatewayANotCards` — with `DeclaresNotCardFields`): `GatewayACard`, `GatewayAForm`, `GatewayAUnsigned`;
   API `FakeGatewayServer` on `gateway-a.test` in the process, page `GET /pay/fake/{uuid}`; only with `WEBX_PAYMENTS_FAKE_GATEWAY=true`, never in production
   (`FakeGatewaySite::methods()` adds its methods). Contract test: trait `Testing\GatewayContract`.
 - **Commands** `webx:payments:exchange-prune --days=N [--dry-run] [--force]` — the only removal of
   events, `N` ≥ 365; `webx:payments:selections-prune` — nightly, choices of carts that are gone;
-  `Doctor\ExchangeSizeCheck` (with module-admin): a note over `exchange.warn_size`.
+  `Doctor\ExchangeSizeCheck` (with module-admin): a note over `exchange.warn_size`; `Doctor\OverriddenViewsCheck`: a theme's copy without `prompt` / `declined`.
 - **Panel** (with module-admin; `routes/panel.php`, npm `@webx-ui/module-payments`): «Methods» — keys
   «set / replace / remove», never sent back, «Test the connection» journaled `out/connection`
   (`Panel\MethodForm`, screen `payments.method-form`); «Attempts»; «Gateway exchange» — keyset pages,
@@ -101,7 +101,7 @@ The theme's contract, in `resources/theme/payments.css`; restyle with the same c
 `webx-payments-instructions__row` (+ `webx-payments-instructions__row--<field>`), `webx-payments-instructions__label`,
 `webx-payments-instructions__value`, `webx-payments-status` (+ `webx-payments-status--<state>`), `webx-payments-status__pay`,
 `webx-payments-pay`, `webx-payments-pay__title`, `webx-payments-pay__amount`, `webx-payments-pay__message` (+ `--error`),
-`webx-payments-pay__form`, `webx-payments-pay__button`, `webx-payments-pay__link`, `webx-payments-handoff`.
+`webx-payments-pay__form`, `webx-payments-pay__button`, `webx-payments-pay__link`, `webx-payments-handoff`, `webx-payments-prompt`, `webx-payments-prompt__form`, `webx-payments-prompt__button`, `webx-payments-prompt__message`, `webx-payments-others`, `webx-payments-others__toggle`, `webx-payments-others__list`, `webx-payments-others__form`, `webx-payments-others__choice`.
 
 ## Change it without forking
 

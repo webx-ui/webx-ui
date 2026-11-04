@@ -65,9 +65,10 @@ the gateway's signed notification or from its API.
   journal before anything reads it; a bad signature changes nothing. A gateway whose notifications
   are not signed is never believed: its notification is only a reason for the shop to ask the
   gateway's API itself.
-- **Pay again.** A payment that did not go through leaves the order awaiting payment; the buyer's
-  page of the order and the letter carry a link «Pay» to a new attempt, and the buyer may switch to
-  another method there.
+- **Pay again.** A payment that did not go through leaves the order awaiting payment. The buyer's
+  page of the order says «Awaiting payment» with «Pay» and «Choose another method», and the letter
+  carries a link. The list holds every method the order may take by its sum and delivery, on receipt
+  and bank transfer too; the buyer changes the method, never the items.
 - **Problems.** Money for a cancelled order, a second payment for a paid one, a sum that does not
   match — the attempt is marked a problem in **Payments → Attempts → Problems**; a manager settles
   it with the gateway and presses «Resolved».
@@ -84,7 +85,22 @@ the money, capture later». The order then shows «Money held» until a manager 
 - **Release the hold** — the money goes back to the buyer; the order awaits payment as before.
 
 Both show what they will do before they do it. A hold the gateway lets expire is a failed payment;
-the poll warns before.
+the poll warns before. A capture the gateway refused leaves a note on the order; it goes from the
+notes when the hold is over — captured, released or expired — and stays in the history.
+
+### A theme with its own templates
+
+The buyer's pages say «Awaiting payment», «Pay» and «Choose another method», and tell a card the bank
+declined. A theme that keeps its own copy of these templates has to carry them over:
+
+- **`webx-orders/order/body.blade.php`** has to print the block `prompt`: `$order['prompt']['title']`
+  over the status and `$order['prompt']['html']` under the scale. Without it the buyer reads the
+  public status and gets no button to pay.
+- **`webx-payments/pay/page.blade.php`** has to handle the state `declined`. Without it the buyer the
+  bank turned down gets an empty place instead of the reason and «Pay again».
+
+`php artisan webx:doctor` names a copy that lacks either. «My orders» needs nothing: the words come
+in `$row['status']`, with the code `awaiting-payment`.
 
 ## The exchange journal
 
@@ -177,6 +193,7 @@ tells the managers about a problem; its channels are the setting «Payments» of
 ## Read more
 
 - [Payment gateways](./payment-gateways.md) — writing a satellite of a gateway and its contract test.
+- [LiqPay](./payment-liqpay.md) — the first gateway: keys, the switches of the page, the hold.
 - [Orders](./orders.md) — milestones, the balance, top-ups.
 - [Checkout](./checkout.md) — the steps and the slots.
 - The payments spec — [`WEBX_UI_MODULE_PAYMENTS.md`](https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_PAYMENTS.md).
