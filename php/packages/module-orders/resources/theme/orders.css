@@ -367,6 +367,7 @@
 }
 
 .webx-account-orders__status {
+  align-self: start;
   justify-self: start;
   padding: 0 var(--site-space-2);
   border-radius: var(--site-radius-full);
