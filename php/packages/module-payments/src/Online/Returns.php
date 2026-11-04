@@ -37,7 +37,7 @@ use WebxUi\Payments\PaymentStatus;
  *
  * Paid or held — the «Thank you» of the checkout for an order this session placed, else the
  * order's signed page, with «Payment received»; anything else — the page of payment, which shows
- * the reason or «we are checking».
+ * the reason, «we are checking» or «Payment not completed».
  */
 final readonly class Returns
 {

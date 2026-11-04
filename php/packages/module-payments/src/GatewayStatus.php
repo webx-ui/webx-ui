@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Payments;
 
 use Carbon\CarbonImmutable;
+use InvalidArgumentException;
 
 /** What the gateway says of a payment (spec §6.3), in the base's terms. */
 final readonly class GatewayStatus
@@ -22,5 +23,11 @@ final readonly class GatewayStatus
         public ?int $refundedAmount = null,
         public ?CarbonImmutable $holdExpiresAt = null,
         public array $meta = [],
-    ) {}
+        /** The gateway knows no such payment because the buyer never began it (§8.4): Pending only. */
+        public bool $notStarted = false,
+    ) {
+        if ($notStarted && $status !== Reported::Pending) {
+            throw new InvalidArgumentException('A payment that is not started can only be Pending, not '.$status->value.'.');
+        }
+    }
 }

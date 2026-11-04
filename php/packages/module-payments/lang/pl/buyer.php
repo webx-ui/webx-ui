@@ -48,5 +48,8 @@ return [
         'top_up_button' => 'Dopłać',
         'online_now' => 'Zapłać teraz online',
         'wait' => 'Jeśli już zapłaciłeś w innej karcie, poczekaj minutę, zanim zapłacisz ponownie.',
+        'unfinished' => 'Płatność nie została ukończona',
+        'pay_again' => 'Zapłać ponownie',
+        'other_method' => 'Wybierz inną metodę',
     ],
 ];

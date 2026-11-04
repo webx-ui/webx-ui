@@ -48,5 +48,8 @@ return [
         'top_up_button' => 'Top up',
         'online_now' => 'Pay online now',
         'wait' => 'If you have already paid in another tab, wait a minute before paying again.',
+        'unfinished' => 'Payment not completed',
+        'pay_again' => 'Pay again',
+        'other_method' => 'Choose another method',
     ],
 ];

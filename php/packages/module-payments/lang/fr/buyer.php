@@ -48,5 +48,8 @@ return [
         'top_up_button' => 'Payer le complément',
         'online_now' => 'Payer en ligne maintenant',
         'wait' => 'Si vous avez déjà payé dans un autre onglet, attendez une minute avant de payer à nouveau.',
+        'unfinished' => 'Paiement non terminé',
+        'pay_again' => 'Payer à nouveau',
+        'other_method' => 'Choisir un autre moyen',
     ],
 ];

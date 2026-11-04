@@ -43,7 +43,7 @@ Orders, their milestones and balance are `webx-ui/module-orders`; the cart is `w
 - **Gateway contract** (spec §6.3–§6.4, §14.1): `Contracts\Gateway` (keys, settings, secret
   headers and fields, `testConnection()`), registry `WebxUi\Payments\Gateways`; online types
   implement `Contracts\ChargesOnline` (`start()` → `Handoff::redirect|post`, `fetchStatus()` →
-  `GatewayStatus` with `Reported`, `needs()` → `StartNeeds`, `trustsNotifications()`,
+  `GatewayStatus` with `Reported` (`notStarted`: Pending, the buyer never began — «Payment not completed»), `needs()` → `StartNeeds`, `trustsNotifications()`,
   `readNotification()` → `Notification::status|poke|unrelated` or `InvalidNotification` (a bad signature may claim `uuid`/`gatewayRef`: linked, not believed), the
   answers to the gateway) and, as they can, `CancelsPayments`, `CompletesApproval`,
   `CapturesPayments` (`capturesPartially()`). Errors: `GatewayUnavailable`, `GatewayRefused` —

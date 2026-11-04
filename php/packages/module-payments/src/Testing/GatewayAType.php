@@ -12,6 +12,7 @@ use Throwable;
 use WebxUi\Payments\Availability;
 use WebxUi\Payments\Contracts\ChargesOnline;
 use WebxUi\Payments\GatewayAmount;
+use WebxUi\Payments\GatewayStatus;
 use WebxUi\Payments\GatewayUnavailable;
 use WebxUi\Payments\Kind;
 use WebxUi\Payments\Method;
@@ -42,6 +43,14 @@ abstract class GatewayAType implements ChargesOnline
      * @return array<string, Reported>
      */
     abstract public function statuses(): array;
+
+    /** A payment the gateway has no record of: lost, or never begun by the buyer (§21.2). */
+    protected static function unknownPayment(mixed $error, ?string $gatewayRef = null): GatewayStatus
+    {
+        return $error === FakeGatewayServer::NOT_STARTED
+            ? new GatewayStatus(Reported::Pending, $gatewayRef, reason: 'The buyer did not begin the payment', notStarted: true)
+            : new GatewayStatus(Reported::Pending, $gatewayRef, reason: 'The gateway does not know the payment');
+    }
 
     public function key(): string
     {

@@ -133,7 +133,7 @@ class GatewayACard extends GatewayAType implements CancelsPayments, CapturesPaym
         $answer = self::call(static fn () => $http->request()->withToken($token)->get(FakeGateway::API.'/v1/payments/'.self::ref($payment)));
 
         if ($answer->status() === 404) {
-            return new GatewayStatus(Reported::Pending, $payment->gateway_ref, reason: 'The gateway does not know the payment');
+            return self::unknownPayment($answer->json('error'), $payment->gateway_ref);
         }
 
         if (! $answer->successful()) {

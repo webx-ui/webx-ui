@@ -77,7 +77,7 @@ final readonly class PayController
         return $this->redirect->to($this->links->go($payment), 303);
     }
 
-    /** «Pay online now» of an order «on receipt» (§8.5): the method switched, then the gateway. */
+    /** «Pay online now», «Choose another method» (§8.5): the method switched, then the gateway. */
     public function method(Request $request, Payments $payments): RedirectResponse
     {
         $order = $this->order($request);
@@ -122,6 +122,8 @@ final readonly class PayController
         return new JsonResponse([
             'status' => $payment->status->value,
             'final' => ! in_array($payment->status, [PaymentStatus::Created, PaymentStatus::Pending], true),
+            // Nothing is coming: a script stops waiting, the page says «Payment not completed».
+            'not_started' => $payment->notStarted(),
         ]);
     }
 

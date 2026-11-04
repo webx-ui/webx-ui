@@ -48,5 +48,8 @@ return [
         'top_up_button' => 'Pagar la diferencia',
         'online_now' => 'Pagar en línea ahora',
         'wait' => 'Si ya ha pagado en otra pestaña, espere un minuto antes de volver a pagar.',
+        'unfinished' => 'Pago no completado',
+        'pay_again' => 'Pagar de nuevo',
+        'other_method' => 'Elegir otro método',
     ],
 ];

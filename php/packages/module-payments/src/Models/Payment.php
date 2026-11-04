@@ -43,6 +43,9 @@ use WebxUi\Payments\PaymentStatus;
  */
 final class Payment extends Model
 {
+    /** The key of `meta`: the gateway's last word was «the buyer never began this payment» (§8.4). */
+    public const string NOT_STARTED = 'not_started';
+
     protected $table = 'payments';
 
     protected $guarded = ['id'];
@@ -59,6 +62,11 @@ final class Payment extends Model
                 $payment->uuid = (string) Str::ulid();
             }
         });
+    }
+
+    public function notStarted(): bool
+    {
+        return $this->status === PaymentStatus::Pending && isset(($this->meta ?? [])[self::NOT_STARTED]);
     }
 
     /** @return BelongsTo<Order, $this> */

@@ -94,6 +94,8 @@ final readonly class Settlement
             $row->gateway_ref = mb_substr($status->gatewayRef, 0, 190);
         }
 
+        $this->rememberNotStarted($row, $status);
+
         return match ($status->status) {
             Reported::Pending => $before === PaymentStatus::Created
                 ? $this->to($row, $status, PaymentStatus::Pending)
@@ -105,6 +107,19 @@ final readonly class Settlement
             Reported::Expired => $this->failed($row, $status, PaymentStatus::Expired, $closing, $actor),
             Reported::Refunded => $this->refunded($row, $status),
         };
+    }
+
+    /** Only the gateway's last word counts (§8.4): any other answer takes the mark off. */
+    private function rememberNotStarted(Payment $row, GatewayStatus $status): void
+    {
+        $meta = $row->meta ?? [];
+
+        if ($status->notStarted === isset($meta[Payment::NOT_STARTED])) {
+            return;
+        }
+
+        unset($meta[Payment::NOT_STARTED]);
+        $row->meta = $status->notStarted ? [...$meta, Payment::NOT_STARTED => true] : $meta;
     }
 
     /** Money held (§9.5): the order keeps awaiting payment, its history says how much and till when. */
