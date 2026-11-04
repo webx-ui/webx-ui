@@ -28,13 +28,12 @@ final class PaymentMarksTest extends PaymentsCheckoutCase
 {
     private const string FILES = __DIR__.'/../resources/marks/';
 
-    private ?string $swapped = null;
+    /** @var list<string> files a test put in the place of a mark */
+    private array $swapped = [];
 
     protected function tearDown(): void
     {
-        if ($this->swapped !== null) {
-            @unlink($this->swapped);
-        }
+        array_map(unlink(...), $this->swapped);
 
         parent::tearDown();
     }
@@ -62,15 +61,17 @@ final class PaymentMarksTest extends PaymentsCheckoutCase
         $this->assertFalse($marks->get('privat24')->isPlate());
     }
 
+    /** Says only what holds for any file: an official one comes with its own paths and proportions. */
     #[Test]
-    public function every_file_is_a_card_of_the_same_size(): void
+    public function every_file_is_drawn_at_the_width_it_states_itself(): void
     {
         foreach (['visa', 'mastercard', 'apple-pay', 'google-pay'] as $key) {
             $mark = $this->marks()->get($key);
 
             $this->assertFalse($mark->isPlate(), $key);
-            $this->assertSame(38, $mark->width, $key);
-            $this->assertStringContainsString('fill="#fff"', (string) file_get_contents((string) $mark->file), $key);
+            $this->assertFileExists((string) $mark->file, $key);
+            $this->assertSame(PaymentMark::widthOf((string) file_get_contents((string) $mark->file)), $mark->width, $key);
+            $this->assertStringContainsString('width="'.$mark->width.'" height="24"', $this->render($key), $key);
         }
     }
 
@@ -80,18 +81,18 @@ final class PaymentMarksTest extends PaymentsCheckoutCase
         $notice = (string) preg_replace('/\s+/', ' ', (string) file_get_contents(self::FILES.'NOTICE.md'));
 
         $this->assertStringContainsString('belong to their owners and are not covered by the MIT licence', $notice);
-        $this->assertStringContainsString('based on Simple Icons', $notice);
-        $this->assertMatchesRegularExpression('/version \d+\.\d+\.\d+/', $notice);
         $this->assertStringNotContainsString('CC0', $notice);
     }
 
     #[Test]
     public function a_file_is_an_image_with_alt_and_a_mark_without_one_a_plate(): void
     {
+        $this->visaFile('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 76 24"/>');
+
         $file = $this->render('visa');
 
         $this->assertStringContainsString('<img class="webx-payments__mark"', $file);
-        $this->assertStringContainsString('width="38" height="24" alt="Visa"', $file);
+        $this->assertStringContainsString('width="76" height="24" alt="Visa"', $file);
         $this->assertStringContainsString('/webx/payments/marks/visa.svg?v=', $file);
 
         $this->assertSame('<span class="webx-payments__mark is-text">Приват24</span>', trim($this->render('privat24')));
@@ -136,12 +137,11 @@ final class PaymentMarksTest extends PaymentsCheckoutCase
     #[Test]
     public function another_file_with_other_paths_and_proportions_needs_no_code(): void
     {
+        $this->visaFile('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 38 24"><rect width="38" height="24"/></svg>');
         $before = $this->marks()->get('visa');
         $official = '<?xml version="1.0"?><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 48"><g><circle cx="60" cy="24" r="20"/></g></svg>';
 
-        $this->swapped = (string) tempnam(sys_get_temp_dir(), 'mark');
-        file_put_contents($this->swapped, $official);
-        $this->marks()->register('visa', 'Visa', $this->swapped);
+        $this->visaFile($official);
 
         $after = $this->marks()->get('visa');
 
@@ -242,6 +242,16 @@ final class PaymentMarksTest extends PaymentsCheckoutCase
     public function the_doctor_is_quiet_about_the_marks_it_knows(): void
     {
         $this->assertSame([], $this->app->make(PaymentMarksCheck::class)->run());
+    }
+
+    /** Puts a file of known content in the place of Visa: what a test expects must not come from ours. */
+    private function visaFile(string $svg): void
+    {
+        $file = (string) tempnam(sys_get_temp_dir(), 'mark');
+        file_put_contents($file, $svg);
+
+        $this->swapped[] = $file;
+        $this->marks()->register('visa', 'Visa', $file);
     }
 
     private function marks(): PaymentMarks
