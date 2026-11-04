@@ -29,6 +29,7 @@ use WebxUi\Payments\Console\ExchangePruneCommand;
 use WebxUi\Payments\Console\PollCommand;
 use WebxUi\Payments\Console\SelectionsPruneCommand;
 use WebxUi\Payments\Doctor\ExchangeSizeCheck;
+use WebxUi\Payments\Doctor\MethodGroupsCheck;
 use WebxUi\Payments\Doctor\OverriddenViewsCheck;
 use WebxUi\Payments\Events\PaymentProblem;
 use WebxUi\Payments\Exchange\ExchangeConnection;
@@ -37,6 +38,7 @@ use WebxUi\Payments\Exchange\ExchangeMasker;
 use WebxUi\Payments\Exchange\InProcessHosts;
 use WebxUi\Payments\Mcp\PaymentsModule;
 use WebxUi\Payments\Models\Payment;
+use WebxUi\Payments\Models\PaymentGroup;
 use WebxUi\Payments\Models\PaymentMethod;
 use WebxUi\Payments\Notifications\PaymentNotices;
 use WebxUi\Payments\Online\Checks;
@@ -101,6 +103,7 @@ class PaymentsServiceProvider extends ServiceProvider
         $this->app->singleton(Poll::class);
         $this->app->singleton(Notifications::class);
         $this->app->singleton(Returns::class);
+        $this->app->singleton(MethodGroups::class);
         $this->app->singleton(Methods::class);
         $this->app->singleton(Payments::class);
         $this->app->singleton(PaymentsCheckoutSlot::class);
@@ -148,7 +151,7 @@ class PaymentsServiceProvider extends ServiceProvider
         // The enabled methods are read by every request of the payment step (§18).
         $groups = $this->app->make(CacheGroups::class);
         $groups->declare(Methods::GROUP, 'webx-payments::module.cache');
-        $groups->bumpOn(Methods::GROUP, PaymentMethod::class);
+        $groups->bumpOn(Methods::GROUP, PaymentMethod::class, PaymentGroup::class);
 
         // The checkout's slot «payment» (§10; §22.3 of the orders spec).
         $this->callAfterResolving(CheckoutSlots::class, function (CheckoutSlots $slots): void {
@@ -202,12 +205,13 @@ class PaymentsServiceProvider extends ServiceProvider
             Event::listen(PaymentProblem::class, [PaymentNotices::class, 'problem']);
         }
 
-        // The size of the journal and the templates a theme keeps from an older release in
-        // `webx:doctor`, where the panel's frame is installed.
+        // The size of the journal, the templates a theme keeps from an older release and what the
+        // config of the groups left behind in `webx:doctor`, where the panel's frame is installed.
         if (class_exists(DoctorChecks::class)) {
             $this->callAfterResolving(DoctorChecks::class, static function (DoctorChecks $checks): void {
                 $checks->register(ExchangeSizeCheck::class);
                 $checks->register(OverriddenViewsCheck::class);
+                $checks->register(MethodGroupsCheck::class);
             });
         }
 

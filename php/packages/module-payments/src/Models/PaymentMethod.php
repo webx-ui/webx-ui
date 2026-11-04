@@ -20,6 +20,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $icon
  * @property bool $enabled
  * @property int $position
+ * @property string|null $group_key
  * @property array<string, mixed> $delivery_rule
  * @property int|null $min_amount
  * @property int|null $max_amount

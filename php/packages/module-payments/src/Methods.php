@@ -24,6 +24,7 @@ final readonly class Methods
         private MethodTypes $types,
         private Gateways $gateways,
         private MethodCredentials $credentials,
+        private MethodGroups $methodGroups,
     ) {}
 
     /**
@@ -182,6 +183,46 @@ final readonly class Methods
         $type = $this->types->get($method->type);
         $presented = $type->present($method, $context);
 
-        return new MethodOption($method, $type, $presented->title, $presented->note, $method->icon, $type->kind());
+        return new MethodOption($method, $type, $presented->title, $presented->note, $method->icon, $type->kind(), $this->methodGroups->of($method, $type));
+    }
+
+    /**
+     * A list of options as the buyer reads it (groups spec §2.6): the groups in their order, those
+     * with nothing to offer left out, the methods inside by their position. It takes a list already
+     * filtered, so the step and the page of payment each pass their own. A site without groups gets
+     * one view, which is what a flat list is.
+     *
+     * @param  list<MethodOption>  $options
+     * @return list<MethodGroupView>
+     */
+    public function grouped(array $options): array
+    {
+        usort($options, static fn (MethodOption $a, MethodOption $b): int => $a->method->position <=> $b->method->position);
+
+        if ($options === []) {
+            return [];
+        }
+
+        $groups = $this->methodGroups->all();
+
+        if ($groups === []) {
+            return [new MethodGroupView(MethodGroup::none(), $options)];
+        }
+
+        $inGroup = [];
+
+        foreach ($options as $option) {
+            $inGroup[(string) $option->group][] = $option;
+        }
+
+        $views = [];
+
+        foreach ($groups as $group) {
+            if (isset($inGroup[$group->key])) {
+                $views[] = new MethodGroupView($group, $inGroup[$group->key]);
+            }
+        }
+
+        return $views;
     }
 }

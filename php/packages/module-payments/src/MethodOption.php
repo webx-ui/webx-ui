@@ -19,6 +19,7 @@ final readonly class MethodOption
         public ?string $note,
         public ?string $icon,
         public Kind $kind,
+        public ?string $group,
     ) {}
 
     public function key(): string
@@ -26,7 +27,7 @@ final readonly class MethodOption
         return $this->method->key;
     }
 
-    /** @return array{key: string, title: string, note: string|null, icon: string|null, kind: string} */
+    /** @return array{key: string, title: string, note: string|null, icon: string|null, kind: string, group: string|null} */
     public function toArray(): array
     {
         return [
@@ -35,6 +36,7 @@ final readonly class MethodOption
             'note' => $this->note,
             'icon' => $this->icon,
             'kind' => $this->kind->value,
+            'group' => $this->group,
         ];
     }
 }

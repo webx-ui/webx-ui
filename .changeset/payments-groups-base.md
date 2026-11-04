@@ -1,0 +1,5 @@
+---
+'@webx-ui/php': minor
+---
+
+`webx-ui/module-payments`: the base of the groups of payment methods, with nothing changed for the buyer yet. `webx-payments.groups` lists three groups out of the box (a site's own list replaces it whole, an empty one is a flat list), the table `payment_groups` keeps only the manager's edits over the config, `payment_methods.group_key` keeps only a manager's move (`null` — the group of the type, so existing methods are in place without a write). `MethodGroups` merges the two on reading, `Contracts\DeclaresGroup` is the optional way for a type to stand elsewhere than its kind suggests, `Methods::grouped()` gives a list by groups, `<x-webx-payments::pictogram>` draws the set of pictograms. The migration gives the groups in use a position by their first enabled method, so a configured site keeps its first item first. `webx:doctor` names a move to a group the config lost, a method whose group is gone, a type declaring an unknown group and a pictogram outside the set.

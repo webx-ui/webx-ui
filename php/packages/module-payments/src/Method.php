@@ -31,6 +31,7 @@ final readonly class Method
         public ?int $maxAmount,
         public array $settings,
         public bool $hasCredentials,
+        public ?string $groupKey = null,
     ) {}
 
     public static function of(PaymentMethod $row): self
@@ -53,6 +54,7 @@ final readonly class Method
             'icon' => $row->icon,
             'enabled' => $row->enabled,
             'position' => $row->position,
+            'group_key' => $row->group_key,
             'delivery_rule' => $row->delivery_rule,
             'min_amount' => $row->min_amount,
             'max_amount' => $row->max_amount,
@@ -78,6 +80,8 @@ final readonly class Method
             maxAmount: is_numeric($row['max_amount']) ? (int) $row['max_amount'] : null,
             settings: is_array($row['settings']) ? $row['settings'] : [],
             hasCredentials: (bool) $row['has_credentials'],
+            // An entry cached before the column came has no such key, and means the same as null.
+            groupKey: is_string($row['group_key'] ?? null) ? $row['group_key'] : null,
         );
     }
 
