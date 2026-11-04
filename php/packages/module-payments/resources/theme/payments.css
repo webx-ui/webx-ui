@@ -219,6 +219,25 @@
   margin: 0;
 }
 
+.webx-payments-prompt__button,
+.webx-payments-others__choice {
+  justify-self: start;
+  min-height: 44px;
+  max-width: 100%;
+  padding: var(--site-space-2) var(--site-space-4);
+  border: 1px solid var(--site-color-accent);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-accent);
+  color: var(--site-color-accent-contrast);
+  font: inherit;
+  cursor: pointer;
+}
+
+.webx-payments-others__choice {
+  background: transparent;
+  color: var(--site-color-text);
+}
+
 .webx-payments-others {
   min-width: 0;
 }
