@@ -19,6 +19,9 @@ final class ExchangeMaskerTest extends PlainTestCase
 {
     private const string SECRET = 'fake-secret-key/0001+abc=';
 
+    /** A date in milliseconds that passes Luhn, as a gateway's answer may hold. */
+    private const string DATE = '1730000000001';
+
     /** @return iterable<string, array{string}> */
     public static function encodings(): iterable
     {
@@ -147,13 +150,148 @@ final class ExchangeMaskerTest extends PlainTestCase
         $this->assertSame(1, $counts['pan'] ?? null);
     }
 
+    /** @return iterable<string, array{string}> */
+    public static function declaredValues(): iterable
+    {
+        $date = self::DATE;
+
+        yield 'json number' => ['{"create_date":'.$date.',"status":"success"}'];
+        yield 'json string' => ['{"create_date":"'.$date.'"}'];
+        yield 'json with spaces' => ['{ "create_date" : '.$date.' }'];
+        yield 'json, nested' => ['{"payment":{"create_date":'.$date.'}}'];
+        yield 'json, in a list' => ['[{"create_date":'.$date.'}]'];
+        yield 'form, first' => ['create_date='.$date.'&status=success'];
+        yield 'form, last' => ['status=success&create_date='.$date];
+    }
+
+    #[Test]
+    #[DataProvider('declaredValues')]
+    public function a_number_in_a_declared_field_stays_and_is_not_counted(string $body): void
+    {
+        $counts = [];
+
+        $this->assertSame($body, (new ExchangeMasker)->text($body, $this->secrets(notCards: ['create_date']), $counts, body: true));
+        $this->assertSame([], $counts);
+    }
+
+    /** @return iterable<string, array{string, string}> */
+    public static function undeclaredValues(): iterable
+    {
+        $date = self::DATE;
+        $star = '*********0001';
+
+        yield 'json' => ['{"create_date":'.$date.',"other":'.$date.'}', '{"create_date":'.$date.',"other":'.$star.'}'];
+        yield 'json, undeclared first' => ['{"other":"'.$date.'","create_date":"'.$date.'"}', '{"other":"'.$star.'","create_date":"'.$date.'"}'];
+        yield 'form' => ['create_date='.$date.'&other='.$date, 'create_date='.$date.'&other='.$star];
+        yield 'a list under the name' => ['{"create_date":['.$date.']}', '{"create_date":['.$star.']}'];
+        yield 'an object under the name' => ['{"create_date":{"x":'.$date.'}}', '{"create_date":{"x":'.$star.'}}'];
+        yield 'the name inside a json string' => ['{"note":"\"create_date\":'.$date.'"}', '{"note":"\"create_date\":'.$star.'"}'];
+        yield 'a form inside a json string' => ['{"note":"create_date='.$date.'"}', '{"note":"create_date='.$star.'"}'];
+        yield 'a longer name' => ['{"x_create_date":'.$date.'}', '{"x_create_date":'.$star.'}'];
+        yield 'a form name as a value' => ['other=create_date='.$date, 'other=create_date='.$star];
+    }
+
+    #[Test]
+    #[DataProvider('undeclaredValues')]
+    public function the_same_number_anywhere_else_is_still_starred(string $body, string $masked): void
+    {
+        $counts = [];
+
+        $this->assertSame($masked, (new ExchangeMasker)->text($body, $this->secrets(notCards: ['create_date']), $counts, body: true));
+        $this->assertSame(1, $counts['pan'] ?? null);
+    }
+
+    #[Test]
+    public function a_declared_field_spares_only_a_body(): void
+    {
+        $counts = [];
+        $secrets = $this->secrets(notCards: ['create_date']);
+
+        // A url or an error's text is not a body: nothing is parsed, the rule stands.
+        $this->assertSame(
+            'https://gateway-a.test/?create_date=*********0001',
+            (new ExchangeMasker)->text('https://gateway-a.test/?create_date='.self::DATE, $secrets, $counts),
+        );
+    }
+
+    #[Test]
+    public function a_secret_in_a_declared_field_is_wiped_all_the_same(): void
+    {
+        $masker = new ExchangeMasker;
+        $counts = [];
+
+        $this->assertSame(
+            '{"create_date":"[secret:secret_key]"}',
+            $masker->text((string) json_encode(['create_date' => self::SECRET]), $this->secrets(notCards: ['create_date']), $counts, body: true),
+        );
+        $this->assertSame(
+            'create_date=[secret:secret_key]',
+            $masker->text('create_date='.urlencode(self::SECRET), $this->secrets(notCards: ['create_date']), $counts, body: true),
+        );
+
+        // A secret field and a run-time secret too, and a key that looks like a date.
+        $this->assertSame(
+            '{"access_token":"[secret:access_token]"}',
+            $masker->text('{"access_token":"oauth-token-of-gateway-a-0001"}', $this->secrets(fields: ['access_token'], notCards: ['access_token']), $counts, body: true),
+        );
+
+        $digits = new ExchangeSecrets(Credentials::of(['secret_key' => self::DATE]), notCardFields: ['create_date']);
+        $this->assertSame('{"create_date":[secret:secret_key]}', $masker->text('{"create_date":'.self::DATE.'}', $digits, $counts, body: true));
+
+        $this->assertArrayNotHasKey('pan', $counts);
+    }
+
+    #[Test]
+    public function a_wiped_bare_number_does_not_cost_the_other_fields_their_exception(): void
+    {
+        $secrets = new ExchangeSecrets(Credentials::of(['secret_key' => '12345678']), notCardFields: ['create_date']);
+        $counts = [];
+
+        // The wipe leaves text that is no longer JSON; the body was JSON all the same.
+        $this->assertSame(
+            '{"amount":[secret:secret_key],"create_date":'.self::DATE.'}',
+            (new ExchangeMasker)->text('{"amount":12345678,"create_date":'.self::DATE.'}', $secrets, $counts, body: true),
+        );
+        $this->assertArrayNotHasKey('pan', $counts);
+    }
+
+    #[Test]
+    public function a_gateway_without_the_contract_has_every_number_looked_at(): void
+    {
+        $counts = [];
+
+        $this->assertSame(
+            '{"create_date":*********0001}',
+            (new ExchangeMasker)->text('{"create_date":'.self::DATE.'}', $this->secrets(), $counts, body: true),
+        );
+        $this->assertSame(1, $counts['pan'] ?? null);
+    }
+
+    #[Test]
+    public function a_base64_body_is_not_opened_for_cards_and_its_secrets_are_still_wiped(): void
+    {
+        $secrets = $this->secrets(notCards: ['create_date']);
+        $counts = [];
+
+        // The form of a page gateway: the fields are inside base64, where the card rule does not
+        // reach, so the body keeps every byte — a signature over it can still be checked.
+        $body = 'data='.base64_encode('{"create_date":'.self::DATE.',"other":'.self::DATE.'}').'&signature=c2lnbmF0dXJl';
+        $this->assertSame($body, (new ExchangeMasker)->text($body, $secrets, $counts, body: true));
+        $this->assertSame([], $counts);
+
+        $masked = (string) (new ExchangeMasker)->text('data='.base64_encode('{"create_date":"'.self::SECRET.'"}'), $secrets, $counts, body: true);
+        $this->assertNoSecret($masked);
+        $this->assertGreaterThan(0, $counts['secret:secret_key'] ?? 0);
+    }
+
     /**
      * @param  list<string>  $headers
      * @param  list<string>  $fields
+     * @param  list<string>  $notCards
      */
-    private function secrets(array $headers = [], array $fields = []): ExchangeSecrets
+    private function secrets(array $headers = [], array $fields = [], array $notCards = []): ExchangeSecrets
     {
-        return new ExchangeSecrets(Credentials::of(['secret_key' => self::SECRET, 'shop_id' => 'shop-a']), $headers, $fields);
+        return new ExchangeSecrets(Credentials::of(['secret_key' => self::SECRET, 'shop_id' => 'shop-a']), $headers, $fields, $notCards);
     }
 
     private function assertNoSecret(string $text): void

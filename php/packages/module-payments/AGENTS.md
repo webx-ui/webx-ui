@@ -37,7 +37,7 @@ Orders, their milestones and balance are `webx-ui/module-orders`; the cart is `w
   `JournalUnavailable` (a notification gets 503), `decide()` adds the decision once. Its own
   connection (`ExchangeConnection`, `webx-payments-exchange`): a rollback never takes an event.
 - **Masking** `ExchangeMasker`: key values in every encoding, `Authorization`, cookies, the gateway's secret
-  headers and fields, run-time secrets, Luhn card numbers; signatures kept. Bodies over 1 MB are cut.
+  headers and fields, run-time secrets, Luhn card numbers (except in a body's fields of `Contracts\DeclaresNotCardFields`, a gateway's option; secrets are wiped there too); signatures kept. Bodies over 1 MB are cut.
 - **HTTP client of satellites** `WebxUi\Payments\GatewayHttp`: `request()` (Laravel `Http` with the journal's middleware
   and the timeouts of `webx-payments.http`), `kind()`, `secret()`, `psr()` (PSR-18). Every attempt of a request is one event.
 - **Gateway contract** (spec §6.3–§6.4, §14.1): `Contracts\Gateway` (keys, settings, secret
@@ -60,7 +60,7 @@ Orders, their milestones and balance are `webx-ui/module-orders`; the cart is `w
 - **Settling** `Payments::settle(payment, GatewayStatus)` → `SettleResult`, the only door to the attempt
   and the order; `check()` asks `fetchStatus()` under the lock first. `POST /payments/notify/{method}` (no
   middleware) journals `in/notify` before parsing (503 if it cannot); `GET|POST /pay/return/{uuid}` asks the API.
-- **Gateway A** `Testing\FakeGateway` (`gateway-a`): `GatewayACard`, `GatewayAForm`, `GatewayAUnsigned`;
+- **Gateway A** `Testing\FakeGateway` (`gateway-a`; `GatewayANotCards` — with `DeclaresNotCardFields`): `GatewayACard`, `GatewayAForm`, `GatewayAUnsigned`;
   API `FakeGatewayServer` on `gateway-a.test` in the process, page `GET /pay/fake/{uuid}`; only with `WEBX_PAYMENTS_FAKE_GATEWAY=true`, never in production
   (`FakeGatewaySite::methods()` adds its methods). Contract test: trait `Testing\GatewayContract`.
 - **Commands** `webx:payments:exchange-prune --days=N [--dry-run] [--force]` — the only removal of

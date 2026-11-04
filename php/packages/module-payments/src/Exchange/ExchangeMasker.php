@@ -14,7 +14,9 @@ namespace WebxUi\Payments\Exchange;
  * 3. Derived secrets: the values of the gateway's secret fields in a JSON or form body, and what a
  *    satellite marked at run time — from then on wiped like the keys in every event of the trace.
  * 4. Card numbers: 13–19 digits passing Luhn, all but the last four starred — a second line of
- *    defence, the card is only ever typed on the gateway's page.
+ *    defence, the card is only ever typed on the gateway's page. Looked for everywhere but the
+ *    values of the fields a gateway declared not to be cards, in a JSON or a form body. Base64 is
+ *    not opened for cards, so a number inside it is neither starred nor in need of an exception.
  *
  * The signature, payment ids, amounts and the buyer's contacts stay: they are what an event is
  * read for. What was wiped is counted by name, never by value — the `masked` column.
@@ -38,9 +40,12 @@ final class ExchangeMasker
             $this->collectFields($text, $secrets);
         }
 
+        // Read before the secrets go: a wiped bare number would leave the JSON unreadable.
+        $json = $body && $secrets->notCardFields() !== [] && is_array(json_decode($text, true));
         $text = $this->secrets($text, $secrets, $counts);
+        $spared = $body ? $this->notCardValues($text, $json, $secrets->notCardFields()) : [];
 
-        return $this->cards($text, $counts);
+        return $this->cards($text, $counts, $spared);
     }
 
     /**
@@ -156,20 +161,86 @@ final class ExchangeMasker
         return $text;
     }
 
-    /** @param  array<string, int>  $counts */
-    private function cards(string $text, array &$counts): string
+    /**
+     * @param  array<string, int>  $counts
+     * @param  list<array{0: int, 1: int}>  $spared  byte ranges of the text the rule skips
+     */
+    private function cards(string $text, array &$counts, array $spared = []): string
     {
-        return (string) preg_replace_callback('/(?<![0-9])[0-9]{13,19}(?![0-9])/', static function (array $match) use (&$counts): string {
-            $digits = $match[0];
+        return (string) preg_replace_callback('/(?<![0-9])[0-9]{13,19}(?![0-9])/', static function (array $match) use (&$counts, $spared): string {
+            [$digits, $at] = $match[0];
 
             if (! self::luhn($digits)) {
                 return $digits;
             }
 
+            foreach ($spared as [$from, $to]) {
+                if ($at >= $from && $at < $to) {
+                    return $digits;
+                }
+            }
+
             $counts['pan'] = ($counts['pan'] ?? 0) + 1;
 
             return str_repeat('*', strlen($digits) - 4).substr($digits, -4);
-        }, $text);
+        }, $text, flags: PREG_OFFSET_CAPTURE);
+    }
+
+    /**
+     * Where the values of the declared fields stand in this very body, found by position and not by
+     * value: the same number under another name must still be starred. Only a scalar value counts;
+     * a list or an object under such a name is looked at like the rest. A pattern that gives up
+     * (a huge body) spares nothing — the safe side.
+     *
+     * @param  list<string>  $fields
+     * @return list<array{0: int, 1: int}> byte ranges
+     */
+    private function notCardValues(string $text, bool $json, array $fields): array
+    {
+        if ($fields === []) {
+            return [];
+        }
+
+        return $json ? $this->jsonValues($text, $fields) : $this->formValues($text, $fields);
+    }
+
+    /**
+     * @param  list<string>  $fields
+     * @return list<array{0: int, 1: int}>
+     */
+    private function jsonValues(string $text, array $fields): array
+    {
+        // In valid JSON a quoted name followed by a colon can only be a key, at any depth.
+        $names = implode('|', array_map(static fn (string $field): string => preg_quote($field, '/'), $fields));
+        $pattern = '/(?<!\\\\)"(?:'.$names.')"\\s*:\\s*("(?:[^"\\\\]++|\\\\.)*+"|-?[0-9][0-9.eE+-]*+)/s';
+
+        if (preg_match_all($pattern, $text, $matches, PREG_OFFSET_CAPTURE) === false) {
+            return [];
+        }
+
+        return array_map(static fn (array $value): array => [$value[1], $value[1] + strlen($value[0])], $matches[1]);
+    }
+
+    /**
+     * @param  list<string>  $fields
+     * @return list<array{0: int, 1: int}>
+     */
+    private function formValues(string $text, array $fields): array
+    {
+        $ranges = [];
+        $at = 0;
+
+        foreach (explode('&', $text) as $pair) {
+            $equals = strpos($pair, '=');
+
+            if ($equals !== false && in_array(urldecode(substr($pair, 0, $equals)), $fields, true)) {
+                $ranges[] = [$at + $equals + 1, $at + strlen($pair)];
+            }
+
+            $at += strlen($pair) + 1;
+        }
+
+        return $ranges;
     }
 
     private static function luhn(string $digits): bool

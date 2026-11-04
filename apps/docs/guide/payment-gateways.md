@@ -210,6 +210,19 @@ A hold is a method's setting — the type adds a switch to its `settings()` and 
 order and asks the type; a capture the gateway refuses leaves the money held and the attempt a
 problem.
 
+The journal stars anything that looks like a card number, and a date in milliseconds or a long
+payment id can pass that check by chance. If the gateway's answers carry such numbers, the **gateway**
+class implements `DeclaresNotCardFields`:
+
+```php
+/** Fields that are never a card: the journal leaves their numbers alone. */
+public function notCardFields(): array { return ['create_date', 'payment_id']; }
+```
+
+Name only the fields you are sure of. The exception covers the value of such a field in a JSON or
+form body and nothing else: the same number in another field is still starred, and a key is wiped
+from these fields like from any other.
+
 ## Every request through `GatewayHttp`
 
 The base passes a `GatewayHttp` to every method of the contract. It is Laravel's `Http` with the

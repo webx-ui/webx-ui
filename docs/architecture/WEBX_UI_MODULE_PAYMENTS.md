@@ -783,6 +783,13 @@ interface CapturesPayments extends ChargesOnline
     /** Lets the hold go. Cancelled on success. */
     public function void(Method $method, Credentials $credentials, Payment $payment, GatewayHttp $http): GatewayStatus;
 }
+
+/** On the gateway, not the type: long numbers of its answers that are not cards (§20.5, rule 4). */
+interface DeclaresNotCardFields extends Gateway
+{
+    /** @return list<string> names of json and form fields the card rule leaves alone */
+    public function notCardFields(): array;
+}
 ```
 
 | Возможность                        | Контракт                                      | v1                                                         |
@@ -792,6 +799,7 @@ interface CapturesPayments extends ChargesOnline
 | серверный шаг после одобрения      | `CompletesApproval`                           | да (база и подставной шлюз)                                |
 | холд и списание                    | `CapturesPayments`                            | да в базе и подставном шлюзе; кнопки панели — поздно (§23) |
 | неподписанное уведомление          | `trustsNotifications() = false`               | да (решение 33)                                            |
+| поля, которые точно не номер карты | `DeclaresNotCardFields` на шлюзе              | да (§20.5, п. 4)                                           |
 | позиции и данные покупателя        | `needs()`                                     | да                                                         |
 | возврат через шлюз                 | `RefundsPayments` — имя занято, контракта нет | нет (решение 13)                                           |
 | виджет на сайте                    | `Handoff::embed()` — не заводится             | нет (решение 3)                                            |
@@ -1797,7 +1805,14 @@ final class GatewayHttp
 4. **Номер карты:** 13–19 цифр подряд, не часть более длинного числа, проходящие Луна, — цифры, кроме
    последних четырёх, — `*`. Маска шлюза (`4444****1111`) не трогается — она уже маска. Данных карт
    быть не должно (страница шлюза), правило — второй рубеж; ложное срабатывание видно в `masked.pan`.
-   Шлюз сможет объявить поля, которые точно не номер карты: правка 0.1 в [`WEBX_UI_PAYMENT_LIQPAY.md`](WEBX_UI_PAYMENT_LIQPAY.md) §19.1.
+   **Исключение:** шлюз объявляет поля, которые точно не номер карты (`DeclaresNotCardFields`, §6.4;
+   правка 0.1 в [`WEBX_UI_PAYMENT_LIQPAY.md`](WEBX_UI_PAYMENT_LIQPAY.md) §19.1) — дату в миллисекундах,
+   номер платежа. В json- и form-теле правило не трогает скалярное значение такого поля на любой
+   глубине json и в `masked.pan` его не считает. Всё остальное — как было: то же число в другом поле
+   того же тела, список или объект под объявленным именем, адрес, заголовки и текст ошибки. Поиск
+   идёт по месту в теле, а не по значению. Секреты правило не обходят: п. 1–3 идут первыми. Внутрь
+   base64 правило карт не заглядывает вообще, поэтому тело вида `data=<base64>` исключений не требует
+   и остаётся побайтно, а значения ключей в нём п. 1 затирает как обычно.
 5. **Не маскируется:** подпись (решение 40), идентификаторы платежа, суммы, e-mail и телефон
    покупателя (они нужны для разбора; доступ — правом `payments.exchange`, решение 47).
 
@@ -1848,6 +1863,8 @@ final class GatewayHttp
 | `gateway-a.form`     | только `ChargesOnline`; `CompletesApproval` (одобрение ≠ оплата)                                          | `post`     | подписанная форма, ждёт **подписанного ответа** |
 | `gateway-a.unsigned` | только `ChargesOnline`, `trustsNotifications() = false`, `needs()` — телефон                              | `post`     | без подписи — повод для опроса                  |
 
+- **`DeclaresNotCardFields`** — свойство шлюза, а не типа: `Testing\GatewayANotCards` — тот же шлюз A с
+  контрактом, тест регистрирует его вместо `FakeGateway`.
 - **API шлюза — в процессе, без сети:** спутник ходит через `GatewayHttp` на хост `gateway-a.test`,
   ответы даёт `FakeGatewayServer` (обработчик стека `Http`, как `Http::fake`): журнал видит запрос и
   ответ как настоящие, а сайт не зовёт сам себя по сети. Состояние платежей шлюза — в кеше сайта
