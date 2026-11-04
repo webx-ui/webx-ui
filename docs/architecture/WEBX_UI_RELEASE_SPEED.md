@@ -13,8 +13,9 @@
 - CI PR — `completedAt` чеков из `gh pr checks <N> --json name,completedAt,bucket`: агрегатор
   `Lint, typecheck, test, build` и последний из чеков (обычно `PHP lint, analyse, test (8.4)`);
 - очередь — прогоны `gh run list --event merge_group` с `headSha` записи очереди;
-- `release.yml` — `gh run view <id> --json jobs`: «Version or publish» (тег `php-v*` и npm) и
-  `Publish PHP packages / Split *` (зеркала с тегом `v*`);
+- `release.yml` — `gh run view <id> --json jobs`: «Tag the PHP packages» (тег `php-v*`), рядом
+  с ним «Version or publish» (npm), и `Publish PHP packages / Split *` (зеркала с тегом `v*`) — эта
+  цепочка от npm не зависит;
 - Packagist — опрос `repo.packagist.org/p2/webx-ui/<пакет>.json` раз в 15 с после конца сплита;
   поле `time` версии — дата коммита, а не момент появления, им не мерить.
 
@@ -147,6 +148,44 @@ version PR #503 — `light` (`reason=the version PR, versions only`), 0:20; ег
 2:45, а последним отчитывается smoke «Install into a real Laravel app» (09:41:42). Его и
 повторный JS CI в очереди убирает webx-ui#33 (раздел ниже). Дальше по величине — полный PHP CI PR
 ветки дня и его очереди (~18 минут на 21.10): это защита, её не режем.
+
+## Composer не ждёт npm, новые пакеты — заранее (webx-ui#111)
+
+Два релиза подряд (30.10 и 02–04.11) один пакет без доверенного издателя ронял «Version or publish»,
+сплит с тегом пропускался, и Packagist стоял, пока человек не запускал его руками: 5:00 от падения
+до ручного сплита на 0.92.0. Ещё на каждый новый пакет агент останавливался по разу на «нет
+зеркала», «нет на Packagist», «нет на npm».
+
+Сделано так:
+
+- **Три джоба вместо цепочки.** «Tag the PHP packages» (`php-tag`) идёт рядом с «Version or publish»
+  и сам решает, релиз ли это: версии из `php/package.json` нет тега `php-v*` на remote — ставит тег
+  и отдаёт версию. «Publish PHP packages» зависит только от него. npm-джоб остался красным при
+  ошибке, но больше ни на что не влияет.
+
+  | Что случилось                  | `php-tag`        | Сплит с тегом                            | npm-джоб                               |
+  | ------------------------------ | ---------------- | ---------------------------------------- | -------------------------------------- |
+  | успешный релиз                 | ставит тег       | идёт                                     | зелёный                                |
+  | упал один npm-пакет            | ставит тег       | идёт                                     | красный                                |
+  | Re-run failed jobs после этого | не повторяется   | не повторяется                           | допубликует остальное                  |
+  | Re-run all jobs                | «already exists» | skipped                                  | `changeset publish` пропустит вышедшее |
+  | мерж обычного PR               | «already exists» | skipped, идёт только push-сплит без тега | changesets обновляет version PR        |
+
+- **Сплит с тегом стартует раньше.** Он больше не ждёт публикации (4:02 на 0.92.0) и встаёт в очередь
+  группы `php-split-*` за push-сплитом, поэтому Packagist может обогнать npm на несколько минут.
+  Обмен осознанный: иначе порядок держится только зависимостью от npm-джоба, а с ней Re-run failed
+  jobs повторял бы и сплит.
+- **Чек «New packages are ready to release»** (`release-preflight` в `ci.yml`, скрипт
+  `scripts/release-preflight.mjs`, без установки зависимостей). На PR веток `hot/*` — зеркала: их
+  наполнит мерж этого PR, значит, нужны до него. На version PR — ещё npm и Packagist. Раньше
+  бессмысленно: Submit требует наполненного зеркала, а первая публикация — итоговых диапазонов из
+  `changeset-release/main`. Красный чек валит агрегатор и не пускает PR в очередь. В очереди чек
+  не идёт: за минуты там ничего не меняется.
+
+**Проверить на ближайшем релизе:** на version PR чек зелёный или красный по делу, с предупреждением
+о `module-delivery` и `module-payments` до их первой публикации из CI; при мерже version PR
+«Tag the PHP packages» и «Version or publish» стартуют одновременно; мерж обычного PR — `php-tag`
+с «already exists», «Publish PHP packages» skipped.
 
 ## Гейт этапа и гейт релиза (webx-ui#79)
 

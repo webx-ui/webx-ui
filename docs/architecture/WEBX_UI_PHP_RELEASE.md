@@ -19,9 +19,9 @@ PR с changeset'ом → очередь мержа → main
 release.yml (push в main) → changesets/action открывает «chore: version packages»
         │  мерж этого PR (тоже через очередь)
         ▼
-release.yml:
-   ├─ тег php-v<версия> в монорепо (если версия в php/package.json новая)
-   └─ pnpm release = pnpm build && changeset publish → npm
+release.yml, два независимых джоба:
+   ├─ Version or publish: pnpm release = pnpm build && changeset publish → npm
+   └─ Tag the PHP packages: тег php-v<версия> в монорепо (если версия в php/package.json новая)
         │  uses: ./.github/workflows/php-split.yml с tag: v<версия>
         ▼
 php-split.yml → для каждого php/packages/<pkg> и php/site:
@@ -30,6 +30,10 @@ php-split.yml → для каждого php/packages/<pkg> и php/site:
         ▼
 Packagist: webx-ui/<pkg> <версия>
 ```
+
+Падение npm-публикации Composer-половину не держит (`docs/pitfalls/release-and-ci.md`). Что нужно
+от человека для нового пакета, заранее показывает чек «New packages are ready to release»: на PR
+ветки дня — зеркала, на релизном PR — ещё npm и Packagist.
 
 Push в `main`, который трогает `php/**`, запускает `php-split.yml` без тега — зеркала держатся
 в актуальном состоянии между релизами.
@@ -169,10 +173,11 @@ GitHub: зеркала `webx-ui/<имя>` (имя = вторая часть им
   поэтому в split-репозиторий уезжает `v0.1.0`, а `php-v*` остаётся меткой в монорепо.
 - **Пуш тега из workflow с `GITHUB_TOKEN` не запускает другие workflow.** Поэтому `release.yml`
   вызывает сплит напрямую через `uses:`, а не надеется на триггер по тегу.
-- **Шаг тега стоит до `changesets/action`, и это не косметика.** Когда changesets есть что
-  делать, он бампает версию и коммитит её: после него ни рабочее дерево, ни `HEAD` уже не то,
-  что лежит на `main`. Тег, поставленный после, помечает релиз, которого никто не мержил, — на
-  коммите, который может вообще не доехать до `main`. `git show HEAD:` от этого не спасает.
+- **Тег ставит отдельный джоб, а не шаг после `changesets/action`, и это не косметика.** Когда
+  changesets есть что делать, он бампает версию и коммитит её: после него ни рабочее дерево, ни
+  `HEAD` уже не то, что лежит на `main`. Тег, поставленный после, помечает релиз, которого никто
+  не мержил, — на коммите, который может вообще не доехать до `main`. `git show HEAD:` от этого не
+  спасает. Джоб `php-tag` читает своё чистое дерево запушенного коммита и от npm не зависит.
 - **Токен App отдаётся экшену как `x-access-token:<токен>`.** Экшен собирает
   `https://<токен>@github.com/...`, то есть кладёт токен в имя пользователя. Для PAT так можно,
   для installation-токена App — нет, он должен быть паролем; иначе git молча просит пароль и

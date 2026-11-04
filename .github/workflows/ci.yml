@@ -217,6 +217,26 @@ jobs:
           git diff --name-only --no-renames --diff-filter=d "$BASE" HEAD \
             | xargs --no-run-if-empty pnpm exec prettier --check --ignore-unknown
 
+  # What a release needs from a person, while there is time to do it: on the version PR the first
+  # npm publish, the mirror and the Packagist submit of a new package, on the day's PR the mirror
+  # (its merge is what fills one). Named by the branch rather than `light`: a version PR somebody
+  # edited by hand needs this as much. Node comes with the runner and nothing is installed.
+  # Not in the queue: nothing there can have changed, and the skip leaves `verify` green.
+  release-preflight:
+    name: New packages are ready to release
+    if: >-
+      github.event_name == 'pull_request' &&
+      (github.head_ref == 'changeset-release/main' || startsWith(github.head_ref, 'hot/'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: npm, mirrors and Packagist
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SCOPE: ${{ github.head_ref != 'changeset-release/main' && '--mirrors' || '' }}
+        # $SCOPE is a flag or nothing: word splitting is the point.
+        run: node scripts/release-preflight.mjs $SCOPE
+
   # The catalogue's engine tests against a real Manticore (decision 26 of the Manticore spec): the
   # same scenarios as the database engine, with `--fail-on-skipped` so that a server that never
   # came up fails here instead of skipping quietly. EXTRA brings the lemmatizer dictionaries.
@@ -295,7 +315,7 @@ jobs:
   # the path of everything a change does not reach.
   verify:
     name: Lint, typecheck, test, build
-    needs: [changes, names, lint, typecheck, test, docs, manticore, release-pr]
+    needs: [changes, names, lint, typecheck, test, docs, manticore, release-pr, release-preflight]
     if: always()
     runs-on: ubuntu-latest
     steps:

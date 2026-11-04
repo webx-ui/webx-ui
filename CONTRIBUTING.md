@@ -121,10 +121,15 @@ Pick the packages, pick the bump (`patch` / `minor` / `major` — pre-1.0 we sta
 
 1. Merging a PR with changesets makes the release workflow open a **"chore: version packages"** PR
    with the version bumps and changelogs.
-2. Merging that PR publishes the packages to npm, tags the PHP packages `php-v<version>` and runs
-   `php-split.yml`, which mirrors each composer package into its own repository for Packagist. If
-   the npm job fails after the tag, re-run only the mirror:
-   `gh workflow run php-split.yml --ref main -f tag=v<version>`.
+2. Merging that PR publishes the packages to npm and, independently of how that goes, tags the PHP
+   packages `php-v<version>` and runs `php-split.yml`, which mirrors each composer package into its
+   own repository for Packagist. If the npm job fails, fix the package and use **Re-run failed
+   jobs**; the PHP half is already out.
+
+A new package needs a few things done by hand, and the check **New packages are ready to release**
+lists them with the exact commands: the mirror on the pull request of a `hot/*` branch, then the
+first npm publish and the Packagist submit on the version PR. It is part of the required check, so
+such a pull request cannot enter the queue until they are done.
 
 Publishing uses **npm Trusted Publishing (OIDC)** from GitHub Actions — there is no `NPM_TOKEN` in
 the repository secrets. Trusted Publishing cannot create a name, so the first version of each new
