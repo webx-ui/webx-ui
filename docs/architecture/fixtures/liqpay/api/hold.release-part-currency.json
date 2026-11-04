@@ -1,0 +1,27 @@
+{
+  "checked": "2026-11-04T08:18:31.608Z",
+  "signed_with": "sha3-256",
+  "request": {
+    "url": "https://www.liqpay.ua/api/request",
+    "json": {
+      "version": 7,
+      "public_key": "sandbox_FAKEpublic00000000",
+      "action": "refund",
+      "order_id": "f9fe423c-fa22-4774-b3cc-883d2cfb53da",
+      "amount": "2.00",
+      "currency": "UAH"
+    },
+    "data": "eyJ2ZXJzaW9uIjo3LCJwdWJsaWNfa2V5Ijoic2FuZGJveF9GQUtFcHVibGljMDAwMDAwMDAiLCJhY3Rpb24iOiJyZWZ1bmQiLCJvcmRlcl9pZCI6ImY5ZmU0MjNjLWZhMjItNDc3NC1iM2NjLTg4M2QyY2ZiNTNkYSIsImFtb3VudCI6IjIuMDAiLCJjdXJyZW5jeSI6IlVBSCJ9",
+    "signature": "/3CBDCe2GeZmY1YJX45Ive4ujepjLk3812wR087kdGs="
+  },
+  "response": {
+    "status": 200,
+    "json": {
+      "result": "error",
+      "action": "refund",
+      "status": "error",
+      "err_code": "wrong_amount_currency",
+      "err_description": "Валюта платежу не збігається з валютою debit"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "checked": "2026-11-04T08:18:31.300Z",
+  "request": {
+    "url": "https://www.liqpay.ua/api/3/checkout",
+    "json": {
+      "version": 7,
+      "public_key": "sandbox_FAKEpublic00000000",
+      "action": "pay",
+      "amount": "12.34",
+      "currency": "UAH",
+      "description": "Order 1024",
+      "language": "uk",
+      "order_id": "709b9902-39eb-429a-afa1-f3226992ca60",
+      "expired_date": "2020-01-01 00:00:00"
+    },
+    "data": "eyJ2ZXJzaW9uIjo3LCJwdWJsaWNfa2V5Ijoic2FuZGJveF9GQUtFcHVibGljMDAwMDAwMDAiLCJhY3Rpb24iOiJwYXkiLCJhbW91bnQiOiIxMi4zNCIsImN1cnJlbmN5IjoiVUFIIiwiZGVzY3JpcHRpb24iOiJPcmRlciAxMDI0IiwibGFuZ3VhZ2UiOiJ1ayIsIm9yZGVyX2lkIjoiNzA5Yjk5MDItMzllYi00MjlhLWFmYTEtZjMyMjY5OTJjYTYwIiwiZXhwaXJlZF9kYXRlIjoiMjAyMC0wMS0wMSAwMDowMDowMCJ9",
+    "signature": "KFxJwpecqyRVc8lTFD3Y+PaA+RH0Tylfesf0+U0s7PQ="
+  },
+  "response": {
+    "status": 302,
+    "location": {
+      "host": "www.liqpay.ua",
+      "path": "/uk/checkout/[id]",
+      "query": []
+    },
+    "type": null,
+    "bodyStart": ""
+  }
+}

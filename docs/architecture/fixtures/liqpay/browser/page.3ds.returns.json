@@ -1,0 +1,10 @@
+{
+  "returns": [
+    {
+      "method": "GET",
+      "url": "https://shop.example.com/pay/return/7c2cd575-6e65-40b2-bcb3-b304dbeba7c3",
+      "type": null,
+      "body": null
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "checked": "2026-11-04T08:26:52.803Z",
+  "signed_with": "sha3-256",
+  "request": {
+    "url": "https://www.liqpay.ua/api/request",
+    "json": {
+      "version": 7,
+      "public_key": "sandbox_FAKEpublic00000000",
+      "action": "pay",
+      "order_id": "f2be4f21-fde3-498a-9c5b-c92cd9354c68",
+      "amount": "12.34",
+      "currency": "PLN",
+      "description": "Order 1024",
+      "card": "[test-card]",
+      "card_exp_month": "12",
+      "card_exp_year": "30",
+      "card_cvv": "[test-cvv]",
+      "phone": "+800 1234 5678",
+      "ip": "203.0.113.10"
+    },
+    "data": "eyJ2ZXJzaW9uIjo3LCJwdWJsaWNfa2V5Ijoic2FuZGJveF9GQUtFcHVibGljMDAwMDAwMDAiLCJhY3Rpb24iOiJwYXkiLCJvcmRlcl9pZCI6ImYyYmU0ZjIxLWZkZTMtNDk4YS05YzViLWM5MmNkOTM1NGM2OCIsImFtb3VudCI6IjEyLjM0IiwiY3VycmVuY3kiOiJQTE4iLCJkZXNjcmlwdGlvbiI6Ik9yZGVyIDEwMjQiLCJjYXJkIjoiW3Rlc3QtY2FyZF0iLCJjYXJkX2V4cF9tb250aCI6IjEyIiwiY2FyZF9leHBfeWVhciI6IjMwIiwiY2FyZF9jdnYiOiJbdGVzdC1jdnZdIiwicGhvbmUiOiIrODAwIDEyMzQgNTY3OCIsImlwIjoiMjAzLjAuMTEzLjEwIn0=",
+    "signature": "4fy5NCC5I4MCPqaXVwQIFZF8wZueK29GL8Alucv2/ig="
+  },
+  "response": {
+    "status": 200,
+    "json": {
+      "result": "error",
+      "action": "pay",
+      "status": "failure",
+      "err_code": "err_wrong_currency",
+      "err_description": "Невірно вказана валюта. Використовуйте (USD, UAH, EUR)",
+      "version": 7,
+      "type": "buy",
+      "public_key": "sandbox_FAKEpublic00000000",
+      "liqpay_order_id": "f2be4f21-fde3-498a-9c5b-c92cd9354c68",
+      "description": "Order 1024",
+      "amount": "12.34",
+      "currency": "PLN",
+      "is_3ds": false,
+      "code": "err_wrong_currency"
+    }
+  }
+}

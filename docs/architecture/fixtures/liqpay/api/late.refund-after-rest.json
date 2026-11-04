@@ -1,0 +1,60 @@
+{
+  "checked": "2026-11-04T08:27:11.974Z",
+  "signed_with": "sha3-256",
+  "request": {
+    "url": "https://www.liqpay.ua/api/request",
+    "json": {
+      "version": 7,
+      "public_key": "sandbox_FAKEpublic00000000",
+      "action": "status",
+      "order_id": "cdbd2da1-bf9a-42c5-996c-6d26c1d5dff8"
+    },
+    "data": "eyJ2ZXJzaW9uIjo3LCJwdWJsaWNfa2V5Ijoic2FuZGJveF9GQUtFcHVibGljMDAwMDAwMDAiLCJhY3Rpb24iOiJzdGF0dXMiLCJvcmRlcl9pZCI6ImNkYmQyZGExLWJmOWEtNDJjNS05OTZjLTZkMjZjMWQ1ZGZmOCJ9",
+    "signature": "UfhlvA0nDatoUKmYwVwhQ2w0xTLQ+1gTpq8plldyiz8="
+  },
+  "response": {
+    "status": 200,
+    "json": {
+      "result": "ok",
+      "payment_id": 2950754540,
+      "action": "pay",
+      "status": "reversed",
+      "version": 7,
+      "type": "buy",
+      "paytype": "card",
+      "public_key": "sandbox_FAKEpublic00000000",
+      "acq_id": 100000,
+      "order_id": "cdbd2da1-bf9a-42c5-996c-6d26c1d5dff8",
+      "liqpay_order_id": "YT9ID2LX1793780311736175",
+      "description": "Order 1024",
+      "sender_phone": "+800 1234 5678",
+      "sender_card_mask2": "424242*42",
+      "sender_card_bank": "Test",
+      "sender_card_type": "visa",
+      "sender_card_country": 804,
+      "ip": "203.0.113.10",
+      "amount": 12.34,
+      "currency": "UAH",
+      "sender_commission": 0,
+      "receiver_commission": 0.16,
+      "agent_commission": 0,
+      "amount_debit": 12.34,
+      "amount_credit": 12.34,
+      "commission_debit": 0,
+      "commission_credit": 0.16,
+      "currency_debit": "UAH",
+      "currency_credit": "UAH",
+      "sender_bonus": 0,
+      "amount_bonus": 0,
+      "mpi_eci": "7",
+      "is_3ds": false,
+      "refund_amount": 12.34,
+      "refund_date_last": 1793780487051,
+      "refund_reserve_ids": [2950756317],
+      "create_date": 1793780311738,
+      "end_date": 1793780311811,
+      "confirm_phone": "+800 1234 5678",
+      "transaction_id": 2950754540
+    }
+  }
+}
