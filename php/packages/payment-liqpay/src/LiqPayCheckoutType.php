@@ -7,6 +7,9 @@ namespace WebxUi\Payment\LiqPay;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
 use Symfony\Component\HttpFoundation\Response;
+use WebxUi\Payment\LiqPay\Api\Answer;
+use WebxUi\Payment\LiqPay\Api\Signature;
+use WebxUi\Payment\LiqPay\Api\Statuses;
 use WebxUi\Payments\Availability;
 use WebxUi\Payments\Contracts\ChargesOnline;
 use WebxUi\Payments\Contracts\ValidatesSettings;
@@ -31,8 +34,8 @@ use WebxUi\Payments\Words;
  * `liqpay.checkout` — the page of LiqPay (spec §6). One type, any number of methods: what the page
  * offers is the method's seven switches, each with its own keys (decisions 3, 15).
  *
- * The talk with LiqPay comes by the stages of the plan (§19): the notification with stage 2, the
- * page and the statuses with stage 3, the hold with stage 4. Until then those calls refuse.
+ * The talk with LiqPay comes by the stages of the plan (§19): the page and the poll with stage 3,
+ * the hold with stage 4. Until then those calls refuse.
  */
 final class LiqPayCheckoutType implements ChargesOnline, ValidatesSettings
 {
@@ -53,6 +56,12 @@ final class LiqPayCheckoutType implements ChargesOnline, ValidatesSettings
 
     /** The fields a hold rules out: what a hold means with instalments is not known (decision 17). */
     private const array INSTALMENTS = ['pay_moment_part', 'pay_paypart'];
+
+    /**
+     * Subscriptions and tokens (§21). A list of what is not ours rather than of what is: the action
+     * of a refund is not known, and it has to reach the poke (§3.3).
+     */
+    private const array NOT_PAYMENTS = ['subscribe', 'unsubscribe', 'regular', 'recurring', 'recurringbytoken'];
 
     private const string NOT_YET = 'The payments of LiqPay are not there yet';
 
@@ -170,9 +179,42 @@ final class LiqPayCheckoutType implements ChargesOnline, ValidatesSettings
         throw GatewayUnavailable::because(self::NOT_YET);
     }
 
+    /**
+     * The steps of §8.1. The signature is checked on the string `data` as it came: decoding it and
+     * encoding it again would give another string.
+     */
     public function readNotification(Method $method, Credentials $credentials, Request $request, GatewayHttp $http): Notification
     {
-        throw InvalidNotification::malformed(self::NOT_YET);
+        $data = $request->post('data');
+        $signature = $request->post('signature');
+
+        if (! is_string($data) || $data === '' || ! is_string($signature) || $signature === '') {
+            throw InvalidNotification::malformed();
+        }
+
+        $private = Keys::of($method, $credentials)->privateKey();
+        $answer = Answer::decode($data);
+
+        if ($private === null || ! Signature::verify($data, $signature, $private)) {
+            throw InvalidNotification::signature(uuid: $answer?->orderId());
+        }
+
+        if ($answer === null) {
+            throw InvalidNotification::malformed();
+        }
+
+        $eventKey = Notification::keyOf($data);
+
+        if (in_array($answer->action(), self::NOT_PAYMENTS, true) || in_array($answer->status(), ['subscribed', 'unsubscribed'], true)) {
+            return Notification::unrelated($eventKey, 'Not about a payment: '.$answer->action().', '.$answer->status(), $answer->orderId(), $answer->paymentId());
+        }
+
+        // The same word means another thing at an attempt on hold, and only the poll sees it (§8.3).
+        if ($answer->status() === 'reversed' || (float) ($answer->fields['refund_amount'] ?? 0) > 0) {
+            return Notification::poke($eventKey, $answer->orderId(), $answer->paymentId());
+        }
+
+        return Notification::status($eventKey, $answer->orderId(), $answer->paymentId(), Statuses::read($answer));
     }
 
     /** What LiqPay expects is not documented: an empty 200, until a live one says otherwise (§8.2). */

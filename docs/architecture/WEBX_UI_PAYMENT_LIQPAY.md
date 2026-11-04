@@ -106,7 +106,7 @@ MCP; §15 — слова; §16 — `AGENTS.md`; §17 — тесты и фикс�
 получить ответы песочницы. Для этого у боевого магазина нужен сертификат PCI DSS, и в пакете таких
 вызовов **не будет никогда** (решение 3 базы): покупатель вводит карту только на странице LiqPay.
 
-Записанное лежит в [`fixtures/liqpay/`](fixtures/liqpay) — §17.
+Записанное лежит в [`tests/Fixtures/`](../../php/packages/payment-liqpay/tests/Fixtures) пакета — §17.
 
 ### 3.2. Подтверждено песочницей
 
@@ -647,8 +647,7 @@ return Handoff::post($config['checkout_url'], ['data' => $data, 'signature' => $
 
 ### 17.1. Записанные ответы
 
-Лежат в [`docs/architecture/fixtures/liqpay/`](fixtures/liqpay) как приложение к этой спеке; этап 2
-плана переносит их в `php/packages/payment-liqpay/tests/Fixtures/`.
+Лежат в [`php/packages/payment-liqpay/tests/Fixtures/`](../../php/packages/payment-liqpay/tests/Fixtures).
 
 | Каталог    | Что                                                                                                                        |
 | ---------- | -------------------------------------------------------------------------------------------------------------------------- |

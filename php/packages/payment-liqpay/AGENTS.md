@@ -5,9 +5,10 @@ LiqPay, a payment gateway of Ukraine, for `webx-ui/module-payments`. The package
 `settle()`, the exchange journal, the poll, the method form and MCP. Read the base's `AGENTS.md`
 first. This package has no tables, routes, screens, MCP tools or npm package of its own.
 
-**Being built by stages** (§19 of the spec). There now: the registration, the fields, the words and
-the migration. `start()`, `fetchStatus()`, `readNotification()` and `testConnection()` refuse until
-their stages land, and the type is not `CapturesPayments` yet, so the hold switch is not drawn.
+**Being built by stages** (§19 of the spec). There now: the registration, the fields, the words, the
+migration, the signature, the client and `readNotification()`. `start()`, `fetchStatus()` and
+`testConnection()` refuse until their stages land, and the type is not `CapturesPayments` yet, so
+the hold switch is not drawn. A `reversed` notification asks `fetchStatus()`, so it answers 500 until then.
 
 ## What it owns
 
@@ -23,6 +24,13 @@ their stages land, and the type is not `CapturesPayments` yet, so the hold switc
 - **Hold and instalments never share a method.** `pay_moment_part` and `pay_paypart` carry `off_with:
 hold`, and `validateSettings()` refuses the pair on the server. It also refuses a hold with no
   switch on: without `paytypes` the page shows everything, instalments too.
+- **Signature** `Api\Signature`: `version` decides the algorithm of our requests, and a notification
+  passes with SHA3-256 or SHA1 until a live one shows which LiqPay uses. It covers the string `data`
+  as it came, never the decoded JSON. Only the key of the method's mode counts (`Keys`).
+- **Statuses** `Api\Statuses`: the table of §9.2. `reversed` and `refund_amount` are a poke, because
+  their meaning depends on the attempt. `try_again` is Pending; `wait_accept` is Paid with a reason.
+- **Fixtures** `tests/Fixtures`: `api/` and `browser/` were recorded on the sandbox, `notify/` is
+  emulated. `FixturesAreScrubbedTest` keeps real keys, cards and phones out.
 - **Migration**: the method `liqpay-checkout`, switched off, no title of its own. A second run adds
   nothing. The rollback removes it only while it has no attempts.
 - **Config** `webx-payment-liqpay.php`: the two addresses and the version of the API.
