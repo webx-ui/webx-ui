@@ -229,6 +229,27 @@ final readonly class Methods
         return $views;
     }
 
+    /**
+     * What a form that sends both a group and a method means (groups spec §6.4): the method if it is
+     * of that group, otherwise the group's first. A form without the script sends the radio of the
+     * group it left along with the new group, and a row of one method has no radio `method` at all.
+     * Without a group the method alone decides; null — nothing of this is on offer.
+     *
+     * @param  list<MethodOption>  $options
+     */
+    public function picked(array $options, ?string $group, ?string $method): ?MethodOption
+    {
+        $among = $group === null ? $options : array_values(array_filter($options, static fn (MethodOption $option): bool => $option->group === $group));
+
+        foreach ($among as $option) {
+            if ($option->key() === $method) {
+                return $option;
+            }
+        }
+
+        return $group === null || $among === [] ? null : $this->grouped($among)[0]->options[0];
+    }
+
     /** @param  non-empty-list<MethodOption>  $options */
     private function view(MethodGroup $group, array $options): MethodGroupView
     {

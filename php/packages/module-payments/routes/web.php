@@ -34,5 +34,6 @@ Route::group(['webx_service' => true], static function () use ($path): void {
     $files = trim((string) config('webx-payments.script_path', 'webx/payments'), '/');
 
     Route::get($files.'/step.js', ScriptController::class)->name('webx-payments.script');
+    Route::get($files.'/methods.js', [ScriptController::class, 'methods'])->name('webx-payments.methods-script');
     Route::get($files.'/marks/{key}.svg', MarkController::class)->where('key', '[a-z0-9-]+')->name('webx-payments.mark');
 });

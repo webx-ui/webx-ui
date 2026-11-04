@@ -71,7 +71,8 @@ final class PaymentsCheckoutSlot implements NamesErrors, PaymentSlot
         $errors = view()->shared('errors');
 
         return new HtmlString(view('webx-payments::step', [
-            'step' => $this->state($context),
+            'step' => $state = $this->state($context),
+            'groups' => $this->methods->grouped($state->options),
             'urls' => ['selection' => route('webx-payments.selection.update')],
             'event' => SlotStep::CHANGED,
             'script' => app(Assets::class)->script(),

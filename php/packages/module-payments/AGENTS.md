@@ -20,7 +20,7 @@ Orders, their milestones and balance are `webx-ui/module-orders`; the cart is `w
   `explain()` gives the reason of each (`webx-payments::reasons`). Cache group `payments`.
 - **Checkout** `Checkout\PaymentsCheckoutSlot` in the slot «payment»: view `webx-payments::step`,
   the choice in `payment_selections` through `GET /api/payments/methods` and
-  `PUT /api/payments/selection` (`method`); script `resources/js/step.js`. A choice the delivery took
+  `PUT /api/payments/selection` (`method`, or `group` and `method`: `Methods::picked()`); scripts `resources/js/step.js` and, for the list `<x-webx-payments::methods>`, `methods.js`. A choice the delivery took
   away is dropped with a word; methods waiting for the delivery say «Choose delivery first».
 - **Order block** `payment` (`PaymentSnapshot`): `method`, `type`, `kind`, `title` by language,
   `instructions` of a transfer. While the order awaits payment its page and «Thank you» show
@@ -94,9 +94,9 @@ panel and as tools; `payments_exchange_get` — `payments.exchange`; the other t
 
 The theme's contract, in `resources/theme/payments.css`; restyle with the same class:
 `webx-payments` (`is-live`, `is-loading`), `webx-payments__form`, `webx-payments__hint`, `webx-payments__notice`,
-`webx-payments__error`, `webx-payments__methods` (`is-single`), `webx-payments__methods-title`,
-`webx-payments__method` (`is-chosen`), `webx-payments__radio`, `webx-payments__icon`, `webx-payments__method-text`,
-`webx-payments__method-title`, `webx-payments__method-note`, `webx-payments__mark` (`is-text`), `webx-payments__save`, `webx-payments__nojs`,
+`webx-payments__error`, `webx-payments__groups` (`is-flat`, `is-single`), `webx-payments__methods-title`,
+`webx-payments__group` (`is-chosen`), `webx-payments__group-head`, `webx-payments__group-methods`, `webx-payments__group-legend`, `webx-payments__option` (`is-chosen`), `webx-payments__radio`, `webx-payments__icon`, `webx-payments__pictogram`, `webx-payments__row-text`,
+`webx-payments__row-title`, `webx-payments__row-note`, `webx-payments__marks`, `webx-payments__marks-item`, `webx-payments__mark` (`is-text`), `webx-payments__save`, `webx-payments__nojs`,
 `webx-payments-instructions`, `webx-payments-instructions__title`, `webx-payments-instructions__list`,
 `webx-payments-instructions__row` (+ `webx-payments-instructions__row--<field>`), `webx-payments-instructions__label`,
 `webx-payments-instructions__value`, `webx-payments-status` (+ `webx-payments-status--<state>`), `webx-payments-status__pay`,

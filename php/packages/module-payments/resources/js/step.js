@@ -1,14 +1,15 @@
-// The payment step's script (payments spec §10.2), on top of a form that works without it: a
-// choice is written at once with `PUT selection`, and the checkout hears of it on `document`
-// (`data-checkout-event`) to redraw its column. A single method, shown chosen, is written once
-// on load. The checkout redraws the whole step itself after the delivery changes.
+// The payment step's script (payments spec §10.2), on top of a form that works without it: what
+// the list of methods chose (`methods.js`) is written at once with `PUT selection`, and the
+// checkout hears of it on `document` (`data-checkout-event`) to redraw its column. A single method,
+// shown chosen, is written once on load. The checkout redraws the whole step itself after the
+// delivery changes.
 
 const ROOT = '[data-webx-payments]'
 
 const token = (form) => form.querySelector('input[name="_token"]')?.value ?? ''
 
-async function save(root, radio) {
-  const form = radio.form
+async function save(root, key) {
+  const form = root.querySelector('form')
   root.classList.add('is-loading')
   try {
     const response = await fetch(root.getAttribute('data-selection'), {
@@ -19,15 +20,12 @@ async function save(root, radio) {
         Accept: 'application/json',
         'X-CSRF-TOKEN': token(form),
       },
-      body: JSON.stringify({ method: radio.value }),
+      body: JSON.stringify({ method: key }),
     })
     const body = await response.json().catch(() => ({}))
     if (!response.ok) {
       form.submit()
       return
-    }
-    for (const label of root.querySelectorAll('.webx-payments__method')) {
-      label.classList.toggle('is-chosen', label.contains(radio))
     }
     const event = root.getAttribute('data-checkout-event')
     if (event) {
@@ -43,12 +41,9 @@ async function save(root, radio) {
 function start(root) {
   if (root.classList.contains('is-live')) return
   root.classList.add('is-live')
-  root.addEventListener('change', (event) => {
-    const radio = event.target
-    if (radio instanceof HTMLInputElement && radio.type === 'radio') save(root, radio)
-  })
+  root.addEventListener('webx:payments:method', (event) => save(root, event.detail.key))
   const single = root.querySelector('input[data-autosave]')
-  if (single) save(root, single)
+  if (single) save(root, single.value)
 }
 
 function startAll() {
