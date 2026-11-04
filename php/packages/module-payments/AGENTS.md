@@ -101,7 +101,7 @@ The theme's contract, in `resources/theme/payments.css`; restyle with the same c
 `webx-payments-instructions__row` (+ `webx-payments-instructions__row--<field>`), `webx-payments-instructions__label`,
 `webx-payments-instructions__value`, `webx-payments-status` (+ `webx-payments-status--<state>`), `webx-payments-status__pay`,
 `webx-payments-pay`, `webx-payments-pay__title`, `webx-payments-pay__amount`, `webx-payments-pay__message` (+ `--error`),
-`webx-payments-pay__form`, `webx-payments-pay__button`, `webx-payments-pay__link`, `webx-payments-handoff`, `webx-payments-prompt`, `webx-payments-prompt__form`, `webx-payments-prompt__button`, `webx-payments-prompt__message`, `webx-payments-others`, `webx-payments-others__toggle`, `webx-payments-others__list`, `webx-payments-others__form`, `webx-payments-others__choice`.
+`webx-payments-pay__form`, `webx-payments-pay__button`, `webx-payments-pay__link`, `webx-payments-handoff`, `webx-payments-prompt`, `webx-payments-prompt__form`, `webx-payments-prompt__button`, `webx-payments-prompt__message`, `webx-payments-others`, `webx-payments-others__toggle`, `webx-payments-others__list`, `webx-payments-others__continue`.
 
 ## Change it without forking
 
