@@ -1,6 +1,6 @@
 {
   "name": "@webx-ui/module-payments",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Payments for the WebX UI admin panel: methods with their gateway keys and a connection test, the journal of attempts, the raw exchange with gateways, and the tab «Payment» of an order.",
   "license": "MIT",
   "type": "module",
