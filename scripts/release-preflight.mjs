@@ -20,6 +20,11 @@
 //
 // Reads only, with no write access anywhere; GH_TOKEN or GITHUB_TOKEN only lifts GitHub's rate
 // limit. Exits 1 when something is missing or could not be checked.
+//
+// Run by hand with a token: anonymous GitHub allows 60 requests an hour and one run spends about
+// one per mirror, so a second run in the hour comes back unchecked:
+//
+//   GH_TOKEN=$(gh auth token) node scripts/release-preflight.mjs
 
 import { appendFileSync, existsSync, readFileSync, readdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -61,21 +66,21 @@ export function readPackages(root) {
  * "publish it by hand", so anything else is retried and then reported as not checked.
  */
 async function probe(url, { fetcher, headers = {}, attempts = 3, pause = 1000 }) {
-  let note = ''
+  let failure = {}
 
   for (let attempt = 1; attempt <= attempts; attempt++) {
     try {
       const response = await fetcher(url, { headers, signal: AbortSignal.timeout(15000) })
       if (response.ok) return { state: 'found', response }
       if (response.status === 404) return { state: 'missing' }
-      note = `HTTP ${response.status}`
+      failure = { note: `HTTP ${response.status}`, status: response.status }
     } catch (error) {
-      note = error.message
+      failure = { note: error.message }
     }
     if (attempt < attempts) await new Promise((resolve) => setTimeout(resolve, pause * attempt))
   }
 
-  return { state: 'unknown', note }
+  return { state: 'unknown', ...failure }
 }
 
 async function eachLimited(items, limit, work) {
@@ -102,12 +107,17 @@ export async function check(
     unproven: [],
     unknown: [],
     checked: { npm: 0, mirrors: 0, packagist: 0 },
+    unchecked: { npm: 0, mirrors: 0, packagist: 0 },
+    rateLimited: false,
   }
 
   const count = (kind, label, answer, onMissing) => {
     result.checked[kind]++
     if (answer.state === 'missing') onMissing()
-    if (answer.state === 'unknown') result.unknown.push(`${label}: ${answer.note}`)
+    if (answer.state === 'unknown') {
+      result.unchecked[kind]++
+      result.unknown.push(`${label}: ${answer.note}`)
+    }
   }
 
   const askNpm = async (item) => {
@@ -129,6 +139,8 @@ export async function check(
     }
     const answer = await probe(mirrorUrl(repository), { fetcher, pause, headers })
     count('mirrors', `зеркало ${repository}`, answer, () => result.mirrors.push(repository))
+    // With a token already sent, the advice to send one would be wrong.
+    if (!token && [403, 429].includes(answer.status)) result.rateLimited = true
   }
 
   const askPackagist = async (repository) => {
@@ -212,10 +224,11 @@ function packagistSteps(repositories) {
 
 /** The text a person reads in the red check: what is wrong and the commands that fix it. */
 export function report(result, { runId } = {}) {
-  const { checked, mirrorsOnly } = result
+  const { checked, unchecked, mirrorsOnly } = result
   const tally = (kind, label) => {
-    const missing = result[kind].length
-    return `${label} ${checked[kind] - missing}/${checked[kind]}`
+    const found = checked[kind] - result[kind].length - unchecked[kind]
+    const rest = unchecked[kind] ? `, не проверено ${unchecked[kind]}` : ''
+    return `${label} ${found}/${checked[kind]}${rest}`
   }
   const counts = mirrorsOnly
     ? [tally('mirrors', 'зеркала')]
@@ -232,6 +245,13 @@ export function report(result, { runId } = {}) {
     sections.push([
       'Не удалось проверить — это сбой сервиса, а не отсутствие пакета:',
       ...result.unknown.map((line) => `  ${line}`),
+      ...(result.rateLimited
+        ? [
+            '',
+            '  GitHub ограничил запросы без токена: 60 в час, а один прогон — около 50. Запускать так:',
+            '  GH_TOKEN=$(gh auth token) node scripts/release-preflight.mjs',
+          ]
+        : []),
     ])
   }
 

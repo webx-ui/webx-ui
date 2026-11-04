@@ -118,6 +118,42 @@ describe('release-preflight', () => {
     expect(isGreen(result)).toBe(false)
   })
 
+  it('counts what it could not check apart from what it found', async () => {
+    const result = await check(
+      { npm: packages.npm, composer: ['module-a', 'module-b', 'module-c'] },
+      {
+        fetcher: services({
+          [mirrorUrl('module-b')]: { status: 503 },
+          [mirrorUrl('module-c')]: { status: 404 },
+        }),
+        pause: 0,
+      },
+    )
+    const text = report(result)
+
+    expect(isGreen(result)).toBe(false)
+    expect(text).toContain(
+      'Preflight релиза (npm 1/1, зеркала 1/3, не проверено 1, Packagist 3/3): релиз не готов.',
+    )
+    expect(text).not.toContain('GH_TOKEN')
+  })
+
+  it.each([403, 429])('points at the token when GitHub answers %i', async (status) => {
+    const fetcher = services({ [mirrorUrl('module-a')]: { status } })
+    const text = report(await check(packages, { fetcher, pause: 0, mirrorsOnly: true }))
+
+    expect(text).toContain('Preflight релиза (зеркала 0/1, не проверено 1): релиз не готов.')
+    expect(text).toContain('GH_TOKEN=$(gh auth token) node scripts/release-preflight.mjs')
+  })
+
+  it('does not advise a token to a run that sent one, or for another service', async () => {
+    const limited = await run({ [mirrorUrl('module-a')]: { status: 403 } }, { token: 'secret' })
+    const npm = await run({ [npmUrl('@webx-ui/module-a')]: { status: 429 } })
+
+    expect(report(limited)).not.toContain('GH_TOKEN')
+    expect(report(npm)).not.toContain('GH_TOKEN')
+  })
+
   it('retries a passing failure', async () => {
     const fetcher = vi
       .fn(services())
