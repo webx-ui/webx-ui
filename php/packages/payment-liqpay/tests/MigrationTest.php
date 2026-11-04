@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace WebxUi\Payment\LiqPay\Tests;
 
-use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
@@ -29,7 +28,7 @@ final class MigrationTest extends TestCase
     {
         PaymentMethod::query()->where('key', 'liqpay-checkout')->update(['enabled' => true]);
 
-        $this->migration()->up();
+        $this->up();
 
         $this->assertSame(1, PaymentMethod::query()->where('key', 'liqpay-checkout')->count());
         $this->assertTrue(PaymentMethod::query()->where('key', 'liqpay-checkout')->firstOrFail()->enabled);
@@ -38,10 +37,10 @@ final class MigrationTest extends TestCase
     #[Test]
     public function it_rolls_back_and_comes_again(): void
     {
-        $this->migration()->down();
+        $this->down();
         $this->assertFalse(PaymentMethod::query()->where('key', 'liqpay-checkout')->exists());
 
-        $this->migration()->up();
+        $this->up();
         $this->assertTrue(PaymentMethod::query()->where('key', 'liqpay-checkout')->exists());
     }
 
@@ -61,13 +60,18 @@ final class MigrationTest extends TestCase
             ]);
         });
 
-        $this->migration()->down();
+        $this->down();
 
         $this->assertTrue(PaymentMethod::query()->where('key', 'liqpay-checkout')->exists());
     }
 
-    private function migration(): Migration
+    private function up(): void
     {
-        return require __DIR__.'/../database/migrations/2026_11_04_000000_add_liqpay_checkout_method.php';
+        (require __DIR__.'/../database/migrations/2026_11_04_000000_add_liqpay_checkout_method.php')->up();
+    }
+
+    private function down(): void
+    {
+        (require __DIR__.'/../database/migrations/2026_11_04_000000_add_liqpay_checkout_method.php')->down();
     }
 }

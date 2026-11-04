@@ -125,7 +125,8 @@ final class LiqPayCheckoutType implements ChargesOnline, ValidatesSettings
         return $refused;
     }
 
-    public function currencies(): ?array
+    /** @return list<string> PLN and the rest are refused with `err_wrong_currency` (§3.2) */
+    public function currencies(): array
     {
         return ['UAH', 'USD', 'EUR'];
     }
