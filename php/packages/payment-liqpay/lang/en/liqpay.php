@@ -63,6 +63,7 @@ return [
         'payment_not_found' => 'LiqPay has no such payment: the buyer did not begin it',
         'err_wrong_currency' => 'LiqPay does not take this currency',
         'wrong_amount_currency' => 'The hold cannot be released in part',
+        'part_in_hryvnias' => 'LiqPay captures a part only of a payment in hryvnias: capture the whole sum or release the hold',
         'refused' => 'LiqPay refused the operation',
     ],
 ];

@@ -63,6 +63,7 @@ return [
         'payment_not_found' => 'LiqPay n\'a pas ce paiement : l\'acheteur ne l\'a pas commencé',
         'err_wrong_currency' => 'LiqPay n\'accepte pas cette devise',
         'wrong_amount_currency' => 'La préautorisation ne peut pas être libérée en partie',
+        'part_in_hryvnias' => 'LiqPay ne débite une partie que pour un paiement en hryvnias : débitez le montant entier ou libérez la préautorisation',
         'refused' => 'LiqPay a refusé l\'opération',
     ],
 ];

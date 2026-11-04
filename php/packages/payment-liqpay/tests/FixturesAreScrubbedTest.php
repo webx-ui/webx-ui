@@ -61,7 +61,7 @@ final class FixturesAreScrubbedTest extends Base
     {
         $recordings = self::recordings();
 
-        $this->assertCount(57, $recordings);
+        $this->assertCount(58, $recordings);
 
         foreach (array_keys($recordings) as $name) {
             $this->assertIsArray(json_decode((string) file_get_contents(__DIR__.'/Fixtures/'.$name), true), $name);

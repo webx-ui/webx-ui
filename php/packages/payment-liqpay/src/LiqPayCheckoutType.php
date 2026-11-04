@@ -281,6 +281,12 @@ final class LiqPayCheckoutType implements CapturesPayments, ValidatesSettings
             return $status->status === Reported::Failed ? throw self::refused($answer) : $status;
         }
 
+        // The same code as a part of a release, and here it is the currency: a hold in EUR or USD
+        // is debited in hryvnias, and LiqPay takes only the whole of it, whatever the request says.
+        if ($answer->errorCode() === 'wrong_amount_currency') {
+            throw GatewayRefused::because(LiqPayGateway::word('errors.part_in_hryvnias'));
+        }
+
         if ($answer->errorCode() === 'payment_err_status') {
             $status = $this->fetchStatus($method, $credentials, $payment, $http->kind(ExchangeKind::Status));
 

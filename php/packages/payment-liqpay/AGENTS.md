@@ -36,6 +36,9 @@ hold`, and `validateSettings()` refuses the pair on the server. It also refuses 
   `hold_completion`, whole or a part: LiqPay lets the rest go itself. `payment_err_status` asks `status`,
   because a lost answer and a hold that is gone say the same. `void()` is `refund` of all that is held,
   only at `authorized`. LiqPay names no end of a hold: `create_date` + 10 days for Visa, + 7 for the rest.
+- **A part needs hryvnias.** A hold in EUR or USD is debited in UAH, and `hold_completion` of a part answers
+  `wrong_amount_currency` whatever the request says. The whole sum and a release work in any currency.
+  `capturesPartially()` knows no payment, so the manager gets a refusal in words and the hold stays.
 - **Test the connection** `testConnection()`: `status` of a random uuid, `payment_not_found` means both
   keys are right. Keys of the other mode (`sandbox_` prefix) are refused without a request.
 - **Fixtures** `tests/Fixtures`: `api/` and `browser/` were recorded on the sandbox, `notify/` is

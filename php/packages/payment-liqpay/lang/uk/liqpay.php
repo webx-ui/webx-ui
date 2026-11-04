@@ -63,6 +63,7 @@ return [
         'payment_not_found' => 'LiqPay не має такого платежу: покупець його не почав',
         'err_wrong_currency' => 'LiqPay не приймає цю валюту',
         'wrong_amount_currency' => 'Холд не можна відпустити частково',
+        'part_in_hryvnias' => 'LiqPay списує частину лише в платежу в гривнях: спишіть усю суму або відпустіть холд',
         'refused' => 'LiqPay відмовив в операції',
     ],
 ];

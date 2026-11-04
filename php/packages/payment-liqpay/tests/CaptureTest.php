@@ -114,6 +114,14 @@ final class CaptureTest extends PaymentsCheckoutCase
     }
 
     #[Test]
+    public function a_part_of_a_hold_in_another_currency_is_refused_with_what_to_do(): void
+    {
+        $this->answers('api/hold.completion-part-eur');
+
+        $this->assertRefused('LiqPay captures a part only of a payment in hryvnias: capture the whole sum or release the hold', fn () => $this->capture(500));
+    }
+
+    #[Test]
     public function a_lost_answer_is_found_by_asking_and_nothing_is_taken_twice(): void
     {
         $this->answers('api/hold.completion-repeat', 'api/hold.status-after-full');

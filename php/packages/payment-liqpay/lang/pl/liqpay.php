@@ -63,6 +63,7 @@ return [
         'payment_not_found' => 'LiqPay nie ma takiej płatności: kupujący jej nie rozpoczął',
         'err_wrong_currency' => 'LiqPay nie przyjmuje tej waluty',
         'wrong_amount_currency' => 'Blokady nie można zwolnić częściowo',
+        'part_in_hryvnias' => 'LiqPay pobiera część tylko z płatności w hrywnach: pobierz całą kwotę lub zwolnij blokadę',
         'refused' => 'LiqPay odrzucił operację',
     ],
 ];

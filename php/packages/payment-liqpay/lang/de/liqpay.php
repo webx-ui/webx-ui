@@ -63,6 +63,7 @@ return [
         'payment_not_found' => 'LiqPay kennt diese Zahlung nicht: Der Käufer hat sie nicht begonnen',
         'err_wrong_currency' => 'LiqPay akzeptiert diese Währung nicht',
         'wrong_amount_currency' => 'Die Reservierung kann nicht teilweise freigegeben werden',
+        'part_in_hryvnias' => 'LiqPay bucht einen Teilbetrag nur bei Zahlungen in Hrywnja ab: Buchen Sie den ganzen Betrag ab oder geben Sie die Reservierung frei',
         'refused' => 'LiqPay hat den Vorgang abgelehnt',
     ],
 ];

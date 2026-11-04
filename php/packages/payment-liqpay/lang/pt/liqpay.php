@@ -63,6 +63,7 @@ return [
         'payment_not_found' => 'O LiqPay não tem esse pagamento: o comprador não o iniciou',
         'err_wrong_currency' => 'O LiqPay não aceita esta moeda',
         'wrong_amount_currency' => 'A retenção não pode ser libertada em parte',
+        'part_in_hryvnias' => 'O LiqPay só cobra uma parte de um pagamento em grívnias: cobre o valor total ou liberte a retenção',
         'refused' => 'O LiqPay recusou a operação',
     ],
 ];

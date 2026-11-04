@@ -63,6 +63,7 @@ return [
         'payment_not_found' => 'LiqPay non ha questo pagamento: l\'acquirente non l\'ha iniziato',
         'err_wrong_currency' => 'LiqPay non accetta questa valuta',
         'wrong_amount_currency' => 'La preautorizzazione non può essere sbloccata in parte',
+        'part_in_hryvnias' => 'LiqPay addebita una parte solo per un pagamento in grivne: addebita l\'intero importo o sblocca la preautorizzazione',
         'refused' => 'LiqPay ha rifiutato l\'operazione',
     ],
 ];

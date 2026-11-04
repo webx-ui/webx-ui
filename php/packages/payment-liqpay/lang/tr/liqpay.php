@@ -63,6 +63,7 @@ return [
         'payment_not_found' => 'LiqPay bu ödemeye sahip değil: alıcı ödemeyi başlatmadı',
         'err_wrong_currency' => 'LiqPay bu para birimini kabul etmiyor',
         'wrong_amount_currency' => 'Bloke kısmen kaldırılamaz',
+        'part_in_hryvnias' => 'LiqPay yalnızca grivna ödemelerinde kısmi tahsilat yapar: tutarın tamamını tahsil edin veya blokeyi kaldırın',
         'refused' => 'LiqPay işlemi reddetti',
     ],
 ];
