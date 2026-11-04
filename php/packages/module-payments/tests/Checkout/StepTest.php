@@ -136,6 +136,27 @@ final class StepTest extends PaymentsCheckoutCase
     }
 
     #[Test]
+    public function a_step_with_every_method_waiting_already_brings_the_script_of_the_list(): void
+    {
+        // The redraw that brings the list inserts scripts the browser never runs, so this is the
+        // only moment the page can get it.
+        $this->installSlots(shipping: true, payment: false);
+        PaymentMethod::query()->get()->each(static fn (PaymentMethod $method) => $method->update(['delivery_rule' => ['mode' => 'on_hand']]));
+        $slot = $this->app->make(CheckoutSlots::class)->payment();
+        $this->assertInstanceOf(PaymentsCheckoutSlot::class, $slot);
+        $context = $this->checkoutWithFakeDelivery($this->cart());
+
+        $this->assertSame([], $slot->state($context)->options);
+        $this->assertTrue($slot->state($context)->waiting);
+
+        $html = $slot->render($context)->toHtml();
+
+        $this->assertStringContainsString('Choose delivery first', $html);
+        $this->assertSame(1, substr_count($html, '/step.js'));
+        $this->assertSame(1, substr_count($html, '/methods.js'));
+    }
+
+    #[Test]
     public function the_block_of_a_transfer_carries_the_details_in_every_language(): void
     {
         $cart = $this->cart();

@@ -40,4 +40,11 @@
     @if (($script ?? null) !== null)
         <script type="module" src="{{ $script }}"></script>
     @endif
+
+    {{-- Here too, not only in the list: a step waiting for the delivery has no list yet, and the
+         redraw that brings it inserts scripts the browser never runs. --}}
+    @php($methods = app(\WebxUi\Payments\Rendering\Assets::class)->methods())
+    @if ($methods !== null)
+        <script type="module" src="{{ $methods }}"></script>
+    @endif
 </section>

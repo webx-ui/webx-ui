@@ -8,6 +8,7 @@ use DOMDocument;
 use DOMElement;
 use DOMNode;
 use DOMXPath;
+use Illuminate\Support\Facades\Blade;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Cart\AddResult;
 use WebxUi\Orders\Checkout\CheckoutContext;
@@ -228,6 +229,17 @@ final class MethodsListTest extends PaymentsCheckoutCase
             ->assertOk()
             ->assertHeader('Content-Type', 'text/javascript; charset=UTF-8')
             ->assertHeader('ETag', '"'.Assets::version(Assets::METHODS).'"');
+    }
+
+    #[Test]
+    public function the_list_on_a_page_without_the_step_brings_its_script_itself(): void
+    {
+        $this->app->forgetScopedInstances();
+        $groups = $this->app->make(Methods::class)->grouped($this->app->make(PaymentsCheckoutSlot::class)->state($this->context())->options);
+
+        $html = Blade::render('<x-webx-payments::methods :groups="$groups" legend="Methods" />', ['groups' => $groups]);
+
+        $this->assertSame(1, substr_count($html, '/methods.js'));
     }
 
     /** @param  list<string>  $marks */

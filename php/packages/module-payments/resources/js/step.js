@@ -5,6 +5,7 @@
 // delivery changes.
 
 const ROOT = '[data-webx-payments]'
+const LIST = '[data-webx-payments-methods]'
 
 const token = (form) => form.querySelector('input[name="_token"]')?.value ?? ''
 
@@ -42,6 +43,12 @@ function start(root) {
   if (root.classList.contains('is-live')) return
   root.classList.add('is-live')
   root.addEventListener('webx:payments:method', (event) => save(root, event.detail.key))
+  // A site's copy of the step with its own radios has no list to speak for them.
+  root.addEventListener('change', (event) => {
+    const radio = event.target
+    if (!(radio instanceof HTMLInputElement) || radio.type !== 'radio') return
+    if (!radio.closest(LIST)) save(root, radio.value)
+  })
   const single = root.querySelector('input[data-autosave]')
   if (single) save(root, single.value)
 }
