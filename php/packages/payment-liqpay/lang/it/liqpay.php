@@ -1,0 +1,66 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'gateway' => [
+        'title' => 'LiqPay',
+        'mode' => 'Modalità',
+        'modes' => [
+            'test' => 'Test',
+            'live' => 'Produzione',
+        ],
+        'test_public_key' => 'Chiave pubblica, test',
+        'live_public_key' => 'Chiave pubblica, produzione',
+        'test_private_key' => 'Chiave privata, test',
+        'live_private_key' => 'Chiave privata, produzione',
+        'language' => 'Lingua della pagina',
+        'language_help' => 'LiqPay mostra la sua pagina solo in ucraino e in inglese.',
+        'languages' => [
+            'auto' => 'In base alla lingua dell\'ordine',
+            'uk' => 'Ucraino',
+            'en' => 'Inglese',
+        ],
+        'expires_minutes' => 'Minuti di validità della pagina di pagamento',
+    ],
+    'paytypes' => [
+        'card' => 'Carta',
+        'apay' => 'Apple Pay',
+        'gpay' => 'Google Pay',
+        'privat24' => 'Privat24',
+        'qr' => 'Codice QR',
+        'moment_part' => 'Rateizzazione istantanea',
+        'paypart' => 'Pagamento a rate',
+        'paypart_help' => 'Attiva prima il servizio nell\'area LiqPay',
+        'hold_cards_only' => 'La preautorizzazione funziona solo con il pagamento con carta',
+        'hold_needs_choice' => 'Con la preautorizzazione scegli cosa offre la pagina: senza una scelta mostra anche le rate',
+    ],
+    'connection' => [
+        'ok' => 'LiqPay ha accettato le chiavi',
+        'no_keys' => 'Inserisci entrambe le chiavi di questa modalità',
+        'wrong_mode' => 'Queste chiavi non corrispondono alla modalità scelta',
+        'private_key' => 'La chiave privata non corrisponde',
+        'public_key' => 'La chiave pubblica non è stata trovata',
+        'no_answer' => 'LiqPay non ha risposto',
+    ],
+    'status' => [
+        'wait_accept' => 'LiqPay non ha ancora verificato il negozio: il denaro arriverà dopo la verifica',
+        'wait_reserve' => 'Il pagamento è riuscito; il denaro è riservato a un rimborso precedente',
+        'subscribed' => 'LiqPay segnala un abbonamento: il sito non ne ha',
+        'unsubscribed' => 'LiqPay segnala un abbonamento annullato: il sito non ne ha',
+        'unknown' => 'Stato LiqPay sconosciuto: :status',
+    ],
+    'errors' => [
+        '9859' => 'La carta non ha fondi sufficienti',
+        'limit' => 'La banca ha rifiutato: raggiunto un limite della carta',
+        'expired' => 'Il tempo per il pagamento è scaduto',
+        'wait_info' => 'LiqPay attende altri dati dall\'acquirente',
+        'err_amount_hold' => 'L\'importo supera quello bloccato',
+        'payment_err_status' => 'LiqPay non lo consente nello stato attuale del pagamento',
+        'order_id_duplicate' => 'LiqPay ha già un pagamento saldato con questo numero',
+        'invalid_signature' => 'La firma non corrisponde: controlla la chiave privata',
+        'public_key_not_found' => 'LiqPay non conosce questa chiave pubblica',
+        'payment_not_found' => 'LiqPay non ha questo pagamento: l\'acquirente non l\'ha iniziato',
+        'err_wrong_currency' => 'LiqPay non accetta questa valuta',
+    ],
+];

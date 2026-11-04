@@ -1,0 +1,66 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'gateway' => [
+        'title' => 'LiqPay',
+        'mode' => 'Mode',
+        'modes' => [
+            'test' => 'Test',
+            'live' => 'Live',
+        ],
+        'test_public_key' => 'Public key, test',
+        'live_public_key' => 'Public key, live',
+        'test_private_key' => 'Private key, test',
+        'live_private_key' => 'Private key, live',
+        'language' => 'Language of the page',
+        'language_help' => 'LiqPay shows its page in Ukrainian and English only.',
+        'languages' => [
+            'auto' => 'By the language of the order',
+            'uk' => 'Ukrainian',
+            'en' => 'English',
+        ],
+        'expires_minutes' => 'Minutes the payment page works',
+    ],
+    'paytypes' => [
+        'card' => 'Card',
+        'apay' => 'Apple Pay',
+        'gpay' => 'Google Pay',
+        'privat24' => 'Privat24',
+        'qr' => 'QR code',
+        'moment_part' => 'Instant instalments',
+        'paypart' => 'Pay in parts',
+        'paypart_help' => 'Enable the service in the LiqPay cabinet first',
+        'hold_cards_only' => 'Hold works for card payments only',
+        'hold_needs_choice' => 'With a hold, choose what the page offers: without a choice it shows instalments too',
+    ],
+    'connection' => [
+        'ok' => 'LiqPay accepted the keys',
+        'no_keys' => 'Enter both keys of this mode',
+        'wrong_mode' => 'These keys do not belong to the chosen mode',
+        'private_key' => 'The private key does not match',
+        'public_key' => 'The public key was not found',
+        'no_answer' => 'LiqPay did not answer',
+    ],
+    'status' => [
+        'wait_accept' => 'LiqPay has not checked the shop yet: the money comes after the check',
+        'wait_reserve' => 'The payment went through; the money is reserved for an earlier refund',
+        'subscribed' => 'LiqPay reports a subscription: the site has none',
+        'unsubscribed' => 'LiqPay reports a cancelled subscription: the site has none',
+        'unknown' => 'Unknown status of LiqPay: :status',
+    ],
+    'errors' => [
+        '9859' => 'The card has too little money',
+        'limit' => 'The bank refused: a limit of the card was reached',
+        'expired' => 'The time of the payment is over',
+        'wait_info' => 'LiqPay waits for more data from the buyer',
+        'err_amount_hold' => 'The amount is more than is held',
+        'payment_err_status' => 'LiqPay does not allow this in the present status of the payment',
+        'order_id_duplicate' => 'LiqPay already has a paid payment with this number',
+        'invalid_signature' => 'The signature does not match: check the private key',
+        'public_key_not_found' => 'LiqPay does not know this public key',
+        'payment_not_found' => 'LiqPay has no such payment: the buyer did not begin it',
+        'err_wrong_currency' => 'LiqPay does not take this currency',
+    ],
+];
