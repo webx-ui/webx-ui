@@ -1,6 +1,0 @@
----
-'@webx-ui/php': minor
-'@webx-ui/module-delivery': minor
----
-
-Delivery panel in plain words. Carriers, method types and locality types are named by their titles, never by their keys: the optional contract `LabelledMethodType` (`title()`, `description()`) names a type, and without it the panel builds the name from the kind after the dot or from what the type asks, with the carrier's title. «Add a method» is in the head and asks the type from a list with one line of what each is. The kind of points is the field `wx-delivery-point-kind` with «New kind of points» right under it, for the shop's pick-up only; a carrier's type with one kind no longer shows the field and keeps the carrier's kind. Own points: a table sorted by name, kind, locality or state, with a `···` menu (edit, delete with a confirmation) and a paragraph of what a point is. Regions: a sorted table with a `···` menu and one dialog to add and edit. A country is removed from its `···` — deleted while nothing is in it, otherwise only switched off (`Editor::removeCountry()`, `POST …/geography/countries/{code}/remove`). The leading carrier and the binding queue say what they are; a popular town is removed after a confirmation. Buttons in the heads carry no icons.

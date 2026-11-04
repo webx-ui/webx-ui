@@ -1,5 +1,27 @@
 # @webx-ui/admin
 
+## 0.35.0
+
+### Minor Changes
+
+- 9c212d0: The delivery in the order's card: the price of delivery is a row of its own in «Summary» («Delivery» between the discounts and the total; «Free» and «By carrier rates» in words), and «Items» no longer repeats the delivery block or shows its raw data — a block registered with `view` lives on its own tab. «Change delivery» on the tab «Delivery» (and `delivery_order_change` for agents, with `dry_run`): the town, the method, the point or the address checked as at the checkout, a new snapshot, the price in place of the old one with the total and the balance counted again, a history line «was → is»; behind `orders.manage`, not while a waybill stands. `module-orders`: `Orders::changeBlock()`, `BlockDefinition` `charge`, `price` and `view`, the history kind `block_changed`. `module-admin`: `HistorySubject.reload` — a node patched onto a screen asks its host to read the record again.
+- 9c212d0: The payments panel after its review on a live site (payments spec, decisions 54–58). A payment takes the order out of «Awaiting payment»: an order still in that status moves to the new setting `orders.status_after_payment` (the status of a new order by default), whether a gateway or a manager marked it; one a manager moved on by hand stays. «Mark as paid» is one action: the card's button asks the document and the day and, with the payments installed, goes through the new orders contract `MarksPaidByHand` — the attempt, the journal event and the milestone together; the tab «Payment» has no button of its own and reads itself again after the head of the card acts (`HistorySubject.version`). The poll asks an unfinished attempt less and less often (10, 20, 40… minutes, at most six hours) instead of every five minutes until its deadline. A notification with a bad signature may say which attempt it claims (`InvalidNotification::signature(uuid:, gatewayRef:)`): linked to that attempt and order, believed in nothing, shown in red. The screens: tables of events with fixed columns that wrap instead of scrolling sideways, the time in one line, a signing key folded under its request, moments of a decision in local words, the gateway's and the method's titles beside their keys, an administrator's name instead of «admin #N», «how it was paid» on the tab (method, document, date, who) also for an order placed without a method; the tabs of «Attempts» on the line of the search, the filters of the exchange in the card's rhythm; the method's key removed after a confirmation, «Cancel» instead of «Keep», and no return address to copy into a gateway's account — it goes with every payment. The block «Payment» is no longer repeated on «Items». «Summary» shortens a gateway's payment id and links it to the tab «Payment» with the attempt open (`?tab=payment&attempt=`): a page can hold the selection of a screen's tabs through `screenTabKey` of `@webx-ui/schema`.
+
+### Patch Changes
+
+- 9c212d0: Delivery panel after the walk-through on a real carrier: the list of localities with no country
+  shows every country that is on, and an empty search says where the towns are (another country, or
+  one switched off); the remarks of a pass come in words from the server (`NamesSkipReasons`, the
+  base's «Skipped, for another reason: N» for a reason nobody names); a carrier whose point names
+  carry the street drops the address line under them (`NamesPointLines`); a locality that is its own
+  region is named once; the carrier's settings show their defaults as placeholders; «By hand only»
+  is words, not code; a method named after its type has no echo line; and a toast over an open
+  dialog goes to the top instead of covering its footer.
+- Updated dependencies [9c212d0]
+- Updated dependencies [9c212d0]
+  - @webx-ui/core@0.46.1
+  - @webx-ui/schema@0.11.0
+
 ## 0.34.0
 
 ### Minor Changes

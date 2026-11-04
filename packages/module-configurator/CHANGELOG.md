@@ -1,5 +1,18 @@
 # @webx-ui/module-configurator
 
+## 0.1.2
+
+### Patch Changes
+
+- Updated dependencies [9c212d0]
+- Updated dependencies [9c212d0]
+- Updated dependencies [9c212d0]
+- Updated dependencies [9c212d0]
+  - @webx-ui/module-admin@0.35.0
+  - @webx-ui/core@0.46.1
+  - @webx-ui/schema@0.11.0
+  - @webx-ui/module-media@0.12.2
+
 ## 0.1.1
 
 ### Patch Changes

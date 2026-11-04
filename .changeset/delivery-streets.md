@@ -1,5 +1,0 @@
----
-'@webx-ui/php': minor
----
-
-Delivery: streets — the third directory of a carrier (delivery spec §7, §8). `Directory::Streets` with `StreetRecord`s, written page by page into `delivery_streets` (a page of 2 000 in four statements; a page written twice makes no second row), removed with the same threshold and `held` as points — a held streets pass touches neither points nor localities — and counted on each binding after the pass (`streets`, one `UPDATE`); a locality where the carrier has a courier and no street is in the run's `warnings.no_streets`. Points and streets follow a successful pass of localities, not each other. `Streets` gives the step its suggestions by a prefix inside the locality (two queries) for a carrier's courier, the carriers' streets of the town as text for the shop's courier, and `find()`; a carrier's courier takes a street of its directory only, named as the directory names it, and where the carrier has no street it is refused with the hint. Words of the kinds of streets in ten languages; `FakeCarrier` gives streets on request.

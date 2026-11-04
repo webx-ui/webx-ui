@@ -1,5 +1,16 @@
 # @webx-ui/schema
 
+## 0.11.0
+
+### Minor Changes
+
+- 9c212d0: The payments panel after its review on a live site (payments spec, decisions 54–58). A payment takes the order out of «Awaiting payment»: an order still in that status moves to the new setting `orders.status_after_payment` (the status of a new order by default), whether a gateway or a manager marked it; one a manager moved on by hand stays. «Mark as paid» is one action: the card's button asks the document and the day and, with the payments installed, goes through the new orders contract `MarksPaidByHand` — the attempt, the journal event and the milestone together; the tab «Payment» has no button of its own and reads itself again after the head of the card acts (`HistorySubject.version`). The poll asks an unfinished attempt less and less often (10, 20, 40… minutes, at most six hours) instead of every five minutes until its deadline. A notification with a bad signature may say which attempt it claims (`InvalidNotification::signature(uuid:, gatewayRef:)`): linked to that attempt and order, believed in nothing, shown in red. The screens: tables of events with fixed columns that wrap instead of scrolling sideways, the time in one line, a signing key folded under its request, moments of a decision in local words, the gateway's and the method's titles beside their keys, an administrator's name instead of «admin #N», «how it was paid» on the tab (method, document, date, who) also for an order placed without a method; the tabs of «Attempts» on the line of the search, the filters of the exchange in the card's rhythm; the method's key removed after a confirmation, «Cancel» instead of «Keep», and no return address to copy into a gateway's account — it goes with every payment. The block «Payment» is no longer repeated on «Items». «Summary» shortens a gateway's payment id and links it to the tab «Payment» with the attempt open (`?tab=payment&attempt=`): a page can hold the selection of a screen's tabs through `screenTabKey` of `@webx-ui/schema`.
+
+### Patch Changes
+
+- Updated dependencies [9c212d0]
+  - @webx-ui/core@0.46.1
+
 ## 0.10.0
 
 ### Minor Changes

@@ -1,5 +1,30 @@
 # @webx-ui/module-orders
 
+## 0.4.0
+
+### Minor Changes
+
+- 9c212d0: The delivery in the order's card: the price of delivery is a row of its own in «Summary» («Delivery» between the discounts and the total; «Free» and «By carrier rates» in words), and «Items» no longer repeats the delivery block or shows its raw data — a block registered with `view` lives on its own tab. «Change delivery» on the tab «Delivery» (and `delivery_order_change` for agents, with `dry_run`): the town, the method, the point or the address checked as at the checkout, a new snapshot, the price in place of the old one with the total and the balance counted again, a history line «was → is»; behind `orders.manage`, not while a waybill stands. `module-orders`: `Orders::changeBlock()`, `BlockDefinition` `charge`, `price` and `view`, the history kind `block_changed`. `module-admin`: `HistorySubject.reload` — a node patched onto a screen asks its host to read the record again.
+- 9c212d0: Payments, stage P9: the guides «Payments» (the shop) and «Payment gateways» (a satellite and its contract test), the package in the registry, `webx:demo --module=payments` switches gateway A's three methods on where the fake gateway is. After the check of P8 on lab: an attempt paid short of its amount reads «Captured 50,00 € of 92,90 €», not «Paid», on the order's tab, in the attempts and the attempt's window; the order's history writes such a capture as its own line `payment_part` («Captured … of …», by the method), not «Top-up»; an open attempt's head has square bottom corners. Money held after a failed try takes «Payment failed» down (`Orders::paymentHeld()`). The checkout's «Place the order» saves a step left unsaved first, as its «Save» would, and goes on after the redraw; a step the server refuses keeps its errors at its own fields and no order is sent.
+- 9c212d0: Payments, stage P8 after the check on lab. A hold captured in part sets the milestone «paid» only where it covers what the order owes; less is money in without the milestone (`Orders::recordPayment(…, part: true)`), the rest to pay — the capture dialog and its `dry_run` say so. A hold released by the shop is no failed payment: the order awaits payment as before, and the order's strip shows one mark of the payment, never «Awaiting payment» beside «Payment failed». The journal names the base's decisions `internal/captured` («Captured») and `internal/released` («Hold released») with the manager's name; the requests are «Capture request» / «Release request»; the order's history answers «Money held … capture or release it» in the manager's name. «Thank you» and the order's page do not say «waiting for payment» while the money is held (`BlockDefinition::$held`). The order's history names `payment:<key>` by the method's title (`SourceNames`, `source_title`). A rejected notification's description is short; its claim is the event's mark only, not on the attempt's head. The order's number in the journal and the attempts links to the order's tab «Payment» with the attempt open. The sum to capture is prefilled as the panel's language writes it; the attempt's events have no frame of their own and a gap under the head.
+- 9c212d0: The payments panel after its review on a live site (payments spec, decisions 54–58). A payment takes the order out of «Awaiting payment»: an order still in that status moves to the new setting `orders.status_after_payment` (the status of a new order by default), whether a gateway or a manager marked it; one a manager moved on by hand stays. «Mark as paid» is one action: the card's button asks the document and the day and, with the payments installed, goes through the new orders contract `MarksPaidByHand` — the attempt, the journal event and the milestone together; the tab «Payment» has no button of its own and reads itself again after the head of the card acts (`HistorySubject.version`). The poll asks an unfinished attempt less and less often (10, 20, 40… minutes, at most six hours) instead of every five minutes until its deadline. A notification with a bad signature may say which attempt it claims (`InvalidNotification::signature(uuid:, gatewayRef:)`): linked to that attempt and order, believed in nothing, shown in red. The screens: tables of events with fixed columns that wrap instead of scrolling sideways, the time in one line, a signing key folded under its request, moments of a decision in local words, the gateway's and the method's titles beside their keys, an administrator's name instead of «admin #N», «how it was paid» on the tab (method, document, date, who) also for an order placed without a method; the tabs of «Attempts» on the line of the search, the filters of the exchange in the card's rhythm; the method's key removed after a confirmation, «Cancel» instead of «Keep», and no return address to copy into a gateway's account — it goes with every payment. The block «Payment» is no longer repeated on «Items». «Summary» shortens a gateway's payment id and links it to the tab «Payment» with the attempt open (`?tab=payment&attempt=`): a page can hold the selection of a screen's tabs through `screenTabKey` of `@webx-ui/schema`.
+
+### Patch Changes
+
+- 9c212d0: Delivery: the order keeps the snapshot of §11.1 in every language with the payer of the waybill;
+  waybills and tracking of carriers' methods (`CreatesWaybills`, `TracksShipments`,
+  `delivery_shipments`, `webx:delivery:track` every 30 minutes), «received» as the order's milestone,
+  and the tab «Delivery» on the order's card. The bin of the popular towns and of the opening hours'
+  exceptions is the panel's red one. The order's card gives its id to the nodes its neighbours patch
+  onto it.
+- Updated dependencies [9c212d0]
+- Updated dependencies [9c212d0]
+- Updated dependencies [9c212d0]
+- Updated dependencies [9c212d0]
+  - @webx-ui/module-admin@0.35.0
+  - @webx-ui/core@0.46.1
+  - @webx-ui/schema@0.11.0
+
 ## 0.3.0
 
 ### Minor Changes
