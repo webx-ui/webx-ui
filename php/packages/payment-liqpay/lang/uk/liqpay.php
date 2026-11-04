@@ -62,5 +62,7 @@ return [
         'public_key_not_found' => 'LiqPay не знає цього публічного ключа',
         'payment_not_found' => 'LiqPay не має такого платежу: покупець його не почав',
         'err_wrong_currency' => 'LiqPay не приймає цю валюту',
+        'wrong_amount_currency' => 'Холд не можна відпустити частково',
+        'refused' => 'LiqPay відмовив в операції',
     ],
 ];

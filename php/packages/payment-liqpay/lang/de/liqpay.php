@@ -62,5 +62,7 @@ return [
         'public_key_not_found' => 'LiqPay kennt diesen öffentlichen Schlüssel nicht',
         'payment_not_found' => 'LiqPay kennt diese Zahlung nicht: Der Käufer hat sie nicht begonnen',
         'err_wrong_currency' => 'LiqPay akzeptiert diese Währung nicht',
+        'wrong_amount_currency' => 'Die Reservierung kann nicht teilweise freigegeben werden',
+        'refused' => 'LiqPay hat den Vorgang abgelehnt',
     ],
 ];

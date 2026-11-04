@@ -6,9 +6,7 @@ LiqPay, a payment gateway of Ukraine, for `webx-ui/module-payments`. The package
 first. This package has no tables, routes, screens, MCP tools or npm package of its own.
 
 **Being built by stages** (§19 of the spec). There now: the registration, the fields, the words, the
-migration, the signature, the notification, the page, the poll and «Test the connection». The type is
-not `CapturesPayments` yet, so the hold switch is not drawn and `validateSettings()` has nothing to
-refuse through the panel.
+migration, the signature, the notification, the page, the poll, «Test the connection» and the hold.
 
 ## What it owns
 
@@ -34,6 +32,10 @@ hold`, and `validateSettings()` refuses the pair on the server. It also refuses 
   `authorized` and `Refunded` elsewhere. `try_again` is Pending everywhere, `wait_accept` is Paid with a
   reason, and an answer without `payment_id` is a failed request, not a payment. `payment_not_found`
   is Pending with `notStarted`: the buyer has not sent a card, a late `success` still counts.
+- **Hold** `CapturesPayments`: the base's switch `hold` sends `action=hold` to the page. `capture()` is
+  `hold_completion`, whole or a part: LiqPay lets the rest go itself. `payment_err_status` asks `status`,
+  because a lost answer and a hold that is gone say the same. `void()` is `refund` of all that is held,
+  only at `authorized`. LiqPay names no end of a hold: `create_date` + 10 days for Visa, + 7 for the rest.
 - **Test the connection** `testConnection()`: `status` of a random uuid, `payment_not_found` means both
   keys are right. Keys of the other mode (`sandbox_` prefix) are refused without a request.
 - **Fixtures** `tests/Fixtures`: `api/` and `browser/` were recorded on the sandbox, `notify/` is
@@ -65,6 +67,7 @@ None of its own. The method, its keys and «Test the connection» are behind the
   any other pair is refused.
 - Do not add a call that sends card fields through the API. A buyer enters a card only on the page
   of LiqPay; that way of paying needs PCI DSS and belongs to recording answers, outside the package.
+- Do not call `refund` outside `void()`: at a paid attempt it gives the money back (not in v1).
 - Do not put a real key in a test, a fixture or a log, not even a sandbox one.
 - Do not offer `cash` or `invoice` in `paytypes`: their statuses keep an attempt open.
 
@@ -73,6 +76,7 @@ None of its own. The method, its keys and «Test the connection» are behind the
 - `vendor/bin/phpunit packages/payment-liqpay/tests` from `php/` of the monorepo.
 - «Payments → Methods» in the panel shows LiqPay, switched off, with a warning that it has no keys.
 - With sandbox keys «Test the connection» succeeds, and a test card on the page ends paid by the poll.
+- With `hold` on, a test card ends held; «Capture» and «Release the hold» in the order's card end it.
 - `php artisan migrate:rollback` removes a method without attempts and leaves one that has them.
 
 ## Read more

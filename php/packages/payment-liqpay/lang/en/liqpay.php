@@ -62,5 +62,7 @@ return [
         'public_key_not_found' => 'LiqPay does not know this public key',
         'payment_not_found' => 'LiqPay has no such payment: the buyer did not begin it',
         'err_wrong_currency' => 'LiqPay does not take this currency',
+        'wrong_amount_currency' => 'The hold cannot be released in part',
+        'refused' => 'LiqPay refused the operation',
     ],
 ];

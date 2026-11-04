@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Payment\LiqPay\Tests;
 
 use GuzzleHttp\Promise\PromiseInterface;
+use Illuminate\Http\Client\Request as SentRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use PHPUnit\Framework\Attributes\Test;
@@ -17,13 +18,12 @@ use WebxUi\Payments\Exchange\ExchangeKind;
 use WebxUi\Payments\Gateways;
 use WebxUi\Payments\Method;
 use WebxUi\Payments\Models\Payment;
+use WebxUi\Payments\PaymentStatus;
 use WebxUi\Payments\Reported;
 use WebxUi\Payments\Testing\GatewayContract;
 
 /**
  * The contract of a satellite (base §21.3) on the recorded answers (spec §17.2).
- *
- * The hold comes with stage 4 of the plan (§19): until then the trait skips its test by itself.
  */
 final class GatewayContractTest extends TestCase
 {
@@ -61,6 +61,23 @@ final class GatewayContractTest extends TestCase
             'amount' => $payment->amount / 100,
             'currency' => $payment->currency,
         ]));
+    }
+
+    /** LiqPay as the recordings show it: it takes what is asked up to the hold, and lets it go. */
+    protected function answerAuthorized(ChargesOnline $type, Payment $payment): void
+    {
+        $payment->forceFill(['status' => PaymentStatus::Authorized, 'authorized_amount' => $payment->amount]);
+
+        Http::fake(['www.liqpay.ua/*' => static function (SentRequest $request) use ($payment) {
+            $sent = json_decode((string) base64_decode((string) $request['data'], true), true);
+            $held = $payment->amount / 100;
+
+            return Http::response(match (true) {
+                $sent['action'] === 'refund' => self::fixture('api/hold.release-refund')['response']['json'],
+                (float) $sent['amount'] > $held => self::fixture('api/hold.completion-above')['response']['json'],
+                default => [...self::fixture('api/hold.completion-full')['response']['json'], 'order_id' => $payment->uuid, 'amount' => (float) $sent['amount'], 'currency' => $payment->currency],
+            });
+        }]);
     }
 
     protected function answerError(ChargesOnline $type, Payment $payment): string

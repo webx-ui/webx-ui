@@ -62,5 +62,7 @@ return [
         'public_key_not_found' => 'LiqPay bu açık anahtarı tanımıyor',
         'payment_not_found' => 'LiqPay bu ödemeye sahip değil: alıcı ödemeyi başlatmadı',
         'err_wrong_currency' => 'LiqPay bu para birimini kabul etmiyor',
+        'wrong_amount_currency' => 'Bloke kısmen kaldırılamaz',
+        'refused' => 'LiqPay işlemi reddetti',
     ],
 ];

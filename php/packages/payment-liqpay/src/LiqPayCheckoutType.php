@@ -13,11 +13,13 @@ use WebxUi\Payment\LiqPay\Api\Client;
 use WebxUi\Payment\LiqPay\Api\Signature;
 use WebxUi\Payment\LiqPay\Api\Statuses;
 use WebxUi\Payments\Availability;
-use WebxUi\Payments\Contracts\ChargesOnline;
+use WebxUi\Payments\Contracts\CapturesPayments;
 use WebxUi\Payments\Contracts\ValidatesSettings;
 use WebxUi\Payments\Credentials;
+use WebxUi\Payments\Exchange\ExchangeKind;
 use WebxUi\Payments\GatewayAmount;
 use WebxUi\Payments\GatewayHttp;
+use WebxUi\Payments\GatewayRefused;
 use WebxUi\Payments\GatewayStatus;
 use WebxUi\Payments\GatewayUnavailable;
 use WebxUi\Payments\Handoff;
@@ -28,6 +30,7 @@ use WebxUi\Payments\Models\Payment;
 use WebxUi\Payments\Notification;
 use WebxUi\Payments\PaymentContext;
 use WebxUi\Payments\PaymentSnapshot;
+use WebxUi\Payments\PaymentStatus;
 use WebxUi\Payments\Presentation;
 use WebxUi\Payments\Reported;
 use WebxUi\Payments\StartNeeds;
@@ -36,11 +39,10 @@ use WebxUi\Payments\Words;
 
 /**
  * `liqpay.checkout` — the page of LiqPay (spec §6). One type, any number of methods: what the page
- * offers is the method's seven switches, each with its own keys (decisions 3, 15).
- *
- * The hold comes with stage 4 of the plan (§19): until then the base draws no switch for it.
+ * offers is the method's seven switches, each with its own keys (decisions 3, 15). A method with the
+ * base's switch `hold` takes the money in two steps (§10).
  */
-final class LiqPayCheckoutType implements ChargesOnline, ValidatesSettings
+final class LiqPayCheckoutType implements CapturesPayments, ValidatesSettings
 {
     public const string KEY = 'liqpay.checkout';
 
@@ -248,6 +250,75 @@ final class LiqPayCheckoutType implements ChargesOnline, ValidatesSettings
         }
 
         throw GatewayUnavailable::because(Statuses::wordOf($answer->errorCode()) ?? LiqPayGateway::word('connection.no_answer'));
+    }
+
+    /** The smaller of the two guarantees: the poll warns by it when an answer has no date (§10). */
+    public function maxHoldDays(): int
+    {
+        return Statuses::HOLD_DAYS;
+    }
+
+    public function capturesPartially(): bool
+    {
+        return true;
+    }
+
+    /**
+     * The rest of a part LiqPay lets go itself. `payment_err_status` is also the second call after
+     * an answer that got lost: only the status tells it from a hold that is gone (§10).
+     */
+    public function capture(Method $method, Credentials $credentials, Payment $payment, int $amount, GatewayHttp $http): GatewayStatus
+    {
+        $answer = Client::for($http, Keys::of($method, $credentials))->call('hold_completion', [
+            'order_id' => $payment->uuid,
+            'amount' => GatewayAmount::toDecimal($amount, $payment->currency),
+        ]);
+
+        if ($answer->isPayment()) {
+            $status = Statuses::read($answer, $payment->status);
+
+            // A capture that failed leaves the hold in place: the attempt must not end with it.
+            return $status->status === Reported::Failed ? throw self::refused($answer) : $status;
+        }
+
+        if ($answer->errorCode() === 'payment_err_status') {
+            $status = $this->fetchStatus($method, $credentials, $payment, $http->kind(ExchangeKind::Status));
+
+            if ($status->status === Reported::Paid) {
+                return $status;
+            }
+        }
+
+        throw self::refused($answer);
+    }
+
+    /**
+     * `refund` on the whole sum is the only way to let a hold go, and LiqPay refuses a part (§3.2).
+     * At a paid attempt the same request would give the money back, which is not in v1 (§10).
+     */
+    public function void(Method $method, Credentials $credentials, Payment $payment, GatewayHttp $http): GatewayStatus
+    {
+        if ($payment->status !== PaymentStatus::Authorized) {
+            throw GatewayRefused::because(LiqPayGateway::word('errors.payment_err_status'));
+        }
+
+        $answer = Client::for($http, Keys::of($method, $credentials))->call('refund', [
+            'order_id' => $payment->uuid,
+            'amount' => GatewayAmount::toDecimal((int) ($payment->authorized_amount ?? $payment->amount), $payment->currency),
+            'currency' => $payment->currency,
+        ]);
+
+        if ($answer->status() !== 'reversed') {
+            throw self::refused($answer);
+        }
+
+        return Statuses::read($answer, $payment->status);
+    }
+
+    /** Words for the manager, never the body. */
+    private static function refused(Answer $answer): GatewayRefused
+    {
+        return GatewayRefused::because(Statuses::wordOf($answer->errorCode()) ?? LiqPayGateway::word('errors.refused'));
     }
 
     /**

@@ -62,5 +62,7 @@ return [
         'public_key_not_found' => 'LiqPay non conosce questa chiave pubblica',
         'payment_not_found' => 'LiqPay non ha questo pagamento: l\'acquirente non l\'ha iniziato',
         'err_wrong_currency' => 'LiqPay non accetta questa valuta',
+        'wrong_amount_currency' => 'La preautorizzazione non può essere sbloccata in parte',
+        'refused' => 'LiqPay ha rifiutato l\'operazione',
     ],
 ];

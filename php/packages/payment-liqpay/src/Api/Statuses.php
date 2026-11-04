@@ -53,6 +53,11 @@ final class Statuses
         'unsubscribed' => Reported::Pending,
     ];
 
+    /** Days a hold is guaranteed: LiqPay does not say, the card decides (§10). */
+    public const int HOLD_DAYS = 7;
+
+    public const int HOLD_DAYS_VISA = 10;
+
     /** The statuses that carry a word of their own in the reason (§9.2). */
     private const array SAID = ['wait_accept', 'wait_reserve', 'subscribed', 'unsubscribed'];
 
@@ -64,15 +69,17 @@ final class Statuses
     {
         $status = (string) $answer->status();
         $currency = $answer->text('currency');
+        $reported = self::reported($status, $answer, $attempt);
 
         return new GatewayStatus(
-            status: self::reported($status, $answer, $attempt),
+            status: $reported,
             gatewayRef: $answer->paymentId(),
             amount: self::minor($answer->fields['amount'] ?? null, $currency),
             currency: $currency,
             paidAt: self::date($answer->fields['end_date'] ?? null),
             reason: self::reason($status, $answer),
             refundedAmount: self::minor($answer->fields['refund_amount'] ?? null, $currency),
+            holdExpiresAt: $reported === Reported::Authorized ? self::holdEnd($answer) : null,
             meta: array_filter(
                 array_intersect_key($answer->fields, array_flip(self::META)),
                 static fn (mixed $value): bool => is_scalar($value),
@@ -108,6 +115,14 @@ final class Statuses
         }
 
         return GatewayAmount::fromDecimal(number_format((float) $amount, GatewayAmount::exponent($currency), '.', ''), $currency);
+    }
+
+    /** No date in the answer — null, and the base counts `maxHoldDays()` from now. */
+    private static function holdEnd(Answer $answer): ?CarbonImmutable
+    {
+        $days = strtolower((string) $answer->text('sender_card_type')) === 'visa' ? self::HOLD_DAYS_VISA : self::HOLD_DAYS;
+
+        return self::date($answer->fields['create_date'] ?? null)?->addDays($days);
     }
 
     /** Milliseconds. */

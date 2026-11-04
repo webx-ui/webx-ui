@@ -62,5 +62,7 @@ return [
         'public_key_not_found' => 'O LiqPay não conhece esta chave pública',
         'payment_not_found' => 'O LiqPay não tem esse pagamento: o comprador não o iniciou',
         'err_wrong_currency' => 'O LiqPay não aceita esta moeda',
+        'wrong_amount_currency' => 'A retenção não pode ser libertada em parte',
+        'refused' => 'O LiqPay recusou a operação',
     ],
 ];
