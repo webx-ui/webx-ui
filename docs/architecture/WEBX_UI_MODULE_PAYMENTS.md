@@ -10,7 +10,8 @@ webx-ui#106 по плану §23. Что изменилось — решения
 §9), оформление — часть II [`WEBX_UI_MODULE_ORDERS.md`](WEBX_UI_MODULE_ORDERS.md) (слот `PaymentSlot`
 §6.3, подтверждение §8, «Спасибо» §10), доставка — [`WEBX_UI_MODULE_DELIVERY.md`](WEBX_UI_MODULE_DELIVERY.md)
 (наложенный платёж в накладной §11.2, шаблон спутника §13), доступ агентов —
-[`WEBX_UI_MCP_ACCESS.md`](WEBX_UI_MCP_ACCESS.md).
+[`WEBX_UI_MCP_ACCESS.md`](WEBX_UI_MCP_ACCESS.md), группы способов и значки платёжных систем —
+[`WEBX_UI_PAYMENT_GROUPS.md`](WEBX_UI_PAYMENT_GROUPS.md) (предложена, webx-ui#114).
 
 Пакет — `webx-ui/module-payments` (composer, namespace `WebxUi\Payments`, словарь
 `webx-payments`), npm-пара — `@webx-ui/module-payments` (экраны панели). Id модуля — `payments`
