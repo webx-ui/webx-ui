@@ -140,6 +140,32 @@ final class OrderBlocks
     }
 
     /**
+     * What «My orders» says over the public status (§13.2): the words of `prompt()` for a whole
+     * list, order id => title. An owner that throws says nothing.
+     *
+     * @param  list<Order>  $orders  the ones that await payment
+     * @return array<int, string>
+     */
+    public function awaiting(array $orders, string $locale): array
+    {
+        $titles = [];
+
+        foreach ($orders === [] ? [] : $this->blocks as $key => $block) {
+            if ($block->awaiting === null) {
+                continue;
+            }
+
+            try {
+                $titles += ($block->awaiting)($orders, $locale);
+            } catch (Throwable $e) {
+                Log::warning("webx-orders: the list of the block «{$key}» failed", ['exception' => $e]);
+            }
+        }
+
+        return $titles;
+    }
+
+    /**
      * Whether a block says the buyer's money is in the shop's hands though the order is not paid
      * yet — a hold (§8.3 of payments): the buyer's pages then do not say «waiting for payment». An
      * owner that throws says no.

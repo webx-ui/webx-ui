@@ -127,13 +127,12 @@ final readonly class PayPage
      */
     public function prompt(Order $order): ?array
     {
-        $block = is_array($order->payment) ? $order->payment : [];
-        $page = $this->links->page($order);
-
-        if (($block['kind'] ?? null) !== Kind::Online->value || $page === '') {
+        if (! $this->payableOnline($order)) {
             return null;
         }
 
+        $block = is_array($order->payment) ? $order->payment : [];
+        $page = $this->links->page($order);
         $last = Payment::query()->where('order_id', $order->id)->orderByDesc('id')->first();
         $checking = $last?->status === PaymentStatus::Pending && ! $last->notStarted() && ! $last->declined();
         $others = $checking ? [] : $this->others($order, $this->orders->balance($order)->due);
@@ -146,6 +145,35 @@ final readonly class PayPage
             'switch' => $others !== [] ? $this->links->method($order) : null,
             'others' => self::listed($others),
         ];
+    }
+
+    /**
+     * Of the orders that await payment, the ones `prompt()` answers for — «My orders» (§8.4): the
+     * same rule without the buttons, and one query for the list. Money held is paid for the buyer.
+     *
+     * @param  list<Order>  $orders
+     * @return list<int>
+     */
+    public function promptable(array $orders): array
+    {
+        $online = array_values(array_filter($orders, $this->payableOnline(...)));
+        $ids = array_map(static fn (Order $order): int => $order->id, $online);
+
+        if ($ids === []) {
+            return [];
+        }
+
+        $held = Payment::query()->whereIn('order_id', $ids)->where('status', PaymentStatus::Authorized->value)->pluck('order_id')->all();
+
+        return array_values(array_diff($ids, $held));
+    }
+
+    /** Paid by an online method, and the site has the page to pay on. */
+    private function payableOnline(Order $order): bool
+    {
+        $block = is_array($order->payment) ? $order->payment : [];
+
+        return ($block['kind'] ?? null) === Kind::Online->value && $this->links->page($order) !== '';
     }
 
     /**

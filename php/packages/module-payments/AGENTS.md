@@ -65,7 +65,7 @@ Orders, their milestones and balance are `webx-ui/module-orders`; the cart is `w
   (`FakeGatewaySite::methods()` adds its methods). Contract test: trait `Testing\GatewayContract`.
 - **Commands** `webx:payments:exchange-prune --days=N [--dry-run] [--force]` — the only removal of
   events, `N` ≥ 365; `webx:payments:selections-prune` — nightly, choices of carts that are gone;
-  `Doctor\ExchangeSizeCheck` (with module-admin): a note over `exchange.warn_size`.
+  `Doctor\ExchangeSizeCheck` (with module-admin): a note over `exchange.warn_size`; `Doctor\OverriddenViewsCheck`: a theme's copy without `prompt` / `declined`.
 - **Panel** (with module-admin; `routes/panel.php`, npm `@webx-ui/module-payments`): «Methods» — keys
   «set / replace / remove», never sent back, «Test the connection» journaled `out/connection`
   (`Panel\MethodForm`, screen `payments.method-form`); «Attempts»; «Gateway exchange» — keyset pages,

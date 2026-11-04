@@ -38,6 +38,10 @@ final readonly class BlockDefinition
      *                                                                                                            awaits payment and the buyer can pay now: its page
      *                                                                                                            says `title` over the public status and shows `html`,
      *                                                                                                            the way to pay; null — the order just waits
+     * @param  (Closure(list<Order>, string): array<int, string>)|null  $awaiting  the same rule for a list, «My orders»: of
+     *                                                                             the orders passed, the id of each the buyer can
+     *                                                                             pay now and the `title` it reads over the public
+     *                                                                             status — all at once, a list asks nothing per row
      */
     public function __construct(
         public string $key,
@@ -50,5 +54,6 @@ final readonly class BlockDefinition
         public ?Closure $details = null,
         public ?Closure $held = null,
         public ?Closure $prompt = null,
+        public ?Closure $awaiting = null,
     ) {}
 }

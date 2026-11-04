@@ -29,6 +29,7 @@ use WebxUi\Payments\Console\ExchangePruneCommand;
 use WebxUi\Payments\Console\PollCommand;
 use WebxUi\Payments\Console\SelectionsPruneCommand;
 use WebxUi\Payments\Doctor\ExchangeSizeCheck;
+use WebxUi\Payments\Doctor\OverriddenViewsCheck;
 use WebxUi\Payments\Events\PaymentProblem;
 use WebxUi\Payments\Exchange\ExchangeConnection;
 use WebxUi\Payments\Exchange\ExchangeJournal;
@@ -179,6 +180,11 @@ class PaymentsServiceProvider extends ServiceProvider
                             'html' => view('webx-payments::pay.prompt', ['prompt' => $prompt])->render(),
                         ];
                     },
+                    // The same for «My orders»: its words, without the buttons.
+                    awaiting: static fn (array $orders, string $locale): array => array_fill_keys(
+                        app(PayPage::class)->promptable($orders),
+                        (string) trans('webx-payments::buyer.status.awaiting', [], $locale),
+                    ),
                     details: static function (array $block, Order $order, string $locale): ?string {
                         if (! $order->awaiting_payment || $order->paid_at !== null || $order->cancelled_at !== null) {
                             return null;
@@ -196,10 +202,12 @@ class PaymentsServiceProvider extends ServiceProvider
             Event::listen(PaymentProblem::class, [PaymentNotices::class, 'problem']);
         }
 
-        // The size of the journal in `webx:doctor`, where the panel's frame is installed.
+        // The size of the journal and the templates a theme keeps from an older release in
+        // `webx:doctor`, where the panel's frame is installed.
         if (class_exists(DoctorChecks::class)) {
             $this->callAfterResolving(DoctorChecks::class, static function (DoctorChecks $checks): void {
                 $checks->register(ExchangeSizeCheck::class);
+                $checks->register(OverriddenViewsCheck::class);
             });
         }
 

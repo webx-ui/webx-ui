@@ -8,9 +8,12 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use PHPUnit\Framework\Attributes\Test;
+use RuntimeException;
 use WebxUi\Admin\History\HistoryEntry;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Visitors\Events\VisitorDeleting;
+use WebxUi\Orders\Blocks\BlockDefinition;
+use WebxUi\Orders\Blocks\OrderBlocks;
 use WebxUi\Orders\Events\OrderDetailsChanged;
 use WebxUi\Orders\Milestone;
 use WebxUi\Orders\Models\Order;
@@ -53,6 +56,17 @@ final class VisitorOrdersTest extends PanelTestCase
     private function visitor(string $email, string $first, ?string $last = null): User
     {
         return User::query()->create(['email' => $email, 'password' => 'correct-horse-battery', 'first_name' => $first, 'last_name' => $last]);
+    }
+
+    #[Test]
+    public function an_owner_of_a_block_that_throws_leaves_the_list_its_public_statuses(): void
+    {
+        $blocks = new OrderBlocks;
+        $blocks->register(new BlockDefinition('payment', 'payments', static fn (array $value): array => [], awaiting: static function (): array {
+            throw new RuntimeException('The owner is down');
+        }));
+
+        $this->assertSame([], $blocks->awaiting([new Order], 'en'));
     }
 
     #[Test]

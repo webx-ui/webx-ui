@@ -50,7 +50,7 @@ grouped into public ones. Dictionary `webx-orders` (`module`, `statuses`, `panel
   a move inside a group tells nobody. `migrate` makes the starting set once (`DefaultChannels`, the edits' two apart): «Order accepted», «Payment received», «Order changed» (`items_changed` — only with `ItemsEdit::notify`; `changes`, `previous_total`, `balance*`, `amount_due|over`, `message`, never `reason`), «Payment due» (`payment_requested`, by hand only, while `due > 0`) to `customer_email`,
   «New order» to the first contacts e-mail. `{{status}}` is `internal`. By hand (§10.3): `Orders::notify()`, `orders_notify`; `NotifyRefused::label()` — the words.
 - **Journal** `orders.order`: what `updateDetails()` and the links changed. **Blocks** `OrderBlocks` —
-  `register(new BlockDefinition('delivery'|'payment', module, validate, summary, charge?, price?, view?, prompt?))` in `boot()`: `charge` — a row of its own in «Summary»; `view` — its own tab, no raw data under «Items»; `prompt` — the buyer's way to pay on the order's page.
+  `register(new BlockDefinition('delivery'|'payment', module, validate, summary, charge?, price?, view?, prompt?, awaiting?))` in `boot()`: `charge` — a row of its own in «Summary»; `view` — its own tab, no raw data under «Items»; `prompt` — the buyer's way to pay on the order's page; `awaiting` — its words for a whole list, «My orders».
 - **Config** `webx-orders`: `number` (`prefix`, `start` = 1000, `pad`), `initial_status`, `initial_status_awaiting_payment`, `status_after_payment`
   (ids; null — «New» and «Awaiting payment» of the default set), `notify.*`, `layout`, `middleware`, `account_per_page`,
   `checkout.*`. `OrderSettings` reads what `orders.settings` saved in `module-settings`, then the config. `webx:doctor`:

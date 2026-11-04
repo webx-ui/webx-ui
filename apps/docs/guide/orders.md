@@ -346,7 +346,10 @@ and no event.
   paid order that owes more, or «We will give you back …» on one paid over. The reason of an edit
   and who made it are never there.
 - **«My orders»** — with `webx-ui/module-users`, a section of the visitor's account with the
-  orders in work counted on its badge. Another visitor's order is `404`.
+  orders in work counted on its badge. Another visitor's order is `404`. An order the buyer can pay
+  online reads «Awaiting payment» there, as on its page.
+- **A theme with its own `order/body.blade.php`** has to print the block `prompt`, or the buyer gets
+  no way to pay on the order's page: see [Payments](./payments.md#a-theme-with-its-own-templates).
 - **Linking a guest's order.** In the card, «Link to a visitor» finds the account (the one with the
   order's e-mail first) and shows a dry run before linking. Only `user_id` changes: the contacts
   stay as the buyer typed them.

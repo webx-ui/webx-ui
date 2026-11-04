@@ -41,6 +41,9 @@ final readonly class Settlement
     /** How the order's note of a hold begins: it leaves the notes when the hold is over. */
     private const string HELD_NOTE = 'Money held: ';
 
+    /** How the order's note of a refused capture begins: it asks to try again, and leaves with the hold. */
+    public const string CAPTURE_REFUSED_NOTE = 'The gateway refused to capture ';
+
     public function __construct(
         private ConnectionInterface $db,
         private Orders $orders,
@@ -391,10 +394,18 @@ final readonly class Settlement
     }
 
     /** @param  string|null  $actor  'panel', 'mcp' — the line is the manager's; null — the method's */
-    /** The hold is over: «capture or release it» has its answer and leaves the order's notes (§9.5). */
+    /**
+     * The hold is over: «capture or release it» has its answer, and so has a capture the gateway
+     * refused on the way — both leave the order's notes (§9.5). A refused release leaves no note:
+     * the manager reads it in the toast and the journal.
+     */
     private function closeHeldNote(Payment $row): void
     {
-        $this->orders->closeNote(Order::query()->findOrFail($row->order_id), $this->source($row), self::HELD_NOTE);
+        $order = Order::query()->findOrFail($row->order_id);
+
+        foreach ([self::HELD_NOTE, self::CAPTURE_REFUSED_NOTE] as $beginning) {
+            $this->orders->closeNote($order, $this->source($row), $beginning);
+        }
     }
 
     private function note(Payment $row, string $text, ?string $actor = null): void
