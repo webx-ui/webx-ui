@@ -219,14 +219,16 @@ jobs:
 
   # What a release needs from a person, while there is time to do it: on the version PR the first
   # npm publish, the mirror and the Packagist submit of a new package, on the day's PR the mirror
-  # (its merge is what fills one). Named by the branch rather than `light`: a version PR somebody
-  # edited by hand needs this as much. Node comes with the runner and nothing is installed.
+  # (its merge is what fills one), whether it comes from `hot/*` or from a `release/*` cut of it.
+  # Named by the branch rather than `light`: a version PR somebody edited by hand needs this as much. Node comes with the runner and nothing is installed.
   # Not in the queue: nothing there can have changed, and the skip leaves `verify` green.
   release-preflight:
     name: New packages are ready to release
     if: >-
       github.event_name == 'pull_request' &&
-      (github.head_ref == 'changeset-release/main' || startsWith(github.head_ref, 'hot/'))
+      (github.head_ref == 'changeset-release/main' ||
+      startsWith(github.head_ref, 'hot/') ||
+      startsWith(github.head_ref, 'release/'))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5

@@ -4,7 +4,7 @@
 // release. ci.yml runs this on the two pull requests of a release:
 //
 //   node scripts/release-preflight.mjs             the version PR: npm, mirrors and Packagist
-//   node scripts/release-preflight.mjs --mirrors   the day's PR: mirrors alone
+//   node scripts/release-preflight.mjs --mirrors   the day's PR, hot/* or release/*: mirrors alone
 //
 // The day's PR stops at the mirrors because that is all its merge needs: the push to main fills
 // them, Packagist can only take a mirror that has been filled, and the first npm version has to
@@ -16,7 +16,12 @@
 // Whether a trusted publisher is configured cannot be read without a login. What is public is
 // provenance: a version published from CI carries an attestation. No such version proves nothing
 // is wrong or right — a correct new package looks the same until its first CI release — so that
-// is a warning and never fails the check.
+// is a warning and never fails the check. It is a warning only for a package going out now, one
+// whose checkout version npm does not have yet: nothing can go wrong for the others in this
+// release, so they get a line of information.
+//
+// The commands for a first publish need a directory for a temporary worktree. Whose machine it is
+// cannot be known from CI, so the text says <worktree>; --worktree=<path> writes the path in.
 //
 // Reads only, with no write access anywhere; GH_TOKEN or GITHUB_TOKEN only lifts GitHub's rate
 // limit. Exits 1 when something is missing or could not be checked.
@@ -31,7 +36,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
 const OWNER = 'webx-ui'
-const WORKTREE = '~/work/webx-ui-release'
+const WORKTREE_PLACEHOLDER = '<worktree>'
 
 export const npmUrl = (name) => `https://registry.npmjs.org/${name.replace('/', '%2f')}`
 export const mirrorUrl = (repository) => `https://api.github.com/repos/${OWNER}/${repository}`
@@ -105,6 +110,7 @@ export async function check(
     mirrors: [],
     packagist: [],
     unproven: [],
+    unprovenElsewhere: [],
     unknown: [],
     checked: { npm: 0, mirrors: 0, packagist: 0 },
     unchecked: { npm: 0, mirrors: 0, packagist: 0 },
@@ -129,7 +135,10 @@ export async function check(
     count('npm', `npm ${item.name}`, answer, () => result.npm.push(item))
     if (answer.state !== 'found') return
     const document = await answer.response.json().catch(() => null)
-    if (document && !publishedFromCi(document)) result.unproven.push(item.name)
+    if (document && !publishedFromCi(document)) {
+      const inThisRelease = !document.versions?.[item.version]
+      ;(inThisRelease ? result.unproven : result.unprovenElsewhere).push(item.name)
+    }
   }
 
   const askMirror = async (repository) => {
@@ -153,9 +162,14 @@ export async function check(
     ...(mirrorsOnly ? [] : [eachLimited(npm, 8, askNpm), eachLimited(composer, 8, askPackagist)]),
   ])
 
-  for (const list of [result.mirrors, result.packagist, result.unproven, result.unknown]) {
-    list.sort()
-  }
+  const lists = [
+    result.mirrors,
+    result.packagist,
+    result.unproven,
+    result.unprovenElsewhere,
+    result.unknown,
+  ]
+  lists.forEach((list) => list.sort())
   result.npm.sort((a, b) => a.name.localeCompare(b.name))
 
   return result
@@ -166,15 +180,22 @@ export const isGreen = (result) =>
 
 const tarball = ({ name, version }) => `${name.replace('@', '').replace('/', '-')}-${version}.tgz`
 
-function npmSteps(packages) {
+function npmSteps(packages, worktree) {
   const filters = packages.map(({ name }) => `--filter "${name}..."`).join(' ')
   const lines = [
     `npm: нужна первая ручная публикация — ${packages.map(({ name }) => name).join(', ')}`,
     '  Этого имени нет в реестре, а Trusted Publishing новое имя не создаёт: после мержа',
     '  «Version or publish» ответит 404. Публикует человек, до мержа этого PR:',
+    ...(worktree === WORKTREE_PLACEHOLDER
+      ? [
+          '',
+          `  ${WORKTREE_PLACEHOLDER} в командах — путь к новому каталогу вне монорепы, не симлинк. Подставить свой`,
+          '  или запустить локально: node scripts/release-preflight.mjs --worktree=<путь>',
+        ]
+      : []),
     '',
-    `  1. cd ~/work/webx-ui && git fetch origin && git worktree add ${WORKTREE} origin/changeset-release/main`,
-    `  2. cd ${WORKTREE} && pnpm install --frozen-lockfile && pnpm ${filters} build`,
+    `  1. cd ~/work/webx-ui && git fetch origin && git worktree add ${worktree} origin/changeset-release/main`,
+    `  2. cd ${worktree} && pnpm install --frozen-lockfile && pnpm ${filters} build`,
   ]
 
   packages.forEach((item, index) => {
@@ -182,7 +203,7 @@ function npmSteps(packages) {
     const step = index + 3
     lines.push(
       `  ${step}. ${item.name}@${item.version}:`,
-      `     cd ${WORKTREE}/${item.dir} && pnpm pack && tar -xzf ${file}`,
+      `     cd ${worktree}/${item.dir} && pnpm pack && tar -xzf ${file}`,
       `     jq '.version, .dependencies, .peerDependencies' package/package.json && ls package/dist && rm -rf package`,
       `     Ждём: версия ${item.version}, диапазоны без workspace:, в dist есть сборка.`,
       `     npm publish ${file} --access public   (с 2FA, из настоящего терминала)`,
@@ -193,7 +214,7 @@ function npmSteps(packages) {
   lines.push(
     `  ${next}. Для каждого пакета: npmjs.com → пакет → Settings → Trusted Publishing → GitHub Actions:`,
     '     webx-ui / webx-ui / release.yml, environment пустой, отметить Allow npm publish.',
-    `  ${next + 1}. npm logout && cd ~/work/webx-ui && git worktree remove ${WORKTREE}`,
+    `  ${next + 1}. npm logout && cd ~/work/webx-ui && git worktree remove ${worktree}`,
   )
 
   return lines
@@ -223,7 +244,7 @@ function packagistSteps(repositories) {
 }
 
 /** The text a person reads in the red check: what is wrong and the commands that fix it. */
-export function report(result, { runId } = {}) {
+export function report(result, { runId, worktree = WORKTREE_PLACEHOLDER } = {}) {
   const { checked, unchecked, mirrorsOnly } = result
   const tally = (kind, label) => {
     const found = checked[kind] - result[kind].length - unchecked[kind]
@@ -237,7 +258,7 @@ export function report(result, { runId } = {}) {
 
   const sections = [[`Preflight релиза (${counts.join(', ')}): ${verdict}.`]]
 
-  if (result.npm.length) sections.push(npmSteps(result.npm))
+  if (result.npm.length) sections.push(npmSteps(result.npm, worktree))
   if (result.mirrors.length) sections.push(mirrorSteps(result.mirrors, mirrorsOnly))
   if (result.packagist.length) sections.push(packagistSteps(result.packagist))
 
@@ -257,9 +278,15 @@ export function report(result, { runId } = {}) {
 
   if (result.unproven.length) {
     sections.push([
-      `Предупреждение: у этих пакетов ни одна версия не вышла из CI — ${result.unproven.join(', ')}`,
+      `Предупреждение: идут в этот релиз, но ни одна версия не вышла из CI — ${result.unproven.join(', ')}`,
       '  Значит, доверенный издатель ещё не подтверждён публикацией. Отсюда настройка не видна:',
       '  посмотреть Settings → Trusted Publishing на npmjs.com. Без издателя будет 404 у одного пакета.',
+    ])
+  }
+
+  if (result.unprovenElsewhere.length) {
+    sections.push([
+      `Остальные, не подтверждённые публикацией из CI (в этот релиз не идут): ${result.unprovenElsewhere.join(', ')}`,
     ])
   }
 
@@ -284,9 +311,13 @@ export function annotations(result) {
     result.packagist.length && `::error::Нет на Packagist: ${names(result.packagist)}`,
     result.unknown.length && `::error::Не удалось проверить: ${names(result.unknown)}`,
     result.unproven.length &&
-      `::warning::Доверенный издатель не подтверждён публикацией из CI: ${names(result.unproven)}`,
+      `::warning::Идут в этот релиз, издатель не подтверждён публикацией из CI: ${names(result.unproven)}`,
   ].filter(Boolean)
 }
+
+/** `--worktree=<path>`; an empty value is no path at all. */
+export const worktreeArgument = (argv) =>
+  argv.find((item) => item.startsWith('--worktree='))?.slice('--worktree='.length) || undefined
 
 async function main() {
   const { env, argv } = process
@@ -295,7 +326,7 @@ async function main() {
     mirrorsOnly: argv.includes('--mirrors'),
     token: env.GH_TOKEN || env.GITHUB_TOKEN,
   })
-  const text = report(result, { runId: env.GITHUB_RUN_ID })
+  const text = report(result, { runId: env.GITHUB_RUN_ID, worktree: worktreeArgument(argv) })
 
   console.log(text)
   if (env.GITHUB_ACTIONS) annotations(result).forEach((line) => console.log(line))

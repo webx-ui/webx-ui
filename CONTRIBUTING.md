@@ -127,8 +127,9 @@ Pick the packages, pick the bump (`patch` / `minor` / `major` — pre-1.0 we sta
    jobs**; the PHP half is already out.
 
 A new package needs a few things done by hand, and the check **New packages are ready to release**
-lists them with the exact commands: the mirror on the pull request of a `hot/*` branch, then the
-first npm publish and the Packagist submit on the version PR. It is part of the required check, so
+lists them with the exact commands: the mirror on the pull request of a `hot/*` or `release/*`
+branch, then the first npm publish and the Packagist submit on the version PR. It is part of the
+required check, so
 such a pull request cannot enter the queue until they are done.
 
 Publishing uses **npm Trusted Publishing (OIDC)** from GitHub Actions — there is no `NPM_TOKEN` in
