@@ -5,13 +5,17 @@ import type {
   EventDetail,
   ExchangeFilters,
   ExchangePage,
+  GroupSave,
   MethodBlank,
   MethodDetail,
+  MethodGroup,
   MethodRow,
   MethodSave,
   MethodType,
   HoldPreview,
   OrderPayment,
+  PaymentMark,
+  Pictogram,
 } from './types'
 
 /** Only what was asked for: an empty filter is no filter. */
@@ -35,7 +39,9 @@ export function createPaymentsApi(admin: AdminContext) {
   return {
     methods: () =>
       http
-        .get<{ data: { methods: MethodRow[]; types: MethodType[] } }>(`${base}/methods`)
+        .get<{
+          data: { methods: MethodRow[]; types: MethodType[]; marks: Record<string, PaymentMark> }
+        }>(`${base}/methods`)
         .then(data),
     method: (id: number) => http.get<{ data: MethodDetail }>(`${base}/methods/${id}`).then(data),
     blank: (type: string) =>
@@ -46,6 +52,15 @@ export function createPaymentsApi(admin: AdminContext) {
       http.put<{ data: MethodDetail }>(`${base}/methods/${id}`, body).then(data),
     orderMethods: (ids: number[]) =>
       http.put<void>(`${base}/methods/order`, { ids }).then(() => undefined),
+    /** The order of a site with groups: the groups and the methods in them, in one transaction. */
+    orderGroups: (groups: { key: string; methods: number[] }[]) =>
+      http.put<void>(`${base}/methods/order`, { groups }).then(() => undefined),
+    groups: () =>
+      http
+        .get<{ data: { groups: MethodGroup[]; pictograms: Pictogram[] } }>(`${base}/groups`)
+        .then(data),
+    saveGroup: (key: string, body: GroupSave) =>
+      http.put<{ data: MethodGroup }>(`${base}/groups/${key}`, body).then(data),
     /** With the stored keys and whatever is typed over them; nothing is saved. */
     testMethod: (id: number, credentials: Record<string, string>) =>
       http

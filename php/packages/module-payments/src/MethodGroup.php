@@ -40,11 +40,13 @@ final readonly class MethodGroup
     {
         $locale ??= app()->getLocale();
 
-        if (isset($this->titles[$locale])) {
-            return $this->titles[$locale];
-        }
+        return $this->titles[$locale] ?? $this->configWords($locale);
+    }
 
-        $words = trans($this->configTitle, [], $locale);
+    /** What the config calls the group: the title a manager's empty field falls back to. */
+    public function configWords(?string $locale = null): string
+    {
+        $words = trans($this->configTitle, [], $locale ?? app()->getLocale());
 
         return is_string($words) ? $words : $this->key;
     }

@@ -114,6 +114,25 @@ final readonly class MethodGroups
         return $method->groupKey !== null && $this->has($method->groupKey) ? $method->groupKey : $this->ofType($type);
     }
 
+    /**
+     * The group of a method the panel lists, whose type may not be installed any more: where it was
+     * moved, else the first group. Such a method is not offered, but a manager still has to see it.
+     */
+    public function current(Method $method, ?MethodType $type): ?string
+    {
+        if ($type !== null) {
+            return $this->of($method, $type);
+        }
+
+        return $method->groupKey !== null && $this->has($method->groupKey) ? $method->groupKey : ($this->keys()[0] ?? null);
+    }
+
+    /** What a method's row keeps for a group (groups spec §7): the group of its type is no move at all. */
+    public function moved(string $key, ?MethodType $type): ?string
+    {
+        return $type !== null && $key === $this->ofType($type) ? null : $key;
+    }
+
     /** The group of a type on this site; its own gone from the config — the first there is. */
     public function ofType(MethodType $type): ?string
     {

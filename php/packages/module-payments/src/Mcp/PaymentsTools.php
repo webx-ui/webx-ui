@@ -908,8 +908,9 @@ final class PaymentsTools
             ->orderByDesc('id')->limit(50)->get(['id', 'number', 'payment_failed_at']);
 
         $form = $this->container->make(MethodForm::class);
+        $similar = $form->similar();
         $keyless = PaymentMethod::query()->where('enabled', true)->orderBy('position')->get()
-            ->map(static fn (PaymentMethod $method): array => $form->row($method))
+            ->map(static fn (PaymentMethod $method): array => $form->row($method, $similar))
             ->filter(static fn (array $row): bool => array_intersect($row['warnings'], ['no_credentials', 'credentials_unreadable', 'gateway_missing', 'type_missing']) !== [])
             ->map(static fn (array $row): array => ['key' => $row['key'], 'title' => $row['title'], 'warnings' => $row['warnings']])
             ->values()->all();
