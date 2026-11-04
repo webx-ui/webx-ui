@@ -1,7 +1,8 @@
 # `webx-ui/payment-liqpay` — спутник шлюза LiqPay — спецификация
 
-Статус: ждёт приёмки человеком (webx-ui#112). Реализация — отдельной задачей по плану §19, как
-webx-ui#102 → #103 у Новой почты. Пакет есть со скелетом этапа 1, платежей ещё не принимает.
+Статус: принята человеком 04.11.2026 (webx-ui#112). Реализация — webx-ui#113 по плану §19: этапы 0–5
+в ветке, сценарий этапа 6 и «первое живое уведомление» этапа 7 впереди. Гайд —
+`apps/docs/guide/payment-liqpay.md`.
 
 Первый настоящий спутник базы оплаты по шаблону §14 спеки
 [`WEBX_UI_MODULE_PAYMENTS.md`](WEBX_UI_MODULE_PAYMENTS.md) (дальше — «база»). Карточка шлюза —
@@ -127,6 +128,7 @@ MCP; §15 — слова; §16 — `AGENTS.md`; §17 — тесты и фикс�
 | Списание больше холда          | `err_code: err_amount_hold`, холд на месте                                                                                                                                                                                                                        | `api/hold.completion-above`                                                                         |
 | Повторное списание             | `err_code: payment_err_status`                                                                                                                                                                                                                                    | `api/hold.completion-repeat`                                                                        |
 | Отмена холда                   | `action=refund` на всю сумму → `reversed`; затем `status`: `reversed`, `refund_amount` равен сумме; списать после этого нельзя (`payment_err_status`)                                                                                                             | `api/hold.release-refund`, `api/hold.status-after-release`                                          |
+| Списание части не в гривнах    | Нет: `wrong_amount_currency`, холд на месте. У холда в EUR `currency_debit` — UAH; отказ при любом `amount` и `currency` в запросе. USD не проверялся, вывод по той же причине. Списание всей суммы и отмена работают в любой валюте                              | `api/hold.completion-part-eur`                                                                      |
 | Частичная отмена холда         | Нет: `wrong_amount_currency`, холд на месте. Нам и не нужна: `void()` отпускает всё                                                                                                                                                                               | `api/hold.release-part-currency`                                                                    |
 | Срок холда в ответе            | Нет такого поля. Есть `create_date` и `sender_card_type`                                                                                                                                                                                                          | `api/hold.status`                                                                                   |
 | Отмена неоплаченного           | Нечем: `refund` — `payment_not_found`                                                                                                                                                                                                                             | `api/cancel.refund-unknown`                                                                         |
@@ -188,13 +190,15 @@ MCP; §15 — слова; §16 — `AGENTS.md`; §17 — тесты и фикс�
 - Холд вместе с рассрочкой: не нужен, сочетание запрещено (решение 17).
 - Mastercard: тестовых карт этой системы в документации нет, поэтому значение `sender_card_type` для
   неё не видели.
+- Кнопка Privat24 на странице при `paytypes` без `privat24`: замечена на песочнице при проверке холда,
+  не разбиралась.
 
 ## 4. Пакет
 
 - `php/packages/payment-liqpay`, composer `webx-ui/payment-liqpay`, namespace `WebxUi\Payment\LiqPay`,
   словарь `webx-payment-liqpay`, конфиг `webx-payment-liqpay.php`, ключ шлюза — `liqpay`.
-- `require`: `php`, `webx-ui/module-payments`, `webx-ui/localization`, `illuminate/http`,
-  `illuminate/support`. SDK LiqPay не берём: он один класс на SHA1 и `version: 3`, свой тонкий клиент
+- `require`: `php`, `webx-ui/module-payments`, `webx-ui/localization`, `illuminate/database`
+  (миграция), `illuminate/http`, `illuminate/support`. SDK LiqPay не берём: он один класс на SHA1 и `version: 3`, свой тонкий клиент
   проще (обзор §2.1).
 - `extra.laravel` — провайдер. Без `extra.webx.module`, `npm`, `panel`: это не раздел панели.
 - npm-пакета нет: сверено с Новой почтой, настройки рисует `MethodPane` базы по полям.
@@ -275,6 +279,9 @@ path-репозитория, строка в реестре пакетов и в
 | `public_key_not_found`               | «The public key was not found»                 |
 | таймаут, не JSON, другое             | «LiqPay did not answer» и код ошибки, без тела |
 
+Проверка берёт публичный ключ из сохранённого способа, а приватный — ещё и из формы: несохранённый
+публичный даёт «Enter both keys of this mode». Подсказка у поля об этом говорит.
+
 До запроса — проверка, что ключ подходит режиму: в режиме `test` оба ключа начинаются с префикса
 песочницы, в режиме `live` — нет. Иначе отказ словами без запроса. Боевые ключи в тестовом режиме
 означали бы настоящие деньги там, где менеджер их не ждёт.
@@ -302,7 +309,8 @@ path-репозитория, строка в реестре пакетов и в
 - `cash` и `invoice` не предлагаем: оплата не сразу, статусы `cash_wait` / `invoice_wait` держали бы
   попытку незавершённой, а в объём решения 1 они не названы.
 - **Значение, которое магазину недоступно, не даёт ошибки:** страница показывает всё (§3.2). Подсказка
-  под полем `pay_paypart` говорит: «Enable the service in the LiqPay cabinet first» (решение 16).
+  под полями `pay_moment_part` и `pay_paypart` говорит: «Enable the service in the LiqPay cabinet first»
+  (решение 16), под `pay_card` — что будет, если выключить всё.
 
 **Два способа рядом.** База создаёт способ кнопкой в панели (`MethodForm::blank()`, `save()`), ключ
 получается сам: `liqpay-checkout`, `liqpay-checkout-2`. Например:
@@ -324,12 +332,10 @@ path-репозитория, строка в реестре пакетов и в
 Запрещены в одном способе (решение 17): магазин получает всю сумму сразу, и что значит блокировка при
 рассрочке, не ясно. Подсказка в форме: «Hold works for card payments only».
 
-- **Форма.** Включён холд — поля `pay_moment_part` и `pay_paypart` недоступны и сняты. Сейчас база
-  этого не умеет: поля доходят до формы только с именем, типом, подписью и подсказкой, а условие
-  `visible` экрана поле прячет, но не выключает. Правка базы 0.2 (§19.1).
+- **Форма.** Включён холд — поля `pay_moment_part` и `pay_paypart` недоступны и сняты: `off_with` и
+  `off_help` поля, правка базы 0.2 (§19.1).
 - **Проверка на сервере.** Форму можно обойти, а панель и MCP сохраняют способ одним
-  `MethodForm::save()`. Спутнику там слова нет: `cleanSettings()` проверяет каждое поле отдельно, а не
-  сочетание. Правка базы 0.2 даёт типу необязательный `ValidatesSettings`.
+  `MethodForm::save()`: сочетание проверяет необязательный `ValidatesSettings` той же правки.
 - **`LiqPayCheckoutType` отказывает**, если `hold` включён и включена рассрочка. И если при холде нет
   ни одной галочки: `paytypes` тогда не уходит, и страница покажет всё, что есть в кабинете, рассрочку
   тоже (§3.2).
@@ -380,7 +386,9 @@ return Handoff::post($config['checkout_url'], ['data' => $data, 'signature' => $
    InvalidNotification::signature(uuid: order_id)
 4. JSON из base64; не вышло — InvalidNotification::malformed()
 5. eventKey = Notification::keyOf($data)
-6. action subscribe, regular и подобные — Notification::unrelated()
+6. action subscribe, unsubscribe, regular, recurring, recurringbytoken или статус subscribed,
+   unsubscribed — Notification::unrelated(); список запрещённых, а не разрешённых: action возврата
+   неизвестен (§3.3), и он должен дойти до шага 7
 7. status reversed или refund_amount > 0 — Notification::poke() (§8.3)
 8. иначе Notification::status(eventKey, order_id, payment_id, GatewayStatus по таблице §9.2)
 ```
@@ -494,8 +502,7 @@ return Handoff::post($config['checkout_url'], ['data' => $data, 'signature' => $
 
 - Спутник отвечает `GatewayStatus(Reported::Pending, notStarted: true)`: для денег это `Pending`,
   попытка открыта до срока. Поздний `success` принимается как обычно.
-- Сейчас база так не умеет: `pending` всегда даёт «Проверяем оплату» без кнопки, а «Выбрать другой
-  способ» на странице оплаты код не рисует вовсе, хотя §8.4 базы его обещает. Правка базы 0.3 (§19.1).
+- Состояние `unfinished` страницы оплаты и «Выбрать другой способ» в нём — правка базы 0.3 (§19.1).
 - «Оплатить снова» — обычная новая попытка. Прежнюю закрыть нечем (§11), она остаётся `pending` до
   срока, страница предупреждает о второй вкладке (§9.4 базы). Двойная оплата видна: `problem = duplicate`.
 - Если покупатель открыл ссылку на оплату, не закрыв страницу LiqPay, он увидит то же: карту он ещё не
@@ -512,12 +519,17 @@ return Handoff::post($config['checkout_url'], ['data' => $data, 'signature' => $
   предупреждаем по гарантии.
 - **`capture()`** — `action=hold_completion`, `order_id`, `amount` десятичной строкой.
 
-  | Ответ                | Итог                                                                                                 |
-  | -------------------- | ---------------------------------------------------------------------------------------------------- |
-  | `success`            | `Paid`, `amount` — списанное; остаток LiqPay отпускает сам                                           |
-  | `err_amount_hold`    | `GatewayRefused`                                                                                     |
-  | `payment_err_status` | `fetchStatus()`: уже `Paid` — вернуть его (ответ на прошлый вызов потерялся), иначе `GatewayRefused` |
-  | таймаут              | `GatewayUnavailable`                                                                                 |
+  | Ответ                   | Итог                                                                                                 |
+  | ----------------------- | ---------------------------------------------------------------------------------------------------- |
+  | `success`               | `Paid`, `amount` — списанное; остаток LiqPay отпускает сам                                           |
+  | `err_amount_hold`       | `GatewayRefused`                                                                                     |
+  | `wrong_amount_currency` | `GatewayRefused`, слово `errors.part_in_hryvnias`: часть — только у холда в гривнах (§3.2)           |
+  | `payment_err_status`    | `fetchStatus()`: уже `Paid` — вернуть его (ответ на прошлый вызов потерялся), иначе `GatewayRefused` |
+  | таймаут                 | `GatewayUnavailable`                                                                                 |
+
+- **Часть холда не в гривнах.** `capturesPartially()` платежа не получает, поэтому поле суммы менеджер
+  видит и у холда в EUR и USD, а отказ получает словами, холд на месте. Спрятать поле заранее — правка
+  контракта базы, в v1 её нет (§21).
 
 - **`void()`** — `action=refund`, `order_id`, `amount` = вся заблокированная сумма, `currency`.
   `reversed` — `Cancelled`; ошибка — `GatewayRefused`. Вызов только у попытки `authorized`: у `paid`
@@ -599,8 +611,9 @@ return Handoff::post($config['checkout_url'], ['data' => $data, 'signature' => $
 
 Как у Новой почты, ключи не попадают в git: человек один раз добавляет в `~/work/webx-lab/.lab-env`
 строку с приватным ключом под именем §13.2, значение берёт из `LIQPAY_SECRET` там же, и запускает
-`scripts/lab-site.sh refresh`. Публичный вставляет в форму способа из `LIQPAY_PUBLIC`. Агент этих значений
-не видит и не печатает.
+`scripts/lab-site.sh create`: `refresh` строки `.lab-env` в `.env` не переносит, а `create` на готовом
+сайте переносит и ничего не пересоздаёт. Публичный вставляет в форму способа из `LIQPAY_PUBLIC`. Агент
+этих значений не видит и не печатает.
 
 ## 14. Панель и MCP
 
@@ -608,23 +621,28 @@ return Handoff::post($config['checkout_url'], ['data' => $data, 'signature' => $
 переключатель холда, адрес уведомлений, вкладка «Оплата», журнал обмена, кнопки холда, инструменты
 `payments_*`.
 
-**Спутник добавляет только слова:** подписи полей, значок. Своих экранов, маршрутов, прав и
+**Спутник добавляет только слова:** подписи и подсказки полей, значок. Своих экранов, маршрутов, прав и
 инструментов MCP нет, поэтому `AccessCoverageTest` не меняется. Недоступные при холде галочки и отказ
 при сохранении (§6.1) рисует база по правке 0.2.
 
-В MCP приватный ключ не показывается и не задаётся (§15.2 базы), публичный виден как настройка.
+В MCP приватный ключ не показывается и не задаётся (§15.2 базы; `McpTest` держит имена ключей
+LiqPay). Публичный — настройка: виден в ответах, и `payments_methods_save` его принимает, как любую
+настройку. Отказать в нём может только база, а секретом он не является (§13.1).
 
 ## 15. Слова
 
-Словарь `webx-payment-liqpay`, 10 языков: `en, ru, uk, de, pl, fr, es, it, pt, tr`.
+Словарь `webx-payment-liqpay`, один файл `liqpay.php` на язык, 10 языков:
+`en, ru, uk, de, pl, fr, es, it, pt, tr`.
 
 - `gateway.*` — название, режим, подписи и подсказки полей §5.2;
-- `paytypes.*` — подписи §6, подсказка у `pay_paypart`, подсказка и отказ про холд (§6.1);
-- `connection.*` — ответы §5.3;
-- `status.*` — статусы §9.2 для `reason`, в том числе пометка `wait_accept`;
+- `paytypes.*` — подписи §6, подсказки `card_help` и `service_help`, подсказка и отказы про холд (§6.1);
+- `connection.*` — ответы §5.3, `no_keys` и `wrong_mode`;
+- `status.*` — статусы §9.2 для `reason`, в том числе пометка `wait_accept`; `unknown` — неизвестный
+  статус, `not_a_payment` — решение журнала у уведомления не о платеже;
 - `errors.*` — коды отказа: `limit`, `9859`, `expired`, `wait_info`, `err_amount_hold`,
   `payment_err_status`, `order_id_duplicate`, `invalid_signature`, `public_key_not_found`,
-  `payment_not_found`, `err_wrong_currency`. Неизвестный код — `err_description`, как прислал LiqPay.
+  `payment_not_found`, `err_wrong_currency`, `wrong_amount_currency`; `part_in_hryvnias` и `refused` —
+  слова `capture()`. Неизвестный код — `err_description`, как прислал LiqPay.
 
 Язык `err_description` у LiqPay разный: у ошибок запроса — украинский, у отказа банка — английский.
 
@@ -676,11 +694,17 @@ return Handoff::post($config['checkout_url'], ['data' => $data, 'signature' => $
 - `StatusTest` — `payment_not_found` с `notStarted`, ошибка запроса против платежа со статусом `error`,
   `try_again` как `Pending` в уведомлении и в опросе, `wait_accept` с `reason`, `reversed` у `authorized`
   и `paid`;
-- `CaptureTest` — полное, частичное, больше холда, потерянный ответ (`payment_err_status`), `void()`;
+- `CaptureTest` — полное, частичное, больше холда, часть не в гривнах, потерянный ответ
+  (`payment_err_status`), `void()`;
 - `ConnectionTest` — ответы §5.3 и несовпадение ключа и режима;
 - `JournalTest` — `data` в журнале байт в байт, подпись по нему сходится (держит §13.1); даты ответа
   `status` не затёрты, номер карты в другом поле затёрт (держит §12);
 - `FixturesAreScrubbedTest` — только фейковые ключи, телефоны и IP;
+- `MethodFormTest` — поля и подсказки формы, `off_with`, приватный ключ из окружения;
+- `McpTest` — приватный ключ отказан в `credentials` и в `settings`, в ответах только «set», холд с
+  рассрочкой отказан, как в панели;
+- `NotificationTest`, `ClientTest`, `MigrationTest`, `RegistrationTest` — разбор уведомления, клиент,
+  миграция и её откат, регистрация в реестрах базы;
 - `TranslationsTest`, `AgentDocsCoverageTest` (общий).
 
 ## 18. Сценарий человека на lab
@@ -692,7 +716,7 @@ lab не доходят (решение 4), поэтому статус на ш�
 
 Каждый шаг — затем «Payments → Gateway exchange».
 
-1. **Включить способ.** «Payments → Methods» → LiqPay: режим Test, публичный ключ, «Test the
+1. **Включить способ.** «Payments → Methods» → LiqPay: режим Test, публичный ключ, «Save», «Test the
    connection» — успех, событие `out/connection`. Включить способ.
 2. **Успех.** Заказ, карта `4242 4242 4242 4242`: «Спасибо», заказ оплачен. В журнале
    `browser/handoff` → `browser/return` → `out/status`, в `handoff` видны `data` и `signature`,
@@ -710,6 +734,8 @@ lab не доходят (решение 4), поэтому статус на ш�
 8. **Холд → списать часть.** В способе включить холд: галочки рассрочки недоступны, с подсказкой «Hold
    works for card payments only». Заказ картой `4242…`: «Деньги заблокированы
    до…»; «Capture» на меньшую сумму — предупреждение, затем бейдж «Captured …», событие `out/capture`.
+   Часть списывается только у заказа в гривнах (§10). Демо-каталог lab — в EUR: там на этом шаге отказ
+   словами, холд на месте.
 9. **Холд → отменить.** Новый заказ: «Release the hold» — `Hold released`, событие `out/void`, заказ ждёт
    оплаты.
 10. **Списать больше холда.** «Capture» на сумму больше заблокированной — отказ словами, холд на месте.
@@ -817,3 +843,4 @@ interface ValidatesSettings extends MethodType
 | список IP уведомлений                                | `notify_ips` базы, адреса LiqPay не опубликованы                                             |
 | общие ключи шлюза                                    | решение 15: ключи у шлюза или кнопка «взять ключи из способа…»; правка базы                  |
 | пометка `wait_accept` в карточке заказа и при опросе | решение 23: правка базы — поле в `GatewayStatus`, запись в историю заказа и в строку попытки |
+| поле суммы при холде не в гривнах                    | `capturesPartially()` получает платёж или контракт спрашивает отдельно; правка базы (§10)    |

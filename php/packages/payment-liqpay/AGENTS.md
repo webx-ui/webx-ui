@@ -5,9 +5,6 @@ LiqPay, a payment gateway of Ukraine, for `webx-ui/module-payments`. The package
 `settle()`, the exchange journal, the poll, the method form and MCP. Read the base's `AGENTS.md`
 first. This package has no tables, routes, screens, MCP tools or npm package of its own.
 
-**Being built by stages** (§19 of the spec). There now: the registration, the fields, the words, the
-migration, the signature, the notification, the page, the poll, «Test the connection» and the hold.
-
 ## What it owns
 
 - **Gateway** `LiqPayGateway`, key `liqpay`. Settings: `mode` (`test` / `live`), `test_public_key`,
@@ -40,7 +37,10 @@ hold`, and `validateSettings()` refuses the pair on the server. It also refuses 
   `wrong_amount_currency` whatever the request says. The whole sum and a release work in any currency.
   `capturesPartially()` knows no payment, so the manager gets a refusal in words and the hold stays.
 - **Test the connection** `testConnection()`: `status` of a random uuid, `payment_not_found` means both
-  keys are right. Keys of the other mode (`sandbox_` prefix) are refused without a request.
+  keys are right. Keys of the other mode (`sandbox_` prefix) are refused without a request. The public
+  key comes from the saved method: save the form first, or the answer is «Enter both keys of this mode».
+- **MCP**: only the base's `payments_*`. A private key is refused there and answers say «set». The
+  public key is a setting, so an agent sees it and `payments_methods_save` takes it.
 - **Fixtures** `tests/Fixtures`: `api/` and `browser/` were recorded on the sandbox, `notify/` is
   emulated. `FixturesAreScrubbedTest` keeps real keys, cards and phones out.
 - **Migration**: the method `liqpay-checkout`, switched off, no title of its own. A second run adds
@@ -76,7 +76,8 @@ None of its own. The method, its keys and «Test the connection» are behind the
 
 ## Check your work
 
-- `vendor/bin/phpunit packages/payment-liqpay/tests` from `php/` of the monorepo.
+- `vendor/bin/phpunit packages/payment-liqpay/tests` from `php/` of the monorepo, in a shell without
+  `WEBX_PAYMENTS_LIQPAY_*`: a variable from the lab's `.lab-env` beats what the tests set up.
 - «Payments → Methods» in the panel shows LiqPay, switched off, with a warning that it has no keys.
 - With sandbox keys «Test the connection» succeeds, and a test card on the page ends paid by the poll.
 - With `hold` on, a test card ends held; «Capture» and «Release the hold» in the order's card end it.
@@ -85,5 +86,6 @@ None of its own. The method, its keys and «Test the connection» are behind the
 ## Read more
 
 - The satellite's spec: `docs/architecture/WEBX_UI_PAYMENT_LIQPAY.md` in the monorepo.
+- The guide for people: `apps/docs/guide/payment-liqpay.md`.
 - The base: `webx-ui/module-payments`, its `AGENTS.md` and the guide «Payment gateways»
   (`apps/docs/guide/payment-gateways.md`).

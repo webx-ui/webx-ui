@@ -95,11 +95,12 @@ final class LiqPayCheckoutType implements CapturesPayments, ValidatesSettings
         foreach (self::PAYTYPES as $name => [$paytype, $default]) {
             $field = ['name' => $name, 'type' => 'switch', 'label' => LiqPayGateway::line("paytypes.{$paytype}"), 'default' => $default];
 
-            if ($name === 'pay_paypart') {
-                $field['help'] = LiqPayGateway::line('paytypes.paypart_help');
+            if ($name === 'pay_card') {
+                $field['help'] = LiqPayGateway::line('paytypes.card_help');
             }
 
             if (in_array($name, self::INSTALMENTS, true)) {
+                $field['help'] = LiqPayGateway::line('paytypes.service_help');
                 $field['off_with'] = 'hold';
                 $field['off_help'] = LiqPayGateway::line('paytypes.hold_cards_only');
             }
@@ -354,7 +355,9 @@ final class LiqPayCheckoutType implements CapturesPayments, ValidatesSettings
         $eventKey = Notification::keyOf($data);
 
         if (in_array($answer->action(), self::NOT_PAYMENTS, true) || in_array($answer->status(), ['subscribed', 'unsubscribed'], true)) {
-            return Notification::unrelated($eventKey, 'Not about a payment: '.$answer->action().', '.$answer->status(), $answer->orderId(), $answer->paymentId());
+            $what = $answer->action().', '.$answer->status();
+
+            return Notification::unrelated($eventKey, (string) __(LiqPayGateway::line('status.not_a_payment'), ['what' => $what]), $answer->orderId(), $answer->paymentId());
         }
 
         // The same word means another thing at an attempt on hold, and only the poll sees it (§8.3).

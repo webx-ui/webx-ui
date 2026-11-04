@@ -87,12 +87,12 @@ final class PaytypesTest extends TestCase
     }
 
     #[Test]
-    public function pay_in_parts_says_it_needs_the_service_in_the_cabinet(): void
+    public function instalments_say_they_need_the_service_in_the_cabinet(): void
     {
         $fields = array_column($this->app->make(LiqPayCheckoutType::class)->settings(), null, 'name');
 
         $this->assertSame('Enable the service in the LiqPay cabinet first', __($fields['pay_paypart']['help']));
-        $this->assertArrayNotHasKey('help', $fields['pay_moment_part']);
+        $this->assertSame($fields['pay_paypart']['help'], $fields['pay_moment_part']['help']);
     }
 
     #[Test]

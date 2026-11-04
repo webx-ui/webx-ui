@@ -53,6 +53,11 @@ final class MethodFormTest extends TestCase
         $this->assertFalse($fields['pay_qr']['default']);
         $this->assertSame('Instant instalments', $fields['pay_moment_part']['label']);
         $this->assertSame('Enable the service in the LiqPay cabinet first', $fields['pay_paypart']['help']);
+        $this->assertSame('Enable the service in the LiqPay cabinet first', $fields['pay_moment_part']['help']);
+        $this->assertSame('With every switch off the page shows all that is switched on in the LiqPay cabinet.', $fields['pay_card']['help']);
+        $this->assertNotNull($fields['mode']['help']);
+        $this->assertSame($fields['test_public_key']['help'], $fields['live_public_key']['help']);
+        $this->assertNotNull($fields['expires_minutes']['help']);
         $this->assertSame(['test', 'live'], array_column($fields['mode']['options'], 'value'));
         $this->assertSame(60, $fields['expires_minutes']['default']);
         $this->assertSame(['test_private_key', 'live_private_key'], array_column($form['credentials'], 'name'));

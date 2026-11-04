@@ -61,11 +61,12 @@ final class LiqPayGateway implements DeclaresNotCardFields
                 'name' => 'mode',
                 'type' => 'select',
                 'label' => self::line('gateway.mode'),
+                'help' => self::line('gateway.mode_help'),
                 'options' => ['test' => self::line('gateway.modes.test'), 'live' => self::line('gateway.modes.live')],
                 'default' => 'test',
             ],
-            ['name' => 'test_public_key', 'type' => 'text', 'label' => self::line('gateway.test_public_key')],
-            ['name' => 'live_public_key', 'type' => 'text', 'label' => self::line('gateway.live_public_key')],
+            ['name' => 'test_public_key', 'type' => 'text', 'label' => self::line('gateway.test_public_key'), 'help' => self::line('gateway.public_key_help')],
+            ['name' => 'live_public_key', 'type' => 'text', 'label' => self::line('gateway.live_public_key'), 'help' => self::line('gateway.public_key_help')],
             [
                 'name' => 'language',
                 'type' => 'select',
@@ -82,6 +83,7 @@ final class LiqPayGateway implements DeclaresNotCardFields
                 'name' => 'expires_minutes',
                 'type' => 'number',
                 'label' => self::line('gateway.expires_minutes'),
+                'help' => self::line('gateway.expires_minutes_help'),
                 'default' => self::EXPIRES_MINUTES,
             ],
         ];

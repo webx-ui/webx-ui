@@ -155,7 +155,10 @@ final class NotificationTest extends TestCase
     {
         $data = self::dataOf('success', $changes);
 
-        $this->assertTrue($this->read($data, self::signed($data))->isUnrelated());
+        $notification = $this->read($data, self::signed($data));
+
+        $this->assertTrue($notification->isUnrelated());
+        $this->assertStringStartsWith('Not about a payment: ', (string) $notification->reason);
     }
 
     /** @return array<string, array{0: string, 1: array<string, mixed>}> */

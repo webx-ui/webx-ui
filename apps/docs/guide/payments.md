@@ -177,6 +177,7 @@ tells the managers about a problem; its channels are the setting «Payments» of
 ## Read more
 
 - [Payment gateways](./payment-gateways.md) — writing a satellite of a gateway and its contract test.
+- [LiqPay](./payment-liqpay.md) — the first gateway: keys, the switches of the page, the hold.
 - [Orders](./orders.md) — milestones, the balance, top-ups.
 - [Checkout](./checkout.md) — the steps and the slots.
 - The payments spec — [`WEBX_UI_MODULE_PAYMENTS.md`](https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_PAYMENTS.md).

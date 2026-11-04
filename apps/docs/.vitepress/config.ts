@@ -110,6 +110,7 @@ export default defineConfig({
             { text: 'Nova Poshta', link: '/guide/delivery-novaposhta' },
             { text: 'Payments', link: '/guide/payments' },
             { text: 'Payment gateways', link: '/guide/payment-gateways' },
+            { text: 'LiqPay', link: '/guide/payment-liqpay' },
             { text: 'Site visitors', link: '/guide/site-visitors' },
           ],
         },

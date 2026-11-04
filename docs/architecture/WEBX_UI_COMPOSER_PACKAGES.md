@@ -753,8 +753,8 @@ MCP `delivery_*`. Требует `module-cart` и `geography`; работает 
 
 ### `webx-ui/payment-liqpay` — шлюз LiqPay
 
-Статус: в работе (webx-ui#113), есть скелет: шлюз, тип, поля, слова, миграция; платежей ещё не
-принимает. **Первую версию выпускает человек** — пустое зеркало `webx-ui/payment-liqpay` и отправка
+Статус: в работе (webx-ui#113): страница, статусы, холд, панель и гайд готовы, сценарий на lab и живое
+уведомление впереди. Гайд — `apps/docs/guide/payment-liqpay.md`. **Первую версию выпускает человек** — пустое зеркало `webx-ui/payment-liqpay` и отправка
 на Packagist руками ([`WEBX_UI_PHP_RELEASE.md`](WEBX_UI_PHP_RELEASE.md), «Что остаётся руками на
 каждый новый пакет»). Спека — [`WEBX_UI_PAYMENT_LIQPAY.md`](WEBX_UI_PAYMENT_LIQPAY.md).
 Первый настоящий спутник `module-payments` (имя без `module-`, правило выше): шлюз `liqpay`, один тип
