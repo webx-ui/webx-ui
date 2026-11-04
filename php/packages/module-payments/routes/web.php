@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use WebxUi\Cart\Http\KeepPrivate;
+use WebxUi\Payments\Http\MarkController;
 use WebxUi\Payments\Http\PayController;
 use WebxUi\Payments\Http\ScriptController;
 use WebxUi\Payments\Http\StepController;
@@ -28,6 +29,10 @@ Route::group(['webx_service' => true], static function () use ($path): void {
             Route::put('selection', [StepController::class, 'update'])->middleware('throttle:webx-payments-write')->name('selection.update');
         });
 
-    // The step's script: no session, cached forever — its address carries a hash of it.
-    Route::get(trim((string) config('webx-payments.script_path', 'webx/payments'), '/').'/step.js', ScriptController::class)->name('webx-payments.script');
+    // The step's script and the files of the marks: no session, cached forever — their addresses
+    // carry a hash of them.
+    $files = trim((string) config('webx-payments.script_path', 'webx/payments'), '/');
+
+    Route::get($files.'/step.js', ScriptController::class)->name('webx-payments.script');
+    Route::get($files.'/marks/{key}.svg', MarkController::class)->where('key', '[a-z0-9-]+')->name('webx-payments.mark');
 });

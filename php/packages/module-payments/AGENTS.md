@@ -96,7 +96,7 @@ The theme's contract, in `resources/theme/payments.css`; restyle with the same c
 `webx-payments` (`is-live`, `is-loading`), `webx-payments__form`, `webx-payments__hint`, `webx-payments__notice`,
 `webx-payments__error`, `webx-payments__methods` (`is-single`), `webx-payments__methods-title`,
 `webx-payments__method` (`is-chosen`), `webx-payments__radio`, `webx-payments__icon`, `webx-payments__method-text`,
-`webx-payments__method-title`, `webx-payments__method-note`, `webx-payments__save`, `webx-payments__nojs`,
+`webx-payments__method-title`, `webx-payments__method-note`, `webx-payments__mark` (`is-text`), `webx-payments__save`, `webx-payments__nojs`,
 `webx-payments-instructions`, `webx-payments-instructions__title`, `webx-payments-instructions__list`,
 `webx-payments-instructions__row` (+ `webx-payments-instructions__row--<field>`), `webx-payments-instructions__label`,
 `webx-payments-instructions__value`, `webx-payments-status` (+ `webx-payments-status--<state>`), `webx-payments-status__pay`,

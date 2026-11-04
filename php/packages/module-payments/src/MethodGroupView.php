@@ -10,10 +10,14 @@ namespace WebxUi\Payments;
  */
 final readonly class MethodGroupView
 {
-    /** @param  non-empty-list<MethodOption>  $options  by the position of the method */
+    /**
+     * @param  non-empty-list<MethodOption>  $options  by the position of the method
+     * @param  list<string>  $marks  of all its methods, once each, in the order of `PaymentMarks`
+     */
     public function __construct(
         public MethodGroup $group,
         public array $options,
+        public array $marks = [],
     ) {}
 
     public function key(): string

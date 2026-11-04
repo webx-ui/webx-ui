@@ -66,4 +66,5 @@ $answer = $http->request()->post('https://gateway-a.test/api/status', ['order_id
 
 ## License
 
-MIT
+MIT. The payment marks in `resources/marks/` are trademarks of their owners and are not covered by it: see
+[`NOTICE.md`](resources/marks/NOTICE.md).

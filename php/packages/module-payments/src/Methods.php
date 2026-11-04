@@ -25,6 +25,7 @@ final readonly class Methods
         private Gateways $gateways,
         private MethodCredentials $credentials,
         private MethodGroups $methodGroups,
+        private PaymentMarks $marks,
     ) {}
 
     /**
@@ -183,7 +184,9 @@ final readonly class Methods
         $type = $this->types->get($method->type);
         $presented = $type->present($method, $context);
 
-        return new MethodOption($method, $type, $presented->title, $presented->note, $method->icon, $type->kind(), $this->methodGroups->of($method, $type));
+        $marks = $this->marks->of($method, $type);
+
+        return new MethodOption($method, $type, $presented->title, $presented->note, $method->icon, $type->kind(), $this->methodGroups->of($method, $type), $marks, $marks === [PaymentMarks::APPLE_PAY]);
     }
 
     /**
@@ -206,7 +209,7 @@ final readonly class Methods
         $groups = $this->methodGroups->all();
 
         if ($groups === []) {
-            return [new MethodGroupView(MethodGroup::none(), $options)];
+            return [$this->view(MethodGroup::none(), $options)];
         }
 
         $inGroup = [];
@@ -219,10 +222,16 @@ final readonly class Methods
 
         foreach ($groups as $group) {
             if (isset($inGroup[$group->key])) {
-                $views[] = new MethodGroupView($group, $inGroup[$group->key]);
+                $views[] = $this->view($group, $inGroup[$group->key]);
             }
         }
 
         return $views;
+    }
+
+    /** @param  non-empty-list<MethodOption>  $options */
+    private function view(MethodGroup $group, array $options): MethodGroupView
+    {
+        return new MethodGroupView($group, $options, $this->marks->known(array_merge(...array_map(static fn (MethodOption $option): array => $option->marks, $options))));
     }
 }

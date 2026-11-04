@@ -14,6 +14,7 @@ use WebxUi\Payment\LiqPay\Api\Signature;
 use WebxUi\Payment\LiqPay\Api\Statuses;
 use WebxUi\Payments\Availability;
 use WebxUi\Payments\Contracts\CapturesPayments;
+use WebxUi\Payments\Contracts\ProvidesPaymentMarks;
 use WebxUi\Payments\Contracts\ValidatesSettings;
 use WebxUi\Payments\Credentials;
 use WebxUi\Payments\Exchange\ExchangeKind;
@@ -42,7 +43,7 @@ use WebxUi\Payments\Words;
  * offers is the method's seven switches, each with its own keys (decisions 3, 15). A method with the
  * base's switch `hold` takes the money in two steps (§10).
  */
-final class LiqPayCheckoutType implements CapturesPayments, ValidatesSettings
+final class LiqPayCheckoutType implements CapturesPayments, ProvidesPaymentMarks, ValidatesSettings
 {
     public const string KEY = 'liqpay.checkout';
 
@@ -57,6 +58,17 @@ final class LiqPayCheckoutType implements CapturesPayments, ValidatesSettings
         'pay_qr' => ['qr', false],
         'pay_moment_part' => ['moment_part', false],
         'pay_paypart' => ['paypart', false],
+    ];
+
+    /** Field of the method => the marks it shows: `qr` has no common mark (groups spec §3.5). */
+    private const array MARKS = [
+        'pay_card' => ['visa', 'mastercard'],
+        'pay_apay' => ['apple-pay'],
+        'pay_gpay' => ['google-pay'],
+        'pay_privat24' => ['privat24'],
+        'pay_qr' => [],
+        'pay_moment_part' => ['privatbank'],
+        'pay_paypart' => ['privatbank'],
     ];
 
     /** The fields a hold rules out: what a hold means with instalments is not known (decision 17). */
@@ -136,6 +148,21 @@ final class LiqPayCheckoutType implements CapturesPayments, ValidatesSettings
         }
 
         return $refused;
+    }
+
+    /**
+     * What the switches offer. With none on `paytypes` is not sent and the page shows what the
+     * cabinet has, which nobody here knows: no marks then (groups spec §3.5).
+     */
+    public function marks(Method $method): array
+    {
+        $marks = [];
+
+        foreach (array_keys(self::paytypes($method->settings)) as $name) {
+            $marks = [...$marks, ...self::MARKS[$name]];
+        }
+
+        return array_values(array_unique($marks));
     }
 
     /**
