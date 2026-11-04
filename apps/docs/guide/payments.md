@@ -102,6 +102,68 @@ declined. A theme that keeps its own copy of these templates has to carry them o
 `php artisan webx:doctor` names a copy that lacks either. «My orders» needs nothing: the words come
 in `$row['status']`, with the code `awaiting-payment`.
 
+## Groups and marks
+
+The step «Payment» reads in two levels: a few groups, and the methods inside the one the buyer
+opens. Opening a group picks its first method. The lists on the page of payment are the same
+component, with **Continue** under them, because a choice there leaves for the gateway.
+
+Three groups come with the package: `on_receipt`, `online` and `transfer`. A method stands in the
+group of its type by itself. In **Payments → Methods** a manager drags groups and methods, renames a
+group, gives it a description and a pictogram, and moves a method to another group, by dragging or by
+its field **Group**. Nothing in the panel or the agent's tools creates or removes a group: that is
+the site's config. Two enabled methods of one group with the same marks are warned of, never refused.
+
+The buyer does not see a group with nothing to offer. A group with one method is one line, and a
+single group is a flat list.
+
+### The groups of a site
+
+Which groups there are is `webx-payments.groups`. Publish the config with
+`php artisan vendor:publish --tag=webx-payments-config`:
+
+```php
+'groups' => [
+    'on_receipt' => ['title' => 'webx-payments::groups.on_receipt', 'pictogram' => 'cash'],
+    'online' => ['title' => 'webx-payments::groups.online', 'pictogram' => 'card'],
+    'instalments' => ['title' => 'Pay in parts', 'pictogram' => 'wallet'],
+],
+```
+
+- **The key** is the group's for good: moves of methods and a manager's edits are stored under it.
+- **`title`** is a key of a dictionary or the words themselves.
+- **`pictogram`** is one of `card`, `cash`, `document`, `bank`, `wallet`, `truck`, `store`, `qr`.
+- **The site's `groups` replaces the list whole**: what is not there, the site does not have. An
+  empty array is the flat list without groups.
+- **A key taken out** keeps its edits and the moves into it: they come back with the key. Until then
+  its methods stand in the group of their type, and `php artisan webx:doctor` names the key.
+
+The panel's edits stay in the table `payment_groups`, over the config, so a deploy does not undo them.
+
+### Official files of the marks
+
+The marks are files of `resources/marks/` of the package, based on Simple Icons. Where a payment
+system or your acquirer asks for its official file, give the mark another file from a service
+provider of the site. A key registered again keeps its place on the page:
+
+```php
+use WebxUi\Payments\PaymentMarks;
+
+$this->callAfterResolving(PaymentMarks::class, static function (PaymentMarks $marks): void {
+    $marks->register('visa', 'Visa', resource_path('payment-marks/visa.svg'));
+});
+```
+
+The file has to be an SVG. No code depends on what it draws: the width comes from its `viewBox`, or
+from `width` and `height` without one, every mark stands 24 pixels high, and a new file gets a new
+address, so no cache holds the old one. A key without a file is drawn as a plate with its words, as
+Приват24, ПриватБанк and monobank are. In the package itself a file is replaced by putting another
+under the same name. The trademarks belong to their owners and are not under the package's MIT
+licence: see `resources/marks/NOTICE.md`.
+
+Which marks a method shows is decided by its type, not by a manager. A method whose only mark is Apple
+Pay is hidden by the buyer's browser where Apple Pay does not work; Google Pay is always shown.
+
 ## The exchange journal
 
 **Payments → Gateway exchange** lists every event: what went out to the gateway, what came in, what
@@ -164,8 +226,11 @@ what is done to an order needs `orders.manage`. Every write takes `dry_run`.
 | Tool                       | What it does                                                                        |
 | -------------------------- | ----------------------------------------------------------------------------------- |
 | `payments_methods_list`    | methods in the checkout's order: type, titles, rules, limits, keys only as «set»    |
-| `payments_methods_save`    | create a method of a type, or change one; never its keys                            |
-| `payments_methods_reorder` | the checkout's order of methods                                                     |
+| `payments_methods_save`    | create a method of a type, or change one, its group too; never its keys; `warnings` |
+| `payments_methods_reorder` | the order of methods inside their groups, or moved as in the panel (`groups`)       |
+| `payments_groups_list`     | the groups in their order: words, pictogram, methods, marks                         |
+| `payments_groups_save`     | a group's titles, descriptions and pictogram; never creates or removes one          |
+| `payments_groups_reorder`  | the order of the groups                                                             |
 | `payments_available`       | the methods of a cart or an amount and a delivery, each with why it is not offered  |
 | `payments_list`            | attempts by order, method, status, problem                                          |
 | `payments_get`             | an attempt with its events                                                          |
@@ -181,7 +246,7 @@ what is done to an order needs `orders.manage`. Every write takes `dry_run`.
 | `payments_exchange_get`    | one event or a trace with its headers and bodies (up to 64 KB), `payments.exchange` |
 
 The resource `payments://catalog` lists the types of methods and what each can do, the gateways
-installed and the delivery rules. **A gateway's key never passes through an agent**: no answer
+installed, the groups, the pictograms, the marks and the delivery rules. **A gateway's key never passes through an agent**: no answer
 carries it and no tool takes it.
 
 ## Letters

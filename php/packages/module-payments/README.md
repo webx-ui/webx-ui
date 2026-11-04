@@ -63,6 +63,9 @@ $answer = $http->request()->post('https://gateway-a.test/api/status', ['order_id
 | `exchange.body_limit`                  | 1 MB                | bytes kept of one body, up to 16 MB  |
 | `exchange.warn_size`                   | 1 GB                | `webx:doctor` notes a bigger journal |
 | `http.timeout`, `http.connect_timeout` | 15, 5               | seconds of a gateway request         |
+| `groups`                               | three groups        | the groups of the buyer's list       |
+
+The groups of a site and official files of the marks: [Groups and marks](https://github.com/webx-ui/webx-ui/blob/main/apps/docs/guide/payments.md#groups-and-marks).
 
 ## License
 

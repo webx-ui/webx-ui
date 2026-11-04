@@ -165,6 +165,19 @@ final class CardType implements ChargesOnline, CancelsPayments
   manager must read — `GatewayRefused::because('…')`. Words, never the gateway's body: the body is in
   the journal.
 
+### The group and the marks
+
+An online type stands in the group `online` by itself. Two optional contracts say more:
+
+- **`Contracts\DeclaresGroup`** — `defaultGroup()`: a group of the config other than the one its kind
+  gives. A key the site does not have falls back to the usual choice, and `webx:doctor` names it.
+- **`Contracts\ProvidesPaymentMarks`** — `marks(Method $method)`: the keys of `PaymentMarks` this
+  method shows, read from its settings if they differ by method. A mark of your own is registered in
+  `boot()` through `callAfterResolving(PaymentMarks::class)`, with a file or without one, as a plate.
+
+The buyer's list and the panel read both; the [payments guide](./payments.md#groups-and-marks) has the
+rest.
+
 ## Notifications
 
 The gateway posts to `POST /payments/notify/{method}`. Before the satellite sees the request, the

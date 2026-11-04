@@ -37,13 +37,44 @@ final readonly class GroupForm
     public function describe(): array
     {
         return [
-            'groups' => array_map($this->row(...), $this->groups->all()),
+            'groups' => $this->rows(),
             'pictograms' => array_map(fn (string $name): array => [
                 'name' => $name,
                 // Through the view: a theme's own drawing of a pictogram is the one a manager picks.
                 'svg' => trim($this->views->make('webx-payments::icons.'.$name)->render()),
             ], MethodGroups::PICTOGRAMS),
         ];
+    }
+
+    /** @return list<array<string, mixed>> the groups of the site, in their order */
+    public function rows(): array
+    {
+        return array_map($this->row(...), $this->groups->all());
+    }
+
+    /**
+     * Every method of the panel's list under the group it stands in, the groups in their order and
+     * empty ones too: what `order()` takes, for a caller that changes only a part of it.
+     *
+     * @return array<string, list<PaymentMethod>>
+     */
+    public function layout(): array
+    {
+        $layout = [];
+
+        foreach ($this->groups->all() as $group) {
+            $layout[$group->key] = [];
+        }
+
+        foreach (PaymentMethod::query()->orderBy('position')->orderBy('id')->get() as $row) {
+            $key = $this->groups->current(Method::of($row), $this->types->has($row->type) ? $this->types->get($row->type) : null);
+
+            if ($key !== null) {
+                $layout[$key][] = $row;
+            }
+        }
+
+        return $layout;
     }
 
     /** @return array<string, mixed> */
