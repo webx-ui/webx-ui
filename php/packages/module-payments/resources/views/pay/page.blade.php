@@ -5,10 +5,10 @@
     with the reason and «Pay» with an online method, «Payment not completed» with «Pay again» when
     the buyer came back without beginning the payment, «The bank declined the card» with the reason,
     «Pay again» and «Check again» when the gateway keeps the payment open for another card, «Top up»
-    of a paid order that owes more, «Pay online now» of an order on receipt, the bank details of a
-    transfer. «Choose another method» opens every other method of the order wherever it is not paid
-    and nothing is being checked (`pay.others`). Nobody but the holder of the link reads it:
-    `noindex`, `no-store`.
+    of a paid order that owes more, the bank details of a transfer. «Choose another method» opens
+    every other method of the order wherever it is not paid and nothing is being checked
+    (`pay.others`); of an order on receipt it stands open as «Pay online now» if any is online.
+    Nobody but the holder of the link reads it: `noindex`, `no-store`.
 
     Override: <layer>/views/vendor/webx-payments/pay/page.blade.php.
     Classes: webx-payments-pay, __title, __amount, __message (+ --error), __form, __button, __link.
@@ -67,13 +67,6 @@
                 <p class="webx-payments-pay__message">{{ __('webx-payments::buyer.pay.on_receipt') }}</p>
                 @if ($page['switch'])
                     <p class="webx-payments-pay__amount">{{ __('webx-payments::buyer.pay.due', ['amount' => $page['due']]) }}</p>
-                    @foreach ($page['online'] as $option)
-                        <form class="webx-payments-pay__form" method="post" action="{{ $page['switch'] }}">
-                            @csrf
-                            <input type="hidden" name="method" value="{{ $option['key'] }}">
-                            <button class="webx-payments-pay__button" type="submit">{{ __('webx-payments::buyer.pay.online_now') }} — {{ $option['title'] }}</button>
-                        </form>
-                    @endforeach
                 @endif
                 @break
             @case('unfinished')
@@ -121,7 +114,11 @@
                 @endif
         @endswitch
 
-        @include('webx-payments::pay.others', ['others' => $page['others'], 'switch' => $page['switch']])
+        @include('webx-payments::pay.others', [
+            'others' => $page['others'],
+            'switch' => $page['switch'],
+            'toggle' => $page['state'] === 'on_receipt' && $page['online'] !== [] ? __('webx-payments::buyer.pay.online_now') : null,
+        ])
 
         @if ($page['state'] === 'declined' && $page['check'])
             <p><a class="webx-payments-pay__link" href="{{ $page['check'] }}">{{ __('webx-payments::buyer.pay.check_again') }}</a></p>

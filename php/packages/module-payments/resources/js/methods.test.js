@@ -296,6 +296,24 @@ describe('methods.js and Apple Pay', () => {
     expect(keys).toEqual(['card'])
   })
 
+  it('sends the method of a folded group with a form that goes to the server', () => {
+    const root = page(
+      grouped([
+        ['online', [apple, card]],
+        ['transfer', [cash]],
+      ]),
+    )
+    checkAll()
+
+    root.querySelector('input[value="online"]').checked = true
+    const form = root.closest('form')
+    const event = new Event('formdata', { bubbles: true })
+    event.formData = new Map()
+    form.dispatchEvent(event)
+
+    expect(event.formData.get('method')).toBe('card')
+  })
+
   describe('with the step', () => {
     const answer = () =>
       vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ summary: null }) })

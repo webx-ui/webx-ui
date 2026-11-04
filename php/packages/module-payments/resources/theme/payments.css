@@ -116,7 +116,8 @@
 }
 
 /* Named for a reader, and out of sight: the head right above says the same. */
-.webx-payments__group-legend {
+.webx-payments__group-legend,
+.webx-payments-others .webx-payments__methods-title {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -287,7 +288,9 @@
 
 /*
  * The way on from the page of payment and the order's page (§8.4, §8.5): «Pay», and every other
- * method of the order behind one button — `details`, so it opens without the script.
+ * method of the order behind one button — `details`, so it opens without the script. The button
+ * names the list, so the list's own title is for a screen reader alone. `__form` and `__choice`
+ * are of a theme's copy of the template from before the list.
  */
 .webx-payments-prompt {
   display: grid;
@@ -305,6 +308,7 @@
 }
 
 .webx-payments-prompt__button,
+.webx-payments-others__continue,
 .webx-payments-others__choice {
   justify-self: start;
   min-height: 44px;

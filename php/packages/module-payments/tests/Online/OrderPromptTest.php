@@ -84,10 +84,10 @@ final class OrderPromptTest extends OnlineCase
         $order = $this->onlineOrder();
 
         $this->get($this->payPage($order))
-            ->assertSee('value="'.OnReceipt::METHOD.'"', false)
-            ->assertSee('value="'.BankTransfer::METHOD.'"', false)
+            ->assertSee('data-method="'.OnReceipt::METHOD.'"', false)
+            ->assertSee('data-method="'.BankTransfer::METHOD.'"', false)
             ->assertSee('value="gateway-a-form"', false)
-            ->assertDontSee('name="method" value="gateway-a-card"', false);
+            ->assertDontSee('value="gateway-a-card"', false);
     }
 
     #[Test]
@@ -97,11 +97,11 @@ final class OrderPromptTest extends OnlineCase
         PaymentMethod::query()->where('key', OnReceipt::METHOD)->update(['delivery_rule' => json_encode(['mode' => 'on_hand'])]);
         $order->forceFill(['delivery' => ['method' => 'courier', 'type' => 'store.courier', 'carrier' => 'store', 'title' => ['en' => 'Courier'], 'price' => 0]])->save();
 
-        $this->get($this->payPage($order))->assertDontSee('value="'.OnReceipt::METHOD.'"', false)->assertSee('value="'.BankTransfer::METHOD.'"', false);
+        $this->get($this->payPage($order))->assertDontSee('data-method="'.OnReceipt::METHOD.'"', false)->assertSee('data-method="'.BankTransfer::METHOD.'"', false);
 
         $order->forceFill(['delivery' => ['method' => 'pickup', 'type' => 'store.pickup', 'carrier' => 'store', 'title' => ['en' => 'Pick-up'], 'price' => 0]])->save();
 
-        $this->get($this->payPage($order))->assertSee('value="'.OnReceipt::METHOD.'"', false);
+        $this->get($this->payPage($order))->assertSee('data-method="'.OnReceipt::METHOD.'"', false);
     }
 
     #[Test]

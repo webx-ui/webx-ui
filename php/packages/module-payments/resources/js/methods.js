@@ -148,6 +148,13 @@ if (typeof document !== 'undefined') {
   checkAll()
   new MutationObserver(checkAll).observe(document.body, { childList: true, subtree: true })
 
+  // A form that goes to the server: the head of a group folded here still says the group, whose
+  // first method on the server may be the one this device took away (§4.3, §6.4).
+  document.addEventListener('formdata', (event) => {
+    const head = event.target.querySelector(`${ROOT} input[data-method]:checked`)
+    if (head) event.formData.set('method', head.dataset.method)
+  })
+
   document.addEventListener('change', (event) => {
     const radio = event.target
     if (!(radio instanceof HTMLInputElement) || radio.type !== 'radio') return
