@@ -1,8 +1,9 @@
 // The payment step's script (payments spec §10.2), on top of a form that works without it: what
 // the list of methods chose (`methods.js`) is written at once with `PUT selection`, and the
 // checkout hears of it on `document` (`data-checkout-event`) to redraw its column. A single method,
-// shown chosen, is written once on load. The checkout redraws the whole step itself after the
-// delivery changes.
+// shown chosen, is written once on load. A key of null is the list dropping a choice this device
+// cannot pay with (groups spec §4.3): `DELETE selection`. The checkout redraws the whole step itself
+// after the delivery changes.
 
 const ROOT = '[data-webx-payments]'
 const LIST = '[data-webx-payments-methods]'
@@ -14,18 +15,19 @@ async function save(root, key) {
   root.classList.add('is-loading')
   try {
     const response = await fetch(root.getAttribute('data-selection'), {
-      method: 'PUT',
+      method: key === null ? 'DELETE' : 'PUT',
       credentials: 'same-origin',
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
         'X-CSRF-TOKEN': token(form),
       },
-      body: JSON.stringify({ method: key }),
+      body: key === null ? undefined : JSON.stringify({ method: key }),
     })
     const body = await response.json().catch(() => ({}))
     if (!response.ok) {
-      form.submit()
+      // A refused drop has no form to fall back on: nothing is chosen, and the page would only loop.
+      if (key !== null) form.submit()
       return
     }
     const event = root.getAttribute('data-checkout-event')
@@ -42,7 +44,10 @@ async function save(root, key) {
 function start(root) {
   if (root.classList.contains('is-live')) return
   root.classList.add('is-live')
-  root.addEventListener('webx:payments:method', (event) => save(root, event.detail.key))
+  root.addEventListener('webx:payments:method', (event) => {
+    delete event.target.dataset.owed
+    save(root, event.detail.key)
+  })
   // A site's copy of the step with its own radios has no list to speak for them.
   root.addEventListener('change', (event) => {
     const radio = event.target
@@ -51,9 +56,15 @@ function start(root) {
   })
   const single = root.querySelector('input[data-autosave]')
   if (single) save(root, single.value)
+  // What the list said before this script listened: the two run in either order.
+  const owed = root.querySelector(`${LIST}[data-owed]`)
+  if (owed) {
+    save(root, owed.dataset.owed || null)
+    delete owed.dataset.owed
+  }
 }
 
-function startAll() {
+export function startAll() {
   for (const root of document.querySelectorAll(ROOT)) start(root)
 }
 

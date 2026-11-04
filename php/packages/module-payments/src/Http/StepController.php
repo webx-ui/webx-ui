@@ -24,7 +24,9 @@ use WebxUi\Payments\Selections;
  * the client never sends. Without a cart — 404.
  *
  * `PUT selection` from the script answers JSON; a form without JavaScript goes back to the
- * checkout, the refusal under `payment` in the session, as Laravel answers any form.
+ * checkout, the refusal under `payment` in the session, as Laravel answers any form. `DELETE
+ * selection` is the script's alone: the chosen method cannot work on this device and its group has
+ * no other (groups spec §4.3).
  */
 final class StepController
 {
@@ -71,6 +73,16 @@ final class StepController
         if (! $request->expectsJson()) {
             return Redirect::to(url()->previous().'#'.self::ANCHOR);
         }
+
+        return $this->answer($request, $context, $this->slot->state($context));
+    }
+
+    public function destroy(Request $request): JsonResponse
+    {
+        $context = $this->context();
+
+        $this->selections->forget((int) $context->cart?->id);
+        $this->slot->forget($context);
 
         return $this->answer($request, $context, $this->slot->state($context));
     }

@@ -27,6 +27,7 @@ Route::group(['webx_service' => true], static function () use ($path): void {
             // The page «we are checking» asks here (§8.4): the attempt's row, the gateway at most every 15 s.
             Route::get('{uuid}/status', [PayController::class, 'status'])->where('uuid', '[0-9A-Za-z]{26}')->name('status');
             Route::put('selection', [StepController::class, 'update'])->middleware('throttle:webx-payments-write')->name('selection.update');
+            Route::delete('selection', [StepController::class, 'destroy'])->middleware('throttle:webx-payments-write')->name('selection.destroy');
         });
 
     // The step's script and the files of the marks: no session, cached forever — their addresses

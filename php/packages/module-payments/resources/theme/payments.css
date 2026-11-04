@@ -126,6 +126,7 @@
 }
 
 /* One method is one line: nothing to choose between, no radio to tick. */
+.webx-payments__groups.is-single .webx-payments__group-head,
 .webx-payments__groups.is-single .webx-payments__option {
   cursor: default;
 }

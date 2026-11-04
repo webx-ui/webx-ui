@@ -147,6 +147,79 @@ final class MethodsListTest extends PaymentsCheckoutCase
     }
 
     #[Test]
+    public function only_a_method_of_apple_pay_alone_says_so_on_its_row(): void
+    {
+        $this->marked('apple', 5, ['apple-pay']);
+        $this->marked('card', 6, ['visa', 'apple-pay']);
+        $this->marked('google', 7, ['google-pay']);
+        $page = $this->step();
+
+        $rows = $page->query('//*[@data-apple-pay-only]');
+        $this->assertSame(1, $rows->length);
+        $this->assertSame('apple', $this->one($page, './/input', $this->element($rows->item(0)))->getAttribute('value'));
+    }
+
+    #[Test]
+    public function the_row_of_a_group_of_one_says_so_on_its_head(): void
+    {
+        $this->marked('apple', 5, ['apple-pay']);
+        PaymentMethod::query()->where('key', 'apple')->firstOrFail()->update(['group_key' => 'online']);
+        $page = $this->step();
+
+        $head = $this->one($page, '//*[@data-apple-pay-only]');
+        $this->assertStringContainsString('webx-payments__group-head', $head->getAttribute('class'));
+        $this->assertSame('apple', $this->one($page, './/input', $head)->getAttribute('data-method'));
+    }
+
+    #[Test]
+    public function the_row_of_a_flat_list_says_so_too(): void
+    {
+        config()->set('webx-payments.groups', []);
+        $this->marked('apple', 5, ['apple-pay']);
+
+        $this->assertSame('apple', $this->one($this->step(), '//label[@data-apple-pay-only]//input')->getAttribute('value'));
+    }
+
+    #[Test]
+    public function the_server_knows_no_device_and_keeps_the_method_on_offer(): void
+    {
+        $this->marked('apple', 5, ['apple-pay']);
+        $this->context();
+
+        $this->visit($this->cart, '/api/payments/selection', ['_method' => 'PUT', 'method' => 'apple'], json: true)->assertOk()->assertJsonPath('selected', 'apple');
+    }
+
+    #[Test]
+    public function a_choice_is_dropped_and_the_step_is_not_ready_as_on_first_opening(): void
+    {
+        $this->marked('apple', 5, ['apple-pay']);
+        $this->context();
+        $this->visit($this->cart, '/api/payments/selection', ['_method' => 'PUT', 'method' => 'apple'], json: true)->assertOk();
+
+        $this->visit($this->cart, '/api/payments/selection', ['_method' => 'DELETE'], json: true)
+            ->assertOk()
+            ->assertJsonPath('selected', null)
+            ->assertJsonPath('summary', null);
+
+        $this->assertSame(0, PaymentSelection::query()->where('cart_id', $this->cart->cart->id)->count());
+        $this->assertSame(0, $this->step()->query('//input[@checked]')->length);
+    }
+
+    #[Test]
+    public function dropping_a_choice_with_nothing_chosen_changes_nothing(): void
+    {
+        $this->context();
+
+        $this->visit($this->cart, '/api/payments/selection', ['_method' => 'DELETE'], json: true)->assertOk()->assertJsonPath('selected', null);
+    }
+
+    #[Test]
+    public function without_a_cart_there_is_nothing_to_drop(): void
+    {
+        $this->deleteJson(route('webx-payments.selection.destroy'))->assertNotFound();
+    }
+
+    #[Test]
     public function a_method_of_the_group_is_taken_and_any_other_means_the_groups_first(): void
     {
         $this->marked('card', 5);
@@ -263,6 +336,13 @@ final class MethodsListTest extends PaymentsCheckoutCase
         @$document->loadHTML('<?xml encoding="UTF-8">'.$html);
 
         return new DOMXPath($document);
+    }
+
+    private function element(?DOMNode $node): DOMElement
+    {
+        $this->assertInstanceOf(DOMElement::class, $node);
+
+        return $node;
     }
 
     private function one(DOMXPath $page, string $path, ?DOMElement $in = null): DOMElement
