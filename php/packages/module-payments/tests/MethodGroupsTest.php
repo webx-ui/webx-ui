@@ -269,6 +269,18 @@ final class MethodGroupsTest extends TestCase
     }
 
     #[Test]
+    public function the_step_pays_no_query_for_the_groups_on_a_warm_cache(): void
+    {
+        PaymentMethod::query()->where('key', BankTransfer::METHOD)->update(['enabled' => true]);
+        $context = new PaymentContext(4999, 'EUR', 'en', null, Purpose::Checkout);
+        $this->methods()->grouped($this->methods()->available($context));
+
+        $views = $this->assertQueriesWithin(0, fn (): array => $this->methods()->grouped($this->methods()->available($context)));
+
+        $this->assertSame([[BankTransfer::METHOD]], $this->optionKeys($views));
+    }
+
+    #[Test]
     public function an_edit_is_seen_at_once(): void
     {
         $row = PaymentGroup::query()->create(['key' => 'online', 'title' => ['en' => 'Before']]);
