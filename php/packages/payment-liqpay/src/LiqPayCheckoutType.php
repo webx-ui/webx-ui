@@ -4,16 +4,19 @@ declare(strict_types=1);
 
 namespace WebxUi\Payment\LiqPay;
 
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
 use Symfony\Component\HttpFoundation\Response;
 use WebxUi\Payment\LiqPay\Api\Answer;
+use WebxUi\Payment\LiqPay\Api\Client;
 use WebxUi\Payment\LiqPay\Api\Signature;
 use WebxUi\Payment\LiqPay\Api\Statuses;
 use WebxUi\Payments\Availability;
 use WebxUi\Payments\Contracts\ChargesOnline;
 use WebxUi\Payments\Contracts\ValidatesSettings;
 use WebxUi\Payments\Credentials;
+use WebxUi\Payments\GatewayAmount;
 use WebxUi\Payments\GatewayHttp;
 use WebxUi\Payments\GatewayStatus;
 use WebxUi\Payments\GatewayUnavailable;
@@ -26,6 +29,7 @@ use WebxUi\Payments\Notification;
 use WebxUi\Payments\PaymentContext;
 use WebxUi\Payments\PaymentSnapshot;
 use WebxUi\Payments\Presentation;
+use WebxUi\Payments\Reported;
 use WebxUi\Payments\StartNeeds;
 use WebxUi\Payments\StartRequest;
 use WebxUi\Payments\Words;
@@ -34,8 +38,7 @@ use WebxUi\Payments\Words;
  * `liqpay.checkout` — the page of LiqPay (spec §6). One type, any number of methods: what the page
  * offers is the method's seven switches, each with its own keys (decisions 3, 15).
  *
- * The talk with LiqPay comes by the stages of the plan (§19): the page and the poll with stage 3,
- * the hold with stage 4. Until then those calls refuse.
+ * The hold comes with stage 4 of the plan (§19): until then the base draws no switch for it.
  */
 final class LiqPayCheckoutType implements ChargesOnline, ValidatesSettings
 {
@@ -62,8 +65,6 @@ final class LiqPayCheckoutType implements ChargesOnline, ValidatesSettings
      * of a refund is not known, and it has to reach the poke (§3.3).
      */
     private const array NOT_PAYMENTS = ['subscribe', 'unsubscribe', 'regular', 'recurring', 'recurringbytoken'];
-
-    private const string NOT_YET = 'The payments of LiqPay are not there yet';
 
     public function key(): string
     {
@@ -117,7 +118,7 @@ final class LiqPayCheckoutType implements ChargesOnline, ValidatesSettings
             return [];
         }
 
-        $on = array_filter(self::PAYTYPES, static fn (array $paytype, string $name): bool => (bool) ($settings[$name] ?? $paytype[1]), ARRAY_FILTER_USE_BOTH);
+        $on = self::paytypes($settings);
 
         if ($on === []) {
             return ['pay_card' => LiqPayGateway::line('paytypes.hold_needs_choice')];
@@ -132,6 +133,37 @@ final class LiqPayCheckoutType implements ChargesOnline, ValidatesSettings
         }
 
         return $refused;
+    }
+
+    /**
+     * What is switched on, in the order of the table: a switch never saved keeps its default.
+     *
+     * @param  array<string, mixed>  $settings
+     * @return array<string, string> field => value of `paytypes`
+     */
+    private static function paytypes(array $settings): array
+    {
+        $on = [];
+
+        foreach (self::PAYTYPES as $name => [$paytype, $default]) {
+            if ($settings[$name] ?? $default) {
+                $on[$name] = $paytype;
+            }
+        }
+
+        return $on;
+    }
+
+    /** The page speaks Ukrainian and English only: `ru` would silently give Ukrainian (§5.2). */
+    private static function language(Method $method, string $locale): string
+    {
+        $language = $method->settings['language'] ?? 'auto';
+
+        if ($language === 'uk' || $language === 'en') {
+            return $language;
+        }
+
+        return $locale === 'uk' ? 'uk' : 'en';
     }
 
     /** @return list<string> PLN and the rest are refused with `err_wrong_currency` (§3.2) */
@@ -169,14 +201,53 @@ final class LiqPayCheckoutType implements ChargesOnline, ValidatesSettings
         return true;
     }
 
+    /**
+     * Only signs the form: LiqPay hears of the payment when the buyer sends the card, so there is
+     * no request here and no `payment_id` yet (§7). The term goes always: without it a forgotten
+     * payment has no end (decision 13).
+     */
     public function start(Method $method, Credentials $credentials, StartRequest $request, GatewayHttp $http): Handoff
     {
-        throw GatewayUnavailable::because(self::NOT_YET);
+        $expiresAt = $request->expiresAt ?? CarbonImmutable::now()->addMinutes(LiqPayGateway::EXPIRES_MINUTES);
+        $paytypes = self::paytypes($method->settings);
+
+        $fields = [
+            'amount' => GatewayAmount::toDecimal($request->amount, $request->currency),
+            'currency' => $request->currency,
+            'description' => $request->description,
+            'order_id' => $request->uuid,
+            'result_url' => $request->returnUrl,
+            'server_url' => $request->notifyUrl,
+            'language' => self::language($method, $request->locale),
+            'expired_date' => $expiresAt->setTimezone('UTC')->format('Y-m-d H:i:s'),
+        ];
+
+        if ($paytypes !== []) {
+            $fields['paytypes'] = implode(',', $paytypes);
+        }
+
+        $form = Client::for($http, Keys::of($method, $credentials))->form($request->hold ? 'hold' : 'pay', $fields);
+
+        return Handoff::post((string) config('webx-payment-liqpay.checkout_url'), $form, null, $expiresAt);
     }
 
+    /**
+     * A failed request and a payment look alike, `payment_id` tells them apart (§9.1). No such
+     * payment is the buyer who has not sent a card: the attempt stays open until its term (§9.3).
+     */
     public function fetchStatus(Method $method, Credentials $credentials, Payment $payment, GatewayHttp $http): GatewayStatus
     {
-        throw GatewayUnavailable::because(self::NOT_YET);
+        $answer = Client::for($http, Keys::of($method, $credentials))->call('status', ['order_id' => $payment->uuid]);
+
+        if ($answer->isPayment()) {
+            return Statuses::read($answer, $payment->status);
+        }
+
+        if ($answer->errorCode() === 'payment_not_found') {
+            return new GatewayStatus(Reported::Pending, notStarted: true);
+        }
+
+        throw GatewayUnavailable::because(Statuses::wordOf($answer->errorCode()) ?? LiqPayGateway::word('connection.no_answer'));
     }
 
     /**

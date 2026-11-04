@@ -15,17 +15,28 @@ use WebxUi\Payments\Method;
  */
 final readonly class Keys
 {
+    private const string SANDBOX = 'sandbox_';
+
     private function __construct(
         public string $mode,
         public ?string $publicKey,
         private Credentials $credentials,
     ) {}
 
-    /** Anything but `live` is `test`: a broken setting must not end up taking real money. */
     public static function of(Method $method, Credentials $credentials): self
     {
-        $mode = ($method->settings['mode'] ?? null) === 'live' ? 'live' : 'test';
-        $public = $method->settings[$mode.'_public_key'] ?? null;
+        return self::from($method->settings, $credentials);
+    }
+
+    /**
+     * Anything but `live` is `test`: a broken setting must not end up taking real money.
+     *
+     * @param  array<string, mixed>  $settings
+     */
+    public static function from(array $settings, Credentials $credentials): self
+    {
+        $mode = ($settings['mode'] ?? null) === 'live' ? 'live' : 'test';
+        $public = $settings[$mode.'_public_key'] ?? null;
 
         return new self($mode, is_string($public) && $public !== '' ? $public : null, $credentials);
     }
@@ -33,5 +44,19 @@ final readonly class Keys
     public function privateKey(): ?string
     {
         return $this->credentials->get($this->mode.'_private_key');
+    }
+
+    public function complete(): bool
+    {
+        return $this->publicKey !== null && $this->privateKey() !== null;
+    }
+
+    /** Live keys in the test mode would be real money where a manager does not expect it (§5.3). */
+    public function fitTheMode(): bool
+    {
+        $sandbox = $this->mode === 'test';
+
+        return str_starts_with((string) $this->publicKey, self::SANDBOX) === $sandbox
+            && str_starts_with((string) $this->privateKey(), self::SANDBOX) === $sandbox;
     }
 }

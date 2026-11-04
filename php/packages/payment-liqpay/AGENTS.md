@@ -6,9 +6,9 @@ LiqPay, a payment gateway of Ukraine, for `webx-ui/module-payments`. The package
 first. This package has no tables, routes, screens, MCP tools or npm package of its own.
 
 **Being built by stages** (§19 of the spec). There now: the registration, the fields, the words, the
-migration, the signature, the client and `readNotification()`. `start()`, `fetchStatus()` and
-`testConnection()` refuse until their stages land, and the type is not `CapturesPayments` yet, so
-the hold switch is not drawn. A `reversed` notification asks `fetchStatus()`, so it answers 500 until then.
+migration, the signature, the notification, the page, the poll and «Test the connection». The type is
+not `CapturesPayments` yet, so the hold switch is not drawn and `validateSettings()` has nothing to
+refuse through the panel.
 
 ## What it owns
 
@@ -27,8 +27,15 @@ hold`, and `validateSettings()` refuses the pair on the server. It also refuses 
 - **Signature** `Api\Signature`: `version` decides the algorithm of our requests, and a notification
   passes with SHA3-256 or SHA1 until a live one shows which LiqPay uses. It covers the string `data`
   as it came, never the decoded JSON. Only the key of the method's mode counts (`Keys`).
-- **Statuses** `Api\Statuses`: the table of §9.2. `reversed` and `refund_amount` are a poke, because
-  their meaning depends on the attempt. `try_again` is Pending; `wait_accept` is Paid with a reason.
+- **The page** `start()`: signs the form and asks LiqPay nothing, so no `out/start` and no `gatewayRef`.
+  `order_id` is our uuid of the attempt. `expired_date` goes always, 60 minutes when the method is silent.
+- **Statuses** `Api\Statuses`: the table of §9.2. In a notification `reversed` and `refund_amount` are a
+  poke, because their meaning depends on the attempt: `fetchStatus()` sees it, `Cancelled` at
+  `authorized` and `Refunded` elsewhere. `try_again` is Pending everywhere, `wait_accept` is Paid with a
+  reason, and an answer without `payment_id` is a failed request, not a payment. `payment_not_found`
+  is Pending with `notStarted`: the buyer has not sent a card, a late `success` still counts.
+- **Test the connection** `testConnection()`: `status` of a random uuid, `payment_not_found` means both
+  keys are right. Keys of the other mode (`sandbox_` prefix) are refused without a request.
 - **Fixtures** `tests/Fixtures`: `api/` and `browser/` were recorded on the sandbox, `notify/` is
   emulated. `FixturesAreScrubbedTest` keeps real keys, cards and phones out.
 - **Migration**: the method `liqpay-checkout`, switched off, no title of its own. A second run adds
@@ -65,6 +72,7 @@ None of its own. The method, its keys and «Test the connection» are behind the
 
 - `vendor/bin/phpunit packages/payment-liqpay/tests` from `php/` of the monorepo.
 - «Payments → Methods» in the panel shows LiqPay, switched off, with a warning that it has no keys.
+- With sandbox keys «Test the connection» succeeds, and a test card on the page ends paid by the poll.
 - `php artisan migrate:rollback` removes a method without attempts and leaves one that has them.
 
 ## Read more

@@ -23,15 +23,12 @@ use WebxUi\Payments\Testing\GatewayContract;
 /**
  * The contract of a satellite (base §21.3) on the recorded answers (spec §17.2).
  *
- * Stage 2 of the plan owns the signature and the repeat. What needs `start()` or `fetchStatus()` is
- * skipped by name below: stage 3 removes these overrides, and the hold comes with stage 4.
+ * The hold comes with stage 4 of the plan (§19): until then the trait skips its test by itself.
  */
 final class GatewayContractTest extends TestCase
 {
     use GatewayContract;
     use Recorded;
-
-    private const string LATER = 'Needs start() and fetchStatus(): stage 3 of the plan (§19).';
 
     private PromiseInterface $next;
 
@@ -104,36 +101,6 @@ final class GatewayContractTest extends TestCase
 
             $this->assertSame($reported, $read->status?->status, $status);
         }
-    }
-
-    #[Test]
-    public function every_request_goes_through_gateway_http_and_no_key_reaches_the_journal(): void
-    {
-        $this->markTestSkipped(self::LATER);
-    }
-
-    #[Test]
-    public function the_handoff_carries_no_card_and_start_takes_no_more_than_it_needs(): void
-    {
-        $this->markTestSkipped(self::LATER);
-    }
-
-    #[Test]
-    public function the_gateways_statuses_map_by_its_table_and_an_unknown_one_is_pending(): void
-    {
-        $this->markTestSkipped(self::LATER);
-    }
-
-    #[Test]
-    public function amounts_go_to_the_gateway_and_back_without_a_float(): void
-    {
-        $this->markTestSkipped(self::LATER);
-    }
-
-    #[Test]
-    public function an_error_of_the_gateway_is_words_for_the_panel_without_its_body(): void
-    {
-        $this->markTestSkipped(self::LATER);
     }
 
     /**

@@ -203,6 +203,94 @@ final class JournalTest extends PaymentsCheckoutCase
     }
 
     #[Test]
+    public function the_buyer_goes_to_the_page_with_a_signed_form_and_no_private_key_in_the_journal(): void
+    {
+        [, $payment] = $this->openAttempt();
+        $payment->forceFill(['status' => 'created'])->save();
+
+        $page = $this->get($this->app->make(PaymentLinks::class)->go($payment))->assertOk();
+
+        $payment->refresh();
+        $this->assertSame(PaymentStatus::Pending, $payment->status);
+        $this->assertNotNull($payment->expires_at, 'The term goes always, and the poll closes the attempt by it.');
+        $this->assertStringContainsString('https://www.liqpay.ua/api/3/checkout', (string) $page->getContent());
+
+        $event = PaymentGatewayEvent::query()->where('kind', 'handoff')->sole();
+        $this->assertSame('browser', $event->direction);
+        $this->assertStringContainsString('name="signature"', (string) $event->response_body);
+        $this->assertSame(0, PaymentGatewayEvent::query()->where('kind', 'start')->count(), 'start() asks LiqPay nothing.');
+        $this->assertNoPrivateKeyInTheJournal();
+    }
+
+    #[Test]
+    public function a_return_with_no_parameters_finds_the_payment_by_asking(): void
+    {
+        [, $payment] = $this->openAttempt();
+        Http::fake(['www.liqpay.ua/*' => Http::response([
+            ...self::fixture('api/page.success.status-after-return')['response']['json'],
+            'order_id' => $payment->uuid,
+            'amount' => 49.99,
+            'currency' => 'EUR',
+        ])]);
+
+        $this->get($this->app->make(PaymentLinks::class)->returnUrl($payment))->assertRedirect();
+
+        $this->assertSame(PaymentStatus::Paid, $payment->refresh()->status);
+        $this->assertSame(1, PaymentGatewayEvent::query()->where(['direction' => 'out', 'kind' => 'status'])->count());
+    }
+
+    #[Test]
+    public function a_buyer_back_without_paying_leaves_the_attempt_open_and_marked(): void
+    {
+        [, $payment] = $this->openAttempt();
+        Http::fake(['www.liqpay.ua/*' => Http::response(self::fixture('api/checkout.status-before-paying')['response']['json'])]);
+
+        $this->get($this->app->make(PaymentLinks::class)->returnUrl($payment))->assertRedirect();
+
+        $payment->refresh();
+        $this->assertSame(PaymentStatus::Pending, $payment->status);
+        $this->assertTrue($payment->notStarted());
+    }
+
+    #[Test]
+    public function a_refusal_with_try_again_keeps_the_attempt_open_and_says_why_in_the_journal(): void
+    {
+        [, $payment] = $this->openAttempt();
+        Http::fake(['www.liqpay.ua/*' => Http::response([
+            ...self::fixture('api/page.decline.status-after-return')['response']['json'],
+            'order_id' => $payment->uuid,
+        ])]);
+
+        $this->get($this->app->make(PaymentLinks::class)->returnUrl($payment))->assertRedirect();
+
+        $payment->refresh();
+        $this->assertSame(PaymentStatus::Pending, $payment->status);
+        $this->assertFalse($payment->notStarted());
+    }
+
+    #[Test]
+    public function a_reversed_notification_asks_and_the_answer_decides(): void
+    {
+        [, $payment] = $this->openAttempt();
+        $paid = $this->paid($payment);
+        $this->notify(self::body($paid, self::signed($paid)))->assertOk();
+        Http::fake(['www.liqpay.ua/*' => Http::response([
+            ...self::fixture('api/late.refund-after-rest')['response']['json'],
+            'order_id' => $payment->uuid,
+            'amount' => 49.99,
+            'refund_amount' => 49.99,
+            'currency' => 'EUR',
+        ])]);
+
+        $data = self::dataOf('reversed', ['order_id' => $payment->uuid]);
+        $this->notify(self::body($data, self::signed($data)))->assertOk();
+
+        $payment->refresh();
+        $this->assertSame(PaymentStatus::Paid, $payment->status);
+        $this->assertSame(4999, $payment->refunded_amount);
+    }
+
+    #[Test]
     public function the_dates_of_an_answer_stay_and_a_card_number_beside_them_does_not(): void
     {
         $answer = [

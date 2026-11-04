@@ -9,13 +9,14 @@ use Illuminate\Support\Facades\Lang;
 use WebxUi\Payment\LiqPay\LiqPayGateway;
 use WebxUi\Payments\GatewayAmount;
 use WebxUi\Payments\GatewayStatus;
+use WebxUi\Payments\PaymentStatus;
 use WebxUi\Payments\Reported;
 
 /**
  * The statuses of LiqPay in the base's terms (spec §9.2).
  *
  * `reversed` means another thing at an attempt on hold, and only `fetchStatus()` sees the attempt:
- * a notification never reaches this table with it (§8.3).
+ * a notification never reaches this table with it (§8.3). The table says what it is everywhere else.
  */
 final class Statuses
 {
@@ -58,13 +59,14 @@ final class Statuses
     /** The fields of `meta` (§9.1). The base does not read them yet, so nothing leans on them. */
     private const array META = ['paytype', 'sender_card_mask2', 'sender_card_type', 'is_3ds', 'receiver_commission'];
 
-    public static function read(Answer $answer): GatewayStatus
+    /** @param  PaymentStatus|null  $attempt  what the attempt is now; a notification does not know (§8.3) */
+    public static function read(Answer $answer, ?PaymentStatus $attempt = null): GatewayStatus
     {
         $status = (string) $answer->status();
         $currency = $answer->text('currency');
 
         return new GatewayStatus(
-            status: self::reported($status, $answer),
+            status: self::reported($status, $answer, $attempt),
             gatewayRef: $answer->paymentId(),
             amount: self::minor($answer->fields['amount'] ?? null, $currency),
             currency: $currency,
@@ -78,10 +80,18 @@ final class Statuses
         );
     }
 
-    private static function reported(string $status, Answer $answer): Reported
+    private static function reported(string $status, Answer $answer, ?PaymentStatus $attempt): Reported
     {
         if ($status === 'failure' && $answer->errorCode() === 'expired') {
             return Reported::Expired;
+        }
+
+        if ($status === 'reversed' && $attempt === PaymentStatus::Authorized) {
+            return Reported::Cancelled;
+        }
+
+        if ($status === 'success' && $attempt === PaymentStatus::Paid && (float) ($answer->fields['refund_amount'] ?? 0) > 0) {
+            return Reported::Refunded;
         }
 
         return self::TABLE[$status] ?? Reported::Pending;
@@ -116,13 +126,17 @@ final class Statuses
             return LiqPayGateway::word('status.'.$status);
         }
 
-        $code = $answer->errorCode();
+        return self::wordOf($answer->errorCode()) ?? $answer->text('err_description');
+    }
 
+    /** The dictionary's word for a code of LiqPay, if it has one. */
+    public static function wordOf(?string $code): ?string
+    {
         // A code with a dot would read another branch of the dictionary.
         if ($code !== null && preg_match('/^\w+$/', $code) === 1 && Lang::has(LiqPayGateway::line('errors.'.$code))) {
             return LiqPayGateway::word('errors.'.$code);
         }
 
-        return $answer->text('err_description');
+        return null;
     }
 }
