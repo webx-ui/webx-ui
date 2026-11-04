@@ -163,6 +163,20 @@ describe('checkout.js', () => {
     expect(root.querySelector('#checkout-summary dd').textContent).toBe('€15.00')
   })
 
+  it('redraws the step of a slot that changed by itself, and only when it asks', async () => {
+    const root = page('open')
+    vi.spyOn(server, 'fetch').mockResolvedValue(markup('open', { payable: '€15.00' }))
+
+    const payment = root.querySelector('[data-step="payment"]')
+    emit(doc, 'webx:checkout:slot-changed', { slot: 'payment', redraw: false })
+    await flush()
+    expect(root.querySelector('[data-step="payment"]')).toBe(payment)
+
+    emit(doc, 'webx:checkout:slot-changed', { slot: 'payment', redraw: true })
+    await flush()
+    expect(root.querySelector('[data-step="payment"]')).not.toBe(payment)
+  })
+
   describe('«Place the order» with a step left unsaved', () => {
     // The page of the press: «Contacts» filled by the account, never saved — not done.
     const pressPage = (contacts = 'is-open') => {

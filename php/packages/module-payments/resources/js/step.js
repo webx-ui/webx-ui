@@ -10,7 +10,8 @@ const LIST = '[data-webx-payments-methods]'
 
 const token = (form) => form.querySelector('input[name="_token"]')?.value ?? ''
 
-async function save(root, key) {
+/** `redraw`: the buyer did not do this, so a step folded on the old choice has to follow it. */
+async function save(root, key, redraw = false) {
   const form = root.querySelector('form')
   root.classList.add('is-loading')
   try {
@@ -33,7 +34,9 @@ async function save(root, key) {
     const event = root.getAttribute('data-checkout-event')
     if (event) {
       document.dispatchEvent(
-        new CustomEvent(event, { detail: { slot: 'payment', summary: body.summary ?? null } }),
+        new CustomEvent(event, {
+          detail: { slot: 'payment', summary: body.summary ?? null, redraw },
+        }),
       )
     }
   } finally {
@@ -45,8 +48,9 @@ function start(root) {
   if (root.classList.contains('is-live')) return
   root.classList.add('is-live')
   root.addEventListener('webx:payments:method', (event) => {
+    const owed = 'owed' in event.target.dataset
     delete event.target.dataset.owed
-    save(root, event.detail.key)
+    save(root, event.detail.key, owed)
   })
   // A site's copy of the step with its own radios has no list to speak for them.
   root.addEventListener('change', (event) => {
@@ -59,7 +63,7 @@ function start(root) {
   // What the list said before this script listened: the two run in either order.
   const owed = root.querySelector(`${LIST}[data-owed]`)
   if (owed) {
-    save(root, owed.dataset.owed || null)
+    save(root, owed.dataset.owed || null, true)
     delete owed.dataset.owed
   }
 }

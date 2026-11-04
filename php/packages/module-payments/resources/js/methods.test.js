@@ -361,6 +361,48 @@ describe('methods.js and Apple Pay', () => {
       expect(fetch.mock.calls[0][1].body).toBe(JSON.stringify({ method: 'card' }))
     })
 
+    it('asks the checkout to redraw the step: a folded one still says the lost method', async () => {
+      const heard = []
+      const listen = (event) => heard.push(event.detail)
+      document.addEventListener('webx:checkout:slot-changed', listen)
+      lostChoice()
+      document
+        .querySelector('[data-webx-payments]')
+        .setAttribute('data-checkout-event', 'webx:checkout:slot-changed')
+
+      checkAll()
+      startAll()
+      await new Promise((resolve) => setTimeout(resolve))
+      document.removeEventListener('webx:checkout:slot-changed', listen)
+
+      expect(heard).toEqual([{ slot: 'payment', summary: null, redraw: true }])
+    })
+
+    it('leaves the step alone when the buyer chose', async () => {
+      const heard = []
+      const listen = (event) => heard.push(event.detail)
+      document.addEventListener('webx:checkout:slot-changed', listen)
+      const root = page(
+        grouped([
+          ['online', [card, google]],
+          ['receipt', [cash]],
+        ]),
+      )
+      document
+        .querySelector('[data-webx-payments]')
+        .setAttribute('data-checkout-event', 'webx:checkout:slot-changed')
+      checkAll()
+      startAll()
+
+      const head = root.querySelector('input[name="group"]')
+      head.checked = true
+      head.dispatchEvent(new Event('change', { bubbles: true }))
+      await new Promise((resolve) => setTimeout(resolve))
+      document.removeEventListener('webx:checkout:slot-changed', listen)
+
+      expect(heard).toEqual([{ slot: 'payment', summary: null, redraw: false }])
+    })
+
     it('does not fall back on the form when a drop is refused', async () => {
       vi.stubGlobal(
         'fetch',
