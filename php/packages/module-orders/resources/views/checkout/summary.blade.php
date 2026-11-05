@@ -8,7 +8,7 @@
     out, «at carrier rates» — then not in the amount to pay — or «choose a method».
 
     Classes: webx-orders-checkout__summary, __summary-title, __row, __row--discount,
-    __row--delivery, __was, __lines, __line, __change, __benefit, __hint, __payable, __carrier,
+    __row--delivery, __was, __lines, __line, __line-link, __change, __benefit, __hint, __payable, __carrier,
     __place, __terms, __honeypot.
 --}}
 <div class="webx-orders-checkout__summary" id="checkout-summary">
@@ -76,7 +76,7 @@
         <ul>
             @foreach ($lines as $line)
                 <li class="webx-orders-checkout__line">
-                    <span>{{ $line['name'] }} × {{ $line['qty'] }}</span>
+                    <span>@if (($line['url'] ?? null) !== null)<a class="webx-orders-checkout__line-link" href="{{ $line['url'] }}">{{ $line['name'] }}</a>@else{{ $line['name'] }}@endif × {{ $line['qty'] }}</span>
                     <span>{{ $line['line_total_formatted'] }}</span>
                     @if ($line['price_change'] !== null)
                         <span class="webx-orders-checkout__change">{{ __('webx-orders::checkout.summary.price-'.$line['price_change']) }}</span>

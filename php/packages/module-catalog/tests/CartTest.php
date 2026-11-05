@@ -93,6 +93,24 @@ final class CartTest extends TestCase
     }
 
     #[Test]
+    public function only_a_product_with_a_page_has_an_address(): void
+    {
+        $this->useLocales('en', 'pl');
+        $tools = $this->category('tools');
+        $live = $this->product('Live', $tools, ['price' => '10.00']);
+        $unpublished = $this->product('Unpublished', $tools, ['price' => '10.00', 'is_published' => false]);
+        $uncategorised = $this->product('Uncategorised', null, ['price' => '10.00']);
+
+        $lines = $this->resolve([$live->id, $unpublished->id, $uncategorised->id]);
+
+        $this->assertSame($live->url('en'), $lines[$live->id]?->url);
+        $this->assertNull($lines[$unpublished->id]?->url);
+        $this->assertNull($lines[$uncategorised->id]?->url);
+        // Written in English only: the Polish site has no such page.
+        $this->assertNull($this->resolve([$live->id], 'pl')[$live->id]?->url);
+    }
+
+    #[Test]
     public function the_panel_finds_a_product_by_name_or_article_number_the_unbuyable_marked(): void
     {
         $tools = $this->category('tools');
