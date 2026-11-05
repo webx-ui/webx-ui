@@ -58,7 +58,7 @@
         "webx": {
             "module": "catalog-feeds",
             "npm": {
-                "@webx-ui/module-catalog-feeds": "^0.1.0"
+                "@webx-ui/module-catalog-feeds": "^0.0.0"
             },
             "panel": {
                 "import": "import { catalogFeeds } from '@webx-ui/module-catalog-feeds'",

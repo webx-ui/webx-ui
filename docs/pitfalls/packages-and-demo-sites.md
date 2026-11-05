@@ -204,6 +204,10 @@ webx-ui/<пакет>` из `php/`. Проверка — `grep helpers.php vendor
   звать новую библиотеку: `vendor/webx-ui/*` — ссылки, код уже новый, а автозагрузка сайта о библиотеке
   не знает, поэтому падает любой `artisan`. Лечение — `composer update 'webx-ui/*'` на сайте до первого
   `artisan`; `refresh` так и делает. Проверка — `/` и `/cms` отвечают 200.
+- **`refresh` падает на `webx:doctor`: «node_modules has @webx-ui/<пакет>@0.0.0, below the ^0.1.0».**
+  У нового npm-пакета в чекауте версия `0.0.0`, а `extra.webx.npm` composer-половины заранее просит
+  первую версию. До релиза там должно стоять `^0.0.0`: `scripts/sync-npm-pairs.mjs` сам перепишет
+  диапазон в коммите версий. Проверка — `refresh` печатает «refreshed in».
 - `create` — достроить недостающее (скелет, `site create webx-lab webx`, `webx:setup --modules=all`,
   типы блоков, демо) и `refresh`; повторный запуск ничего не пересоздаёт.
 - `refresh` — после правок здесь: `pnpm --filter … build` пакетов, чьи исходники новее `dist`;
