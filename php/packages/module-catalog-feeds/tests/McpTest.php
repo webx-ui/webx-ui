@@ -20,6 +20,7 @@ use WebxUi\Catalog\Tests\Fixtures\Shop;
 use WebxUi\Catalog\Variables\StockStatuses;
 use WebxUi\CatalogBrands\BrandsServiceProvider;
 use WebxUi\CatalogFeeds\Build\BuildFeed;
+use WebxUi\CatalogFeeds\Http\FeedForm;
 use WebxUi\CatalogFeeds\Models\Feed;
 use WebxUi\CatalogFeeds\Models\FeedBuild;
 use WebxUi\CatalogFeeds\Models\Taxonomy;
@@ -117,6 +118,69 @@ final class McpTest extends TestCase
         $rules = ($resources['catalog://feed-rules']->handler)();
         $this->assertArrayHasKey('escaping', $rules['rules']);
         $this->assertContains('brand', array_column($rules['facets'], 'key'));
+    }
+
+    /** The description of `values` sends an agent to the rules for every field, so each has to be there. */
+    #[Test]
+    public function the_rules_say_what_every_field_of_a_feed_holds(): void
+    {
+        $said = implode("\n", $this->rules()['rules']);
+
+        foreach ([...FeedForm::FIELDS, 'currency'] as $field) {
+            $this->assertMatchesRegularExpression('/`'.$field.'[`.]/', $said, $field);
+        }
+
+        foreach ([...Feed::SCHEDULES, 'delimiter', 'description', 'default_availability'] as $value) {
+            $this->assertStringContainsString("`{$value}`", $said);
+        }
+    }
+
+    #[Test]
+    public function what_the_rules_say_of_schedules_and_options_is_accepted(): void
+    {
+        foreach (Feed::SCHEDULES as $schedule) {
+            $this->agent('catalog_feeds_create', ['preset' => 'google', 'dry_run' => true, 'values' => ['schedule' => $schedule]])->assertHasNoErrors();
+        }
+
+        $feed = $this->content($this->agent('catalog_feeds_create', ['preset' => 'google', 'values' => [
+            'schedule' => 'daily',
+            'schedule_at' => '06:30',
+            'rebuild_on_change' => true,
+            'taxonomy' => 'google',
+            'options' => ['description' => 'Spare parts', 'default_availability' => 'out_of_stock'],
+        ]]))['feed'];
+
+        $this->assertSame('06:30', $feed['schedule_at']);
+        $this->assertTrue($feed['rebuild_on_change']);
+        $this->assertSame('Spare parts', $feed['options']['description']);
+    }
+
+    /** Read the way an agent reads it: from the JSON, with the numbers as keys of an object. */
+    #[Test]
+    public function the_label_sources_of_the_rules_are_accepted_as_they_are_written(): void
+    {
+        $rules = json_decode((string) json_encode($this->rules(), JSON_THROW_ON_ERROR), true, 512, JSON_THROW_ON_ERROR);
+        $example = $rules['label_example'];
+        $said = $rules['rules']['labels'];
+
+        $this->assertEqualsCanonicalizing($rules['label_sources'], array_column($example, 'type'));
+
+        foreach ($example as $number => $source) {
+            $this->agent('catalog_feeds_create', ['preset' => 'google', 'dry_run' => true, 'values' => ['custom_labels' => [$number => $source]]])
+                ->assertHasNoErrors();
+
+            // The words have to name what the example sends, or one of the two is wrong.
+            foreach (array_diff(array_keys($source), ['type']) as $key) {
+                $this->assertStringContainsString("`{$source['type']}` with `{$key}`", $said);
+            }
+        }
+
+        $made = $this->content($this->agent('catalog_feeds_create', ['preset' => 'google', 'values' => ['custom_labels' => $example]]))['feed'];
+        $preview = $this->content($this->agent('catalog_feeds_preview', ['feed' => $made['id']]));
+
+        $this->assertTrue($preview['ok'], json_encode($preview['errors'], JSON_THROW_ON_ERROR));
+        $this->assertStringContainsString('<g:custom_label_3>autumn</g:custom_label_3>', $preview['text']);
+        $this->assertStringContainsString('<g:custom_label_1>', $preview['text']);
     }
 
     #[Test]
@@ -418,6 +482,20 @@ final class McpTest extends TestCase
         $this->agent('catalog_feeds_rebuild', ['feed' => $feed->id])->assertHasErrors(['off']);
 
         Queue::assertNotPushed(BuildFeed::class);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function rules(): array
+    {
+        foreach ($this->app->make(ToolRegistry::class)->resources() as $resource) {
+            if ($resource->uri === 'catalog://feed-rules') {
+                return ($resource->handler)();
+            }
+        }
+
+        $this->fail('No catalog://feed-rules.');
     }
 
     /**
