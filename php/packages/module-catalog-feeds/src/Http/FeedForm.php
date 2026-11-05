@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\CatalogFeeds\Http;
 
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use WebxUi\CatalogFeeds\Build\FeedProblem;
@@ -38,6 +39,9 @@ final class FeedForm
         'taxonomy', 'custom_labels', 'sources', 'options',
     ];
 
+    /** Written to the byte: the rest of a form is cleaned here, see {@see cleaned()}. */
+    private const AS_TYPED = ['head', 'item', 'foot', 'separator'];
+
     public function __construct(
         private readonly Locales $locales,
         private readonly FeedTrial $trial,
@@ -68,6 +72,7 @@ final class FeedForm
      */
     public function fill(Feed $feed, array $input): void
     {
+        $input = $this->cleaned($input);
         $creating = ! $feed->exists;
 
         Validator::make($input, [
@@ -105,6 +110,48 @@ final class FeedForm
         if (($creating || array_key_exists('separator', $input)) && (string) ($input['separator'] ?? '') === '') {
             $feed->separator = Feed::separatorOf($feed->format);
         }
+    }
+
+    /**
+     * What `TrimStrings` and `ConvertEmptyStringsToNull` do everywhere else. They are off for these
+     * routes because they cannot spare the templates, and without them an empty string passes every
+     * rule but `required`: Laravel does not run the others on it.
+     *
+     * The delimiter of a csv stays too: a tab is a delimiter, and trimmed it would turn into a comma.
+     *
+     * @param  array<array-key, mixed>  $input
+     * @return array<array-key, mixed>
+     */
+    public function cleaned(array $input): array
+    {
+        $delimiter = $input['options']['delimiter'] ?? null;
+
+        foreach ($input as $field => $value) {
+            if (! in_array($field, self::AS_TYPED, true)) {
+                $input[$field] = self::clean($value);
+            }
+        }
+
+        if (is_string($delimiter) && $delimiter !== '') {
+            $input['options']['delimiter'] = $delimiter;
+        }
+
+        return $input;
+    }
+
+    private static function clean(mixed $value): mixed
+    {
+        if (is_array($value)) {
+            return array_map(self::clean(...), $value);
+        }
+
+        if (! is_string($value)) {
+            return $value;
+        }
+
+        $value = Str::trim($value);
+
+        return $value === '' ? null : $value;
     }
 
     /**

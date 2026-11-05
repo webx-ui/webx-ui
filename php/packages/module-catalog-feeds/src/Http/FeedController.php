@@ -7,6 +7,7 @@ namespace WebxUi\CatalogFeeds\Http;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Validator;
 use WebxUi\CatalogFeeds\Build\FeedTrial;
 use WebxUi\CatalogFeeds\Delivery\FeedKey;
 use WebxUi\CatalogFeeds\Models\Feed;
@@ -61,11 +62,11 @@ final class FeedController
      */
     public function preview(Request $request, FeedTrial $trial): JsonResponse
     {
-        $validated = $request->validate([
+        $validated = Validator::make($this->form->cleaned($request->all()), [
             'feed' => ['sometimes', 'nullable', 'integer'],
             'product_ids' => ['sometimes', 'array', 'max:'.self::NAMED],
             'product_ids.*' => ['integer'],
-        ]);
+        ])->validate();
 
         $feed = isset($validated['feed']) ? Feed::query()->findOrFail((int) $validated['feed']) : new Feed;
         $this->form->fill($feed, $request->all());

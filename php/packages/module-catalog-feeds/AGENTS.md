@@ -49,7 +49,8 @@ read, `cms.can:catalog.manage` to write.
 - JSON is read twice: each product by itself and then the whole, as a build does. `jsonText()`
   gives the line, and it is for samples: `seld/jsonlint` wants the whole text in memory.
 - Templates reach the API untrimmed (`keepTemplatesAsTyped()`): the line break after a csv's head
-  is what keeps the first product off the line of the column names.
+  is what keeps the first product off the line of the column names. The skip takes the whole
+  request, so every other field of the form goes through `FeedForm::cleaned()`.
 
 ### How a build goes
 

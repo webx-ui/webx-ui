@@ -98,15 +98,20 @@ class CatalogFeedsServiceProvider extends ServiceProvider
 
     /**
      * A template is written to the byte: the line break that ends the head of a csv is what keeps
-     * the first product off the line of the column names.
+     * the first product off the line of the column names. A skip takes the whole request, so it is
+     * for the form's own addresses only, and `FeedForm::cleaned()` does the rest of the form's fields.
      */
     private function keepTemplatesAsTyped(): void
     {
-        $writes = static fn (Request $request): bool => ! $request->isMethod('GET')
-            && $request->is(trim((string) config('webx-admin.api_path'), '/').'/'.self::SOURCE.'*');
+        $form = static function (Request $request): bool {
+            $base = trim((string) config('webx-admin.api_path'), '/').'/'.self::SOURCE;
 
-        TrimStrings::skipWhen($writes);
-        ConvertEmptyStringsToNull::skipWhen($writes);
+            return ! $request->isMethod('GET')
+                && preg_match('#^'.preg_quote($base, '#').'(/preview|/\d+)?$#', $request->path()) === 1;
+        };
+
+        TrimStrings::skipWhen($form);
+        ConvertEmptyStringsToNull::skipWhen($form);
     }
 
     /** Hashed: the key is in the path, and it stays out of the cache's keys as of the logs. */

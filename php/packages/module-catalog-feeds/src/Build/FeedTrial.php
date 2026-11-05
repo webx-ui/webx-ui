@@ -7,6 +7,7 @@ namespace WebxUi\CatalogFeeds\Build;
 use Closure;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Traits\Localizable;
 use RuntimeException;
 use WebxUi\Catalog\Models\Product;
@@ -102,10 +103,15 @@ final class FeedTrial
             return new FeedProof($problem);
         }
 
+        // The values speak the feed's language; what is said about them, the language of the panel.
+        $panel = App::getLocale();
+
         try {
-            return $this->withLocale($feed->locale, fn (): FeedProof => $this->sample($feed, $named, $counters));
+            return $this->withLocale($feed->locale, fn (): FeedProof => $this->sample($feed, $named, $counters, $panel));
         } catch (FeedFailure $failure) {
-            return new FeedProof(new FeedProblem(self::FIELDS[$failure->key] ?? 'item', $failure->getMessage()));
+            $said = FeedFailure::of($failure->key, $failure->replace);
+
+            return new FeedProof(new FeedProblem(self::FIELDS[$failure->key] ?? 'item', $said->getMessage()));
         }
     }
 
@@ -196,7 +202,7 @@ final class FeedTrial
     /**
      * @param  list<int>  $named
      */
-    private function sample(Feed $feed, array $named, bool $counters): FeedProof
+    private function sample(Feed $feed, array $named, bool $counters, string $panel): FeedProof
     {
         $selected = $this->selection->query($feed);
         $item = $this->render->item($feed);
@@ -228,7 +234,7 @@ final class FeedTrial
         }
 
         return new FeedProof(
-            problem: trim($text) === '' ? null : $this->parse($feed, $text, $pieces),
+            problem: trim($text) === '' ? null : $this->withLocale($panel, fn (): ?FeedProblem => $this->parse($feed, $text, $pieces)),
             text: $text,
             warnings: $warnings,
             written: count($items),
@@ -394,7 +400,10 @@ final class FeedTrial
             try {
                 $this->check->jsonText($piece['text']);
             } catch (FeedFailure $failure) {
-                return $this->located($failure, $text, $pieces, $piece['offset'] + $this->position($piece['text'], $failure));
+                // The end of a product is still that product, not what follows it.
+                $inside = min($this->jsonPosition($piece['text'], $failure), strlen($piece['text']) - 1);
+
+                return $this->located($failure, $text, $pieces, $piece['offset'] + $inside);
             }
         }
 
@@ -405,7 +414,7 @@ final class FeedTrial
         try {
             $this->check->jsonText($text);
         } catch (FeedFailure $failure) {
-            return $this->located($failure, $text, $pieces, $this->position($text, $failure));
+            return $this->located($failure, $text, $pieces, $this->jsonPosition($text, $failure));
         }
 
         return null;
@@ -426,17 +435,35 @@ final class FeedTrial
 
             return null;
         } catch (FeedFailure $failure) {
-            return $this->located($failure, $text, $pieces, $this->position($text, $failure));
+            return $this->located($failure, $text, $pieces, $this->filePosition($text, $failure));
         } finally {
             @unlink($path);
         }
     }
 
-    /** The byte a parser's line and column stand for; past the end for a line that is not there. */
-    private function position(string $text, FeedFailure $failure): int
+    /** The byte of a place in JSON: the parser counts bytes, up to the end of the last good token. */
+    private function jsonPosition(string $text, FeedFailure $failure): int
     {
-        $line = (int) ($failure->replace['line'] ?? 1);
-        $column = (int) ($failure->replace['column'] ?? 1);
+        $start = $this->lineStart($text, (int) ($failure->replace['line'] ?? 1));
+        $after = min(strlen($text), $start + max(0, (int) ($failure->replace['column'] ?? 1) - 1));
+
+        return $after + strspn($text, " \t\r\n", $after);
+    }
+
+    /** The byte of a place in a file: libxml counts characters, a row of a csv has no column. */
+    private function filePosition(string $text, FeedFailure $failure): int
+    {
+        $start = $this->lineStart($text, (int) ($failure->replace['line'] ?? 1));
+        $end = strpos($text, "\n", $start);
+        $line = substr($text, $start, ($end === false ? strlen($text) : $end) - $start);
+        $before = mb_substr($line, 0, max(0, (int) ($failure->replace['column'] ?? 1) - 1), 'UTF-8');
+
+        return $start + strlen($before);
+    }
+
+    /** Where a line of a parser's starts; the end of the text for a line that is not there. */
+    private function lineStart(string $text, int $line): int
+    {
         $offset = 0;
 
         for ($at = 1; $at < $line; $at++) {
@@ -449,7 +476,7 @@ final class FeedTrial
             $offset = $next + 1;
         }
 
-        return min(strlen($text), $offset + max(0, $column - 1));
+        return $offset;
     }
 
     /**

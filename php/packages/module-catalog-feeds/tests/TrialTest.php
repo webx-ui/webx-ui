@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace WebxUi\CatalogFeeds\Tests;
 
 use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Testing\TestResponse;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\HttpFoundation\Response;
 use WebxUi\Catalog\Models\Product;
@@ -15,6 +17,7 @@ use WebxUi\Catalog\Tests\Fixtures\Shop;
 use WebxUi\CatalogBrands\BrandsServiceProvider;
 use WebxUi\CatalogFeeds\Build\FeedBuilder;
 use WebxUi\CatalogFeeds\Build\FeedProof;
+use WebxUi\CatalogFeeds\Build\FeedTrial;
 use WebxUi\CatalogFeeds\Models\Feed;
 use WebxUi\CatalogFeeds\Models\FeedBuild;
 use WebxUi\CatalogLabels\LabelsServiceProvider;
@@ -33,6 +36,9 @@ final class TrialTest extends TestCase
     private const XML = ['format' => 'xml', 'head' => "<feed>\n", 'item' => '<item><id>{{id}}</id></item>', 'foot' => "\n</feed>"];
 
     private const JSON = ['format' => 'json', 'head' => '{"items":[', 'item' => '{"id":"{{id}}"}', 'foot' => ']}'];
+
+    /** Longer in bytes than a column counted in characters reaches: a place must not slide into it. */
+    private const WORDS = 'Интернет-магазин запчастей для всех видов техники и даже больше';
 
     private Shop $shop;
 
@@ -202,6 +208,179 @@ final class TrialTest extends TestCase
             ->json('data.id');
 
         $this->putJson($this->api((string) $id), ['head' => ''])->assertOk()->assertJsonPath('data.head', '');
+    }
+
+    /**
+     * @return iterable<string, array{0: string, 1: mixed}>
+     */
+    public static function emptyNotAllowed(): iterable
+    {
+        yield 'name' => ['name', ''];
+        yield 'name of spaces' => ['name', '   '];
+        yield 'format' => ['format', ''];
+        yield 'locale' => ['locale', ''];
+        yield 'schedule' => ['schedule', ''];
+        yield 'is_active' => ['is_active', ''];
+        yield 'rebuild_on_change' => ['rebuild_on_change', ''];
+        yield 'filter' => ['filter', ''];
+        yield 'stock_map' => ['stock_map', ''];
+        yield 'custom_labels' => ['custom_labels', ''];
+        yield 'sources' => ['sources', ''];
+        yield 'options' => ['options', ''];
+    }
+
+    #[Test]
+    #[DataProvider('emptyNotAllowed')]
+    public function an_empty_value_is_refused_under_its_field(string $field, mixed $value): void
+    {
+        $feed = $this->saved(self::XML);
+
+        $this->putJson($this->api((string) $feed->id), [$field => $value])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors($field);
+
+        $this->assertSame('Spare parts', $feed->refresh()->name);
+        $this->assertSame('xml', $feed->format);
+    }
+
+    #[Test]
+    public function an_empty_value_of_a_field_that_may_be_empty_is_null(): void
+    {
+        $feed = $this->saved([...self::XML, 'taxonomy' => 'google', 'schedule' => 'daily', 'schedule_at' => '04:30', 'preset' => 'google']);
+
+        $this->putJson($this->api((string) $feed->id), ['taxonomy' => '', 'schedule_at' => '  ', 'preset' => ''])
+            ->assertOk()
+            ->assertJsonPath('data.taxonomy', null)
+            ->assertJsonPath('data.schedule_at', null)
+            ->assertJsonPath('data.preset', null);
+    }
+
+    #[Test]
+    public function the_fields_around_the_templates_are_trimmed_and_the_templates_are_not(): void
+    {
+        $this->save([...self::XML, 'name' => '  Spare parts  ', 'head' => "  <feed>\n", 'options' => ['description' => '  Parts  ']])
+            ->assertCreated()
+            ->assertJsonPath('data.name', 'Spare parts')
+            ->assertJsonPath('data.head', "  <feed>\n")
+            ->assertJsonPath('data.options.description', 'Parts');
+    }
+
+    #[Test]
+    public function a_tab_stays_the_delimiter_of_a_csv(): void
+    {
+        $this->save(['format' => 'csv', 'item' => "{{id}}\tx", 'options' => ['delimiter' => "\t"]])
+            ->assertCreated()
+            ->assertJsonPath('data.options.delimiter', "\t");
+    }
+
+    #[Test]
+    public function an_empty_value_is_refused_in_a_preview_too_and_an_empty_feed_is_no_feed(): void
+    {
+        $this->preview([...self::XML, 'locale' => ''])->assertUnprocessable()->assertJsonValidationErrors('locale');
+        $this->preview([...self::XML, 'feed' => ''])->assertOk()->assertJsonPath('data.ok', true);
+    }
+
+    #[Test]
+    public function a_part_is_found_past_text_that_is_not_ascii_in_xml(): void
+    {
+        $this->nameProducts();
+
+        $values = [
+            'format' => 'xml',
+            'head' => '<feed><shop>'.self::WORDS.'</shop>',
+            'item' => '<item><t>{{title}}</t><id>{{id}}</wrong></item>',
+            'foot' => '</feed>',
+        ];
+
+        $this->refused($values, 'item', 'The file is not valid XML, line 1:');
+
+        $problem = $this->preview($values)->json('data.errors.0');
+
+        $this->assertSame('item', $problem['field']);
+        $this->assertSame('item', $problem['part']);
+        $this->assertSame($this->firstProduct(), $problem['product']);
+        $this->assertStringContainsString('</wrong>', $problem['fragment']);
+    }
+
+    #[Test]
+    public function a_part_is_found_past_text_that_is_not_ascii_on_a_later_line_of_xml(): void
+    {
+        $this->nameProducts();
+
+        $problem = $this->preview([
+            'format' => 'xml',
+            'head' => "<feed>\n<shop>".self::WORDS.'</shop>',
+            'item' => '<item><t>{{title}}</t><id>{{id}}</id></item>',
+            'foot' => '</wrong>',
+            'separator' => ' ',
+        ])->json('data.errors.0');
+
+        $this->assertSame('foot', $problem['part']);
+        $this->assertSame(2, $problem['line']);
+        $this->assertStringContainsString('</wrong>', $problem['fragment']);
+    }
+
+    #[Test]
+    public function a_part_is_found_past_text_that_is_not_ascii_in_json(): void
+    {
+        $this->nameProducts();
+
+        $values = [
+            'format' => 'json',
+            'head' => '{"shop":"'.self::WORDS.'","items":[',
+            'item' => '{"title":"{{title}}","id":{{id}}x}',
+            'foot' => ']}',
+        ];
+
+        $this->refused($values, 'item', 'The sample is not valid JSON, line 1:');
+
+        $problem = $this->preview($values)->json('data.errors.0');
+
+        $this->assertSame('item', $problem['part']);
+        $this->assertSame($this->firstProduct(), $problem['product']);
+        $this->assertStringContainsString('x}', $problem['fragment']);
+    }
+
+    #[Test]
+    public function a_mistake_of_a_frame_of_json_on_one_line_is_shown_in_the_frame(): void
+    {
+        $this->nameProducts();
+
+        $item = '{"title":"{{title}}"}';
+
+        $separator = $this->preview(['format' => 'json', 'head' => '[', 'item' => $item, 'foot' => ']', 'separator' => ';'])->json('data.errors.0');
+        $this->assertSame('separator', $separator['part']);
+        $this->assertNull($separator['product']);
+
+        $foot = $this->preview(['format' => 'json', 'head' => '[', 'item' => $item, 'foot' => ']}', 'separator' => ','])->json('data.errors.0');
+        $this->assertSame('foot', $foot['part']);
+        $this->assertNull($foot['product']);
+
+        $head = $this->preview(['format' => 'json', 'head' => '[}', 'item' => $item, 'foot' => ']', 'separator' => ','])->json('data.errors.0');
+        $this->assertSame('head', $head['part']);
+    }
+
+    #[Test]
+    public function a_product_cut_short_is_the_products_mistake_and_not_what_follows_it(): void
+    {
+        $problem = $this->preview(['format' => 'json', 'head' => '[', 'item' => '{"id":"{{id}}"', 'foot' => ']', 'separator' => ','])->json('data.errors.0');
+
+        $this->assertSame('item', $problem['part']);
+        $this->assertSame($this->firstProduct(), $problem['product']);
+    }
+
+    #[Test]
+    public function a_mistake_is_told_in_the_language_of_the_panel_and_not_of_the_feed(): void
+    {
+        App::setLocale('en');
+
+        $feed = new Feed;
+        $feed->forceFill([...self::XML, 'head' => '<feed><a></b>', 'locale' => 'ru', 'separator' => "\n", 'currency' => 'EUR']);
+
+        $problem = $this->app->make(FeedTrial::class)->check($feed)->problem;
+
+        $this->assertStringContainsString('The file is not valid XML', (string) $problem?->message);
+        $this->assertSame('en', App::getLocale());
     }
 
     #[Test]
@@ -384,6 +563,27 @@ final class TrialTest extends TestCase
     private function preview(array $values): TestResponse
     {
         return $this->postJson($this->api('preview'), ['name' => 'Spare parts', 'format' => 'text', 'item' => '{{id}}', ...$values]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $values
+     */
+    private function saved(array $values): Feed
+    {
+        return Feed::query()->findOrFail((int) $this->save($values)->assertCreated()->json('data.id'));
+    }
+
+    /** Cyrillic in what the products render to as well, as on a site that writes in it. */
+    private function nameProducts(): void
+    {
+        foreach (Product::query()->visible()->orderBy('id')->limit(10)->get() as $product) {
+            $product->setTranslation('name', 'en', 'Тормозные колодки')->save();
+        }
+    }
+
+    private function firstProduct(): int
+    {
+        return (int) $this->preview(['format' => 'text', 'item' => '{{id}}'])->json('data.text');
     }
 
     /**

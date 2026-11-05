@@ -72,9 +72,10 @@ final class FeedFileCheck
         $words = explode("\n", trim($error->getMessage()));
 
         throw FeedFailure::of('sample-json', [
-            'line' => (int) ($at['first_line'] ?? 1),
-            // Counted from zero, unlike the line.
-            'column' => (int) ($at['first_column'] ?? 0) + 1,
+            // `loc` is the last token it took, not the one it choked on: the mistake starts after it.
+            'line' => (int) ($at['last_line'] ?? 1),
+            // In bytes and from zero, unlike the line and unlike the column of libxml.
+            'column' => (int) ($at['last_column'] ?? 0) + 1,
             'reason' => (string) end($words),
         ]);
     }
@@ -110,7 +111,8 @@ final class FeedFileCheck
             $error = libxml_get_errors()[0] ?? null;
 
             if ($error !== null) {
-                // libxml stands just past what it read, which may already be the next part of a template.
+                // libxml stands just past what it read, which may already be the next part of a
+                // template, and it counts characters, not bytes.
                 throw FeedFailure::of('file-xml', ['line' => $error->line, 'column' => max(1, $error->column - 1), 'reason' => trim($error->message)]);
             }
 
