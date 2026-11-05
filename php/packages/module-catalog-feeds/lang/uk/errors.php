@@ -15,4 +15,8 @@ return [
     'file-json' => 'Шапка й підвал не дають коректний JSON: :reason',
     'file-json-item' => 'Товар :product не дає коректний JSON: :reason',
     'file-csv' => 'У рядку :line файлу полів :found замість :expected.',
+    'sample-json' => 'Проба — некоректний JSON, рядок :line: :reason',
+    'sample-place' => 'Частина «:part», рядок :line: :fragment',
+    'unknown-variable' => 'У частині «:part» немає змінної {{:name}}.',
+    'no-products' => 'Відповідних товарів поки немає: перевірено лише шапку й підвал.',
 ];

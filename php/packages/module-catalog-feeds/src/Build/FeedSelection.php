@@ -6,6 +6,7 @@ namespace WebxUi\CatalogFeeds\Build;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
+use Illuminate\Support\Facades\DB;
 use WebxUi\Catalog\Facets\Facet;
 use WebxUi\Catalog\Facets\Facets;
 use WebxUi\Catalog\Facets\FacetValue;
@@ -65,6 +66,22 @@ final readonly class FeedSelection
                 $excluded->select('product_id')->from(self::EXCLUSIONS)->where('feed_id', $feed->id);
             })
             ->count();
+    }
+
+    /**
+     * Which of these a person took out of this feed.
+     *
+     * @param  list<int>  $products
+     * @return list<int>
+     */
+    public function excludedAmong(Feed $feed, array $products): array
+    {
+        return DB::table(self::EXCLUSIONS)
+            ->where('feed_id', $feed->id)
+            ->whereIn('product_id', $products)
+            ->pluck('product_id')
+            ->map(static fn (mixed $id): int => (int) $id)
+            ->all();
     }
 
     /**

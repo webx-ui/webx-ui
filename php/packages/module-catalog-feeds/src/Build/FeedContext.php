@@ -11,6 +11,8 @@ use WebxUi\Catalog\Models\Category;
 use WebxUi\CatalogFeeds\Models\Feed;
 use WebxUi\CatalogFeeds\Models\FeedBuild;
 use WebxUi\Routing\Models\Route;
+use WebxUi\Templates\Variable;
+use WebxUi\Templates\Variables;
 
 /**
  * What a head and a foot may say (§4.6 of the feeds spec). They have no product: they speak about
@@ -19,6 +21,25 @@ use WebxUi\Routing\Models\Route;
 final readonly class FeedContext
 {
     public function __construct(private Config $config) {}
+
+    /**
+     * What a head and a foot may name. The labels are the names until an editor shows them.
+     *
+     * @return Variables<Variable>
+     */
+    public function variables(): Variables
+    {
+        $texts = [
+            'shop.name', 'shop.url', 'shop.description', 'shop.email', 'shop.phone', 'feed.name',
+            'feed.locale', 'feed.currency', 'generated_at', 'generated_at_rfc822', 'products_count',
+        ];
+
+        return new Variables([
+            ...array_map(static fn (string $name): Variable => new Variable($name, $name), $texts),
+            new Variable('currencies', 'currencies', [], ['code' => 'code', 'rate' => 'rate']),
+            new Variable('categories', 'categories', [], ['id' => 'id', 'parent_id' => 'parent_id', 'name' => 'name', 'path' => 'path', 'url' => 'url']),
+        ]);
+    }
 
     /**
      * @param  list<string>  $used  the names the head and the foot use

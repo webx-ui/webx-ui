@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\CatalogFeeds\Build;
 
+use Seld\JsonLint\JsonParser;
 use WebxUi\CatalogFeeds\Models\Feed;
 use XMLReader;
 
@@ -53,6 +54,31 @@ final class FeedFileCheck
         }
     }
 
+    /**
+     * JSON read for a person: `json_decode` says what is wrong but not where, which a sample of a
+     * few products can afford and a whole file cannot.
+     *
+     * @throws FeedFailure
+     */
+    public function jsonText(string $text): void
+    {
+        $error = (new JsonParser)->lint($text);
+
+        if ($error === null) {
+            return;
+        }
+
+        $at = $error->getDetails()['loc'] ?? [];
+        $words = explode("\n", trim($error->getMessage()));
+
+        throw FeedFailure::of('sample-json', [
+            'line' => (int) ($at['first_line'] ?? 1),
+            // Counted from zero, unlike the line.
+            'column' => (int) ($at['first_column'] ?? 0) + 1,
+            'reason' => (string) end($words),
+        ]);
+    }
+
     public static function delimiter(Feed $feed): string
     {
         $delimiter = $feed->options['delimiter'] ?? ',';
@@ -80,10 +106,12 @@ final class FeedFileCheck
             }
 
             $reader->close();
-            $error = libxml_get_last_error();
+            // The first one: what follows a broken tag is mostly the parser losing its way.
+            $error = libxml_get_errors()[0] ?? null;
 
-            if ($error !== false) {
-                throw FeedFailure::of('file-xml', ['line' => $error->line, 'reason' => trim($error->message)]);
+            if ($error !== null) {
+                // libxml stands just past what it read, which may already be the next part of a template.
+                throw FeedFailure::of('file-xml', ['line' => $error->line, 'column' => max(1, $error->column - 1), 'reason' => trim($error->message)]);
             }
 
             if (! $seen) {
@@ -133,7 +161,9 @@ final class FeedFileCheck
             fseek($file, $from['offset'] ?? 0);
 
             while (($row = fgetcsv($file, null, $delimiter, '"', '')) !== false) {
-                $line++;
+                $at = $line + 1;
+                // A quoted value may hold line breaks, and a person counts lines of the file.
+                $line = $at + substr_count(implode('', $row), "\n");
 
                 // A line with nothing on it reads as one empty field; the last one always does.
                 if ($row === [null]) {
@@ -143,7 +173,7 @@ final class FeedFileCheck
                 $expected ??= count($row);
 
                 if (count($row) !== $expected) {
-                    throw FeedFailure::of('file-csv', ['line' => $line, 'found' => count($row), 'expected' => $expected]);
+                    throw FeedFailure::of('file-csv', ['line' => $at, 'found' => count($row), 'expected' => $expected]);
                 }
 
                 if (microtime(true) >= $until) {

@@ -20,6 +20,7 @@ use WebxUi\NestedSet\NestedSetServiceProvider;
 use WebxUi\Routing\RoutingServiceProvider;
 use WebxUi\Seo\SeoServiceProvider;
 use WebxUi\Settings\SettingsServiceProvider;
+use WebxUi\Templates\TemplatesServiceProvider;
 use WebxUi\Themes\ThemeServiceProvider;
 use WebxUi\Widgets\WidgetsServiceProvider;
 
@@ -45,6 +46,7 @@ abstract class TestCase extends Orchestra
             SeoServiceProvider::class,
             ThemeServiceProvider::class,
             WidgetsServiceProvider::class,
+            TemplatesServiceProvider::class,
             CatalogServiceProvider::class,
             CatalogFeedsServiceProvider::class,
         ];

@@ -16,8 +16,16 @@ final class FeedFailure extends RuntimeException
     /**
      * @param  array<string, string|int>  $replace
      */
+    private function __construct(string $message, public readonly string $key, public readonly array $replace)
+    {
+        parent::__construct($message);
+    }
+
+    /**
+     * @param  array<string, string|int>  $replace
+     */
     public static function of(string $key, array $replace = []): self
     {
-        return new self((string) __('webx-catalog-feeds::errors.'.$key, $replace));
+        return new self((string) __('webx-catalog-feeds::errors.'.$key, $replace), $key, $replace);
     }
 }

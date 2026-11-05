@@ -6,6 +6,8 @@ namespace WebxUi\CatalogFeeds;
 
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull;
+use Illuminate\Foundation\Http\Middleware\TrimStrings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -63,6 +65,7 @@ class CatalogFeedsServiceProvider extends ServiceProvider
 
         $this->reservePrefix();
         $this->registerRateLimiter();
+        $this->keepTemplatesAsTyped();
 
         $this->registerHistory();
         $this->app->make(ModuleRegistry::class)->register($this->app->make(CatalogFeedsModule::class));
@@ -91,6 +94,19 @@ class CatalogFeedsServiceProvider extends ServiceProvider
             ...(array) $config->get('webx-routing.reserved', []),
             trim((string) $config->get('webx-catalog-feeds.path'), '/'),
         ]);
+    }
+
+    /**
+     * A template is written to the byte: the line break that ends the head of a csv is what keeps
+     * the first product off the line of the column names.
+     */
+    private function keepTemplatesAsTyped(): void
+    {
+        $writes = static fn (Request $request): bool => ! $request->isMethod('GET')
+            && $request->is(trim((string) config('webx-admin.api_path'), '/').'/'.self::SOURCE.'*');
+
+        TrimStrings::skipWhen($writes);
+        ConvertEmptyStringsToNull::skipWhen($writes);
     }
 
     /** Hashed: the key is in the path, and it stays out of the cache's keys as of the logs. */

@@ -15,14 +15,10 @@ use RuntimeException;
 use WebxUi\Catalog\Models\Product;
 use WebxUi\Catalog\Storefront\StorefrontCache;
 use WebxUi\Catalog\Support\RequestMemo;
-use WebxUi\Catalog\Variables\ProductVariables;
 use WebxUi\CatalogFeeds\Delivery\FeedFiles;
 use WebxUi\CatalogFeeds\Models\Feed;
 use WebxUi\CatalogFeeds\Models\FeedBuild;
 use WebxUi\Templates\Compiled;
-use WebxUi\Templates\Escapes;
-use WebxUi\Templates\Template;
-use WebxUi\Templates\TemplateError;
 
 /**
  * A build of a feed (§7 of the feeds spec): pages of products by the cursor, each written to a
@@ -52,9 +48,7 @@ final class FeedBuilder
 
     public function __construct(
         private readonly FeedSelection $selection,
-        private readonly FeedVariables $feedVariables,
-        private readonly ProductVariables $variables,
-        private readonly FeedContext $context,
+        private readonly FeedRender $render,
         private readonly FeedFileCheck $check,
         private readonly FeedFiles $files,
         private readonly StorefrontCache $cache,
@@ -148,6 +142,8 @@ final class FeedBuilder
     {
         $until = microtime(true) + $seconds;
 
+        $this->sameCurrency($feed);
+
         if ($build->status === FeedBuild::QUEUED) {
             $build->forceFill([
                 'status' => FeedBuild::RUNNING,
@@ -157,14 +153,8 @@ final class FeedBuilder
             ])->save();
         }
 
-        $template = (string) $feed->item;
-
-        if (trim($template) === '') {
-            throw FeedFailure::of('no-item');
-        }
-
-        $item = $this->compile($template, $feed);
-        $names = $this->names($feed, $template);
+        $item = $this->render->item($feed);
+        $names = $this->render->names($feed);
         $selected = $this->selection->query($feed);
         $body = $this->body($build);
 
@@ -190,69 +180,22 @@ final class FeedBuilder
         $chunk = max(1, (int) $this->config->get('webx-catalog-feeds.chunk', 500));
         $from = (int) $build->cursor;
 
-        /** @var Collection<int, Product> $products */
-        $products = (clone $selected)
-            ->with('images')
-            ->where('catalog_products.id', '>', $from)
-            ->orderBy('catalog_products.id')
-            ->limit($chunk)
-            ->get();
+        $products = $this->render->products($selected, $from, $chunk);
 
         if ($products->isEmpty()) {
             return false;
         }
 
         $written = (int) $build->written;
-        $filtered = 0;
-        $reasons = [];
-        $rejects = [];
-        $warnings = [];
-        $categories = [];
-        $kept = new Collection;
 
-        foreach ($products as $product) {
-            $reason = FeedChecks::reason($product, $feed->locale);
-
-            if ($reason === null) {
-                $kept->push($product);
-
-                continue;
-            }
-
-            $reasons[$reason] = ($reasons[$reason] ?? 0) + 1;
-            $rejects[] = ['build_id' => $build->id, 'product_id' => $product->id, 'reason' => $reason];
-        }
-
-        $rows = $kept->isEmpty() ? [] : $this->variables->values($kept, $feed->locale, $names, $this->feedVariables->overrides($feed));
-        $onlyInStock = in_array('is_purchasable', $names, true) && (bool) ($feed->filter['only_in_stock'] ?? false);
-
-        foreach ($kept as $product) {
-            $id = (int) $product->id;
-            $row = $rows[$id];
-
-            if ($onlyInStock && $row['is_purchasable'] === '') {
-                $filtered++;
-
-                continue;
-            }
-
-            $text = $item->render($row);
-
+        $page = $this->render->page($feed, $products, $item, $names, function (string $text, int $id) use ($feed, $body, &$written): void {
             if ($feed->format === 'json') {
                 $this->check->jsonItem($text, $id);
             }
 
             fwrite($body, ($written > 0 ? $feed->separator : '').$text);
             $written++;
-
-            foreach (FeedChecks::warnings($product, $row, $feed->locale) as $warning) {
-                $warnings[$warning] = ($warnings[$warning] ?? 0) + 1;
-            }
-
-            if ($product->category_id !== null) {
-                $categories[(int) $product->category_id] = true;
-            }
-        }
+        });
 
         fflush($body);
         $bytes = (int) ftell($body);
@@ -261,7 +204,13 @@ final class FeedBuilder
             throw FeedFailure::of('too-large');
         }
 
-        $this->record($build, $products, $written, $filtered, $bytes, $reasons, $rejects, $warnings, array_keys($categories));
+        $rejects = [];
+
+        foreach ($page->rejected as $id => $reason) {
+            $rejects[] = ['build_id' => $build->id, 'product_id' => $id, 'reason' => $reason];
+        }
+
+        $this->record($build, $products, $written, count($page->filtered), $bytes, $page->reasons(), $rejects, $page->warnings, $page->categories);
         RequestMemo::forget();
 
         return $products->count() === $chunk;
@@ -311,10 +260,7 @@ final class FeedBuilder
 
     private function join(FeedBuild $build, Feed $feed): bool
     {
-        $names = $this->frameNames($feed);
-        $values = $this->context->values($feed, $build, $names);
-        $head = $this->frame((string) $feed->head, $feed, $values);
-        $foot = $this->frame((string) $feed->foot, $feed, $values);
+        [$head, $foot] = $this->render->frame($feed, $build);
 
         $this->check->frame($feed, $head, $foot, (int) $build->written);
 
@@ -466,55 +412,15 @@ final class FeedBuilder
     }
 
     /**
-     * @return list<string>
+     * Prices are already in the site's currency and a feed still says the old one: a person has to
+     * look at the template again, and saving it is how they say they did (§8.1).
      */
-    private function names(Feed $feed, string $template): array
+    private function sameCurrency(Feed $feed): void
     {
-        try {
-            $names = $this->feedVariables->used($template);
-        } catch (TemplateError $error) {
-            throw FeedFailure::of('template', ['reason' => $error->words()]);
-        }
+        $site = Feed::siteCurrency();
 
-        foreach (FeedChecks::COMPANIONS as $name => $companion) {
-            if (in_array($name, $names, true)) {
-                $names[] = $companion;
-            }
-        }
-
-        if ((bool) ($feed->filter['only_in_stock'] ?? false) && isset($this->variables->all()['is_purchasable'])) {
-            $names[] = 'is_purchasable';
-        }
-
-        return array_values(array_unique($names));
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function frameNames(Feed $feed): array
-    {
-        try {
-            return array_column([...Template::usages((string) $feed->head), ...Template::usages((string) $feed->foot)], 'name');
-        } catch (TemplateError $error) {
-            throw FeedFailure::of('template', ['reason' => $error->words()]);
-        }
-    }
-
-    /**
-     * @param  array<string, string|list<array<string, string>>>  $values
-     */
-    private function frame(string $template, Feed $feed, array $values): string
-    {
-        return $template === '' ? '' : $this->compile($template, $feed)->render($values);
-    }
-
-    private function compile(string $template, Feed $feed): Compiled
-    {
-        try {
-            return Template::compile($template, Escapes::for($feed->format, ['delimiter' => FeedFileCheck::delimiter($feed)]));
-        } catch (TemplateError $error) {
-            throw FeedFailure::of('template', ['reason' => $error->words()]);
+        if ($site !== strtoupper(trim($feed->currency))) {
+            throw $site === '' ? FeedFailure::of('currency-unset') : FeedFailure::of('currency', ['currency' => $site]);
         }
     }
 

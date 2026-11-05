@@ -15,4 +15,8 @@ return [
     'file-json' => 'Üst ve alt bölüm geçerli JSON oluşturmuyor: :reason',
     'file-json-item' => ':product ürünü geçerli JSON oluşturmuyor: :reason',
     'file-csv' => 'Dosyanın :line. satırında :expected yerine :found alan var.',
+    'sample-json' => 'Örnek geçerli JSON değil, satır :line: :reason',
+    'sample-place' => '“:part” bölümü, satır :line: :fragment',
+    'unknown-variable' => '“:part” bölümünde {{:name}} değişkeni yok.',
+    'no-products' => 'Henüz feed’e uyan ürün yok: yalnızca üst ve alt bölüm denetlendi.',
 ];

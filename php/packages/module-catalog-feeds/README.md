@@ -54,10 +54,26 @@ The site's scheduler has to run: `webx:catalog:feeds` every minute starts what i
 catalogue a feed with `rebuild_on_change` waits for 10 quiet minutes and for a running import, comes
 no oftener than once an hour and no later than 6 hours after the first change.
 
+## The check
+
+A feed that would not make a valid file is not kept. On saving, the templates are read, the names
+they use are checked, `sample` real products go through the build's own code and the result through
+the parser of the format; a refusal is a 422 under the field, and a mistake in the sample names its
+line, the part of the template and the text around it. A warning that stopped nothing comes in
+`warnings` next to `data`. Changing only the name, the schedule or `is_active` tries nothing.
+
+`POST catalog/feeds/preview` takes the values of the form and answers with the same check, keeping
+nothing: the sample's `text`, `errors`, `warnings`, how many products the filter passes and what
+became of those looked at. `feed` names the saved feed they belong to; `product_ids`, up to 20, look
+at those products and say why each one that stays out does.
+
+A feed is in the site's currency. After the site changes it, a build fails until the feed is saved
+again, so somebody looks at a template that may print the old one.
+
 ## API
 
 Under the panel's API path: `GET`, `POST catalog/feeds`; `GET`, `PUT`, `DELETE catalog/feeds/{id}`;
-`POST catalog/feeds/{id}/reissue-key`.
+`POST catalog/feeds/preview`; `POST catalog/feeds/{id}/reissue-key`.
 
 ## License
 

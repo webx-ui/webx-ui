@@ -15,4 +15,8 @@ return [
     'file-json' => 'Kopf und Fuß ergeben kein gültiges JSON: :reason',
     'file-json-item' => 'Produkt :product ergibt kein gültiges JSON: :reason',
     'file-csv' => 'Zeile :line der Datei hat :found Felder statt :expected.',
+    'sample-json' => 'Die Probe ist kein gültiges JSON, Zeile :line: :reason',
+    'sample-place' => 'Teil „:part“, Zeile :line: :fragment',
+    'unknown-variable' => '{{:name}} ist im Teil „:part“ nicht bekannt.',
+    'no-products' => 'Noch passt kein Produkt zum Feed: Nur Kopf und Fuß wurden geprüft.',
 ];

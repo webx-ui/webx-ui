@@ -43,6 +43,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | The trial of a feed (§8 of the feeds spec)
+    |--------------------------------------------------------------------------
+    |
+    | `sample` products go through a build's own code when a feed is saved or previewed. It runs
+    | while a person waits, so it stays small.
+    |
+    */
+
+    'sample' => 5,
+
+    /*
+    |--------------------------------------------------------------------------
     | Delivery (§7.3, §7.5 and §7.6 of the feeds spec)
     |--------------------------------------------------------------------------
     |

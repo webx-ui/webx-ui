@@ -15,4 +15,8 @@ return [
     'file-json' => 'L’en-tête et le pied ne forment pas un JSON valide : :reason',
     'file-json-item' => 'Le produit :product ne forme pas un JSON valide : :reason',
     'file-csv' => 'La ligne :line du fichier a :found champs au lieu de :expected.',
+    'sample-json' => 'L’échantillon n’est pas un JSON valide, ligne :line : :reason',
+    'sample-place' => 'Partie « :part », ligne :line : :fragment',
+    'unknown-variable' => '{{:name}} n’existe pas dans la partie « :part ».',
+    'no-products' => 'Aucun produit ne convient encore au flux : seuls l’en-tête et le pied ont été vérifiés.',
 ];

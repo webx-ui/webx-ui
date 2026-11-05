@@ -15,4 +15,8 @@ return [
     'file-json' => 'The head and the foot do not make valid JSON: :reason',
     'file-json-item' => 'Product :product does not make valid JSON: :reason',
     'file-csv' => 'Line :line of the file has :found fields instead of :expected.',
+    'sample-json' => 'The sample is not valid JSON, line :line: :reason',
+    'sample-place' => 'Part “:part”, line :line: :fragment',
+    'unknown-variable' => '{{:name}} is not known in the part “:part”.',
+    'no-products' => 'No product suits the feed yet: only the header and the footer were checked.',
 ];

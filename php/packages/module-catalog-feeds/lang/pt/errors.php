@@ -15,4 +15,8 @@ return [
     'file-json' => 'O cabeçalho e o rodapé não formam JSON válido: :reason',
     'file-json-item' => 'O produto :product não forma JSON válido: :reason',
     'file-csv' => 'A linha :line do ficheiro tem :found campos em vez de :expected.',
+    'sample-json' => 'A amostra não é JSON válido, linha :line: :reason',
+    'sample-place' => 'Parte «:part», linha :line: :fragment',
+    'unknown-variable' => '{{:name}} não existe na parte «:part».',
+    'no-products' => 'Ainda nenhum produto serve para o feed: só o cabeçalho e o rodapé foram verificados.',
 ];

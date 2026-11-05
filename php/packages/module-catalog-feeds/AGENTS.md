@@ -5,7 +5,8 @@ satellite of `webx-ui/module-catalog`; it works only through the core's registri
 the filter and `ProductVariables`, read the core's `AGENTS.md`.
 
 The package is built in stages. Today it holds the tables, the models, the feeds' CRUD API, the
-section of the panel, the build and its delivery. Presets and MCP tools are not here yet.
+section of the panel, the build, its delivery, the check on saving and the preview. Presets and MCP
+tools are not here yet.
 
 ## What it owns
 
@@ -17,20 +18,38 @@ section of the panel, the build and its delivery. Presets and MCP tools are not 
 - **Journal** type `catalog.feed`; `Feed::HISTORY` names the fields it follows.
 - **Panel**: module `catalog-feeds` in the catalogue's group, after «Landings» (order 304). The
   API is `catalog/feeds` under the panel's API path. `FeedForm` is the one way to write a feed.
-- **Currency**: `FeedForm` always stores `webx-catalog.price.currency` and refuses any other.
+- **Currency**: `FeedForm` always stores `webx-catalog.price.currency` and refuses any other. A
+  build of a feed that holds another one fails until the feed is saved again.
 
 ### Permissions
 
 None of its own: the catalogue's permissions (`webx-ui/module-catalog`) open it, and the section
 shows to whoever holds `catalog.view` or `catalog.manage` (`visibleWith()`).
 
-| Permission       | Opens                                                    |
-| ---------------- | -------------------------------------------------------- |
-| `catalog.view`   | the list and a feed, without the address                 |
-| `catalog.manage` | create, edit and delete a feed; the address with its key |
+| Permission       | Opens                                                             |
+| ---------------- | ----------------------------------------------------------------- |
+| `catalog.view`   | the list and a feed, without the address                          |
+| `catalog.manage` | create, edit, preview and delete a feed; the address with its key |
 
 A route the site adds next to the module asks the same: `cms.can:catalog.view,catalog.manage` to
 read, `cms.can:catalog.manage` to write.
+
+### How a feed is checked
+
+- `FeedTrial` is §8.1: syntax, names (`ProductVariables` for the item, `FeedContext::variables()` for
+  the head and the foot), CDATA, currency, a sample of `sample` products, the parser of the format.
+  The first failure is the answer. `check()` serves `FeedForm::save()`, `preview()` the route.
+- `FeedForm::save()` tries a feed only when `TRIED` fields changed: a feed gone bad with the catalogue
+  can still be renamed or switched off. `fill()` puts the values on a feed without writing it.
+- `FeedRender` is the code a build and a trial share, so a sample that passes means the file will.
+  Render through it; what is rendered elsewhere proves nothing about the file.
+- The sample looks at no more than 1000 products for its `sample`, so `rejected` in a preview speaks
+  about those looked at; `selected` is the whole of what the filter passes.
+- A preview's mistake is a 200 with `ok: false`, a save's the 422 under the field.
+- JSON is read twice: each product by itself and then the whole, as a build does. `jsonText()`
+  gives the line, and it is for samples: `seld/jsonlint` wants the whole text in memory.
+- Templates reach the API untrimmed (`keepTemplatesAsTyped()`): the line break after a csv's head
+  is what keeps the first product off the line of the column names.
 
 ### How a build goes
 
@@ -74,6 +93,7 @@ read, `cms.can:catalog.manage` to write.
 | Another disk for the files  | `WEBX_CATALOG_FEEDS_DISK`; a public disk is refused          |
 | Another size of a page      | `chunk` in `webx-catalog-feeds`                              |
 | Other limits of the watch   | `quiet_minutes`, `min_interval`, `max_wait`                  |
+| A bigger or smaller sample  | `sample` in `webx-catalog-feeds`                             |
 | Open feeds on a closed site | `feeds/*` in `webx-admin.gate.except`                        |
 
 ## Do not
@@ -89,7 +109,7 @@ read, `cms.can:catalog.manage` to write.
 
 ## Check your work
 
-- `tests/ApiTest.php`, `tests/BuildTest.php`, `tests/DeliveryTest.php` and
+- `tests/ApiTest.php`, `tests/BuildTest.php`, `tests/DeliveryTest.php`, `tests/TrialTest.php` and
   `tests/AccessCoverageTest.php` are green.
 - `GET /api/cms/catalog/feeds` as an administrator with `catalog.view` shows no key.
 

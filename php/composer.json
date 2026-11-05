@@ -6,6 +6,7 @@
     "require": {
         "php": "^8.4",
         "mustache/mustache": "^3.2",
+        "seld/jsonlint": "^1.11",
         "webx-ui/cache": "*",
         "webx-ui/compositions": "*",
         "webx-ui/delivery-novaposhta": "*",

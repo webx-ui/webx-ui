@@ -145,6 +145,12 @@ class Feed extends Model
         return $format === 'json' ? ',' : "\n";
     }
 
+    /** What every price of the site is in; empty where nobody set it. */
+    public static function siteCurrency(): string
+    {
+        return strtoupper(trim((string) config('webx-catalog.price.currency')));
+    }
+
     /** The whole address with its key: for whoever holds `catalog.manage`, and nobody else (§11). */
     public function address(): string
     {

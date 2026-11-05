@@ -15,4 +15,8 @@ return [
     'file-json' => 'Nagłówek i stopka nie tworzą poprawnego JSON: :reason',
     'file-json-item' => 'Produkt :product nie tworzy poprawnego JSON: :reason',
     'file-csv' => 'Wiersz :line pliku ma pól: :found zamiast :expected.',
+    'sample-json' => 'Próbka nie jest poprawnym JSON, wiersz :line: :reason',
+    'sample-place' => 'Część „:part”, wiersz :line: :fragment',
+    'unknown-variable' => 'W części „:part” nie ma zmiennej {{:name}}.',
+    'no-products' => 'Żaden produkt jeszcze nie pasuje do feedu: sprawdzono tylko nagłówek i stopkę.',
 ];

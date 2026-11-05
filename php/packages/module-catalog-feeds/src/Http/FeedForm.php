@@ -4,16 +4,18 @@ declare(strict_types=1);
 
 namespace WebxUi\CatalogFeeds\Http;
 
-use Illuminate\Contracts\Config\Repository;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use WebxUi\CatalogFeeds\Build\FeedProblem;
+use WebxUi\CatalogFeeds\Build\FeedTrial;
 use WebxUi\CatalogFeeds\Models\Feed;
 use WebxUi\Localization\Locales;
 
 /**
  * A feed written from the panel: the fields checked, the language one of the site's, the currency
- * the site's (§8.1 of the feeds spec).
+ * the site's, and what they make tried on real products (§8.1 of the feeds spec). A feed that does
+ * not make a valid file is not kept.
  *
  * The key, the build's columns and `driver` are not among the fields: nothing a form sends reaches
  * them.
@@ -27,15 +29,44 @@ final class FeedForm
         'rebuild_on_change', 'is_active',
     ];
 
+    /**
+     * What changes the file. A write of anything else is not tried: a feed gone bad with the
+     * catalogue can still be renamed or switched off.
+     */
+    private const TRIED = [
+        'format', 'locale', 'currency', 'head', 'item', 'foot', 'separator', 'filter', 'stock_map',
+        'taxonomy', 'custom_labels', 'sources', 'options',
+    ];
+
     public function __construct(
         private readonly Locales $locales,
-        private readonly Repository $config,
+        private readonly FeedTrial $trial,
     ) {}
 
     /**
      * @param  array<string, mixed>  $input
      */
-    public function save(Feed $feed, array $input): Feed
+    public function save(Feed $feed, array $input): FeedSaved
+    {
+        $this->fill($feed, $input);
+
+        $proof = $feed->exists && ! $feed->isDirty(self::TRIED) ? null : $this->trial->check($feed);
+
+        if ($proof?->problem instanceof FeedProblem) {
+            throw ValidationException::withMessages([$proof->problem->field => [$proof->problem->message]]);
+        }
+
+        $feed->save();
+
+        return new FeedSaved($feed->refresh(), $proof?->warnings() ?? []);
+    }
+
+    /**
+     * The form's values on a feed, kept or not, without writing it: what a preview looks at.
+     *
+     * @param  array<string, mixed>  $input
+     */
+    public function fill(Feed $feed, array $input): void
     {
         $creating = ! $feed->exists;
 
@@ -70,14 +101,10 @@ final class FeedForm
         $feed->locale ??= $this->locales->defaultCode();
         $feed->currency = $this->currency($input);
 
-        // A line break does not survive the trimming of a request: empty means the format's own.
+        // Empty means the format's own.
         if (($creating || array_key_exists('separator', $input)) && (string) ($input['separator'] ?? '') === '') {
             $feed->separator = Feed::separatorOf($feed->format);
         }
-
-        $feed->save();
-
-        return $feed->refresh();
     }
 
     /**
@@ -88,7 +115,7 @@ final class FeedForm
      */
     private function currency(array $input): string
     {
-        $site = strtoupper(trim((string) $this->config->get('webx-catalog.price.currency')));
+        $site = Feed::siteCurrency();
         $asked = strtoupper(trim((string) ($input['currency'] ?? '')));
 
         if ($asked !== '' && $asked !== $site) {

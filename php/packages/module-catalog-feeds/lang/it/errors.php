@@ -15,4 +15,8 @@ return [
     'file-json' => 'Intestazione e piè di pagina non formano un JSON valido: :reason',
     'file-json-item' => 'Il prodotto :product non forma un JSON valido: :reason',
     'file-csv' => 'La riga :line del file ha :found campi invece di :expected.',
+    'sample-json' => 'Il campione non è JSON valido, riga :line: :reason',
+    'sample-place' => 'Parte «:part», riga :line: :fragment',
+    'unknown-variable' => '{{:name}} non esiste nella parte «:part».',
+    'no-products' => 'Nessun prodotto è ancora adatto al feed: sono stati controllati solo intestazione e piè di pagina.',
 ];
