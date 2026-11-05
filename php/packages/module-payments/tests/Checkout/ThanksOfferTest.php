@@ -7,6 +7,7 @@ namespace WebxUi\Payments\Tests\Checkout;
 use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\HttpFoundation\Response;
+use WebxUi\Cart\AddResult;
 use WebxUi\Orders\Checkout\Slots\ShippingLine;
 use WebxUi\Orders\Models\Order;
 use WebxUi\Orders\Tests\Checkout\UsesFakeSlots;
@@ -128,7 +129,7 @@ final class ThanksOfferTest extends OnlineCase
     /**
      * Placed on receipt, and «Thank you» as its buyer opens it.
      *
-     * @return array{0: \WebxUi\Cart\AddResult, 1: Order, 2: TestResponse<Response>}
+     * @return array{0: AddResult, 1: Order, 2: TestResponse<Response>}
      */
     private function placedOnReceipt(): array
     {
