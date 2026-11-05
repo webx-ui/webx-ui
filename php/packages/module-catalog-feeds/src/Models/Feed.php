@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\CatalogFeeds\Models;
 
+use Illuminate\Container\Container;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -11,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use WebxUi\Admin\History\RecordsHistory;
+use WebxUi\CatalogFeeds\Delivery\FeedFiles;
 
 /**
  * A feed (§3 of the feeds spec): a template, what goes into it, and when it is built.
@@ -43,10 +45,13 @@ use WebxUi\Admin\History\RecordsHistory;
  * @property bool $is_active
  * @property int|null $current_build_id
  * @property string|null $built_generation
+ * @property string|null $seen_generation
  * @property Carbon|null $dirty_since
+ * @property Carbon|null $first_dirty_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read FeedBuild|null $lastBuild
+ * @property-read FeedBuild|null $currentBuild
  */
 class Feed extends Model
 {
@@ -58,7 +63,13 @@ class Feed extends Model
     /** The format decides the escaping and the check of the file; each has its file extension. */
     public const FORMATS = ['xml' => 'xml', 'json' => 'json', 'csv' => 'csv', 'text' => 'txt'];
 
+    /** What a file of each format is served as. */
+    public const TYPES = ['xml' => 'application/xml', 'json' => 'application/json', 'csv' => 'text/csv', 'text' => 'text/plain'];
+
     public const SCHEDULES = ['manual', 'hourly', 'every_6_hours', 'daily'];
+
+    /** How long a schedule's period is, in minutes; `manual` has none. */
+    public const PERIODS = ['hourly' => 60, 'every_6_hours' => 360, 'daily' => 1440];
 
     /** The fields the journal names in words: the settings, not the service columns. */
     public const HISTORY = [
@@ -95,8 +106,12 @@ class Feed extends Model
     protected static function booted(): void
     {
         static::creating(static function (Feed $feed): void {
-            $feed->access_key = Str::random(40);
+            $feed->access_key = self::newKey();
             $feed->key_issued_at = Carbon::now();
+        });
+
+        static::deleted(static function (Feed $feed): void {
+            Container::getInstance()->make(FeedFiles::class)->forget((int) $feed->id);
         });
     }
 
@@ -115,7 +130,13 @@ class Feed extends Model
             'is_active' => 'boolean',
             'key_issued_at' => 'datetime',
             'dirty_since' => 'datetime',
+            'first_dirty_at' => 'datetime',
         ];
+    }
+
+    public static function newKey(): string
+    {
+        return Str::random(40);
     }
 
     /** What stands between two products when nothing else was chosen (§3.1). */

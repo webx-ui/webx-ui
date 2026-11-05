@@ -14,6 +14,7 @@ return [
     'event-published' => 'Publié',
     'event-unpublished' => 'Dépublié',
     'event-refused' => 'Refusé',
+    'event-key_reissued' => 'Clé réémise',
     'event-run' => 'Exécution',
     'source-panel' => 'dans le panneau',
     'source-mcp' => 'via un agent',

@@ -25,5 +25,6 @@ Route::prefix((string) config('webx-admin.api_path'))
             Route::post($path, [FeedController::class, 'store'])->name('store');
             Route::put($path.'/{feed}', [FeedController::class, 'update'])->whereNumber('feed')->name('update');
             Route::delete($path.'/{feed}', [FeedController::class, 'destroy'])->whereNumber('feed')->name('destroy');
+            Route::post($path.'/{feed}/reissue-key', [FeedController::class, 'reissueKey'])->whereNumber('feed')->name('reissue-key');
         });
     });

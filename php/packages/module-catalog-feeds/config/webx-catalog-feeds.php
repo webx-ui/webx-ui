@@ -41,4 +41,28 @@ return [
 
     'stale_minutes' => 30,
 
+    /*
+    |--------------------------------------------------------------------------
+    | Delivery (§7.3, §7.5 and §7.6 of the feeds spec)
+    |--------------------------------------------------------------------------
+    |
+    | `keep_files` files stay behind the one served, for whoever is reading them, and the journal
+    | goes back `keep_builds_days`. After a change of the catalogue a build waits for `quiet_minutes`
+    | of silence, comes no oftener than `min_interval` and no later than `max_wait` after the first
+    | change, all in minutes. `per_minute` requests a minute by one address to one key.
+    |
+    */
+
+    'keep_files' => 2,
+
+    'keep_builds_days' => 30,
+
+    'quiet_minutes' => 10,
+
+    'min_interval' => 60,
+
+    'max_wait' => 360,
+
+    'per_minute' => 60,
+
 ];

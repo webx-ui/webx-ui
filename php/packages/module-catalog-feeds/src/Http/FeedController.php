@@ -7,6 +7,7 @@ namespace WebxUi\CatalogFeeds\Http;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use WebxUi\CatalogFeeds\Delivery\FeedKey;
 use WebxUi\CatalogFeeds\Models\Feed;
 
 /**
@@ -55,6 +56,12 @@ final class FeedController
         Feed::query()->findOrFail($feed)->delete();
 
         return new Response(status: 204);
+    }
+
+    /** The answer is the only place the new address is shown: it goes into the marketplace by hand. */
+    public function reissueKey(Request $request, FeedKey $key, int $feed): JsonResponse
+    {
+        return $this->answer($request, $key->reissue(Feed::query()->findOrFail($feed)));
     }
 
     private function answer(Request $request, Feed $feed, int $status = 200): JsonResponse

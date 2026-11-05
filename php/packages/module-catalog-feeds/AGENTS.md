@@ -5,7 +5,7 @@ satellite of `webx-ui/module-catalog`; it works only through the core's registri
 the filter and `ProductVariables`, read the core's `AGENTS.md`.
 
 The package is built in stages. Today it holds the tables, the models, the feeds' CRUD API, the
-section of the panel and the build. The public address, presets and MCP tools are not here yet.
+section of the panel, the build and its delivery. Presets and MCP tools are not here yet.
 
 ## What it owns
 
@@ -51,14 +51,30 @@ read, `cms.can:catalog.manage` to write.
   and never queues the next one. `budget()` keeps a raised `job_seconds` under it.
 - `FeedVariables` holds what a feed overrides in `ProductVariables`: `availability`, `mpn`.
 
+### How a file gets out
+
+- `GET /{path}/{key}.{ext}` is `FeedFileController`, outside every group, behind the limiter
+  `webx-catalog-feeds` (by key and address). A request never builds and reads one row of the feed.
+- A wrong key, an old key, a feed switched off and a feed without a file are the same empty 404;
+  `Retry-After` goes only to the right key. Another extension of a right key answers 301.
+- A feed whose format changed has no file until it is built: the old one is not served as the new.
+- `FeedKey::reissue()` is the only way to change a key: one transaction, one `key_reissued` row.
+- `FeedWatch` (`webx:catalog:feeds`, every minute) decides and queues. `dirty_since` moves with each
+  new generation, for `quiet_minutes`; `first_dirty_at` stays, for `max_wait`. A running import
+  holds a build; `min_interval` holds in any case. The last build counts even if it failed.
+- `FeedPrune` (`webx:catalog:feeds-prune`, daily) keeps the file served and `keep_files` before it.
+- `FeedsCheck` in `webx:doctor` names feeds, never keys. Only `Doctor\RobotsRules` reads robots.txt.
+
 ## Change it without forking
 
-| You want                   | Do this                                                      |
-| -------------------------- | ------------------------------------------------------------ |
-| Another prefix of the file | `WEBX_CATALOG_FEEDS_PATH`, or `path` in `webx-catalog-feeds` |
-| Other words in the panel   | `php artisan vendor:publish --tag=webx-catalog-feeds-lang`   |
-| Another disk for the files | `WEBX_CATALOG_FEEDS_DISK`; a public disk is refused          |
-| Another size of a page     | `chunk` in `webx-catalog-feeds`                              |
+| You want                    | Do this                                                      |
+| --------------------------- | ------------------------------------------------------------ |
+| Another prefix of the file  | `WEBX_CATALOG_FEEDS_PATH`, or `path` in `webx-catalog-feeds` |
+| Other words in the panel    | `php artisan vendor:publish --tag=webx-catalog-feeds-lang`   |
+| Another disk for the files  | `WEBX_CATALOG_FEEDS_DISK`; a public disk is refused          |
+| Another size of a page      | `chunk` in `webx-catalog-feeds`                              |
+| Other limits of the watch   | `quiet_minutes`, `min_interval`, `max_wait`                  |
+| Open feeds on a closed site | `feeds/*` in `webx-admin.gate.except`                        |
 
 ## Do not
 
@@ -66,11 +82,15 @@ read, `cms.can:catalog.manage` to write.
 - Do not add a `RouteType`: a feed is a file behind a key, not a page of the site.
 - Do not add a currency conversion: a feed is in the site's currency, there are no rates.
 - Do not add a fourth reason to `FeedChecks::reason()`: what does not take a product out is a warning.
+- Do not write the watcher's columns through the model: a note is no edit, and it would touch
+  `updated_at`.
+- Do not start a build from a request to the address, and do not answer 403 there: it confirms a key.
 - Do not read a variable per product: a page is asked at once, or a build turns into an N+1.
 
 ## Check your work
 
-- `tests/ApiTest.php`, `tests/BuildTest.php` and `tests/AccessCoverageTest.php` are green.
+- `tests/ApiTest.php`, `tests/BuildTest.php`, `tests/DeliveryTest.php` and
+  `tests/AccessCoverageTest.php` are green.
 - `GET /api/cms/catalog/feeds` as an administrator with `catalog.view` shows no key.
 
 ## Read more

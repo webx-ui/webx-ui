@@ -6,19 +6,17 @@ namespace WebxUi\CatalogFeeds\Build;
 
 use Illuminate\Contracts\Bus\Dispatcher;
 use Illuminate\Contracts\Config\Repository as Config;
-use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Traits\Localizable;
 use RuntimeException;
-use WebxUi\Admin\Support\PrivateDisk;
 use WebxUi\Catalog\Models\Product;
 use WebxUi\Catalog\Storefront\StorefrontCache;
 use WebxUi\Catalog\Support\RequestMemo;
 use WebxUi\Catalog\Variables\ProductVariables;
+use WebxUi\CatalogFeeds\Delivery\FeedFiles;
 use WebxUi\CatalogFeeds\Models\Feed;
 use WebxUi\CatalogFeeds\Models\FeedBuild;
 use WebxUi\Templates\Compiled;
@@ -46,8 +44,6 @@ final class FeedBuilder
 {
     use Localizable;
 
-    private const DIRECTORY = 'catalog-feeds';
-
     private const JOIN = 'join';
 
     private const CHECK = 'check';
@@ -60,6 +56,7 @@ final class FeedBuilder
         private readonly ProductVariables $variables,
         private readonly FeedContext $context,
         private readonly FeedFileCheck $check,
+        private readonly FeedFiles $files,
         private readonly StorefrontCache $cache,
         private readonly Dispatcher $bus,
         private readonly Config $config,
@@ -378,11 +375,11 @@ final class FeedBuilder
         $path = $this->temporary($build, 'file');
         $bytes = (int) filesize($path);
         $etag = (string) hash_file('sha256', $path);
-        $target = self::DIRECTORY.'/'.$feed->id.'/'.$build->id.'.'.Feed::FORMATS[$feed->format];
+        $target = $this->files->path((int) $feed->id, (int) $build->id, Feed::FORMATS[$feed->format]);
         $stream = fopen($path, 'rb') ?: throw new RuntimeException('The file of a feed vanished before it was kept.');
 
         try {
-            if ($this->disk()->writeStream($target, $stream) === false) {
+            if ($this->files->disk()->writeStream($target, $stream) === false) {
                 throw new RuntimeException("The file [{$target}] could not be written.");
             }
         } finally {
@@ -403,11 +400,13 @@ final class FeedBuilder
                 'content_at' => $current instanceof FeedBuild && $current->etag === $etag ? $current->content_at : $now,
             ])->save();
 
-            // Not through the model: a build is no edit of the feed, and the journal stays out of it.
-            Feed::query()->whereKey($feed->id)->update([
+            // Past the model: a build is no edit of the feed, for the journal or for `updated_at`.
+            Feed::query()->whereKey($feed->id)->toBase()->update([
                 'current_build_id' => $build->id,
                 'built_generation' => $build->generation,
                 'dirty_since' => null,
+                'first_dirty_at' => null,
+                'seen_generation' => null,
             ]);
         });
 
@@ -455,26 +454,15 @@ final class FeedBuilder
         return $file;
     }
 
-    /** Always on this machine, whatever the feed's disk: a disk in the cloud cannot be appended to. */
     private function temporary(FeedBuild $build, string $kind): string
     {
-        $directory = storage_path('app/'.self::DIRECTORY);
+        $directory = $this->files->temporaryDirectory();
 
         if (! is_dir($directory)) {
             @mkdir($directory, 0775, true);
         }
 
         return $directory.'/'.$build->id.'.'.$kind;
-    }
-
-    private function disk(): Filesystem
-    {
-        $name = (string) ($this->config->get('webx-catalog-feeds.disk') ?: 'local');
-
-        // What guards a feed is its key: on a public disk the file is there for anyone.
-        PrivateDisk::fromConfig()->assert($name, 'webx-catalog-feeds.disk');
-
-        return Storage::disk($name);
     }
 
     /**
