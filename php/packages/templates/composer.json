@@ -1,0 +1,47 @@
+{
+    "name": "webx-ui/templates",
+    "description": "Safe Mustache for templates kept in a database: rendering, checks, escaping by format and a description of the variables a template may use.",
+    "keywords": ["laravel", "mustache", "templates", "webx-ui"],
+    "homepage": "https://github.com/webx-ui/webx-ui",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "WebX UI",
+            "homepage": "https://github.com/webx-ui"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/webx-ui/webx-ui/issues",
+        "source": "https://github.com/webx-ui/webx-ui/tree/main/php/packages/templates"
+    },
+    "require": {
+        "php": "^8.4",
+        "ext-mbstring": "*",
+        "illuminate/support": "^13.0",
+        "mustache/mustache": "^3.2"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^11.0",
+        "phpunit/phpunit": "^12.0 || ^13.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "WebxUi\\Templates\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "WebxUi\\Templates\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": ["WebxUi\\Templates\\TemplatesServiceProvider"]
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

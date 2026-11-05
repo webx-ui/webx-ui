@@ -6,6 +6,7 @@ namespace WebxUi\Notifications\Events;
 
 use Closure;
 use InvalidArgumentException;
+use WebxUi\Templates\Variables;
 
 /**
  * Something a consumer notifies about (§5): `inbox.submission`, with the values its templates
@@ -54,13 +55,7 @@ final readonly class EventDefinition
     /** The variable a template name stands for, a family included. */
     public function variable(string $name): ?Variable
     {
-        foreach ($this->variables as $variable) {
-            if ($variable->matches($name)) {
-                return $variable;
-            }
-        }
-
-        return null;
+        return (new Variables($this->variables))->variable($name);
     }
 
     /**
@@ -71,15 +66,7 @@ final readonly class EventDefinition
      */
     public function knows(string $name, array $sections = []): bool
     {
-        foreach (array_reverse($sections) as $section) {
-            $list = $this->variable($section);
-
-            if ($list !== null && $list->isList() && array_key_exists($name, $list->fields)) {
-                return true;
-            }
-        }
-
-        return $this->variable($name) !== null;
+        return (new Variables($this->variables))->knows($name, $sections);
     }
 
     /**
@@ -102,15 +89,7 @@ final readonly class EventDefinition
      */
     public function examples(): array
     {
-        $examples = [];
-
-        foreach ($this->variables as $variable) {
-            if (! $variable->isFamily()) {
-                $examples[$variable->name] = $variable->example;
-            }
-        }
-
-        return $examples;
+        return (new Variables($this->variables))->examples();
     }
 
     /** Whether a channel of this provider has a default template to start with. */

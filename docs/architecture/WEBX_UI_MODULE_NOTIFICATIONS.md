@@ -386,7 +386,8 @@ Telegram не подтверждает обновления, и они оста�
 
 ## 7. Шаблоны
 
-Решение 16: шаблон рендерит `mustache/mustache` (`Templates\Template`). Сам Mustache кода не
+Решение 16: шаблон рендерит `mustache/mustache` (`WebxUi\Templates\Template` из библиотеки
+`webx-ui/templates`, общей с фидами каталога). Сам Mustache кода не
 исполняет. Лямбды выключены (`lambdas: false`), `strict_callables` включён. Значения — только
 строки и списки строк, так что вызвать из шаблона нечего.
 
@@ -495,8 +496,8 @@ Mustache для CodeMirror 6 нет (в `@codemirror/legacy-modes` — Jinja и 
 кнопки переменных (вставка в курсор) и предупреждения `mustacheProblems()`: незакрытая секция,
 лишнее закрытие, неизвестное имя, запрещённый тег.
 
-Предпросмотр рисуется в браузере, пока шаблон набирается: `mustache.js` разбирает шаблон, обход
-дерева — по правилам `Templates\Template` (`'0'` — пусто, как в PHP), экранирование — как у
+Предпросмотр рисуется в браузере, пока шаблон набирается: `renderTemplate` из `@webx-ui/core` —
+`mustache.js` разбирает шаблон, обход дерева — по правилам `WebxUi\Templates\Template` (`'0'` — пусто, как в PHP), экранирование — как у
 провайдера. Расхождение с сервером закрывает `PreviewParityTest` и `render.test.ts` на общих
 примерах `tests/fixtures/render.json`. `POST preview` остаётся для агента
 (`notifications_preview`).

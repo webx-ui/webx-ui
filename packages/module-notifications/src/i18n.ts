@@ -1,3 +1,4 @@
+import { templateMessages } from '@webx-ui/core'
 import { useAdmin } from '@webx-ui/module-admin'
 import { notificationsMessages } from './messages'
 
@@ -10,6 +11,7 @@ export function useNotificationsMessages(): void {
 
     if (!seeded.has(i18n)) {
       i18n.defaults('webx-notifications', notificationsMessages)
+      i18n.defaults('webx-templates', templateMessages)
       seeded.add(i18n)
     }
   } catch {

@@ -98,7 +98,7 @@ module is there (`bound(NotificationEvents::class)`), the ids a form keeps, `del
 A channel writes to an addressee with the recipient `{"variable": "customer_email"}` — only on a
 channel of that event, only of the provider's kind; one using an `internal: true` variable warns.
 
-**Templates are Mustache** (`mustache/mustache`): `{{name}}`, `{{field.phone}}` (one dot),
+**Templates are Mustache** (`webx-ui/templates`): `{{name}}`, `{{field.phone}}` (one dot),
 `{{#items}}…{{/items}}` over a list — inside, a name is a field of the row first, then a variable
 of the event — and `{{#name}}…{{/name}}` / `{{^name}}…{{/name}}` for there or empty. Values are
 escaped by the provider; `{{{name}}}` and `{{&name}}` are the same as `{{name}}`. Partials,

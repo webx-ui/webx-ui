@@ -16,6 +16,7 @@ use WebxUi\Notifications\Email\EmailProvider;
 use WebxUi\Notifications\Models\Channel;
 use WebxUi\Notifications\Panel\NotificationsModule;
 use WebxUi\Notifications\Telegram\TelegramProvider;
+use WebxUi\Templates\TemplatesServiceProvider;
 
 /**
  * Channels of notifications (the notifications spec): a registry of providers with Telegram and
@@ -33,6 +34,8 @@ class NotificationsServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__.'/../config/webx-notifications.php', 'webx-notifications');
+
+        $this->app->register(TemplatesServiceProvider::class);
 
         $this->app->singleton(NotificationEvents::class);
         $this->app->singleton(Providers::class, function (): Providers {

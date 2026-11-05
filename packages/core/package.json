@@ -74,10 +74,12 @@
     "@tiptap/vue-3": "^3.31.3",
     "@vuepic/vue-datepicker": "^14.0.0",
     "@webx-ui/tokens": "workspace:^",
+    "mustache": "^4.2.0",
     "reka-ui": "^2.10.4",
     "vue-draggable-plus": "^0.6.1"
   },
   "devDependencies": {
+    "@types/mustache": "^4.2.6",
     "@types/node": "^24.10.1",
     "@vitejs/plugin-vue": "^6.0.1",
     "typescript": "^5.9.3",

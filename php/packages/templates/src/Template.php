@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WebxUi\Notifications\Templates;
+namespace WebxUi\Templates;
 
 use Closure;
 use Mustache\Engine;
@@ -11,20 +11,27 @@ use Mustache\Loader\ArrayLoader;
 use Mustache\Tokenizer;
 
 /**
- * A channel's template is Mustache (§7, decision 16), rendered by `mustache/mustache`: `{{name}}`,
- * a list `{{#items}}…{{/items}}` over the fields of each element, `{{#name}}…{{/name}}` when a
- * value is there and `{{^name}}…{{/name}}` when it is not. A template is stored in the database,
- * so it is never Blade and never PHP: Mustache has no way to call code, and lambdas are off.
+ * A template kept in the database — a channel's message, a feed — is Mustache, rendered by
+ * `mustache/mustache`: `{{name}}`, a list `{{#items}}…{{/items}}` over the fields of each element,
+ * `{{#name}}…{{/name}}` when a value is there and `{{^name}}…{{/name}}` when it is not. It is never
+ * Blade and never PHP: Mustache has no way to call code, and lambdas are off.
  *
  * What Mustache has besides is refused: partials `{{>x}}`, a change of delimiters `{{=<% %>=}}`,
  * pragmas, inheritance, dynamic names. `{{{name}}}` and `{{&name}}` are read as `{{name}}` — no
- * value ever reaches a message unescaped. Escaping is the provider's: it replaces Mustache's own
- * HTML escaping, so nothing is escaped twice.
+ * value ever goes out unescaped. Escaping is the caller's — a provider's, a format's ({@see Escapes})
+ * — and replaces Mustache's own HTML escaping, so nothing is escaped twice.
  *
  * Names are lowercase with one dot at most: `field.phone` is the field `phone` — the values are
  * given flat (`['field.phone' => …]`) and nested before rendering, the way Mustache reads a dot.
  *
- * @phpstan-type Values array<string, string|list<array<string, string>>>
+ * Every element of a list has `first` and `last`, `'1'` or `''`: Mustache does not know the last
+ * element, and a comma between two is what a JSON feed cannot do without.
+ * `{{#images}}{{^first}},{{/first}}"{{url}}"{{/images}}`. A field of that name of its own wins.
+ *
+ * `$escape` takes the value, and `true` after it when the value is a {@see Cdata}: a closure that
+ * does not care leaves the second argument out and gets the text like any value.
+ *
+ * @phpstan-type Values array<string, string|Cdata|null|list<array<string, string|Cdata|null>>>
  * @phpstan-type Usage array{name: string, sections: list<string>, kind: string}
  */
 final class Template
@@ -36,6 +43,9 @@ final class Template
 
     /** A name a section opens: `{{#name}}` or `{{^name}}`. */
     public const SECTION = 'section';
+
+    /** What every element of a list has besides its own fields. */
+    public const POSITIONS = ['first', 'last'];
 
     private const REFUSED = [
         Tokenizer::T_PARTIAL => 'template-partial',
@@ -75,7 +85,7 @@ final class Template
      * mistake in the template).
      *
      * @param  Values  $values
-     * @param  Closure(string): string  $escape
+     * @param  Closure(string, bool=): string  $escape
      * @param  (Closure(string, list<string>): bool)|null  $known  a name and the sections it is inside
      * @return array{text: string, unknown: list<string>}
      *
@@ -93,8 +103,27 @@ final class Template
             }
         });
 
+        return ['text' => self::compile($template, $escape)->render($values), 'unknown' => array_keys($unknown)];
+    }
+
+    /**
+     * The template read and checked once, for what renders it many times: nothing is looked for
+     * in the values then — unknown names are the business of the check on saving.
+     *
+     * @param  Closure(string, bool=): string  $escape
+     *
+     * @throws TemplateError
+     */
+    public static function compile(string $template, Closure $escape): Compiled
+    {
         $engine = new Engine([
-            'escape' => static fn (mixed $value): string => is_scalar($value) ? $escape((string) $value) : '',
+            'escape' => static function (mixed $value) use ($escape): string {
+                if ($value instanceof Cdata) {
+                    return $escape($value->toText(), true);
+                }
+
+                return is_scalar($value) ? $escape((string) $value) : '';
+            },
             'partials_loader' => new ArrayLoader([]),
             'lambdas' => false,
             'inheritance' => false,
@@ -102,7 +131,43 @@ final class Template
             'strict_callables' => true,
         ]);
 
-        return ['text' => $engine->render(self::source($template), $context), 'unknown' => array_keys($unknown)];
+        return new Compiled($engine->loadTemplate(self::source($template)));
+    }
+
+    /**
+     * Refuses a variable inside a literal `<![CDATA[ … ]]>` of the template: the escaping does not
+     * see where a tag stands, so the value would be escaped for XML inside a block that prints
+     * entities as they are. A `_cdata` variable says it instead, without the block around it.
+     *
+     * Not a part of the check every template passes: only a format that writes XML has a reason
+     * to ask, and a message that happens to contain the words stays as it was.
+     *
+     * @throws TemplateError
+     */
+    public static function refuseInCdata(string $template): void
+    {
+        $inside = false;
+
+        foreach (self::tokens($template) as $token) {
+            $type = $token[Tokenizer::TYPE];
+
+            if ($type === Tokenizer::T_TEXT) {
+                // A section may cross the bounds of a block, so the walk is over the flat tokens.
+                $text = (string) $token[Tokenizer::VALUE];
+                $opened = strrpos($text, '<![CDATA[');
+                $closed = strrpos($text, ']]>');
+
+                if ($opened !== false || $closed !== false) {
+                    $inside = $opened !== false && ($closed === false || $opened > $closed);
+                }
+
+                continue;
+            }
+
+            if ($inside && in_array($type, [Tokenizer::T_ESCAPED, Tokenizer::T_UNESCAPED, Tokenizer::T_UNESCAPED_2], true)) {
+                throw new TemplateError('template-cdata', ['name' => (string) $token[Tokenizer::NAME]]);
+            }
+        }
     }
 
     /**
@@ -256,12 +321,15 @@ final class Template
     }
 
     /**
-     * Flat values nested the way Mustache reads a dot: `field.phone` is `field` → `phone`.
+     * Flat values nested the way Mustache reads a dot — `field.phone` is `field` → `phone` — with
+     * `first` and `last` on the elements of every list.
+     *
+     * @internal
      *
      * @param  Values  $values
      * @return array<string, mixed>
      */
-    private static function nest(array $values): array
+    public static function nest(array $values): array
     {
         $context = [];
 
@@ -281,12 +349,40 @@ final class Template
             }
         }
 
-        return $context;
+        return self::positioned($context);
+    }
+
+    /**
+     * @template T of array<array-key, mixed>
+     *
+     * @param  T  $values
+     * @return T
+     */
+    private static function positioned(array $values): array
+    {
+        $list = array_is_list($values);
+        $last = count($values) - 1;
+
+        foreach ($values as $key => $value) {
+            if (! is_array($value)) {
+                continue;
+            }
+
+            $value = self::positioned($value);
+
+            if ($list && ($value === [] || ! array_is_list($value))) {
+                $value += ['first' => $key === 0 ? '1' : '', 'last' => $key === $last ? '1' : ''];
+            }
+
+            $values[$key] = $value;
+        }
+
+        return $values;
     }
 
     /**
      * Whether a name has a value where it is used: in the element of an enclosing list, then
-     * outwards to the event's values — how Mustache looks it up.
+     * outwards to the values — how Mustache looks it up.
      *
      * @param  array<string, mixed>  $context
      * @param  list<string>  $sections

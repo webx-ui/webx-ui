@@ -1,0 +1,204 @@
+{
+  "cases": [
+    {
+      "name": "first and last of a list",
+      "format": "text",
+      "template": "{{#images}}{{^first}},{{/first}}{{url}}{{#last}}.{{/last}}{{/images}}",
+      "values": { "images": [{ "url": "a" }, { "url": "b" }, { "url": "c" }] },
+      "text": "a,b,c."
+    },
+    {
+      "name": "the only element is the first and the last",
+      "format": "text",
+      "template": "{{#images}}[{{first}}|{{last}}]{{/images}}",
+      "values": { "images": [{ "url": "a" }] },
+      "text": "[1|1]"
+    },
+    {
+      "name": "first and last of nested lists are each their own",
+      "format": "text",
+      "template": "{{#rows}}{{^first}};{{/first}}{{#cells}}{{^first}},{{/first}}{{v}}{{/cells}}{{/rows}}",
+      "values": {
+        "rows": [{ "cells": [{ "v": "a" }, { "v": "b" }] }, { "cells": [{ "v": "c" }] }]
+      },
+      "text": "a,b;c"
+    },
+    {
+      "name": "a field of its own called first wins",
+      "format": "text",
+      "template": "{{#people}}{{first}} {{/people}}",
+      "values": { "people": [{ "first": "Ann" }, { "first": "Bob" }] },
+      "text": "Ann Bob "
+    },
+    {
+      "name": "first means nothing outside a list",
+      "format": "text",
+      "template": "[{{first}}]{{#images}}{{/images}}",
+      "values": { "images": [{ "url": "a" }] },
+      "text": "[]",
+      "unknown": ["first"]
+    },
+    {
+      "name": "a section reads 0 the way PHP does",
+      "format": "text",
+      "template": "{{#qty}}has{{/qty}}{{^qty}}none{{/qty}}",
+      "values": { "qty": "0" },
+      "text": "none"
+    },
+    {
+      "name": "xml: entities",
+      "format": "xml",
+      "template": "<t a=\"{{v}}\">{{v}}</t>",
+      "values": { "v": "a&b <c> \"d\" 'e'" },
+      "text": "<t a=\"a&amp;b &lt;c&gt; &quot;d&quot; &apos;e&apos;\">a&amp;b &lt;c&gt; &quot;d&quot; &apos;e&apos;</t>"
+    },
+    {
+      "name": "xml: what a parser refuses is dropped, a tab and line breaks stay",
+      "format": "xml",
+      "template": "{{v}}",
+      "values": { "v": "a\u0000b\u0008c\u000bd\u001fe\tf\ng\rh￾i￿j" },
+      "text": "abcde\tf\ng\rhij"
+    },
+    {
+      "name": "xml: the text of the template is not escaped",
+      "format": "xml",
+      "template": "<a>&amp; 'x' {{v}}</a>",
+      "values": { "v": "&" },
+      "text": "<a>&amp; 'x' &amp;</a>"
+    },
+    {
+      "name": "xml: cdata is written whole",
+      "format": "xml",
+      "template": "<d>{{html}}</d>",
+      "values": { "html": { "$cdata": "<p>Tea & 'co'</p>" } },
+      "text": "<d><![CDATA[<p>Tea & 'co'</p>]]></d>"
+    },
+    {
+      "name": "xml: the end of a cdata inside the value is split",
+      "format": "xml",
+      "template": "{{html}}",
+      "values": { "html": { "$cdata": "a]]>b]]>" } },
+      "text": "<![CDATA[a]]]]><![CDATA[>b]]]]><![CDATA[>]]>"
+    },
+    {
+      "name": "xml: cdata is cleaned like any value",
+      "format": "xml",
+      "template": "{{html}}",
+      "values": { "html": { "$cdata": "a\u0001b￿c" } },
+      "text": "<![CDATA[abc]]>"
+    },
+    {
+      "name": "xml: a section over cdata shows, and prints it inside",
+      "format": "xml",
+      "template": "{{#html}}<d>{{html}}</d>{{/html}}{{^html}}none{{/html}}",
+      "values": { "html": { "$cdata": "<b>0</b>" } },
+      "text": "<d><![CDATA[<b>0</b>]]></d>"
+    },
+    {
+      "name": "xml: empty cdata is no value",
+      "format": "xml",
+      "template": "{{#html}}<d>{{html}}</d>{{/html}}{{^html}}none{{/html}}",
+      "values": { "html": { "$cdata": "" } },
+      "text": "none"
+    },
+    {
+      "name": "json: quotes, backslashes and control characters",
+      "format": "json",
+      "template": "{\"v\":\"{{v}}\"}",
+      "values": { "v": "a\"b\\c\nd\te\u0001" },
+      "text": "{\"v\":\"a\\\"b\\\\c\\nd\\te\\u0001\"}"
+    },
+    {
+      "name": "json: unicode, slashes and line separators as they are",
+      "format": "json",
+      "template": "{{v}}",
+      "values": { "v": "чай/é  " },
+      "text": "чай/é  "
+    },
+    {
+      "name": "json: cdata is its text",
+      "format": "json",
+      "template": "\"{{html}}\"",
+      "values": { "html": { "$cdata": "<p class=\"a\">x</p>" } },
+      "text": "\"<p class=\\\"a\\\">x</p>\""
+    },
+    {
+      "name": "csv: a plain value stays",
+      "format": "csv",
+      "template": "{{a}},{{b}}",
+      "values": { "a": "tea", "b": "a;b" },
+      "text": "tea,a;b"
+    },
+    {
+      "name": "csv: delimiter, quote and line break go in quotes",
+      "format": "csv",
+      "template": "{{a}},{{b}},{{c}},{{d}}",
+      "values": { "a": "a,b", "b": "say \"hi\"", "c": "two\nlines", "d": "cr\rend" },
+      "text": "\"a,b\",\"say \"\"hi\"\"\",\"two\nlines\",\"cr\rend\""
+    },
+    {
+      "name": "csv: the delimiter of the feed",
+      "format": "csv",
+      "options": { "delimiter": ";" },
+      "template": "{{a}};{{b}}",
+      "values": { "a": "a;b", "b": "a,b" },
+      "text": "\"a;b\";a,b"
+    },
+    {
+      "name": "csv: cdata is its text",
+      "format": "csv",
+      "template": "{{html}}",
+      "values": { "html": { "$cdata": "<a href=\"x\">y</a>" } },
+      "text": "\"<a href=\"\"x\"\">y</a>\""
+    },
+    {
+      "name": "text: as it is",
+      "format": "text",
+      "template": "{{v}} {{html}}",
+      "values": { "v": "<&>\"'\n", "html": { "$cdata": "]]>" } },
+      "text": "<&>\"'\n ]]>"
+    },
+    {
+      "name": "raw output is read as a value",
+      "format": "xml",
+      "template": "{{{v}}} {{&v}}",
+      "values": { "v": "<" },
+      "text": "&lt; &lt;"
+    },
+    {
+      "name": "a partial is refused",
+      "format": "text",
+      "template": "{{>footer}}",
+      "values": {},
+      "error": "template-partial"
+    },
+    {
+      "name": "a variable inside a literal cdata is refused",
+      "format": "xml",
+      "template": "<d><![CDATA[{{description}}]]></d>",
+      "values": {},
+      "cdata_error": "description"
+    },
+    {
+      "name": "a block that crosses a section is still followed",
+      "format": "xml",
+      "template": "{{#a}}<![CDATA[{{/a}}{{b}}{{#a}}]]>{{/a}}",
+      "values": {},
+      "cdata_error": "b"
+    },
+    {
+      "name": "raw output inside a literal cdata is refused too",
+      "format": "xml",
+      "template": "<![CDATA[ {{{b}}} ]]>",
+      "values": {},
+      "cdata_error": "b"
+    },
+    {
+      "name": "a variable after a closed block and a block of text are fine",
+      "format": "xml",
+      "template": "<![CDATA[plain]]>{{v}}<![CDATA[{{#v}}more{{/v}}]]>",
+      "values": { "v": "x" },
+      "text": "<![CDATA[plain]]>x<![CDATA[more]]>"
+    }
+  ]
+}

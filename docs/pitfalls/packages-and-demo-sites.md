@@ -200,6 +200,10 @@ webx-ui/<пакет>` из `php/`. Проверка — `grep helpers.php vendor
 (`node_modules/@webx-ui/*` — ссылки). Git у сайта нет, база одноразовая. Общий код со
 `starter-site.sh` — `scripts/lib/linked-site.sh`.
 
+- **Сайт на ссылках не загружается, `Class … not found` в провайдере пакета.** Пакет монорепы начал
+  звать новую библиотеку: `vendor/webx-ui/*` — ссылки, код уже новый, а автозагрузка сайта о библиотеке
+  не знает, поэтому падает любой `artisan`. Лечение — `composer update 'webx-ui/*'` на сайте до первого
+  `artisan`; `refresh` так и делает. Проверка — `/` и `/cms` отвечают 200.
 - `create` — достроить недостающее (скелет, `site create webx-lab webx`, `webx:setup --modules=all`,
   типы блоков, демо) и `refresh`; повторный запуск ничего не пересоздаёт.
 - `refresh` — после правок здесь: `pnpm --filter … build` пакетов, чьи исходники новее `dist`;

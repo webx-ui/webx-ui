@@ -141,7 +141,7 @@ Packagist ([`WEBX_UI_PHP_RELEASE.md`](WEBX_UI_PHP_RELEASE.md)). Версия у 
 
 Всё, из чего состоит панель, — пакет с префиксом `module-`: каркас `webx-ui/module-admin` и
 разделы; npm-пара называется так же (`@webx-ui/module-admin`). Библиотека, которая живёт и без
-панели, — без префикса: `nested-set`, `cache`, `compositions`, `localization`, `mcp`, `routing`, `themes`, `widgets`,
+панели, — без префикса: `nested-set`, `cache`, `compositions`, `localization`, `mcp`, `routing`, `templates`, `themes`, `widgets`,
 `theme-default`. По имени видно, панель это или библиотека.
 
 Исключение — спутники-интеграции коммерции: `payment-<шлюз>` и `delivery-<служба>` называются без
@@ -169,6 +169,7 @@ Packagist ([`WEBX_UI_PHP_RELEASE.md`](WEBX_UI_PHP_RELEASE.md)). Версия у 
 | `geography`                 | общая география: страны, регионы, пункты, ключ имён, подсказки        | — (экраны в `module-delivery`)       |
 | `mcp`                       | контракт инструментов модуля, MCP-сервер, OAuth и ключи агентов       | экраны в `module-auth`               |
 | `routing`                   | плоский реестр публичных адресов и резолвер                           | —                                    |
+| `templates`                 | безопасный Mustache: рендер, проверка, экранирование по формату       | — (JS-половина в `@webx-ui/core`)    |
 | `themes`                    | темы слоями: порядок вьюх, токены, ассеты                             | —                                    |
 | `widgets`                   | интерактивные куски сайта: логика и доступность без внешнего вида     | —                                    |
 | `theme-default`             | тема, на которой стоит каждый новый сайт                              | —                                    |
@@ -227,6 +228,15 @@ Packagist ([`WEBX_UI_PHP_RELEASE.md`](WEBX_UI_PHP_RELEASE.md)). Версия у 
 ---
 
 ## Библиотеки
+
+### `webx-ui/templates` — шаблоны в базе
+
+Mustache для шаблонов, которые хранятся в базе: сообщения уведомлений, фиды каталога. Рендер без
+кода и сырого вывода, проверка с ключами `webx-templates::errors.*`, `compile()` для потока,
+экранирование по формату (`Escapes`: xml, json, csv, text), `Cdata`, описание переменных
+(`Variable`, `Variables`), поля `first`/`last` у элементов списка. Панели не касается: рендер работает
+в очереди. Браузерная половина — `renderTemplate`, `escapeForFormat` и соседи в `@webx-ui/core`; общий
+файл случаев — `tests/fixtures/render.json`.
 
 ### `webx-ui/nested-set` — дерево
 

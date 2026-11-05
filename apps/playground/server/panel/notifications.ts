@@ -4,7 +4,7 @@ import { SUBMISSION_SAMPLES } from './notificationSamples'
 import {
   renderTemplate,
   TemplateRefusal,
-} from '../../../../packages/module-notifications/src/render'
+} from '../../../../packages/core/src/components/CodeEditor/template'
 
 /*
  * «Notifications» (WEBX_UI_MODULE_NOTIFICATIONS.md §10) without Telegram and without mail: three
@@ -619,7 +619,14 @@ function write(
       try {
         renderTemplate(String(text ?? ''), {}, (value) => value)
       } catch (error) {
-        if (error instanceof TemplateRefusal) errors[field] = [say(error.key, error.replace)]
+        if (error instanceof TemplateRefusal) {
+          errors[field] = [
+            Object.entries(error.replace).reduce(
+              (text, [name, value]) => text.split(`:${name}`).join(value),
+              line(locale, 'webx-templates', `errors.${error.key}`),
+            ),
+          ]
+        }
       }
     }
   }

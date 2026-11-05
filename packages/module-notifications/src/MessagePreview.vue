@@ -28,6 +28,7 @@ defineOptions({ name: 'WxNotificationsPreview' })
 useNotificationsMessages()
 
 const t = useTranslate('webx-notifications')
+const refusalWords = useTranslate('webx-templates')
 const channel = useChannel()
 const locales = useLocales()
 
@@ -56,7 +57,7 @@ const outcome = computed<Outcome | null>(() => {
     }
   } catch (error) {
     if (error instanceof TemplateRefusal) {
-      return { refusal: t(`errors.${error.key}`, error.replace) }
+      return { refusal: refusalWords(`errors.${error.key}`, error.replace) }
     }
 
     throw error

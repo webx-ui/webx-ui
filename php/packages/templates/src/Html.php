@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WebxUi\Notifications\Templates;
+namespace WebxUi\Templates;
 
 use Closure;
 
@@ -11,8 +11,8 @@ use Closure;
  * check of its tags a save runs — Telegram's few tags and a letter's many are the same walk with
  * other lists (`TelegramMarkup`, `EmailMarkup`).
  *
- * `render.ts` of the npm package does the same in the browser, so the preview of an HTML letter is
- * the letter; `PreviewParityTest` holds the two together.
+ * `htmlPlain()` of `@webx-ui/core` does the same in the browser, so the preview of an HTML letter
+ * is the letter; `PreviewParityTest` of the notifications holds the two together.
  */
 final class Html
 {

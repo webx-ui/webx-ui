@@ -59,6 +59,7 @@
             <directory>packages/module-tasks/tests</directory>
             <directory>packages/nested-set/tests</directory>
             <directory>packages/routing/tests</directory>
+            <directory>packages/templates/tests</directory>
             <directory>packages/themes/tests</directory>
             <directory>packages/theme-default/tests</directory>
             <directory>packages/widgets/tests</directory>
@@ -113,6 +114,7 @@
             <directory>packages/module-tasks/src</directory>
             <directory>packages/nested-set/src</directory>
             <directory>packages/routing/src</directory>
+            <directory>packages/templates/src</directory>
             <directory>packages/themes/src</directory>
             <directory>packages/widgets/src</directory>
         </include>

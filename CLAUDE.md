@@ -13,7 +13,7 @@
   `@webx-ui/module-*` — фронт разделов панели. `@webx-ui/adapter-laravel` не начинался.
 - **composer** (`php/packages/*`, вендор `webx-ui/*`, namespace `WebxUi`, одна общая версия):
   разделы панели `module-*` и библиотеки `cache`, `compositions`, `localization`, `mcp`, `nested-set`, `routing`,
-  `themes`, `theme-default`, `widgets`. Список и назначение — `ls php/packages` и реестр
+  `templates`, `themes`, `theme-default`, `widgets`. Список и назначение — `ls php/packages` и реестр
   `docs/architecture/WEBX_UI_COMPOSER_PACKAGES.md`.
 
 **Имена.** Всё, из чего состоит панель, — с префиксом `module-` (каркас `module-admin`, разделы);

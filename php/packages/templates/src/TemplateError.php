@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace WebxUi\Notifications\Templates;
+namespace WebxUi\Templates;
 
 use InvalidArgumentException;
 
 /**
  * A template Mustache cannot read, or one using what is refused (§7): a dictionary key under
- * `webx-notifications::errors` and its replacements, for the words under the field.
+ * `webx-templates::errors` and its replacements, for the words under the field.
  */
 final class TemplateError extends InvalidArgumentException
 {
@@ -23,7 +23,7 @@ final class TemplateError extends InvalidArgumentException
     /** In the words of the panel. */
     public function words(): string
     {
-        $line = __('webx-notifications::errors.'.$this->key, $this->replace);
+        $line = __('webx-templates::errors.'.$this->key, $this->replace);
 
         return is_string($line) ? $line : $this->key;
     }

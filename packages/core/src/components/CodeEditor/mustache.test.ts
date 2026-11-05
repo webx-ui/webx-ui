@@ -84,6 +84,13 @@ describe('mustacheProblems', () => {
     expect(problems.unclosed).toEqual([])
   })
 
+  it('takes first and last inside a list and nowhere else', () => {
+    expect(
+      mustacheProblems('{{#items}}{{^first}},{{/first}}{{/items}}', variables).unknown,
+    ).toEqual([])
+    expect(mustacheProblems('{{first}}', variables).unknown).toEqual(['first'])
+  })
+
   it('says a template that ends inside a tag is broken', () => {
     expect(mustacheProblems('Hello {{form').broken).toBe(true)
   })
@@ -133,6 +140,17 @@ describe('mustacheCompletions', () => {
     expect(option(result, 'title')?.detail).toBe('field of items')
     // The end of the open section is one of the suggestions too.
     expect(option(result, '/items')?.apply).toBe('/items}}')
+  })
+
+  it('offers first and last inside a list, as a value and as a section', () => {
+    const inside = suggest('{{#items}}{{|')
+    const section = suggest('{{#items}}{{^|')
+
+    expect(option(inside, 'first')?.detail).toBe('field of items')
+    expect(option(inside, 'last')?.apply).toBe('last}}')
+    expect(option(section, 'first')?.apply).toBe('first}}${}{{/first}}')
+    expect(option(suggest('{{|'), 'first')).toBeUndefined()
+    expect(option(suggest('{{#note}}{{|'), 'first')).toBeUndefined()
   })
 
   it('does not offer the fields once the section is closed', () => {

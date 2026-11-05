@@ -53,6 +53,7 @@
         "webx-ui/nested-set": "*",
         "webx-ui/payment-liqpay": "*",
         "webx-ui/routing": "*",
+        "webx-ui/templates": "*",
         "webx-ui/theme-default": "*",
         "webx-ui/themes": "*",
         "webx-ui/widgets": "*"
@@ -118,6 +119,7 @@
                     "webx-ui/nested-set": "0.93.0",
                     "webx-ui/payment-liqpay": "0.93.0",
                     "webx-ui/routing": "0.93.0",
+                    "webx-ui/templates": "0.93.0",
                     "webx-ui/theme-default": "0.93.0",
                     "webx-ui/themes": "0.93.0",
                     "webx-ui/widgets": "0.93.0"
@@ -168,6 +170,7 @@
             "WebxUi\\Services\\Tests\\": "packages/module-services/tests/",
             "WebxUi\\Settings\\Tests\\": "packages/module-settings/tests/",
             "WebxUi\\Snippets\\Tests\\": "packages/module-snippets/tests/",
+            "WebxUi\\Templates\\Tests\\": "packages/templates/tests/",
             "WebxUi\\Debug\\Tests\\": "packages/module-debug/tests/",
             "WebxUi\\Tariffs\\Tests\\": "packages/module-tariffs/tests/",
             "WebxUi\\Tasks\\Tests\\": "packages/module-tasks/tests/",

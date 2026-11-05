@@ -33,7 +33,6 @@ export default defineConfig({
         '@webx-ui/tokens',
         '@webx-ui/module-admin',
         '@webx-ui/schema',
-        'mustache',
       ],
     },
   },

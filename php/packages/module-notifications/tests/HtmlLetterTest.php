@@ -16,7 +16,7 @@ use WebxUi\Notifications\Models\Channel;
 use WebxUi\Notifications\Sending\Credentials;
 use WebxUi\Notifications\Sending\Recipient;
 use WebxUi\Notifications\Sending\Renderer;
-use WebxUi\Notifications\Templates\Html;
+use WebxUi\Templates\Html;
 
 /**
  * A letter whose template is HTML (§6.2): a template that starts with a tag is laid out by its

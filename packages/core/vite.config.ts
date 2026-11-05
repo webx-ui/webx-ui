@@ -32,6 +32,7 @@ export default defineConfig({
       external: [
         'vue',
         '@vuepic/vue-datepicker',
+        'mustache',
         'reka-ui',
         /^@tiptap\//,
         /^@codemirror\//,

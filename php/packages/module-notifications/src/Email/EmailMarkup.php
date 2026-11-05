@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Notifications\Email;
 
-use WebxUi\Notifications\Templates\Html;
+use WebxUi\Templates\Html;
 
 /**
  * A letter's template in HTML (§6.2): the tags and attributes a letter is laid out with — tables
