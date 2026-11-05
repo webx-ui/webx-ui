@@ -26,7 +26,15 @@ export default defineConfig({
       cssFileName: 'style',
     },
     rollupOptions: {
-      external: ['vue', 'vue-router', '@webx-ui/core', '@webx-ui/tokens', '@webx-ui/module-admin'],
+      external: [
+        'vue',
+        'vue-router',
+        '@webx-ui/core',
+        '@webx-ui/tokens',
+        '@webx-ui/module-admin',
+        '@webx-ui/module-catalog',
+        '@webx-ui/schema',
+      ],
     },
   },
 })

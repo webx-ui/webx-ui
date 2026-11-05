@@ -10,6 +10,7 @@ return [
     'no-item' => 'Il feed non ha un modello di prodotto.',
     'template' => 'Il modello non è leggibile: :reason',
     'too-large' => 'Il file supera la dimensione consentita di un feed.',
+    'inactive' => 'Il feed è disattivato: attivalo per generarlo.',
     'stale' => 'La generazione ha smesso di avanzare ed è stata chiusa.',
     'file-xml' => 'Il file non è un XML valido, riga :line: :reason',
     'file-json' => 'Intestazione e piè di pagina non formano un JSON valido: :reason',

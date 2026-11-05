@@ -57,6 +57,9 @@ class Feed extends Model
 {
     use RecordsHistory;
 
+    /** The form of the panel (§11). */
+    public const SCREEN = 'catalog.feed-form';
+
     /** The type the journal knows it by. */
     public const TYPE = 'catalog.feed';
 

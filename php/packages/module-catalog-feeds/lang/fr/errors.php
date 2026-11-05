@@ -10,6 +10,7 @@ return [
     'no-item' => 'Le flux n’a pas de modèle de produit.',
     'template' => 'Le modèle est illisible : :reason',
     'too-large' => 'Le fichier dépasse la taille permise d’un flux.',
+    'inactive' => 'Le flux est désactivé : activez-le pour le générer.',
     'stale' => 'La génération n’avançait plus et a été fermée.',
     'file-xml' => 'Le fichier n’est pas un XML valide, ligne :line : :reason',
     'file-json' => 'L’en-tête et le pied ne forment pas un JSON valide : :reason',

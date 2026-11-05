@@ -10,6 +10,7 @@ return [
     'no-item' => 'Beslemenin ürün şablonu yok.',
     'template' => 'Şablon okunamıyor: :reason',
     'too-large' => 'Dosya, beslemenin izin verilen boyutunu aşıyor.',
+    'inactive' => 'Akış kapalı: oluşturmak için açın.',
     'stale' => 'Oluşturma ilerlemeyi bıraktı ve kapatıldı.',
     'file-xml' => 'Dosya geçerli XML değil, satır :line: :reason',
     'file-json' => 'Üst ve alt bölüm geçerli JSON oluşturmuyor: :reason',

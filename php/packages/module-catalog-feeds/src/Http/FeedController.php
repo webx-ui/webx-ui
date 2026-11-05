@@ -4,16 +4,27 @@ declare(strict_types=1);
 
 namespace WebxUi\CatalogFeeds\Http;
 
+use Illuminate\Contracts\Container\Container;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
+use WebxUi\Catalog\Variables\ProductVariables;
+use WebxUi\Catalog\Variables\StockStatuses;
+use WebxUi\CatalogFeeds\Build\FeedContext;
+use WebxUi\CatalogFeeds\Build\FeedFacets;
+use WebxUi\CatalogFeeds\Build\FeedFailure;
 use WebxUi\CatalogFeeds\Build\FeedLabels;
+use WebxUi\CatalogFeeds\Build\FeedSelection;
 use WebxUi\CatalogFeeds\Build\FeedTrial;
 use WebxUi\CatalogFeeds\Delivery\FeedKey;
 use WebxUi\CatalogFeeds\Models\Feed;
 use WebxUi\CatalogFeeds\Presets\FeedPreset;
 use WebxUi\CatalogFeeds\Presets\FeedPresets;
+use WebxUi\Localization\Locales;
+use WebxUi\Templates\Variable;
 
 /**
  * `/api/cms/catalog/feeds` (§11 of the feeds spec): the list, a feed and its writes.
@@ -45,7 +56,7 @@ final class FeedController
     }
 
     /** What a new feed starts from: a preset with all it copies, so a form can show it unsaved. */
-    public function meta(FeedPresets $presets): JsonResponse
+    public function meta(FeedPresets $presets, ProductVariables $variables, Container $container): JsonResponse
     {
         return new JsonResponse(['data' => [
             'presets' => array_map(static fn (FeedPreset $preset): array => [
@@ -56,7 +67,56 @@ final class FeedController
             ], $presets->all()),
             'formats' => array_keys(Feed::FORMATS),
             'label_sources' => FeedLabels::TYPES,
+            'currency' => Feed::siteCurrency(),
+            // Only the stock satellite knows what can be bought (§5.1): without it there is no option.
+            'stock' => isset($variables->all()['is_purchasable']),
+            'stock_statuses' => $container->bound(StockStatuses::class) ? $container->make(StockStatuses::class)->all(app()->getLocale()) : [],
         ]]);
+    }
+
+    /** What the editor suggests, by part: a head and a foot have no product (§4.6, §11). */
+    public function variables(ProductVariables $variables, FeedContext $context): JsonResponse
+    {
+        $words = static fn (Variable $variable): array => $variable->toArray();
+
+        return new JsonResponse(['data' => [
+            'item' => array_map($words, $variables->variables()->variables),
+            'frame' => array_map($words, $context->variables()->variables),
+        ]]);
+    }
+
+    /** What the selection of a feed in this language may name (§5.1). */
+    public function facets(Request $request, FeedFacets $facets, Locales $locales): JsonResponse
+    {
+        $validated = $request->validate(['locale' => ['nullable', 'string', Rule::in($locales->codes())]]);
+
+        return new JsonResponse(['data' => $facets->offered((string) ($validated['locale'] ?? $locales->defaultCode()))]);
+    }
+
+    /**
+     * How many products a filter passes now, before the third layer and «only in stock», which need
+     * the products themselves (§5). `feed` is the one whose exclusions count.
+     */
+    public function count(Request $request, FeedSelection $selection, Locales $locales): JsonResponse
+    {
+        $validated = $request->validate([
+            'feed' => ['nullable', 'integer'],
+            'filter' => ['present', 'array'],
+            'locale' => ['nullable', 'string', Rule::in($locales->codes())],
+        ]);
+
+        $feed = isset($validated['feed']) ? Feed::query()->findOrFail((int) $validated['feed']) : new Feed;
+        $feed->filter = $validated['filter'];
+        $feed->locale = (string) ($validated['locale'] ?? $feed->locale ?? $locales->defaultCode());
+
+        try {
+            return new JsonResponse(['data' => [
+                'selected' => $selection->query($feed)->count(),
+                'excluded' => $feed->exists ? $selection->excluded($feed) : 0,
+            ]]);
+        } catch (FeedFailure $failure) {
+            throw ValidationException::withMessages(['filter' => [$failure->getMessage()]]);
+        }
     }
 
     public function show(Request $request, int $feed): JsonResponse
@@ -80,6 +140,24 @@ final class FeedController
      */
     public function preview(Request $request, FeedTrial $trial): JsonResponse
     {
+        [$feed, $products] = $this->tried($request);
+
+        return new JsonResponse(['data' => $trial->preview($feed, $products)->toArray()]);
+    }
+
+    /** The values a form renders with by itself as it is typed in (§8.3). */
+    public function sample(Request $request, FeedTrial $trial): JsonResponse
+    {
+        [$feed, $products] = $this->tried($request);
+
+        return new JsonResponse(['data' => $trial->values($feed, $products)]);
+    }
+
+    /**
+     * @return array{Feed, list<int>}
+     */
+    private function tried(Request $request): array
+    {
         $validated = Validator::make($this->form->cleaned($request->all()), [
             'feed' => ['sometimes', 'nullable', 'integer'],
             'product_ids' => ['sometimes', 'array', 'max:'.self::NAMED],
@@ -89,7 +167,7 @@ final class FeedController
         $feed = isset($validated['feed']) ? Feed::query()->findOrFail((int) $validated['feed']) : new Feed;
         $this->form->fill($feed, $request->all());
 
-        return new JsonResponse(['data' => $trial->preview($feed, array_map(intval(...), $validated['product_ids'] ?? []))->toArray()]);
+        return [$feed, array_map(intval(...), $validated['product_ids'] ?? [])];
     }
 
     public function destroy(int $feed): Response

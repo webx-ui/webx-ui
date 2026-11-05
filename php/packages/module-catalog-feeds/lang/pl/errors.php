@@ -10,6 +10,7 @@ return [
     'no-item' => 'Feed nie ma szablonu produktu.',
     'template' => 'Nie można odczytać szablonu: :reason',
     'too-large' => 'Plik przekracza dopuszczalny rozmiar feedu.',
+    'inactive' => 'Feed jest wyłączony: włącz go, aby go zbudować.',
     'stale' => 'Budowanie przestało postępować i zostało zamknięte.',
     'file-xml' => 'Plik nie jest poprawnym XML, wiersz :line: :reason',
     'file-json' => 'Nagłówek i stopka nie tworzą poprawnego JSON: :reason',

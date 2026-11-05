@@ -1038,6 +1038,19 @@ export function searchProducts(
   return listing({ params: [], query, body: {}, locale }) as ReturnType<typeof searchProducts>
 }
 
+/** The tree in order, one row a category: what the feeds map to a marketplace's list. */
+export function categoryRows(
+  locale: string,
+): { id: number; parent_id: number | null; name: string }[] {
+  const walk = (nodes: CategoryNode[]): { id: number; parent_id: number | null; name: string }[] =>
+    nodes.flatMap((one) => [
+      { id: one.id, parent_id: one.parent_id, name: one.name },
+      ...walk(one.children),
+    ])
+
+  return walk(treeOf(locale))
+}
+
 /** Every facet the products can be filtered by, the category's included. */
 export function catalogFacets(locale: string): FacetInfo[] {
   return registry?.(locale) ?? []

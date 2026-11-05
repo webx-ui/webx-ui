@@ -6,8 +6,8 @@ files for marketplaces and ad platforms, set up in the panel from a template. A 
 
 Specification: `docs/architecture/WEBX_UI_CATALOG_FEEDS.md` in the monorepo.
 
-The package is being built in stages. What works today: the tables, the section of the panel, the
-feeds' API, building a file, serving it and the presets. The agent's tools come next.
+The package is being built in stages. What works today: the tables, the panel with the form of a
+feed, its API, building a file, serving it and the presets. The agent's tools come next.
 
 ## Requirements
 
@@ -119,7 +119,9 @@ A value is cut to 100 characters. `to` belongs to its range: a price of 50 is `l
 ## API
 
 Under the panel's API path: `GET`, `POST catalog/feeds`; `GET`, `PUT`, `DELETE catalog/feeds/{id}`;
-`POST catalog/feeds/preview`; `POST catalog/feeds/{id}/reissue-key`.
+`GET catalog/feeds/meta`, `variables`, `facets`; `POST catalog/feeds/count`, `sample`, `preview`;
+`POST catalog/feeds/{id}/rebuild`, `reissue-key`; `GET catalog/feeds/{id}/builds`, `builds/{build}`;
+`catalog/feeds/{id}/exclusions`, `categories`; `catalog/feeds/taxonomies/{key}/search`, `import`.
 
 ## License
 

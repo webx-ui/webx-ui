@@ -8,6 +8,7 @@ use Illuminate\Database\Query\Builder as QueryBuilder;
 use WebxUi\Catalog\Facets\FacetKind;
 use WebxUi\Catalog\Facets\FacetValue;
 use WebxUi\Catalog\Facets\IndexField;
+use WebxUi\Catalog\Facets\TypedFacet;
 use WebxUi\CatalogProperties\Models\Property;
 
 /**
@@ -15,7 +16,7 @@ use WebxUi\CatalogProperties\Models\Property;
  * never a facet of the storefront, so it has no address, no count and no place in an index: only
  * {@see PropertySource::allFacets()} makes one.
  */
-final class TextFacet extends PropertyFacet
+final class TextFacet extends PropertyFacet implements TypedFacet
 {
     public function __construct(Property $property, private readonly string $locale)
     {

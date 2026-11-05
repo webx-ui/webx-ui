@@ -10,6 +10,7 @@ return [
     'no-item' => 'The feed has no template of a product.',
     'template' => 'The template cannot be read: :reason',
     'too-large' => 'The file is over the limit of a feed’s size.',
+    'inactive' => 'The feed is off: switch it on to build it.',
     'stale' => 'The build stopped moving and was closed.',
     'file-xml' => 'The file is not valid XML, line :line: :reason',
     'file-json' => 'The head and the foot do not make valid JSON: :reason',

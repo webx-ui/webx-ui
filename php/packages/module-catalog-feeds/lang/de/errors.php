@@ -10,6 +10,7 @@ return [
     'no-item' => 'Der Feed hat keine Produktvorlage.',
     'template' => 'Die Vorlage ist nicht lesbar: :reason',
     'too-large' => 'Die Datei überschreitet die zulässige Größe eines Feeds.',
+    'inactive' => 'Der Feed ist ausgeschaltet: Schalten Sie ihn ein, um ihn zu erstellen.',
     'stale' => 'Der Aufbau kam nicht mehr voran und wurde geschlossen.',
     'file-xml' => 'Die Datei ist kein gültiges XML, Zeile :line: :reason',
     'file-json' => 'Kopf und Fuß ergeben kein gültiges JSON: :reason',

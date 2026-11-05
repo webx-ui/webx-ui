@@ -154,6 +154,20 @@ final readonly class FeedRender
     }
 
     /**
+     * Every variable of these products under the feed's settings: what a preview in the browser
+     * fills whatever is typed next with (§8.3).
+     *
+     * @param  Collection<int, Product>  $products  with their galleries
+     * @return array<int, array<string, mixed>>
+     *
+     * @throws FeedFailure
+     */
+    public function values(Feed $feed, Collection $products): array
+    {
+        return $this->variables->values($products, $feed->locale, null, $this->feedVariables->overrides($feed));
+    }
+
+    /**
      * The head and the foot, once the pages have said what they speak about.
      *
      * @return array{string, string}

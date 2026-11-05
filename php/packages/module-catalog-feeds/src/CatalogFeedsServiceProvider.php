@@ -14,6 +14,7 @@ use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Admin\History\HistoryTypes;
 use WebxUi\Admin\ModuleRegistry;
+use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Admin\Uploads\UploadPurposes;
 use WebxUi\CatalogFeeds\Console\FeedsCommand;
@@ -78,6 +79,10 @@ class CatalogFeedsServiceProvider extends ServiceProvider
         $this->registerRateLimiter();
         $this->keepTemplatesAsTyped();
 
+        $screens = $this->app->make(ScreenRegistry::class);
+        $screens->register(Feed::SCREEN, __DIR__.'/../resources/screens/feed-form.json');
+        $screens->rules(Feed::SCREEN, ['name' => ['required', 'string', 'max:120']]);
+
         $this->registerHistory();
         $this->registerUpload();
         $this->app->make(ModuleRegistry::class)->register($this->app->make(CatalogFeedsModule::class));
@@ -131,7 +136,7 @@ class CatalogFeedsServiceProvider extends ServiceProvider
             $base = trim((string) config('webx-admin.api_path'), '/').'/'.self::SOURCE;
 
             return ! $request->isMethod('GET')
-                && preg_match('#^'.preg_quote($base, '#').'(/preview|/\d+)?$#', $request->path()) === 1;
+                && preg_match('#^'.preg_quote($base, '#').'(/preview|/sample|/\d+)?$#', $request->path()) === 1;
         };
 
         TrimStrings::skipWhen($form);

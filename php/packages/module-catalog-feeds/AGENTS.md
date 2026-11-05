@@ -4,9 +4,9 @@ Product feeds of the catalogue: files for marketplaces and ad platforms, made fr
 satellite of `webx-ui/module-catalog`; it works only through the core's registries. For products,
 the filter and `ProductVariables`, read the core's `AGENTS.md`.
 
-The package is built in stages. Today it holds the tables, the models, the feeds' CRUD API, the
-section of the panel, the build, its delivery, the check on saving, the preview, the mappings and
-the presets. MCP tools are not here yet; the forms come with the panel's stage.
+The package is built in stages. Today it holds everything but the MCP tools: the tables, the API,
+the panel with the form `catalog.feed-form`, the build, its delivery, the check, the mappings and
+the presets.
 
 ## What it owns
 
@@ -17,8 +17,8 @@ the presets. MCP tools are not here yet; the forms come with the panel's stage.
 - **Key** `access_key`: 40 random characters made when a feed is created. It is in `$hidden` and
   never in the journal. `FeedResource` gives the address that holds it only to `catalog.manage`.
 - **Journal** type `catalog.feed`; `Feed::HISTORY` names the fields it follows.
-- **Panel**: module `catalog-feeds` in the catalogue's group, after «Landings» (order 304). The
-  API is `catalog/feeds` under the panel's API path. `FeedForm` is the one way to write a feed.
+- **Panel**: module `catalog-feeds`, after «Landings» (order 304); the form is `catalog.feed-form`,
+  its node ids are public (`apps/docs/guide/catalog-feeds.md`). `FeedForm` alone writes a feed.
 - **Currency**: `FeedForm` always stores `webx-catalog.price.currency` and refuses any other. A
   build of a feed that holds another one fails until the feed is saved again.
 
@@ -27,10 +27,10 @@ the presets. MCP tools are not here yet; the forms come with the panel's stage.
 None of its own: the catalogue's permissions (`webx-ui/module-catalog`) open it, and the section
 shows to whoever holds `catalog.view` or `catalog.manage` (`visibleWith()`).
 
-| Permission       | Opens                                                             |
-| ---------------- | ----------------------------------------------------------------- |
-| `catalog.view`   | the list and a feed, without the address                          |
-| `catalog.manage` | create, edit, preview and delete a feed; the address with its key |
+| Permission       | Opens                                                           |
+| ---------------- | --------------------------------------------------------------- |
+| `catalog.view`   | the list, a feed without the address, the count, the journal    |
+| `catalog.manage` | write, preview, rebuild, exclude, map; the address with its key |
 
 A route the site adds next to the module asks the same: `cms.can:catalog.view,catalog.manage` to
 read, `cms.can:catalog.manage` to write.
@@ -138,8 +138,8 @@ read, `cms.can:catalog.manage` to write.
 
 ## Check your work
 
-- `tests/ApiTest.php`, `tests/BuildTest.php`, `tests/DeliveryTest.php`, `tests/TrialTest.php`,
-  `tests/MappingsTest.php`, `tests/PresetsTest.php` and `tests/AccessCoverageTest.php` are green.
+- Everything in `tests/` is green. `tests/fixtures/preview.json` is what the browser's preview is
+  held to: rewrite it with `WEBX_WRITE_FIXTURES=1` and read the diff.
 - `GET /api/cms/catalog/feeds` as an administrator with `catalog.view` shows no key.
 
 ## Read more

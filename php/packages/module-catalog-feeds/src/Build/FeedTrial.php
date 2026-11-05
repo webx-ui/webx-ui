@@ -93,6 +93,84 @@ final class FeedTrial
     }
 
     /**
+     * The values a preview renders with in the browser on every key (§8.3): the products a sample
+     * would take, or the ones named, and what a head and a foot may say. The template plays no part,
+     * so a form asks once and types on; a mistake in the settings is the answer, not a refusal.
+     *
+     * @param  list<int>  $named
+     * @return array{products: list<array{id: int, name: string, sku: string|null, values: array<string, mixed>}>, frame: array<string, mixed>, errors: list<array<string, mixed>>}
+     */
+    public function values(Feed $feed, array $named = []): array
+    {
+        try {
+            return $this->withLocale($feed->locale, fn (): array => $this->valuesOf($feed, array_values(array_unique($named))));
+        } catch (FeedFailure $failure) {
+            $said = FeedFailure::of($failure->key, $failure->replace);
+            $problem = new FeedProblem(self::FIELDS[$failure->key] ?? 'item', $said->getMessage());
+
+            return ['products' => [], 'frame' => [], 'errors' => [$problem->toArray()]];
+        }
+    }
+
+    /**
+     * @param  list<int>  $named
+     * @return array{products: list<array{id: int, name: string, sku: string|null, values: array<string, mixed>}>, frame: array<string, mixed>, errors: list<array<string, mixed>>}
+     */
+    private function valuesOf(Feed $feed, array $named): array
+    {
+        $selected = $this->selection->query($feed);
+        $limit = $named === [] ? max(1, (int) $this->config->get('webx-catalog-feeds.sample', 5)) : count($named);
+        $onlyInStock = (bool) ($feed->filter['only_in_stock'] ?? false);
+        $products = [];
+        $categories = [];
+        $after = 0;
+        $looked = 0;
+
+        while (count($products) < $limit && $looked < self::LOOK_AT) {
+            $page = $named === []
+                ? $this->render->products($selected, $after, self::PAGE)
+                : (clone $selected)->with('images')->whereIn('catalog_products.id', $named)->orderBy('catalog_products.id')->get();
+
+            if ($page->isEmpty()) {
+                break;
+            }
+
+            $after = (int) $page->last()->getKey();
+            $looked += $page->count();
+            $kept = $page->filter(static fn (Product $product): bool => FeedChecks::reason($product, $feed->locale) === null)->take($limit - count($products));
+            $rows = $kept->isEmpty() ? [] : $this->render->values($feed, $kept);
+
+            foreach ($kept as $product) {
+                $row = $rows[(int) $product->id];
+
+                if ($onlyInStock && ($row['is_purchasable'] ?? null) === '') {
+                    continue;
+                }
+
+                $products[] = [
+                    'id' => (int) $product->id,
+                    'name' => (string) $product->getTranslation('name', $feed->locale, false),
+                    'sku' => $product->sku,
+                    'values' => $row,
+                ];
+
+                if ($product->category_id !== null) {
+                    $categories[(int) $product->category_id] = true;
+                }
+            }
+
+            if ($named !== []) {
+                break;
+            }
+        }
+
+        $build = new FeedBuild;
+        $build->forceFill(['written' => count($products), 'state' => ['categories' => array_keys($categories)]]);
+
+        return ['products' => $products, 'frame' => $this->context->values($feed, $build, ['categories']), 'errors' => []];
+    }
+
+    /**
      * @param  list<int>  $named
      */
     private function run(Feed $feed, array $named, bool $counters): FeedProof

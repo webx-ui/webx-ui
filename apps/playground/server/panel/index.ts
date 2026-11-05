@@ -2787,8 +2787,8 @@ registerLandings(
   categoryLookup,
 )
 
-/* Its feeds (WEBX_UI_CATALOG_FEEDS.md): the list, empty until the form comes. */
-registerFeeds(on)
+/* Its feeds (WEBX_UI_CATALOG_FEEDS.md): the list, the form, the journal, builds by a timer. */
+registerFeeds(on, (status, message, errors) => new HttpFailure(status, message, undefined, errors))
 
 on('GET', '/entities/([\\w-]+)/(\\d+)/notes', ({ params }) => ({
   data: notes.get(`${params[0]}:${params[1]}`) ?? [],

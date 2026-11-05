@@ -4,7 +4,8 @@ Product feeds for the catalogue of the [WebX UI](https://github.com/webx-ui/webx
 
 The other half is the Composer package `webx-ui/module-catalog-feeds`, which owns the feeds and
 their API. The section appears in the panel when both halves are installed, beside
-`@webx-ui/module-catalog`. Today it shows the list of feeds; the form comes in a later version.
+`@webx-ui/module-catalog`: the list of feeds and the form of one, with the template editor and its
+live preview, the selection, the mappings, the labels and the journal.
 
 ## Install
 

@@ -23,7 +23,7 @@ final readonly class FeedContext
     public function __construct(private Config $config) {}
 
     /**
-     * What a head and a foot may name. The labels are the names until an editor shows them.
+     * What a head and a foot may name.
      *
      * @return Variables<Variable>
      */
@@ -34,10 +34,18 @@ final readonly class FeedContext
             'feed.locale', 'feed.currency', 'generated_at', 'generated_at_rfc822', 'products_count',
         ];
 
+        $word = static fn (string $name): string => 'webx-catalog-feeds::variables.'.str_replace('.', '-', $name);
+
         return new Variables([
-            ...array_map(static fn (string $name): Variable => new Variable($name, $name), $texts),
-            new Variable('currencies', 'currencies', [], ['code' => 'code', 'rate' => 'rate']),
-            new Variable('categories', 'categories', [], ['id' => 'id', 'parent_id' => 'parent_id', 'name' => 'name', 'path' => 'path', 'url' => 'url']),
+            ...array_map(static fn (string $name): Variable => new Variable($name, $word($name)), $texts),
+            new Variable('currencies', $word('currencies'), [], ['code' => $word('currency-code'), 'rate' => $word('currency-rate')]),
+            new Variable('categories', $word('categories'), [], [
+                'id' => $word('category-id'),
+                'parent_id' => $word('category-parent'),
+                'name' => $word('category-name'),
+                'path' => $word('category-path'),
+                'url' => $word('category-url'),
+            ]),
         ]);
     }
 
