@@ -59,8 +59,8 @@ final class CheckoutViewTest extends CheckoutTestCase
 
         $html = (string) $this->visit($cart, '/checkout')->assertOk()->getContent();
 
-        $this->assertStringContainsString('<span><a class="webx-orders-checkout__line-link" href="https://shop.example.test/item-a">Item A</a> × 1</span>', $html);
-        $this->assertStringContainsString('<span>Part C × 1</span>', $html);
+        $this->assertStringContainsString('<span><a class="webx-orders-checkout__line-link" href="https://shop.example.test/item-a">Item A</a> </span>', $html);
+        $this->assertStringContainsString('<span>Part C </span>', $html);
     }
 
     #[Test]
@@ -142,7 +142,8 @@ final class CheckoutViewTest extends CheckoutTestCase
         $this->assertStringStartsWith('text/javascript', (string) $response->headers->get('Content-Type'));
         $this->assertStringContainsString('immutable', (string) $response->headers->get('Cache-Control'));
         $this->assertStringContainsString('webx:users:signed-in', (string) $response->getContent());
-        $this->assertLessThan(4096, strlen((string) gzencode(ScriptController::contents(), 9)), 'checkout.js is small (§27.3)');
+        // 7 KB, comments included: the cart edited in «Order contents» (§23.5) took it from 4; the page alone loads it.
+        $this->assertLessThan(7168, strlen((string) gzencode(ScriptController::contents(), 9)), 'checkout.js is small (§27.3)');
     }
 
     #[Test]
