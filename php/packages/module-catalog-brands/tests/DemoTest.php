@@ -44,8 +44,20 @@ final class DemoTest extends TestCase
 
         $this->assertSame(8, Brand::withTrashed()->count());
         $this->assertSame(1, Brand::query()->where('is_visible', false)->count(), 'One taken off the site.');
-        $products = Product::withTrashed()->count();
-        $this->assertSame($products - intdiv($products + 3, 7), DB::table(Brand::LINKS)->count(), 'Every seventh without a brand.');
+
+        $onSite = Product::query()->where('is_published', true)->pluck('id');
+        $visible = Brand::query()->where('is_visible', true)->pluck('id');
+        $this->assertGreaterThan(0, $onSite->count());
+        $this->assertSame(
+            $onSite->count(),
+            DB::table(Brand::LINKS)->whereIn('product_id', $onSite)->whereIn('brand_id', $visible)->count(),
+            'Everything on the site has a brand on the site: a feed cannot go without one.',
+        );
+
+        $links = DB::table(Brand::LINKS)->pluck('product_id');
+        $hidden = Brand::query()->where('is_visible', false)->value('id');
+        $this->assertGreaterThan(0, Product::withTrashed()->whereKeyNot($links->all())->count(), 'The filter «no brand» has something to find.');
+        $this->assertGreaterThan(0, DB::table(Brand::LINKS)->where('brand_id', $hidden)->count(), 'The brand taken off has products in the panel.');
 
         // The brands go first: they were seeded after the products.
         foreach (array_reverse($ledger->entries()) as $entry) {

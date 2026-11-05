@@ -19,6 +19,7 @@ use WebxUi\Catalog\Models\Category;
 use WebxUi\Catalog\Models\Product;
 use WebxUi\Catalog\Models\ProductBarcode;
 use WebxUi\Catalog\Models\ProductImage;
+use WebxUi\Catalog\Variables\Gtin;
 use WebxUi\Routing\Models\Route;
 
 /**
@@ -85,6 +86,18 @@ final class DemoAndSourcesTest extends TestCase
         $this->assertGreaterThan(0, Product::query()->whereNotNull('mpn')->count());
         $this->assertGreaterThan(0, ProductBarcode::query()->count());
         $this->assertSame(Product::withTrashed()->count(), ProductImage::query()->count());
+
+        // What a feed has to get right (§14.2 of the feeds spec).
+        $products = Product::query()->where('is_published', true)->whereNotNull('category_id')->get();
+        $gtin = static fn (Product $product): bool => Gtin::of($product->barcode) !== null;
+        $this->assertGreaterThan(0, $products->filter($gtin)->count(), 'A real GTIN.');
+        $this->assertGreaterThan(0, $products->filter(static fn (Product $product): bool => $product->barcode !== null && ! $gtin($product))->count(), 'A shop\'s own code.');
+        $this->assertGreaterThan(0, $products->filter(static fn (Product $product): bool => $gtin($product) && $product->mpn !== null)->count(), 'Both identifiers.');
+        $this->assertGreaterThan(0, $products->filter(static fn (Product $product): bool => $product->barcode === null && $product->mpn === null)->count(), 'No identifier.');
+
+        $cyrillic = $products->first(static fn (Product $product): bool => preg_match('/\p{Cyrillic}/u', (string) $product->getTranslation('name', 'en', false)) === 1);
+        $this->assertInstanceOf(Product::class, $cyrillic, 'A name in Cyrillic.');
+        $this->assertMatchesRegularExpression('/^[a-z0-9-]+$/', (string) $cyrillic->getTranslation('slug', 'en', false), 'Its address is in Latin letters.');
         // One video, a link rather than a file: nothing but pictures lands on the disk.
         $this->assertSame(['youtube'], ProductImage::query()->whereNotNull('video')->pluck('video_provider')->all());
 

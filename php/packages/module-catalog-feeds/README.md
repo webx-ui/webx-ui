@@ -116,6 +116,13 @@ A value is cut to 100 characters. `to` belongs to its range: a price of 50 is `l
 
 `sources.mpn` is `{ "type": "field" }`, or `{ "type": "property", "property": "<code>" }`.
 
+## Demo
+
+`php artisan webx:demo` adds one Google Merchant feed to the demo shop, daily and rebuilt on change.
+It is saved without a build, because the demo of the stock runs after it: the next minute of the
+scheduler queues the first one, or press «Build» in the panel. The site needs a currency
+(`WEBX_CATALOG_CURRENCY`), and a site with a feed of its own is left alone.
+
 ## API
 
 Under the panel's API path: `GET`, `POST catalog/feeds`; `GET`, `PUT`, `DELETE catalog/feeds/{id}`;

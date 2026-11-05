@@ -260,7 +260,7 @@ final class Catalogue
             'label' => 'Catalog feeds — product files for marketplaces and ad platforms, built from a template and served at a permanent address (needs the catalog)',
             'default' => false,
             'requires' => ['catalog'],
-            'demo' => [],
+            'demo' => ['en'],
         ],
         'catalog-manticore' => [
             'package' => 'webx-ui/module-catalog-manticore',

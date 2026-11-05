@@ -15,8 +15,11 @@ use WebxUi\Localization\Locales;
  * Eight made-up brands on the demo shop's products (§7 of the dictionaries spec): four on the main
  * page, one taken off the site — its page answers 404 and its products show no brand.
  *
- * The products are the core demo's, counted by their order. Every seventh has no brand — not every
- * sixth, which is where the core puts its old prices, or a brand's page would never show a sale.
+ * The products are the core demo's, counted by their order. Everything on the site has a brand that
+ * is on the site too: a marketplace refuses a product without one, and the demo's feed is checked
+ * against that rule (§14.2 of the feeds spec). What the shop keeps off the site shows the other two
+ * cases in the panel: half has no brand, half the one taken off. Seven brands share no divisor with
+ * the core's nine shelves or its every sixth sale, so each brand gets every shelf and a sale.
  * The links go with the brands: a brand forced out takes them ({@see Brand}).
  */
 final class BrandsDemo
@@ -57,6 +60,7 @@ final class BrandsDemo
         $codes = $this->locales->codes();
         $default = $this->locales->defaultCode();
         $brands = [];
+        $hidden = null;
         $position = 0;
 
         foreach (self::BRANDS as $slug => [$name, $featured, $published]) {
@@ -74,15 +78,23 @@ final class BrandsDemo
                 'position' => ++$position,
             ])->save();
             $ledger->created($brand, 'Brand '.$name);
-            $brands[] = $brand->getKey();
+
+            if ($published) {
+                $brands[] = $brand->getKey();
+            } else {
+                $hidden = $brand->getKey();
+            }
         }
 
         $rows = [];
 
-        foreach (Product::withTrashed()->whereKey($ids)->orderBy('id')->pluck('id')->values() as $n => $id) {
-            if ($n % 7 !== 3) {
-                // Shifted every eight, or a brand would only ever get the odd products or the even ones.
-                $rows[] = ['product_id' => $id, 'brand_id' => $brands[($n + intdiv($n, count($brands))) % count($brands)]];
+        $products = Product::withTrashed()->whereKey($ids)->orderBy('id')->get(['id', 'is_published', 'deleted_at']);
+
+        foreach ($products->values() as $n => $product) {
+            if ($product->is_published && ! $product->trashed()) {
+                $rows[] = ['product_id' => $product->id, 'brand_id' => $brands[$n % count($brands)]];
+            } elseif ($n % 2 === 0) {
+                $rows[] = ['product_id' => $product->id, 'brand_id' => $hidden];
             }
         }
 
