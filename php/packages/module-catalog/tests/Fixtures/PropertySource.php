@@ -60,6 +60,11 @@ final class PropertySource implements RelevantFacets, SearchContributor
         }
     }
 
+    public function allFacets(string $locale): array
+    {
+        return $this->facets();
+    }
+
     public function facets(): array
     {
         $this->asked++;

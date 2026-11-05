@@ -123,6 +123,25 @@ final class Facets
         return $this->facets[$key] ?? $this->load()[$key] ?? null;
     }
 
+    /**
+     * Every facet a selection may name, by key: the registered ones and all a source has, offered to
+     * visitors or not ({@see FacetSource::allFacets()}). Not kept: whoever asks does so once a job.
+     *
+     * @return array<string, Facet>
+     */
+    public function selectable(string $locale): array
+    {
+        $facets = $this->facets;
+
+        foreach ($this->sources as $source) {
+            foreach ($source->allFacets($locale) as $facet) {
+                $facets[$facet->key()] ??= $facet;
+            }
+        }
+
+        return $facets;
+    }
+
     public function byCode(string $code, string $locale): ?Facet
     {
         return $this->taken($code, $locale);

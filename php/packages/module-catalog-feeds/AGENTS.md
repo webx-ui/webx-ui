@@ -4,8 +4,8 @@ Product feeds of the catalogue: files for marketplaces and ad platforms, made fr
 satellite of `webx-ui/module-catalog`; it works only through the core's registries. For products,
 the filter and `ProductVariables`, read the core's `AGENTS.md`.
 
-The package is built in stages. Today it holds the tables, the models, the feeds' CRUD API and the
-section of the panel. Builds, the public address, presets and MCP tools are not here yet.
+The package is built in stages. Today it holds the tables, the models, the feeds' CRUD API, the
+section of the panel and the build. The public address, presets and MCP tools are not here yet.
 
 ## What it owns
 
@@ -32,22 +32,39 @@ shows to whoever holds `catalog.view` or `catalog.manage` (`visibleWith()`).
 A route the site adds next to the module asks the same: `cms.can:catalog.view,catalog.manage` to
 read, `cms.can:catalog.manage` to write.
 
+### How a build goes
+
+- `FeedBuilder::start($feed, $trigger)` queues `BuildFeed`, one build a feed at a time. Nothing else
+  starts a build. A build silent for `stale_minutes` is closed by the next start.
+- `FeedSelection` is the filter and the exclusions, `FeedChecks` the third layer and the warnings.
+  A filter naming a facet the site has not fails the build: it is never dropped in silence.
+- Pages go by the cursor `id` into `storage/app/catalog-feeds/<build>.body`. The cursor, the counters,
+  `state`, the rejects and `body_bytes` are written together, and a job starts by cutting the body to
+  `body_bytes`: that is what makes a repeated page harmless.
+- The head and the foot render last (`FeedContext`), `FeedFileCheck` reads the joined file, and only
+  then does `current_build_id` move. A failed build leaves the file served as it was.
+- `FeedVariables` holds what a feed overrides in `ProductVariables`: `availability`, `mpn`.
+
 ## Change it without forking
 
 | You want                   | Do this                                                      |
 | -------------------------- | ------------------------------------------------------------ |
 | Another prefix of the file | `WEBX_CATALOG_FEEDS_PATH`, or `path` in `webx-catalog-feeds` |
 | Other words in the panel   | `php artisan vendor:publish --tag=webx-catalog-feeds-lang`   |
+| Another disk for the files | `WEBX_CATALOG_FEEDS_DISK`; a public disk is refused          |
+| Another size of a page     | `chunk` in `webx-catalog-feeds`                              |
 
 ## Do not
 
 - Do not print, log or put `access_key` in a resource: whoever has it reads the file.
 - Do not add a `RouteType`: a feed is a file behind a key, not a page of the site.
 - Do not add a currency conversion: a feed is in the site's currency, there are no rates.
+- Do not add a fourth reason to `FeedChecks::reason()`: what does not take a product out is a warning.
+- Do not read a variable per product: a page is asked at once, or a build turns into an N+1.
 
 ## Check your work
 
-- `tests/ApiTest.php` and `tests/AccessCoverageTest.php` of this package are green.
+- `tests/ApiTest.php`, `tests/BuildTest.php` and `tests/AccessCoverageTest.php` are green.
 - `GET /api/cms/catalog/feeds` as an administrator with `catalog.view` shows no key.
 
 ## Read more

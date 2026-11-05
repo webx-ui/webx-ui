@@ -32,6 +32,9 @@ use Illuminate\Support\Carbon;
  * @property int|null $cursor
  * @property int|null $body_bytes
  * @property string|null $generation
+ * @property array{categories?: list<int>}|null $state
+ * @property Carbon|null $progress_at
+ * @property-read Feed|null $feed
  */
 class FeedBuild extends Model
 {
@@ -42,6 +45,14 @@ class FeedBuild extends Model
     public const DONE = 'done';
 
     public const FAILED = 'failed';
+
+    public const MANUAL = 'manual';
+
+    public const SCHEDULE = 'schedule';
+
+    public const CHANGE = 'change';
+
+    public const MCP = 'mcp';
 
     public $timestamps = false;
 
@@ -60,9 +71,17 @@ class FeedBuild extends Model
             'started_at' => 'datetime',
             'finished_at' => 'datetime',
             'content_at' => 'datetime',
+            'progress_at' => 'datetime',
             'rejected' => 'array',
             'warnings' => 'array',
+            'state' => 'array',
         ];
+    }
+
+    /** Whether nothing more will happen to it. */
+    public function finished(): bool
+    {
+        return $this->status === self::DONE || $this->status === self::FAILED;
     }
 
     /**

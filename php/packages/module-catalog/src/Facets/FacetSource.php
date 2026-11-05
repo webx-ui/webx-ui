@@ -12,6 +12,9 @@ namespace WebxUi\Catalog\Facets;
  *
  * A source may also say which of its facets belong on a page ({@see RelevantFacets}): two hundred
  * properties are not two hundred blocks of a filter.
+ *
+ * {@see allFacets()} is the other list: everything a selection can be narrowed by, which only an
+ * administrator's selection reads and the storefront never does.
  */
 interface FacetSource
 {
@@ -21,4 +24,13 @@ interface FacetSource
      * @return list<Facet>
      */
     public function facets(): array;
+
+    /**
+     * What the selection of a feed narrows by (§5.1 of the feeds spec): the facets above and those
+     * no visitor is offered. Nothing here reaches a filter of the storefront, or its counts.
+     *
+     * @param  string  $locale  the language of the selection: a facet that matches words needs it
+     * @return list<Facet>
+     */
+    public function allFacets(string $locale): array;
 }
