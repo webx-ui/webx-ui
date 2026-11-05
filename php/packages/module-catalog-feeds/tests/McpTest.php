@@ -15,17 +15,20 @@ use Laravel\Mcp\Server\Testing\TestResponse;
 use Laravel\Passport\AccessToken;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\History\HistoryEntry;
+use WebxUi\Admin\Testing\CountsQueries;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Catalog\Tests\Fixtures\Shop;
 use WebxUi\Catalog\Variables\StockStatuses;
 use WebxUi\CatalogBrands\BrandsServiceProvider;
 use WebxUi\CatalogFeeds\Build\BuildFeed;
+use WebxUi\CatalogFeeds\Formats\FeedFormats;
 use WebxUi\CatalogFeeds\Http\FeedForm;
 use WebxUi\CatalogFeeds\Models\Feed;
 use WebxUi\CatalogFeeds\Models\FeedBuild;
 use WebxUi\CatalogFeeds\Models\Taxonomy;
 use WebxUi\CatalogFeeds\Models\TaxonomyItem;
 use WebxUi\CatalogFeeds\Taxonomy\ImportTaxonomy;
+use WebxUi\CatalogFeeds\Tests\Fixtures\LinesFormat;
 use WebxUi\CatalogLabels\LabelsServiceProvider;
 use WebxUi\CatalogProperties\CatalogPropertiesServiceProvider;
 use WebxUi\CatalogStock\StockServiceProvider;
@@ -42,6 +45,8 @@ use WebxUi\Mcp\Server\WebxServer;
  */
 final class McpTest extends TestCase
 {
+    use CountsQueries;
+
     private const CLIENT = '9d2f6c1e-0a7b-4c3d-8e5f-1a2b3c4d5e6f';
 
     private const READS = ['list', 'get', 'presets', 'builds', 'build_get', 'exclusions', 'mappings', 'taxonomy_search'];
@@ -274,6 +279,35 @@ final class McpTest extends TestCase
 
         $this->get((string) $made['address'])->assertOk();
         $this->assertSame(1, $this->content($this->agent('catalog_feeds_list', [], $editor))['count']);
+    }
+
+    #[Test]
+    public function the_list_reads_no_build_per_feed_whether_the_class_is_there_or_gone(): void
+    {
+        $this->app->make(FeedFormats::class)->register(new LinesFormat);
+
+        // Two of a kind: one feed alone would read its build once and look like no loop at all.
+        foreach (range(1, 4) as $number) {
+            $feed = $this->feed(['name' => 'Feed '.$number, 'format' => 'text', 'driver' => 'lines']);
+            $this->built($feed);
+
+            if ($number > 2) {
+                $feed->forceFill(['driver' => 'gone'])->save();
+            }
+        }
+
+        $editor = $this->editor();
+        $this->agent('catalog_feeds_list', [], $editor)->assertOk();
+
+        $answer = $this->assertNoRepeatedQueries(fn (): TestResponse => $this->agent('catalog_feeds_list', [], $editor)->assertOk());
+
+        $feeds = $this->content($answer)['feeds'];
+
+        $this->assertCount(4, $feeds);
+
+        foreach ($feeds as $feed) {
+            $this->assertStringEndsWith('.lines', (string) $feed['address']);
+        }
     }
 
     #[Test]

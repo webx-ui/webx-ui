@@ -40,7 +40,7 @@ final class FeedFileController
             return new RedirectResponse($feed->address(), 301, self::HEADERS);
         }
 
-        $build = $feed->currentBuild()->first();
+        $build = $feed->currentBuild;
 
         // The format changed and nothing was built since: what is there is not what the address says.
         if (! $build instanceof FeedBuild || ! str_ends_with((string) $build->path, '.'.$extension)) {

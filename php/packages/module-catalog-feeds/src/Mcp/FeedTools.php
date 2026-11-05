@@ -273,7 +273,7 @@ final class FeedTools
      */
     private function list(array $arguments, ?Authenticatable $user): array
     {
-        $page = Feed::query()->with('lastBuild')->orderBy('id')
+        $page = Feed::query()->with(['lastBuild', 'currentBuild:id,path'])->orderBy('id')
             ->paginate(min(200, max(1, (int) ($arguments['per_page'] ?? 50))), page: max(1, (int) ($arguments['page'] ?? 1)));
 
         $sees = $this->seesAddress($user);

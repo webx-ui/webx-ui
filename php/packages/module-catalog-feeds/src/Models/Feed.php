@@ -174,9 +174,14 @@ class Feed extends Model
         }
 
         $format = Container::getInstance()->make(FeedFormats::class)->find($this->driver);
+
+        if ($format !== null) {
+            return $format->extension();
+        }
+
         $served = pathinfo((string) $this->currentBuild?->path, PATHINFO_EXTENSION);
 
-        return $format?->extension() ?? ($served === '' ? $own : $served);
+        return $served === '' ? $own : $served;
     }
 
     /**

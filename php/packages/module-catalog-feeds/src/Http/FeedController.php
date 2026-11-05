@@ -38,7 +38,7 @@ final class FeedController
             'per_page' => ['nullable', 'integer', 'min:1', 'max:200'],
         ]);
 
-        $page = Feed::query()->with('lastBuild')->orderBy('id')->paginate((int) ($validated['per_page'] ?? 50));
+        $page = Feed::query()->with(['lastBuild', 'currentBuild:id,path'])->orderBy('id')->paginate((int) ($validated['per_page'] ?? 50));
         $user = $request->user();
 
         return new JsonResponse([

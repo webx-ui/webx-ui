@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Testing\CountsQueries;
 use WebxUi\Catalog\Tests\Fixtures\Shop;
 use WebxUi\CatalogFeeds\Build\FeedBuilder;
 use WebxUi\CatalogFeeds\Formats\FeedFormats;
@@ -21,6 +22,8 @@ use WebxUi\CatalogFeeds\Tests\Fixtures\LinesFormat;
  */
 final class FormatClassTest extends TestCase
 {
+    use CountsQueries;
+
     private const API = '/api/cms/catalog/feeds';
 
     private Shop $shop;
@@ -229,6 +232,42 @@ final class FormatClassTest extends TestCase
     }
 
     #[Test]
+    public function the_list_reads_no_build_per_feed_whether_the_class_is_there_or_gone(): void
+    {
+        $gone = $this->feedsOfBothKinds();
+
+        $this->actingAs($this->editor(), 'cms');
+        $this->getJson(self::API)->assertOk();
+
+        $answer = $this->assertNoRepeatedQueries(fn () => $this->getJson(self::API)->assertOk());
+
+        $addresses = array_column((array) $answer->json('data'), 'address', 'id');
+
+        $this->assertCount(4, $addresses);
+
+        foreach ($gone as $feed) {
+            $this->assertStringEndsWith('.lines', (string) $addresses[$feed->id]);
+        }
+    }
+
+    #[Test]
+    public function a_file_reads_its_build_once(): void
+    {
+        $gone = $this->feedsOfBothKinds()[0];
+        $there = Feed::query()->where('driver', 'lines')->firstOrFail();
+
+        foreach ([$there, $gone] as $feed) {
+            $path = $this->path($feed, 'lines');
+            $tally = $this->recordQueries(fn () => $this->get($path)->assertOk());
+
+            $this->assertCount(1, array_filter(
+                $tally->queries,
+                static fn (array $query): bool => str_contains($query['query'], 'catalog_feed_builds'),
+            ), (string) $feed->driver.PHP_EOL.$tally->describe());
+        }
+    }
+
+    #[Test]
     public function a_mistake_in_a_registration_stops_the_boot(): void
     {
         $formats = $this->app->make(FeedFormats::class);
@@ -237,6 +276,29 @@ final class FormatClassTest extends TestCase
         $this->expectExceptionMessage('already registered');
 
         $formats->register(new LinesFormat);
+    }
+
+    /**
+     * Two feeds whose class is there and two whose class is gone, each with a file: one of a kind
+     * would read its build once and look like no loop at all.
+     *
+     * @return list<Feed> the two whose class is gone
+     */
+    private function feedsOfBothKinds(): array
+    {
+        $gone = [];
+
+        foreach (range(1, 4) as $number) {
+            $feed = $this->feed(['name' => 'Feed '.$number]);
+            $this->build($feed);
+
+            if ($number > 2) {
+                $feed->forceFill(['driver' => 'gone'])->save();
+                $gone[] = $feed;
+            }
+        }
+
+        return $gone;
     }
 
     private function build(Feed $feed): FeedBuild
