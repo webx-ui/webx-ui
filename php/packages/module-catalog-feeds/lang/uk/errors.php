@@ -19,6 +19,7 @@ return [
     'sample-json' => 'Проба — некоректний JSON, рядок :line: :reason',
     'sample-place' => 'Частина «:part», рядок :line: :fragment',
     'unknown-variable' => 'У частині «:part» немає змінної {{:name}}.',
+    'similar-variables' => 'Схожі: :names.',
     'no-products' => 'Відповідних товарів поки немає: перевірено лише шапку й підвал.',
     'label-key' => 'Міток п’ять, від 0 до 4: [:label] серед них немає.',
     'label-type' => 'У мітки :label невідоме джерело.',

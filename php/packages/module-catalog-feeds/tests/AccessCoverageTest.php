@@ -16,8 +16,10 @@ final class AccessCoverageTest extends TestCase
     use AssertsPermissions;
 
     #[Test]
-    public function every_route_asks_for_a_declared_permission(): void
+    public function every_route_and_tool_asks_for_a_declared_permission(): void
     {
         $this->assertPanelRoutesNeedPermission('WebxUi\\CatalogFeeds\\');
+
+        $this->assertToolsNeedPermission('catalog');
     }
 }

@@ -4,27 +4,19 @@ declare(strict_types=1);
 
 namespace WebxUi\CatalogFeeds\Http;
 
-use Illuminate\Contracts\Container\Container;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
-use WebxUi\Catalog\Variables\ProductVariables;
-use WebxUi\Catalog\Variables\StockStatuses;
-use WebxUi\CatalogFeeds\Build\FeedContext;
 use WebxUi\CatalogFeeds\Build\FeedFacets;
 use WebxUi\CatalogFeeds\Build\FeedFailure;
-use WebxUi\CatalogFeeds\Build\FeedLabels;
 use WebxUi\CatalogFeeds\Build\FeedSelection;
 use WebxUi\CatalogFeeds\Build\FeedTrial;
 use WebxUi\CatalogFeeds\Delivery\FeedKey;
 use WebxUi\CatalogFeeds\Models\Feed;
-use WebxUi\CatalogFeeds\Presets\FeedPreset;
-use WebxUi\CatalogFeeds\Presets\FeedPresets;
 use WebxUi\Localization\Locales;
-use WebxUi\Templates\Variable;
 
 /**
  * `/api/cms/catalog/feeds` (§11 of the feeds spec): the list, a feed and its writes.
@@ -32,7 +24,7 @@ use WebxUi\Templates\Variable;
 final class FeedController
 {
     /** How many products a preview may be asked about (§13). */
-    private const NAMED = 20;
+    public const NAMED = 20;
 
     public function __construct(
         private readonly FeedForm $form,
@@ -55,34 +47,14 @@ final class FeedController
         ]);
     }
 
-    /** What a new feed starts from: a preset with all it copies, so a form can show it unsaved. */
-    public function meta(FeedPresets $presets, ProductVariables $variables, Container $container): JsonResponse
+    public function meta(FeedMeta $meta): JsonResponse
     {
-        return new JsonResponse(['data' => [
-            'presets' => array_map(static fn (FeedPreset $preset): array => [
-                'key' => $preset->key(),
-                'name' => $preset->name(),
-                'description' => $preset->description(),
-                'values' => $preset->values(),
-            ], $presets->all()),
-            'formats' => array_keys(Feed::FORMATS),
-            'label_sources' => FeedLabels::TYPES,
-            'currency' => Feed::siteCurrency(),
-            // Only the stock satellite knows what can be bought (§5.1): without it there is no option.
-            'stock' => isset($variables->all()['is_purchasable']),
-            'stock_statuses' => $container->bound(StockStatuses::class) ? $container->make(StockStatuses::class)->all(app()->getLocale()) : [],
-        ]]);
+        return new JsonResponse(['data' => $meta->all()]);
     }
 
-    /** What the editor suggests, by part: a head and a foot have no product (§4.6, §11). */
-    public function variables(ProductVariables $variables, FeedContext $context): JsonResponse
+    public function variables(FeedMeta $meta): JsonResponse
     {
-        $words = static fn (Variable $variable): array => $variable->toArray();
-
-        return new JsonResponse(['data' => [
-            'item' => array_map($words, $variables->variables()->variables),
-            'frame' => array_map($words, $context->variables()->variables),
-        ]]);
+        return new JsonResponse(['data' => $meta->variables()]);
     }
 
     /** What the selection of a feed in this language may name (§5.1). */

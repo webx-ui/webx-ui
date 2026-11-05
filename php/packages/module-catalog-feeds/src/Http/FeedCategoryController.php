@@ -30,12 +30,7 @@ final class FeedCategoryController
     {
         $found = Feed::query()->findOrFail($feed);
 
-        $validated = $request->validate([
-            'categories' => ['present', 'array', 'max:5000'],
-            'categories.*.category_id' => ['required', 'integer', 'distinct', 'exists:catalog_categories,id'],
-            'categories.*.taxonomy_item_id' => ['nullable', 'integer', 'exists:catalog_feed_taxonomy_items,id', 'prohibits:categories.*.value'],
-            'categories.*.value' => ['nullable', 'string', 'max:255'],
-        ]);
+        $validated = $request->validate(FeedCategories::RULES);
 
         $this->categories->set($found, $validated['categories']);
 
@@ -48,7 +43,7 @@ final class FeedCategoryController
 
         return new JsonResponse([
             'data' => $tree,
-            'unmapped' => count(array_filter($tree, static fn (array $row): bool => $row['value'] === null && $row['inherited'] === null)),
+            'unmapped' => count(FeedCategories::unmapped($tree)),
             'taxonomy' => $feed->taxonomy === null ? null : $this->taxonomies->describe($feed->taxonomy, $feed->locale),
         ]);
     }

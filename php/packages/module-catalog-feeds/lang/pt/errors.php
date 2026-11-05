@@ -19,6 +19,7 @@ return [
     'sample-json' => 'A amostra não é JSON válido, linha :line: :reason',
     'sample-place' => 'Parte «:part», linha :line: :fragment',
     'unknown-variable' => '{{:name}} não existe na parte «:part».',
+    'similar-variables' => 'Semelhantes: :names.',
     'no-products' => 'Ainda nenhum produto serve para o feed: só o cabeçalho e o rodapé foram verificados.',
     'label-key' => 'Há cinco etiquetas personalizadas, de 0 a 4: [:label] não é uma delas.',
     'label-type' => 'A etiqueta personalizada :label tem uma origem desconhecida.',

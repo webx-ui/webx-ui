@@ -19,6 +19,7 @@ return [
     'sample-json' => 'L’échantillon n’est pas un JSON valide, ligne :line : :reason',
     'sample-place' => 'Partie « :part », ligne :line : :fragment',
     'unknown-variable' => '{{:name}} n’existe pas dans la partie « :part ».',
+    'similar-variables' => 'Similaires : :names.',
     'no-products' => 'Aucun produit ne convient encore au flux : seuls l’en-tête et le pied ont été vérifiés.',
     'label-key' => 'Il y a cinq libellés personnalisés, de 0 à 4 : [:label] n’en fait pas partie.',
     'label-type' => 'Le libellé personnalisé :label a une source inconnue.',

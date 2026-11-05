@@ -50,6 +50,9 @@ final class FeedTrial
 
     private const FRAGMENT_BEFORE = 60;
 
+    /** How many names a mistaken one is answered with. */
+    private const SIMILAR = 5;
+
     /** Where a failure of the settings is shown: the rest belongs to the template of a product. */
     private const FIELDS = [
         'filter-facet' => 'filter',
@@ -223,15 +226,52 @@ final class FeedTrial
 
             foreach (Template::usages((string) $feed->{$part}) as $usage) {
                 if (! $known->knows($usage['name'], $usage['sections'])) {
-                    return new FeedProblem($part, (string) __('webx-catalog-feeds::errors.unknown-variable', [
+                    $similar = $this->similar($usage['name'], $usage['sections'], $known);
+
+                    $message = (string) __('webx-catalog-feeds::errors.unknown-variable', [
                         'name' => $usage['name'],
                         'part' => $this->word($part),
+                    ]);
+
+                    return new FeedProblem($part, $similar === [] ? $message : $message.' '.__('webx-catalog-feeds::errors.similar-variables', [
+                        'names' => implode(', ', $similar),
                     ]));
                 }
             }
         }
 
         return null;
+    }
+
+    /**
+     * What a name was probably meant to be: the closest names, the fields of the lists it stands in
+     * among them. A typo reads better with its correction beside it (§12).
+     *
+     * @param  list<string>  $sections
+     * @param  Variables<Variable>  $known
+     * @return list<string>
+     */
+    private function similar(string $name, array $sections, Variables $known): array
+    {
+        $names = array_map(static fn (Variable $variable): string => $variable->name, array_values($known->variables));
+
+        foreach ($sections as $section) {
+            $names = [...$names, ...array_keys($known->variable($section)->fields ?? [])];
+        }
+
+        $distances = [];
+
+        foreach (array_unique($names) as $candidate) {
+            $distance = levenshtein($name, $candidate);
+
+            if ($distance <= max(2, intdiv(strlen($name), 3)) || str_contains($candidate, $name)) {
+                $distances[$candidate] = $distance;
+            }
+        }
+
+        asort($distances);
+
+        return array_slice(array_keys($distances), 0, self::SIMILAR);
     }
 
     /**

@@ -7,7 +7,7 @@ files for marketplaces and ad platforms, set up in the panel from a template. A 
 Specification: `docs/architecture/WEBX_UI_CATALOG_FEEDS.md` in the monorepo.
 
 The package is being built in stages. What works today: the tables, the panel with the form of a
-feed, its API, building a file, serving it and the presets. The agent's tools come next.
+feed, its API, building a file, serving it, the presets and the agent's tools (`catalog_feeds_*`).
 
 ## Requirements
 

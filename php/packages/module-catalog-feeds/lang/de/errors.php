@@ -19,6 +19,7 @@ return [
     'sample-json' => 'Die Probe ist kein gültiges JSON, Zeile :line: :reason',
     'sample-place' => 'Teil „:part“, Zeile :line: :fragment',
     'unknown-variable' => '{{:name}} ist im Teil „:part“ nicht bekannt.',
+    'similar-variables' => 'Ähnlich: :names.',
     'no-products' => 'Noch passt kein Produkt zum Feed: Nur Kopf und Fuß wurden geprüft.',
     'label-key' => 'Es gibt fünf Custom Labels, 0 bis 4: [:label] gehört nicht dazu.',
     'label-type' => 'Custom Label :label hat eine unbekannte Quelle.',

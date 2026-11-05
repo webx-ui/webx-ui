@@ -19,6 +19,7 @@ return [
     'sample-json' => 'Próbka nie jest poprawnym JSON, wiersz :line: :reason',
     'sample-place' => 'Część „:part”, wiersz :line: :fragment',
     'unknown-variable' => 'W części „:part” nie ma zmiennej {{:name}}.',
+    'similar-variables' => 'Podobne: :names.',
     'no-products' => 'Żaden produkt jeszcze nie pasuje do feedu: sprawdzono tylko nagłówek i stopkę.',
     'label-key' => 'Etykiet niestandardowych jest pięć, od 0 do 4: [:label] nie należy do nich.',
     'label-type' => 'Etykieta niestandardowa :label ma nieznane źródło.',

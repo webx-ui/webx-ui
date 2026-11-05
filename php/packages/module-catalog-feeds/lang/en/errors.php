@@ -19,6 +19,7 @@ return [
     'sample-json' => 'The sample is not valid JSON, line :line: :reason',
     'sample-place' => 'Part “:part”, line :line: :fragment',
     'unknown-variable' => '{{:name}} is not known in the part “:part”.',
+    'similar-variables' => 'Similar: :names.',
     'no-products' => 'No product suits the feed yet: only the header and the footer were checked.',
     'label-key' => 'There are five custom labels, 0 to 4: [:label] is not one of them.',
     'label-type' => 'Custom label :label has an unknown source.',

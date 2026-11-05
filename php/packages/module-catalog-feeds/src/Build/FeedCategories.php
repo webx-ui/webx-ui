@@ -37,6 +37,25 @@ final class FeedCategories
         return new CategoryMap($own, $parents);
     }
 
+    /** What a write of mappings has to pass, from the panel and from an agent. */
+    public const RULES = [
+        'categories' => ['present', 'array', 'max:5000'],
+        'categories.*.category_id' => ['required', 'integer', 'distinct', 'exists:catalog_categories,id'],
+        'categories.*.taxonomy_item_id' => ['nullable', 'integer', 'exists:catalog_feed_taxonomy_items,id', 'prohibits:categories.*.value'],
+        'categories.*.value' => ['nullable', 'string', 'max:255'],
+    ];
+
+    /**
+     * The rows of {@see tree()} that lead nowhere: nothing of their own, no parent to take after.
+     *
+     * @param  list<array<string, mixed>>  $tree
+     * @return list<array<string, mixed>>
+     */
+    public static function unmapped(array $tree): array
+    {
+        return array_values(array_filter($tree, static fn (array $row): bool => $row['value'] === null && $row['inherited'] === null));
+    }
+
     /**
      * Every category with what it holds and what it takes after: what the form draws a tree from.
      *

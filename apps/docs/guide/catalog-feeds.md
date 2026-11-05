@@ -88,3 +88,19 @@ warnings and the first products left out, each a link to its form. Below are the
 
 **Reissue the key** closes the old address at once, so it asks first. Paste the new address into
 Merchant Center and everywhere else that reads the feed.
+
+## Agents
+
+An agent connected to the panel has the same feeds as `catalog_feeds_*` tools, behind the catalogue's
+permissions and the scopes `catalog:read` and `catalog:write`. The usual path is
+`catalog_feeds_presets`, `catalog_feeds_create`, `catalog_feeds_mappings_set`, `catalog_feeds_preview`,
+`catalog_feeds_rebuild` and `catalog_feeds_builds`. It reads `catalog://feed-rules` and
+`catalog://feed-variables` before writing a template.
+
+Every tool that changes something takes `dry_run`. Creating, editing, mappings and exclusions go through
+all their checks and keep nothing. `catalog_feeds_rebuild` counts the products instead,
+`catalog_feeds_reissue_key` names the address that would stop working, and `catalog_feeds_delete` says what
+would go.
+
+The address holds the key, so it goes only to a connection that may write: an administrator with
+`catalog.manage` who connected an agent read-only does not hand it the key.

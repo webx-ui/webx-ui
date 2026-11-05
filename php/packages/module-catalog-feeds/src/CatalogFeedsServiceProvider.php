@@ -17,9 +17,12 @@ use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Admin\Uploads\UploadPurposes;
+use WebxUi\Catalog\Mcp\SatelliteTools;
 use WebxUi\CatalogFeeds\Console\FeedsCommand;
 use WebxUi\CatalogFeeds\Console\FeedsPruneCommand;
 use WebxUi\CatalogFeeds\Doctor\FeedsCheck;
+use WebxUi\CatalogFeeds\Mcp\FeedResources;
+use WebxUi\CatalogFeeds\Mcp\FeedTools;
 use WebxUi\CatalogFeeds\Models\Feed;
 use WebxUi\CatalogFeeds\Panel\CatalogFeedsModule;
 use WebxUi\CatalogFeeds\Presets\CsvPreset;
@@ -86,6 +89,12 @@ class CatalogFeedsServiceProvider extends ServiceProvider
         $this->registerHistory();
         $this->registerUpload();
         $this->app->make(ModuleRegistry::class)->register($this->app->make(CatalogFeedsModule::class));
+
+        // The agent's tools and resources are the catalogue's (§12): its names, scopes and
+        // permissions. Built when an agent asks, not at boot.
+        $mcp = $this->app->make(SatelliteTools::class);
+        $mcp->tools(fn (): array => $this->app->make(FeedTools::class)->all());
+        $mcp->resources(fn (): array => $this->app->make(FeedResources::class)->all());
 
         if (! $this->app->runningInConsole()) {
             return;

@@ -19,6 +19,7 @@ return [
     'sample-json' => 'Örnek geçerli JSON değil, satır :line: :reason',
     'sample-place' => '“:part” bölümü, satır :line: :fragment',
     'unknown-variable' => '“:part” bölümünde {{:name}} değişkeni yok.',
+    'similar-variables' => 'Benzerleri: :names.',
     'no-products' => 'Henüz feed’e uyan ürün yok: yalnızca üst ve alt bölüm denetlendi.',
     'label-key' => 'Beş özel etiket vardır, 0 ile 4 arası: [:label] bunlardan biri değil.',
     'label-type' => ':label özel etiketinin kaynağı bilinmiyor.',

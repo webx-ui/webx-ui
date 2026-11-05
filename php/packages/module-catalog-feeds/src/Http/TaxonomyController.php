@@ -18,9 +18,12 @@ use WebxUi\Localization\Locales;
  */
 final class TaxonomyController
 {
-    private const LOCALE = 'regex:/^[a-zA-Z]{2}([-_][a-zA-Z]{2})?$/';
+    public const LOCALE = 'regex:/^[a-zA-Z]{2}([-_][a-zA-Z]{2})?$/';
 
-    private const LIMIT = 20;
+    public const LIMIT = 20;
+
+    /** Where a list may come from (§13). */
+    public const ADDRESS = ['nullable', 'string', 'url', 'starts_with:https://', 'max:500'];
 
     public function __construct(
         private readonly Taxonomies $taxonomies,
@@ -52,7 +55,7 @@ final class TaxonomyController
 
         $validated = $request->validate([
             'locale' => ['nullable', 'string', self::LOCALE],
-            'url' => ['nullable', 'string', 'url', 'starts_with:https://', 'max:500', 'prohibits:upload'],
+            'url' => [...self::ADDRESS, 'prohibits:upload'],
             'upload' => ['nullable', 'string'],
         ]);
 

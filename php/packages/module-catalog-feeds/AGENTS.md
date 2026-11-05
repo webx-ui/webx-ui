@@ -4,10 +4,6 @@ Product feeds of the catalogue: files for marketplaces and ad platforms, made fr
 satellite of `webx-ui/module-catalog`; it works only through the core's registries. For products,
 the filter and `ProductVariables`, read the core's `AGENTS.md`.
 
-The package is built in stages. Today it holds everything but the MCP tools: the tables, the API,
-the panel with the form `catalog.feed-form`, the build, its delivery, the check, the mappings and
-the presets.
-
 ## What it owns
 
 - **Tables** `catalog_feeds` (`WebxUi\CatalogFeeds\Models\Feed`), `catalog_feed_builds`
@@ -19,6 +15,8 @@ the presets.
 - **Journal** type `catalog.feed`; `Feed::HISTORY` names the fields it follows.
 - **Panel**: module `catalog-feeds`, after «Landings» (order 304); the form is `catalog.feed-form`,
   its node ids are public (`apps/docs/guide/catalog-feeds.md`). `FeedForm` alone writes a feed.
+- **MCP** `catalog_feeds_*` (`Mcp\FeedTools`), `catalog://feed-variables` and `catalog://feed-rules`
+  (`Mcp\FeedResources`), through `SatelliteTools`: scopes `catalog:read`, `catalog:write`.
 - **Currency**: `FeedForm` always stores `webx-catalog.price.currency` and refuses any other. A
   build of a feed that holds another one fails until the feed is saved again.
 
@@ -125,6 +123,8 @@ read, `cms.can:catalog.manage` to write.
 ## Do not
 
 - Do not print, log or put `access_key` in a resource: whoever has it reads the file.
+- Do not rehearse `delete`, `rebuild`, `reissue_key` or `taxonomy_import`: a rollback brings back no file, no job.
+- Do not show the address to a read-only connection or a `catalog:read` key: `FeedTools::seesAddress()`.
 - Do not add a `RouteType`: a feed is a file behind a key, not a page of the site.
 - Do not add a currency conversion: a feed is in the site's currency, there are no rates.
 - Do not add a fourth reason to `FeedChecks::reason()`: what does not take a product out is a warning.

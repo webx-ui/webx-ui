@@ -4,14 +4,10 @@ declare(strict_types=1);
 
 namespace WebxUi\CatalogFeeds\Http;
 
-use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
-use WebxUi\Catalog\Models\Product;
-use WebxUi\CatalogFeeds\Build\FeedSelection;
+use WebxUi\CatalogFeeds\Build\FeedExclusions;
 use WebxUi\CatalogFeeds\Models\Feed;
 
 /**
@@ -20,7 +16,7 @@ use WebxUi\CatalogFeeds\Models\Feed;
  */
 final class FeedExclusionController
 {
-    private const AT_ONCE = 200;
+    public function __construct(private readonly FeedExclusions $exclusions) {}
 
     public function index(Request $request, int $feed): JsonResponse
     {
@@ -31,25 +27,11 @@ final class FeedExclusionController
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
-        $query = Product::query()->whereIn('catalog_products.id', static function (QueryBuilder $rows) use ($found): void {
-            $rows->select('product_id')->from(FeedSelection::EXCLUSIONS)->where('feed_id', $found->id);
-        });
-
-        $term = trim((string) ($validated['q'] ?? ''));
-
-        if ($term !== '') {
-            $query->matching($term);
-        }
-
-        $page = $query->orderBy('catalog_products.id')->paginate((int) ($validated['per_page'] ?? 25));
+        $page = $this->exclusions->page($found, trim((string) ($validated['q'] ?? '')), (int) ($validated['per_page'] ?? 25));
 
         return new JsonResponse([
             ...$page->toArray(),
-            'data' => array_map(static fn (Product $product): array => [
-                'id' => (int) $product->id,
-                'name' => $product->displayName($found->locale),
-                'sku' => $product->sku,
-            ], $page->items()),
+            'data' => $this->exclusions->rows($found, $page->items()),
         ]);
     }
 
@@ -57,26 +39,18 @@ final class FeedExclusionController
     {
         $found = Feed::query()->findOrFail($feed);
         $validated = $request->validate([
-            'product_ids' => ['required', 'array', 'min:1', 'max:'.self::AT_ONCE],
+            'product_ids' => ['required', 'array', 'min:1', 'max:'.FeedExclusions::AT_ONCE],
             'product_ids.*' => ['integer', 'distinct', 'exists:catalog_products,id'],
         ]);
 
-        $now = Carbon::now();
-
-        DB::table(FeedSelection::EXCLUSIONS)->insertOrIgnore(array_map(static fn (mixed $id): array => [
-            'feed_id' => $found->id,
-            'product_id' => (int) $id,
-            'created_at' => $now,
-        ], $validated['product_ids']));
+        $this->exclusions->add($found, array_map(intval(...), $validated['product_ids']));
 
         return new Response(status: 204);
     }
 
     public function destroy(int $feed, int $product): Response
     {
-        $found = Feed::query()->findOrFail($feed);
-
-        DB::table(FeedSelection::EXCLUSIONS)->where('feed_id', $found->id)->where('product_id', $product)->delete();
+        $this->exclusions->remove(Feed::query()->findOrFail($feed), [$product]);
 
         return new Response(status: 204);
     }

@@ -19,6 +19,7 @@ return [
     'sample-json' => 'Il campione non è JSON valido, riga :line: :reason',
     'sample-place' => 'Parte «:part», riga :line: :fragment',
     'unknown-variable' => '{{:name}} non esiste nella parte «:part».',
+    'similar-variables' => 'Simili: :names.',
     'no-products' => 'Nessun prodotto è ancora adatto al feed: sono stati controllati solo intestazione e piè di pagina.',
     'label-key' => 'Le etichette personalizzate sono cinque, da 0 a 4: [:label] non è tra queste.',
     'label-type' => 'L’etichetta personalizzata :label ha un’origine sconosciuta.',
