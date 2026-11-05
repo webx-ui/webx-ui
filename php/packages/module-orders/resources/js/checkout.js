@@ -15,8 +15,9 @@
 // - «Place the order» saves a step not done or typed in first, as its «Save» would, and goes on
 //   after the redraw; a step refused keeps its errors at its fields and no order is sent.
 // - «Order contents» changes the cart (§23.5): its forms go in place, the stepper 300 ms after the
-//   last press. The slots' steps and the column follow; a step the buyer types in is not a slot,
-//   so nothing typed is lost. The last line gone, the page is the empty cart's. The focus stays on
+//   last press. The slots' steps and the column follow, and a slot's fields the buyer changed go
+//   over by name: a slot writes as it is typed, but the server refuses a half-done address, so the
+//   drawing has none of it. The last line gone, the page is the empty cart's. The focus stays on
 //   the control pressed, and «Place the order» waits for a press still on its way.
 
 const ROOT = '.webx-orders-checkout'
@@ -30,6 +31,10 @@ const STEP_PAUSE = 300
 const PLACE = 'checkout-place'
 // A field the buyer fills: not a hidden one, nor the honeypot of the antispam (§28).
 const FIELD = 'input:not([type="hidden"], [tabindex="-1"]), select, textarea'
+// A field with a value of its own. A choice of radios stays the server's: it resets what the cart
+// no longer allows (§23.5).
+const VALUE =
+  'input:not([type="hidden"], [type="radio"], [type="checkbox"], [type="file"], [tabindex="-1"]), select:not([multiple]), textarea'
 
 const webx = () => (typeof window !== 'undefined' ? (window.webx ?? {}) : {})
 
@@ -128,7 +133,30 @@ export async function redrawPage(root, keys = null) {
   draw(root, parse(await server.fetch(window.location.href)), keys)
 }
 
-function draw(root, doc, keys) {
+/** The value the server printed: a list without a `selected` shows its first option. */
+function printed(field) {
+  if (field.tagName !== 'SELECT') return field.defaultValue
+  const options = Array.from(field.options)
+  return (options.find((option) => option.defaultSelected) ?? options[0])?.value ?? ''
+}
+
+/**
+ * What the buyer changed in a step, into its new drawing by name; a field the drawing no longer
+ * has takes nothing along. An option found by the server's search is not among those printed.
+ */
+function carry(old, fresh) {
+  const fields = Array.from(fresh.querySelectorAll(VALUE))
+  for (const field of old.querySelectorAll(VALUE)) {
+    const same = fields.find((el) => el.name === field.name)
+    if (!field.name || !same || field.value === printed(field)) continue
+    if (same.options && !Array.from(same.options).some((el) => el.value === field.value)) {
+      same.append(new Option(field.selectedOptions?.[0]?.text ?? field.value, field.value))
+    }
+    same.value = field.value
+  }
+}
+
+function draw(root, doc, keys, keep = false) {
   for (const fresh of doc.querySelectorAll(STEP)) {
     const key = fresh.getAttribute('data-step')
     const old = root.querySelector(`${STEP}[data-step="${key}"]`)
@@ -137,6 +165,7 @@ function draw(root, doc, keys) {
     const typing = active instanceof Element && active.matches(FIELD) && old.contains(active)
     if ((keys === null || keys.includes(key)) && !typing) {
       if (old.classList.contains('is-editing')) fresh.classList.add('is-editing')
+      if (keep) carry(old, fresh)
       swap(old, fresh)
     } else {
       const head = fresh.querySelector('.webx-orders-checkout__step-head')
@@ -188,8 +217,8 @@ function followWarnings(root, doc) {
 
 /**
  * The page after the cart changed (§23.5): delivery and payment count from the lines, so the
- * slots' steps are drawn again; the buyer's other steps only keep their state and number. The
- * last line gone, the page is the empty cart's own.
+ * slots' steps are drawn again, with what the buyer typed in them; the buyer's other steps only
+ * keep their state and number. The last line gone, the page is the empty cart's own.
  */
 export async function redrawCart(root) {
   const doc = parse(await server.fetch(window.location.href))
@@ -204,6 +233,7 @@ export async function redrawCart(root) {
     root,
     doc,
     slots.map((step) => step.getAttribute('data-step')),
+    true,
   )
 }
 

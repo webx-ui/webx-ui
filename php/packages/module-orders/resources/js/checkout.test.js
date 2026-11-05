@@ -518,6 +518,138 @@ describe('order contents', () => {
     expect(places).toEqual(['€20.00'])
   })
 
+  describe('what the buyer typed in a slot', () => {
+    // The server refused the half-done address: its drawing has none of it.
+    const courier = (fields) => `
+      <li class="webx-orders-checkout__step" data-step="delivery" data-slot>
+        <h2 class="webx-orders-checkout__step-head">delivery</h2>
+        <div class="webx-orders-checkout__step-body"><form>${fields}</form></div>
+      </li>`
+
+    const address = `
+      <input name="address[street]" value="">
+      <input name="address[house]" value="">
+      <textarea name="address[note]"></textarea>`
+
+    const field = (name) => doc.querySelector(`[name="address[${name}]"]`)
+
+    const type = () => {
+      field('street').value = 'Only street'
+      field('note').value = 'Ring twice'
+    }
+
+    it('stays after a press, and the sum follows', async () => {
+      await open(pageOf(courier(address), '€10.00', line(1, 1) + line(2, 1)))
+      vi.spyOn(mod.server, 'send').mockResolvedValue({ status: 200, body: {} })
+      vi.spyOn(mod.server, 'fetch').mockResolvedValue(
+        pageOf(courier(address), '€30.00', line(1, 2) + line(2, 1)),
+      )
+      const old = field('street')
+      type()
+
+      doc.querySelector('[data-control="increase"]').focus()
+      press('[data-control="increase"]')
+      await settle()
+
+      expect(field('street')).not.toBe(old)
+      expect(field('street').value).toBe('Only street')
+      expect(field('note').value).toBe('Ring twice')
+      expect(field('house').value).toBe('')
+      expect(doc.querySelector('#checkout-summary dd').textContent).toBe('€30.00')
+      expect(doc.activeElement).toBe(doc.querySelector('[data-control="increase"]'))
+    })
+
+    it('stays after «Remove» and press after press', async () => {
+      await open(pageOf(courier(address), '€10.00', line(1, 1) + line(2, 1)))
+      vi.spyOn(mod.server, 'send').mockResolvedValue({ status: 200, body: {} })
+      const fetch = vi
+        .spyOn(mod.server, 'fetch')
+        .mockResolvedValue(pageOf(courier(address), '€20.00', line(1, 2) + line(2, 1)))
+      type()
+
+      press('[data-control="increase"]')
+      await settle()
+      fetch.mockResolvedValue(pageOf(courier(address), '€5.00', line(2, 1)))
+      press('[data-control="remove"]')
+      await settle()
+
+      expect(field('street').value).toBe('Only street')
+      expect(doc.querySelector('#checkout-summary dd').textContent).toBe('€5.00')
+    })
+
+    it('stays when the widget of the cart changes the lines', async () => {
+      await open(pageOf(courier(address), '€10.00', line(1, 1)))
+      vi.spyOn(mod.server, 'fetch').mockResolvedValue(
+        pageOf(courier(address), '€20.00', line(1, 2)),
+      )
+      type()
+
+      doc.dispatchEvent(new CustomEvent('webx:cart:change'))
+      await settle()
+
+      expect(field('street').value).toBe('Only street')
+      expect(doc.querySelector('[data-qty]').textContent).toBe('2')
+    })
+
+    it('leaves a field the buyer did not touch to the server', async () => {
+      await open(
+        pageOf(courier('<input name="address[street]" value="Old">'), '€10.00', line(1, 1)),
+      )
+      vi.spyOn(mod.server, 'fetch').mockResolvedValue(
+        pageOf(courier('<input name="address[street]" value="New">'), '€20.00', line(1, 2)),
+      )
+
+      doc.dispatchEvent(new CustomEvent('webx:cart:change'))
+      await settle()
+
+      expect(field('street').value).toBe('New')
+    })
+
+    it('has nothing to take over when the drawing lost the field', async () => {
+      await open(pageOf(courier(address), '€10.00', line(1, 1)))
+      vi.spyOn(mod.server, 'fetch').mockResolvedValue(
+        pageOf(courier('<input type="radio" name="method" value="pickup">'), '€20.00', line(1, 2)),
+      )
+      type()
+
+      doc.dispatchEvent(new CustomEvent('webx:cart:change'))
+      await settle()
+
+      expect(field('street')).toBeNull()
+      expect(doc.querySelector('[name="method"]')).not.toBeNull()
+    })
+
+    it("keeps an option of the server's search the drawing does not print", async () => {
+      const list = '<select name="address[street_id]"><option value="">Choose</option></select>'
+      await open(pageOf(courier(list), '€10.00', line(1, 1)))
+      vi.spyOn(mod.server, 'fetch').mockResolvedValue(pageOf(courier(list), '€20.00', line(1, 2)))
+      const select = field('street_id')
+      select.append(new Option('Found street', '77'))
+      select.value = '77'
+
+      doc.dispatchEvent(new CustomEvent('webx:cart:change'))
+      await settle()
+
+      expect(field('street_id')).not.toBe(select)
+      expect(field('street_id').value).toBe('77')
+      expect(field('street_id').selectedOptions[0].textContent).toBe('Found street')
+    })
+
+    it('leaves a list on its placeholder to the server', async () => {
+      const list = (chosen) =>
+        `<select name="address[street_id]"><option value="">Choose</option><option value="5" ${chosen}>Saved</option></select>`
+      await open(pageOf(courier(list('')), '€10.00', line(1, 1)))
+      vi.spyOn(mod.server, 'fetch').mockResolvedValue(
+        pageOf(courier(list('selected')), '€20.00', line(1, 2)),
+      )
+
+      doc.dispatchEvent(new CustomEvent('webx:cart:change'))
+      await settle()
+
+      expect(field('street_id').value).toBe('5')
+    })
+  })
+
   it('follows the widget of the cart', async () => {
     await open(pageOf(stepOf('contacts', 'A'), '€10.00', line(1, 1)))
     vi.spyOn(mod.server, 'fetch').mockResolvedValue(
