@@ -7,6 +7,8 @@ return [
     'slug' => 'Adresse',
     'sku' => 'Référence',
     'barcode' => 'Code-barres',
+    'barcodes' => 'Codes-barres supplémentaires',
+    'mpn' => 'Référence fabricant (MPN)',
     'summary' => 'Résumé',
     'description' => 'Description',
     'category_id' => 'Catégorie principale',

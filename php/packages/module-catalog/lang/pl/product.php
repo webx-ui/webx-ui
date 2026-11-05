@@ -7,6 +7,8 @@ return [
     'slug' => 'Adres',
     'sku' => 'Kod produktu',
     'barcode' => 'Kod kreskowy',
+    'barcodes' => 'Dodatkowe kody kreskowe',
+    'mpn' => 'Numer katalogowy producenta (MPN)',
     'summary' => 'Krótki opis',
     'description' => 'Opis',
     'category_id' => 'Kategoria główna',

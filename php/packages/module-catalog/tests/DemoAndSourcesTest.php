@@ -17,6 +17,7 @@ use WebxUi\Admin\Setup\Catalogue;
 use WebxUi\Catalog\Demo\CatalogDemo;
 use WebxUi\Catalog\Models\Category;
 use WebxUi\Catalog\Models\Product;
+use WebxUi\Catalog\Models\ProductBarcode;
 use WebxUi\Catalog\Models\ProductImage;
 use WebxUi\Routing\Models\Route;
 
@@ -81,6 +82,8 @@ final class DemoAndSourcesTest extends TestCase
         $this->assertGreaterThan(0, Product::query()->where('is_published', false)->whereNotNull('category_id')->count());
         $this->assertGreaterThan(0, Product::onlyTrashed()->count());
         $this->assertSame(2, Product::query()->whereNull('category_id')->count());
+        $this->assertGreaterThan(0, Product::query()->whereNotNull('mpn')->count());
+        $this->assertGreaterThan(0, ProductBarcode::query()->count());
         $this->assertSame(Product::withTrashed()->count(), ProductImage::query()->count());
         // One video, a link rather than a file: nothing but pictures lands on the disk.
         $this->assertSame(['youtube'], ProductImage::query()->whereNotNull('video')->pluck('video_provider')->all());
@@ -95,6 +98,7 @@ final class DemoAndSourcesTest extends TestCase
         $this->assertSame(0, Category::withTrashed()->count());
         $this->assertSame(0, Product::withTrashed()->count());
         $this->assertSame(0, ProductImage::query()->count());
+        $this->assertSame(0, ProductBarcode::query()->count());
         Storage::disk('public')->assertMissing((string) $path);
     }
 

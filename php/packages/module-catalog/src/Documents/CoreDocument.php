@@ -15,11 +15,12 @@ use WebxUi\Catalog\Models\Product;
  * What the core puts into a product's document (§7.3): the id, the three states and visibility,
  * the categories with every ancestor, the main one, the price, the hand-set priority, the score,
  * the date, and for the search the name in each language and the codes — the article number, the
- * barcode, the external id.
+ * barcodes, the external id.
  *
  * Unpublished and deleted products are in the index too: the panel searches with the same engine
  * as the site (decision 14 of the architecture), and the storefront cuts them off with a filter.
- * Four queries per batch whatever its size — visibility, categories, scores, and the products.
+ * Five queries per batch whatever its size — visibility, categories, scores, the additional
+ * barcodes, and the products.
  */
 final class CoreDocument implements DocumentContributor
 {
@@ -51,6 +52,7 @@ final class CoreDocument implements DocumentContributor
 
         if ((bool) $this->config->get('webx-catalog.fields.barcode', true)) {
             $fields[] = new IndexField('barcode', IndexField::STRING, code: true);
+            $fields[] = new IndexField('barcodes', IndexField::STRING, multi: true, code: true);
         }
 
         return $fields;
@@ -81,6 +83,14 @@ final class CoreDocument implements DocumentContributor
 
         $scores = DB::table('catalog_product_popularity')->whereIn('product_id', $ids)->pluck('score', 'product_id');
         $barcode = (bool) $this->config->get('webx-catalog.fields.barcode', true);
+        $barcodes = [];
+
+        if ($barcode) {
+            foreach (DB::table('catalog_product_barcodes')->whereIn('product_id', $ids)->orderBy('position')->orderBy('id')->get() as $row) {
+                $barcodes[(int) $row->product_id][] = (string) $row->barcode;
+            }
+        }
+
         $documents = [];
 
         foreach ($products as $product) {
@@ -110,6 +120,7 @@ final class CoreDocument implements DocumentContributor
 
             if ($barcode) {
                 $document['barcode'] = $product->barcode;
+                $document['barcodes'] = $barcodes[$id] ?? [];
             }
 
             $documents[$id] = $document;

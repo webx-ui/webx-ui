@@ -18,7 +18,7 @@ export interface CategoryRef {
 /**
  * One product as a row of the list and as the head of its editor (§11.2).
  *
- * `price`, `old_price` and `barcode` are absent — not null — when the site has them switched off,
+ * `price`, `old_price`, `barcode` and `mpn` are absent — not null — when the site has them switched off,
  * so the panel cannot show a column the site does not have.
  */
 export interface ProductRow {
@@ -27,6 +27,7 @@ export interface ProductRow {
   name: string
   sku: string | null
   barcode?: string | null
+  mpn?: string | null
   price?: number | null
   old_price?: number | null
   unit: string | null

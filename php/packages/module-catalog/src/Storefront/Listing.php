@@ -143,7 +143,7 @@ final class Listing
         $position = array_flip($ids);
 
         return Product::query()
-            ->with(['category', 'images', 'routes'])
+            ->with(['category', 'images', 'routes', ...Product::barcodeRelations()])
             ->whereKey($ids)
             ->get()
             ->sortBy(static fn (Product $product): int => $position[(int) $product->id] ?? PHP_INT_MAX)

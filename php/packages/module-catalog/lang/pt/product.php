@@ -7,6 +7,8 @@ return [
     'slug' => 'Endereço',
     'sku' => 'Referência',
     'barcode' => 'Código de barras',
+    'barcodes' => 'Códigos de barras adicionais',
+    'mpn' => 'Número de peça do fabricante (MPN)',
     'summary' => 'Resumo',
     'description' => 'Descrição',
     'category_id' => 'Categoria principal',

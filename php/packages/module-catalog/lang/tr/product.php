@@ -7,6 +7,8 @@ return [
     'slug' => 'Adres',
     'sku' => 'Stok kodu',
     'barcode' => 'Barkod',
+    'barcodes' => 'Ek barkodlar',
+    'mpn' => 'Üretici parça numarası (MPN)',
     'summary' => 'Özet',
     'description' => 'Açıklama',
     'category_id' => 'Ana kategori',

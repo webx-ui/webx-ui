@@ -44,6 +44,7 @@ use WebxUi\Catalog\Documents\CoreDocument;
 use WebxUi\Catalog\Documents\Documents;
 use WebxUi\Catalog\Engine\CatalogEngines;
 use WebxUi\Catalog\Engine\SqlEngine;
+use WebxUi\Catalog\Exchange\Columns\BarcodesColumn;
 use WebxUi\Catalog\Exchange\Columns\CategoryColumn;
 use WebxUi\Catalog\Exchange\Columns\ExternalIdColumn;
 use WebxUi\Catalog\Exchange\Columns\IdColumn;
@@ -124,7 +125,7 @@ class CatalogServiceProvider extends ServiceProvider
     {
         // What moves between stands with webx:snapshot, and what stays where it is.
         $this->callAfterResolving(SnapshotTables::class, static function (SnapshotTables $tables): void {
-            $tables->content('catalog_products', 'catalog_categories', 'catalog_category_product', 'catalog_category_facets', 'catalog_product_images', 'catalog_filter_aliases', 'catalog_exchange_profiles');
+            $tables->content('catalog_products', 'catalog_categories', 'catalog_category_product', 'catalog_category_facets', 'catalog_product_images', 'catalog_product_barcodes', 'catalog_filter_aliases', 'catalog_exchange_profiles');
             // Runs, their errors, the index queue and the view counts are what happened on this stand.
             $tables->stand('catalog_bulk_runs', 'catalog_bulk_run_items', 'catalog_exchange_runs', 'catalog_exchange_run_items', 'catalog_exchange_errors', 'catalog_index_queue', 'catalog_product_popularity');
         });
@@ -297,6 +298,10 @@ class CatalogServiceProvider extends ServiceProvider
             $patch[] = ['op' => 'remove', 'target' => 'barcode-col'];
         }
 
+        if (! (bool) $this->config()->get('webx-catalog.fields.mpn', true)) {
+            $patch[] = ['op' => 'remove', 'target' => 'mpn'];
+        }
+
         // What the gallery field needs to offer videos (§7 of the video spec): the flag, and the
         // limits it checks a file against before sending a byte of it.
         $patch[] = [
@@ -332,7 +337,7 @@ class CatalogServiceProvider extends ServiceProvider
 
         $product = [];
 
-        foreach (['name', 'slug', 'sku', 'barcode', 'summary', 'description', 'category_id', 'categories', 'price', 'old_price', 'unit', 'priority', 'is_published', 'images'] as $field) {
+        foreach (['name', 'slug', 'sku', 'barcode', 'barcodes', 'mpn', 'summary', 'description', 'category_id', 'categories', 'price', 'old_price', 'unit', 'priority', 'is_published', 'images'] as $field) {
             $product[$field] = 'webx-catalog::product.'.$field;
         }
 
@@ -542,6 +547,11 @@ class CatalogServiceProvider extends ServiceProvider
 
         if ((bool) $this->config()->get('webx-catalog.fields.barcode', true)) {
             $columns->register(new ValueColumn('barcode'));
+            $columns->register(new BarcodesColumn);
+        }
+
+        if ((bool) $this->config()->get('webx-catalog.fields.mpn', true)) {
+            $columns->register(new ValueColumn('mpn'));
         }
 
         $columns->register(new ExternalIdColumn);

@@ -67,6 +67,8 @@ interface ProductRecord {
   slug: Map
   sku: string | null
   barcode: string | null
+  barcodes: string[]
+  mpn: string | null
   summary: Map
   description: Map
   category_id: number | null
@@ -279,6 +281,8 @@ CATALOGUE.forEach(([ru, en, main, price, unit], index) => {
     slug: { ru: slugOf(ru), en: slugOf(en) },
     sku: `WX-${String(1000 + id * 7)}`,
     barcode: index % 3 === 0 ? `46000000${String(10000 + id)}` : null,
+    barcodes: index % 6 === 0 ? [`20100000${String(10000 + id)}`] : [],
+    mpn: index % 2 === 0 ? `WX-${String(9000 + id)}-A` : null,
     summary: {},
     description: {},
     category_id: main,
@@ -344,6 +348,8 @@ for (let index = 0; index < 120; index++) {
     slug: { ru: slugOf(`${ru} ${number}`), en: slugOf(`${en} ${number}`) },
     sku: `WX-${String(2000 + index)}`,
     barcode: null,
+    barcodes: [],
+    mpn: null,
     summary: {},
     description: {},
     category_id: main,
@@ -542,6 +548,7 @@ function productRow(record: ProductRecord, locale: string): ProductRow {
     name: word(record.name, locale),
     sku: record.sku,
     barcode: record.barcode,
+    mpn: record.mpn,
     price: record.price,
     old_price: record.old_price,
     unit: record.unit,
@@ -569,6 +576,8 @@ function productValues(record: ProductRecord): Record<string, unknown> {
     slug: record.slug,
     sku: record.sku,
     barcode: record.barcode,
+    barcodes: record.barcodes,
+    mpn: record.mpn,
     summary: record.summary,
     description: record.description,
     category_id: record.category_id,
@@ -1311,7 +1320,11 @@ export function registerCatalog(
           break
         case 'sku':
         case 'barcode':
+        case 'mpn':
           next[name] = typeof value === 'string' && value.trim() !== '' ? value.trim() : null
+          break
+        case 'barcodes':
+          next.barcodes = Array.isArray(value) ? value.map(String) : []
           break
         // Emptied, the unit goes back to `default_unit`, as the model does it.
         case 'unit':
@@ -1439,6 +1452,8 @@ export function registerCatalog(
       slug: {},
       sku: null,
       barcode: null,
+      barcodes: [],
+      mpn: null,
       summary: {},
       description: {},
       category_id: null,
@@ -1981,6 +1996,8 @@ export function registerCatalog(
       slug: {},
       sku: null,
       barcode: null,
+      barcodes: [],
+      mpn: null,
       summary: {},
       description: {},
       category_id: null,

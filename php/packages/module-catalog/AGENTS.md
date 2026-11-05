@@ -76,7 +76,7 @@ adds next to the module asks the same: `cms.can:catalog.view,catalog.manage,cata
 | Different markup of a catalogue page         | `php artisan vendor:publish --tag=webx-catalog-views`, keep only the files you change                                                                                    |
 | A catalogue without prices                   | `WEBX_CATALOG_PRICE=false` (form, facet, sorts, exchange and markup all go)                                                                                              |
 | `Offer` in the product's structured data     | `WEBX_CATALOG_CURRENCY` (ISO 4217)                                                                                                                                       |
-| No barcode / no videos                       | `WEBX_CATALOG_BARCODE=false` / `WEBX_CATALOG_VIDEO=false`                                                                                                                |
+| No barcodes / no MPN / no videos             | `WEBX_CATALOG_BARCODE=false` / `WEBX_CATALOG_MPN=false` / `WEBX_CATALOG_VIDEO=false`                                                                                     |
 | Each category picks its own filters          | `WEBX_CATALOG_CATEGORY_FACETS=true` (the «Filters» tab)                                                                                                                  |
 | A `/catalog` page over everything            | `WEBX_CATALOG_ROOT=true`; `WEBX_CATALOG_ROOT_PREFIX` moves it and the search                                                                                             |
 | Translated filter codes in addresses         | `facet_codes` in `config/webx-catalog.php` (`--tag=webx-catalog-config`)                                                                                                 |
@@ -95,7 +95,7 @@ adds next to the module asks the same: `cms.can:catalog.view,catalog.manage,cata
 Fields that are switched off are removed from the screen at boot, and so are never validated or
 saved. A satellite's fields on `catalog.product-form` are named `<part key>.<field>`. The core
 saves its own data and every part in one transaction, which produces one journal entry. Product
-form node ids: `naming`, `name`, `slug`, `is_published`, `codes`, `sku`, `barcode-col`, `pricing`,
+form node ids: `naming`, `name`, `slug`, `is_published`, `codes`, `sku`, `mpn`, `barcode-col`, `barcode`, `barcodes`, `pricing`,
 `prices`, `price`, `old_price`, `unit`, `placement`, `category_id`, `categories`, `summary`,
 `description`, `gallery`, `seo`, `priority`, `history`. Category form node ids: `naming`, `name`,
 `slug`, `is_published`, `presentation`, `cover`, `description`, `facets`, `seo`, `history`.
@@ -136,7 +136,7 @@ form node ids: `naming`, `name`, `slug`, `is_published`, `codes`, `sku`, `barcod
 - With Manticore: run `php artisan webx:catalog:index` (schedule and queue worker needed) and the
   product shows up in search.
 - With MCP: read `catalog://fields` and `catalog://product-parts` first. Every write tool takes
-  `dry_run: true`. `catalog_products_get` shows what was saved.
+  `dry_run: true`. A theme prints every barcode with `$product->allBarcodes()`. `catalog_products_get` shows what was saved.
 - `tests/PerformanceTest.php`: query budgets of public pages and the panel's list, the site follows an edit, a move,
   a bulk action, an import at once; `StorefrontCacheTest`: every write path moves the generation.
 

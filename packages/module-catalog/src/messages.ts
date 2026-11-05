@@ -30,6 +30,8 @@ export const catalogMessages: Record<string, Messages> = {
     slug: 'Address',
     sku: 'Article number',
     barcode: 'Barcode',
+    barcodes: 'Additional barcodes',
+    mpn: 'Manufacturer part number (MPN)',
     summary: 'Summary',
     description: 'Description',
     category_id: 'Main category',

@@ -108,7 +108,7 @@ final class TableSchema
                 continue;
             }
 
-            if ($field->code && ! $field->multi) {
+            if ($field->code) {
                 $this->codes[] = $field->name;
             }
 
@@ -328,11 +328,15 @@ final class TableSchema
             $flat = [];
 
             foreach ($this->codes as $name) {
-                $code = self::text($document[$name] ?? null);
+                // Each of a field's several values on its own: flattened together they would be
+                // one long code nobody has.
+                foreach ((array) ($document[$name] ?? null) as $value) {
+                    $code = self::text($value);
 
-                if ($code !== '') {
-                    $written[] = $code;
-                    $flat[] = self::flat($code);
+                    if ($code !== '') {
+                        $written[] = $code;
+                        $flat[] = self::flat($code);
+                    }
                 }
             }
 

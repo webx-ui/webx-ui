@@ -164,7 +164,8 @@ else's filters.
     'currency' => env('WEBX_CATALOG_CURRENCY'),   // ISO 4217, one for the site
 ],
 'fields' => [
-    'barcode' => (bool) env('WEBX_CATALOG_BARCODE', true),
+    'barcode' => (bool) env('WEBX_CATALOG_BARCODE', true),   // the main one and the additional ones
+    'mpn' => (bool) env('WEBX_CATALOG_MPN', true),
     'facets' => (bool) env('WEBX_CATALOG_CATEGORY_FACETS', false),
     'video' => (bool) env('WEBX_CATALOG_VIDEO', true),
 ],
@@ -598,7 +599,7 @@ the place everything is written to, and a product page is always read from it.
 **`SqlEngine`** is the database itself and the default. It needs nothing installed and is honest
 up to a couple of thousand live products (`webx-catalog.sql_engine_limit`, 2000). Past that, `webx:doctor`
 and the products list in the panel say so. Its search is `like` on the name, the article number and
-the barcode.
+every barcode of the product.
 
 **Manticore** comes with `webx-ui/module-catalog-manticore` and makes a Manticore Search server
 (29 or later) the engine: a table per language with that language's morphology, facets and counts

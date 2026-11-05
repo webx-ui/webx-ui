@@ -160,6 +160,9 @@ final class CatalogDemo
             'summary' => [$locale => 'A demo product: no such thing is for sale.'],
             'description' => [$locale => '<p>'.$name.' is part of the demo catalogue. Its price, its article number and its picture are made up.</p>'],
             'sku' => sprintf('DEMO-%04d', $i + 1),
+            // Made up, from the range kept for a shop's own codes: no such product exists.
+            'barcode' => $i % 3 === 0 ? sprintf('200%010d', $i + 1) : null,
+            'mpn' => $i % 2 === 0 ? sprintf('DEMO-MPN-%04d', $i + 1) : null,
             'category_id' => $main?->getKey(),
             'price' => $price,
             'old_price' => $i % 6 === 0 ? round($price * 1.25, 2) : null,
@@ -168,6 +171,11 @@ final class CatalogDemo
             'is_published' => $main !== null,
         ]);
         $ledger->created($product, $name);
+
+        // Every sixth comes in a second packaging, with a code of its own.
+        if ($i % 6 === 0) {
+            $product->barcodes()->create(['barcode' => sprintf('201%010d', $i + 1), 'position' => 0]);
+        }
 
         // Every fifth is filed on a second shelf too, the way a real catalogue files a gift set.
         if ($extra !== null && $i % 5 === 0 && $extra->getKey() !== $main?->getKey()) {

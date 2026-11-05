@@ -180,6 +180,39 @@ final class ExchangeTest extends TestCase
     }
 
     #[Test]
+    public function the_part_number_and_the_barcodes_go_out_and_come_back(): void
+    {
+        $this->import("sku,name,barcode,barcodes,mpn\nC-1,Coil,2000000000000,2000000000017; 2000000000024;,WX-9001\n");
+
+        $coil = Product::query()->where('sku', 'C-1')->sole();
+        $this->assertSame('WX-9001', $coil->mpn);
+        $this->assertSame(['2000000000000', '2000000000017', '2000000000024'], $coil->allBarcodes());
+
+        $columns = $this->app->make(ExchangeColumns::class)->all();
+        $this->assertSame([(int) $coil->id => '2000000000017;2000000000024'], $columns['barcodes']->export(new Collection([$coil]), null));
+        $this->assertSame([(int) $coil->id => 'WX-9001'], $columns['mpn']->export(new Collection([$coil]), null));
+
+        // An empty cell leaves the list; erasing is asked for.
+        $this->import("sku,barcodes\nC-1,\n");
+        $this->assertSame(2, $coil->barcodes()->count());
+
+        $this->import("sku,barcodes\nC-1,\n", ['empty_clears' => true]);
+        $this->assertSame(0, $coil->barcodes()->count());
+    }
+
+    #[Test]
+    public function a_row_is_never_found_by_an_additional_barcode(): void
+    {
+        $this->import("sku,name,barcode,barcodes\nC-1,Coil,2000000000000,2000000000017\n");
+
+        // The key is the main barcode alone: this row makes a new product, as a stranger's would.
+        $run = $this->import("barcode,name\n2000000000017,Other\n", ['key' => 'barcode']);
+
+        $this->assertSame(1, $run->created);
+        $this->assertSame(2, Product::query()->count());
+    }
+
+    #[Test]
     public function a_bad_row_is_rolled_back_alone_and_said_where_and_why(): void
     {
         $shoes = $this->category('shoes');

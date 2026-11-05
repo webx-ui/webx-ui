@@ -89,7 +89,7 @@ final class ProductQuery extends RecordQuery
         // category is not eager-loaded: {@see models()} takes it from the request's pool. Nor are
         // the registry rows: noted as the rows arrive, they are read with the page's other
         // addresses by the first one asked — `shownIn()` — and none on a warm page.
-        $query = Product::query()->select('catalog_products.*')->visible()->with(['categories', 'images'])
+        $query = Product::query()->select('catalog_products.*')->visible()->with(['categories', 'images', ...Product::barcodeRelations()])
             ->afterQuery(static fn (iterable $products) => Container::getInstance()->make(RouteCache::class)->preload($products));
         $key = $this->step('sort');
 

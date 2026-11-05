@@ -93,6 +93,29 @@ final class McpTest extends TestCase
     }
 
     #[Test]
+    public function an_agent_reads_and_writes_the_part_number_and_the_barcodes(): void
+    {
+        $created = $this->content($this->agent('catalog_products_create', ['values' => [
+            'name' => ['en' => 'Coil'],
+            'mpn' => 'WX-9001',
+            'barcodes' => ['2000000000017'],
+        ]]));
+
+        $this->assertSame('WX-9001', $created['product']['mpn']);
+        $this->assertSame(['2000000000017'], $created['values']['barcodes']);
+
+        $id = $created['product']['id'];
+        $this->agent('catalog_products_update', ['product' => $id, 'values' => ['barcodes' => ['2000000000024', '2000000000031']]])->assertOk();
+
+        $read = $this->content($this->agent('catalog_products_get', ['product' => $id]));
+        $this->assertSame(['2000000000024', '2000000000031'], $read['values']['barcodes']);
+        $this->assertSame('WX-9001', $read['values']['mpn']);
+
+        $found = $this->content($this->agent('catalog_products_list', ['q' => '2000000000031', 'state' => 'all']));
+        $this->assertSame(1, $found['total']);
+    }
+
+    #[Test]
     public function an_update_goes_through_the_form_and_into_the_journal_as_mcp(): void
     {
         $product = $this->product('Boot', $this->category('shoes'));

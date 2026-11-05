@@ -45,6 +45,7 @@ return [
 
     'fields' => [
         'barcode' => (bool) env('WEBX_CATALOG_BARCODE', true),
+        'mpn' => (bool) env('WEBX_CATALOG_MPN', true),
         'facets' => (bool) env('WEBX_CATALOG_CATEGORY_FACETS', false),
         'video' => (bool) env('WEBX_CATALOG_VIDEO', true),
     ],

@@ -62,6 +62,15 @@
                           "props": {
                             "maxlength": 64
                           }
+                        },
+                        {
+                          "id": "mpn",
+                          "type": "wx-input",
+                          "name": "mpn",
+                          "label": "trans::webx-catalog::product.mpn",
+                          "props": {
+                            "maxlength": 70
+                          }
                         }
                       ]
                     },
@@ -81,6 +90,12 @@
                           "props": {
                             "maxlength": 64
                           }
+                        },
+                        {
+                          "id": "barcodes",
+                          "type": "wx-tags-input",
+                          "name": "barcodes",
+                          "label": "trans::webx-catalog::product.barcodes"
                         }
                       ]
                     }
