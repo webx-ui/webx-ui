@@ -28,7 +28,7 @@ return [
     'label-property' => 'Etykieta niestandardowa :label bierze wartość z właściwości [:property], której strona nie ma.',
     'label-source' => 'Etykieta niestandardowa :label bierze wartość z etykiet produktów, których strona nie ma.',
     'source-type' => 'MPN pochodzi z pola produktu albo z właściwości o podanym kodzie.',
-    'preorder' => 'Razem z preorder Google wymaga availability_date, a katalog nie ma takiej daty.',
+    'preorder' => 'Razem z preorder i backorder Google wymaga availability_date, a katalog nie ma takiej daty.',
     'taxonomy-line' => 'Wiersz :line pliku nie jest kategorią listy.',
     'taxonomy-empty' => 'Plik nie zawiera kategorii.',
     'taxonomy-encoding' => 'Wiersz :line pliku nie jest w UTF-8.',

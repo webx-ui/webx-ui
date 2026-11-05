@@ -5,8 +5,8 @@ satellite of `webx-ui/module-catalog`; it works only through the core's registri
 the filter and `ProductVariables`, read the core's `AGENTS.md`.
 
 The package is built in stages. Today it holds the tables, the models, the feeds' CRUD API, the
-section of the panel, the build, its delivery, the check on saving, the preview and the mappings.
-Presets and MCP tools are not here yet; the form of the mappings comes with the panel's stage.
+section of the panel, the build, its delivery, the check on saving, the preview, the mappings and
+the presets. MCP tools are not here yet; the forms come with the panel's stage.
 
 ## What it owns
 
@@ -87,6 +87,12 @@ read, `cms.can:catalog.manage` to write.
   `to` of a price range belongs to it. Only `FeedLabels` knows the sources; `FeedForm` asks it.
 - A property of several values gives a label its first through the core's `FirstValues`.
 
+### How a preset works
+
+- `FeedPresets` holds the `FeedPreset` classes: `google`, `json`, `xml`, `csv`. `GET meta` offers them.
+- `FeedForm::fromPreset()` copies a preset under what the form sent, for a new feed only. After that
+  `preset` is a word on the feed: nothing reads it, and the preset may change or go.
+
 ### How a file gets out
 
 - `GET /{path}/{key}.{ext}` is `FeedFileController`, outside every group, behind the limiter
@@ -114,6 +120,7 @@ read, `cms.can:catalog.manage` to write.
 | Another limit of label values | `max_label_values` in `webx-catalog-feeds`                   |
 | A larger file of a list       | `taxonomy_max_bytes` in `webx-catalog-feeds`                 |
 | Open feeds on a closed site   | `feeds/*` in `webx-admin.gate.except`                        |
+| A preset of your own          | `FeedPresets::register()` after it resolves                  |
 
 ## Do not
 
@@ -127,11 +134,12 @@ read, `cms.can:catalog.manage` to write.
 - Do not read a variable per product: a page is asked at once, or a build turns into an N+1.
 - Do not delete and insert a list on import: `taxonomy_item_id` points at its rows.
 - Do not split `property.*` by `;` for one value: a name can hold one, ask `FirstValues`.
+- Do not print an attribute of Google outside a section if it can be empty: Google wants it taken out.
 
 ## Check your work
 
 - `tests/ApiTest.php`, `tests/BuildTest.php`, `tests/DeliveryTest.php`, `tests/TrialTest.php`,
-  `tests/MappingsTest.php` and `tests/AccessCoverageTest.php` are green.
+  `tests/MappingsTest.php`, `tests/PresetsTest.php` and `tests/AccessCoverageTest.php` are green.
 - `GET /api/cms/catalog/feeds` as an administrator with `catalog.view` shows no key.
 
 ## Read more

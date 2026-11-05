@@ -28,7 +28,7 @@ return [
     'label-property' => 'A etiqueta personalizada :label obtém o valor da propriedade [:property], que o site não tem.',
     'label-source' => 'A etiqueta personalizada :label obtém o valor das etiquetas de produto, que o site não tem.',
     'source-type' => 'O MPN vem do campo do produto ou de uma propriedade com o seu código.',
-    'preorder' => 'Junto com preorder, o Google pede availability_date, e o catálogo não tem essa data.',
+    'preorder' => 'Junto com preorder e backorder, o Google pede availability_date, e o catálogo não tem essa data.',
     'taxonomy-line' => 'A linha :line do ficheiro não é uma categoria da lista.',
     'taxonomy-empty' => 'O ficheiro não tem categorias.',
     'taxonomy-encoding' => 'A linha :line do ficheiro não está em UTF-8.',

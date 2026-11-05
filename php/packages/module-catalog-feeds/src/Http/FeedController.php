@@ -8,9 +8,12 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Validator;
+use WebxUi\CatalogFeeds\Build\FeedLabels;
 use WebxUi\CatalogFeeds\Build\FeedTrial;
 use WebxUi\CatalogFeeds\Delivery\FeedKey;
 use WebxUi\CatalogFeeds\Models\Feed;
+use WebxUi\CatalogFeeds\Presets\FeedPreset;
+use WebxUi\CatalogFeeds\Presets\FeedPresets;
 
 /**
  * `/api/cms/catalog/feeds` (§11 of the feeds spec): the list, a feed and its writes.
@@ -39,6 +42,21 @@ final class FeedController
             ...$page->toArray(),
             'data' => array_map(fn (Feed $feed): array => $this->resource->list($feed, $user), $page->items()),
         ]);
+    }
+
+    /** What a new feed starts from: a preset with all it copies, so a form can show it unsaved. */
+    public function meta(FeedPresets $presets): JsonResponse
+    {
+        return new JsonResponse(['data' => [
+            'presets' => array_map(static fn (FeedPreset $preset): array => [
+                'key' => $preset->key(),
+                'name' => $preset->name(),
+                'description' => $preset->description(),
+                'values' => $preset->values(),
+            ], $presets->all()),
+            'formats' => array_keys(Feed::FORMATS),
+            'label_sources' => FeedLabels::TYPES,
+        ]]);
     }
 
     public function show(Request $request, int $feed): JsonResponse

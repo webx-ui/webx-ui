@@ -8,6 +8,7 @@ return [
     'images' => 'Все картинки',
     'additional_images' => 'Картинки после главной',
     'availability' => 'Наличие',
+    'brand' => 'Бренд',
     'id' => 'ID товара',
     'group_id' => 'Группа вариантов',
     'price' => 'Текущая цена',

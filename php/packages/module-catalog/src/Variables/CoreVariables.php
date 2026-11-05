@@ -57,6 +57,8 @@ final readonly class CoreVariables
         $variables->register($mpn);
         $variables->register(new IdentifierExists($mpn));
         $variables->fallback($this->variable('availability', 'in_stock', static fn (): string => 'in_stock'));
+        // A preset names it on any site; only the brands satellite has something to say.
+        $variables->fallback($this->variable('brand', '', static fn (): string => ''));
 
         foreach ([...$this->identity(), ...$this->addresses(), ...$this->prices(), ...$this->texts(), ...$this->codes(), ...$this->places(), ...$this->reserved()] as $variable) {
             $variables->register($variable);

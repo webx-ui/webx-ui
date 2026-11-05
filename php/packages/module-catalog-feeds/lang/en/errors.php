@@ -28,7 +28,7 @@ return [
     'label-property' => 'Custom label :label takes its value from the property [:property], which the site does not have.',
     'label-source' => 'Custom label :label takes its value from product labels, which the site does not have.',
     'source-type' => 'The MPN comes from the product’s field or from a property with its code.',
-    'preorder' => 'Google asks for availability_date along with preorder, and the catalogue has no such date.',
+    'preorder' => 'Google asks for availability_date along with preorder and backorder, and the catalogue has no such date.',
     'taxonomy-line' => 'Line :line of the file is not a category of the list.',
     'taxonomy-empty' => 'The file has no categories.',
     'taxonomy-encoding' => 'Line :line of the file is not in UTF-8.',

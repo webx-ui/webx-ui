@@ -28,7 +28,7 @@ return [
     'label-property' => 'L’etichetta personalizzata :label prende il valore dalla proprietà [:property], che il sito non ha.',
     'label-source' => 'L’etichetta personalizzata :label prende il valore dalle etichette di prodotto, che il sito non ha.',
     'source-type' => 'L’MPN viene dal campo del prodotto o da una proprietà con il suo codice.',
-    'preorder' => 'Insieme a preorder Google chiede availability_date, e il catalogo non ha questa data.',
+    'preorder' => 'Insieme a preorder e backorder Google chiede availability_date, e il catalogo non ha questa data.',
     'taxonomy-line' => 'La riga :line del file non è una categoria dell’elenco.',
     'taxonomy-empty' => 'Il file non contiene categorie.',
     'taxonomy-encoding' => 'La riga :line del file non è in UTF-8.',

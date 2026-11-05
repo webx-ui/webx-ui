@@ -28,7 +28,7 @@ return [
     'label-property' => ':label özel etiketi değerini sitede olmayan [:property] özelliğinden alıyor.',
     'label-source' => ':label özel etiketi değerini sitede olmayan ürün etiketlerinden alıyor.',
     'source-type' => 'MPN, ürün alanından veya kodu belirtilen bir özellikten gelir.',
-    'preorder' => 'Google, preorder ile birlikte availability_date ister ve katalogda böyle bir tarih yok.',
+    'preorder' => 'Google, preorder ve backorder ile birlikte availability_date ister ve katalogda böyle bir tarih yok.',
     'taxonomy-line' => 'Dosyanın :line. satırı listenin bir kategorisi değil.',
     'taxonomy-empty' => 'Dosyada kategori yok.',
     'taxonomy-encoding' => 'Dosyanın :line. satırı UTF-8 değil.',

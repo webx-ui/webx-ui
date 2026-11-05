@@ -16,6 +16,17 @@ use WebxUi\CatalogFeeds\Models\FeedBuild;
  */
 final class ApiTest extends TestCase
 {
+    /** No brands, stock or properties here: a preset has to stand on what the core alone knows. */
+    #[Test]
+    public function every_preset_is_kept_on_a_site_with_no_satellites(): void
+    {
+        foreach (['google', 'json', 'xml', 'csv'] as $preset) {
+            $this->actingAs($this->editor(), 'cms')->postJson($this->api(), ['preset' => $preset])
+                ->assertCreated()
+                ->assertJsonPath('data.preset', $preset);
+        }
+    }
+
     #[Test]
     public function a_feed_is_created_with_the_defaults_of_its_format_and_read_back(): void
     {

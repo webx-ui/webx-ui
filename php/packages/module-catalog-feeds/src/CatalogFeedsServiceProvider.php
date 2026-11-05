@@ -21,6 +21,11 @@ use WebxUi\CatalogFeeds\Console\FeedsPruneCommand;
 use WebxUi\CatalogFeeds\Doctor\FeedsCheck;
 use WebxUi\CatalogFeeds\Models\Feed;
 use WebxUi\CatalogFeeds\Panel\CatalogFeedsModule;
+use WebxUi\CatalogFeeds\Presets\CsvPreset;
+use WebxUi\CatalogFeeds\Presets\FeedPresets;
+use WebxUi\CatalogFeeds\Presets\GooglePreset;
+use WebxUi\CatalogFeeds\Presets\JsonPreset;
+use WebxUi\CatalogFeeds\Presets\XmlPreset;
 use WebxUi\CatalogFeeds\Taxonomy\TaxonomyImport;
 
 /**
@@ -54,6 +59,10 @@ class CatalogFeedsServiceProvider extends ServiceProvider
             $schedule->command(FeedsCommand::class)->everyMinute()->withoutOverlapping()->onOneServer();
             $schedule->command(FeedsPruneCommand::class)->dailyAt('04:10')->onOneServer();
         });
+
+        $this->app->singleton(FeedPresets::class, static fn (): FeedPresets => new FeedPresets([
+            new GooglePreset, new JsonPreset, new XmlPreset, new CsvPreset,
+        ]));
 
         $this->mergeConfigFrom(__DIR__.'/../config/webx-catalog-feeds.php', 'webx-catalog-feeds');
     }

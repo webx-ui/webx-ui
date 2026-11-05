@@ -40,6 +40,6 @@ final class ProductVariablesCoreTest extends TestCase
         $this->assertSame([], $row['gtins']);
         $this->assertSame([], $row['barcodes']);
         $this->assertSame('no', $row['identifier_exists']);
-        $this->assertArrayNotHasKey('brand', $row);
+        $this->assertSame('', $row['brand']);
     }
 }

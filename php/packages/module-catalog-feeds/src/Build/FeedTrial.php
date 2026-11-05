@@ -238,7 +238,7 @@ final class FeedTrial
             $warnings = [FeedProof::NO_PRODUCTS => 1, ...$warnings];
         }
 
-        $preorders = count(array_keys($feed->stock_map, FeedProof::PREORDER, true));
+        $preorders = count(array_intersect($feed->stock_map, FeedProof::DATED));
 
         if ($preorders > 0) {
             $warnings[FeedProof::PREORDER] = $preorders;

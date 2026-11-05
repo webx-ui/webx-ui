@@ -8,6 +8,7 @@ return [
     'images' => 'Todas as imagens',
     'additional_images' => 'Imagens após a principal',
     'availability' => 'Disponibilidade',
+    'brand' => 'Marca',
     'id' => 'ID do produto',
     'group_id' => 'Grupo de variantes',
     'price' => 'Preço atual',

@@ -28,7 +28,7 @@ return [
     'label-property' => 'Мітка :label бере значення з властивості [:property], якої на сайті немає.',
     'label-source' => 'Мітка :label бере значення з міток товарів, яких на сайті немає.',
     'source-type' => 'MPN береться з поля товару або з властивості із вказаним кодом.',
-    'preorder' => 'Разом із preorder Google вимагає availability_date, а такої дати в каталозі немає.',
+    'preorder' => 'Разом із preorder і backorder Google вимагає availability_date, а такої дати в каталозі немає.',
     'taxonomy-line' => 'Рядок :line файлу — не категорія довідника.',
     'taxonomy-empty' => 'У файлі немає категорій.',
     'taxonomy-encoding' => 'Рядок :line файлу не в кодуванні UTF-8.',

@@ -8,6 +8,7 @@ return [
     'images' => 'Tüm görseller',
     'additional_images' => 'Ana görselden sonraki görseller',
     'availability' => 'Stok durumu',
+    'brand' => 'Marka',
     'id' => 'Ürün kimliği',
     'group_id' => 'Varyant grubu',
     'price' => 'Güncel fiyat',

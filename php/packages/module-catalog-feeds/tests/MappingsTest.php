@@ -580,6 +580,17 @@ final class MappingsTest extends TestCase
     }
 
     #[Test]
+    public function backorder_asks_for_the_same_date_and_counts_with_preorder(): void
+    {
+        $answer = $this->actingAs($this->editor(), 'cms')
+            ->postJson($this->api(), ['name' => 'Spare parts', 'format' => 'text', 'item' => '{{id}}', 'stock_map' => ['on-order' => 'backorder', 'soon' => 'preorder', 'in-stock' => 'in_stock']])
+            ->assertCreated()
+            ->json('warnings');
+
+        $this->assertSame(2, array_column($answer, null, 'code')['preorder']['count']);
+    }
+
+    #[Test]
     public function a_reader_sees_the_mappings_and_does_not_write_them(): void
     {
         [$top] = $this->branch();

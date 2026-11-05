@@ -20,6 +20,7 @@ Route::prefix((string) config('webx-admin.api_path'))
 
         Route::middleware('cms.can:catalog.view,catalog.manage')->group(static function () use ($path): void {
             Route::get($path, [FeedController::class, 'index'])->name('index');
+            Route::get($path.'/meta', [FeedController::class, 'meta'])->name('meta');
             Route::get($path.'/{feed}', [FeedController::class, 'show'])->whereNumber('feed')->name('show');
             Route::get($path.'/{feed}/categories', [FeedCategoryController::class, 'index'])->whereNumber('feed')->name('categories');
             Route::get($path.'/taxonomies/{key}/search', [TaxonomyController::class, 'search'])->name('taxonomies.search');

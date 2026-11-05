@@ -13,6 +13,8 @@ use WebxUi\CatalogFeeds\Build\FeedLabels;
 use WebxUi\CatalogFeeds\Build\FeedProblem;
 use WebxUi\CatalogFeeds\Build\FeedTrial;
 use WebxUi\CatalogFeeds\Models\Feed;
+use WebxUi\CatalogFeeds\Presets\FeedPreset;
+use WebxUi\CatalogFeeds\Presets\FeedPresets;
 use WebxUi\CatalogFeeds\Taxonomy\Taxonomies;
 use WebxUi\Localization\Locales;
 
@@ -48,6 +50,7 @@ final class FeedForm
     public function __construct(
         private readonly Locales $locales,
         private readonly FeedTrial $trial,
+        private readonly FeedPresets $presets,
     ) {}
 
     /**
@@ -75,8 +78,9 @@ final class FeedForm
      */
     public function fill(Feed $feed, array $input): void
     {
-        $input = $this->cleaned($input);
         $creating = ! $feed->exists;
+        $input = $this->cleaned($input);
+        $input = $creating ? $this->fromPreset($input) : $input;
 
         Validator::make($input, [
             'name' => [$creating ? 'required' : 'sometimes', 'string', 'max:120'],
@@ -141,6 +145,30 @@ final class FeedForm
         }
 
         return $input;
+    }
+
+    /**
+     * A new feed takes a copy of its preset, and what the form sent wins (§9 of the feeds spec). Only
+     * here does `preset` mean anything: on a feed it is a word about where the feed came from.
+     *
+     * @param  array<string, mixed>  $input
+     * @return array<string, mixed>
+     */
+    private function fromPreset(array $input): array
+    {
+        $key = $input['preset'] ?? null;
+
+        if ($key === null) {
+            return $input;
+        }
+
+        $preset = is_string($key) ? $this->presets->find($key) : null;
+
+        if (! $preset instanceof FeedPreset) {
+            throw ValidationException::withMessages(['preset' => [(string) __('validation.in', ['attribute' => 'preset'])]]);
+        }
+
+        return [...$preset->values(), 'name' => $preset->name(), ...$input];
     }
 
     /**

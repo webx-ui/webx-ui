@@ -28,7 +28,7 @@ return [
     'label-property' => 'Custom Label :label nimmt den Wert aus der Eigenschaft [:property], die es auf der Website nicht gibt.',
     'label-source' => 'Custom Label :label nimmt den Wert aus Produktlabels, die es auf der Website nicht gibt.',
     'source-type' => 'Die MPN kommt aus dem Produktfeld oder aus einer Eigenschaft mit ihrem Code.',
-    'preorder' => 'Zusammen mit preorder verlangt Google availability_date, und dieses Datum gibt es im Katalog nicht.',
+    'preorder' => 'Zusammen mit preorder und backorder verlangt Google availability_date, und dieses Datum gibt es im Katalog nicht.',
     'taxonomy-line' => 'Zeile :line der Datei ist keine Kategorie der Liste.',
     'taxonomy-empty' => 'Die Datei enthält keine Kategorien.',
     'taxonomy-encoding' => 'Zeile :line der Datei ist nicht in UTF-8.',

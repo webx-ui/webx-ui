@@ -28,7 +28,7 @@ return [
     'label-property' => 'Le libellé personnalisé :label prend sa valeur dans la propriété [:property], que le site n’a pas.',
     'label-source' => 'Le libellé personnalisé :label prend sa valeur dans les libellés de produit, que le site n’a pas.',
     'source-type' => 'Le MPN vient du champ du produit ou d’une propriété avec son code.',
-    'preorder' => 'Avec preorder, Google demande availability_date, et le catalogue n’a pas cette date.',
+    'preorder' => 'Avec preorder et backorder, Google demande availability_date, et le catalogue n’a pas cette date.',
     'taxonomy-line' => 'La ligne :line du fichier n’est pas une catégorie de la liste.',
     'taxonomy-empty' => 'Le fichier ne contient aucune catégorie.',
     'taxonomy-encoding' => 'La ligne :line du fichier n’est pas en UTF-8.',

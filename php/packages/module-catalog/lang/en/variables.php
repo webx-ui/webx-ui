@@ -8,6 +8,7 @@ return [
     'images' => 'All pictures',
     'additional_images' => 'Pictures after the main one',
     'availability' => 'Availability',
+    'brand' => 'Brand',
     'id' => 'Product ID',
     'group_id' => 'Variant group',
     'price' => 'Current price',

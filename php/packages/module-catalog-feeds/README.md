@@ -7,7 +7,7 @@ files for marketplaces and ad platforms, set up in the panel from a template. A 
 Specification: `docs/architecture/WEBX_UI_CATALOG_FEEDS.md` in the monorepo.
 
 The package is being built in stages. What works today: the tables, the section of the panel, the
-feeds' API, building a file and serving it. Presets and the agent's tools come next.
+feeds' API, building a file, serving it and the presets. The agent's tools come next.
 
 ## Requirements
 
@@ -25,6 +25,14 @@ Set the site's currency with `WEBX_CATALOG_CURRENCY`: a feed is always in it.
 
 There are no permissions of its own: `catalog.view` reads the feeds, `catalog.manage` writes them
 and alone sees the address with its key.
+
+## Presets
+
+`POST catalog/feeds` with `preset` set to `google`, `json`, `xml` or `csv` copies a ready template
+into a new feed; whatever else the request sends wins over it. `GET catalog/feeds/meta` lists them.
+The copy is the feed's own: a later release of a preset does not touch it. The Google preset sends
+only the main `gtin`; to send every barcode, change that line of the copy to
+`{{#gtins}}<g:gtin>{{value}}</g:gtin>{{/gtins}}`.
 
 ## Builds
 

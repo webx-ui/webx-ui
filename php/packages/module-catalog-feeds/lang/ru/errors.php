@@ -28,7 +28,7 @@ return [
     'label-property' => 'Метка :label берёт значение из свойства [:property], которого на сайте нет.',
     'label-source' => 'Метка :label берёт значение из меток товаров, которых на сайте нет.',
     'source-type' => 'MPN берётся из поля товара или из свойства с указанным кодом.',
-    'preorder' => 'Вместе с preorder Google требует availability_date, а такой даты в каталоге нет.',
+    'preorder' => 'Вместе с preorder и backorder Google требует availability_date, а такой даты в каталоге нет.',
     'taxonomy-line' => 'Строка :line файла — не категория справочника.',
     'taxonomy-empty' => 'В файле нет категорий.',
     'taxonomy-encoding' => 'Строка :line файла не в кодировке UTF-8.',
