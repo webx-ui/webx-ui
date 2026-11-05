@@ -190,6 +190,12 @@ class PaymentsServiceProvider extends ServiceProvider
                         app(PayPage::class)->promptable($orders),
                         (string) trans('webx-payments::buyer.status.awaiting', [], $locale),
                     ),
+                    // «Pay online now» of an order on receipt (§8.5), which awaits nothing.
+                    offer: static function (array $block, Order $order): ?string {
+                        $offer = app(PayPage::class)->offer($order);
+
+                        return $offer === null ? null : view('webx-payments::pay.offer', ['offer' => $offer])->render();
+                    },
                     details: static function (array $block, Order $order, string $locale): ?string {
                         if (! $order->awaiting_payment || $order->paid_at !== null || $order->cancelled_at !== null) {
                             return null;

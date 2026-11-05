@@ -37,7 +37,8 @@ use WebxUi\Payments\Words;
  * A paid order that owes more after an edit offers «Top up» by any online method (decision 29);
  * an order «on receipt» offers «Pay online now» (§8.5). An unpaid order may go over to any method
  * it could be placed with, offline ones too: «Choose another method», the list of the checkout's
- * step behind one button (groups spec §6.8), which for an order «on receipt» stands open.
+ * step behind one button (groups spec §6.8), which for an order «on receipt» stands open. The order's
+ * own page is where such a buyer already is, so it offers that list too: `offer()`.
  */
 final readonly class PayPage
 {
@@ -146,6 +147,46 @@ final readonly class PayPage
             'switch' => $others !== [] ? $this->links->method($order) : null,
             'others' => self::listed($others),
         ];
+    }
+
+    /**
+     * «Pay online now» on the order's own page (§8.5): an order on receipt awaits nothing, so
+     * `prompt()` is not for it, and nothing else leads its buyer to the page of payment. Null unless
+     * the page of payment would say the same: the order owes money, nothing is held or being
+     * checked, and one of the other methods is online. Reads the rows, never asks the gateway.
+     *
+     * @return array{switch: string, others: list<array{key: string, title: string, option: MethodOption}>}|null
+     */
+    public function offer(Order $order): ?array
+    {
+        $block = is_array($order->payment) ? $order->payment : [];
+
+        if (($block['kind'] ?? null) !== Kind::Offline->value || ($block['type'] ?? null) === BankTransfer::KEY) {
+            return null;
+        }
+
+        $due = $this->orders->balance($order)->due;
+        $switch = $this->links->method($order);
+
+        if ($order->cancelled_at !== null || $order->paid_at !== null || $due <= 0 || $switch === '') {
+            return null;
+        }
+
+        $last = Payment::query()->where('order_id', $order->id)->orderByDesc('id')->first();
+
+        if ($last?->status === PaymentStatus::Authorized || ($last?->status === PaymentStatus::Pending && ! $last->notStarted() && ! $last->declined())) {
+            return null;
+        }
+
+        $others = $this->others($order, $due);
+
+        foreach ($others as $option) {
+            if ($option->kind === Kind::Online) {
+                return ['switch' => $switch, 'others' => self::listed($others)];
+            }
+        }
+
+        return null;
     }
 
     /**

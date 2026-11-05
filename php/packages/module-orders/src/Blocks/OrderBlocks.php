@@ -140,6 +140,35 @@ final class OrderBlocks
     }
 
     /**
+     * A way to pay of an order that does not await payment (§13.1): the first owner that has one;
+     * an owner that throws says nothing.
+     */
+    public function offer(Order $order, string $locale): ?string
+    {
+        foreach ($this->blocks as $key => $block) {
+            $value = $order->getAttribute($key);
+
+            if ($block->offer === null || ! is_array($value)) {
+                continue;
+            }
+
+            try {
+                $html = ($block->offer)($value, $order, $locale);
+            } catch (Throwable $e) {
+                Log::warning("webx-orders: the offer of the block «{$key}» failed", ['exception' => $e]);
+
+                continue;
+            }
+
+            if (is_string($html) && trim($html) !== '') {
+                return $html;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * What «My orders» says over the public status (§13.2): the words of `prompt()` for a whole
      * list, order id => title. An owner that throws says nothing.
      *

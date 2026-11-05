@@ -95,11 +95,12 @@ declined. A theme that keeps its own copy of these templates has to carry them o
 
 - **`webx-orders/order/body.blade.php`** has to print the block `prompt`: `$order['prompt']['title']`
   over the status and `$order['prompt']['html']` under the scale. Without it the buyer reads the
-  public status and gets no button to pay.
+  public status and gets no button to pay. It also has to print `$order['offer']` under the scale:
+  without it the buyer of an order on receipt gets no «Pay online now».
 - **`webx-payments/pay/page.blade.php`** has to handle the state `declined`. Without it the buyer the
   bank turned down gets an empty place instead of the reason and «Pay again».
 
-`php artisan webx:doctor` names a copy that lacks either. «My orders» needs nothing: the words come
+`php artisan webx:doctor` names a copy that lacks any of them. «My orders» needs nothing: the words come
 in `$row['status']`, with the code `awaiting-payment`.
 
 ## Groups and marks
