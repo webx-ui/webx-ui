@@ -131,7 +131,7 @@ final class AttemptsTest extends OnlineCase
         ]);
         $this->assertFalse($order->awaiting_payment);
 
-        $this->get($this->payPage($order))->assertOk()->assertSee('Pay online now — Card (gateway A)');
+        $this->get($this->payPage($order))->assertOk()->assertSee('Pay online now')->assertSee('value="gateway-a-card"', false);
 
         $response = $this->post($this->app->make(PaymentLinks::class)->method($order), ['method' => 'gateway-a-card']);
 

@@ -33,7 +33,7 @@ Packagist: webx-ui/<pkg> <версия>
 
 Падение npm-публикации Composer-половину не держит (`docs/pitfalls/release-and-ci.md`). Что нужно
 от человека для нового пакета, заранее показывает чек «New packages are ready to release»: на PR
-ветки дня — зеркала, на релизном PR — ещё npm и Packagist.
+ветки дня или её среза `release/*` — зеркала, на релизном PR — ещё npm и Packagist.
 
 Push в `main`, который трогает `php/**`, запускает `php-split.yml` без тега — зеркала держатся
 в актуальном состоянии между релизами.

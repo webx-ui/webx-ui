@@ -12,6 +12,7 @@ import {
   packagistUrl,
   readPackages,
   report,
+  worktreeArgument,
 } from './release-preflight.mjs'
 
 const fromCi = {
@@ -58,16 +59,33 @@ describe('release-preflight', () => {
 
     expect(isGreen(result)).toBe(false)
     expect(text).toContain('нужна первая ручная публикация')
-    expect(text).toContain('git worktree add ~/work/webx-ui-release origin/changeset-release/main')
+    expect(text).toContain('git worktree add <worktree> origin/changeset-release/main')
     expect(text).toContain('pnpm install --frozen-lockfile && pnpm --filter "@webx-ui/module-a..."')
-    expect(text).toContain('cd ~/work/webx-ui-release/packages/module-a && pnpm pack')
+    expect(text).toContain('cd <worktree>/packages/module-a && pnpm pack')
     expect(text).toContain("jq '.version, .dependencies, .peerDependencies'")
     expect(text).toContain('npm publish webx-ui-module-a-0.1.0.tgz --access public')
     expect(text).toContain('webx-ui / webx-ui / release.yml')
     expect(text).toContain('npm logout')
-    expect(text).toContain('git worktree remove ~/work/webx-ui-release')
+    expect(text).toContain('git worktree remove <worktree>')
     expect(text).toContain('gh run rerun 123 --failed')
     expect(annotations(result)[0]).toMatch(/^::error::.*@webx-ui\/module-a/)
+  })
+
+  it('explains the worktree placeholder, and writes in a path it was given', async () => {
+    const result = await run({ [npmUrl('@webx-ui/module-a')]: { status: 404 } })
+    const given = report(result, { worktree: '/srv/release-copy' })
+
+    expect(report(result)).toContain('<worktree> в командах — путь к новому каталогу')
+    expect(given).not.toContain('<worktree>')
+    expect(given).toContain('git worktree add /srv/release-copy origin/changeset-release/main')
+    expect(given).toContain('cd /srv/release-copy/packages/module-a && pnpm pack')
+    expect(given).toContain('git worktree remove /srv/release-copy')
+  })
+
+  it('reads the worktree from the command line', () => {
+    expect(worktreeArgument(['node', 'script', '--worktree=/srv/copy'])).toBe('/srv/copy')
+    expect(worktreeArgument(['node', 'script', '--worktree='])).toBeUndefined()
+    expect(worktreeArgument(['node', 'script', '--mirrors'])).toBeUndefined()
   })
 
   it('asks for the mirror that does not exist', async () => {
@@ -164,13 +182,64 @@ describe('release-preflight', () => {
     expect(isGreen(result)).toBe(true)
   })
 
-  it('warns, and only warns, about a package that never came from CI', async () => {
-    const result = await run({ [npmUrl('@webx-ui/module-a')]: { status: 200, body: byHand } })
+  it('warns, and only warns, about a package of this release that never came from CI', async () => {
+    const result = await check(
+      { ...packages, npm: [{ ...packages.npm[0], version: '0.2.0' }] },
+      {
+        fetcher: services({ [npmUrl('@webx-ui/module-a')]: { status: 200, body: byHand } }),
+        pause: 0,
+      },
+    )
 
     expect(isGreen(result)).toBe(true)
     expect(result.unproven).toEqual(['@webx-ui/module-a'])
-    expect(report(result)).toContain('ни одна версия не вышла из CI')
-    expect(annotations(result)).toEqual([expect.stringMatching(/^::warning::/)])
+    expect(result.unprovenElsewhere).toEqual([])
+    expect(report(result)).toContain('Предупреждение: идут в этот релиз')
+    expect(report(result)).not.toContain('Остальные')
+    expect(annotations(result)).toEqual([expect.stringMatching(/^::warning::.*module-a/)])
+  })
+
+  it('only mentions a package that never came from CI and is not in this release', async () => {
+    const result = await run({ [npmUrl('@webx-ui/module-a')]: { status: 200, body: byHand } })
+
+    expect(isGreen(result)).toBe(true)
+    expect(result.unproven).toEqual([])
+    expect(result.unprovenElsewhere).toEqual(['@webx-ui/module-a'])
+    expect(report(result)).toContain('Остальные, не подтверждённые публикацией из CI')
+    expect(report(result)).not.toContain('Предупреждение')
+    expect(annotations(result)).toEqual([])
+  })
+
+  it('tells the two groups apart in one run', async () => {
+    const npm = [
+      { dir: 'packages/module-a', name: '@webx-ui/module-a', version: '0.2.0' },
+      { dir: 'packages/module-b', name: '@webx-ui/module-b', version: '0.1.0' },
+    ]
+    const result = await check(
+      { npm, composer: [] },
+      {
+        fetcher: services({
+          [npmUrl('@webx-ui/module-a')]: { status: 200, body: byHand },
+          [npmUrl('@webx-ui/module-b')]: { status: 200, body: byHand },
+        }),
+        pause: 0,
+      },
+    )
+
+    expect(result.unproven).toEqual(['@webx-ui/module-a'])
+    expect(result.unprovenElsewhere).toEqual(['@webx-ui/module-b'])
+    expect(annotations(result)).toHaveLength(1)
+    expect(annotations(result)[0]).not.toContain('module-b')
+  })
+
+  it('has nothing to say about a package that came from CI', async () => {
+    const result = await check(
+      { ...packages, npm: [{ ...packages.npm[0], version: '0.2.0' }] },
+      { fetcher: services(), pause: 0 },
+    )
+
+    expect(result.unproven).toEqual([])
+    expect(result.unprovenElsewhere).toEqual([])
   })
 
   it('sends the token to GitHub alone', async () => {

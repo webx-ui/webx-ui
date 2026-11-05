@@ -7,8 +7,10 @@ namespace WebxUi\Payments\Rendering;
 use Illuminate\Contracts\Routing\UrlGenerator;
 
 /**
- * The payment step's script, at most once per page (spec §10.3). `scoped`, so the flag belongs to
- * the response being built and not to the worker building it.
+ * The scripts of the payment pages, each at most once per page (spec §10.3, groups spec §6.5):
+ * `step.js` writes the choice of the checkout's step, `methods.js` is the list of methods wherever
+ * it stands. `scoped`, so the flags belong to the response being built and not to the worker
+ * building it.
  *
  * Small enough to ship as written: no build, nothing to keep in step with a source.
  */
@@ -16,9 +18,14 @@ final class Assets
 {
     public const string SCRIPT = __DIR__.'/../../resources/js/step.js';
 
+    public const string METHODS = __DIR__.'/../../resources/js/methods.js';
+
     private bool $printed = false;
 
-    private static ?string $version = null;
+    private bool $methodsPrinted = false;
+
+    /** @var array<string, string> */
+    private static array $versions = [];
 
     public function __construct(private readonly UrlGenerator $url) {}
 
@@ -34,14 +41,26 @@ final class Assets
         return $this->url->route('webx-payments.script', ['v' => self::version()]);
     }
 
-    /** What is served, read once per process — it cannot change under a running worker. */
-    public static function contents(): string
+    /** The same for the list of methods. */
+    public function methods(): ?string
     {
-        return (string) @file_get_contents(self::SCRIPT);
+        if ($this->methodsPrinted) {
+            return null;
+        }
+
+        $this->methodsPrinted = true;
+
+        return $this->url->route('webx-payments.methods-script', ['v' => self::version(self::METHODS)]);
     }
 
-    public static function version(): string
+    /** What is served, read once per process — it cannot change under a running worker. */
+    public static function contents(string $file = self::SCRIPT): string
     {
-        return self::$version ??= substr(hash('xxh128', self::contents()), 0, 16);
+        return (string) @file_get_contents($file);
+    }
+
+    public static function version(string $file = self::SCRIPT): string
+    {
+        return self::$versions[$file] ??= substr(hash('xxh128', self::contents($file)), 0, 16);
     }
 }

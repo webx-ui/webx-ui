@@ -28,7 +28,7 @@ use WebxUi\Orders\Models\Order;
  */
 final class SlotStep implements NamesErrors, Step
 {
-    /** What a slot dispatches on `document` after each change of the choice; detail: slot, summary. */
+    /** What a slot dispatches on `document` after each change of the choice; detail: slot, summary, and `redraw` when it changed by itself, not by the buyer: its step is drawn again. */
     public const string CHANGED = 'webx:checkout:slot-changed';
 
     /**

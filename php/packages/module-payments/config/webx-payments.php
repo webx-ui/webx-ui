@@ -3,6 +3,16 @@
 declare(strict_types=1);
 
 return [
+    // The groups of the buyer's list (groups spec §2.1): the key, for good, and in the order of the
+    // array. `title` is a dictionary's key or the words themselves, `pictogram` a name of
+    // `MethodGroups::PICTOGRAMS`. A site's `groups` replaces this list whole; an empty one is a flat
+    // list. The panel renames and reorders what is here, and neither adds nor removes.
+    'groups' => [
+        'on_receipt' => ['title' => 'webx-payments::groups.on_receipt', 'pictogram' => 'cash'],
+        'online' => ['title' => 'webx-payments::groups.online', 'pictogram' => 'card'],
+        'transfer' => ['title' => 'webx-payments::groups.transfer', 'pictogram' => 'document'],
+    ],
+
     // The buyer's page of payment of an order and the step to the gateway (spec §4): /pay/{number},
     // /pay/go/{uuid}.
     'path' => 'pay',

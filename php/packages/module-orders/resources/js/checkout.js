@@ -293,7 +293,9 @@ export function start(doc = document) {
   if (slotEvent) {
     doc.addEventListener(slotEvent, (event) => {
       // Delivery changes what payment offers (§22.3); a part of the column changes only the column.
-      const keys = event.detail?.slot === 'delivery' ? ['payment'] : []
+      // `redraw`: the slot changed by itself, and its own step, maybe folded, says the old choice.
+      const { slot, redraw } = event.detail ?? {}
+      const keys = slot === 'delivery' ? ['payment'] : redraw ? [slot] : []
       keep(keys.length ? redrawPage(root, keys) : redrawSummary(root))
     })
   }

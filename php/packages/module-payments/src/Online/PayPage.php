@@ -36,7 +36,9 @@ use WebxUi\Payments\Words;
  *
  * A paid order that owes more after an edit offers «Top up» by any online method (decision 29);
  * an order «on receipt» offers «Pay online now» (§8.5). An unpaid order may go over to any method
- * it could be placed with, offline ones too: «Choose another method», a list behind one button.
+ * it could be placed with, offline ones too: «Choose another method», the list of the checkout's
+ * step behind one button (groups spec §6.8), which for an order «on receipt» stands open. The order's
+ * own page is where such a buyer already is, so it offers that list too: `offer()`.
  */
 final readonly class PayPage
 {
@@ -90,9 +92,8 @@ final readonly class PayPage
         };
 
         $online = in_array($state, ['top_up', 'on_receipt'], true) ? $this->onlineOptions($order, $due) : [];
-        // A top-up has its own list and keeps the block; «on receipt» lists its online ways by itself.
+        // A top-up has its own list and keeps the block.
         $others = in_array($state, ['pay', 'unfinished', 'declined', 'transfer', 'on_receipt'], true) ? $this->others($order, $due) : [];
-        $others = $state === 'on_receipt' ? array_values(array_filter($others, static fn (MethodOption $option): bool => $option->kind !== Kind::Online)) : $others;
 
         return [
             'number' => (string) $order->number,
@@ -100,10 +101,11 @@ final readonly class PayPage
             'due' => $this->money->format(max(0, $due), (string) $order->currency),
             'method' => $method !== null ? ($method->title($locale) ?? Words::pick(is_array($block['title'] ?? null) ? $block['title'] : null, $locale) ?? $method->key) : null,
             'attempts' => (in_array($state, ['pay', 'unfinished', 'declined'], true) && $method !== null) || ($state === 'top_up' && $online !== []) ? $this->links->attempts($order) : null,
-            // «Top up» posts its method to the attempts; «Pay online now» switches the method first.
+            // «Top up» posts its method to the attempts. Of an order «on receipt» it only says the
+            // list of `others` may be paid online now, and a theme's older copy has its buttons by it.
             'online' => array_map(static fn (MethodOption $option): array => ['key' => $option->method->key, 'title' => $option->title], $online),
             'others' => self::listed($others),
-            'switch' => ($state === 'on_receipt' && $online !== []) || $others !== [] ? $this->links->method($order) : null,
+            'switch' => $others !== [] ? $this->links->method($order) : null,
             // An earlier attempt the gateway would not close may still take money (§9.4), and so
             // may the one not begun: its page can be open in another tab.
             'wait' => $notStarted || $declined || ($state === 'pay' && $this->closings->open($order, $last?->id)),
@@ -123,7 +125,7 @@ final readonly class PayPage
      * for any other order — the shop's words say it then. Reads the rows, never asks the gateway:
      * the page of an order is not a poll.
      *
-     * @return array{checking: bool, page: string, attempts: string|null, switch: string|null, others: list<array{key: string, title: string}>}|null
+     * @return array{checking: bool, page: string, attempts: string|null, switch: string|null, others: list<array{key: string, title: string, option: MethodOption}>}|null
      */
     public function prompt(Order $order): ?array
     {
@@ -145,6 +147,46 @@ final readonly class PayPage
             'switch' => $others !== [] ? $this->links->method($order) : null,
             'others' => self::listed($others),
         ];
+    }
+
+    /**
+     * «Pay online now» on the order's own page (§8.5): an order on receipt awaits nothing, so
+     * `prompt()` is not for it, and nothing else leads its buyer to the page of payment. Null unless
+     * the page of payment would say the same: the order owes money, nothing is held or being
+     * checked, and one of the other methods is online. Reads the rows, never asks the gateway.
+     *
+     * @return array{switch: string, others: list<array{key: string, title: string, option: MethodOption}>}|null
+     */
+    public function offer(Order $order): ?array
+    {
+        $block = is_array($order->payment) ? $order->payment : [];
+
+        if (($block['kind'] ?? null) !== Kind::Offline->value || ($block['type'] ?? null) === BankTransfer::KEY) {
+            return null;
+        }
+
+        $due = $this->orders->balance($order)->due;
+        $switch = $this->links->method($order);
+
+        if ($order->cancelled_at !== null || $order->paid_at !== null || $due <= 0 || $switch === '') {
+            return null;
+        }
+
+        $last = Payment::query()->where('order_id', $order->id)->orderByDesc('id')->first();
+
+        if ($last?->status === PaymentStatus::Authorized || ($last?->status === PaymentStatus::Pending && ! $last->notStarted() && ! $last->declined())) {
+            return null;
+        }
+
+        $others = $this->others($order, $due);
+
+        foreach ($others as $option) {
+            if ($option->kind === Kind::Online) {
+                return ['switch' => $switch, 'others' => self::listed($others)];
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -200,6 +242,22 @@ final readonly class PayPage
         return array_values(array_filter($this->options($order, $due), static fn (MethodOption $option): bool => $option->kind === Kind::Online));
     }
 
+    /**
+     * What a form of «Choose another method» means (groups spec §6.4, §6.8). The order's own method
+     * is not on the list, so a group that stands for a method never falls to it; named outright it
+     * is still taken: a second press of «Continue» arrives when the first has already switched.
+     */
+    public function picked(Order $order, ?string $group, ?string $method): ?MethodOption
+    {
+        $named = $this->methods->picked($this->options($order), null, $method);
+
+        if ($named !== null && ($group === null || $named->group === $group)) {
+            return $named;
+        }
+
+        return $group === null ? null : $this->methods->picked($this->others($order, $this->orders->balance($order)->due), $group, null);
+    }
+
     /** The order's own method, if it is an enabled online one whose type is installed. */
     public function online(string $key): ?Method
     {
@@ -221,11 +279,14 @@ final readonly class PayPage
     }
 
     /**
+     * The list as `pay/others` takes it: the option for the list of methods, the key and the title
+     * for a theme's copy of the template from before it.
+     *
      * @param  list<MethodOption>  $options
-     * @return list<array{key: string, title: string}>
+     * @return list<array{key: string, title: string, option: MethodOption}>
      */
     private static function listed(array $options): array
     {
-        return array_map(static fn (MethodOption $option): array => ['key' => $option->method->key, 'title' => $option->title], $options);
+        return array_map(static fn (MethodOption $option): array => ['key' => $option->method->key, 'title' => $option->title, 'option' => $option], $options);
     }
 }

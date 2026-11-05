@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   toast,
   WxAlert,
-  WxBadge,
   WxButton,
   WxCard,
   WxDialog,
@@ -19,14 +18,25 @@ import {
 } from '@webx-ui/core'
 import { useAdmin, useErrorText, WxListScreen, type ScreenAction } from '@webx-ui/module-admin'
 import { createPaymentsApi } from './api'
+import GroupDialog from './GroupDialog.vue'
+import GroupPictogram from './GroupPictogram.vue'
 import { usePaymentsWords } from './i18n'
+import MethodLine from './MethodLine.vue'
 import MethodPane from './MethodPane.vue'
-import type { MethodRow, MethodType } from './types'
+import type { MethodGroup, MethodRow, MethodType, PaymentMark, Pictogram } from './types'
+
+/** A group of the list with the methods standing in it, in their order. */
+type GroupList = MethodGroup & { methods: MethodRow[] }
 
 /**
  * The methods (spec §13.2): every one in the order the checkout lists them — dragged by the grip —
  * on the left, the one being written on the right. A new method starts from its type: the shop's
  * own two, or a gateway's.
+ *
+ * On a site with groups (groups spec §7) the left column is the groups in their order, each with
+ * its methods: one list inside another, a method dragged between groups by the shared `group`. The
+ * groups are the config's, so there is no «Add» or «Delete» for them, only «Edit». A site whose
+ * config has none keeps the one flat list.
  *
  * The open method is in the address (`?method=` — an id, or `new:<type>`), so a link to one is a
  * link to it in its list.
@@ -40,6 +50,11 @@ const message = useErrorText()
 
 const rows = ref<MethodRow[]>([])
 const types = ref<MethodType[]>([])
+const groups = ref<GroupList[]>([])
+const marks = ref<Record<string, PaymentMark>>({})
+const pictograms = ref<Pictogram[]>([])
+const editing = ref<MethodGroup | null>(null)
+const editingOpen = ref(false)
 const loading = ref(true)
 const choosing = ref(false)
 const picked = ref<string | null>(null)
@@ -95,10 +110,19 @@ async function load(): Promise<void> {
   loading.value = true
 
   try {
-    const answer = await api.methods()
+    const [answer, site] = await Promise.all([api.methods(), api.groups()])
 
     rows.value = answer.methods
     types.value = answer.types
+    marks.value = answer.marks
+    pictograms.value = site.pictograms
+    groups.value = site.groups.map((group, index) => ({
+      ...group,
+      // A method with no group of the site's stands in the first, where it can still be reached.
+      methods: answer.methods.filter((row) =>
+        site.groups.some((one) => one.key === row.group) ? row.group === group.key : index === 0,
+      ),
+    }))
   } catch (error) {
     toast.danger(message(error))
   } finally {
@@ -139,15 +163,6 @@ const actions = computed<ScreenAction[]>(() =>
     : [],
 )
 
-/* The type and the gateway under the method's name, unless the name already says it. */
-function line(row: MethodRow): string {
-  const echo = row.type_title.trim().toLowerCase() === row.title.trim().toLowerCase()
-
-  return [echo ? '' : row.type_title, row.gateway_title ?? '']
-    .filter((part, index, all) => part !== '' && all.indexOf(part) === index)
-    .join(' · ')
-}
-
 function created(method: MethodRow): void {
   choose(String(method.id))
   void load()
@@ -163,7 +178,62 @@ async function reorder(): Promise<void> {
   }
 }
 
+/*
+ * A row dragged between two lists changes both models in one go, and a drag of a group changes a
+ * third: put together in the next tick, so that one move is one request. Read back after it, since
+ * a move changes which methods are similar and what the open form says.
+ */
+let ordering = false
+
+function queueOrder(): void {
+  if (ordering) return
+
+  ordering = true
+  void nextTick(async () => {
+    ordering = false
+
+    try {
+      await api.orderGroups(
+        groups.value.map((group) => ({
+          key: group.key,
+          methods: group.methods.map((row) => row.id),
+        })),
+      )
+    } catch (error) {
+      toast.danger(message(error, t('common.order-failed')))
+    }
+
+    await load()
+  })
+}
+
+function placeMethods(group: GroupList, methods: MethodRow[]): void {
+  group.methods = methods
+  queueOrder()
+}
+
+function placeGroups(list: GroupList[]): void {
+  groups.value = list
+  queueOrder()
+}
+
+function edit(group: GroupList): void {
+  editing.value = group
+  editingOpen.value = true
+}
+
+function pictogramOf(group: MethodGroup): string | null {
+  return pictograms.value.find((one) => one.name === group.pictogram)?.svg ?? null
+}
+
 const paneKey = computed(() => String(route.query.method ?? ''))
+
+/* Undefined until the list is there: nothing to follow yet. */
+const standing = computed(() => {
+  const row = rows.value.find((one) => one.id === selected.value?.id)
+
+  return row && `${row.group} ${row.similar_to.map((one) => one.key).join()}`
+})
 </script>
 
 <template>
@@ -185,6 +255,63 @@ const paneKey = computed(() => String(route.query.method ?? ''))
 
           <template v-else>
             <wx-sortable-list
+              v-if="groups.length > 0"
+              :model-value="groups"
+              class="wx-payments-methods__groups"
+              plain
+              item-key="key"
+              :handle="canManage ? 'grip' : 'row'"
+              :item-label="(item: GroupList) => item.title"
+              :disabled="!canManage"
+              @update:model-value="placeGroups"
+            >
+              <template #default="{ item: group }">
+                <div class="wx-payments-group" :data-group="group.key">
+                  <div class="wx-payments-group__head">
+                    <group-pictogram v-if="pictogramOf(group)" :svg="pictogramOf(group) ?? ''" />
+                    <span class="wx-payments-group__names">
+                      <span class="wx-payments-group__title">{{ group.title }}</span>
+                      <span v-if="group.description" class="wx-payments-group__description">{{
+                        group.description
+                      }}</span>
+                    </span>
+                    <wx-button
+                      v-if="canManage"
+                      size="sm"
+                      variant="text"
+                      :data-test="`group-edit-${group.key}`"
+                      @click="edit(group)"
+                      >{{ t('common.edit') }}</wx-button
+                    >
+                  </div>
+
+                  <wx-sortable-list
+                    :model-value="group.methods"
+                    group="payment-methods"
+                    hoverable
+                    plain
+                    item-key="id"
+                    :handle="canManage ? 'grip' : 'row'"
+                    :item-label="(item: MethodRow) => item.title"
+                    :disabled="!canManage"
+                    :empty-text="t('groups.drop')"
+                    @update:model-value="placeMethods(group, $event)"
+                  >
+                    <template #default="{ item }">
+                      <method-line
+                        :method="item"
+                        :marks="marks"
+                        :current="selected?.id === item.id"
+                        @choose="choose(String(item.id))"
+                      />
+                    </template>
+                  </wx-sortable-list>
+                </div>
+              </template>
+            </wx-sortable-list>
+
+            <wx-sortable-list
+              v-else
               v-model="rows"
               class="wx-payments-methods__list"
               hoverable
@@ -196,42 +323,12 @@ const paneKey = computed(() => String(route.query.method ?? ''))
               @move="reorder"
             >
               <template #default="{ item }">
-                <button
-                  type="button"
-                  class="wx-payments-method"
-                  :class="{ 'is-current': selected?.id === item.id }"
-                  @click="choose(String(item.id))"
-                >
-                  <span class="wx-payments-method__title">{{ item.title }}</span>
-                  <span v-if="line(item)" class="wx-payments-method__line">{{ line(item) }}</span>
-                  <span class="wx-payments-method__facts">
-                    <wx-badge v-if="!item.enabled" dot size="sm">{{ t('methods.off') }}</wx-badge>
-                    <wx-badge v-else type="success" dot size="sm">{{ t('methods.on') }}</wx-badge>
-                    <wx-badge v-if="item.mode" size="sm">{{
-                      item.mode === 'live' ? t('methods.live') : t('methods.test')
-                    }}</wx-badge>
-                    <wx-badge
-                      v-if="item.credentials"
-                      :type="
-                        item.credentials === 'set' || item.credentials === 'environment'
-                          ? 'default'
-                          : 'warning'
-                      "
-                      size="sm"
-                      >{{ t(`methods.keys.${item.credentials}`) }}</wx-badge
-                    >
-                    <wx-badge v-if="item.hold" size="sm">{{ t('methods.hold') }}</wx-badge>
-                    <wx-badge
-                      v-if="
-                        item.warnings.includes('type_missing') ||
-                        item.warnings.includes('gateway_missing')
-                      "
-                      type="danger"
-                      size="sm"
-                      >{{ t(`methods.warnings.${item.warnings[0]}`) }}</wx-badge
-                    >
-                  </span>
-                </button>
+                <method-line
+                  :method="item"
+                  :marks="marks"
+                  :current="selected?.id === item.id"
+                  @choose="choose(String(item.id))"
+                />
               </template>
             </wx-sortable-list>
 
@@ -251,6 +348,7 @@ const paneKey = computed(() => String(route.query.method ?? ''))
             :key="paneKey"
             :type="selected.type"
             :inline="inline"
+            :standing="standing"
             @back="back"
             @saved="load"
             @created="created"
@@ -265,6 +363,13 @@ const paneKey = computed(() => String(route.query.method ?? ''))
         </template>
       </wx-list-detail>
     </wx-card>
+
+    <group-dialog
+      v-model:open="editingOpen"
+      :group="editing"
+      :pictograms="pictograms"
+      @saved="load"
+    />
 
     <!--
       A list of choices and not a wall of buttons: one name and one line of what it is per type,
@@ -324,61 +429,66 @@ const paneKey = computed(() => String(route.query.method ?? ''))
 }
 
 /* Nothing stands above the list in its card, so it keeps off the top edge too (as Menu's lists do). */
-.wx-payments-methods__list {
+.wx-payments-methods__list,
+.wx-payments-methods__groups {
   padding: var(--wx-space-8);
 }
 
+.wx-payments-methods__groups :deep(.wx-sortable-list__row),
 .wx-payments-methods__list :deep(.wx-sortable-list__row) {
   gap: var(--wx-space-4);
   padding-inline: var(--wx-space-4);
+}
+
+/* A group's row is as tall as its methods: its grip belongs to the head, not to the middle of them. */
+.wx-payments-methods__groups > :deep(.wx-sortable-list__body > .wx-sortable-list__row) {
+  align-items: flex-start;
+}
+
+.wx-payments-methods__groups
+  > :deep(.wx-sortable-list__body > .wx-sortable-list__row > .wx-sortable-list__grip) {
+  margin-block-start: var(--wx-space-14);
 }
 
 .wx-payments-methods__note {
   margin: var(--wx-space-8);
 }
 
-.wx-payments-method {
+.wx-payments-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-4);
+  min-width: 0;
+  padding-block: var(--wx-space-8);
+}
+
+.wx-payments-group__head {
+  display: flex;
+  align-items: center;
+  gap: var(--wx-space-8);
+  min-width: 0;
+}
+
+.wx-payments-group__names {
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
-  gap: var(--wx-space-2);
-  width: 100%;
   min-width: 0;
-  padding-block: var(--wx-space-8);
-  padding-inline: 0;
-  border: 0;
-  background: none;
-  font: inherit;
-  color: inherit;
-  text-align: start;
-  cursor: pointer;
 }
 
-.wx-payments-method__title {
+.wx-payments-group__title {
   overflow: hidden;
-  font-weight: var(--wx-font-weight-medium);
+  font-weight: var(--wx-font-weight-semibold);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.wx-payments-method.is-current .wx-payments-method__title {
-  color: var(--wx-color-primary);
-}
-
-.wx-payments-method__line {
+.wx-payments-group__description {
   overflow: hidden;
   color: var(--wx-text-muted);
   font-size: var(--wx-font-size-sm);
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.wx-payments-method__facts {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--wx-space-8);
-  font-size: var(--wx-font-size-sm);
 }
 
 .wx-payments-types {

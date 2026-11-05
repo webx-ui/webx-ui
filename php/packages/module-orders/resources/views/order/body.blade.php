@@ -1,9 +1,10 @@
 {{--
     An order as the buyer reads it (spec §13.1) — the signed page and «My orders» print the same:
     the date, the public status with its description — or, while the buyer can pay, the words and the
-    way to pay of the payment's owner —, the marks, the scale of the public statuses,
-    the lines — a name leads to the product while it has a page —, the money, the delivery and the payment as one line each — with what their owner adds
-    under it, such as the bank details of a transfer — the contacts. After an edit
+    way to pay of the payment's owner —, the marks, the scale of the public statuses, under it what
+    the payment's owner offers an order that does not wait for payment,
+    the lines — a name leads to the product while it has a page —, the money, the delivery and the
+    payment as one line each — with what their owner adds under it, such as the bank details of a transfer — the contacts. After an edit
     (§40.1) — «Items changed» with its date and the balance under the money. Never the internal
     status, never the manager's note, never the reason of an edit.
 
@@ -47,6 +48,8 @@
         <div class="webx-order__prompt">{!! $order['prompt']['html'] !!}</div>
     @elseif ($order['awaiting_payment'])
         <p class="webx-order__notice" role="status">{{ __('webx-orders::site.order.awaiting_payment') }}</p>
+    @elseif ($order['offer'] !== null)
+        <div class="webx-order__prompt">{!! $order['offer'] !!}</div>
     @endif
 
     <section class="webx-order__section">

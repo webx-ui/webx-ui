@@ -89,6 +89,8 @@ final readonly class OrderPage
             'awaiting_payment' => $awaiting,
             // The owner of the payment says it over the status, with the way to pay (§13.1).
             'prompt' => $awaiting ? $this->blocks->prompt($order, $locale) : null,
+            // Not waiting is not «cannot pay»: an order on receipt may still be paid now.
+            'offer' => $awaiting ? null : $this->blocks->offer($order, $locale),
             'changed_at' => $order->items_changed_at,
             'items' => $this->items($order->items, $locale, $money),
             'adjustments' => $order->adjustments->map(static fn (OrderAdjustment $adjustment): array => [

@@ -38,8 +38,10 @@ const props = withDefaults(
     /** The type of a new method. */
     type?: string | null
     inline?: boolean
+    /** Where the list has it and beside what: changed by a drag, the form follows. */
+    standing?: string
   }>(),
-  { type: null, inline: true },
+  { type: null, inline: true, standing: undefined },
 )
 
 const emit = defineEmits<{
@@ -58,6 +60,7 @@ const SETTING = 'settings.'
 
 const method = ref<MethodRow | null>(null)
 const parts = ref<TypeParts | null>(null)
+const warnings = ref<string[]>([])
 const values = ref<ScreenModel>({})
 const typed = ref<Record<string, string>>({})
 const clear = ref<string[]>([])
@@ -132,6 +135,12 @@ function node(field: SettingField): ScreenNode {
 const patch = computed<Patch>(() => {
   const fields = parts.value?.settings.fields ?? []
   const hold = parts.value?.hold
+  const groups = parts.value?.groups ?? []
+  // The choice depends on the type: «Default (…)» names the group of this one.
+  const group: Patch =
+    groups.length > 0
+      ? [{ op: 'set', target: 'group_key', props: { options: groups } }]
+      : [{ op: 'set', target: 'group_key', visible: false }]
 
   const children: ScreenNode[] = [
     ...fields.map(node),
@@ -155,8 +164,9 @@ const patch = computed<Patch>(() => {
 
   // The card is in the screen, hidden: only a type with fields of its own shows it.
   return children.length === 0
-    ? []
+    ? group
     : [
+        ...group,
         { op: 'set' as const, target: 'settings', visible: true },
         ...children.map((child) => ({ op: 'add' as const, target: 'settings', node: child })),
       ]
@@ -205,6 +215,7 @@ function take(detail: TypeParts, own: ScreenModel): void {
 
 function takeDetail(detail: MethodDetail): void {
   method.value = detail.method
+  warnings.value = detail.warnings
   typeTitle.value = detail.method.type_title
   take(detail, detail.values)
 }
@@ -223,6 +234,7 @@ async function load(): Promise<void> {
         titles: {},
         descriptions: {},
         enabled: false,
+        group_key: '',
         delivery_mode: 'any',
         delivery_methods: [],
         delivery_keys: '',
@@ -239,6 +251,31 @@ async function load(): Promise<void> {
 }
 
 void load()
+
+/*
+ * Dragged to another group while open, or a method like it dragged away: the field follows, or the
+ * next save would drag it back, and so does the warning. Only those: whatever else is being typed
+ * stays, unsaved as it was.
+ */
+watch(
+  () => props.standing,
+  async (_standing, before) => {
+    if (props.id === null || before === undefined) return
+
+    try {
+      const fresh = await api.method(props.id)
+      const key = fresh.values.group_key
+      const stored = JSON.parse(snapshot.value || '{}') as ScreenModel
+
+      method.value = fresh.method
+      warnings.value = fresh.warnings
+      values.value = { ...values.value, group_key: key }
+      snapshot.value = JSON.stringify({ ...stored, group_key: key })
+    } catch (error) {
+      toast.danger(message(error))
+    }
+  },
+)
 
 /** The screen's own values and the type's settings go apart: the server checks each its own way. */
 function body() {
@@ -278,6 +315,7 @@ async function save(): Promise<void> {
 
     takeDetail(detail)
     toast.success(t('common.saved'))
+    for (const warning of detail.warnings) toast.warning(warning)
     if (made) emit('created', detail.method)
     else emit('saved', detail.method)
   } catch (error) {
@@ -371,6 +409,14 @@ async function copy(text: string): Promise<void> {
         :key="warning"
         type="warning"
         :description="t(`methods.warnings.${warning}`)"
+      />
+
+      <wx-alert
+        v-for="warning in warnings"
+        :key="warning"
+        type="warning"
+        data-test="method-similar"
+        :description="warning"
       />
 
       <wx-screen

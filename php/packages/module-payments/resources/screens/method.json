@@ -46,6 +46,16 @@
       "label": "trans::webx-payments::panel.method.rules",
       "children": [
         {
+          "id": "group_key",
+          "type": "wx-select",
+          "name": "group_key",
+          "label": "trans::webx-payments::panel.method.group",
+          "help": "trans::webx-payments::panel.method.group-help",
+          "props": {
+            "options": []
+          }
+        },
+        {
           "id": "delivery_mode",
           "type": "wx-select",
           "name": "delivery_mode",

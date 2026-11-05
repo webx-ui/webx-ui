@@ -9,7 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 
 final class MigrationsTest extends TestCase
 {
-    private const array TABLES = ['payment_methods', 'payment_selections', 'payments', 'payment_gateway_events'];
+    private const array TABLES = ['payment_groups', 'payment_methods', 'payment_selections', 'payments', 'payment_gateway_events'];
 
     #[Test]
     public function the_tables_are_there_with_the_indexes_of_the_spec(): void
@@ -31,6 +31,7 @@ final class MigrationsTest extends TestCase
         );
         $this->assertSame([['id'], ['key'], ['type']], $this->indexes('payment_methods'));
         $this->assertSame([['cart_id'], ['id']], $this->indexes('payment_selections'));
+        $this->assertSame([['id'], ['key']], $this->indexes('payment_groups'));
     }
 
     #[Test]

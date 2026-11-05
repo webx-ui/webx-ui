@@ -52,5 +52,6 @@ return [
         'unfinished' => 'Ödeme tamamlanmadı',
         'pay_again' => 'Yeniden öde',
         'other_method' => 'Başka bir yöntem seç',
+        'continue' => 'Devam et',
     ],
 ];

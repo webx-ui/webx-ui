@@ -151,8 +151,8 @@ final class NotStartedTest extends OnlineCase
         [$order] = $this->left();
         $this->get($this->payPage($order))
             ->assertSee('Choose another method')
-            ->assertSee('>Gateway A page</button>', false)
-            ->assertDontSee('>Card (gateway A)</button>', false);
+            ->assertSee('value="gateway-a-form"', false)
+            ->assertDontSee('value="gateway-a-card"', false);
 
         $this->chooseForm($order);
     }
@@ -166,8 +166,8 @@ final class NotStartedTest extends OnlineCase
         $this->get($this->payPage($order->refresh()))
             ->assertSee('The payment did not go through')
             ->assertSee('Pay — Card (gateway A)')
-            ->assertSee('Choose another method')->assertSee('>Gateway A page</button>', false)
-            ->assertDontSee('>Card (gateway A)</button>', false);
+            ->assertSee('Choose another method')->assertSee('value="gateway-a-form"', false)
+            ->assertDontSee('value="gateway-a-card"', false);
 
         $this->chooseForm($order);
     }
@@ -186,7 +186,7 @@ final class NotStartedTest extends OnlineCase
             'blocks' => ['payment' => ['method' => BankTransfer::METHOD, 'type' => BankTransfer::KEY, 'kind' => 'offline', 'title' => ['en' => 'Bank transfer'], 'price' => null]],
         ]);
 
-        $this->get($this->payPage($order))->assertSee('Choose another method')->assertSee('>Gateway A page</button>', false);
+        $this->get($this->payPage($order))->assertSee('Choose another method')->assertSee('value="gateway-a-form"', false);
         $this->chooseForm($order);
     }
 
@@ -236,7 +236,7 @@ final class NotStartedTest extends OnlineCase
         return [$order, $payment];
     }
 
-    /** The button of the `form` method: the order's block changes, a new attempt goes to the gateway. */
+    /** «Continue» with the `form` method: the order's block changes, a new attempt goes to the gateway. */
     private function chooseForm(Order $order): void
     {
         $response = $this->post($this->app->make(PaymentLinks::class)->method($order), ['method' => 'gateway-a-form']);
