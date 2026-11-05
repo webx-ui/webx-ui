@@ -109,6 +109,18 @@
                   ]
                 },
                 {
+                  "id": "format-csv-warning",
+                  "type": "wx-alert",
+                  "visible": {
+                    "when": "format",
+                    "is": "csv"
+                  },
+                  "props": {
+                    "type": "warning",
+                    "description": "trans::webx-catalog-feeds::feed.format-csv-warning"
+                  }
+                },
+                {
                   "id": "is-active",
                   "type": "wx-switch",
                   "name": "is_active",

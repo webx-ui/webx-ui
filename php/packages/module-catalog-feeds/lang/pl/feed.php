@@ -37,6 +37,7 @@ return [
     'format-csv' => 'CSV',
     'format-text' => 'Tekst',
     'format-help' => 'Określa, jak wartości są zabezpieczane i jak sprawdzany jest plik.',
+    'format-csv-warning' => 'Wartości nie są zabezpieczone przed formułami: plik jest przeznaczony do odczytu przez programy. Jeśli otworzysz go w arkuszu kalkulacyjnym, formuła z opisu produktu zadziała.',
     'locale-help' => 'Jeden język na feed: drugi język to drugi feed.',
     'currency-help' => 'Feed jest zawsze w walucie sklepu.',
     'is-active-help' => 'Wyłączony feed odpowiada 404 i nie jest budowany.',

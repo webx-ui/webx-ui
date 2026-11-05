@@ -37,6 +37,7 @@ return [
     'format-csv' => 'CSV',
     'format-text' => 'Texto',
     'format-help' => 'Decide cómo se escapan los valores y cómo se comprueba el archivo.',
+    'format-csv-warning' => 'Los valores no están protegidos contra fórmulas: este archivo está pensado para que lo lean programas. Si se abre en una hoja de cálculo, se ejecutará una fórmula de la descripción de un producto.',
     'locale-help' => 'Un idioma por feed: un segundo idioma es un segundo feed.',
     'currency-help' => 'Un feed siempre va en la moneda del sitio.',
     'is-active-help' => 'Un feed desactivado responde 404 y no se genera.',

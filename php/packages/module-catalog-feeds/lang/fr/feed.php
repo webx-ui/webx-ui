@@ -37,6 +37,7 @@ return [
     'format-csv' => 'CSV',
     'format-text' => 'Texte',
     'format-help' => 'Détermine comment les valeurs sont échappées et comment le fichier est vérifié.',
+    'format-csv-warning' => 'Les valeurs ne sont pas protégées contre les formules : ce fichier est destiné à être lu par des programmes. S’il est ouvert dans un tableur, une formule contenue dans une description de produit s’exécutera.',
     'locale-help' => 'Une langue par flux : une seconde langue, c’est un second flux.',
     'currency-help' => 'Un flux est toujours dans la devise du site.',
     'is-active-help' => 'Un flux désactivé répond 404 et n’est pas généré.',

@@ -19,19 +19,23 @@ A feed that would not make a valid file is not saved. The form stays open and th
 part they are about, with the line. One language per feed: a second language is a second feed. The
 currency is always the site's (`WEBX_CATALOG_CURRENCY`).
 
+A CSV feed is written for programs, so its values are not protected against spreadsheet formulas: a
+prefix would change the data the marketplace receives. If the file is opened in a spreadsheet, a
+formula in a product description will run, and the form says so as soon as the format is CSV.
+
 ## The form
 
 The screen is `catalog.feed-form`. Its node ids are a public contract, so a site can patch it:
 
-| Tab          | Node ids                                                                                                             |
-| ------------ | -------------------------------------------------------------------------------------------------------------------- |
-| `main`       | `name`, `format`, `locale`, `currency`, `is-active`, `address-field`, `schedule`, `schedule-at`, `rebuild-on-change` |
-| `template`   | `template-field`                                                                                                     |
-| `selection`  | `filter`                                                                                                             |
-| `exclusions` | `exclusions-field`                                                                                                   |
-| `mappings`   | `stock-map`, `taxonomy`, `categories-field`                                                                          |
-| `labels`     | `labels-field`                                                                                                       |
-| `journal`    | `builds-field`                                                                                                       |
+| Tab          | Node ids                                                                                                                                   |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `main`       | `name`, `format`, `format-csv-warning`, `locale`, `currency`, `is-active`, `address-field`, `schedule`, `schedule-at`, `rebuild-on-change` |
+| `template`   | `template-field`                                                                                                                           |
+| `selection`  | `filter`                                                                                                                                   |
+| `exclusions` | `exclusions-field`                                                                                                                         |
+| `mappings`   | `stock-map`, `taxonomy`, `categories-field`                                                                                                |
+| `labels`     | `labels-field`                                                                                                                             |
+| `journal`    | `builds-field`                                                                                                                             |
 
 The types are `wx-catalog-feed-locale`, `-address`, `-template`, `-filter`, `-exclusions`,
 `-stock-map`, `-categories`, `-labels` and `-builds`. They read the page around them, so they work on

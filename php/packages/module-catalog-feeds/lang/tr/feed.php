@@ -37,6 +37,7 @@ return [
     'format-csv' => 'CSV',
     'format-text' => 'Metin',
     'format-help' => 'Değerlerin nasıl kaçışlanacağını ve dosyanın nasıl denetleneceğini belirler.',
+    'format-csv-warning' => 'Değerler formüllere karşı korunmaz: bu dosya programların okuması içindir. Bir elektronik tabloda açılırsa ürün açıklamasındaki formül çalışır.',
     'locale-help' => 'Her akış tek dilde: ikinci dil ikinci bir akıştır.',
     'currency-help' => 'Akış her zaman sitenin para birimindedir.',
     'is-active-help' => 'Kapalı bir akış 404 döndürür ve oluşturulmaz.',

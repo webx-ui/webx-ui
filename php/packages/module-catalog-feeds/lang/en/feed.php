@@ -37,6 +37,7 @@ return [
     'format-csv' => 'CSV',
     'format-text' => 'Text',
     'format-help' => 'Decides how values are escaped and how the file is checked.',
+    'format-csv-warning' => 'Values are not protected against spreadsheet formulas: this file is meant to be read by programs. If it is opened in a spreadsheet, a formula in a product description will run.',
     'locale-help' => 'One language per feed: a second language is a second feed.',
     'currency-help' => 'A feed is always in the site’s currency.',
     'is-active-help' => 'A feed that is off answers 404 and is not built.',
