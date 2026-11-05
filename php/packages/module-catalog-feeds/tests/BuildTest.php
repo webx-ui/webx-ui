@@ -296,7 +296,10 @@ final class BuildTest extends TestCase
         // As the page died: the bytes of a half-written page are in the body, past what is recorded.
         file_put_contents(storage_path('app/catalog-feeds/'.$build->id.'.body'), "\n9999999", FILE_APPEND);
 
-        $this->assertFalse($builder->work($build->id, 3600));
+        while ($builder->work($build->id, 3600)) {
+            // The pages left, then the end of the build.
+        }
+
         $build->refresh();
 
         $this->assertSame(FeedBuild::DONE, $build->status);
@@ -328,9 +331,84 @@ final class BuildTest extends TestCase
             $jobs++;
         }
 
-        $this->assertSame(2, $jobs);
+        // Three pages, and the join and the check each in a job of its own; publishing ends it.
+        $this->assertSame(5, $jobs);
         $this->assertSame(Shop::PRODUCTS, $build->refresh()->written);
         $this->assertSame(FeedBuild::DONE, $build->status);
+    }
+
+    #[Test]
+    public function a_job_outlives_its_budget_and_not_the_retry_of_the_queue(): void
+    {
+        $job = new BuildFeed(1);
+        $site = dirname(__DIR__, 3).'/site';
+        $queue = require $site.'/config/queue.php';
+
+        $this->assertSame(60, $job->budget(), 'The budget of the spec.');
+        $this->assertGreaterThanOrEqual($job->budget() + 15, $job->timeout, 'A page ends and the next job is queued.');
+
+        foreach (['database', 'redis', 'beanstalkd'] as $connection) {
+            $this->assertLessThan($queue['connections'][$connection]['retry_after'], $job->timeout, $connection);
+        }
+
+        // The job's own timeout is what counts: a worker of the skeleton sets none, and may not lower it.
+        $this->assertStringNotContainsString('--timeout', (string) file_get_contents($site.'/docker/supervisord.conf'));
+
+        $this->app['config']->set('webx-catalog-feeds.job_seconds', 600);
+        $this->assertSame(60, $job->budget(), 'A site cannot lift the budget over the timeout.');
+    }
+
+    #[Test]
+    public function the_end_of_a_build_is_repeated_step_by_step_without_a_trace(): void
+    {
+        $feed = $this->feed(['format' => 'csv', 'item' => '{{sku}},{{title}}', 'separator' => "\n"]);
+        $whole = $this->file($this->build($feed));
+
+        Queue::fake();
+        $builder = $this->app->make(FeedBuilder::class);
+        $build = $builder->start($feed->refresh());
+        $this->assertInstanceOf(FeedBuild::class, $build);
+
+        // No time at all, so the check takes a row a job; each step dies once after its work is done.
+        $jobs = 0;
+        $repeated = [];
+
+        do {
+            $before = $build->refresh()->state;
+            $step = $before['step'] ?? 'pages';
+            $more = $builder->work($build->id, 0);
+            $jobs++;
+
+            if ($more && $step !== 'pages' && ! isset($repeated[$step])) {
+                $repeated[$step] = true;
+                $build->refresh()->forceFill(['state' => $before])->save();
+            }
+        } while ($more);
+
+        $this->assertSame(['join', 'check'], array_keys($repeated));
+        $this->assertGreaterThan(Shop::PRODUCTS, $jobs);
+        $this->assertSame(FeedBuild::DONE, $build->refresh()->status);
+        $this->assertSame($whole, $this->file($build));
+        $this->assertSame([], glob(storage_path('app/catalog-feeds/'.$build->id.'.*')) ?: []);
+    }
+
+    #[Test]
+    public function a_broken_row_is_found_after_a_check_was_put_down(): void
+    {
+        $feed = $this->feed(['format' => 'csv', 'head' => "a,b\n", 'item' => '{{sku}},{{title}}', 'separator' => "\n", 'foot' => "\none,two,three"]);
+
+        Queue::fake();
+        $builder = $this->app->make(FeedBuilder::class);
+        $build = $builder->start($feed->refresh());
+        $this->assertInstanceOf(FeedBuild::class, $build);
+
+        while ($builder->work($build->id, 0)) {
+            // A row a job, up to the last.
+        }
+
+        $this->assertSame(FeedBuild::FAILED, $build->refresh()->status);
+        $this->assertStringContainsString((string) ($build->written + 2), (string) $build->error);
+        $this->assertSame([], glob(storage_path('app/catalog-feeds/'.$build->id.'.*')) ?: []);
     }
 
     #[Test]

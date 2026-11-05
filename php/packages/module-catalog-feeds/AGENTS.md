@@ -43,6 +43,12 @@ read, `cms.can:catalog.manage` to write.
   `body_bytes`: that is what makes a repeated page harmless.
 - The head and the foot render last (`FeedContext`), `FeedFileCheck` reads the joined file, and only
   then does `current_build_id` move. A failed build leaves the file served as it was.
+- After the pages each step is a job of its own, the step kept in `state.step`: `join`, `check` (a csv
+  in stretches of `job_seconds`, `state.checked` says where it stopped), `publish`. A repeated job
+  repeats its step.
+- `BuildFeed::$timeout` is 80: above the 60 of `job_seconds` by the page in hand, under the 90 of the
+  skeleton's `retry_after`. A job without its own timeout dies at the worker's 60 with its budget used
+  and never queues the next one. `budget()` keeps a raised `job_seconds` under it.
 - `FeedVariables` holds what a feed overrides in `ProductVariables`: `availability`, `mpn`.
 
 ## Change it without forking

@@ -7,6 +7,7 @@ namespace WebxUi\CatalogFeeds\Build;
 use Illuminate\Contracts\Bus\Dispatcher;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\Filesystem\Filesystem;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -30,6 +31,10 @@ use WebxUi\Templates\TemplateError;
  * temporary file on this machine, then the head, the body and the foot joined, checked and put on
  * the feed's disk. The head comes last because it speaks about what the pages found.
  *
+ * **Every step after the pages is a job of its own.** A worker kills a job at its timeout, and on a
+ * file near `max_bytes` the end of a build does not fit behind a full budget of pages, nor all of
+ * it in one job. The step reached is kept in the build's `state`, so a repeated job repeats a step.
+ *
  * **A repeated page changes nothing.** The cursor, the counters, the journal's rows and the length
  * of the body are written together, and a job starts by cutting the body to that length, so what a
  * page that died had written is gone and the page is simply done again.
@@ -42,6 +47,12 @@ final class FeedBuilder
     use Localizable;
 
     private const DIRECTORY = 'catalog-feeds';
+
+    private const JOIN = 'join';
+
+    private const CHECK = 'check';
+
+    private const PUBLISH = 'publish';
 
     public function __construct(
         private readonly FeedSelection $selection,
@@ -99,7 +110,7 @@ final class FeedBuilder
     }
 
     /**
-     * Pages for `$seconds`, and the end of the build if they run out.
+     * One stretch of a build: pages for `$seconds`, or the next step of its end.
      *
      * @return bool whether there is more for the next job
      */
@@ -113,7 +124,12 @@ final class FeedBuilder
         }
 
         try {
-            return $this->withLocale($feed->locale, fn (): bool => $this->pages($build, $feed, $seconds));
+            return $this->withLocale($feed->locale, fn (): bool => match ($build->state['step'] ?? null) {
+                self::JOIN => $this->join($build, $feed),
+                self::CHECK => $this->check($build, $feed, $seconds),
+                self::PUBLISH => $this->publish($build, $feed),
+                default => $this->pages($build, $feed, $seconds),
+            });
         } catch (FeedFailure $failure) {
             $this->fail($buildId, $failure->getMessage());
 
@@ -152,37 +168,33 @@ final class FeedBuilder
 
         $item = $this->compile($template, $feed);
         $names = $this->names($feed, $template);
+        $selected = $this->selection->query($feed);
         $body = $this->body($build);
 
         try {
             do {
-                $more = $this->page($build, $feed, $item, $names, $body);
+                $more = $this->page($build, $feed, $selected, $item, $names, $body);
             } while ($more && microtime(true) < $until);
         } finally {
             fclose($body);
         }
 
-        if ($more) {
-            return true;
-        }
-
-        $this->finish($build->refresh(), $feed);
-
-        return false;
+        return $more || $this->step($build->refresh(), self::JOIN);
     }
 
     /**
+     * @param  Builder<Product>  $selected
      * @param  list<string>  $names
      * @param  resource  $body
      * @return bool whether a next page may be there
      */
-    private function page(FeedBuild $build, Feed $feed, Compiled $item, array $names, $body): bool
+    private function page(FeedBuild $build, Feed $feed, Builder $selected, Compiled $item, array $names, $body): bool
     {
         $chunk = max(1, (int) $this->config->get('webx-catalog-feeds.chunk', 500));
         $from = (int) $build->cursor;
 
         /** @var Collection<int, Product> $products */
-        $products = $this->selection->query($feed)
+        $products = (clone $selected)
             ->with('images')
             ->where('catalog_products.id', '>', $from)
             ->orderBy('catalog_products.id')
@@ -300,34 +312,52 @@ final class FeedBuilder
         });
     }
 
-    private function finish(FeedBuild $build, Feed $feed): void
+    private function join(FeedBuild $build, Feed $feed): bool
     {
         $names = $this->frameNames($feed);
         $values = $this->context->values($feed, $build, $names);
         $head = $this->frame((string) $feed->head, $feed, $values);
         $foot = $this->frame((string) $feed->foot, $feed, $values);
-        $path = $this->temporary($build, 'file');
 
-        try {
-            $bytes = $this->join($build, $path, $head, $foot);
+        $this->check->frame($feed, $head, $foot, (int) $build->written);
 
-            if ($bytes > (int) $this->config->get('webx-catalog-feeds.max_bytes')) {
-                throw FeedFailure::of('too-large');
-            }
-
-            $this->check->file($feed, $path, $head, $foot, (int) $build->written);
-            $this->publish($build, $feed, $path, $bytes);
-        } finally {
-            @unlink($path);
+        if ($this->write($build, $head, $foot) > (int) $this->config->get('webx-catalog-feeds.max_bytes')) {
+            throw FeedFailure::of('too-large');
         }
 
-        @unlink($this->temporary($build, 'body'));
+        return $this->step($build, self::CHECK);
+    }
+
+    /** The file, for as long as a job has: a csv of 3 GB takes minutes to read. */
+    private function check(FeedBuild $build, Feed $feed, float $seconds): bool
+    {
+        $from = $build->state['checked'] ?? [];
+        $reached = $this->check->file($feed, $this->temporary($build, 'file'), $from, microtime(true) + $seconds);
+
+        return $reached === null
+            ? $this->step($build, self::PUBLISH)
+            : $this->step($build, self::CHECK, ['checked' => $reached]);
+    }
+
+    /**
+     * What is left to do goes to the next job.
+     *
+     * @param  array<string, mixed>  $more
+     */
+    private function step(FeedBuild $build, string $step, array $more = []): bool
+    {
+        $build->forceFill([
+            'state' => [...$build->state ?? [], ...$more, 'step' => $step],
+            'progress_at' => Carbon::now(),
+        ])->save();
+
+        return true;
     }
 
     /** Head, body and foot into one file: a stream, the body may be bigger than the memory. */
-    private function join(FeedBuild $build, string $path, string $head, string $foot): int
+    private function write(FeedBuild $build, string $head, string $foot): int
     {
-        $file = fopen($path, 'wb') ?: throw new RuntimeException('No room for the file of a feed.');
+        $file = fopen($this->temporary($build, 'file'), 'wb') ?: throw new RuntimeException('No room for the file of a feed.');
         $body = fopen($this->temporary($build, 'body'), 'rb') ?: throw new RuntimeException('The body of a feed vanished.');
 
         try {
@@ -343,8 +373,10 @@ final class FeedBuilder
         }
     }
 
-    private function publish(FeedBuild $build, Feed $feed, string $path, int $bytes): void
+    private function publish(FeedBuild $build, Feed $feed): bool
     {
+        $path = $this->temporary($build, 'file');
+        $bytes = (int) filesize($path);
         $etag = (string) hash_file('sha256', $path);
         $target = self::DIRECTORY.'/'.$feed->id.'/'.$build->id.'.'.Feed::FORMATS[$feed->format];
         $stream = fopen($path, 'rb') ?: throw new RuntimeException('The file of a feed vanished before it was kept.');
@@ -378,13 +410,23 @@ final class FeedBuilder
                 'dirty_since' => null,
             ]);
         });
+
+        $this->forget($build);
+
+        return false;
     }
 
     private function close(FeedBuild $build, string $error): void
     {
         $build->forceFill(['status' => FeedBuild::FAILED, 'finished_at' => Carbon::now(), 'error' => $error])->save();
 
+        $this->forget($build);
+    }
+
+    private function forget(FeedBuild $build): void
+    {
         @unlink($this->temporary($build, 'body'));
+        @unlink($this->temporary($build, 'file'));
     }
 
     private function stale(FeedBuild $build): bool

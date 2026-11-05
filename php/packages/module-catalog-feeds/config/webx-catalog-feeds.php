@@ -21,8 +21,9 @@ return [
     | A build (§7.1 and §7.7 of the feeds spec)
     |--------------------------------------------------------------------------
     |
-    | `chunk` products a page. A job works for `job_seconds` and queues the next one, so a worker's
-    | limit or a deploy cuts a build between pages. `disk` keeps the files and must be private: what
+    | `chunk` products a page. A job works for `job_seconds` and queues the next one, so a deploy cuts
+    | a build between pages; more than 60 is not taken, the job's timeout stays under the queue's
+    | `retry_after`. `disk` keeps the files and must be private: what
     | guards them is the key. `max_bytes` stays under the 4 GB Google takes. `max_rejects` rows of
     | the journal name a product; the counters go on. A build silent for `stale_minutes` is closed.
     |

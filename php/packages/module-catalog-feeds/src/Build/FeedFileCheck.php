@@ -10,20 +10,32 @@ use XMLReader;
 /**
  * The finished file, before anybody is given it (§7.2 of the feeds spec): a marketplace is better
  * off with yesterday's file than with a broken one. Everything goes through the file as a stream.
+ *
+ * A csv is the slow one, minutes on a file near `max_bytes`, and the one that can stop at a row:
+ * it reads until the job's time is up and says where it got to. XML is read at once, a parser
+ * cannot be put down, and that is seconds on the same file.
+ *
+ * @phpstan-type Reached array{offset?: int, line?: int, expected?: int|null}
  */
 final class FeedFileCheck
 {
     /**
+     * @param  Reached  $from  where the last job stopped
+     * @return Reached|null where this one did, null for a file read to its end
+     *
      * @throws FeedFailure
      */
-    public function file(Feed $feed, string $path, string $head, string $foot, int $written): void
+    public function file(Feed $feed, string $path, array $from, float $until): ?array
     {
-        match ($feed->format) {
-            'xml' => $this->xml($path),
-            'json' => $this->json($feed, $head, $foot, $written),
-            'csv' => $this->csv($path, self::delimiter($feed)),
-            default => null,
-        };
+        if ($feed->format === 'csv') {
+            return $this->csv($path, self::delimiter($feed), $from, $until);
+        }
+
+        if ($feed->format === 'xml') {
+            $this->xml($path);
+        }
+
+        return null;
     }
 
     /**
@@ -86,10 +98,12 @@ final class FeedFileCheck
     /**
      * The frame around the products, on a sample: `null` stands in a place for any value, and two
      * of them show the separator as well. A feed of lines has no frame to read.
+     *
+     * @throws FeedFailure
      */
-    private function json(Feed $feed, string $head, string $foot, int $written): void
+    public function frame(Feed $feed, string $head, string $foot, int $written): void
     {
-        if (trim($head.$foot) === '' && trim($feed->separator) === '') {
+        if ($feed->format !== 'json' || (trim($head.$foot) === '' && trim($feed->separator) === '')) {
             return;
         }
 
@@ -101,7 +115,11 @@ final class FeedFileCheck
         }
     }
 
-    private function csv(string $path, string $delimiter): void
+    /**
+     * @param  Reached  $from
+     * @return Reached|null
+     */
+    private function csv(string $path, string $delimiter, array $from, float $until): ?array
     {
         $file = fopen($path, 'rb');
 
@@ -110,8 +128,9 @@ final class FeedFileCheck
         }
 
         try {
-            $expected = null;
-            $line = 0;
+            $expected = $from['expected'] ?? null;
+            $line = $from['line'] ?? 0;
+            fseek($file, $from['offset'] ?? 0);
 
             while (($row = fgetcsv($file, null, $delimiter, '"', '')) !== false) {
                 $line++;
@@ -126,7 +145,13 @@ final class FeedFileCheck
                 if (count($row) !== $expected) {
                     throw FeedFailure::of('file-csv', ['line' => $line, 'found' => count($row), 'expected' => $expected]);
                 }
+
+                if (microtime(true) >= $until) {
+                    return ['offset' => (int) ftell($file), 'line' => $line, 'expected' => $expected];
+                }
             }
+
+            return null;
         } finally {
             fclose($file);
         }

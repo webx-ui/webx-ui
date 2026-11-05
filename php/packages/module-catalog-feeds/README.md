@@ -31,7 +31,10 @@ and alone sees the address with its key.
 `FeedBuilder::start($feed)` queues a build, so a site needs a live queue. It walks the products a
 page at a time, keeps the file on `WEBX_CATALOG_FEEDS_DISK` (private, `local` by default) and checks
 it before the feed moves to it: a build that fails leaves the previous file in place. On MariaDB,
-100 000 products with a full template took about 42 seconds and 73 MB in one worker.
+100 000 products through a real `queue:work` took about 22 seconds and 78 MB, in four jobs.
+
+A job keeps its own timeout of 80 seconds, so a worker needs no `--timeout`. Keep the queue's
+`retry_after` above it (90 in the skeleton), or a second worker takes a job that is still alive.
 
 ## API
 
