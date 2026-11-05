@@ -77,6 +77,20 @@ final class LatinSlugsTest extends TestCase
     }
 
     #[Test]
+    public function an_agent_and_a_direct_write_transliterate_a_categorys_slug(): void
+    {
+        $this->agent('catalog_categories_create', ['values' => ['name' => ['en' => 'Agent'], 'slug' => ['en' => 'создана-агентом']]])->assertOk();
+
+        $this->assertLatin(Category::query()->whereTranslation('name', 'Agent', 'en')->firstOrFail(), 'sozdana-agentom', 'sozdana-agentom');
+
+        $category = $this->category('brakes');
+        $category->setTranslation('slug', 'en', 'тормоза');
+        $category->save();
+
+        $this->assertLatin($category->refresh(), 'tormoza', 'tormoza');
+    }
+
+    #[Test]
     public function a_write_straight_into_the_model_is_transliterated(): void
     {
         $product = $this->product('Direct', $this->category('brakes'));

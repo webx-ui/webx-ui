@@ -6,6 +6,9 @@ namespace WebxUi\Pages\Tests;
 
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Mcp\Registry\ToolRegistry;
+use WebxUi\Mcp\Server\RegistryTool;
+use WebxUi\Mcp\Server\WebxServer;
 use WebxUi\Pages\Models\Page;
 use WebxUi\Routing\Doctor\LatinSlugsCheck;
 use WebxUi\Routing\Models\Route;
@@ -29,6 +32,28 @@ final class LatinSlugsTest extends TestCase
 
         $this->assertSame('dostavka', $page->getTranslation('slug', 'en'));
         $this->assertSame('http://localhost/dostavka', $page->url('en'));
+    }
+
+    #[Test]
+    public function an_agent_and_a_direct_write_transliterate_a_pages_slug(): void
+    {
+        WebxServer::actingAs($this->editor(), 'cms')
+            ->tool(new RegistryTool($this->app->make(ToolRegistry::class)->tool('pages_create')), [
+                'title' => ['en' => 'Agent'],
+                'slug' => ['en' => 'создана-агентом'],
+            ])
+            ->assertOk();
+
+        $page = Page::query()->latest('id')->firstOrFail();
+
+        $this->assertSame('sozdana-agentom', $page->getTranslation('slug', 'en'));
+        $this->assertSame('http://localhost/sozdana-agentom', $page->url('en'));
+
+        $page->setTranslation('slug', 'en', 'прямая');
+        $page->save();
+
+        $this->assertSame('priamaia', $page->refresh()->getTranslation('slug', 'en'));
+        $this->assertSame('http://localhost/priamaia', $page->url('en'));
     }
 
     #[Test]
