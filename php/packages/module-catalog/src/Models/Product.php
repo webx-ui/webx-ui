@@ -663,16 +663,14 @@ class Product extends Model implements HasBreadcrumbs, HasSeoFallback, HasStruct
                 continue;
             }
 
-            $slug = Slug::make($name, (string) $locale);
-
-            if ($slug !== '') {
-                $slugs[$locale] = $slug;
-                $changed = true;
-            }
+            $slugs[$locale] = Slug::address($name, (string) $locale);
+            $changed = true;
         }
 
         if ($changed) {
             $this->setTranslations('slug', $slugs);
+            // This event runs after the trait's: a name that left nothing is still to be settled.
+            $this->latinizeSlug();
         }
     }
 

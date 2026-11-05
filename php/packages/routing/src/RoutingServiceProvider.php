@@ -9,6 +9,7 @@ use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\Events\TransactionRolledBack;
 use Illuminate\Support\Facades\Route as Router;
 use Illuminate\Support\ServiceProvider;
+use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Audit\Checks\AuditChecks;
 use WebxUi\Cache\CacheGroups;
 use WebxUi\Cache\CacheServiceProvider;
@@ -16,8 +17,10 @@ use WebxUi\Routing\Aliases\DatabaseAliases;
 use WebxUi\Routing\Aliases\RouteAliases;
 use WebxUi\Routing\Audit\RegistryCheck;
 use WebxUi\Routing\Console\CheckRoutesCommand;
+use WebxUi\Routing\Console\LatinSlugsCommand;
 use WebxUi\Routing\Console\RebuildRoutesCommand;
 use WebxUi\Routing\Contracts\Spelling;
+use WebxUi\Routing\Doctor\LatinSlugsCheck;
 use WebxUi\Routing\Http\Controllers\ResolveController;
 use WebxUi\Routing\Models\Route;
 use WebxUi\Routing\Spelling\RegistrySpelling;
@@ -67,11 +70,18 @@ class RoutingServiceProvider extends ServiceProvider
         $this->registerAudit();
         $this->registerCacheGroup();
 
+        // `webx:doctor` is the frame's, which this package does not require.
+        if (class_exists(DoctorChecks::class)) {
+            $this->callAfterResolving(DoctorChecks::class, static function (DoctorChecks $checks): void {
+                $checks->register(LatinSlugsCheck::class);
+            });
+        }
+
         if (! $this->app->runningInConsole()) {
             return;
         }
 
-        $this->commands([RebuildRoutesCommand::class, CheckRoutesCommand::class]);
+        $this->commands([RebuildRoutesCommand::class, CheckRoutesCommand::class, LatinSlugsCommand::class]);
 
         $this->publishes([
             __DIR__.'/../config/webx-routing.php' => config_path('webx-routing.php'),

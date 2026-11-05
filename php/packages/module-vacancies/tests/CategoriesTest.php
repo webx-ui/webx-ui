@@ -15,6 +15,14 @@ use WebxUi\Vacancies\Models\VacancyCategory;
 final class CategoriesTest extends TestCase
 {
     #[Test]
+    public function a_categorys_slug_is_a_filters_key_and_is_held_to_the_rule_all_the_same(): void
+    {
+        $category = VacancyCategory::query()->create(['title' => ['en' => 'Warehouse'], 'slug' => ['en' => 'склад']]);
+
+        $this->assertSame('sklad', $category->refresh()->getTranslation('slug', 'en'));
+    }
+
+    #[Test]
     public function the_key_is_made_from_the_title_and_kept(): void
     {
         $this->actingAs($this->editor(), 'cms')

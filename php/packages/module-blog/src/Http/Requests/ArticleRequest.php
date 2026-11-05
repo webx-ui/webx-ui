@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Blog\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use WebxUi\Admin\Screens\Types\SlugType;
 use WebxUi\Localization\Slug;
 
 /**
@@ -28,16 +29,8 @@ final class ArticleRequest extends FormRequest
     {
         return [
             'title' => ['required', 'string', 'max:255'],
-            'slug' => ['nullable', 'string', 'max:190', 'regex:/^[\p{L}\p{N}]+(?:[-_][\p{L}\p{N}]+)*$/u'],
+            'slug' => SlugType::checks(),
         ];
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    public function messages(): array
-    {
-        return ['slug.regex' => (string) __('webx-blog::errors.slug-shape')];
     }
 
     public function title(): string
@@ -56,6 +49,6 @@ final class ArticleRequest extends FormRequest
     {
         $slug = trim((string) $this->input('slug', ''));
 
-        return $slug !== '' ? $slug : Slug::make($this->title(), $locale);
+        return $slug !== '' ? $slug : Slug::address($this->title(), $locale);
     }
 }

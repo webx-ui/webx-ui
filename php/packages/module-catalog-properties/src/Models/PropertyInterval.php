@@ -6,6 +6,7 @@ namespace WebxUi\CatalogProperties\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use WebxUi\Localization\HasLatinSlug;
 use WebxUi\Localization\HasTranslations;
 
 /**
@@ -24,6 +25,7 @@ use WebxUi\Localization\HasTranslations;
  */
 class PropertyInterval extends Model
 {
+    use HasLatinSlug;
     use HasTranslations;
 
     protected $table = 'catalog_property_intervals';

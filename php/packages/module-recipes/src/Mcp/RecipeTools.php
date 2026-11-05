@@ -934,7 +934,7 @@ final class RecipeTools
         $slugs = [];
 
         foreach ($title as $locale => $text) {
-            $slugs[$locale] = Slug::make($text, (string) $locale);
+            $slugs[$locale] = Slug::address($text, (string) $locale);
         }
 
         return array_filter($slugs);

@@ -14,6 +14,27 @@ use WebxUi\Localization\Slug;
 final class SlugTest extends TestCase
 {
     #[Test]
+    public function a_slug_in_another_alphabet_is_brought_to_ascii_and_a_latin_one_is_left_alone(): void
+    {
+        $this->assertSame('tormoznye-kolodki', Slug::latin('тормозные-колодки', 'ru'));
+        $this->assertSame('khit', Slug::latin('Хіт', 'uk'));
+        // `_` means something in a slug, and `make()` would have made it a hyphen.
+        $this->assertSame('tormoza_zadnie', Slug::latin('тормоза_задние', 'ru'));
+        // Latin of a wrong shape is the form's to refuse, not this method's to repair.
+        $this->assertSame('Brake Pads', Slug::latin('Brake Pads', 'ru'));
+        $this->assertSame('', Slug::latin('漢字', 'ru'));
+        $this->assertSame('', Slug::latin('!!!', 'ru'));
+        $this->assertLessThanOrEqual(Slug::LENGTH, strlen(Slug::latin(str_repeat('щ', 190), 'ru')));
+    }
+
+    #[Test]
+    public function a_name_that_leaves_nothing_is_handed_on_for_the_model_to_settle(): void
+    {
+        $this->assertSame('khit', Slug::address('Хіт', 'uk'));
+        $this->assertSame('漢字', Slug::address(' 漢字 ', 'ru'));
+    }
+
+    #[Test]
     public function a_name_is_transliterated_by_its_own_language(): void
     {
         // Without a language Cyrillic is read the English way: «Хіт» was `xit`.

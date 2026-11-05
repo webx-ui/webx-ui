@@ -51,6 +51,7 @@ use WebxUi\CatalogProperties\Storefront\ProductProperties;
 use WebxUi\CatalogProperties\Storefront\PropertyQuery;
 use WebxUi\CatalogProperties\Storefront\SpecsTable;
 use WebxUi\Localization\Locales;
+use WebxUi\Localization\SlugModels;
 
 /**
  * The properties of products (`WEBX_UI_CATALOG_PROPERTIES.md`): a satellite of the catalogue whose
@@ -88,6 +89,11 @@ class CatalogPropertiesServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->callAfterResolving(SlugModels::class, static function (SlugModels $models): void {
+            $models->register(PropertyValue::class);
+            $models->register(PropertyInterval::class);
+        });
+
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-catalog-properties');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-catalog-properties');

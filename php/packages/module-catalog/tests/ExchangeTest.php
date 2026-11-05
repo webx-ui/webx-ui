@@ -86,6 +86,17 @@ final class ExchangeTest extends TestCase
     }
 
     #[Test]
+    public function a_slug_column_written_in_cyrillic_lands_in_latin(): void
+    {
+        $this->import("sku,name,slug\nIM-1,Imported,импорт-товар\n");
+
+        $product = Product::query()->where('sku', 'IM-1')->firstOrFail();
+
+        $this->assertSame('import-tovar', $product->getTranslation('slug', 'en'));
+        $this->assertSame("http://localhost/import-tovar-{$product->id}", $product->url('en'));
+    }
+
+    #[Test]
     public function a_csv_exported_and_imported_back_changes_nothing(): void
     {
         $this->roundTrip('csv');

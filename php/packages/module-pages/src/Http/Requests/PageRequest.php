@@ -6,6 +6,7 @@ namespace WebxUi\Pages\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use WebxUi\Admin\Screens\Types\SlugType;
 use WebxUi\Localization\Slug;
 use WebxUi\Pages\Models\Page;
 
@@ -28,20 +29,12 @@ final class PageRequest extends FormRequest
             'title' => ['required', 'string', 'max:255'],
             // The address is checked for shape here and for being free by the registry, which
             // is the only thing that can answer that — it sees every kind of entity.
-            'slug' => ['nullable', 'string', 'max:190', 'regex:/^[\p{L}\p{N}]+(?:[-_][\p{L}\p{N}]+)*$/u'],
+            'slug' => SlugType::checks(),
             // A parent that does not exist is a mistake in the form, under its field — not a 404
             // that reads as if the page being created were the thing missing. One in the bin
             // exists and is refused by the controller, which can say why.
             'parent_id' => ['nullable', 'integer', Rule::exists(Page::class, 'id')],
         ];
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    public function messages(): array
-    {
-        return ['slug.regex' => (string) __('webx-pages::errors.slug-shape')];
     }
 
     /**
@@ -75,7 +68,7 @@ final class PageRequest extends FormRequest
     {
         $slug = trim((string) $this->input('slug', ''));
 
-        return $slug !== '' ? $slug : Slug::make($this->title(), $locale);
+        return $slug !== '' ? $slug : Slug::address($this->title(), $locale);
     }
 
     public function parentId(): ?int

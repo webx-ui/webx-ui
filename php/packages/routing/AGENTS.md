@@ -14,7 +14,10 @@ behind `TreePath` `webx-ui/nested-set` — read their guides for those.
 - **Table** `routes` (`WebxUi\Routing\Models\Route`): `locale`, `path`, `kind` (`canonical` or
   `alias`), `target_id` (an alias points at the canonical row, so renames never chain),
   `entity_type`, `entity_id`; unique on `locale` + `path`.
-- **Trait** `HasUrl` — `routePath()`, `routeCanonical()`, `url()`, `routes()`, `hasUrlIn()`.
+- **Trait** `HasUrl` — `routePath()`, `routeCanonical()`, `url()`, `routes()`, `hasUrlIn()`. Brings
+  `HasLatinSlug`: a slug being written ends up ASCII.
+- **Command** `webx:slugs:latin` — lists slugs saved in another alphabet; `--apply` moves them with
+  301s through `Contracts\AddressRedirects` (bound by `module-seo`). `webx:doctor` warns about them.
 - **Cache group** `routes` (`webx-ui/cache`, `CacheGroups::ROUTES`): every `Route` save moves it; `RouteSync` says so after its bulk writes, `webx:routes:rebuild` after every run. The panel names it; this package owns it.
 - **`RouteCache`** (scoped): the canonical rows `url()` reads when `routes` is not loaded — the
   request's memory, then one `many()` of the site's cache (`webx:route:v1:<type>:<id>` on the

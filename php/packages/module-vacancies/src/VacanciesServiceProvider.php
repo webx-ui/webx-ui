@@ -20,6 +20,7 @@ use WebxUi\Admin\SiteBar\SiteBar;
 use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Compositions\Compositions;
 use WebxUi\Localization\Http\Middleware\OneSpellingPerAddress;
+use WebxUi\Localization\SlugModels;
 use WebxUi\Routing\Formatters\Prefixed;
 use WebxUi\Routing\Formatters\Slug;
 use WebxUi\Routing\OnConflict;
@@ -63,6 +64,10 @@ class VacanciesServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->callAfterResolving(SlugModels::class, static function (SlugModels $models): void {
+            $models->register(VacancyCategory::class);
+        });
+
         $this->registerSiteBar();
 
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-vacancies');

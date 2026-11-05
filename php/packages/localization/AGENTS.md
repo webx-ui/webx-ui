@@ -17,6 +17,9 @@ translation routes belong to `webx-ui/module-admin`, and a translated address is
 - **Trait** `HasTranslations` with `translatable()`: `getTranslations()`, `setTranslations()`,
   `forLocale()`, `translationsToArray()`, scopes `whereTranslation`, `whereTranslationLike`,
   `orderByTranslation`. Stored as `{"en": "...", "uk": "..."}`.
+- **Trait** `HasLatinSlug` — a slug being written is transliterated on the model, one that leaves
+  nothing becomes `<type>-<id>`. A model with a slug and no address uses it by name and registers in
+  `SlugModels`; `LatinSlugCoverageTest` holds every model to it.
 - **Generator** `WebxUi\Localization\Slug` — `make($text, $locale, $max, $prefix, $separator)` and
   `first($texts, $default, …)`: every code and address part a module makes of a name. Transliterates
   by the name's language (`Хіт` is `khit` in uk, `hit` in ru — never `xit`); `$prefix` names a

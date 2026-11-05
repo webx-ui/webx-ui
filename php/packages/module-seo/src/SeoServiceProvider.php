@@ -22,6 +22,7 @@ use WebxUi\Cache\CacheGroups;
 use WebxUi\Compositions\Compositions;
 use WebxUi\Compositions\CompositionsServiceProvider;
 use WebxUi\Media\MediaServiceProvider;
+use WebxUi\Routing\Contracts\AddressRedirects;
 use WebxUi\Routing\Contracts\Spelling;
 use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\Models\Route as RouteRow;
@@ -46,6 +47,7 @@ use WebxUi\Seo\Panel\SeoRules;
 use WebxUi\Seo\Panel\SiteBarSeo;
 use WebxUi\Seo\Panel\UrlMatcher;
 use WebxUi\Seo\Panel\UrlRuleSource;
+use WebxUi\Seo\Redirects\SeoAddressRedirects;
 use WebxUi\Seo\Rendering\Alternates;
 use WebxUi\Seo\Rendering\Breadcrumbs;
 use WebxUi\Seo\Rendering\EntitySource;
@@ -89,6 +91,7 @@ class SeoServiceProvider extends ServiceProvider
 
         $this->mergeConfigFrom(__DIR__.'/../config/webx-seo.php', 'webx-seo');
 
+        $this->app->bind(AddressRedirects::class, SeoAddressRedirects::class);
         $this->app->singleton(SeoSources::class);
         $this->app->singleton(SeoRules::class);
         $this->app->singleton(UrlMatcher::class);

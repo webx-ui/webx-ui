@@ -217,7 +217,7 @@ final class CategoryForm
             $current = $slugs[$locale] ?? null;
 
             if ((! is_string($current) || trim($current) === '') && is_string($name) && trim($name) !== '') {
-                $slugs[$locale] = Slug::make($name, (string) $locale);
+                $slugs[$locale] = Slug::address($name, (string) $locale);
             }
         }
 
