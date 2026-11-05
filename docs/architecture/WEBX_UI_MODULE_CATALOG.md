@@ -269,6 +269,15 @@ $locale)` — свой заголовок первого уровня вмест
 
 `key()`, `values(array $productIds): array` пачкой. Ядро: `views`. Веса — конфиг (§9).
 
+### 7.9. `ProductVariables`
+
+Что шаблон может сказать о товаре: `WebxUi\Catalog\Variables`, спека — `WEBX_UI_CATALOG_FEEDS.md` §4.
+Значения считаются пачкой на страницу: `values($products, $locale, $only, $overrides)` отдаёт
+`id товара → имя → значение`, в конце страницы забывает `RequestMemo`. Кто сильнее: `$overrides` вызова
+(настройки фида), зарегистрированная переменная, `fallback()`, колонка `ExchangeColumns`. Колонки
+провайдеров переменными не становятся: провайдер `ProductVariableProvider` сам говорит, какие имена
+отдать (`property.<код>`). Колонка с маркером `PrivateColumn` в реестр не попадает.
+
 ## 8. Движок
 
 ### 8.1. Запрос и ответ

@@ -723,6 +723,7 @@ provider:
 | the storefront    | a facet, a piece of the card, a narrowing of `products()` | `Facets`, `StorefrontParts`, `ProductQuery::macro` |
 | bulk actions      | «set the brand» on forty thousand products                | `BulkActions`                                      |
 | the exchange      | columns of CSV and XLSX                                   | `ExchangeColumns`                                  |
+| a product feed    | values a template prints, a page of products at a time    | `ProductVariables`                                 |
 | buying            | a rule that may refuse                                    | `Purchasability`                                   |
 
 The product form is one form that several modules write. The core opens a transaction, saves the

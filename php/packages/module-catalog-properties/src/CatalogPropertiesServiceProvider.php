@@ -28,6 +28,7 @@ use WebxUi\Catalog\Search\SearchContributors;
 use WebxUi\Catalog\Storefront\StorefrontCache;
 use WebxUi\Catalog\Storefront\StorefrontParts;
 use WebxUi\Catalog\Support\RequestMemo;
+use WebxUi\Catalog\Variables\ProductVariables;
 use WebxUi\CatalogProperties\Catalog\ProductValues;
 use WebxUi\CatalogProperties\Catalog\Properties;
 use WebxUi\CatalogProperties\Catalog\PropertiesDocument;
@@ -35,6 +36,7 @@ use WebxUi\CatalogProperties\Catalog\PropertiesPart;
 use WebxUi\CatalogProperties\Catalog\PropertyActions;
 use WebxUi\CatalogProperties\Catalog\PropertySets;
 use WebxUi\CatalogProperties\Exchange\PropertyExchangeColumns;
+use WebxUi\CatalogProperties\Exchange\PropertyVariables;
 use WebxUi\CatalogProperties\Facets\PropertySource;
 use WebxUi\CatalogProperties\Mcp\PropertiesResource;
 use WebxUi\CatalogProperties\Mcp\PropertyTools;
@@ -163,6 +165,7 @@ class CatalogPropertiesServiceProvider extends ServiceProvider
         $this->app->make(ProductParts::class)->register($this->app->make(PropertiesPart::class));
         $this->app->make(ProductColumns::class)->source($this->app->make(PropertyColumns::class));
         $this->app->make(ExchangeColumns::class)->provider(PropertyExchangeColumns::class);
+        $this->app->make(ProductVariables::class)->provider(PropertyVariables::class);
         $this->app->make(Documents::class)->register($this->app->make(PropertiesDocument::class));
 
         $source = $this->app->make(PropertySource::class);

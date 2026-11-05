@@ -97,6 +97,8 @@ use WebxUi\Catalog\Sorts\Sorts;
 use WebxUi\Catalog\Storefront\StorefrontCache;
 use WebxUi\Catalog\Storefront\StorefrontParts;
 use WebxUi\Catalog\Support\RequestMemo;
+use WebxUi\Catalog\Variables\CoreVariables;
+use WebxUi\Catalog\Variables\ProductVariables;
 use WebxUi\Compositions\Compositions;
 use WebxUi\Localization\Http\Middleware\OneSpellingPerAddress;
 use WebxUi\Routing\Formatters\Slug;
@@ -149,6 +151,7 @@ class CatalogServiceProvider extends ServiceProvider
         $this->app->singleton(FilterAliases::class);
         $this->app->singleton(SatelliteTools::class);
         $this->app->singleton(ExchangeColumns::class);
+        $this->app->singleton(ProductVariables::class);
         $this->app->singleton(ExchangeFormats::class);
 
         $this->app->singleton(Catalog::class);
@@ -203,6 +206,7 @@ class CatalogServiceProvider extends ServiceProvider
         $this->registerBulk();
         $this->registerVideo();
         $this->registerExchange();
+        $this->app->make(CoreVariables::class)->register($this->app->make(ProductVariables::class));
         $this->registerSources();
 
         if (! $this->app->runningInConsole()) {

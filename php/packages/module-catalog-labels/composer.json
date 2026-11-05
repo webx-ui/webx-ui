@@ -33,7 +33,8 @@
         "webx-ui/localization": "^0.93.0",
         "webx-ui/mcp": "^0.93.0",
         "webx-ui/module-admin": "^0.93.0",
-        "webx-ui/module-catalog": "^0.93.0"
+        "webx-ui/module-catalog": "^0.93.0",
+        "webx-ui/templates": "^0.93.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",

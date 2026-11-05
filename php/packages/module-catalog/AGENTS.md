@@ -43,7 +43,7 @@ question is about one of them.
   twice is kept on the request (`Support\RequestMemo`); categories by id, bounds and visibility — `Storefront\CategoryIndex`.
   Query budgets of every public page: `tests/PerformanceTest.php` (`WEBX_PERF_PRINT=1` prints the tallies).
 - **Registries** (singletons a satellite fills from its provider): `ProductParts`, `Facets`, `Sorts`, `Documents`,
-  `ProductColumns`, `BulkActions`, `ExchangeColumns`, `ExchangeFormats`, `StorefrontParts`, `Purchasability`,
+  `ProductColumns`, `BulkActions`, `ExchangeColumns`, `ExchangeFormats`, `ProductVariables`, `StorefrontParts`, `Purchasability`,
   `PopularitySignals`, `CatalogEngines`, `FilterUrls`, `SearchContributors`, `VideoProviders`, `SatelliteTools`.
 - **MCP** tools `catalog_products_*` (list, get, create, update, publish, unpublish, delete, restore),
   `catalog_products_gallery*`, `catalog_categories_*` (tree, create, update, move, delete, restore),
@@ -91,9 +91,9 @@ adds next to the module asks the same: `cms.can:catalog.view,catalog.manage,cata
 | Something in a card or on a product page     | a `StorefrontPart` registered at one of the points above                                                                                                                 |
 | A shelf of products in any template          | `products()->category('laptops')->sort('popular')->take(8)`; narrow it with `ProductQuery::macro`                                                                        |
 | A refusal to sell                            | a `PurchaseRule` in `Purchasability`                                                                                                                                     |
+| A value for a template of a product feed     | a `ProductVariable` in `ProductVariables`, a whole page per call; a column of `ExchangeColumns` is one by itself unless it is a `PrivateColumn`                          |
 
-Fields that are switched off are removed from the screen at boot, and so are never validated or
-saved. A satellite's fields on `catalog.product-form` are named `<part key>.<field>`. The core
+Fields that are switched off are removed from the screen at boot, and so are never validated or saved. A satellite's fields on `catalog.product-form` are named `<part key>.<field>`. The core
 saves its own data and every part in one transaction, which produces one journal entry. Product
 form node ids: `naming`, `name`, `slug`, `is_published`, `codes`, `sku`, `mpn`, `barcode-col`, `barcode`, `barcodes`, `pricing`,
 `prices`, `price`, `old_price`, `unit`, `placement`, `category_id`, `categories`, `summary`,

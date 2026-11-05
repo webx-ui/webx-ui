@@ -24,6 +24,7 @@ use WebxUi\Catalog\Rendering\ProductQuery;
 use WebxUi\Catalog\Storefront\StorefrontCache;
 use WebxUi\Catalog\Storefront\StorefrontParts;
 use WebxUi\Catalog\Support\RequestMemo;
+use WebxUi\Catalog\Variables\ProductVariables;
 use WebxUi\CatalogStock\Catalog\Stock;
 use WebxUi\CatalogStock\Catalog\StockAction;
 use WebxUi\CatalogStock\Catalog\StockColumn;
@@ -33,6 +34,7 @@ use WebxUi\CatalogStock\Catalog\StockFacet;
 use WebxUi\CatalogStock\Catalog\StockLine;
 use WebxUi\CatalogStock\Catalog\StockPart;
 use WebxUi\CatalogStock\Catalog\StockRule;
+use WebxUi\CatalogStock\Catalog\StockVariables;
 use WebxUi\CatalogStock\Models\StockStatus;
 use WebxUi\CatalogStock\Panel\StockModule;
 
@@ -140,6 +142,7 @@ class StockServiceProvider extends ServiceProvider
         $this->app->make(ProductColumns::class)->register(new StockColumn);
         // The column of exchange files (§7.2 of the exchange spec).
         $this->app->make(ExchangeColumns::class)->register(new StockExchangeColumn);
+        StockVariables::register($this->app->make(ProductVariables::class));
         $this->app->make(Facets::class)->register(new StockFacet);
         $this->app->make(Documents::class)->register(new StockDocument);
         $this->app->make(Purchasability::class)->register(new StockRule);

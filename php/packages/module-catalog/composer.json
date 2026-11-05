@@ -43,6 +43,7 @@
         "webx-ui/module-seo": "^0.93.0",
         "webx-ui/nested-set": "^0.93.0",
         "webx-ui/routing": "^0.93.0",
+        "webx-ui/templates": "^0.93.0",
         "webx-ui/widgets": "^0.93.0"
     },
     "require-dev": {

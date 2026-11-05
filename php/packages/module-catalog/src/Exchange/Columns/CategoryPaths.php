@@ -101,6 +101,27 @@ final class CategoryPaths
         return $current === 0 && $names !== [] ? implode('/', $names) : '#'.$id;
     }
 
+    /**
+     * The names from the top down to a category, the ones without a name in this language left
+     * out: what a person reads, where `path()` is what a file reads back.
+     *
+     * @return list<string>
+     */
+    public function names(int $id): array
+    {
+        $names = [];
+
+        while ($id !== 0 && isset($this->nodes[$id])) {
+            if ($this->nodes[$id]['name'] !== '') {
+                array_unshift($names, $this->nodes[$id]['name']);
+            }
+
+            $id = $this->nodes[$id]['parent'];
+        }
+
+        return $names;
+    }
+
     private function create(string $name, int $parent, string $path, ImportContext $context): int
     {
         if (! $context->createMissing) {

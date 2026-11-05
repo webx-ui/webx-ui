@@ -132,7 +132,7 @@ final class PropertyExchangeColumn implements DescribesCell, EntryColumn
     }
 
     /** The number as stored, without the zeros its six places add: `1.35`, `12`. */
-    private static function number(float $number): string
+    public static function number(float $number): string
     {
         $text = rtrim(rtrim(sprintf('%.6F', $number), '0'), '.');
 

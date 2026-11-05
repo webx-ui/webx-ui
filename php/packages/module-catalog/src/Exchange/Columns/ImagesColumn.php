@@ -154,7 +154,7 @@ final class ImagesColumn implements DescribesCell, WritesProduct
     }
 
     /** A disk that answers `/storage/…` is given the site's host: a file leaves the site. */
-    private static function absolute(string $url): string
+    public static function absolute(string $url): string
     {
         return preg_match('#^https?://#i', $url) === 1 ? $url : url($url);
     }
