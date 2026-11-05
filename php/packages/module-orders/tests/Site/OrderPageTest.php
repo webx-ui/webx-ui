@@ -91,6 +91,18 @@ final class OrderPageTest extends PlaceTestCase
     }
 
     #[Test]
+    public function a_part_of_a_set_leads_to_its_product_as_a_line_does(): void
+    {
+        $order = $this->place($this->cart([['type' => 'test.product', 'ref' => 1], ['type' => 'test.product', 'ref' => 2]]));
+        $this->products->lines[2] = new PurchasableLine(name: 'Set B', sku: null, price: 4999, currency: 'EUR', url: 'https://shop.example.test/set-b');
+        $items = OrderItem::query()->where('order_id', $order->id)->orderBy('id')->get();
+        $items[1]->update(['parent_id' => $items[0]->id]);
+
+        $this->get($this->link($order))->assertOk()
+            ->assertSee('<li><a class="webx-order__link" href="https://shop.example.test/set-b">Set B</a> × 1</li>', false);
+    }
+
+    #[Test]
     public function a_line_of_a_type_nobody_sells_any_more_is_its_name(): void
     {
         $order = $this->place($this->cart());
