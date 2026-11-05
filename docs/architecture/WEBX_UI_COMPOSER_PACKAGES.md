@@ -209,6 +209,7 @@ Packagist ([`WEBX_UI_PHP_RELEASE.md`](WEBX_UI_PHP_RELEASE.md)). Версия у 
 | `module-catalog-brands`     | бренды                                                                | `@webx-ui/module-catalog-brands`     |
 | `module-catalog-properties` | свойства товаров и фасеты                                             | `@webx-ui/module-catalog-properties` |
 | `module-catalog-landings`   | посадочные страницы каталога                                          | `@webx-ui/module-catalog-landings`   |
+| `module-catalog-feeds`      | товарные фиды: шаблон, сборка, постоянный адрес с ключом              | `@webx-ui/module-catalog-feeds`      |
 | `module-catalog-manticore`  | Manticore Search как движок каталога                                  | `@webx-ui/module-catalog-manticore`  |
 | **Разделы: коммерция**      |                                                                       |                                      |
 | `module-cart`               | гостевая корзина: контракт `Purchasable`, цепочка итогов, `cart()`    | —                                    |
@@ -659,6 +660,12 @@ ES-модуль в самом пакете.
 категории, с зашитым набором фильтров, своим адресом в одном пространстве с категориями, SEO и
 двумя текстами. Набор хранится по id значений и следует за слитыми и удалёнными. Ссылки фильтра
 переписываются на посадочную; генерация пачкой с `dry_run`, большая — задачей в очереди.
+
+### `webx-ui/module-catalog-feeds` — товарные фиды
+
+Спека — [`WEBX_UI_CATALOG_FEEDS.md`](WEBX_UI_CATALOG_FEEDS.md). Файлы для площадок: шаблон из шапки,
+товара и подвала, сборка в очереди, постоянный адрес с ключом. Своих прав нет, раздел открывают
+права каталога. Строится этапами: выпущены только каркас, таблицы и CRUD.
 
 ### `webx-ui/module-catalog-manticore` — движок Manticore
 

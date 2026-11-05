@@ -254,6 +254,14 @@ final class Catalogue
             'requires' => ['catalog', 'seo'],
             'demo' => ['en'],
         ],
+        'catalog-feeds' => [
+            'package' => 'webx-ui/module-catalog-feeds',
+            'npm' => '@webx-ui/module-catalog-feeds',
+            'label' => 'Catalog feeds — product files for marketplaces and ad platforms, built from a template and served at a permanent address (needs the catalog)',
+            'default' => false,
+            'requires' => ['catalog'],
+            'demo' => [],
+        ],
         'catalog-manticore' => [
             'package' => 'webx-ui/module-catalog-manticore',
             'npm' => '@webx-ui/module-catalog-manticore',

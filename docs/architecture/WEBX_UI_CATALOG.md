@@ -60,7 +60,8 @@
     фильтрует им; на маленьком каталоге — `SqlEngine`. Значит, в индексе лежат и
     неопубликованные (и удалённые) товары, а витрина отсекает их фильтром.
 15. **Обмен — CSV и XLSX в ядре.** Для 1С — отдельное API, интеграцию пишет интегратор 1С, а не
-    мы. YML и прочие фиды — пакетами через реестр форматов ядра.
+    мы. Товарные фиды — спутник `module-catalog-feeds`, а не реестр форматов обмена
+    ([`WEBX_UI_CATALOG_FEEDS.md`](WEBX_UI_CATALOG_FEEDS.md), решение 1).
 16. **Связи товаров — универсальные и расширяемые:** виды связи регистрируются (похожие,
     сопутствующие, замена — наши; «запчасти», «комплект» — проекта), у вида есть направленность
     и подбор алгоритмом.
@@ -94,6 +95,7 @@
 | `module-catalog-brands`       | бренды со своей страницей                                        | `module-catalog`                                        |
 | `module-catalog-labels`       | метки: топ, акция, новинка                                       | `module-catalog`                                        |
 | `module-catalog-landings`     | посадочные фильтров: адрес, текст, SEO, набор фасетов            | `module-catalog`, `module-seo`                          |
+| `module-catalog-feeds`        | товарные фиды: шаблон, сборка, постоянный адрес с ключом         | `module-catalog`                                        |
 | `module-catalog-links`        | похожие, сопутствующие, замена; алгоритмы подбора                | `module-catalog`                                        |
 | `module-catalog-groups`       | группировка                                                      | `module-catalog-properties`                             |
 | `module-catalog-configurable` | конфигурируемый товар                                            | `module-catalog-properties`                             |
@@ -322,7 +324,8 @@ PHP.
 | `module-catalog-manticore`                     | выпущен                                          | [`WEBX_UI_CATALOG_MANTICORE.md`](WEBX_UI_CATALOG_MANTICORE.md)                                                   |
 | `module-catalog-landings`                      | выпущен                                          | [`WEBX_UI_CATALOG_LANDINGS.md`](WEBX_UI_CATALOG_LANDINGS.md)                                                     |
 | `-links`, `-groups`, `-configurable`, `-sizes` | волна B, не начаты                               | —                                                                                                                |
-| форматы YML, CommerceML, Google Merchant       | волна B, не начаты (пакеты на `ExchangeFormats`) | —                                                                                                                |
+| `module-catalog-feeds`                         | в работе, не выпущен                             | [`WEBX_UI_CATALOG_FEEDS.md`](WEBX_UI_CATALOG_FEEDS.md)                                                           |
+| форматы YML, CommerceML                        | волна B, не начаты (пакеты на `ExchangeFormats`) | —                                                                                                                |
 | API для 1С                                     | не начато (решение 15)                           | —                                                                                                                |
 
 ### Проверка швов: справочник проекта

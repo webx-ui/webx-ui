@@ -299,6 +299,7 @@ import { handleSeoLinkFiles, registerSeoLinks } from './seo-links'
 import { registerManticore } from './catalog-manticore'
 import { brandHistory, registerDictionaries } from './catalog-dictionaries'
 import { propertyHistory, registerProperties } from './catalog-properties'
+import { registerFeeds } from './catalog-feeds'
 import { landingHistory, registerLandings } from './catalog-landings'
 import { Reply } from './reply'
 import { handleUploads } from './uploads'
@@ -706,6 +707,16 @@ function manifestOf(locale: string) {
         title: line(locale, 'webx-catalog-landings', 'module.title'),
         icon: 'filter',
         order: 303,
+        group: 'catalog',
+        permissions: [],
+        meta: {},
+      },
+      /* Feeds: after the landings (§11 of the feeds spec), no permissions of their own. */
+      {
+        id: 'catalog-feeds',
+        title: line(locale, 'webx-catalog-feeds', 'module.title'),
+        icon: 'file-text',
+        order: 304,
         group: 'catalog',
         permissions: [],
         meta: {},
@@ -2775,6 +2786,9 @@ registerLandings(
   line,
   categoryLookup,
 )
+
+/* Its feeds (WEBX_UI_CATALOG_FEEDS.md): the list, empty until the form comes. */
+registerFeeds(on)
 
 on('GET', '/entities/([\\w-]+)/(\\d+)/notes', ({ params }) => ({
   data: notes.get(`${params[0]}:${params[1]}`) ?? [],
