@@ -160,7 +160,7 @@ final class PanelApiTest extends TestCase
 
         $feed = $this->feed();
 
-        $id = $this->postJson($this->api($feed->id.'/rebuild'))->assertAccepted()->assertJsonPath('data.status', 'queued')->json('data.id');
+        $id = $this->postJson($this->api($feed->id.'/rebuild'))->assertAccepted()->assertJsonPath('data.status', 'queued')->assertJsonPath('data.trigger', FeedBuild::MANUAL)->json('data.id');
         $this->postJson($this->api($feed->id.'/rebuild'))->assertAccepted()->assertJsonPath('data.id', $id);
 
         Queue::assertPushed(BuildFeed::class, 1);

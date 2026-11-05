@@ -266,6 +266,7 @@ final class McpTest extends TestCase
         $journal = $this->content($this->agent('catalog_feeds_builds', ['feed' => $feed], $editor));
         $this->assertSame(1, $journal['count']);
         $this->assertSame($build['id'], $journal['builds'][0]['id']);
+        $this->assertSame(FeedBuild::MCP, $journal['builds'][0]['trigger']);
 
         $one = $this->content($this->agent('catalog_feeds_build_get', ['feed' => $feed, 'build' => $build['id']], $editor))['build'];
         $this->assertSame($build['written'], $one['written']);

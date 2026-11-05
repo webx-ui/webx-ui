@@ -378,7 +378,7 @@ final class FeedTools
             return ['dry_run' => true, 'would_be' => $this->counted($feed)];
         }
 
-        $build = $this->builder->start($feed);
+        $build = $this->builder->start($feed, FeedBuild::MCP);
 
         if (! $build instanceof FeedBuild) {
             throw new ToolFailure((string) __('webx-catalog-feeds::errors.inactive'));
