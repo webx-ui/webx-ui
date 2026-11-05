@@ -102,6 +102,7 @@ final readonly class FeedRender
         $filtered = [];
         $warnings = [];
         $categories = [];
+        $labels = [];
         $kept = new Collection;
 
         foreach ($products as $product) {
@@ -136,9 +137,20 @@ final readonly class FeedRender
             if ($product->category_id !== null) {
                 $categories[(int) $product->category_id] = true;
             }
+
+            for ($label = 0; $label < FeedLabels::COUNT; $label++) {
+                $value = $row['custom_label_'.$label] ?? '';
+
+                if (is_string($value) && $value !== '') {
+                    $labels[$label][$value] = true;
+                }
+            }
         }
 
-        return new FeedPage($rejected, $filtered, $warnings, array_keys($categories));
+        return new FeedPage($rejected, $filtered, $warnings, array_keys($categories), array_map(
+            static fn (array $values): array => array_map(strval(...), array_keys($values)),
+            $labels,
+        ));
     }
 
     /**

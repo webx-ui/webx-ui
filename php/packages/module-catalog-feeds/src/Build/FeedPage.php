@@ -15,12 +15,14 @@ final readonly class FeedPage
      * @param  list<int>  $filtered  the products `only_in_stock` left out
      * @param  array<string, int>  $warnings
      * @param  list<int>  $categories  of what was written
+     * @param  array<int, list<string>>  $labels  label => the values it took here, each once
      */
     public function __construct(
         public array $rejected,
         public array $filtered,
         public array $warnings,
         public array $categories,
+        public array $labels = [],
     ) {}
 
     /**

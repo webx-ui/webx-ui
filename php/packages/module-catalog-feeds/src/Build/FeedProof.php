@@ -16,6 +16,12 @@ final readonly class FeedProof
     /** No product suits the feed: only the head and the foot were read. */
     public const NO_PRODUCTS = 'no_products';
 
+    /** A status goes out as `preorder`, which Google takes only with a date the catalogue lacks. */
+    public const PREORDER = 'preorder';
+
+    /** What a warning says for itself: the rest are counters the journal names. */
+    private const WORDS = [self::NO_PRODUCTS => 'no-products', self::PREORDER => 'preorder'];
+
     /**
      * @param  array<string, int>  $warnings
      * @param  array<string, int>  $rejected
@@ -47,7 +53,7 @@ final readonly class FeedProof
             $list[] = [
                 'code' => $code,
                 'count' => $count,
-                'message' => $code === self::NO_PRODUCTS ? (string) __('webx-catalog-feeds::errors.no-products') : null,
+                'message' => isset(self::WORDS[$code]) ? (string) __('webx-catalog-feeds::errors.'.self::WORDS[$code]) : null,
             ];
         }
 

@@ -14,9 +14,8 @@ use WebxUi\CatalogFeeds\Models\Feed;
 use WebxUi\Templates\Template;
 
 /**
- * What the settings of one feed change in the registry's answer (§3.4, §6.1 of the feeds spec), and
- * which variables a template really asks for (§7.1). The mapping of categories and the sources of
- * the labels come with their own stage.
+ * What the settings of one feed change in the registry's answer (§3.3, §3.4, §6 of the feeds spec),
+ * and which variables a template really asks for (§7.1).
  */
 final readonly class FeedVariables
 {
@@ -25,7 +24,21 @@ final readonly class FeedVariables
 
     private const IN_STOCK = 'in_stock';
 
-    public function __construct(private ProductVariables $variables) {}
+    public function __construct(
+        private ProductVariables $variables,
+        private FeedCategories $categories,
+        private FeedLabels $labels,
+    ) {}
+
+    /**
+     * A property by the code a person wrote: a variable writes `-` as `_`.
+     *
+     * @param  array<string, ProductVariable>  $all
+     */
+    public static function property(array $all, string $code): ?ProductVariable
+    {
+        return $all['property.'.str_replace('-', '_', $code)] ?? null;
+    }
 
     /**
      * The names to compute for a template: a field of a list is the list's, not a variable.
@@ -61,7 +74,37 @@ final readonly class FeedVariables
     {
         $all = $this->variables->all();
 
-        return [$this->availability($feed, $all), ...$this->mpn($feed, $all)];
+        return [
+            $this->availability($feed, $all),
+            ...$this->mpn($feed, $all),
+            ...$this->platformCategory($feed, $all),
+            ...$this->labels->variables($feed, $all),
+        ];
+    }
+
+    /**
+     * The two names of one value, read once between them, and not at all by a template without either.
+     *
+     * @param  array<string, ProductVariable>  $all
+     * @return list<ProductVariable>
+     */
+    private function platformCategory(Feed $feed, array $all): array
+    {
+        $map = null;
+
+        $values = function (Collection $products) use ($feed, &$map): array {
+            $map ??= $this->categories->map($feed);
+            $found = $map;
+
+            return $products->mapWithKeys(static fn (Product $product): array => [
+                (int) $product->id => $found->value($product->category_id === null ? null : (int) $product->category_id),
+            ])->all();
+        };
+
+        return [
+            new ComputedVariable($all['platform_category']->describe(), $values),
+            new ComputedVariable($all['google_product_category']->describe(), $values),
+        ];
     }
 
     /**
@@ -106,7 +149,7 @@ final readonly class FeedVariables
         }
 
         $code = (string) ($source['property'] ?? '');
-        $property = $all['property.'.str_replace('-', '_', $code)] ?? throw FeedFailure::of('source-property', ['property' => $code]);
+        $property = self::property($all, $code) ?? throw FeedFailure::of('source-property', ['property' => $code]);
         $mpn = new ComputedVariable($all['mpn']->describe(), $property->values(...));
 
         return [$mpn, new IdentifierExists($mpn)];

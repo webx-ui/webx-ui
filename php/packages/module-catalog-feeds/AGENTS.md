@@ -5,14 +5,15 @@ satellite of `webx-ui/module-catalog`; it works only through the core's registri
 the filter and `ProductVariables`, read the core's `AGENTS.md`.
 
 The package is built in stages. Today it holds the tables, the models, the feeds' CRUD API, the
-section of the panel, the build, its delivery, the check on saving and the preview. Presets and MCP
-tools are not here yet.
+section of the panel, the build, its delivery, the check on saving, the preview and the mappings.
+Presets and MCP tools are not here yet; the form of the mappings comes with the panel's stage.
 
 ## What it owns
 
 - **Tables** `catalog_feeds` (`WebxUi\CatalogFeeds\Models\Feed`), `catalog_feed_builds`
   (`FeedBuild`), `catalog_feed_build_rejects`, `catalog_feed_exclusions`,
-  `catalog_feed_categories`, `catalog_feed_taxonomies`, `catalog_feed_taxonomy_items`.
+  `catalog_feed_categories`, `catalog_feed_taxonomies` (`Taxonomy`),
+  `catalog_feed_taxonomy_items` (`TaxonomyItem`).
 - **Key** `access_key`: 40 random characters made when a feed is created. It is in `$hidden` and
   never in the journal. `FeedResource` gives the address that holds it only to `catalog.manage`.
 - **Journal** type `catalog.feed`; `Feed::HISTORY` names the fields it follows.
@@ -69,7 +70,22 @@ read, `cms.can:catalog.manage` to write.
 - `BuildFeed::$timeout` is 80: above the 60 of `job_seconds` by the page in hand, under the 90 of the
   skeleton's `retry_after`. A job without its own timeout dies at the worker's 60 with its budget used
   and never queues the next one. `budget()` keeps a raised `job_seconds` under it.
-- `FeedVariables` holds what a feed overrides in `ProductVariables`: `availability`, `mpn`.
+- `FeedVariables` holds what a feed overrides in `ProductVariables`: `availability`, `mpn`,
+  `platform_category` with `google_product_category`, and through `FeedLabels` `custom_label_0…4`.
+
+### How the mappings work
+
+- `FeedCategories` reads `catalog_feed_categories` into a `CategoryMap`: a category's row, or the
+  nearest ancestor's. The file gets the list's `external_id`, or the value typed by hand.
+- A list is stored under the language of its file, `en-US`, not `en`. `Taxonomies::of()` gives a
+  language its own list or the English one, and `fallback` says which. The ids are the same.
+- `TaxonomyImport` is the one way in: `queue()` by address (`ImportTaxonomy`, `RemoteFetcher`,
+  https only), `upload()` by a file under the purpose `catalog.feed-taxonomy`, read at once. Google
+  answering 404 for a language moves the import to `en-US`; an address a person gave does not.
+- A new list updates rows in place, so mappings hold. A category it dropped leaves its id in `value`.
+- A source of a label is looked up when the label is printed: an unused one cannot fail a build.
+  `to` of a price range belongs to it. Only `FeedLabels` knows the sources; `FeedForm` asks it.
+- A property of several values gives a label its first through the core's `FirstValues`.
 
 ### How a file gets out
 
@@ -87,15 +103,17 @@ read, `cms.can:catalog.manage` to write.
 
 ## Change it without forking
 
-| You want                    | Do this                                                      |
-| --------------------------- | ------------------------------------------------------------ |
-| Another prefix of the file  | `WEBX_CATALOG_FEEDS_PATH`, or `path` in `webx-catalog-feeds` |
-| Other words in the panel    | `php artisan vendor:publish --tag=webx-catalog-feeds-lang`   |
-| Another disk for the files  | `WEBX_CATALOG_FEEDS_DISK`; a public disk is refused          |
-| Another size of a page      | `chunk` in `webx-catalog-feeds`                              |
-| Other limits of the watch   | `quiet_minutes`, `min_interval`, `max_wait`                  |
-| A bigger or smaller sample  | `sample` in `webx-catalog-feeds`                             |
-| Open feeds on a closed site | `feeds/*` in `webx-admin.gate.except`                        |
+| You want                      | Do this                                                      |
+| ----------------------------- | ------------------------------------------------------------ |
+| Another prefix of the file    | `WEBX_CATALOG_FEEDS_PATH`, or `path` in `webx-catalog-feeds` |
+| Other words in the panel      | `php artisan vendor:publish --tag=webx-catalog-feeds-lang`   |
+| Another disk for the files    | `WEBX_CATALOG_FEEDS_DISK`; a public disk is refused          |
+| Another size of a page        | `chunk` in `webx-catalog-feeds`                              |
+| Other limits of the watch     | `quiet_minutes`, `min_interval`, `max_wait`                  |
+| A bigger or smaller sample    | `sample` in `webx-catalog-feeds`                             |
+| Another limit of label values | `max_label_values` in `webx-catalog-feeds`                   |
+| A larger file of a list       | `taxonomy_max_bytes` in `webx-catalog-feeds`                 |
+| Open feeds on a closed site   | `feeds/*` in `webx-admin.gate.except`                        |
 
 ## Do not
 
@@ -107,11 +125,13 @@ read, `cms.can:catalog.manage` to write.
   `updated_at`.
 - Do not start a build from a request to the address, and do not answer 403 there: it confirms a key.
 - Do not read a variable per product: a page is asked at once, or a build turns into an N+1.
+- Do not delete and insert a list on import: `taxonomy_item_id` points at its rows.
+- Do not split `property.*` by `;` for one value: a name can hold one, ask `FirstValues`.
 
 ## Check your work
 
-- `tests/ApiTest.php`, `tests/BuildTest.php`, `tests/DeliveryTest.php`, `tests/TrialTest.php` and
-  `tests/AccessCoverageTest.php` are green.
+- `tests/ApiTest.php`, `tests/BuildTest.php`, `tests/DeliveryTest.php`, `tests/TrialTest.php`,
+  `tests/MappingsTest.php` and `tests/AccessCoverageTest.php` are green.
 - `GET /api/cms/catalog/feeds` as an administrator with `catalog.view` shows no key.
 
 ## Read more

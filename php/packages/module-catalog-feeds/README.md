@@ -70,6 +70,44 @@ at those products and say why each one that stays out does.
 A feed is in the site's currency. After the site changes it, a build fails until the feed is saved
 again, so somebody looks at a template that may print the old one.
 
+## Mappings
+
+`stock_map` turns a status of the stock satellite into a marketplace's word; a status without a row
+keeps `in_stock` or `out_of_stock`. `preorder` saves with a warning: Google asks for a date the
+catalogue does not have.
+
+A category takes the value of its nearest mapped ancestor, so a branch is mapped by its top. A
+category with no value leaves the tag out, stays in the feed and counts as `unmapped_category` in
+the journal.
+
+Google's list comes in by address, through the queue, or as an uploaded file:
+
+```
+POST /api/cms/catalog/feeds/taxonomies/google/import   { "locale": "de" }            202
+POST /api/cms/catalog/feeds/taxonomies/google/import   { "locale": "de", "upload": "<id>" }   200
+GET  /api/cms/catalog/feeds/taxonomies/google/search?locale=de&q=shoes
+```
+
+Google has no file for some languages. Such a language reads the English list, and `fallback` in the
+answer says so: the ids are the same, only the words in the panel are English.
+
+`custom_labels` gives each of `custom_label_0…4` one source:
+
+```json
+{
+  "0": { "type": "label", "labels": ["sale", "new"] },
+  "1": { "type": "price_range", "ranges": [{ "to": 50, "value": "low" }, { "value": "high" }] },
+  "2": { "type": "property", "property": "material" },
+  "3": { "type": "constant", "value": "autumn-campaign" },
+  "4": { "type": "none" }
+}
+```
+
+A value is cut to 100 characters. `to` belongs to its range: a price of 50 is `low` here. More than
+`max_label_values` different values of a label is a `label_values` warning in the journal.
+
+`sources.mpn` is `{ "type": "field" }`, or `{ "type": "property", "property": "<code>" }`.
+
 ## API
 
 Under the panel's API path: `GET`, `POST catalog/feeds`; `GET`, `PUT`, `DELETE catalog/feeds/{id}`;

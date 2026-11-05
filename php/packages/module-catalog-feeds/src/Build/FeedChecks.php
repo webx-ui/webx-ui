@@ -25,6 +25,9 @@ final class FeedChecks
     /** Below this on either side a marketplace calls a picture small. */
     private const SMALL_IMAGE = 500;
 
+    /** Two names of one value: a template prints either. */
+    private const PLATFORM_CATEGORY = ['platform_category', 'google_product_category'];
+
     private const DESCRIPTIONS = ['description_html', 'description_cdata', 'description_text', 'long_text'];
 
     /** What a warning reads besides what it speaks about: `long_text` is cut from this one. */
@@ -72,6 +75,10 @@ final class FeedChecks
 
         if (self::cut($product, $row, $locale)) {
             $warnings[] = 'text_cut';
+        }
+
+        if (in_array('', array_intersect_key($row, array_flip(self::PLATFORM_CATEGORY)), true)) {
+            $warnings[] = 'unmapped_category';
         }
 
         return $warnings;

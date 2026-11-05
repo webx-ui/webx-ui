@@ -914,6 +914,10 @@ wxtest-manticore`.
   Скачивать адрес от человека только через `WebxUi\Admin\Remote\RemoteFetcher`: он проверяет все
   адреса имени, каждый редирект и подключается к проверенному IP (`CURLOPT_RESOLVE`). Свой пул
   (аудит) — `check()` + `Target::options()` на каждый запрос.
+- **`AccessCoverageTest`: маршрут «answers 404 to nobody signed in, not 401».** Тест подставляет в
+  параметры пути своё значение, а `whereIn` или другое ограничение параметра отсекает его ещё до
+  `cms.can`: запроса к проверке прав не случается. Перечень значений проверять в контроллере
+  (`abort_unless`), после middleware. Заодно посторонний сначала слышит 401, а не 404.
 - **Тест скачивания по адресу ходит в настоящий DNS или падает «does not resolve».** Помощник
   резолвит имя до `Http::fake()`: подменённый ответ не спасает. В тест-кейсе пакета —
   `$app->instance(HostResolver::class, new FakeHostResolver)` (`WebxUi\Admin\Testing`): любое имя —

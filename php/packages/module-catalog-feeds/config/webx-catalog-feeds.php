@@ -43,6 +43,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Mappings (§3.3 and §6.2 of the feeds spec)
+    |--------------------------------------------------------------------------
+    |
+    | `max_label_values` different values of a custom label before the journal warns: Google takes
+    | 1000 a label on an account, and a build sees only its own feed. `taxonomy_max_bytes` is how
+    | large the file of a list may be, by address or uploaded; Google's are about a megabyte.
+    |
+    */
+
+    'max_label_values' => 1000,
+
+    'taxonomy_max_bytes' => 16 * 1024 * 1024,
+
+    /*
+    |--------------------------------------------------------------------------
     | The trial of a feed (§8 of the feeds spec)
     |--------------------------------------------------------------------------
     |

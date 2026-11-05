@@ -51,7 +51,12 @@ final class FeedTrial
     private const FRAGMENT_BEFORE = 60;
 
     /** Where a failure of the settings is shown: the rest belongs to the template of a product. */
-    private const FIELDS = ['filter-facet' => 'filter', 'source-property' => 'sources'];
+    private const FIELDS = [
+        'filter-facet' => 'filter',
+        'source-property' => 'sources',
+        'label-property' => 'custom_labels',
+        'label-source' => 'custom_labels',
+    ];
 
     /** A person named a product and it does not go in: the reasons besides the third layer's. */
     private const NOT_FOUND = 'not_found';
@@ -231,6 +236,12 @@ final class FeedTrial
 
         if ($items === []) {
             $warnings = [FeedProof::NO_PRODUCTS => 1, ...$warnings];
+        }
+
+        $preorders = count(array_keys($feed->stock_map, FeedProof::PREORDER, true));
+
+        if ($preorders > 0) {
+            $warnings[FeedProof::PREORDER] = $preorders;
         }
 
         return new FeedProof(

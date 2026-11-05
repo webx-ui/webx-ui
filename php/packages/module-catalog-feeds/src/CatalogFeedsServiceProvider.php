@@ -15,11 +15,13 @@ use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Admin\History\HistoryTypes;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Snapshots\SnapshotTables;
+use WebxUi\Admin\Uploads\UploadPurposes;
 use WebxUi\CatalogFeeds\Console\FeedsCommand;
 use WebxUi\CatalogFeeds\Console\FeedsPruneCommand;
 use WebxUi\CatalogFeeds\Doctor\FeedsCheck;
 use WebxUi\CatalogFeeds\Models\Feed;
 use WebxUi\CatalogFeeds\Panel\CatalogFeedsModule;
+use WebxUi\CatalogFeeds\Taxonomy\TaxonomyImport;
 
 /**
  * Product feeds of the catalogue (`WEBX_UI_CATALOG_FEEDS.md`): a satellite that knows only the
@@ -68,6 +70,7 @@ class CatalogFeedsServiceProvider extends ServiceProvider
         $this->keepTemplatesAsTyped();
 
         $this->registerHistory();
+        $this->registerUpload();
         $this->app->make(ModuleRegistry::class)->register($this->app->make(CatalogFeedsModule::class));
 
         if (! $this->app->runningInConsole()) {
@@ -83,6 +86,18 @@ class CatalogFeedsServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../lang' => lang_path('vendor/webx-catalog-feeds'),
         ], 'webx-catalog-feeds-lang');
+    }
+
+    /** The file of a marketplace's list, in pieces like any other; the reader refuses a wrong one. */
+    private function registerUpload(): void
+    {
+        $this->app->make(UploadPurposes::class)->register(
+            TaxonomyImport::UPLOAD_PURPOSE,
+            permission: 'catalog.manage',
+            types: ['text/plain'],
+            maxBytes: fn (): int => max(1, (int) $this->app->make('config')->get('webx-catalog-feeds.taxonomy_max_bytes')),
+            extensions: ['txt'],
+        );
     }
 
     /** A route with a parameter cannot be asked about one address at a time, so a page could take it. */

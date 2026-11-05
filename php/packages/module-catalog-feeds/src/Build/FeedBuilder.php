@@ -210,7 +210,7 @@ final class FeedBuilder
             $rejects[] = ['build_id' => $build->id, 'product_id' => $id, 'reason' => $reason];
         }
 
-        $this->record($build, $products, $written, count($page->filtered), $bytes, $page->reasons(), $rejects, $page->warnings, $page->categories);
+        $this->record($build, $products, $written, count($page->filtered), $bytes, $page->reasons(), $rejects, $page->warnings, $page->categories, $page->labels);
         RequestMemo::forget();
 
         return $products->count() === $chunk;
@@ -225,10 +225,11 @@ final class FeedBuilder
      * @param  list<array{build_id: int, product_id: int, reason: string}>  $rejects
      * @param  array<string, int>  $warnings
      * @param  list<int>  $categories
+     * @param  array<int, list<string>>  $labels
      */
-    private function record(FeedBuild $build, Collection $products, int $written, int $filtered, int $bytes, array $reasons, array $rejects, array $warnings, array $categories): void
+    private function record(FeedBuild $build, Collection $products, int $written, int $filtered, int $bytes, array $reasons, array $rejects, array $warnings, array $categories, array $labels): void
     {
-        DB::transaction(function () use ($build, $products, $written, $filtered, $bytes, $reasons, $rejects, $warnings, $categories): void {
+        DB::transaction(function () use ($build, $products, $written, $filtered, $bytes, $reasons, $rejects, $warnings, $categories, $labels): void {
             $locked = FeedBuild::query()->lockForUpdate()->find($build->id, ['id', 'status', 'cursor']);
 
             if (! $locked instanceof FeedBuild || $locked->finished() || (int) $locked->cursor !== (int) $build->cursor) {
@@ -243,6 +244,11 @@ final class FeedBuilder
 
             $state = $build->state ?? [];
             $state['categories'] = array_values(array_unique([...$state['categories'] ?? [], ...$categories]));
+            [$state['labels'], $over] = $this->labelValues($state['labels'] ?? [], $labels);
+
+            if ($over > 0) {
+                $warnings['label_values'] = ($warnings['label_values'] ?? 0) + $over;
+            }
 
             $build->forceFill([
                 'cursor' => (int) $products->last()?->getKey(),
@@ -256,6 +262,37 @@ final class FeedBuilder
                 'progress_at' => Carbon::now(),
             ])->save();
         });
+    }
+
+    /**
+     * The different values of each label so far, and how many labels went over the limit on this
+     * page (§3.3). Hashes, and no more of them than it takes to know: the state is written every page.
+     *
+     * @param  array<int|string, list<string>>  $seen
+     * @param  array<int, list<string>>  $labels
+     * @return array{array<int|string, list<string>>, int}
+     */
+    private function labelValues(array $seen, array $labels): array
+    {
+        $limit = max(1, (int) $this->config->get('webx-catalog-feeds.max_label_values', 1000));
+        $over = 0;
+
+        foreach ($labels as $label => $values) {
+            $before = $seen[$label] ?? [];
+
+            if (count($before) > $limit) {
+                continue;
+            }
+
+            $hashes = array_map(static fn (string $value): string => substr(md5($value), 0, 12), $values);
+            $seen[$label] = array_slice(array_values(array_unique([...$before, ...$hashes])), 0, $limit + 1);
+
+            if (count($seen[$label]) > $limit) {
+                $over++;
+            }
+        }
+
+        return [$seen, $over];
     }
 
     private function join(FeedBuild $build, Feed $feed): bool

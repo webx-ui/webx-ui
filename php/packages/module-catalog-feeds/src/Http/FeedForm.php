@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace WebxUi\CatalogFeeds\Http;
 
+use Closure;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use WebxUi\CatalogFeeds\Build\FeedLabels;
 use WebxUi\CatalogFeeds\Build\FeedProblem;
 use WebxUi\CatalogFeeds\Build\FeedTrial;
 use WebxUi\CatalogFeeds\Models\Feed;
+use WebxUi\CatalogFeeds\Taxonomy\Taxonomies;
 use WebxUi\Localization\Locales;
 
 /**
@@ -87,9 +90,10 @@ final class FeedForm
             'separator' => ['sometimes', 'nullable', 'string', 'max:32'],
             'filter' => ['sometimes', 'array'],
             'stock_map' => ['sometimes', 'array'],
-            'taxonomy' => ['sometimes', 'nullable', Rule::in(['google'])],
-            'custom_labels' => ['sometimes', 'array'],
-            'sources' => ['sometimes', 'array'],
+            'stock_map.*' => ['nullable', 'string', 'max:64'],
+            'taxonomy' => ['sometimes', 'nullable', Rule::in(Taxonomies::KEYS)],
+            'custom_labels' => ['sometimes', 'array', self::labels(...)],
+            'sources' => ['sometimes', 'array', self::sources(...)],
             'options' => ['sometimes', 'array'],
             'schedule' => ['sometimes', Rule::in(Feed::SCHEDULES)],
             'schedule_at' => ['sometimes', 'nullable', 'date_format:H:i'],
@@ -137,6 +141,33 @@ final class FeedForm
         }
 
         return $input;
+    }
+
+    /**
+     * @param  Closure(string): mixed  $fail
+     */
+    private static function labels(string $attribute, mixed $value, Closure $fail): void
+    {
+        $problem = is_array($value) ? FeedLabels::problem($value) : null;
+
+        if ($problem !== null) {
+            $fail($problem);
+        }
+    }
+
+    /**
+     * `mpn` is the field of a product, or a property named by its code (§3.4).
+     *
+     * @param  Closure(string): mixed  $fail
+     */
+    private static function sources(string $attribute, mixed $value, Closure $fail): void
+    {
+        $mpn = is_array($value) ? ($value['mpn'] ?? ['type' => 'field']) : [];
+        $type = is_array($mpn) ? ($mpn['type'] ?? null) : null;
+
+        if ($type !== 'field' && ($type !== 'property' || ! is_string($mpn['property'] ?? null))) {
+            $fail((string) __('webx-catalog-feeds::errors.source-type'));
+        }
     }
 
     private static function clean(mixed $value): mixed
