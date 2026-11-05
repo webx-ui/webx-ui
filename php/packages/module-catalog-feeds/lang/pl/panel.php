@@ -17,6 +17,8 @@ return [
     'new-help' => 'Feed zaczyna jako kopia presetu, a zmiana kopii niczego innego nie zmienia.',
     'new-empty' => 'Pusty feed',
     'new-empty-help' => 'Bez szablonu: wszystko piszesz sam.',
+    'class-help' => 'Ten feed zapisuje klasa PHP witryny: nie ma szablonu do edycji.',
+    'class-gone' => 'Klasy [:driver] nie ma już w witrynie. Budowanie kończy się błędem, dopóki nie wróci; ostatni plik jest nadal udostępniany.',
     'new-go' => 'Dalej',
     'open' => 'Otwórz',
     'inactive' => 'Wyłączony',

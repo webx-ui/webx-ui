@@ -29,14 +29,14 @@ final class FeedFileController
 
     public function __invoke(Request $request, string $key, string $extension): Response
     {
-        $feed = Feed::query()->where('access_key', $key)->first(['id', 'access_key', 'format', 'is_active', 'current_build_id']);
+        $feed = Feed::query()->where('access_key', $key)->first(['id', 'access_key', 'format', 'driver', 'is_active', 'current_build_id']);
 
         // Compared again here: a collation of the database may not tell `aB` from `Ab`.
         if (! $feed instanceof Feed || ! hash_equals($feed->access_key, $key) || ! $feed->is_active) {
             return $this->missing();
         }
 
-        if ($extension !== Feed::FORMATS[$feed->format]) {
+        if ($extension !== $feed->extension()) {
             return new RedirectResponse($feed->address(), 301, self::HEADERS);
         }
 
@@ -47,7 +47,7 @@ final class FeedFileController
             return $this->missing(retry: true);
         }
 
-        $response = new Response(headers: [...self::HEADERS, 'Content-Type' => Feed::TYPES[$feed->format].'; charset=utf-8']);
+        $response = new Response(headers: [...self::HEADERS, 'Content-Type' => $build->content_type ?? Feed::TYPES[$feed->format].'; charset=utf-8']);
         $response->setEtag((string) $build->etag);
         $response->setLastModified($build->content_at);
 

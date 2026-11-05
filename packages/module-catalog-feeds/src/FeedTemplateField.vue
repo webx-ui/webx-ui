@@ -26,6 +26,8 @@ import { NAMESPACE, useCatalogFeedsMessages } from './i18n'
  * offers what the part may say: a header and a footer have no product (§4.6). Under the part being
  * edited the same variables as buttons: the editor is the fast way, the buttons are the way to find
  * out what there is.
+ *
+ * A feed written by a PHP class has none of this: the tab names the class instead (§10).
  */
 defineOptions({ name: 'WxCatalogFeedTemplate' })
 
@@ -37,6 +39,13 @@ const editor = useFeedEditor()
 useCatalogFeedsMessages()
 
 const t = useTranslate(NAMESPACE)
+
+const driver = computed(() => editor.values.value.driver ?? null)
+const driverFormat = computed(() =>
+  editor.meta.value?.drivers.find((format) => format.key === driver.value),
+)
+/* Before the answer about formats nothing is known to be gone. */
+const driverGone = computed(() => editor.meta.value !== null && !driverFormat.value)
 
 const active = ref<Part>('item')
 const search = ref('')
@@ -153,7 +162,26 @@ function keep(part: Part, exposed: unknown): void {
 
 <template>
   <div class="wx-catalog-feed-template">
-    <div class="wx-catalog-feed-template__layout">
+    <wx-card v-if="driver !== null">
+      <div class="wx-catalog-feed-template__stack">
+        <wx-alert
+          v-if="driverGone"
+          type="danger"
+          variant="soft"
+          :description="t('panel.class-gone', { driver })"
+        />
+
+        <template v-else>
+          <wx-text weight="medium">{{ driverFormat?.label ?? driver }}</wx-text>
+          <wx-text size="sm" tone="muted">{{ t('panel.class-help') }}</wx-text>
+          <wx-text v-if="driverFormat" size="sm" class="wx-catalog-feed-template__class">
+            {{ driverFormat.class }}
+          </wx-text>
+        </template>
+      </div>
+    </wx-card>
+
+    <div v-else class="wx-catalog-feed-template__layout">
       <div class="wx-catalog-feed-template__parts">
         <wx-card>
           <div class="wx-catalog-feed-template__stack">
@@ -273,5 +301,11 @@ function keep(part: Part, exposed: unknown): void {
 
 .wx-catalog-feed-template__name {
   font-family: var(--wx-font-family-mono);
+}
+
+/* A class name is one long word: it breaks rather than widen a narrow panel. */
+.wx-catalog-feed-template__class {
+  font-family: var(--wx-font-family-mono);
+  overflow-wrap: anywhere;
 }
 </style>

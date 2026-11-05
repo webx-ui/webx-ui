@@ -66,6 +66,17 @@ const SAMPLE = 5
 const BUILD_MS = 2500
 
 /* The shape of the server's presets, shortened: what the form shows, not what a marketplace takes. */
+/** A site's PHP class (§10 of the feeds spec): the form names it instead of the template. */
+const DRIVERS = [
+  {
+    key: 'marketplace-lines',
+    label: 'Marketplace lines',
+    class: 'App\\Feeds\\MarketplaceLinesFormat',
+    extension: 'lines',
+    content_type: 'application/x-lines',
+  },
+]
+
 const PRESETS = [
   {
     key: 'google',
@@ -123,6 +134,12 @@ const PRESETS = [
       options: { delimiter: ',' },
     },
   },
+  ...DRIVERS.map((driver) => ({
+    key: driver.key,
+    name: driver.label,
+    description: driver.class,
+    values: { format: 'text', item: '', driver: driver.key },
+  })),
 ]
 
 const ITEM_VARIABLES = [
@@ -174,6 +191,11 @@ function newKey(): string {
   return Array.from({ length: 40 }, () => Math.floor(Math.random() * 36).toString(36)).join('')
 }
 
+/** As on the server: from the preset, whatever a form sent. */
+function driverOf(values: Values): string | null {
+  return DRIVERS.find((driver) => driver.key === values.preset)?.key ?? null
+}
+
 function row(feed: FeedRecord) {
   const last = feed.builds[0] ?? null
 
@@ -182,7 +204,7 @@ function row(feed: FeedRecord) {
     name: feed.values.name,
     preset: feed.values.preset ?? null,
     format: feed.values.format,
-    driver: null,
+    driver: driverOf(feed.values),
     locale: feed.values.locale,
     currency: CURRENCY,
     schedule: feed.values.schedule,
@@ -414,7 +436,8 @@ export function registerFeeds(on: On, fail: Fail): void {
       throw fail(422, 'The format is unknown.', { format: ['The format is unknown.'] })
     }
 
-    const problem = refusal(values)
+    // A class checks what it writes, as on the server.
+    const problem = driverOf(values) === null ? refusal(values) : null
 
     if (problem) throw fail(422, problem.message, { [problem.field]: [problem.message] })
   }
@@ -435,6 +458,7 @@ export function registerFeeds(on: On, fail: Fail): void {
     data: {
       presets: PRESETS,
       formats: FORMATS,
+      drivers: DRIVERS,
       label_sources: ['none', 'label', 'price_range', 'property', 'constant'],
       currency: CURRENCY,
       stock: true,

@@ -17,6 +17,8 @@ return [
     'new-help' => 'Un flux démarre comme une copie d’un préréglage, et modifier la copie ne change rien d’autre.',
     'new-empty' => 'Flux vide',
     'new-empty-help' => 'Aucun modèle : vous écrivez tout vous-même.',
+    'class-help' => 'Une classe PHP du site écrit ce flux : il n’y a pas de modèle à modifier.',
+    'class-gone' => 'La classe [:driver] n’est plus sur le site. Les générations échouent jusqu’à son retour ; le dernier fichier continue d’être servi.',
     'new-go' => 'Continuer',
     'open' => 'Ouvrir',
     'inactive' => 'Désactivé',

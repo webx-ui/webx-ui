@@ -76,6 +76,9 @@ export const catalogFeedsMessages: Record<string, Messages> = {
     'new-help': 'A feed starts as a copy of a preset, and changing the copy changes nothing else.',
     'new-empty': 'Empty feed',
     'new-empty-help': 'No template: write everything yourself.',
+    'class-help': 'A PHP class of the site writes this feed: there is no template to edit.',
+    'class-gone':
+      'The class [:driver] is no longer on the site. Builds fail until it is back; the last file goes on being served.',
     'new-go': 'Continue',
     open: 'Open',
     inactive: 'Off',

@@ -35,7 +35,7 @@ read, `cms.can:catalog.manage` to write.
 
 ### How a feed is checked
 
-- `FeedTrial` is §8.1: syntax, names (`ProductVariables` for the item, `FeedContext::variables()` for
+- `FeedTrial` is §8.1: syntax, names (`ProductVariables` for the item, `FeedFrame::variables()` for
   the head and the foot), CDATA, currency, a sample of `sample` products, the parser of the format.
   The first failure is the answer. `check()` serves `FeedForm::save()`, `preview()` the route.
 - `FeedForm::save()` tries a feed only when `TRIED` fields changed: a feed gone bad with the catalogue
@@ -60,8 +60,10 @@ read, `cms.can:catalog.manage` to write.
 - Pages go by the cursor `id` into `storage/app/catalog-feeds/<build>.body`. The cursor, the counters,
   `state`, the rejects and `body_bytes` are written together, and a job starts by cutting the body to
   `body_bytes`: that is what makes a repeated page harmless.
-- The head and the foot render last (`FeedContext`), `FeedFileCheck` reads the joined file, and only
+- The head and the foot render last (`FeedFrame`), `FeedFileCheck` reads the joined file, and only
   then does `current_build_id` move. A failed build leaves the file served as it was.
+- A `FeedFormat` in `FeedFormats` (§10) replaces the template in the same steps and is offered as a
+  preset: `driver` is set from that preset alone. No state in the class: `FeedWriter::written()`.
 - After the pages each step is a job of its own, the step kept in `state.step`: `join`, `check` (a csv
   in stretches of `job_seconds`, `state.checked` says where it stopped), `publish`. A repeated job
   repeats its step.

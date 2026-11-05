@@ -17,6 +17,8 @@ return [
     'new-help' => 'Akış bir hazır ayarın kopyası olarak başlar; kopyayı değiştirmek başka hiçbir şeyi değiştirmez.',
     'new-empty' => 'Boş akış',
     'new-empty-help' => 'Şablon yok: her şeyi kendiniz yazarsınız.',
+    'class-help' => 'Bu feed’i sitenin bir PHP sınıfı yazıyor: düzenlenecek şablon yok.',
+    'class-gone' => '[:driver] sınıfı artık sitede yok. Geri gelene kadar derlemeler başarısız olur; son dosya sunulmaya devam ediyor.',
     'new-go' => 'Devam',
     'open' => 'Aç',
     'inactive' => 'Kapalı',

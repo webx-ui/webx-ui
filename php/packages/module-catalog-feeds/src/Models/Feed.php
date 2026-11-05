@@ -13,6 +13,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use WebxUi\Admin\History\RecordsHistory;
 use WebxUi\CatalogFeeds\Delivery\FeedFiles;
+use WebxUi\CatalogFeeds\Formats\FeedFormats;
 
 /**
  * A feed (§3 of the feeds spec): a template, what goes into it, and when it is built.
@@ -157,7 +158,25 @@ class Feed extends Model
     /** The whole address with its key: for whoever holds `catalog.manage`, and nobody else (§11). */
     public function address(): string
     {
-        return url(config('webx-catalog-feeds.path').'/'.$this->access_key.'.'.self::FORMATS[$this->format]);
+        return url(config('webx-catalog-feeds.path').'/'.$this->access_key.'.'.$this->extension());
+    }
+
+    /**
+     * Of the file and of its address. A class that is gone leaves the extension of its last file:
+     * that file goes on being served, at the address a marketplace holds (§10).
+     */
+    public function extension(): string
+    {
+        $own = self::FORMATS[$this->format];
+
+        if ($this->driver === null) {
+            return $own;
+        }
+
+        $format = Container::getInstance()->make(FeedFormats::class)->find($this->driver);
+        $served = pathinfo((string) $this->currentBuild?->path, PATHINFO_EXTENSION);
+
+        return $format?->extension() ?? ($served === '' ? $own : $served);
     }
 
     /**

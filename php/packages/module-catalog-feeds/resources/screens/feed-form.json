@@ -35,6 +35,10 @@
                     {
                       "id": "format-col",
                       "type": "wx-col",
+                      "visible": {
+                        "when": "driver",
+                        "is": null
+                      },
                       "props": {
                         "span": 24,
                         "sm": 12

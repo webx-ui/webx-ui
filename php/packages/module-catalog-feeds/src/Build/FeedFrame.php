@@ -18,7 +18,7 @@ use WebxUi\Templates\Variables;
  * What a head and a foot may say (§4.6 of the feeds spec). They have no product: they speak about
  * the shop, the feed and what the pages found, which is why they are written last.
  */
-final readonly class FeedContext
+final readonly class FeedFrame
 {
     public function __construct(private Config $config) {}
 

@@ -15,6 +15,9 @@ The section is **Catalog → Feeds**. It has no permissions of its own: `catalog
 opens with a copy of it, and nothing exists until the first save. A feed holds its own copy: changing
 it touches no other feed, and a later version of a preset touches no feed.
 
+A site can register a file no template describes as a PHP class (see below): it is offered here
+like a preset, and the **Template** tab of such a feed names the class instead of the editor.
+
 A feed that would not make a valid file is not saved. The form stays open and the words go under the
 part they are about, with the line. One language per feed: a second language is a second feed. The
 currency is always the site's (`WEBX_CATALOG_CURRENCY`).
@@ -104,3 +107,33 @@ would go.
 
 The address holds the key, so it goes only to a connection that may write: an administrator with
 `catalog.manage` who connected an agent read-only does not hand it the key.
+
+## A format as a PHP class
+
+For a structure a template cannot describe: nesting that depends on the data, an order of its own, a
+binary file. It is the way out, not the main road: a template can be seen and changed without a
+release. Implement `WebxUi\CatalogFeeds\Formats\FeedFormat` and register it from a provider of the
+site:
+
+```php
+$this->callAfterResolving(FeedFormats::class, static function (FeedFormats $formats): void {
+    $formats->register(new MarketplaceFormat);
+});
+```
+
+The selection, the third layer, the variables, the jobs, the journal and the delivery stay the
+build's own. The filter, the exclusions, the mappings and the labels of the form apply as they do to
+a template.
+
+- `variables()` lists the names to compute. A name the site does not have fails the build.
+- A build is many jobs, so an instance keeps nothing between calls. `$out->written()` says how many
+  products are in the file, which is how a comma finds its place. The feed's separator is not used.
+- `open()` is called after the products, because it may speak about them; the file still reads open,
+  products, close. `$context->values` holds what a header may say, by the same names.
+- `validate()` reads the finished file and returns what is wrong with it, or `null`. It runs in one
+  job. A refused file replaces nothing.
+- `extension()` is the end of the feed's address, so changing it changes the address.
+
+A feed is tied to its class when it is created, from the preset; no form or agent can set it. When a
+class leaves the site, builds fail with a clear error and the last file goes on being served at the
+same address, with the same type.

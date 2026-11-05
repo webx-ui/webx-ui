@@ -17,6 +17,8 @@ return [
     'new-help' => 'Ein Feed beginnt als Kopie einer Vorlage; Änderungen an der Kopie wirken sich auf nichts anderes aus.',
     'new-empty' => 'Leerer Feed',
     'new-empty-help' => 'Keine Vorlage: Sie schreiben alles selbst.',
+    'class-help' => 'Diesen Feed schreibt eine PHP-Klasse der Website: Es gibt keine Vorlage zum Bearbeiten.',
+    'class-gone' => 'Die Klasse [:driver] ist nicht mehr auf der Website. Builds schlagen fehl, bis sie zurück ist; die letzte Datei wird weiter ausgeliefert.',
     'new-go' => 'Weiter',
     'open' => 'Öffnen',
     'inactive' => 'Aus',

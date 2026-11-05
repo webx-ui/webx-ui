@@ -7,8 +7,10 @@ namespace WebxUi\CatalogFeeds\Http;
 use Illuminate\Contracts\Container\Container;
 use WebxUi\Catalog\Variables\ProductVariables;
 use WebxUi\Catalog\Variables\StockStatuses;
-use WebxUi\CatalogFeeds\Build\FeedContext;
+use WebxUi\CatalogFeeds\Build\FeedFrame;
 use WebxUi\CatalogFeeds\Build\FeedLabels;
+use WebxUi\CatalogFeeds\Formats\FeedFormat;
+use WebxUi\CatalogFeeds\Formats\FeedFormats;
 use WebxUi\CatalogFeeds\Models\Feed;
 use WebxUi\CatalogFeeds\Presets\FeedPreset;
 use WebxUi\CatalogFeeds\Presets\FeedPresets;
@@ -22,7 +24,8 @@ final readonly class FeedMeta
     public function __construct(
         private FeedPresets $presets,
         private ProductVariables $products,
-        private FeedContext $context,
+        private FeedFrame $frame,
+        private FeedFormats $formats,
         private Container $container,
     ) {}
 
@@ -41,6 +44,14 @@ final readonly class FeedMeta
                 'values' => $preset->values(),
             ], $this->presets->all()),
             'formats' => array_keys(Feed::FORMATS),
+            // What a form shows instead of the template (§10).
+            'drivers' => array_map(static fn (FeedFormat $format): array => [
+                'key' => $format->key(),
+                'label' => $format->label(),
+                'class' => $format::class,
+                'extension' => $format->extension(),
+                'content_type' => $format->contentType(),
+            ], $this->formats->all()),
             'label_sources' => FeedLabels::TYPES,
             'currency' => Feed::siteCurrency(),
             // Only the stock satellite knows what can be bought (§5.1): without it there is no option.
@@ -60,7 +71,7 @@ final readonly class FeedMeta
 
         return [
             'item' => array_map($words, $this->products->variables()->variables),
-            'frame' => array_map($words, $this->context->variables()->variables),
+            'frame' => array_map($words, $this->frame->variables()->variables),
         ];
     }
 }

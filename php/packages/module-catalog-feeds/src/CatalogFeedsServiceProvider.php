@@ -21,6 +21,7 @@ use WebxUi\Catalog\Mcp\SatelliteTools;
 use WebxUi\CatalogFeeds\Console\FeedsCommand;
 use WebxUi\CatalogFeeds\Console\FeedsPruneCommand;
 use WebxUi\CatalogFeeds\Doctor\FeedsCheck;
+use WebxUi\CatalogFeeds\Formats\FeedFormats;
 use WebxUi\CatalogFeeds\Mcp\FeedResources;
 use WebxUi\CatalogFeeds\Mcp\FeedTools;
 use WebxUi\CatalogFeeds\Models\Feed;
@@ -67,6 +68,8 @@ class CatalogFeedsServiceProvider extends ServiceProvider
         $this->app->singleton(FeedPresets::class, static fn (): FeedPresets => new FeedPresets([
             new GooglePreset, new JsonPreset, new XmlPreset, new CsvPreset,
         ]));
+
+        $this->app->singleton(FeedFormats::class);
 
         $this->mergeConfigFrom(__DIR__.'/../config/webx-catalog-feeds.php', 'webx-catalog-feeds');
     }

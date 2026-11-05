@@ -14,7 +14,6 @@ use WebxUi\Catalog\Models\Product;
 use WebxUi\Catalog\Variables\ProductVariables;
 use WebxUi\CatalogFeeds\Models\Feed;
 use WebxUi\CatalogFeeds\Models\FeedBuild;
-use WebxUi\Templates\Compiled;
 use WebxUi\Templates\Template;
 use WebxUi\Templates\TemplateError;
 use WebxUi\Templates\Variable;
@@ -73,7 +72,7 @@ final class FeedTrial
     public function __construct(
         private readonly FeedRender $render,
         private readonly FeedSelection $selection,
-        private readonly FeedContext $context,
+        private readonly FeedFrame $frame,
         private readonly FeedFileCheck $check,
         private readonly ProductVariables $variables,
         private readonly Config $config,
@@ -170,7 +169,7 @@ final class FeedTrial
         $build = new FeedBuild;
         $build->forceFill(['written' => count($products), 'state' => ['categories' => array_keys($categories)]]);
 
-        return ['products' => $products, 'frame' => $this->context->values($feed, $build, ['categories']), 'errors' => []];
+        return ['products' => $products, 'frame' => $this->frame->values($feed, $build, ['categories']), 'errors' => []];
     }
 
     /**
@@ -279,7 +278,7 @@ final class FeedTrial
      */
     private function known(string $part): Variables
     {
-        return $part === 'item' ? $this->variables->variables() : $this->context->variables();
+        return $part === 'item' ? $this->variables->variables() : $this->frame->variables();
     }
 
     private function cdata(Feed $feed): ?FeedProblem
@@ -334,15 +333,17 @@ final class FeedTrial
 
         /** @var list<array{text: string, product: int}> $items */
         $items = [];
-        $write = static function (string $text, int $id) use (&$items, $limit, $named): void {
+        $write = static function (array $row, int $id) use (&$items, $item, $limit, $named): void {
+            $text = $item->render($row);
+
             if ($named !== [] || count($items) < $limit) {
                 $items[] = ['text' => $text, 'product' => $id];
             }
         };
 
         $walk = $named === []
-            ? $this->walk($feed, $selected, $item, $names, $write, $limit, $items)
-            : $this->named($feed, $selected, $item, $names, $write, $named);
+            ? $this->walk($feed, $selected, $names, $write, $limit, $items)
+            : $this->named($feed, $selected, $names, $write, $named);
 
         $build = new FeedBuild;
         $build->forceFill(['written' => count($items), 'state' => ['categories' => $walk['categories']]]);
@@ -382,11 +383,11 @@ final class FeedTrial
      *
      * @param  Builder<Product>  $selected
      * @param  list<string>  $names
-     * @param  Closure(string, int): void  $write
+     * @param  Closure(array<string, mixed>, int): void  $write
      * @param  array<array-key, mixed>  $items
      * @return array{warnings: array<string, int>, rejected: array<string, int>, filtered: int, looked_at: int, categories: list<int>, products: list<Named>}
      */
-    private function walk(Feed $feed, Builder $selected, Compiled $item, array $names, Closure $write, int $limit, array &$items): array
+    private function walk(Feed $feed, Builder $selected, array $names, Closure $write, int $limit, array &$items): array
     {
         $tally = ['warnings' => [], 'rejected' => [], 'filtered' => 0, 'looked_at' => 0, 'categories' => [], 'products' => []];
         $after = 0;
@@ -400,7 +401,7 @@ final class FeedTrial
 
             $after = (int) $products->last()->getKey();
             $tally['looked_at'] += $products->count();
-            $tally = $this->add($tally, $this->render->page($feed, $products, $item, $names, $write));
+            $tally = $this->add($tally, $this->render->page($feed, $products, $names, $write));
         }
 
         return $tally;
@@ -411,16 +412,16 @@ final class FeedTrial
      *
      * @param  Builder<Product>  $selected
      * @param  list<string>  $names
-     * @param  Closure(string, int): void  $write
+     * @param  Closure(array<string, mixed>, int): void  $write
      * @param  list<int>  $named
      * @return array{warnings: array<string, int>, rejected: array<string, int>, filtered: int, looked_at: int, categories: list<int>, products: list<Named>}
      */
-    private function named(Feed $feed, Builder $selected, Compiled $item, array $names, Closure $write, array $named): array
+    private function named(Feed $feed, Builder $selected, array $names, Closure $write, array $named): array
     {
         $tally = ['warnings' => [], 'rejected' => [], 'filtered' => 0, 'looked_at' => count($named), 'categories' => [], 'products' => []];
 
         $products = (clone $selected)->with('images')->whereIn('catalog_products.id', $named)->orderBy('catalog_products.id')->get();
-        $page = $this->render->page($feed, $products, $item, $names, $write);
+        $page = $this->render->page($feed, $products, $names, $write);
         $tally = $this->add($tally, $page);
 
         $inside = $products->modelKeys();

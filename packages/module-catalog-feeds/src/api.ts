@@ -23,7 +23,7 @@ import type {
 /** Where the feeds answer under the panel's API (§11 of the feeds spec). */
 export const FEEDS_API = 'catalog/feeds'
 
-/** What a form sends; the currency is the site's and the key is nobody's to write. */
+/** What a form sends; the currency is the site's, the class a preset's, the key nobody's to write. */
 export const FORM_FIELDS = [
   'name',
   'preset',
@@ -43,12 +43,12 @@ export const FORM_FIELDS = [
   'schedule_at',
   'rebuild_on_change',
   'is_active',
-] as const satisfies readonly (keyof FeedValues)[]
+] as const satisfies readonly Exclude<keyof FeedValues, 'driver'>[]
 
 export function formValues(feed: FeedValues): FeedValues {
   const values = Object.fromEntries(FORM_FIELDS.map((field) => [field, feed[field]]))
 
-  return { ...(values as unknown as FeedValues), currency: feed.currency }
+  return { ...(values as unknown as FeedValues), currency: feed.currency, driver: feed.driver }
 }
 
 /** The form without what it only shows. */

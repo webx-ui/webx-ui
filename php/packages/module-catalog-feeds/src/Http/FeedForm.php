@@ -24,7 +24,7 @@ use WebxUi\Localization\Locales;
  * not make a valid file is not kept.
  *
  * The key, the build's columns and `driver` are not among the fields: nothing a form sends reaches
- * them.
+ * them. A `driver` comes with the preset of a registered format, once, when a feed is created.
  */
 final class FeedForm
 {
@@ -81,6 +81,7 @@ final class FeedForm
         $creating = ! $feed->exists;
         $input = $this->cleaned($input);
         $input = $creating ? $this->fromPreset($input) : $input;
+        $driver = $creating ? $this->driver($input) : $feed->driver;
 
         Validator::make($input, [
             'name' => [$creating ? 'required' : 'sometimes', 'string', 'max:120'],
@@ -89,7 +90,7 @@ final class FeedForm
             'locale' => ['sometimes', Rule::in($this->locales->codes())],
             'currency' => ['sometimes', 'nullable', 'string', 'size:3'],
             'head' => ['sometimes', 'nullable', 'string'],
-            'item' => [$creating ? 'required' : 'sometimes', 'string'],
+            'item' => [$creating && $driver === null ? 'required' : 'sometimes', 'string'],
             'foot' => ['sometimes', 'nullable', 'string'],
             'separator' => ['sometimes', 'nullable', 'string', 'max:32'],
             'filter' => ['sometimes', 'array'],
@@ -111,6 +112,7 @@ final class FeedForm
             }
         }
 
+        $feed->driver = $driver;
         $feed->locale ??= $this->locales->defaultCode();
         $feed->currency = $this->currency($input);
 
@@ -169,6 +171,19 @@ final class FeedForm
         }
 
         return [...$preset->values(), 'name' => $preset->name(), ...$input];
+    }
+
+    /**
+     * From the preset itself: the values of a form are merged over it, and may say anything.
+     *
+     * @param  array<string, mixed>  $input
+     */
+    private function driver(array $input): ?string
+    {
+        $key = $input['preset'] ?? null;
+        $driver = is_string($key) ? ($this->presets->find($key)?->values()['driver'] ?? null) : null;
+
+        return is_string($driver) ? $driver : null;
     }
 
     /**

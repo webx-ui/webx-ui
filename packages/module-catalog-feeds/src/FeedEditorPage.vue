@@ -100,6 +100,7 @@ function blankValues(): FeedValues {
     name: '',
     preset: null,
     format: 'xml',
+    driver: null,
     locale: '',
     head: '',
     item: '',

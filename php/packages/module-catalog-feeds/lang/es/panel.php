@@ -17,6 +17,8 @@ return [
     'new-help' => 'Un feed empieza como copia de un preajuste, y cambiar la copia no modifica nada más.',
     'new-empty' => 'Feed vacío',
     'new-empty-help' => 'Sin plantilla: lo escribes todo tú.',
+    'class-help' => 'Este feed lo escribe una clase PHP del sitio: no hay plantilla que editar.',
+    'class-gone' => 'La clase [:driver] ya no está en el sitio. Las generaciones fallan hasta que vuelva; el último archivo se sigue sirviendo.',
     'new-go' => 'Continuar',
     'open' => 'Abrir',
     'inactive' => 'Desactivado',

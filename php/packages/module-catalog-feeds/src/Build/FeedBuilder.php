@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\CatalogFeeds\Build;
 
+use Closure;
 use Illuminate\Contracts\Bus\Dispatcher;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Database\Eloquent\Builder;
@@ -16,9 +17,11 @@ use WebxUi\Catalog\Models\Product;
 use WebxUi\Catalog\Storefront\StorefrontCache;
 use WebxUi\Catalog\Support\RequestMemo;
 use WebxUi\CatalogFeeds\Delivery\FeedFiles;
+use WebxUi\CatalogFeeds\Formats\FeedFormat;
+use WebxUi\CatalogFeeds\Formats\FeedFormats;
+use WebxUi\CatalogFeeds\Formats\FeedWriter;
 use WebxUi\CatalogFeeds\Models\Feed;
 use WebxUi\CatalogFeeds\Models\FeedBuild;
-use WebxUi\Templates\Compiled;
 
 /**
  * A build of a feed (§7 of the feeds spec): pages of products by the cursor, each written to a
@@ -32,6 +35,9 @@ use WebxUi\Templates\Compiled;
  * **A repeated page changes nothing.** The cursor, the counters, the journal's rows and the length
  * of the body are written together, and a job starts by cutting the body to that length, so what a
  * page that died had written is gone and the page is simply done again.
+ *
+ * **A feed with a `driver` goes the same way** (§10): the class writes where a template would be
+ * rendered and reads the file where the format's parser would, and everything else is this code.
  *
  * The temporary files live here, so a build that moves to a worker on another machine does not find
  * its body; a site with several workers keeps them on one (`onOneServer` is the same promise).
@@ -50,6 +56,7 @@ final class FeedBuilder
         private readonly FeedSelection $selection,
         private readonly FeedRender $render,
         private readonly FeedFileCheck $check,
+        private readonly FeedFormats $formats,
         private readonly FeedFiles $files,
         private readonly StorefrontCache $cache,
         private readonly Dispatcher $bus,
@@ -153,14 +160,16 @@ final class FeedBuilder
             ])->save();
         }
 
-        $item = $this->render->item($feed);
+        $format = $this->formats->of($feed);
         $names = $this->render->names($feed);
         $selected = $this->selection->query($feed);
         $body = $this->body($build);
+        $out = new FeedWriter($body, (int) $build->written);
+        $write = $format === null ? $this->template($feed, $out) : $this->byClass($format, $out);
 
         try {
             do {
-                $more = $this->page($build, $feed, $selected, $item, $names, $body);
+                $more = $this->page($build, $feed, $selected, $write, $names, $body, $out);
             } while ($more && microtime(true) < $until);
         } finally {
             fclose($body);
@@ -170,12 +179,45 @@ final class FeedBuilder
     }
 
     /**
+     * @return Closure(array<string, mixed>, int): void
+     */
+    private function template(Feed $feed, FeedWriter $out): Closure
+    {
+        $item = $this->render->item($feed);
+
+        return function (array $row, int $id) use ($feed, $item, $out): void {
+            $text = $item->render($row);
+
+            if ($feed->format === 'json') {
+                $this->check->jsonItem($text, $id);
+            }
+
+            $out->write(($out->written() > 0 ? $feed->separator : '').$text);
+            $out->counted();
+        };
+    }
+
+    /**
+     * What stands between two products is the class's to write, so the feed's separator is not used.
+     *
+     * @return Closure(array<string, mixed>, int): void
+     */
+    private function byClass(FeedFormat $format, FeedWriter $out): Closure
+    {
+        return static function (array $row) use ($format, $out): void {
+            $format->item($out, $row);
+            $out->counted();
+        };
+    }
+
+    /**
      * @param  Builder<Product>  $selected
+     * @param  Closure(array<string, mixed>, int): void  $write
      * @param  list<string>  $names
      * @param  resource  $body
      * @return bool whether a next page may be there
      */
-    private function page(FeedBuild $build, Feed $feed, Builder $selected, Compiled $item, array $names, $body): bool
+    private function page(FeedBuild $build, Feed $feed, Builder $selected, Closure $write, array $names, $body, FeedWriter $out): bool
     {
         $chunk = max(1, (int) $this->config->get('webx-catalog-feeds.chunk', 500));
         $from = (int) $build->cursor;
@@ -186,16 +228,7 @@ final class FeedBuilder
             return false;
         }
 
-        $written = (int) $build->written;
-
-        $page = $this->render->page($feed, $products, $item, $names, function (string $text, int $id) use ($feed, $body, &$written): void {
-            if ($feed->format === 'json') {
-                $this->check->jsonItem($text, $id);
-            }
-
-            fwrite($body, ($written > 0 ? $feed->separator : '').$text);
-            $written++;
-        });
+        $page = $this->render->page($feed, $products, $names, $write);
 
         fflush($body);
         $bytes = (int) ftell($body);
@@ -210,7 +243,7 @@ final class FeedBuilder
             $rejects[] = ['build_id' => $build->id, 'product_id' => $id, 'reason' => $reason];
         }
 
-        $this->record($build, $products, $written, count($page->filtered), $bytes, $page->reasons(), $rejects, $page->warnings, $page->categories, $page->labels);
+        $this->record($build, $products, $out->written(), count($page->filtered), $bytes, $page->reasons(), $rejects, $page->warnings, $page->categories, $page->labels);
         RequestMemo::forget();
 
         return $products->count() === $chunk;
@@ -297,11 +330,23 @@ final class FeedBuilder
 
     private function join(FeedBuild $build, Feed $feed): bool
     {
-        [$head, $foot] = $this->render->frame($feed, $build);
+        $format = $this->formats->of($feed);
 
-        $this->check->frame($feed, $head, $foot, (int) $build->written);
+        if ($format === null) {
+            [$head, $foot] = $this->render->frame($feed, $build);
 
-        if ($this->write($build, $head, $foot) > (int) $this->config->get('webx-catalog-feeds.max_bytes')) {
+            $this->check->frame($feed, $head, $foot, (int) $build->written);
+
+            $open = static fn (FeedWriter $out) => $out->write($head);
+            $close = static fn (FeedWriter $out) => $out->write($foot);
+        } else {
+            $context = $this->render->context($feed, $build);
+
+            $open = static fn (FeedWriter $out) => $format->open($out, $context);
+            $close = static fn (FeedWriter $out) => $format->close($out, $context);
+        }
+
+        if ($this->write($build, $open, $close) > (int) $this->config->get('webx-catalog-feeds.max_bytes')) {
             throw FeedFailure::of('too-large');
         }
 
@@ -311,6 +356,14 @@ final class FeedBuilder
     /** The file, for as long as a job has: a csv of 3 GB takes minutes to read. */
     private function check(FeedBuild $build, Feed $feed, float $seconds): bool
     {
+        $format = $this->formats->of($feed);
+
+        if ($format !== null) {
+            $error = $format->validate($this->temporary($build, 'file'));
+
+            return $error === null ? $this->step($build, self::PUBLISH) : throw FeedFailure::of('file-format', ['reason' => $error]);
+        }
+
         $from = $build->state['checked'] ?? [];
         $reached = $this->check->file($feed, $this->temporary($build, 'file'), $from, microtime(true) + $seconds);
 
@@ -334,16 +387,23 @@ final class FeedBuilder
         return true;
     }
 
-    /** Head, body and foot into one file: a stream, the body may be bigger than the memory. */
-    private function write(FeedBuild $build, string $head, string $foot): int
+    /**
+     * Head, body and foot into one file: a stream, the body may be bigger than the memory.
+     *
+     * @param  Closure(FeedWriter): void  $open
+     * @param  Closure(FeedWriter): void  $close
+     */
+    private function write(FeedBuild $build, Closure $open, Closure $close): int
     {
         $file = fopen($this->temporary($build, 'file'), 'wb') ?: throw new RuntimeException('No room for the file of a feed.');
         $body = fopen($this->temporary($build, 'body'), 'rb') ?: throw new RuntimeException('The body of a feed vanished.');
 
         try {
-            fwrite($file, $head);
+            $out = new FeedWriter($file, (int) $build->written);
+
+            $open($out);
             stream_copy_to_stream($body, $file);
-            fwrite($file, $foot);
+            $close($out);
             fflush($file);
 
             return (int) ftell($file);
@@ -355,10 +415,11 @@ final class FeedBuilder
 
     private function publish(FeedBuild $build, Feed $feed): bool
     {
+        $format = $this->formats->of($feed);
         $path = $this->temporary($build, 'file');
         $bytes = (int) filesize($path);
         $etag = (string) hash_file('sha256', $path);
-        $target = $this->files->path((int) $feed->id, (int) $build->id, Feed::FORMATS[$feed->format]);
+        $target = $this->files->path((int) $feed->id, (int) $build->id, $feed->extension());
         $stream = fopen($path, 'rb') ?: throw new RuntimeException('The file of a feed vanished before it was kept.');
 
         try {
@@ -369,7 +430,7 @@ final class FeedBuilder
             is_resource($stream) && fclose($stream);
         }
 
-        DB::transaction(function () use ($build, $feed, $target, $bytes, $etag): void {
+        DB::transaction(function () use ($build, $feed, $format, $target, $bytes, $etag): void {
             $current = $feed->currentBuild()->first();
             $now = Carbon::now();
 
@@ -377,6 +438,7 @@ final class FeedBuilder
                 'status' => FeedBuild::DONE,
                 'finished_at' => $now,
                 'path' => $target,
+                'content_type' => $format?->contentType(),
                 'bytes' => $bytes,
                 'etag' => $etag,
                 // The same bytes keep their date, so a marketplace is not told anything changed.

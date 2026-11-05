@@ -28,6 +28,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $path
  * @property int|null $bytes
  * @property string|null $etag
+ * @property string|null $content_type
  * @property Carbon|null $content_at
  * @property int|null $cursor
  * @property int|null $body_bytes

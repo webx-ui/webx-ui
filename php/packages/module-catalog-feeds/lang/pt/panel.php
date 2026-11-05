@@ -17,6 +17,8 @@ return [
     'new-help' => 'Um feed começa como cópia de uma predefinição, e alterar a cópia não muda mais nada.',
     'new-empty' => 'Feed vazio',
     'new-empty-help' => 'Sem modelo: escreva tudo você mesmo.',
+    'class-help' => 'Este feed é escrito por uma classe PHP do site: não há modelo para editar.',
+    'class-gone' => 'A classe [:driver] já não está no site. As gerações falham até que volte; o último ficheiro continua a ser servido.',
     'new-go' => 'Continuar',
     'open' => 'Abrir',
     'inactive' => 'Desativado',

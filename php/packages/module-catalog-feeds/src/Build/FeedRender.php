@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use WebxUi\Catalog\Models\Product;
 use WebxUi\Catalog\Variables\ProductVariables;
+use WebxUi\CatalogFeeds\Formats\FeedContext;
+use WebxUi\CatalogFeeds\Formats\FeedFormats;
 use WebxUi\CatalogFeeds\Models\Feed;
 use WebxUi\CatalogFeeds\Models\FeedBuild;
 use WebxUi\Templates\Compiled;
@@ -17,15 +19,16 @@ use WebxUi\Templates\Template;
 use WebxUi\Templates\TemplateError;
 
 /**
- * Products and a template into text, the one code a build and a trial share (§8.1 of the feeds spec):
- * a sample that passes has to mean the file will. Where the text goes is the caller's.
+ * Products into values and a template into text, the one code a build and a trial share (§8.1 of the
+ * feeds spec): a sample that passes has to mean the file will. Where the values go is the caller's.
  */
 final readonly class FeedRender
 {
     public function __construct(
         private FeedVariables $feedVariables,
         private ProductVariables $variables,
-        private FeedContext $context,
+        private FeedFrame $frame,
+        private FeedFormats $formats,
     ) {}
 
     /**
@@ -51,11 +54,7 @@ final readonly class FeedRender
      */
     public function names(Feed $feed): array
     {
-        try {
-            $names = $this->feedVariables->used((string) $feed->item);
-        } catch (TemplateError $error) {
-            throw FeedFailure::of('template', ['reason' => $error->words()]);
-        }
+        $names = $this->asked($feed);
 
         foreach (FeedChecks::COMPANIONS as $name => $companion) {
             if (in_array($name, $names, true)) {
@@ -68,6 +67,32 @@ final readonly class FeedRender
         }
 
         return array_values(array_unique($names));
+    }
+
+    /**
+     * What the template uses, or what the class says it needs. A class reads its values by name, so
+     * one the site does not have is a failure here, not a hole in the file.
+     *
+     * @return list<string>
+     *
+     * @throws FeedFailure
+     */
+    private function asked(Feed $feed): array
+    {
+        $format = $this->formats->of($feed);
+
+        if ($format !== null) {
+            $names = $format->variables();
+            $unknown = array_diff($names, array_keys($this->variables->all()));
+
+            return $unknown === [] ? $names : throw FeedFailure::of('format-variables', ['names' => implode(', ', $unknown)]);
+        }
+
+        try {
+            return $this->feedVariables->used((string) $feed->item);
+        } catch (TemplateError $error) {
+            throw FeedFailure::of('template', ['reason' => $error->words()]);
+        }
     }
 
     /**
@@ -87,16 +112,16 @@ final readonly class FeedRender
     }
 
     /**
-     * A page through the third layer and the template: `$write` gets the text of each product that
-     * goes in, in order.
+     * A page through the third layer: `$write` gets the values of each product that goes in, in
+     * order.
      *
      * @param  Collection<int, Product>  $products  with their galleries
      * @param  list<string>  $names
-     * @param  Closure(string, int): void  $write
+     * @param  Closure(array<string, mixed>, int): void  $write
      *
      * @throws FeedFailure
      */
-    public function page(Feed $feed, Collection $products, Compiled $item, array $names, Closure $write): FeedPage
+    public function page(Feed $feed, Collection $products, array $names, Closure $write): FeedPage
     {
         $rejected = [];
         $filtered = [];
@@ -128,7 +153,7 @@ final readonly class FeedRender
                 continue;
             }
 
-            $write($item->render($row), $id);
+            $write($row, $id);
 
             foreach (FeedChecks::warnings($product, $row, $feed->locale) as $warning) {
                 $warnings[$warning] = ($warnings[$warning] ?? 0) + 1;
@@ -182,9 +207,15 @@ final readonly class FeedRender
             throw FeedFailure::of('template', ['reason' => $error->words()]);
         }
 
-        $values = $this->context->values($feed, $build, $names);
+        $values = $this->frame->values($feed, $build, $names);
 
         return [$this->part((string) $feed->head, $feed, $values), $this->part((string) $feed->foot, $feed, $values)];
+    }
+
+    /** The same words for a class: it does not say which it will use, so all of them. */
+    public function context(Feed $feed, FeedBuild $build): FeedContext
+    {
+        return new FeedContext($feed, $this->frame->values($feed, $build, ['categories']));
     }
 
     /**

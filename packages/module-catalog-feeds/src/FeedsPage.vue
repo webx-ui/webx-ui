@@ -247,7 +247,7 @@ const actions = computed<ScreenAction[]>(() =>
         <span class="wx-catalog-feeds__name">{{ row.name }}</span>
         <wx-text v-if="!row.is_active" size="sm" tone="muted">{{ t('panel.inactive') }}</wx-text>
       </template>
-      <template #cell-format="{ row }">{{ t(`feed.format-${row.format}`) }}</template>
+      <template #cell-format="{ row }">{{ row.driver ?? t(`feed.format-${row.format}`) }}</template>
       <template #cell-products="{ row }">{{ row.last_build?.written ?? '—' }}</template>
       <template #cell-built="{ row }">
         <wx-date v-if="row.last_build?.finished_at" :value="row.last_build.finished_at" />

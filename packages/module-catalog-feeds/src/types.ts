@@ -62,11 +62,12 @@ export interface MpnSource {
   property?: string
 }
 
-/** What the form edits and sends. */
+/** What the form edits and sends; `driver` it only shows, a preset decides it (§10). */
 export interface FeedValues {
   name: string
   preset: string | null
   format: FeedFormat
+  driver: string | null
   locale: string
   currency?: string
   head: string | null
@@ -108,9 +109,19 @@ export interface FeedPreset {
   values: Partial<FeedValues>
 }
 
+/** A format written by a PHP class of the site (§10). */
+export interface FeedDriver {
+  key: string
+  label: string
+  class: string
+  extension: string
+  content_type: string
+}
+
 export interface FeedsMeta {
   presets: FeedPreset[]
   formats: FeedFormat[]
+  drivers: FeedDriver[]
   label_sources: string[]
   /** The site's: a feed has no other (§8.1). */
   currency: string
