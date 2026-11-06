@@ -55,7 +55,8 @@ not appear.
 
 ## Request form
 
-Requests arrive in the Inbox with the chosen configuration. With no form, they have nowhere to go.
+Requests arrive in the Inbox with the chosen configuration. With no form, or with the form switched
+off in the Inbox, buyers see no request button and cannot send a request.
 
 ## Give a discount
 
