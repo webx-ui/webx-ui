@@ -14,7 +14,9 @@ use WebxUi\Admin\Screens\ScreenRegistry;
  * field belongs to one package. `webx:help --check` on a real site is not, because a project may
  * write one language and may describe a field of a package over it (§2.4).
  *
- * A screen is judged with everything allowed, so a field behind a permission counts.
+ * A screen is judged with everything allowed, so a field behind a permission counts. What must be
+ * described is what this site has; what may be described is what any site has, so a text stays
+ * when a setting takes its field away, and a text of no field at all is still red (§2.3).
  */
 final readonly class HelpAudit
 {
@@ -301,17 +303,14 @@ final readonly class HelpAudit
         }
 
         $problems = [];
-        $ids = [];
 
         foreach ($this->fields($page) as $field) {
-            $ids[] = $field['id'];
-
             if ($field['body'] === null && ! array_key_exists("{$name}#{$field['id']}", $pending)) {
                 $problems[] = "{$name}: the field [{$field['id']}] is not described";
             }
         }
 
-        foreach (array_diff(array_map('strval', array_keys($page->fields)), $ids) as $id) {
+        foreach (array_diff(array_map('strval', array_keys($page->fields)), $this->builder->idsOnAnySite($page)) as $id) {
             $problems[] = "{$name}: [{$id}] is described, and the screen has no such field";
         }
 
@@ -434,8 +433,8 @@ final readonly class HelpAudit
         foreach ($this->screens->names() as $name) {
             $page = $this->help->page($name, HelpRegistry::FALLBACK);
 
-            foreach ($page === null ? [] : $this->fields($page) as $field) {
-                $ids[$field['id']] = true;
+            foreach ($page === null ? [] : $this->builder->idsOnAnySite($page) as $id) {
+                $ids[$id] = true;
             }
         }
 

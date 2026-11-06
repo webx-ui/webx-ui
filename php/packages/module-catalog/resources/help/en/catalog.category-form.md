@@ -56,6 +56,12 @@ Printed on the category page, above the products. Search engines value it: a pag
 list says little about itself. Also used as the description in search results until the «SEO» tab
 says otherwise.
 
+## facets
+
+Decides what buyers can narrow the list by in this category: a filter by voltage makes no sense
+among tyres. Until you switch on your own setting, the category takes the setting of the nearest one
+above it. A filter added to the shop later stays hidden here until you turn it on.
+
 ## seo
 
 How the category looks in search results and when a link to it is shared. Left empty, the name, the

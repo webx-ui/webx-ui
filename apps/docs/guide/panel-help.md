@@ -121,7 +121,8 @@ It fails on:
 
 - a screen with no title or `# about` in `en`;
 - a field, a row of a repeater included, with no description in `en`;
-- a description of an `id` the screen does not have;
+- a description of an `id` the screen has on no site: a field that a setting of the site takes away
+  stays described, and the panel simply does not show the text where the field is off;
 - one `id` described by two packages;
 - `ru` or `uk` without the file, or with other fields, `guide` or `include`;
 - a description that repeats the hint;

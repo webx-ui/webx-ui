@@ -124,6 +124,29 @@ final readonly class HelpBuilder
     }
 
     /**
+     * The `id` of every field the screen of this page has on any site: what a setting took away
+     * here counts, what never was a field does not (§2.3).
+     *
+     * @return list<string>
+     */
+    public function idsOnAnySite(HelpPage $page): array
+    {
+        $ids = [];
+
+        foreach ($this->screens->has($page->key) ? $this->screens->stages($page->key) : [] as $tree) {
+            $groups = [];
+
+            $this->collect($tree, $page, self::LOOSE, null, $groups, false);
+
+            foreach ($groups as $group) {
+                array_push($ids, ...array_column($group['fields'], 'id'));
+            }
+        }
+
+        return array_values(array_unique($ids));
+    }
+
+    /**
      * @param  callable(string): bool  $can
      * @param  callable(string): string  $translate
      * @return list<HelpGroup>

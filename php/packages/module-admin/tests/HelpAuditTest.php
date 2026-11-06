@@ -148,6 +148,44 @@ final class HelpAuditTest extends TestCase
     }
 
     #[Test]
+    public function a_description_of_a_field_a_setting_took_away_is_healthy(): void
+    {
+        Screens::extend('shop.item-form', [['op' => 'remove', 'target' => 'code']]);
+
+        $this->assertSame([], $this->problems());
+    }
+
+    #[Test]
+    public function a_field_a_patch_added_and_a_later_one_took_away_may_stay_described(): void
+    {
+        Screens::extend('shop.item-form', [
+            ['op' => 'add', 'target' => 'lines', 'node' => ['id' => 'line-zip', 'type' => 'wx-input', 'name' => 'zip', 'label' => 'Zip']],
+        ]);
+        Screens::extend('shop.item-form', [['op' => 'remove', 'target' => 'line-zip']]);
+        $this->everyLanguage(['## code' => "## line-zip\n\nAdded and taken away.\n\n## code"]);
+
+        $this->assertSame([], $this->problems());
+    }
+
+    #[Test]
+    public function a_removed_node_that_was_no_field_is_red_when_described(): void
+    {
+        Screens::extend('shop.item-form', [['op' => 'remove', 'target' => 'lines']]);
+        $this->everyLanguage(['## code' => "## lines\n\nNot a field.\n\n## code"]);
+
+        $this->assertSame(['shop.item-form: [lines] is described, and the screen has no such field'], $this->problems());
+    }
+
+    #[Test]
+    public function a_field_on_the_screen_must_be_described_whatever_was_taken_away(): void
+    {
+        Screens::extend('shop.item-form', [['op' => 'remove', 'target' => 'code']]);
+        $this->everyLanguage(["## title\n\nWhat the buyer sees.\n\n" => '']);
+
+        $this->assertSame(['shop.item-form: the field [title] is not described'], $this->problems());
+    }
+
+    #[Test]
     public function one_id_described_by_two_packages_is_red(): void
     {
         foreach (HelpAudit::LANGUAGES as $language) {
@@ -317,6 +355,16 @@ final class HelpAuditTest extends TestCase
         $this->artisan('webx:help', ['--check' => true])
             ->expectsOutputToContain('_fields: [nothing-like-this] is described, and no screen has such a field')
             ->assertExitCode(1);
+    }
+
+    #[Test]
+    public function a_shared_description_of_a_field_a_setting_took_away_is_healthy(): void
+    {
+        Screens::extend('shop.item-form', [['op' => 'remove', 'target' => 'code']]);
+        $this->everyLanguage(["## code\n\nOld links stop working if it changes.\n\n" => '']);
+        $this->write('owner', 'en', '_fields', "# fields\n\n## code\n\nShared.\n");
+
+        $this->assertSame([], $this->problems(strict: false));
     }
 
     #[Test]
