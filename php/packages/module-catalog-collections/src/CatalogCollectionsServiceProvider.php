@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\CatalogCollections;
 
 use Illuminate\Contracts\Events\Dispatcher;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\History\HistoryTypes;
 use WebxUi\Admin\Snapshots\SnapshotTables;
@@ -22,7 +23,7 @@ use WebxUi\CatalogCollections\Storefront\LiveCollections;
 /**
  * Product collections of the catalogue (`WEBX_UI_CATALOG_COLLECTIONS.md`): a satellite that knows
  * only the core. What it registers so far: the tables, what moves between stands, the journal, what
- * a collection holds and its cache.
+ * a collection holds, its cache and the tag that prints it.
  */
 class CatalogCollectionsServiceProvider extends ServiceProvider
 {
@@ -54,6 +55,9 @@ class CatalogCollectionsServiceProvider extends ServiceProvider
     {
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-catalog-collections');
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-catalog-collections');
+
+        Blade::componentNamespace('WebxUi\\CatalogCollections\\View\\Components', 'webx-catalog-collections');
 
         $this->registerHistory();
         $this->registerCache();
@@ -71,6 +75,10 @@ class CatalogCollectionsServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../lang' => lang_path('vendor/webx-catalog-collections'),
         ], 'webx-catalog-collections-lang');
+
+        $this->publishes([
+            __DIR__.'/../resources/views' => resource_path('views/vendor/webx-catalog-collections'),
+        ], 'webx-catalog-collections-views');
     }
 
     /**

@@ -4,8 +4,8 @@ Product collections for the catalogue. A collection is a named block of products
 together once, by hand or by a filter. It has no address of its own: for a page with an address and
 SEO, use `webx-ui/module-catalog-landings`. This package is a satellite of `webx-ui/module-catalog`;
 for the filter, its facets and the product card, read the core's `AGENTS.md`. The package is being
-built in stages: so far it holds the tables, the model and what a collection contains, and it
-prints nothing on the site.
+built in stages: so far it holds the tables, the model, what a collection contains and the tag that
+prints it; the block, the shortcode and the panel come later.
 
 ## What it owns
 
@@ -26,6 +26,11 @@ prints nothing on the site.
   can only lower the collection's own.
 - **Cache group** `catalog-collections`, moved by `ProductCollection`. The ids also depend on
   `catalog`, so a product, its price or the flag of a status needs nothing here.
+- **Tag** `<x-webx-catalog-collections::collection key="popular" />`
+  (`View\Components\Collection`, view `webx-catalog-collections::collection`): `view` is `grid` or
+  `carousel`, `limit` can only lower the collection's own, `title` is empty for the collection's
+  title and `-` for none. Off, in the bin, unknown or empty prints nothing. The card is
+  `webx-catalog::card`.
 - **Repairs** `Catalog\CollectionRepairs` listens to `FacetValueRetargeted`: a merge moves the set,
   a deletion marks `attention`, and a filter's set left empty turns the collection off.
 
@@ -38,6 +43,17 @@ prints nothing on the site.
 | Other words in the refusals   | `php artisan vendor:publish --tag=webx-catalog-collections-lang`   |
 | Another way of filling one    | a `CollectionResolver` in `CollectionResolvers`, and its `source`  |
 | Another preset                | `CollectionPresets::register()`                                    |
+| Another markup                | `php artisan vendor:publish --tag=webx-catalog-collections-views`  |
+| Another card                  | override `webx-catalog::card`: it changes in the listing too       |
+
+### Classes
+
+- `webx-catalog-collection` — the section; `webx-catalog-collection--<view>` — `grid` or `carousel`.
+- `webx-catalog-collection__head` — the heading and the link; `webx-catalog-collection__title`,
+  `webx-catalog-collection__all`.
+- `webx-catalog-collection__grid` — the list of the grid, beside the catalogue's `webx-catalog-grid`.
+  `--webx-catalog-collection-card` is the narrowest card.
+- `webx-catalog-collection__item` — a place for a card, in the grid and in the carousel.
 
 ## Do not
 
@@ -62,6 +78,8 @@ prints nothing on the site.
   and `link`.
 - `app(CollectionProducts::class)->ids($collection)` gives the ids; unpublish one of the products and
   it is gone from the next call.
+- Put `<x-webx-catalog-collections::collection key="new-arrivals" />` in a template: the cards print;
+  turn the collection off and nothing does, not even the heading.
 - `vendor/bin/phpunit packages/module-catalog-collections/tests` in the monorepo's `php/`.
 
 ## Read more

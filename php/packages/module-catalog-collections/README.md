@@ -6,8 +6,8 @@ filter. A satellite of `webx-ui/module-catalog`.
 
 Specification: `docs/architecture/WEBX_UI_CATALOG_COLLECTIONS.md` in the monorepo.
 
-This package is being built in stages. So far a collection can be made in code and says which
-products it holds. It does not print anything on the site yet and has no section in the panel.
+This package is being built in stages. So far a collection can be made in code, says which products
+it holds and prints with a tag. It has no block, no shortcode and no section in the panel yet.
 
 ## Requirements
 
@@ -47,6 +47,21 @@ The model refuses what it cannot keep with a `ValidationException` under the fie
 
 The hand-picked list is `$collection->products()`, in the order of its `position`. A product in the
 bin keeps its row and is back in its place when restored.
+
+## On the site
+
+```blade
+<x-webx-catalog-collections::collection key="popular" />
+<x-webx-catalog-collections::collection key="new" view="carousel" :limit="4" title="-" />
+```
+
+- `key` is required. `view` is `grid` or `carousel`; anything else is dropped for the collection's own.
+- `limit` can only lower the collection's own limit.
+- `title` is the heading: empty is the collection's title, `-` is none.
+
+A collection that is off, in the bin, unknown or left empty prints nothing, not even the heading. The
+cards are the catalogue's `webx-catalog::card`, and the carousel is `<x-webx-slider>`. A theme gets the
+base look from `resources/theme/catalog-collections.css` after `php artisan webx:theme:sync`.
 
 ## What a collection holds
 
