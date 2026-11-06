@@ -130,6 +130,9 @@ class ConfiguratorServiceProvider extends ServiceProvider
             return;
         }
 
+        // Apart from resources/help: on a site with no catalogue this text would have no screen.
+        $this->app->make(HelpRegistry::class)->directory(__DIR__.'/../resources/help-catalog');
+
         $this->app->make(ProductParts::class)->register(new ConfiguratorPart);
         $this->app->make(StorefrontParts::class)->register($this->app->make(OpenConfiguratorPart::class));
         $this->app->make(RelationTargets::class)->register(new ProductTarget);

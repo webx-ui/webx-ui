@@ -97,6 +97,11 @@ A package that adds a field to somebody else's form describes it itself, in a fi
 that form: `module-catalog-stock/resources/help/en/catalog.product-form.md`, with `# fields` and,
 if it has something to say, `# howto`. The title and `# about` stay with the owner of the screen.
 
+A package that works without the owner of the form keeps such a file in a folder of its own and
+registers it only when the owner is there: `module-configurator` has `resources/help-catalog`, read
+when the catalogue is installed. In `resources/help` the file would have no screen on a site without
+it, and `webx:help --check` would say that nobody owns the key.
+
 A package that adds the same `id` to many forms writes it once, in `_fields.md` of the language
 folder. A file of the screen is stronger than `_fields.md`.
 

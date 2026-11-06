@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Remote\HostResolver;
+use WebxUi\Admin\Testing\AssertsHelp;
 use WebxUi\Admin\Testing\FakeHostResolver;
 use WebxUi\Catalog\CatalogServiceProvider;
 use WebxUi\Catalog\Models\Category;
@@ -33,6 +34,8 @@ use WebxUi\Widgets\WidgetsServiceProvider;
  */
 final class CatalogLinkTest extends TestCase
 {
+    use AssertsHelp;
+
     /**
      * @param  Application  $app
      * @return list<class-string>
@@ -65,6 +68,12 @@ final class CatalogLinkTest extends TestCase
         parent::setUp();
 
         Storage::fake(ProductImage::disk());
+    }
+
+    #[Test]
+    public function the_fields_it_adds_to_the_product_form_are_explained(): void
+    {
+        $this->assertScreensHaveHelp();
     }
 
     #[Test]
