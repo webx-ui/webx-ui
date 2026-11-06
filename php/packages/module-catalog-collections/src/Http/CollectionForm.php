@@ -84,9 +84,10 @@ final class CollectionForm
         Validator::make($input, [
             'category_id' => ['nullable', 'integer'],
             'filters' => ['nullable', 'array'],
-            'on_sale' => ['sometimes', 'boolean'],
-            'only_purchasable' => ['sometimes', 'boolean'],
-            'is_enabled' => ['sometimes', 'boolean'],
+            // `filled`: the validator skips `boolean` on a blank string, which then reaches the column.
+            'on_sale' => ['sometimes', 'filled', 'boolean'],
+            'only_purchasable' => ['sometimes', 'filled', 'boolean'],
+            'is_enabled' => ['sometimes', 'filled', 'boolean'],
             'sort' => ['nullable', 'string', 'max:32'],
             'source' => ['sometimes', 'string', 'max:16'],
             'view' => ['sometimes', 'string', 'max:16'],

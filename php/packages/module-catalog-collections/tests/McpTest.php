@@ -284,6 +284,20 @@ final class McpTest extends TestCase
     }
 
     #[Test]
+    public function a_switch_takes_what_a_switch_has_always_taken(): void
+    {
+        $this->manual('sale', ['source' => ProductCollection::FILTER]);
+
+        foreach ([[true, true], [false, false], [1, true], [0, false], ['1', true], ['0', false]] as [$sent, $kept]) {
+            foreach (['on_sale', 'only_purchasable', 'is_enabled'] as $field) {
+                $this->agent('catalog_collections_update', ['collection' => 'sale', 'values' => [$field => $sent]])->assertOk();
+
+                $this->assertSame($kept, ProductCollection::query()->where('key', 'sale')->sole()->{$field}, $field);
+            }
+        }
+    }
+
+    #[Test]
     public function every_refusal_is_a_failure_an_agent_can_read(): void
     {
         $this->manual('picks');
@@ -412,6 +426,22 @@ final class McpTest extends TestCase
             $refusals[] = ['catalog_collections_create', ['values' => ['title' => 'A', 'source' => 'filter', 'set' => $set]], $says];
             $refusals[] = ['catalog_collections_update', ['collection' => 'sale', 'values' => ['set' => $set]], $says];
             $refusals[] = ['catalog_collections_preview', ['values' => ['source' => 'filter', 'set' => $set]], $says];
+        }
+
+        // A blank switch: the `boolean` rule skips it, and MariaDB then refuses the row with an SQL
+        // error while sqlite keeps it and reads "   " as true.
+        foreach (['on_sale', 'only_purchasable', 'is_enabled'] as $field) {
+            foreach (['', '   '] as $blank) {
+                $refusals[] = ['catalog_collections_create', ['values' => ['title' => 'A', 'source' => 'filter', $field => $blank]], "{$field}:"];
+                $refusals[] = ['catalog_collections_create', ['values' => ['title' => 'A', 'source' => 'filter', $field => $blank], 'dry_run' => true], "{$field}:"];
+                $refusals[] = ['catalog_collections_update', ['collection' => 'sale', 'values' => [$field => $blank]], "{$field}:"];
+                $refusals[] = ['catalog_collections_update', ['collection' => 'sale', 'values' => [$field => $blank], 'dry_run' => true], "{$field}:"];
+
+                // `is_enabled` changes nothing in a preview, which leaves it out like the title.
+                if ($field !== 'is_enabled') {
+                    $refusals[] = ['catalog_collections_preview', ['values' => ['source' => 'filter', $field => $blank]], "{$field}:"];
+                }
+            }
         }
 
         foreach ($refusals as [$tool, $arguments, $says]) {

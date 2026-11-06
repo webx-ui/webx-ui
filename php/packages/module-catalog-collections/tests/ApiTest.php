@@ -173,6 +173,22 @@ final class ApiTest extends TestCase
     }
 
     #[Test]
+    public function a_blank_switch_is_refused_under_its_field(): void
+    {
+        $manager = $this->manager();
+
+        foreach (['on_sale', 'only_purchasable', 'is_enabled'] as $field) {
+            foreach (['', '   '] as $blank) {
+                $this->actingAs($manager, 'cms')->postJson($this->api(), ['title' => 'Picks', 'source' => 'filter', $field => $blank])
+                    ->assertUnprocessable()
+                    ->assertJsonValidationErrors($field);
+            }
+        }
+
+        $this->assertSame(0, ProductCollection::query()->count());
+    }
+
+    #[Test]
     public function the_limit_names_the_ceiling_in_its_refusal(): void
     {
         $this->actingAs($this->manager(), 'cms')->postJson($this->api(), ['title' => 'Picks', 'limit' => 49])
