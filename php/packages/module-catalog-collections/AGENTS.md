@@ -50,6 +50,11 @@ come later.
 - **Repairs** `Catalog\CollectionRepairs` listens to `FacetValueRetargeted`: a merge moves the set,
   a deletion marks `attention`, and a filter's set left empty turns the collection off.
 
+### Permissions
+
+None of its own: `catalog.view` reads the section and asks the preview, `catalog.manage` writes and
+sends to the bin. The section is visible to whoever holds either (`visibleWith()`).
+
 ## Change it without forking
 
 | You want                      | Do this                                                            |
@@ -71,11 +76,6 @@ come later.
 - `webx-catalog-collection__grid` — the list of the grid, beside the catalogue's `webx-catalog-grid`.
   `--webx-catalog-collection-card` is the narrowest card.
 - `webx-catalog-collection__item` — a place for a card, in the grid and in the carousel.
-
-### Permissions
-
-None of its own: `catalog.view` reads the section and asks the preview, `catalog.manage` writes and
-sends to the bin. The section is visible to whoever holds either (`visibleWith()`).
 
 ## Do not
 
