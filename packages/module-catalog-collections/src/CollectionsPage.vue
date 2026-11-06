@@ -190,7 +190,8 @@ const columns = computed<TableColumn<CollectionRow>[]>(() => [
     key: 'updated_at',
     label: inBin.value ? t('panel.column-deleted') : t('panel.column-updated'),
     width: 130,
-    hideBelow: 1000,
+    // When it was thrown away is what tells two rows of the bin apart; an update date is a detail.
+    hideBelow: inBin.value ? 700 : 1000,
   },
   { key: 'actions', label: '', width: rowMenuWidth, align: 'right' },
 ])

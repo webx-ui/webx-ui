@@ -93,6 +93,22 @@ final class ApiTest extends TestCase
     }
 
     #[Test]
+    public function the_bin_opens_on_what_was_thrown_away_last(): void
+    {
+        foreach (['first', 'second'] as $key) {
+            ProductCollection::query()->create(['title' => $key, 'key' => $key]);
+        }
+
+        ProductCollection::query()->where('key', 'second')->first()?->delete();
+        $this->travel(1)->minutes();
+        ProductCollection::query()->where('key', 'first')->first()?->delete();
+
+        $rows = $this->actingAs($this->manager(), 'cms')->getJson($this->api().'?trashed=1')->assertOk()->json('data');
+
+        $this->assertSame(['first', 'second'], array_column($rows, 'key'));
+    }
+
+    #[Test]
     public function the_list_costs_the_same_for_two_rows_and_for_twenty(): void
     {
         $product = $this->product('Camera');

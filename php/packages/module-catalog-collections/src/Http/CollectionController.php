@@ -40,8 +40,12 @@ final class CollectionController
             'per_page' => ['nullable', 'integer', 'min:1', 'max:200'],
         ]);
 
-        $query = $request->boolean('trashed') ? ProductCollection::onlyTrashed() : ProductCollection::query();
-        $query->withCount('products')->orderBy('id');
+        // The bin is a list of things to bring back, and the last thing thrown away is the one
+        // somebody is looking for.
+        $query = $request->boolean('trashed')
+            ? ProductCollection::onlyTrashed()->orderByDesc('deleted_at')->orderByDesc('id')
+            : ProductCollection::query()->orderBy('id');
+        $query->withCount('products');
 
         $term = trim((string) ($validated['q'] ?? ''));
 
