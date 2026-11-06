@@ -422,4 +422,17 @@ final class ProductCollectionTest extends TestCase
 
         $this->assertSame('popular-products', $this->collection()->key);
     }
+
+    #[Test]
+    public function the_index_of_the_old_price_rolls_back_and_comes_up_again(): void
+    {
+        $migration = require dirname(__DIR__).'/database/migrations/2026_01_06_000001_add_old_price_index_to_catalog_products_table.php';
+        $this->assertTrue(Schema::hasIndex('catalog_products', ['old_price']));
+
+        $migration->down();
+        $this->assertFalse(Schema::hasIndex('catalog_products', ['old_price']));
+
+        $migration->up();
+        $this->assertTrue(Schema::hasIndex('catalog_products', ['old_price']));
+    }
 }

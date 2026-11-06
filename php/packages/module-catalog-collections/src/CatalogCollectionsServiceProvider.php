@@ -4,14 +4,25 @@ declare(strict_types=1);
 
 namespace WebxUi\CatalogCollections;
 
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\History\HistoryTypes;
 use WebxUi\Admin\Snapshots\SnapshotTables;
+use WebxUi\Cache\CacheGroups;
+use WebxUi\Catalog\Events\FacetValueRetargeted;
+use WebxUi\CatalogCollections\Catalog\CollectionPreset;
+use WebxUi\CatalogCollections\Catalog\CollectionPresets;
+use WebxUi\CatalogCollections\Catalog\CollectionRepairs;
 use WebxUi\CatalogCollections\Models\ProductCollection;
+use WebxUi\CatalogCollections\Resolvers\CollectionResolvers;
+use WebxUi\CatalogCollections\Resolvers\FilterResolver;
+use WebxUi\CatalogCollections\Resolvers\ManualResolver;
+use WebxUi\CatalogCollections\Storefront\LiveCollections;
 
 /**
  * Product collections of the catalogue (`WEBX_UI_CATALOG_COLLECTIONS.md`): a satellite that knows
- * only the core. What it registers so far: the tables, what moves between stands and the journal.
+ * only the core. What it registers so far: the tables, what moves between stands, the journal, what
+ * a collection holds and its cache.
  */
 class CatalogCollectionsServiceProvider extends ServiceProvider
 {
@@ -23,6 +34,20 @@ class CatalogCollectionsServiceProvider extends ServiceProvider
         });
 
         $this->mergeConfigFrom(__DIR__.'/../config/webx-catalog-collections.php', 'webx-catalog-collections');
+
+        $this->app->singleton(CollectionResolvers::class);
+        $this->app->singleton(CollectionPresets::class);
+
+        $this->callAfterResolving(CollectionResolvers::class, function (CollectionResolvers $resolvers): void {
+            $resolvers->register($this->app->make(ManualResolver::class));
+            $resolvers->register($this->app->make(FilterResolver::class));
+        });
+
+        $this->callAfterResolving(CollectionPresets::class, static function (CollectionPresets $presets): void {
+            $presets->register(new CollectionPreset(CollectionPresets::NEW, sort: 'new'));
+            $presets->register(new CollectionPreset(CollectionPresets::ON_SALE, onSale: true));
+            $presets->register(new CollectionPreset(CollectionPresets::LABEL, facet: 'label'));
+        });
     }
 
     public function boot(): void
@@ -31,6 +56,9 @@ class CatalogCollectionsServiceProvider extends ServiceProvider
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-catalog-collections');
 
         $this->registerHistory();
+        $this->registerCache();
+
+        $this->app->make(Dispatcher::class)->listen(FacetValueRetargeted::class, [CollectionRepairs::class, 'handle']);
 
         if (! $this->app->runningInConsole()) {
             return;
@@ -43,6 +71,17 @@ class CatalogCollectionsServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../lang' => lang_path('vendor/webx-catalog-collections'),
         ], 'webx-catalog-collections-lang');
+    }
+
+    /**
+     * A group of its own and not `StorefrontCache::watch()`: saving a collection must not forget
+     * the filter counts of the whole catalogue (§5.5).
+     */
+    private function registerCache(): void
+    {
+        $groups = $this->app->make(CacheGroups::class);
+        $groups->declare(LiveCollections::GROUP, 'webx-catalog-collections::module.title');
+        $groups->bumpOn(LiveCollections::GROUP, ProductCollection::class);
     }
 
     /**

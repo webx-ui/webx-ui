@@ -12,6 +12,7 @@ use WebxUi\Auth\AuthServiceProvider;
 use WebxUi\Catalog\CatalogServiceProvider;
 use WebxUi\Catalog\Models\Category;
 use WebxUi\Catalog\Models\Product;
+use WebxUi\Catalog\Rendering\ProductQuery;
 use WebxUi\CatalogCollections\CatalogCollectionsServiceProvider;
 use WebxUi\Localization\LocalizationServiceProvider;
 use WebxUi\Mcp\McpServiceProvider;
@@ -29,6 +30,18 @@ use WebxUi\Widgets\WidgetsServiceProvider;
 abstract class TestCase extends Orchestra
 {
     use MigratesOnce;
+
+    /**
+     * Macros are static and outlive the test that booted a satellite: `inStock` left by one would
+     * ask for a table this schema does not have. Before the boot, so a case with the satellite
+     * gets its macro back.
+     */
+    protected function setUp(): void
+    {
+        ProductQuery::flushMacros();
+
+        parent::setUp();
+    }
 
     /**
      * @param  Application  $app
@@ -70,7 +83,10 @@ abstract class TestCase extends Orchestra
         $app['config']->set('database.connections.testing.foreign_key_constraints', true);
     }
 
-    protected function product(string $name): Product
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
+    protected function product(string $name, array $attributes = []): Product
     {
         $category = new Category(['name' => 'Parts', 'slug' => 'parts-'.uniqid(), 'is_published' => true]);
         $category->saveAsRoot();
@@ -80,6 +96,7 @@ abstract class TestCase extends Orchestra
             'category_id' => $category->id,
             'is_published' => true,
             'price' => 10,
+            ...$attributes,
         ])->refresh();
     }
 }

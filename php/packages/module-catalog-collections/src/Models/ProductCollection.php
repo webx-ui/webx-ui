@@ -88,6 +88,9 @@ class ProductCollection extends Model
     /** The ways of printing one (§5.4). */
     public const VIEWS = [self::GRID, self::CAROUSEL];
 
+    /** `attention`: a value of the set was deleted (§3.5). Saving the form clears it. */
+    public const VALUE_DELETED = 'value-deleted';
+
     /** The fields the journal names in words. */
     public const HISTORY = [
         'key', 'title', 'source', 'category_id', 'filters', 'on_sale', 'sort', 'only_purchasable',
@@ -296,9 +299,17 @@ class ProductCollection extends Model
         }
     }
 
-    /** The link as `wx-link` keeps it, by the same reading as a block's, or nothing. */
+    /**
+     * The link as `wx-link` keeps it, by the same reading as a block's, or nothing. Checked when it
+     * is written: a link to a module that has gone since must not stop a repair of the set, which
+     * would take the deletion of a brand down with it.
+     */
     private function settleLink(): void
     {
+        if ($this->exists && ! $this->isDirty('link')) {
+            return;
+        }
+
         $type = Container::getInstance()->make(LinkType::class);
         $checks = Validator::make(['link' => $this->link], ['link' => $type->rules([])]);
 
