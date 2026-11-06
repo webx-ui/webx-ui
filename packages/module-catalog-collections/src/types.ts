@@ -18,12 +18,28 @@ export interface CollectionRow {
   view: CollectionView
   limit: number
   products_count: number
+  /** The blocks that place it; `null` — the site has no blocks, so nothing is counted. */
+  places: number | null
   is_enabled: boolean
   attention: CollectionAttention | null
   deleted_at: string | null
   updated_at: string | null
   /** A row of `WxTable`, which reads cells by key. */
   [key: string]: unknown
+}
+
+/** A page or a region whose content places a collection (§6.4). */
+export interface CollectionPlace {
+  model: string
+  id: number | string
+  title: string | null
+  published: boolean
+  /** In what the site shows. */
+  live: boolean
+  /** In the draft. */
+  draft: boolean
+  url: string | null
+  region: string | null
 }
 
 /** A hand-picked product, named. */

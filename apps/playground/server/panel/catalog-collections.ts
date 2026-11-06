@@ -130,6 +130,30 @@ function presetOf(record: CollectionRecord): string | null {
   return found?.key ?? null
 }
 
+/** `CollectionUsage`: the blocks that place a collection, by key. */
+const PLACES: Record<string, Array<Record<string, unknown>>> = {
+  'new-arrivals': [
+    place(1, 'Home', { url: '/' }),
+    place(2, 'About the shop', { live: false, draft: true, url: '/about' }),
+    place(3, 'Region: Footer', { model: 'WebxUi\\Blocks\\Models\\Region', region: 'footer' }),
+  ],
+  'for-beginners': [place(4, 'Spring sale', { published: false })],
+}
+
+function place(id: number, title: string, rest: Record<string, unknown> = {}) {
+  return {
+    model: 'App\\Models\\Page',
+    id,
+    title,
+    published: true,
+    live: true,
+    draft: false,
+    url: null,
+    region: null,
+    ...rest,
+  }
+}
+
 function row(record: CollectionRecord) {
   return {
     id: record.id,
@@ -140,6 +164,7 @@ function row(record: CollectionRecord) {
     view: record.view,
     limit: record.limit,
     products_count: record.products.length,
+    places: PLACES[record.key]?.length ?? 0,
     is_enabled: record.is_enabled,
     attention: record.attention,
     deleted_at: record.deleted_at,
@@ -393,6 +418,10 @@ export function registerCollections(on: On, fail: Fail, line: Line): void {
 
   on('GET', '/catalog/collections/(\\d+)', ({ params, locale }) => ({
     data: detail(find(params[0]!, true), locale),
+  }))
+
+  on('GET', '/catalog/collections/(\\d+)/usage', ({ params }) => ({
+    data: PLACES[find(params[0]!, true).key] ?? [],
   }))
 
   on('POST', '/catalog/collections', ({ body, locale }) => {

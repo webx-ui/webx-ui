@@ -38,6 +38,16 @@ final class ApiTest extends TestCase
     }
 
     #[Test]
+    public function without_blocks_nothing_is_counted_which_is_not_the_same_as_none(): void
+    {
+        $collection = ProductCollection::query()->create(['title' => 'Picks', 'key' => 'picks']);
+        $user = $this->manager();
+
+        $this->actingAs($user, 'cms')->getJson($this->api())->assertOk()->assertJsonPath('data.0.places', null);
+        $this->actingAs($user, 'cms')->getJson($this->api($collection->id.'/usage'))->assertOk()->assertExactJson(['data' => []]);
+    }
+
+    #[Test]
     public function a_collection_is_created_with_its_list_in_order_and_read_back(): void
     {
         $first = $this->product('Camera');

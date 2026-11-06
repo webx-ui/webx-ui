@@ -51,4 +51,10 @@ return [
     'reason-no-language' => 'Keine Adresse in dieser Sprache',
     'reason-status' => 'Nicht kaufbar: :status',
     'reason-status-unnamed' => 'Nicht kaufbar',
+    'column-places' => 'Verwendung',
+    'places' => 'Stellen: :count',
+    'places-title' => 'Wo sie eingesetzt ist',
+    'places-note' => 'Gezählt werden Blöcke und Regionen. Einfügungen im Text und Tags in Vorlagen sind hier nicht sichtbar.',
+    'place-draft' => 'Nur im Entwurf',
+    'place-unpublished' => 'Nicht veröffentlicht',
 ];

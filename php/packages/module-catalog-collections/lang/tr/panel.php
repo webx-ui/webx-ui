@@ -51,4 +51,10 @@ return [
     'reason-no-language' => 'Bu dilde adresi yok',
     'reason-status' => 'Satın alınamaz: :status',
     'reason-status-unnamed' => 'Satın alınamaz',
+    'column-places' => 'Nerede',
+    'places' => 'Yer sayısı: :count',
+    'places-title' => 'Nerede kullanılıyor',
+    'places-note' => 'Bloklar ve bölgeler sayılır. Metinlerdeki eklemeler ve şablonlardaki etiketler burada görünmez.',
+    'place-draft' => 'Yalnızca taslakta',
+    'place-unpublished' => 'Yayımlanmadı',
 ];

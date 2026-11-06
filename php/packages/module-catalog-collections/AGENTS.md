@@ -47,6 +47,10 @@ come later.
   its facets and sort, stops the list at `max_limit` and clears `attention`. `POST preview`
   (`Catalog\CollectionPreview`) answers on unsaved values, with the reason a picked product is out.
   The npm half is `@webx-ui/module-catalog-collections`.
+- **Usage** `Panel\CollectionUsage`: where a collection stands as a block, in pages and regions, in
+  the live tree and in the draft, from one walk on the cache group `block-usage`. The list shows
+  «Places: N», `GET {id}/usage` names them. Shortcodes in texts and tags in templates are not counted,
+  and the panel says so. Without `webx-ui/module-blocks`, `places` is null and the panel shows neither.
 - **Repairs** `Catalog\CollectionRepairs` listens to `FacetValueRetargeted`: a merge moves the set,
   a deletion marks `attention`, and a filter's set left empty turns the collection off.
 
@@ -109,6 +113,8 @@ sends to the bin. The section is visible to whoever holds either (`visibleWith()
   section and no `<p>` around it; the same bracket in a title prints nothing.
 - In the panel, «Catalog» → «Product collections»: on a new collection add products on the tab
   «Products», and the preview beside them says what the site would show before anything is saved.
+- Put the block on a page and save the draft: the list says «Places: 1», and the words open the page's
+  name, marked as a draft until it is published.
 - `vendor/bin/phpunit packages/module-catalog-collections/tests` in the monorepo's `php/`.
 
 ## Read more

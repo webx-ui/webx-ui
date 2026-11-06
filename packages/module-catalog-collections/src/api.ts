@@ -4,6 +4,7 @@ import type { ScreenModel } from '@webx-ui/schema'
 import type {
   CollectionDetail,
   CollectionFacets,
+  CollectionPlace,
   CollectionPreset,
   CollectionPreview,
   CollectionQuery,
@@ -36,6 +37,7 @@ export interface CatalogCollectionsApi {
   restore(id: number): Promise<CollectionDetail>
   facets(categoryId: number | null): Promise<CollectionFacets>
   preview(values: Record<string, unknown>): Promise<CollectionPreview>
+  usage(id: number): Promise<CollectionPlace[]>
 }
 
 export function createCollectionsApi(admin: AdminContext): CatalogCollectionsApi {
@@ -61,6 +63,7 @@ export function createCollectionsApi(admin: AdminContext): CatalogCollectionsApi
       ),
     preview: (values) =>
       admin.http.post<{ data: CollectionPreview }>(`${base}/preview`, values).then(data),
+    usage: (id) => admin.http.get<{ data: CollectionPlace[] }>(`${base}/${id}/usage`).then(data),
   }
 }
 

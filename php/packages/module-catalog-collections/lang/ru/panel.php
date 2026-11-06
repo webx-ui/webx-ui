@@ -51,4 +51,10 @@ return [
     'reason-no-language' => 'Нет адреса на этом языке',
     'reason-status' => 'Нельзя купить: :status',
     'reason-status-unnamed' => 'Нельзя купить',
+    'column-places' => 'Где стоит',
+    'places' => 'Мест: :count',
+    'places-title' => 'Где стоит подборка',
+    'places-note' => 'Считаются блоки и регионы. Вставки в текст и теги в шаблонах здесь не видны.',
+    'place-draft' => 'Только в черновике',
+    'place-unpublished' => 'Не опубликовано',
 ];

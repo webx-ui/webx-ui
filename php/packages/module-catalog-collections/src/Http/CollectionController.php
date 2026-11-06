@@ -14,12 +14,13 @@ use WebxUi\CatalogCollections\Catalog\CollectionPreset;
 use WebxUi\CatalogCollections\Catalog\CollectionPresets;
 use WebxUi\CatalogCollections\Catalog\CollectionPreview;
 use WebxUi\CatalogCollections\Models\ProductCollection;
+use WebxUi\CatalogCollections\Panel\CollectionUsage;
 use WebxUi\Localization\Locales;
 
 /**
  * `/api/cms/catalog/collections` (§6.5 of the collections spec): the list with the panel's filters,
- * a collection, its writes, the bin, and two questions the form asks while it is being filled in:
- * which facets and presets a base offers, and what the values on the form would show.
+ * a collection, its writes, the bin, where it stands, and two questions the form asks while it is
+ * being filled in: which facets and presets a base offers, and what the values on the form would show.
  */
 final class CollectionController
 {
@@ -28,7 +29,7 @@ final class CollectionController
         private readonly CollectionResource $resource,
     ) {}
 
-    public function index(Request $request): JsonResponse
+    public function index(Request $request, CollectionUsage $usage): JsonResponse
     {
         $validated = $request->validate([
             'q' => ['nullable', 'string', 'max:255'],
@@ -58,10 +59,15 @@ final class CollectionController
         }
 
         $page = $query->paginate((int) ($validated['per_page'] ?? 50));
+        $places = $usage->counts();
 
         return new JsonResponse([
             ...$page->toArray(),
-            'data' => array_map(fn (ProductCollection $collection): array => $this->resource->list($collection), $page->items()),
+            'data' => array_map(fn (ProductCollection $collection): array => [
+                ...$this->resource->list($collection),
+                // Null without blocks: nothing is counted, which is not the same as none.
+                'places' => $places === null ? null : ($places[$collection->key] ?? 0),
+            ], $page->items()),
         ]);
     }
 
@@ -93,6 +99,12 @@ final class CollectionController
         $trashed->restore();
 
         return $this->answer($trashed->refresh());
+    }
+
+    /** Where it stands (§6.4). A collection in the bin too: that is what restoring brings back. */
+    public function usage(int $collection, CollectionUsage $usage): JsonResponse
+    {
+        return new JsonResponse(['data' => $usage->of(ProductCollection::withTrashed()->findOrFail($collection)->key)]);
     }
 
     /** The facets a base offers the set, with their values counted, and the presets of the site. */

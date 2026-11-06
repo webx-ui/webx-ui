@@ -51,4 +51,10 @@ return [
     'reason-no-language' => 'Немає адреси цією мовою',
     'reason-status' => 'Не можна купити: :status',
     'reason-status-unnamed' => 'Не можна купити',
+    'column-places' => 'Де стоїть',
+    'places' => 'Місць: :count',
+    'places-title' => 'Де стоїть добірка',
+    'places-note' => 'Рахуються блоки й регіони. Вставки в текст і теги в шаблонах тут не видно.',
+    'place-draft' => 'Лише в чернетці',
+    'place-unpublished' => 'Не опубліковано',
 ];

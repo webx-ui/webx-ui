@@ -51,4 +51,10 @@ return [
     'reason-no-language' => 'Nessun indirizzo in questa lingua',
     'reason-status' => 'Non acquistabile: :status',
     'reason-status-unnamed' => 'Non acquistabile',
+    'column-places' => 'Dove',
+    'places' => 'Posizioni: :count',
+    'places-title' => 'Dove è inserita',
+    'places-note' => 'Vengono contati i blocchi e le regioni. Gli inserimenti nei testi e i tag nei modelli qui non sono visibili.',
+    'place-draft' => 'Solo in bozza',
+    'place-unpublished' => 'Non pubblicato',
 ];

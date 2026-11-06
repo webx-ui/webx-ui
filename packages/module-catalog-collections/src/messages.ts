@@ -117,5 +117,12 @@ export const catalogCollectionsMessages: Record<string, Messages> = {
     'reason-no-language': 'No address in this language',
     'reason-status': 'Cannot be bought: :status',
     'reason-status-unnamed': 'Cannot be bought',
+    'column-places': 'Where',
+    places: 'Places: :count',
+    'places-title': 'Where it is placed',
+    'places-note':
+      'Blocks and regions are counted. Insertions in a text and tags in templates are not visible here.',
+    'place-draft': 'Draft only',
+    'place-unpublished': 'Not published',
   },
 }

@@ -51,4 +51,10 @@ return [
     'reason-no-language' => 'Brak adresu w tym języku',
     'reason-status' => 'Nie można kupić: :status',
     'reason-status-unnamed' => 'Nie można kupić',
+    'column-places' => 'Gdzie',
+    'places' => 'Miejsca: :count',
+    'places-title' => 'Gdzie jest umieszczona',
+    'places-note' => 'Liczone są bloki i regiony. Wstawki w tekście i tagi w szablonach nie są tu widoczne.',
+    'place-draft' => 'Tylko w szkicu',
+    'place-unpublished' => 'Nieopublikowane',
 ];

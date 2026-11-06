@@ -51,4 +51,10 @@ return [
     'reason-no-language' => 'Sin dirección en este idioma',
     'reason-status' => 'No se puede comprar: :status',
     'reason-status-unnamed' => 'No se puede comprar',
+    'column-places' => 'Dónde',
+    'places' => 'Lugares: :count',
+    'places-title' => 'Dónde está colocada',
+    'places-note' => 'Se cuentan los bloques y las regiones. Las inserciones en textos y las etiquetas en plantillas no se ven aquí.',
+    'place-draft' => 'Solo en el borrador',
+    'place-unpublished' => 'Sin publicar',
 ];

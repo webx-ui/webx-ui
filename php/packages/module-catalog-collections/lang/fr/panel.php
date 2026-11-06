@@ -51,4 +51,10 @@ return [
     'reason-no-language' => 'Pas d’adresse dans cette langue',
     'reason-status' => 'Achat impossible : :status',
     'reason-status-unnamed' => 'Achat impossible',
+    'column-places' => 'Où',
+    'places' => 'Emplacements : :count',
+    'places-title' => 'Où elle est placée',
+    'places-note' => 'Les blocs et les régions sont comptés. Les insertions dans un texte et les balises dans les modèles ne sont pas visibles ici.',
+    'place-draft' => 'Brouillon uniquement',
+    'place-unpublished' => 'Non publié',
 ];

@@ -22,6 +22,7 @@ Route::prefix((string) config('webx-admin.api_path'))
             Route::get($path.'/facets', [CollectionController::class, 'facets'])->name('facets');
             Route::post($path.'/preview', [CollectionController::class, 'preview'])->name('preview');
             Route::get($path.'/{collection}', [CollectionController::class, 'show'])->whereNumber('collection')->name('show');
+            Route::get($path.'/{collection}/usage', [CollectionController::class, 'usage'])->whereNumber('collection')->name('usage');
         });
 
         Route::middleware('cms.can:catalog.manage')->group(static function () use ($path): void {

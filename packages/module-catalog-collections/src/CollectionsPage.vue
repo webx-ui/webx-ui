@@ -31,6 +31,7 @@ import {
   type ScreenAction,
 } from '@webx-ui/module-admin'
 import { createCollectionsApi, tagOf } from './api'
+import CollectionPlaces from './CollectionPlaces.vue'
 import { NAMESPACE, useCatalogCollectionsMessages } from './i18n'
 import type { CollectionQuery, CollectionRow, CollectionsPage } from './types'
 
@@ -38,7 +39,8 @@ import type { CollectionQuery, CollectionRow, CollectionsPage } from './types'
  * The collections (§6.1 of the collections spec): title and key, how it is filled, the view, the
  * state and the mark of attention; filtered by «needs attention», «turned off» and the bin; searched
  * by title and key. The key is copied with its tag, which is what a developer pastes. The filters
- * live in the address, so coming back from a collection lands where the list was left.
+ * live in the address, so coming back from a collection lands where the list was left. «Places: 3»
+ * opens where it stands (§6.4); a site without blocks has neither the column nor the note under it.
  */
 defineOptions({ name: 'WxCatalogCollectionsPage' })
 
@@ -153,11 +155,16 @@ watch([attention, disabled, trashed], () => {
 
 watch([search, pageNumber], remember)
 
+const counted = computed(() => page.value?.data.some((row) => row.places !== null) ?? false)
+
 const columns = computed<TableColumn<CollectionRow>[]>(() => [
   { key: 'title', label: t('panel.column-title'), minWidth: 220 },
   { key: 'source', label: t('panel.column-source'), width: 170, hideBelow: 640 },
-  { key: 'view', label: t('panel.column-view'), width: 110, hideBelow: 760 },
+  { key: 'view', label: t('panel.column-view'), width: 110, hideBelow: 820 },
   { key: 'state', label: t('panel.column-state'), width: 150, hideBelow: 520 },
+  ...(counted.value
+    ? [{ key: 'places', label: t('panel.column-places'), width: 110, hideBelow: 700 }]
+    : []),
   { key: 'updated_at', label: t('panel.column-updated'), width: 130, hideBelow: 1000 },
   { key: 'actions', label: '', width: rowMenuWidth, align: 'right' },
 ])
@@ -356,6 +363,10 @@ const emptyText = computed(() =>
           </div>
         </template>
 
+        <template #cell-places="{ row }">
+          <collection-places v-if="row.places !== null" :id="row.id" :count="row.places" />
+        </template>
+
         <template #cell-updated_at="{ row }">
           <wx-date :value="row.updated_at" compact />
         </template>
@@ -364,6 +375,10 @@ const emptyText = computed(() =>
           <wx-row-menu :actions="actionsFor(row)" :label="titleOf(row)" />
         </template>
       </wx-table>
+
+      <wx-text v-if="counted" class="wx-catalog-collections__note" size="sm" tone="muted">
+        {{ t('panel.places-note') }}
+      </wx-text>
     </wx-list-screen>
   </div>
 </template>
@@ -404,6 +419,11 @@ const emptyText = computed(() =>
   display: flex;
   align-items: center;
   gap: var(--wx-space-6);
+}
+
+.wx-catalog-collections__note {
+  display: block;
+  margin-top: var(--wx-space-12);
 }
 
 .wx-catalog-collections__sr {
