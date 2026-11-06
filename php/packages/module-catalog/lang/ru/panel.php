@@ -288,4 +288,12 @@ return [
     'exchange-profile-edit' => 'Изменить',
     'exchange-profile-up' => 'Выше',
     'exchange-profile-down' => 'Ниже',
+    'facet-set-add' => 'Добавить фасет',
+    'facet-set-empty' => 'Добавьте фасет и выберите его значения.',
+    'facet-set-remove' => 'Убрать фасет',
+    'facet-set-values' => 'Выберите значения',
+    'facet-set-from' => 'От',
+    'facet-set-to' => 'До',
+    'facet-set-count' => 'Товаров: :count',
+    'facet-set-counting' => 'Считаем…',
 ];

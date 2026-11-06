@@ -1,5 +1,5 @@
 import type { LocationQuery } from 'vue-router'
-import type { FacetChoice, FacetInfo } from './types'
+import type { FacetChoice, FacetInfo, FacetSetValue } from './types'
 
 /**
  * The list's facet filters live in the address, one parameter per facet — `f.<key>` — so that
@@ -55,4 +55,22 @@ export function writeFacet(choice: FacetChoice | null | undefined): string | und
   const max = choice.max ?? null
 
   return min === null && max === null ? undefined : `${min ?? ''}-${max ?? ''}`
+}
+
+/**
+ * A stored set without the facets that say nothing — a list with no value, a range with no end —
+ * so that a half-built facet neither counts nor fails a save.
+ */
+export function cleanSet(filters: FacetSetValue | null | undefined): FacetSetValue {
+  const clean: FacetSetValue = {}
+
+  for (const [key, choice] of Object.entries(filters ?? {})) {
+    if ('values' in choice) {
+      if (choice.values.length > 0) clean[key] = { values: [...choice.values] }
+    } else if (choice.min !== null || choice.max !== null) {
+      clean[key] = { min: choice.min, max: choice.max }
+    }
+  }
+
+  return clean
 }

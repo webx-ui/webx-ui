@@ -3,7 +3,7 @@ export { catalog, type CatalogOptions } from './module'
 export { createCatalogApi, productSearch, CATALOG_API, type CatalogApi } from './api'
 export { catalogMessages } from './messages'
 export { dictionaryOptions, dictionarySection, type DictionaryOptions } from './dictionaries'
-export { FACET_PREFIX } from './filters'
+export { FACET_PREFIX, cleanSet } from './filters'
 export { TONES, toneBadge, isOwnColor, contrastText, ownBadgeStyle, type Tone } from './tones'
 export {
   provideProductEditor,
@@ -67,11 +67,13 @@ export const WxCatalogExchangeProfile = defineAsyncComponent(
   () => import('./ExchangeProfilePage.vue'),
 )
 export { default as WxCatalogCategoryField } from './CategoryField.vue'
+export { default as WxCatalogFacetSet } from './FacetSetField.vue'
 export { default as WxCatalogFacetsField } from './FacetsField.vue'
 export { default as WxCatalogGallery } from './GalleryField.vue'
 export { default as WxCatalogToneField } from './ToneField.vue'
 export { default as WxCatalogColumnValue } from './ColumnValue.vue'
 export type {
+  BaseFacet,
   CategoryDetail,
   CategoryNode,
   CategoryRef,
@@ -84,6 +86,7 @@ export type {
   FacetChoice,
   FacetInfo,
   FacetKind,
+  FacetSetValue,
   FacetSetting,
   ProductColumnInfo,
   ProductDetail,
@@ -95,5 +98,6 @@ export type {
   ProductSort,
   ProductState,
   ProductsPage,
+  SetChoice,
   SkuHolder,
 } from './types'

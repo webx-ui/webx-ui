@@ -288,4 +288,12 @@ return [
     'exchange-profile-edit' => 'Змінити',
     'exchange-profile-up' => 'Вище',
     'exchange-profile-down' => 'Нижче',
+    'facet-set-add' => 'Додати фасет',
+    'facet-set-empty' => 'Додайте фасет і виберіть його значення.',
+    'facet-set-remove' => 'Прибрати фасет',
+    'facet-set-values' => 'Виберіть значення',
+    'facet-set-from' => 'Від',
+    'facet-set-to' => 'До',
+    'facet-set-count' => 'Товарів: :count',
+    'facet-set-counting' => 'Рахуємо…',
 ];

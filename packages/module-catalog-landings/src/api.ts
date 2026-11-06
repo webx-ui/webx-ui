@@ -1,4 +1,5 @@
 import type { AdminContext } from '@webx-ui/module-admin'
+import { cleanSet } from '@webx-ui/module-catalog'
 import type {
   BaseFacet,
   GenerateParams,
@@ -115,20 +116,4 @@ export function formValues(detail: LandingDetail): Record<string, unknown> {
   return values
 }
 
-/**
- * A set without the facets that say nothing — a list with no value, a range with no end — so
- * that a half-built facet neither counts nor fails a save.
- */
-export function cleanSet(filters: LandingFilters | null | undefined): LandingFilters {
-  const clean: LandingFilters = {}
-
-  for (const [key, choice] of Object.entries(filters ?? {})) {
-    if ('values' in choice) {
-      if (choice.values.length > 0) clean[key] = { values: [...choice.values] }
-    } else if (choice.min !== null || choice.max !== null) {
-      clean[key] = { min: choice.min, max: choice.max }
-    }
-  }
-
-  return clean
-}
+export { cleanSet }

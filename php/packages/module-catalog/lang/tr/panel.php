@@ -288,4 +288,12 @@ return [
     'exchange-profile-edit' => 'Düzenle',
     'exchange-profile-up' => 'Yukarı taşı',
     'exchange-profile-down' => 'Aşağı taşı',
+    'facet-set-add' => 'Filtre ekle',
+    'facet-set-empty' => 'Bir filtre ekleyin ve değerlerini seçin.',
+    'facet-set-remove' => 'Filtreyi kaldır',
+    'facet-set-values' => 'Değerleri seçin',
+    'facet-set-from' => 'En az',
+    'facet-set-to' => 'En çok',
+    'facet-set-count' => 'Ürünler: :count',
+    'facet-set-counting' => 'Sayılıyor…',
 ];

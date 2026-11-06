@@ -380,5 +380,13 @@ export const catalogMessages: Record<string, Messages> = {
     'exchange-profile-edit': 'Edit',
     'exchange-profile-up': 'Move up',
     'exchange-profile-down': 'Move down',
+    'facet-set-add': 'Add a facet',
+    'facet-set-empty': 'Add a facet and choose its values.',
+    'facet-set-remove': 'Remove the facet',
+    'facet-set-values': 'Choose values',
+    'facet-set-from': 'From',
+    'facet-set-to': 'To',
+    'facet-set-count': 'Products: :count',
+    'facet-set-counting': 'Counting…',
   },
 }

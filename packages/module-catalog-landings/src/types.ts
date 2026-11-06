@@ -1,10 +1,10 @@
 import type { LocalizedValue } from '@webx-ui/core'
+import type { BaseFacet, FacetSetValue, SetChoice } from '@webx-ui/module-catalog'
 
-/** One facet of a set: values of a list, or the ends of a range (§4 of the landings spec). */
-export type SetChoice = { values: string[] } | { min: number | null; max: number | null }
+export type { BaseFacet, SetChoice }
 
-/** A landing's set as the server stores it: facet key → choice. */
-export type LandingFilters = Record<string, SetChoice>
+/** A landing's set as the server stores it (§4 of the landings spec): facet key → choice. */
+export type LandingFilters = FacetSetValue
 
 /** «Brand: Apple, Dell» — a facet of the set as words. */
 export interface LandingChip {
@@ -78,16 +78,6 @@ export interface LandingQuery {
   trashed?: boolean
   page?: number
   per_page?: number
-}
-
-/** A facet a base offers the set, with its values counted (`GET facets?category=`). */
-export interface BaseFacet {
-  key: string
-  label: string
-  kind: string
-  min: number | null
-  max: number | null
-  values: { value: string; label: string; count: number }[]
 }
 
 /** What `POST count` answers: the number, the landing holding the set, the suggested slugs. */
