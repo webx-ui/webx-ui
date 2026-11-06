@@ -160,7 +160,7 @@ final class LandingTools
 
             Tool::mutating(
                 'landings_delete',
-                'Put a landing in the bin. Its set stays taken until it is gone for good: landings_restore brings it back.',
+                'Put a landing in the bin. Its set stays taken until catalog_landings_purge: catalog_landings_restore brings it back.',
                 fn (array $arguments): array => $this->write($arguments, fn (): array => $this->delete($arguments)),
                 ['properties' => ['landing' => $landing], 'required' => ['landing']],
             ),
@@ -169,6 +169,15 @@ final class LandingTools
                 'landings_restore',
                 'Take a landing out of the bin.',
                 fn (array $arguments): array => $this->write($arguments, fn (): array => $this->restore($arguments)),
+                ['properties' => ['landing' => $landing], 'required' => ['landing']],
+            ),
+
+            Tool::mutating(
+                'landings_purge',
+                'Delete a landing in the bin for good, with its recommended products and SEO card. Cannot be undone. Only a landing in '
+                .'the bin: catalog_landings_delete puts it there first. Its address answers 404 with no redirect left, former addresses '
+                .'included, and the address and the set are free for a new landing.',
+                fn (array $arguments): array => $this->write($arguments, fn (): array => $this->purge($arguments)),
                 ['properties' => ['landing' => $landing], 'required' => ['landing']],
             ),
 
@@ -416,6 +425,30 @@ final class LandingTools
         $landing->restore();
 
         return ['landing' => $this->answer($landing->refresh(), $this->locale($arguments))];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function purge(array $arguments): array
+    {
+        $landing = $this->landing($arguments['landing'] ?? null, true);
+
+        if ($landing->deleted_at === null) {
+            throw new ToolFailure("The landing {$landing->id} is not in the bin: catalog_landings_delete puts it there first.");
+        }
+
+        // Read before it goes: the words are the landing's.
+        $answer = [
+            'purged' => (int) $landing->id,
+            'name' => $landing->label($this->locale($arguments)),
+            'slug' => $landing->getTranslations('slug'),
+        ];
+
+        $landing->forceDelete();
+
+        return $answer;
     }
 
     /**

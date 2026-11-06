@@ -16,8 +16,10 @@ import {
   WxText,
   WxTooltip,
   WxTreeSelect,
+  type TabItem,
   type TableColumn,
   type TableState,
+  type TabValue,
   type TreeSelectValue,
 } from '@webx-ui/core'
 import {
@@ -42,9 +44,9 @@ import type { GenerateRun, LandingQuery, LandingRow, LandingsPage } from './type
 /**
  * The landings (§8.1 of the landings spec): name and address, the base, the set as chips, the
  * products, the state and the mark of attention; filtered by the base as a tree (the whole
- * catalogue is a choice of its own), «needs attention», published, empty, the bin; searched by
- * name and address. The filters live in the address, so coming back from a landing lands where
- * the list was left.
+ * catalogue is a choice of its own), «needs attention», published, empty; searched by name and
+ * address. The bin is a tab over the list, the way it is in every section that has one. The filters
+ * live in the address, so coming back from a landing lands where the list was left.
  */
 defineOptions({ name: 'WxCatalogLandingsPage' })
 
@@ -82,8 +84,24 @@ const chosenBase = ref<string | null>(route.query.category ? String(route.query.
 const attention = ref(flag('attention'))
 const published = ref(flag('published'))
 const empty = ref(flag('empty'))
-const trashed = ref(flag('trashed'))
 let perPage = 25
+
+const view = computed<TabValue>({
+  get: () => (route.query.view === 'trashed' ? 'trashed' : ''),
+  set: (value) => {
+    // A new view is a new list: the page it was on belongs to the view it was on.
+    void router.replace({
+      query: { ...route.query, view: value === '' ? undefined : String(value), page: undefined },
+    })
+  },
+})
+
+const inBin = computed(() => view.value === 'trashed')
+
+const views = computed<TabItem[]>(() => [
+  { value: '', label: t('panel.view-all') },
+  { value: 'trashed', label: t('panel.bin'), icon: 'trash' },
+])
 
 const title = computed(
   () =>
@@ -131,7 +149,6 @@ const applied = computed<AppliedFilter[]>(() => {
     ['attention', attention, 'panel.filter-attention'],
     ['published', published, 'panel.filter-published'],
     ['empty', empty, 'panel.filter-empty'],
-    ['trashed', trashed, 'panel.filter-trashed'],
   ] as const) {
     if (on.value) chips.push({ key, label: t(word), clear: () => (on.value = false) })
   }
@@ -144,7 +161,6 @@ function clearFilters(): void {
   attention.value = false
   published.value = false
   empty.value = false
-  trashed.value = false
 }
 
 function query(state?: TableState): LandingQuery {
@@ -154,7 +170,7 @@ function query(state?: TableState): LandingQuery {
     attention: attention.value || undefined,
     published: published.value || undefined,
     empty: empty.value || undefined,
-    trashed: trashed.value || undefined,
+    trashed: inBin.value || undefined,
     page: state?.page ?? pageNumber.value,
     per_page: state?.perPage ?? perPage,
   }
@@ -186,9 +202,11 @@ function remember(): void {
   if (q.category) wanted.category = q.category
   if (q.page && q.page > 1) wanted.page = String(q.page)
 
-  for (const key of ['attention', 'published', 'empty', 'trashed'] as const) {
+  for (const key of ['attention', 'published', 'empty'] as const) {
     if (q[key]) wanted[key] = '1'
   }
+
+  if (inBin.value) wanted.view = 'trashed'
 
   void router.replace({ query: wanted })
 }
@@ -198,9 +216,14 @@ function onState(state: TableState): void {
   void load(state)
 }
 
-watch([chosenBase, attention, published, empty, trashed], () => {
+watch([chosenBase, attention, published, empty], () => {
   pageNumber.value = 1
   remember()
+  void load()
+})
+
+watch(view, () => {
+  pageNumber.value = 1
   void load()
 })
 
@@ -212,7 +235,13 @@ const columns = computed<TableColumn<LandingRow>[]>(() => [
   { key: 'chips', label: t('panel.column-set'), minWidth: 180, hideBelow: 640 },
   { key: 'products_count', label: t('panel.column-count'), width: 110, align: 'right' },
   { key: 'state', label: t('panel.column-state'), width: 170, hideBelow: 900 },
-  { key: 'updated_at', label: t('panel.column-updated'), width: 130, hideBelow: 1180 },
+  {
+    key: 'updated_at',
+    label: inBin.value ? t('panel.column-deleted') : t('panel.column-updated'),
+    width: 130,
+    // When it was thrown away is what tells two rows of the bin apart; an update date is a detail.
+    hideBelow: inBin.value ? 700 : 1180,
+  },
   { key: 'actions', label: '', width: rowMenuWidth, align: 'right' },
 ])
 
@@ -264,6 +293,27 @@ async function restore(row: LandingRow): Promise<void> {
   }
 }
 
+async function purge(row: LandingRow): Promise<void> {
+  const agreed = await confirm({
+    title: t('panel.purge-title', { name: nameOf(row) }),
+    message: t('panel.purge-text'),
+    confirmText: t('panel.purge'),
+    cancelText: t('panel.cancel'),
+    tone: 'danger',
+  })
+
+  if (!agreed) return
+
+  try {
+    await api.purge(row.id)
+    toast.success(t('panel.purged'))
+  } catch (error) {
+    toast.danger(message(error))
+  } finally {
+    await load()
+  }
+}
+
 function actionsFor(row: LandingRow): RowAction[] {
   if (row.deleted_at !== null) {
     return canManage.value
@@ -273,6 +323,13 @@ function actionsFor(row: LandingRow): RowAction[] {
             icon: 'refresh',
             label: t('panel.restore'),
             run: () => void restore(row),
+          },
+          {
+            key: 'purge',
+            icon: 'trash',
+            label: t('panel.purge'),
+            danger: true,
+            run: () => void purge(row),
           },
         ]
       : []
@@ -320,7 +377,7 @@ async function bulk(): Promise<void> {
 }
 
 const actions = computed<ScreenAction[]>(() =>
-  canManage.value
+  canManage.value && !inBin.value
     ? [
         {
           key: 'new',
@@ -339,9 +396,11 @@ const actions = computed<ScreenAction[]>(() =>
     : [],
 )
 
-const emptyText = computed(() =>
-  applied.value.length > 0 || search.value ? t('panel.nothing-found') : t('panel.empty'),
-)
+const emptyText = computed(() => {
+  if (applied.value.length > 0 || search.value) return t('panel.nothing-found')
+
+  return inBin.value ? t('panel.empty-bin') : t('panel.empty')
+})
 
 onMounted(() => {
   void tree.load().catch(() => undefined)
@@ -350,7 +409,7 @@ onMounted(() => {
 
 <template>
   <div class="wx-catalog-landings">
-    <wx-list-screen :title="title" :actions="actions">
+    <wx-list-screen v-model:view="view" :title="title" :views="views" :actions="actions">
       <wx-table
         v-model:search="search"
         v-model:page="pageNumber"
@@ -359,8 +418,8 @@ onMounted(() => {
         :columns="columns"
         row-key="id"
         searchable
-        clickable
-        hover
+        :clickable="!inBin"
+        :hover="!inBin"
         flush
         :loading="loading"
         layout="fixed"
@@ -405,9 +464,6 @@ onMounted(() => {
           <wx-form-item>
             <wx-switch v-model="empty" size="sm" :label="t('panel.filter-empty')" />
           </wx-form-item>
-          <wx-form-item>
-            <wx-switch v-model="trashed" size="sm" :label="t('panel.filter-trashed')" />
-          </wx-form-item>
 
           <wx-button v-if="applied.length > 0" variant="text" size="sm" block @click="clearFilters">
             <template #icon><wx-icon name="close" /></template>
@@ -450,8 +506,7 @@ onMounted(() => {
 
         <template #cell-state="{ row }">
           <div class="wx-catalog-landings__state">
-            <wx-badge v-if="row.deleted_at" dot size="sm">{{ t('panel.in-bin') }}</wx-badge>
-            <wx-badge v-else :type="row.is_published ? 'success' : 'default'" dot size="sm">
+            <wx-badge :type="row.is_published ? 'success' : 'default'" dot size="sm">
               {{ t(row.is_published ? 'panel.published' : 'panel.unpublished') }}
             </wx-badge>
             <wx-tooltip v-if="row.attention" :content="t(`landing.attention-${row.attention}`)">
@@ -464,7 +519,7 @@ onMounted(() => {
         </template>
 
         <template #cell-updated_at="{ row }">
-          <wx-date :value="row.updated_at" compact />
+          <wx-date :value="inBin ? row.deleted_at : row.updated_at" compact />
         </template>
 
         <template #cell-actions="{ row }">

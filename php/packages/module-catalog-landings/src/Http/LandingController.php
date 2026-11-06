@@ -45,8 +45,12 @@ final class LandingController
             'per_page' => ['nullable', 'integer', 'min:1', 'max:200'],
         ]);
 
-        $query = $request->boolean('trashed') ? Landing::onlyTrashed() : Landing::query();
-        $query->with(['category', 'routes'])->orderBy('position')->orderBy('id');
+        // The bin is a list of things to bring back, and the last thing thrown away is the one
+        // somebody is looking for.
+        $query = $request->boolean('trashed')
+            ? Landing::onlyTrashed()->orderByDesc('deleted_at')->orderByDesc('id')
+            : Landing::query()->orderBy('position')->orderBy('id');
+        $query->with(['category', 'routes']);
 
         $term = trim((string) ($validated['q'] ?? ''));
 
@@ -118,6 +122,18 @@ final class LandingController
         $trashed->restore();
 
         return $this->answer($trashed->refresh());
+    }
+
+    /**
+     * Gone for good, only from the bin, so nothing leaves the site in one click. The address goes
+     * as a page's does: no redirect is left, former addresses go with it, and the path and the set
+     * are free for a new landing.
+     */
+    public function purge(int $landing): Response
+    {
+        Landing::onlyTrashed()->findOrFail($landing)->forceDelete();
+
+        return new Response(status: 204);
     }
 
     /** Published only as a landing a save would accept: a set, not another landing's. */

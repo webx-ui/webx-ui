@@ -12,6 +12,7 @@ use WebxUi\Catalog\Models\Category;
 use WebxUi\CatalogBrands\Models\Brand;
 use WebxUi\CatalogLandings\Catalog\LandingGenerator;
 use WebxUi\CatalogLandings\Models\Landing;
+use WebxUi\Mcp\Exceptions\ToolFailure;
 use WebxUi\Mcp\McpResource;
 use WebxUi\Mcp\Registry\ToolRegistry;
 use WebxUi\Mcp\Server\RegistryTool;
@@ -57,7 +58,7 @@ final class McpTest extends TestCase
             $this->assertContains('catalog.view', $tools["catalog_landings_{$read}"][1], $read);
         }
 
-        foreach (['create', 'update', 'publish', 'unpublish', 'delete', 'restore', 'generate'] as $write) {
+        foreach (['create', 'update', 'publish', 'unpublish', 'delete', 'restore', 'purge', 'generate'] as $write) {
             $this->assertSame(['catalog:write', ['catalog.manage']], $tools["catalog_landings_{$write}"] ?? null, $write);
         }
 
@@ -113,6 +114,26 @@ final class McpTest extends TestCase
     }
 
     #[Test]
+    public function a_landing_is_purged_only_from_the_bin_and_a_dry_run_keeps_it(): void
+    {
+        $landing = $this->landing('laptops-dell', $this->laptops, ['brand' => $this->brands([$this->dell])]);
+
+        $this->refused('catalog_landings_purge', ['landing' => 'laptops-dell'], 'not in the bin');
+
+        $this->agent('catalog_landings_delete', ['landing' => 'laptops-dell']);
+
+        $dry = $this->content($this->agent('catalog_landings_purge', ['landing' => 'laptops-dell', 'dry_run' => true]));
+        $this->assertTrue($dry['dry_run']);
+        $this->assertSame($landing->id, $dry['would_be']['purged']);
+        $this->assertSoftDeleted($landing);
+
+        $done = $this->content($this->agent('catalog_landings_purge', ['landing' => 'laptops-dell']));
+        $this->assertSame($landing->id, $done['purged']);
+        $this->assertSame(['en' => 'laptops-dell'], $done['slug']);
+        $this->assertSame(0, Landing::withTrashed()->count());
+    }
+
+    #[Test]
     public function count_and_facets_speak_slugs_and_name_the_holder(): void
     {
         $holder = $this->landing('apple-laptops', $this->laptops, ['brand' => $this->brands([$this->apple])]);
@@ -165,6 +186,24 @@ final class McpTest extends TestCase
         $this->assertArrayHasKey('duplicates', $read['rules']);
         $this->assertSame(1, $read['counts']['all']);
         $this->assertSame(1, $read['counts']['attention']);
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     */
+    private function refused(string $tool, array $arguments, string $says): void
+    {
+        $handler = $this->app->make(ToolRegistry::class)->tool($tool)->tool->handler;
+
+        try {
+            $handler($arguments);
+        } catch (ToolFailure $failure) {
+            $this->assertStringContainsString($says, $failure->getMessage(), $tool);
+
+            return;
+        }
+
+        $this->fail("{$tool} accepted ".json_encode($arguments));
     }
 
     /**

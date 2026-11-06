@@ -9,6 +9,8 @@ use WebxUi\Admin\History\HistoryEntry;
 use WebxUi\Catalog\Models\Category;
 use WebxUi\CatalogBrands\Models\Brand;
 use WebxUi\CatalogLandings\Models\Landing;
+use WebxUi\Routing\Models\Route;
+use WebxUi\Routing\Models\TrashedAlias;
 
 /**
  * §8.4 of the landings spec: the API the section of the panel reads and writes, and its refusals.
@@ -199,5 +201,57 @@ final class ApiTest extends TestCase
 
         $this->actingAs($editor, 'cms')->postJson($this->api("{$landing->id}/restore"))->assertOk();
         $this->get('/laptops-apple')->assertOk();
+    }
+
+    #[Test]
+    public function the_bin_lists_the_last_one_thrown_away_first(): void
+    {
+        $first = $this->landing('laptops-apple', $this->laptops, ['brand' => $this->brands([$this->apple])]);
+        $second = $this->landing('laptops-dell', $this->laptops, ['brand' => $this->brands([$this->brand('Dell')])]);
+
+        $this->travelTo(now()->subHour());
+        $second->delete();
+        $this->travelBack();
+        $first->delete();
+
+        $ids = $this->actingAs($this->editor(), 'cms')->getJson($this->api('?trashed=1'))->assertOk()->json('data.*.id');
+
+        $this->assertSame([$first->id, $second->id], $ids);
+    }
+
+    #[Test]
+    public function a_landing_is_deleted_for_good_only_from_the_bin_and_frees_its_address_and_set(): void
+    {
+        $set = ['brand' => $this->brands([$this->apple])];
+        $landing = $this->landing('laptops-apple', $this->laptops, $set);
+        $landing->recommended()->attach($this->product('Air', $this->laptops, $this->apple)->id, ['position' => 0]);
+        $landing->update(['slug' => 'apple-notebooks']);
+        $this->get('/laptops-apple')->assertRedirect('/apple-notebooks');
+        $editor = $this->editor();
+
+        $this->actingAs($editor, 'cms')->deleteJson($this->api("{$landing->id}/purge"))->assertNotFound();
+        $this->assertNotSoftDeleted($landing);
+
+        $landing->delete();
+        $reader = $this->editor(['catalog.view']);
+        $this->actingAs($reader, 'cms')->deleteJson($this->api("{$landing->id}/purge"))->assertForbidden();
+
+        $this->actingAs($editor, 'cms')->deleteJson($this->api("{$landing->id}/purge"))->assertNoContent();
+
+        $this->assertDatabaseMissing('catalog_landings', ['id' => $landing->id]);
+        $this->assertDatabaseMissing(Landing::PRODUCTS, ['landing_id' => $landing->id]);
+        $this->assertSame(0, Route::query()->where('entity_type', (new Landing)->getMorphClass())->where('entity_id', $landing->id)->count());
+        $this->assertSame(0, TrashedAlias::query()->where('entity_type', (new Landing)->getMorphClass())->where('entity_id', $landing->id)->count());
+
+        // What a page leaves behind: a 404 on the address and the former one, no redirect.
+        $this->get('/apple-notebooks')->assertNotFound();
+        $this->get('/laptops-apple')->assertNotFound();
+
+        $this->actingAs($editor, 'cms')->postJson($this->api(), [
+            'category_id' => $this->laptops->id,
+            'filters' => $set,
+            'name' => ['en' => 'Apple again'],
+            'slug' => ['en' => 'apple-notebooks'],
+        ])->assertCreated();
     }
 }

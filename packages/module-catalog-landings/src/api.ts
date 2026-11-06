@@ -35,6 +35,7 @@ export interface CatalogLandingsApi {
   save(id: number, values: Record<string, unknown>): Promise<LandingDetail>
   remove(id: number): Promise<void>
   restore(id: number): Promise<LandingDetail>
+  purge(id: number): Promise<void>
   publish(id: number, on: boolean): Promise<LandingDetail>
   count(
     categoryId: number | null,
@@ -64,6 +65,7 @@ export function createLandingsApi(admin: AdminContext): CatalogLandingsApi {
     remove: (id) => admin.http.delete<void>(`${base}/${id}`).then(() => undefined),
     restore: (id) =>
       admin.http.post<{ data: LandingDetail }>(`${base}/${id}/restore`, {}).then(data),
+    purge: (id) => admin.http.delete<void>(`${base}/${id}/purge`).then(() => undefined),
     publish: (id, on) =>
       admin.http
         .post<{ data: LandingDetail }>(`${base}/${id}/${on ? 'publish' : 'unpublish'}`, {})

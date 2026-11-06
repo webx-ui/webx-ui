@@ -24,12 +24,12 @@ catalogue's name and scopes. For the filter, its facets and the storefront views
 - **Panel**: module `catalog-landings` in the catalogue's group; screen `catalog.landing-form`
   (tabs `main`, `texts-tab`, `recommended-tab`, `seo-tab`, `history-tab`). The API is under
   `/api/cms/catalog/landings` (with `count`, `facets`, `generate`, `publish`, `unpublish`,
-  `restore`). A landing saved moves the `catalog` cache group. Query budgets of its pages:
+  `restore`, `purge`). A landing saved moves the `catalog` cache group. Query budgets of its pages:
   `tests/PerformanceTest.php`.
 - **Command** `webx:catalog-landings:count` (`--all`), which runs on the package's own schedule:
   every fifteen minutes, and with `--all` nightly.
 - **MCP** tools `catalog_landings_list`, `_get`, `_facets`, `_count`, `_create`, `_update`,
-  `_publish`, `_unpublish`, `_delete`, `_restore`, `_generate`, `_generation`. Resource:
+  `_publish`, `_unpublish`, `_delete`, `_restore`, `_purge`, `_generate`, `_generation`. Resource:
   `catalog://landings` (the house rules).
 
 ### Permissions
@@ -38,10 +38,10 @@ None of its own: the catalogue's permissions (`webx-ui/module-catalog`) open it,
 shows to whoever holds `catalog.view` or `catalog.manage` (`visibleWith()`). The tools are served
 as the catalogue's, with its scopes.
 
-| Permission       | Opens                                                                                                                                                                           |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `catalog.view`   | landings read-only: the list, the form, `facets`, `count`, a generation run; `catalog_landings_list`, `_get`, `_facets`, `_count`, `_generation`                                |
-| `catalog.manage` | create, edit, publish, unpublish, delete, restore landings, bulk generation; `catalog_landings_create`, `_update`, `_publish`, `_unpublish`, `_delete`, `_restore`, `_generate` |
+| Permission       | Opens                                                                                                                                                                                            |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `catalog.view`   | landings read-only: the list, the form, `facets`, `count`, a generation run; `catalog_landings_list`, `_get`, `_facets`, `_count`, `_generation`                                                 |
+| `catalog.manage` | create, edit, publish, unpublish, delete, restore, purge landings, bulk generation; `catalog_landings_create`, `_update`, `_publish`, `_unpublish`, `_delete`, `_restore`, `_purge`, `_generate` |
 
 A route or screen node the site adds next to the module asks the same: `cms.can:catalog.view,catalog.manage`
 to read, `cms.can:catalog.manage` to write.
@@ -74,6 +74,9 @@ Landing form node ids: `naming`, `name`, `category`, `set`, `slug`, `display`, `
   `webx:catalog-landings:count`. Run `--all` to recount now.
 - Do not run large generations without a queue worker. Runs past `generate.sync_limit` go to the
   queue and wait there.
+- Do not purge a landing to move it. `_purge` works only from the bin and cannot be undone: the
+  address answers 404 with no redirect left, former addresses included, and the address and the set
+  are free. A new slug on the landing leaves a 301 instead.
 - Do not ignore «needs attention». A value in the set was deleted, and the set is now narrower
   than intended. Fix the set and save the landing; saving clears the mark.
 

@@ -544,6 +544,12 @@ to the queue. The number of products per landing is recounted after each indexin
 by `webx:catalog-landings:count --all`. The design is
 `docs/architecture/WEBX_UI_CATALOG_LANDINGS.md`.
 
+**The bin** is a tab over the list, «All» and «Bin», at `?view=trashed`. A deleted landing stops
+answering and keeps its set; **Restore** brings it back. **Delete for good** asks first and cannot be
+undone: as with a page, the address answers 404 with no redirect left, former addresses included,
+and the address and the set are free for a new landing. An agent does the same with
+`catalog_landings_purge`: it takes a landing in the bin only, and `dry_run` shows what would go.
+
 ## Product collections
 
 `webx-ui/module-catalog-collections` is a named block of products a manager puts together once and
@@ -865,7 +871,7 @@ that changes something accepts `dry_run: true`.
 | labels     | `catalog_labels_list`, `_create`, `_update`, `_delete`, `_reorder`                                                                                                                                      |
 | stock      | `catalog_stock_list`, `_create`, `_update`, `_delete`, `_reorder`                                                                                                                                       |
 | brands     | `catalog_brands_list`, `_create`, `_update`, `_delete`, `_reorder`                                                                                                                                      |
-| landings   | `catalog_landings_list`, `_get`, `_facets`, `_count`, `_create`, `_update`, `_publish`, `_unpublish`, `_delete`, `_restore`, `_generate`, `_generation`                                                 |
+| landings   | `catalog_landings_list`, `_get`, `_facets`, `_count`, `_create`, `_update`, `_publish`, `_unpublish`, `_delete`, `_restore`, `_purge`, `_generate`, `_generation`                                       |
 | manticore  | `catalog_index_status` — read only: a rebuild is minutes of load, and its time is a person's to choose                                                                                                  |
 
 A product's share in a satellite is written through `catalog_products_update` by the part's key —
