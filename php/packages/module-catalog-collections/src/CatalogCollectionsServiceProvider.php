@@ -8,17 +8,21 @@ use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\History\HistoryTypes;
+use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Relations\RelationTargets;
 use WebxUi\Admin\Screens\FieldTypes;
+use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Shortcodes\Shortcodes;
 use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Blocks\BlockOffers;
 use WebxUi\Cache\CacheGroups;
 use WebxUi\Catalog\Events\FacetValueRetargeted;
+use WebxUi\Catalog\Rendering\ProductQuery;
 use WebxUi\CatalogCollections\Catalog\CollectionPreset;
 use WebxUi\CatalogCollections\Catalog\CollectionPresets;
 use WebxUi\CatalogCollections\Catalog\CollectionRepairs;
 use WebxUi\CatalogCollections\Models\ProductCollection;
+use WebxUi\CatalogCollections\Panel\CollectionsModule;
 use WebxUi\CatalogCollections\Relations\CollectionTarget;
 use WebxUi\CatalogCollections\Resolvers\CollectionResolvers;
 use WebxUi\CatalogCollections\Resolvers\FilterResolver;
@@ -30,13 +34,16 @@ use WebxUi\CatalogCollections\Storefront\LiveCollections;
 /**
  * Product collections of the catalogue (`WEBX_UI_CATALOG_COLLECTIONS.md`): a satellite that knows
  * only the core. What it registers so far: the tables, what moves between stands, the journal, what
- * a collection holds, its cache, the tag that prints it, the block that places it and the shortcode
- * that puts it in a text.
+ * a collection holds, its cache, the tag that prints it, the block that places it, the shortcode
+ * that puts it in a text, and the section of the panel with its API.
  */
 class CatalogCollectionsServiceProvider extends ServiceProvider
 {
     /** The module's id in the panel: what `webx:setup` and `--module` ask for. */
     public const MODULE = 'catalog-collections';
+
+    /** Where the collections answer under the panel's API. */
+    public const SOURCE = 'catalog/collections';
 
     public function register(): void
     {
@@ -67,6 +74,7 @@ class CatalogCollectionsServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-catalog-collections');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-catalog-collections');
+        $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
 
         Blade::componentNamespace('WebxUi\\CatalogCollections\\View\\Components', 'webx-catalog-collections');
 
@@ -74,6 +82,7 @@ class CatalogCollectionsServiceProvider extends ServiceProvider
         $this->registerCache();
         $this->registerBlock();
         $this->registerShortcode();
+        $this->registerPanel();
 
         $this->app->make(Dispatcher::class)->listen(FacetValueRetargeted::class, [CollectionRepairs::class, 'handle']);
 
@@ -136,6 +145,27 @@ class CatalogCollectionsServiceProvider extends ServiceProvider
             block: true,
             menu: static fn (): array => $shortcode()->menu(),
         );
+    }
+
+    /**
+     * The section and its form. The patch waits for the tree: the ceiling is the site's config, and
+     * whether the stock satellite is there is known only once every provider has booted (§6.2).
+     */
+    private function registerPanel(): void
+    {
+        $screens = $this->app->make(ScreenRegistry::class);
+        $screens->register(ProductCollection::SCREEN, __DIR__.'/../resources/screens/collection-form.json');
+        $screens->extend(ProductCollection::SCREEN, static function (): array {
+            $max = ProductCollection::maxLimit();
+            $patch = [
+                ['op' => 'set', 'target' => 'limit', 'props' => ['max' => $max]],
+                ['op' => 'set', 'target' => 'products', 'props' => ['max' => $max]],
+            ];
+
+            return ProductQuery::hasMacro('inStock') ? $patch : [...$patch, ['op' => 'remove', 'target' => 'only-purchasable']];
+        });
+
+        $this->app->make(ModuleRegistry::class)->register($this->app->make(CollectionsModule::class));
     }
 
     /**

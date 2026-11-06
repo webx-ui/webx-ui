@@ -63,6 +63,9 @@ class ProductCollection extends Model
     /** The type the journal knows it by. */
     public const TYPE = 'catalog.collection';
 
+    /** The form of the panel. */
+    public const SCREEN = 'catalog.collection-form';
+
     /** The hand-picked products, in their order (§2.3). */
     public const PRODUCTS = 'catalog_collection_products';
 

@@ -12,4 +12,9 @@ return [
     'source-unknown' => '«:source» adlı bir doldurma yolu yok.',
     'view-unknown' => '«:view» adlı bir görünüm yok.',
     'limit-range' => 'Sınır, 1 ile :max arasında bir sayıdır.',
+    'category-facet' => 'Kategori, koleksiyonun kendi alanıdır, kümenin parçası değildir.',
+    'unknown-facet' => '«:key» filtresi yok.',
+    'unknown-sort' => '«:sort» sıralaması yok.',
+    'unknown-product' => '#:id ürünü yok.',
+    'products-too-many' => 'Bir liste en fazla :max ürün içerir.',
 ];

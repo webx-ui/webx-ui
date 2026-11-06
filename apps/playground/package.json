@@ -21,6 +21,7 @@
     "@webx-ui/module-catalog-brands": "workspace:*",
     "@webx-ui/module-catalog-labels": "workspace:*",
     "@webx-ui/module-catalog-feeds": "workspace:*",
+    "@webx-ui/module-catalog-collections": "workspace:*",
     "@webx-ui/module-catalog-landings": "workspace:*",
     "@webx-ui/module-catalog-manticore": "workspace:*",
     "@webx-ui/module-catalog-properties": "workspace:*",

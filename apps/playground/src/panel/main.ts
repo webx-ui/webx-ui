@@ -14,6 +14,7 @@ import { catalog } from '@webx-ui/module-catalog'
 import { catalogBrands } from '@webx-ui/module-catalog-brands'
 import { catalogLabels } from '@webx-ui/module-catalog-labels'
 import { catalogFeeds } from '@webx-ui/module-catalog-feeds'
+import { catalogCollections } from '@webx-ui/module-catalog-collections'
 import { catalogLandings } from '@webx-ui/module-catalog-landings'
 import { catalogManticore } from '@webx-ui/module-catalog-manticore'
 import { catalogProperties } from '@webx-ui/module-catalog-properties'
@@ -92,6 +93,7 @@ const admin = createAdmin({
     ...catalogBrands(),
     ...catalogLandings(),
     ...catalogFeeds(),
+    ...catalogCollections(),
     ...catalogLabels(),
     ...catalogProperties(),
     ...catalogStock(),

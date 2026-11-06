@@ -12,4 +12,9 @@ return [
     'source-unknown' => 'Le mode de remplissage «:source» n’existe pas.',
     'view-unknown' => 'L’affichage «:view» n’existe pas.',
     'limit-range' => 'La limite est un nombre de 1 à :max.',
+    'category-facet' => 'La catégorie est un champ propre de la sélection, pas une partie de l’ensemble.',
+    'unknown-facet' => 'La facette «:key» n’existe pas.',
+    'unknown-sort' => 'Le tri «:sort» n’existe pas.',
+    'unknown-product' => 'Le produit #:id n’existe pas.',
+    'products-too-many' => 'Une liste contient au plus :max produits.',
 ];

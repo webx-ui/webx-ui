@@ -12,4 +12,9 @@ return [
     'source-unknown' => 'Nie ma sposobu wypełnienia «:source».',
     'view-unknown' => 'Nie ma widoku «:view».',
     'limit-range' => 'Limit to liczba od 1 do :max.',
+    'category-facet' => 'Kategoria to osobne pole kolekcji, a nie część zestawu.',
+    'unknown-facet' => 'Nie ma fasety «:key».',
+    'unknown-sort' => 'Nie ma sortowania «:sort».',
+    'unknown-product' => 'Nie ma produktu #:id.',
+    'products-too-many' => 'Lista mieści najwyżej :max produktów.',
 ];

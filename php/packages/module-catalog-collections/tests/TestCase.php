@@ -9,6 +9,8 @@ use Orchestra\Testbench\TestCase as Orchestra;
 use WebxUi\Admin\AdminServiceProvider;
 use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Auth\AuthServiceProvider;
+use WebxUi\Auth\Models\CmsUser;
+use WebxUi\Auth\Models\Role;
 use WebxUi\Catalog\CatalogServiceProvider;
 use WebxUi\Catalog\Models\Category;
 use WebxUi\Catalog\Models\Product;
@@ -98,5 +100,32 @@ abstract class TestCase extends Orchestra
             'price' => 10,
             ...$attributes,
         ])->refresh();
+    }
+
+    /**
+     * @param  list<string>  $permissions
+     */
+    protected function manager(array $permissions = ['catalog.view', 'catalog.manage']): CmsUser
+    {
+        static $count = 0;
+        $count++;
+
+        $user = CmsUser::query()->create([
+            'name' => 'Editor '.$count,
+            'email' => "collections-{$count}@example.test",
+            'password' => 'correct-horse-battery',
+            'is_super' => false,
+            'is_active' => true,
+        ]);
+
+        $role = Role::query()->create(['slug' => "collections-{$count}", 'name' => 'Editor', 'permissions' => $permissions]);
+        $user->roles()->attach($role->getKey());
+
+        return $user;
+    }
+
+    protected function api(string $path = ''): string
+    {
+        return rtrim('/api/cms/catalog/collections/'.$path, '/');
     }
 }

@@ -80,6 +80,7 @@ export default defineConfig({
       pkg('module-blog'),
       pkg('module-catalog'),
       pkg('module-catalog-brands'),
+      pkg('module-catalog-collections'),
       pkg('module-catalog-manticore'),
       pkg('module-catalog-labels'),
       pkg('module-catalog-feeds'),

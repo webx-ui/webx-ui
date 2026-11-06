@@ -12,4 +12,9 @@ return [
     'source-unknown' => 'O modo de preenchimento «:source» não existe.',
     'view-unknown' => 'A vista «:view» não existe.',
     'limit-range' => 'O limite é um número de 1 a :max.',
+    'category-facet' => 'A categoria é um campo próprio da coleção, não parte do conjunto.',
+    'unknown-facet' => 'Não existe a faceta «:key».',
+    'unknown-sort' => 'Não existe a ordenação «:sort».',
+    'unknown-product' => 'Não existe o produto #:id.',
+    'products-too-many' => 'Uma lista tem no máximo :max produtos.',
 ];

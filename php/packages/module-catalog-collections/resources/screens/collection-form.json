@@ -1,0 +1,224 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "catalog.collection-form",
+  "model": "catalog.collection",
+  "root": [
+    {
+      "id": "tabs",
+      "type": "wx-tabs",
+      "children": [
+        {
+          "id": "main",
+          "type": "wx-tab",
+          "label": "trans::webx-catalog-collections::collection.tab-main",
+          "children": [
+            {
+              "id": "naming",
+              "type": "wx-card",
+              "children": [
+                {
+                  "id": "title",
+                  "type": "wx-input",
+                  "name": "title",
+                  "label": "trans::webx-catalog-collections::collection.title",
+                  "help": "trans::webx-catalog-collections::collection.title-help",
+                  "localized": true,
+                  "props": { "maxlength": 255 }
+                },
+                {
+                  "id": "key",
+                  "type": "wx-catalog-collection-key",
+                  "name": "key",
+                  "label": "trans::webx-catalog-collections::collection.key",
+                  "help": "trans::webx-catalog-collections::collection.key-help"
+                },
+                {
+                  "id": "source",
+                  "type": "wx-segmented",
+                  "name": "source",
+                  "label": "trans::webx-catalog-collections::collection.source",
+                  "props": {
+                    "options": [
+                      {
+                        "label": "trans::webx-catalog-collections::collection.source-manual",
+                        "value": "manual"
+                      },
+                      {
+                        "label": "trans::webx-catalog-collections::collection.source-filter",
+                        "value": "filter"
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "id": "display",
+              "type": "wx-card",
+              "label": "trans::webx-catalog-collections::collection.display",
+              "children": [
+                {
+                  "id": "limit",
+                  "type": "wx-input-number",
+                  "name": "limit",
+                  "label": "trans::webx-catalog-collections::collection.limit",
+                  "help": "trans::webx-catalog-collections::collection.limit-help",
+                  "props": { "min": 1, "max": 48 }
+                },
+                {
+                  "id": "view",
+                  "type": "wx-segmented",
+                  "name": "view",
+                  "label": "trans::webx-catalog-collections::collection.view",
+                  "props": {
+                    "options": [
+                      {
+                        "label": "trans::webx-catalog-collections::collection.view-grid",
+                        "value": "grid"
+                      },
+                      {
+                        "label": "trans::webx-catalog-collections::collection.view-carousel",
+                        "value": "carousel"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "link",
+                  "type": "wx-link",
+                  "name": "link",
+                  "label": "trans::webx-catalog-collections::collection.link",
+                  "help": "trans::webx-catalog-collections::collection.link-help"
+                },
+                {
+                  "id": "link-text",
+                  "type": "wx-input",
+                  "name": "link_text",
+                  "label": "trans::webx-catalog-collections::collection.link_text",
+                  "help": "trans::webx-catalog-collections::collection.link-text-help",
+                  "localized": true,
+                  "props": { "maxlength": 255 }
+                },
+                {
+                  "id": "is-enabled",
+                  "type": "wx-switch",
+                  "name": "is_enabled",
+                  "label": "trans::webx-catalog-collections::collection.is_enabled",
+                  "help": "trans::webx-catalog-collections::collection.enabled-help"
+                },
+                {
+                  "id": "only-purchasable",
+                  "type": "wx-switch",
+                  "name": "only_purchasable",
+                  "label": "trans::webx-catalog-collections::collection.only_purchasable",
+                  "help": "trans::webx-catalog-collections::collection.only-purchasable-help"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "products-tab",
+          "type": "wx-tab",
+          "label": "trans::webx-catalog-collections::collection.tab-products",
+          "children": [
+            {
+              "id": "products-row",
+              "type": "wx-row",
+              "props": { "class": "wx-catalog-collection-split" },
+              "children": [
+                {
+                  "id": "conditions-col",
+                  "type": "wx-col",
+                  "props": { "span": 24, "md": 14 },
+                  "children": [
+                    {
+                      "id": "manual-card",
+                      "type": "wx-card",
+                      "visible": { "when": "source", "is": "manual" },
+                      "children": [
+                        {
+                          "id": "products",
+                          "type": "wx-catalog-collection-products",
+                          "name": "products",
+                          "label": "trans::webx-catalog-collections::collection.products",
+                          "help": "trans::webx-catalog-collections::collection.products-help",
+                          "props": { "max": 48 }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "filter-card",
+                      "type": "wx-card",
+                      "visible": { "when": "source", "is": "filter" },
+                      "children": [
+                        { "id": "preset", "type": "wx-catalog-collection-preset" },
+                        {
+                          "id": "category",
+                          "type": "wx-catalog-category",
+                          "name": "category_id",
+                          "label": "trans::webx-catalog-collections::collection.category_id",
+                          "help": "trans::webx-catalog-collections::collection.category-help"
+                        },
+                        {
+                          "id": "set",
+                          "type": "wx-catalog-collection-set",
+                          "name": "filters",
+                          "label": "trans::webx-catalog-collections::collection.filters"
+                        },
+                        {
+                          "id": "on-sale",
+                          "type": "wx-switch",
+                          "name": "on_sale",
+                          "label": "trans::webx-catalog-collections::collection.on_sale",
+                          "help": "trans::webx-catalog-collections::collection.on-sale-help"
+                        },
+                        {
+                          "id": "sort",
+                          "type": "wx-catalog-collection-sort",
+                          "name": "sort",
+                          "label": "trans::webx-catalog-collections::collection.sort"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "preview-col",
+                  "type": "wx-col",
+                  "props": { "span": 24, "md": 10 },
+                  "children": [
+                    {
+                      "id": "preview-card",
+                      "type": "wx-card",
+                      "label": "trans::webx-catalog-collections::collection.preview",
+                      "children": [{ "id": "preview", "type": "wx-catalog-collection-preview" }]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "history-tab",
+          "type": "wx-tab",
+          "label": "trans::webx-catalog-collections::collection.tab-history",
+          "children": [
+            {
+              "id": "history-card",
+              "type": "wx-card",
+              "children": [
+                {
+                  "id": "history",
+                  "type": "wx-history",
+                  "props": { "type": "catalog.collection", "title": "" }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

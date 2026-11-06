@@ -12,4 +12,9 @@ return [
     'source-unknown' => 'There is no way of filling a collection called «:source».',
     'view-unknown' => 'There is no view called «:view».',
     'limit-range' => 'The limit is a number from 1 to :max.',
+    'category-facet' => 'The category is the collection’s own field, not a part of the set.',
+    'unknown-facet' => 'There is no facet «:key».',
+    'unknown-sort' => 'There is no sort «:sort».',
+    'unknown-product' => 'There is no product #:id.',
+    'products-too-many' => 'A list holds at most :max products.',
 ];

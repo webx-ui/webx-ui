@@ -5,7 +5,8 @@ together once, by hand or by a filter. It has no address of its own: for a page 
 SEO, use `webx-ui/module-catalog-landings`. This package is a satellite of `webx-ui/module-catalog`;
 for the filter, its facets and the product card, read the core's `AGENTS.md`. The package is being
 built in stages: so far it holds the tables, the model, what a collection contains, the tag that
-prints it, the block that places it and the shortcode; the panel comes later.
+prints it, the block that places it, the shortcode and the section of the panel; the agent's tools
+come later.
 
 ## What it owns
 
@@ -40,6 +41,12 @@ prints it, the block that places it and the shortcode; the panel comes later.
   (`Storefront\CollectionShortcode`): the tag in a rich text, a block shortcode of `module-admin`.
   In a line of text and in anything plain it prints nothing. The panel's `[` offers a row for each
   collection, so the key is chosen, not typed.
+- **Panel** the section `catalog-collections` (`Panel\CollectionsModule`), the form
+  `catalog.collection-form` and the API `/api/cms/catalog/collections`
+  (`Http\CollectionController`). A write goes through `Http\CollectionForm`, which holds a filter to
+  its facets and sort, stops the list at `max_limit` and clears `attention`. `POST preview`
+  (`Catalog\CollectionPreview`) answers on unsaved values, with the reason a picked product is out.
+  The npm half is `@webx-ui/module-catalog-collections`.
 - **Repairs** `Catalog\CollectionRepairs` listens to `FacetValueRetargeted`: a merge moves the set,
   a deletion marks `attention`, and a filter's set left empty turns the collection off.
 
@@ -53,6 +60,7 @@ prints it, the block that places it and the shortcode; the panel comes later.
 | Another way of filling one    | a `CollectionResolver` in `CollectionResolvers`, and its `source`  |
 | Another preset                | `CollectionPresets::register()`                                    |
 | Another markup                | `php artisan vendor:publish --tag=webx-catalog-collections-views`  |
+| More on the form              | `Screens::extend('catalog.collection-form', […])`                  |
 | Another card                  | override `webx-catalog::card`: it changes in the listing too       |
 
 ### Classes
@@ -63,6 +71,11 @@ prints it, the block that places it and the shortcode; the panel comes later.
 - `webx-catalog-collection__grid` — the list of the grid, beside the catalogue's `webx-catalog-grid`.
   `--webx-catalog-collection-card` is the narrowest card.
 - `webx-catalog-collection__item` — a place for a card, in the grid and in the carousel.
+
+### Permissions
+
+None of its own: `catalog.view` reads the section and asks the preview, `catalog.manage` writes and
+sends to the bin. The section is visible to whoever holds either (`visibleWith()`).
 
 ## Do not
 
@@ -94,6 +107,8 @@ prints it, the block that places it and the shortcode; the panel comes later.
   keys there are.
 - Write `[product-collection key=new-arrivals]` alone in a paragraph of a rich text: the page has the
   section and no `<p>` around it; the same bracket in a title prints nothing.
+- In the panel, «Catalog» → «Product collections»: on a new collection add products on the tab
+  «Products», and the preview beside them says what the site would show before anything is saved.
 - `vendor/bin/phpunit packages/module-catalog-collections/tests` in the monorepo's `php/`.
 
 ## Read more

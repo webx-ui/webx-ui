@@ -12,4 +12,9 @@ return [
     'source-unknown' => 'Способу наповнення «:source» немає.',
     'view-unknown' => 'Вигляду «:view» немає.',
     'limit-range' => 'Ліміт — число від 1 до :max.',
+    'category-facet' => 'Категорія — окреме поле підбірки, а не частина набору.',
+    'unknown-facet' => 'Фасета «:key» немає.',
+    'unknown-sort' => 'Сортування «:sort» немає.',
+    'unknown-product' => 'Товару #:id немає.',
+    'products-too-many' => 'У списку не більше :max товарів.',
 ];

@@ -21,6 +21,17 @@ final class ManualResolver implements CollectionResolver
     {
         $picked = $collection->products()->pluck('catalog_products.id')->map(intval(...))->all();
 
+        return $this->pick($collection, array_values($picked), $limit, $locale);
+    }
+
+    /**
+     * A list through the rules: the saved one, or the one on a form nobody saved yet (§6.3).
+     *
+     * @param  list<int>  $picked
+     * @return list<int>
+     */
+    public function pick(ProductCollection $collection, array $picked, int $limit, string $locale): array
+    {
         if ($picked === []) {
             return [];
         }

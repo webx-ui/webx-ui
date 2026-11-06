@@ -300,6 +300,7 @@ import { registerManticore } from './catalog-manticore'
 import { brandHistory, registerDictionaries } from './catalog-dictionaries'
 import { propertyHistory, registerProperties } from './catalog-properties'
 import { registerFeeds } from './catalog-feeds'
+import { collectionHistory, registerCollections } from './catalog-collections'
 import { landingHistory, registerLandings } from './catalog-landings'
 import { Reply } from './reply'
 import { handleUploads } from './uploads'
@@ -717,6 +718,16 @@ function manifestOf(locale: string) {
         title: line(locale, 'webx-catalog-feeds', 'module.title'),
         icon: 'file-text',
         order: 304,
+        group: 'catalog',
+        permissions: [],
+        meta: {},
+      },
+      /* Collections: below the landings (§6 of the collections spec), no permissions of their own. */
+      {
+        id: 'catalog-collections',
+        title: line(locale, 'webx-catalog-collections', 'module.title'),
+        icon: 'grid',
+        order: 305,
         group: 'catalog',
         permissions: [],
         meta: {},
@@ -2700,6 +2711,7 @@ on('GET', '/history/([\\w.-]+)/(\\d+)', ({ params, query }) => {
     brandHistory(params[0]!, Number(params[1]), page) ??
     propertyHistory(params[0]!) ??
     landingHistory(params[0]!) ??
+    collectionHistory(params[0]!) ??
     snippetHistory(params[0]!, Number(params[1])) ??
     notificationsHistory(params[0]!, Number(params[1]))
 
@@ -2785,6 +2797,13 @@ registerLandings(
   (status, message, errors) => new HttpFailure(status, message, undefined, errors),
   line,
   categoryLookup,
+)
+
+/* Its collections (WEBX_UI_CATALOG_COLLECTIONS.md): the list, the form, the preview. */
+registerCollections(
+  on,
+  (status, message, errors) => new HttpFailure(status, message, undefined, errors),
+  line,
 )
 
 /* Its feeds (WEBX_UI_CATALOG_FEEDS.md): the list, the form, the journal, builds by a timer. */

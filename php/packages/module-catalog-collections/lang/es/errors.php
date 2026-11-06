@@ -12,4 +12,9 @@ return [
     'source-unknown' => 'No existe el modo de relleno «:source».',
     'view-unknown' => 'No existe la vista «:view».',
     'limit-range' => 'El límite es un número de 1 a :max.',
+    'category-facet' => 'La categoría es un campo propio de la colección, no parte del conjunto.',
+    'unknown-facet' => 'No existe la faceta «:key».',
+    'unknown-sort' => 'No existe el orden «:sort».',
+    'unknown-product' => 'No existe el producto #:id.',
+    'products-too-many' => 'Una lista admite como máximo :max productos.',
 ];

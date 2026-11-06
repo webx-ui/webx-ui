@@ -308,6 +308,11 @@ const SCREENS: Record<string, { base: string; patches: (string | Patch)[] }> = {
     base: 'php/packages/module-catalog-landings/resources/screens/landing-form.json',
     patches: [],
   },
+  // A collection's form (WEBX_UI_CATALOG_COLLECTIONS.md §6.2).
+  'catalog.collection-form': {
+    base: 'php/packages/module-catalog-collections/resources/screens/collection-form.json',
+    patches: [],
+  },
   // A feed's form (WEBX_UI_CATALOG_FEEDS.md §11).
   'catalog.feed-form': {
     base: 'php/packages/module-catalog-feeds/resources/screens/feed-form.json',
