@@ -96,6 +96,20 @@
           }
         },
         {
+          "id": "delivery_keys",
+          "type": "wx-input",
+          "name": "delivery_keys",
+          "label": "trans::webx-payments::panel.method.delivery-keys",
+          "help": "trans::webx-payments::panel.method.delivery-keys-help",
+          "visible": {
+            "when": "delivery_mode",
+            "in": ["methods", "except"]
+          },
+          "props": {
+            "maxlength": 500
+          }
+        },
+        {
           "id": "min_amount",
           "type": "wx-input-number",
           "name": "min_amount",

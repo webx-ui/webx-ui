@@ -312,21 +312,14 @@ class PaymentsServiceProvider extends ServiceProvider
         $screens->register(MethodForm::SCREEN, __DIR__.'/../resources/screens/method.json');
 
         // The delivery methods a rule names: the delivery module's list, or their keys as text
-        // where it is not installed (§13.3). Read when the screen is asked for, not at boot.
+        // where it is not installed (§13.3). Both fields are in the screen and the patch takes one
+        // off, so the help of either is checked on any site. Read when the screen is asked for.
         $screens->extend(MethodForm::SCREEN, fn (): array => ($options = $this->app->make(MethodForm::class)->deliveryOptions()) !== null
-            ? [['op' => 'set', 'target' => 'delivery_methods', 'props' => ['options' => $options]]]
-            : [
-                ['op' => 'remove', 'target' => 'delivery_methods'],
-                ['op' => 'add', 'target' => 'rules', 'position' => 'after:delivery_mode', 'node' => [
-                    'id' => 'delivery_keys',
-                    'type' => 'wx-input',
-                    'name' => 'delivery_keys',
-                    'label' => 'trans::webx-payments::panel.method.delivery-keys',
-                    'help' => 'trans::webx-payments::panel.method.delivery-keys-help',
-                    'visible' => ['when' => 'delivery_mode', 'in' => ['methods', 'except']],
-                    'props' => ['maxlength' => 500],
-                ]],
-            ]);
+            ? [
+                ['op' => 'set', 'target' => 'delivery_methods', 'props' => ['options' => $options]],
+                ['op' => 'remove', 'target' => 'delivery_keys'],
+            ]
+            : [['op' => 'remove', 'target' => 'delivery_methods']]);
 
         // The tab «Payment» of the order's card, before «Customer» — after «Delivery» where it is
         // (§13.4): the node reads the order's id from the card. A static `can`, not a closure: the

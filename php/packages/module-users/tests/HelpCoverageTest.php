@@ -17,8 +17,8 @@ final class HelpCoverageTest extends TestCase
     use AssertsHelp;
 
     /**
-     * The settings too: without them the card of required fields is taken off the screen, and its
-     * fields are the ones a site really has.
+     * The settings too: without them the card of required fields is taken off the screen, and
+     * nothing would ask for its fields to be described.
      *
      * @param  Application  $app
      * @return list<class-string>
