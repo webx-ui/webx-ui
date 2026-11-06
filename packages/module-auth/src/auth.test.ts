@@ -26,6 +26,7 @@ function panel(status: 'unauthenticated' | 'ready' = 'unauthenticated'): Admin {
     pickImage: null,
     assetUrls: null,
     loadScreen: () => Promise.resolve([]),
+    loadHelp: () => Promise.reject(new Error('no help here')),
     screenPatch: () => [],
     reload: () => Promise.resolve(),
     refreshManifest: () => Promise.resolve(),

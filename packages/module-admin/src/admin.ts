@@ -1,6 +1,7 @@
 import { computed, inject, reactive, type App, type ComputedRef, type InjectionKey } from 'vue'
 import type { Patch, ScreenNode, TypeRegistry } from '@webx-ui/schema'
 import { adminTypes } from './screenTypes'
+import type { HelpPage } from './help'
 import type { Http } from './http'
 import type { I18n } from './i18n'
 import type { ThemeController } from './theme'
@@ -85,6 +86,11 @@ export interface AdminContext {
    * permissions, translated. Fetched once per name and language for the session.
    */
   loadScreen(name: string): Promise<ScreenNode[]>
+  /**
+   * The help of a screen, asked for when somebody presses «?» and not before. Fetched once per
+   * key and language for the session, like a screen.
+   */
+  loadHelp(key: string): Promise<HelpPage>
   /** The project's own operations over a screen, from `createAdmin({ screens })`. */
   screenPatch(name: string): Patch
 }
@@ -270,6 +276,27 @@ export function createAdminContext(options: {
           throw error
         })
       screens.set(key, pending)
+    }
+
+    return pending
+  }
+
+  const helpPages = new Map<string, Promise<HelpPage>>()
+
+  async function loadHelp(name: string): Promise<HelpPage> {
+    const key = `${options.i18n.state.locale}:${name}`
+    let pending = helpPages.get(key)
+
+    if (pending === undefined) {
+      pending = options.http
+        .get<{ data: HelpPage }>(`${options.apiPath}/help/${name}`)
+        .then((body) => body.data)
+        .catch((error: unknown) => {
+          // As with a screen: the next press of «?» asks again.
+          helpPages.delete(key)
+          throw error
+        })
+      helpPages.set(key, pending)
     }
 
     return pending
@@ -471,6 +498,7 @@ export function createAdminContext(options: {
       return user.isSuper || user.permissions.includes(permission)
     },
     loadScreen,
+    loadHelp,
     screenPatch(name) {
       return options.screens?.[name] ?? []
     },

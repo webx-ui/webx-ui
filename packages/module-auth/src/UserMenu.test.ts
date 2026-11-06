@@ -31,6 +31,7 @@ function panel(user: AdminUser, siteUrl: string | null = null): AdminContext {
     pickImage: null,
     assetUrls: null,
     loadScreen: () => Promise.resolve([]),
+    loadHelp: () => Promise.reject(new Error('no help here')),
     screenPatch: () => [],
     reload: () => Promise.resolve(),
     refreshManifest: () => Promise.resolve(),

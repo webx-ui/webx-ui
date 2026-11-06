@@ -1,10 +1,21 @@
 <script setup lang="ts">
-import { computed, onUnmounted, ref, watch, watchEffect } from 'vue'
+import {
+  computed,
+  onUnmounted,
+  provide,
+  ref,
+  useTemplateRef,
+  watch,
+  watchEffect,
+  type ComponentPublicInstance,
+} from 'vue'
 import { useRoute } from 'vue-router'
-import { shellLayoutFor, useResponsiveShell, WxToaster } from '@webx-ui/core'
+import { shellLayoutFor, useElementWidth, useResponsiveShell, WxToaster } from '@webx-ui/core'
 import { useAdmin } from './admin'
 import { useTranslate } from './i18n'
+import { createHelp, helpKey } from './help'
 import AdminForbidden from './AdminForbidden.vue'
+import HelpPanel from './HelpPanel.vue'
 import SiteLink from './SiteLink.vue'
 
 /**
@@ -115,10 +126,40 @@ watchEffect(() => {
 onUnmounted(() => {
   if (typeof document !== 'undefined') delete document.documentElement.dataset.wxShell
 })
+
+const help = createHelp(admin)
+provide(helpKey, help)
+
+/** What a screen has to keep for its head to stay in one line: `WxScreenHead`'s `collapseBelow`. */
+const SCREEN_ROOM = 720
+
+const screen = useTemplateRef<ComponentPublicInstance>('screen')
+const screenBox = computed<HTMLElement | null>(() => screen.value?.$el ?? null)
+const screenWidth = useElementWidth(screenBox)
+
+/*
+ * The help stands beside the screen, which narrows, rather than over it: the form it explains has
+ * to stay in view. With less room than a screen can work in, it lies over the right edge instead
+ * and the reader can drag it narrower.
+ *
+ * The room is taken inside the column, on `.wx-main__inner`, and not on the column that is
+ * measured: an observer reports the content box, so padding there shrinks the very number this
+ * asks about, the answer turns to «no room», the padding goes, and the screen flickers for ever.
+ */
+const helpRoom = computed(() => {
+  const docked =
+    help.open.value &&
+    !help.blocking.value &&
+    help.width.value > 0 &&
+    screenWidth.value - help.width.value >= SCREEN_ROOM
+
+  return docked ? help.width.value : 0
+})
 </script>
 
 <template>
   <wx-toaster placement="bottom-center" />
+  <help-panel v-if="admin.state.status === 'ready'" />
 
   <div v-if="admin.state.status === 'unauthenticated'" class="wx-root wx-admin-plain">
     <router-view />
@@ -277,7 +318,12 @@ onUnmounted(() => {
         </template>
       </wx-aside>
 
-      <wx-main padding="none" class="wx-admin__screen">
+      <wx-main
+        ref="screen"
+        padding="none"
+        class="wx-admin__screen"
+        :style="helpRoom > 0 ? { '--wx-help-room': `${helpRoom}px` } : undefined"
+      >
         <admin-forbidden v-if="forbidden" />
         <router-view v-else />
       </wx-main>
@@ -499,6 +545,11 @@ onUnmounted(() => {
 
   min-width: 0;
   min-height: 0;
+}
+
+.wx-admin__screen :deep(> .wx-main__inner) {
+  box-sizing: border-box;
+  padding-inline-end: var(--wx-help-room, 0);
 }
 
 .wx-admin--drawer .wx-admin__screen {

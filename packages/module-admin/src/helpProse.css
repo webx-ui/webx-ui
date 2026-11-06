@@ -1,0 +1,74 @@
+/*
+ * A page of prose rather than a form: room between the paragraphs, and code that is readable
+ * at the size the rest of the panel is set in. One file for the two things that show such a
+ * page, the dialog of `WxHelpButton` and the side panel of `WxHelpPanel`.
+ */
+.wx-help {
+  color: var(--wx-text-default);
+  font-size: var(--wx-font-size-md);
+  line-height: var(--wx-font-line-height-normal);
+}
+
+.wx-help h2,
+.wx-help h3,
+.wx-help h4 {
+  margin-block: var(--wx-space-18) var(--wx-space-8);
+  font-weight: var(--wx-font-weight-semibold);
+}
+
+.wx-help h2 {
+  font-size: var(--wx-font-size-lg);
+}
+
+.wx-help h3,
+.wx-help h4 {
+  font-size: var(--wx-font-size-md);
+}
+
+.wx-help :is(h2, h3, h4):first-child {
+  margin-block-start: 0;
+}
+
+.wx-help p,
+.wx-help ul,
+.wx-help ol {
+  margin-block: 0 var(--wx-space-12);
+}
+
+.wx-help > :last-child {
+  margin-block-end: 0;
+}
+
+.wx-help ul,
+.wx-help ol {
+  padding-inline-start: var(--wx-space-24);
+}
+
+.wx-help li {
+  margin-block-end: var(--wx-space-4);
+}
+
+.wx-help code {
+  padding: 0 var(--wx-space-4);
+  border-radius: var(--wx-radius-xs);
+  background: var(--wx-bg-subtle);
+  font-family: var(--wx-font-family-mono);
+  font-size: var(--wx-font-size-sm);
+}
+
+.wx-help pre {
+  margin-block: 0 var(--wx-space-12);
+  padding: var(--wx-space-12);
+  border-radius: var(--wx-radius-sm);
+  background: var(--wx-bg-subtle);
+  overflow: auto;
+}
+
+.wx-help pre code {
+  padding: 0;
+  background: none;
+}
+
+.wx-help a {
+  color: var(--wx-color-primary);
+}

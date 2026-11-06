@@ -53,6 +53,8 @@ withDefaults(
     fill?: boolean
     /** Container width below which the views fold into one switch. */
     collapseBelow?: number
+    /** The head's `help`: a key other than the route's, or `false` for no «?». */
+    help?: string | false
   }>(),
   {
     title: undefined,
@@ -65,6 +67,7 @@ withDefaults(
     padding: undefined,
     fill: false,
     collapseBelow: 560,
+    help: undefined,
   },
 )
 
@@ -100,6 +103,7 @@ const view = defineModel<TabValue | undefined>('view', { default: undefined })
       :back="back"
       :back-label="backLabel"
       :actions="actions"
+      :help="help"
       :collapse-below="480"
     >
       <template v-if="$slots.actions" #extra><slot name="actions" /></template>

@@ -31,11 +31,17 @@ function bound(page: Component, options: CategoriesOptions): Component {
  */
 export function categoryRoutes(options: CategoriesOptions): RouteRecordRaw[] {
   return [
-    { path: options.path, name: options.name, component: bound(CategoriesPage, options) },
+    {
+      path: options.path,
+      name: options.name,
+      component: bound(CategoriesPage, options),
+      meta: { help: `${options.module}.index` },
+    },
     {
       path: `${options.path}/:id(\\d+)`,
       name: `${options.name}.edit`,
       component: bound(CategoryEditorPage, options),
+      meta: { help: options.screen },
     },
   ]
 }

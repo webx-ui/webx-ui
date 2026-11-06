@@ -7,8 +7,9 @@ import { screen } from './screens'
  * fixture, and the labels, hints and tabs come from the same tree the form gets. `HelpBuilder` is
  * the real thing.
  *
- * Three keys, one for each thing the panel has to draw: a screen with no tabs, a screen with tabs
- * and a field nobody described (the SEO tab), and a page with no tree. Texts are in `en` and `ru`
+ * Four keys, one for each thing the panel has to draw: a screen with no tabs, a screen with tabs
+ * and a field nobody described (the SEO tab), a page with no tree, and a screen that fills the
+ * window. Texts are in `en` and `ru`
  * only, so a panel in any other language gets the English text and the line that says so.
  */
 
@@ -73,6 +74,18 @@ const TEXTS: Record<string, Record<string, Text>> = {
           'Это слово покупатель видит у товара и в фильтре каталога, поэтому лучше писать коротко.',
         code: 'Если код поменять, ссылки на фильтр, которые уже разошлись по рекламе и закладкам, перестанут выбирать этот статус.',
       },
+    },
+  },
+  'media.index': {
+    en: {
+      title: 'Media library',
+      about:
+        'All the files of the site live here, in folders. A picture put on a page is taken from this library.',
+    },
+    ru: {
+      title: 'Медиатека',
+      about:
+        'Здесь лежат все файлы сайта, по папкам. Картинка на странице берётся из этой библиотеки.',
     },
   },
   'blog.category-form': {
