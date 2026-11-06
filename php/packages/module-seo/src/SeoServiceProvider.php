@@ -152,9 +152,11 @@ class SeoServiceProvider extends ServiceProvider
 
         $screens->extend(Settings::SCREEN, __DIR__.'/../resources/screens/settings.json');
 
-        // The default heading of interlinking blocks, only where interlinking exists (§18.1, 2).
-        if (Features::links()) {
-            $screens->extend(Settings::SCREEN, __DIR__.'/../resources/screens/settings.links.json');
+        // The default heading of interlinking blocks, only where interlinking exists (§18.1, 2). It is
+        // in the JSON and a site without it loses it here: what depends on the site has to be on a
+        // step of the screen for its help to be checked.
+        if (! Features::links()) {
+            $screens->extend(Settings::SCREEN, [['op' => 'remove', 'target' => 'links-heading']]);
         }
 
         // The card on the page editor, for the same reason and by the same mechanism: a

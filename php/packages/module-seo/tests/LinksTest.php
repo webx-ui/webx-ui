@@ -12,6 +12,7 @@ use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Response;
+use WebxUi\Admin\Facades\Screens;
 use WebxUi\Mcp\Tool;
 use WebxUi\Routing\Resolution;
 use WebxUi\Routing\Resolver;
@@ -186,6 +187,15 @@ final class LinksTest extends TestCase
         app(Settings::class)->save(['seo.links-heading' => ['ru' => 'Похожие разделы']]);
 
         $this->assertStringContainsString('Похожие разделы', $this->render($donor));
+    }
+
+    #[Test]
+    public function the_settings_tab_has_the_default_heading_in_its_first_card(): void
+    {
+        $ids = array_column(Screens::fields(Settings::SCREEN), 'id');
+
+        $this->assertContains('links-heading', $ids);
+        $this->assertSame(array_search('org-socials', $ids, true) + 1, array_search('links-heading', $ids, true));
     }
 
     #[Test]
