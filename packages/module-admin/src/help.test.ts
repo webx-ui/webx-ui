@@ -83,6 +83,17 @@ describe('where the focus goes when the panel closes', () => {
     expect(document.activeElement).toBe(trigger)
   })
 
+  it('leaves the form where the reader scrolled it', () => {
+    const help = panel()
+    const trigger = button()
+    const focus = vi.spyOn(trigger, 'focus')
+
+    help.toggle('a.index', trigger)
+    help.returnFocus()
+
+    expect(focus).toHaveBeenCalledWith({ preventScroll: true })
+  })
+
   it('stays in the field the reader is typing in', () => {
     const help = panel()
     const field = document.createElement('input')

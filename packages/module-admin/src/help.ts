@@ -160,7 +160,8 @@ export function createHelp(admin: Pick<AdminContext, 'state'>): Help {
         ? trigger
         : document.querySelector<HTMLElement>(`[aria-controls="${HELP_PANEL_ID}"]`)
 
-      target?.focus()
+      /* The head does not stick, so a plain focus would scroll the form away from the reader. */
+      target?.focus({ preventScroll: true })
     },
   }
 }

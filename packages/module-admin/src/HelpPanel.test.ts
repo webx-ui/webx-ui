@@ -174,6 +174,57 @@ describe('WxHelpPanel', () => {
     expect(help.open.value).toBe(false)
   })
 
+  it('shows the skeleton and no old words while another page loads', async () => {
+    let finish: (page: HelpPage) => void = () => {}
+
+    const { help } = await draw((key) =>
+      key === 'a.form'
+        ? Promise.resolve(PAGE)
+        : new Promise<HelpPage>((resolve) => {
+            finish = resolve
+          }),
+    )
+
+    help.show('b.form')
+    await flushPromises()
+
+    expect(document.querySelector('.wx-help-panel .wx-skeleton')).not.toBeNull()
+    expect(panelText()).not.toContain('Help: Status')
+    expect(panelText()).not.toContain('About title')
+
+    finish({ ...PAGE, key: 'b.form', title: 'Next' })
+    await flushPromises()
+
+    expect(document.querySelector('.wx-help-panel .wx-skeleton')).toBeNull()
+    expect(panelText()).toContain('Help: Next')
+  })
+
+  it('does not blink when the page on show loads again', async () => {
+    let finish: (page: HelpPage) => void = () => {}
+    let attempts = 0
+
+    const { help } = await draw(() => {
+      attempts += 1
+      if (attempts === 1) return Promise.resolve(PAGE)
+
+      return new Promise<HelpPage>((resolve) => {
+        finish = resolve
+      })
+    })
+
+    help.close()
+    await flushPromises()
+    help.toggle('a.form', null)
+    await flushPromises()
+
+    expect(attempts).toBe(2)
+    expect(document.querySelector('.wx-help-panel .wx-skeleton')).toBeNull()
+    expect(panelText()).toContain('Help: Status')
+
+    finish(PAGE)
+    await flushPromises()
+  })
+
   it('keeps the newer page when the older answer comes last', async () => {
     let finish: (page: HelpPage) => void = () => {}
 

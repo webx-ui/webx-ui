@@ -48,7 +48,14 @@ const open = computed({
   },
 })
 
-const page = ref<HelpPage | null>(null)
+const answered = ref<HelpPage | null>(null)
+
+/*
+ * Only the page that was asked for: on the way to another screen the last one's text would pass
+ * for this one's. The same page loading again, in another language, stays until its answer comes.
+ */
+const page = computed(() => (answered.value?.key === help?.key.value ? answered.value : null))
+
 const failure = ref<string | null>(null)
 const loading = ref(false)
 const tab = ref<string | number>('')
@@ -70,14 +77,14 @@ async function load() {
     const answer = await admin.loadHelp(key)
     if (mine !== ticket) return
 
-    page.value = answer
+    answered.value = answer
     tab.value = answer.groups[0]?.id ?? ''
     query.value = ''
     scroller()?.scrollTo?.({ top: 0 })
   } catch (error) {
     if (mine !== ticket) return
 
-    page.value = null
+    answered.value = null
     failure.value = errorOf(error, t('help.error'))
   } finally {
     if (mine === ticket) loading.value = false
