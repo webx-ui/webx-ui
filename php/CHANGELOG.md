@@ -1,5 +1,166 @@
 # @webx-ui/php
 
+## 0.94.0
+
+### Minor Changes
+
+- cd801c7: `webx-ui/module-catalog-collections`: the offered block `product-collection` puts a collection on any page or region, with its own heading, view and a limit that can only lower the collection's. Install it with `php artisan webx:blocks:offered --install`. The field `wx-catalog-collection` keeps the key and refuses an unknown one only when it is written, naming the keys there are; the relation target `catalog-collection` lists the collections for the picker.
+- cd801c7: `webx-ui/module-catalog-collections`: a collection now knows what it holds. By hand or by a filter, with the presets «new», «on sale» and «by label», the rule `only_purchasable` and a limit a place can only lower, from a cache of its own group `catalog-collections`. A value of a set merged or deleted repairs the collection. New index on `catalog_products.old_price`. After updating: `php artisan migrate`.
+- cd801c7: Демо подборок: `webx:demo` создаёт на демо-магазине шесть подборок — пресеты «Новинки» и «Со скидкой» (карусель), «Хиты» по метке, ручной список, выключенную и пустую. Блоки встают на главную, шорткоды — в демо-статью; `--remove` возвращает обе как были. Сайт со своими подборками демо не трогает. Раздел о подборках в гайде каталога.
+- cd801c7: Подборки доступны агенту: инструменты `catalog_collections_*` (list, get, facets, preview, usage, create, update, products, delete, restore) и ресурс `catalog://collections` с правилами дома — под скоупами и правами каталога. Каждая запись принимает `dry_run`, набор принимается кодами и слагами и хранится по id, а условие у ручной подборки и список у подборки по фильтру получают отказ: ни то ни другое не читается, и агент решил бы, что поменял сайт. Кривой ввод получает отказ, а не молчаливую замену: `limit` не целым числом (и в форме панели), слова не строкой, фасет без читаемого значения — иначе подборка стала бы всем каталогом. Пустая строка в `on_sale`, `only_purchasable` и `is_enabled` — тоже отказ, у панели и у агента: правило `boolean` её пропускает, и на MariaDB запись падала ошибкой SQL. `_preview` отказывает в том же `limit` и `view`, что и запись.
+- cd801c7: New satellite of the catalogue, `webx-ui/module-catalog-collections`: the tables of product collections and the `ProductCollection` model, with its key, limit and link rules, the journal and snapshots. A collection can be made in code; printing it on the site and the panel's section come next. After updating: `php artisan migrate`.
+- cd801c7: Раздел «Подборки товаров» в панели: список с поиском по заголовку и ключу, копированием тега,
+  «Требует внимания», выключенными и корзиной; форма `catalog.collection-form` с ручным списком и
+  перетаскиванием или с фильтром (пресет, категория, набор, «только со скидкой», сортировка) и живым
+  предпросмотром на несохранённых значениях: в нём сказано, почему товар ручного списка не попадёт на
+  сайт. API `/api/cms/catalog/collections`, модуль в `webx:setup`, поле блока `wx-catalog-collection`.
+  Первую версию npm-пакета публикует человек.
+- cd801c7: Подборки: окончательное удаление из вкладки «Корзина» с подтверждением, как в страницах и сниппетах: маршрут `DELETE {id}/purge` (право `catalog.manage`) и инструмент `catalog_collections_purge` с `dry_run`. Удалить навсегда можно только запись в корзине; её ключ освобождается, а вставки с этим ключом ничего не печатают.
+- cd801c7: `[product-collection key=cameras view=carousel limit=4]` puts a product collection in a rich text. `webx-ui/module-admin` gets block shortcodes: `Shortcodes::register(block: true)` prints only in `htmlIn()`, out of its paragraph, and nothing in a line or in plain text; `register(menu: fn)` gives the panel's `[` a ready bracket per row in place of the bare name, and `GET /api/cms/shortcodes` answers with those rows. `htmlIn()` and `PageText::html()` take `blocks: false` for HTML that leaves the page. Text no longer comes from the printed HTML: `SeoData::fallback()` takes the stored lead and reads its shortcodes before the cut, category and author descriptions, the `Person` of an author and the answers of `FAQPage` pass it the stored text, the description of `JobPosting` and the description variables of feeds leave block shortcodes out, and a question whose answer has no words of its own gets no `FAQPage` entry. `TokenOption` in `@webx-ui/core` takes `text`, the whole bracket a row writes, so several rows can share a name. `@webx-ui/module-admin` and `@webx-ui/module-blocks` keep block shortcodes out of lines and paragraphs.
+- cd801c7: `webx-ui/module-catalog-collections`: the tag `<x-webx-catalog-collections::collection key="…" />` prints a collection on the site, as a grid or a carousel, with the catalogue's own card. `view` and `title` are per place, and `limit` can only lower the collection's own. A collection that is off, in the bin, unknown or empty prints nothing. Base look in `resources/theme/catalog-collections.css`; after updating: `php artisan webx:theme:sync`.
+- cd801c7: «Где используется» у подборок: в списке — «Мест: N», за словами — страницы и регионы, где подборка стоит блоком, с пометками «Только в черновике» и «Не опубликовано». Считаются блоки и регионы, панель прямо говорит, что вставки в текст и теги в шаблонах не видны. Счёт идёт одним обходом на кеше группы `block-usage`; без `webx-ui/module-blocks` нет ни счётчика, ни подписи. `Usage::valued($slug, $field)` в `webx-ui/module-blocks` — места типа блока по значению поля.
+- cd801c7: Сборка товарного фида в `module-catalog-feeds`: отбор в три слоя (фильтр, ручные исключения,
+  автоматический отсев с причинами), запись потоком в очереди с шапкой последней, журнал сборок и
+  проверка файла до подмены. Миграция `catalog_feed_builds`: `php artisan migrate`.
+
+  **Новый метод интерфейса.** `WebxUi\Catalog\Facets\FacetSource` получил `allFacets(string $locale)`:
+  всё, по чему можно сузить отбор фида, включая свойства без флага «в фильтре». Свой источник фасетов
+  на сайте должен его реализовать; витрину метод не меняет. Реестр `Facets` читает его через новый
+  `selectable($locale)`, `module-catalog-properties` отдаёт для текстового свойства `TextFacet`.
+
+  Задание `BuildFeed` держит свой таймаут (80 с: выше бюджета 60 с, ниже `retry_after` скелета 90 с), а
+  конец сборки идёт отдельными заданиями: склейка, проверка, выкладка.
+
+- cd801c7: Доставка товарного фида в `module-catalog-feeds`: постоянный адрес `/feeds/{key}.{ext}` с ETag,
+  Last-Modified и 304, перевыпуск ключа (`POST catalog/feeds/{id}/reissue-key`), сторож
+  `webx:catalog:feeds` с защитой от частых сборок, чистка `webx:catalog:feeds-prune` и проверка
+  `FeedsCheck` в `webx:doctor`. Файлы фида удаляются вместе с ним. Миграция `catalog_feeds`:
+  `php artisan migrate`. Сторож и чистка идут по расписанию сайта, нужен работающий `schedule:run`.
+
+  В журнале появилось событие `key_reissued` (`HistoryEntry::KEY_REISSUED`): ключ в строку не попадает.
+
+- cd801c7: Демо товарных фидов: `webx:demo` создаёт на демо-магазине фид Google Merchant, первую сборку ставит
+  планировщик. `PerformanceTest` в `module-catalog-feeds`.
+
+  Демо каталога покрывает правила Google: у части товаров настоящий GTIN с верной контрольной цифрой,
+  есть оба идентификатора и ни одного, товар с кириллическим названием (адрес латиницей) и название со
+  спецсимволами. Демо брендов: у каждого товара на сайте теперь есть бренд, снятый бренд и «без бренда»
+  остались у товаров вне сайта.
+
+- cd801c7: Товарный фид можно писать PHP-классом: контракт `FeedFormat` и реестр `FeedFormats` для структур,
+  которые шаблон не описывает. Отбор, отсев, переменные, запись потоком, журнал и доставка — те же, что
+  у шаблона. Формат предлагается в «Новом фиде» как пресет, `driver` берётся только из него. Вкладка
+  «Шаблон» такого фида показывает класс вместо редактора. Класс, которого больше нет на сайте, валит
+  сборку с понятной ошибкой, а старый файл продолжает отдаваться по тому же адресу и с тем же типом.
+
+  `GET meta` отдаёт ещё `drivers`. Новая колонка `catalog_feed_builds.content_type`. Адрес файла теперь
+  принимает любое расширение из латиницы и цифр, неверное для фида уводит на верное редиректом.
+
+- cd801c7: Маппинги товарного фида в `module-catalog-feeds`: значения склада, категории площадки с наследованием
+  от предка, импорт справочника Google по адресу (очередью) и файлом, пять источников
+  `custom_label_0…4` (метка, ценовой диапазон, свойство, константа, пусто), проверка источников `mpn` и
+  меток при сохранении. В журнале сборок появились `unmapped_category` и `label_values`. Миграция
+  `catalog_feed_taxonomies`: `php artisan migrate`.
+
+  В `module-catalog` новый необязательный контракт `WebxUi\Catalog\Variables\FirstValues`: переменная с
+  несколькими значениями отдаёт первое целиком. `module-catalog-properties` его реализует.
+
+- cd801c7: Product feeds reach agents: `catalog_feeds_*` tools (list, get, presets, create, update, delete, preview, rebuild, reissue_key, builds, build_get, exclusions, exclusions_set, mappings, mappings_set, taxonomy_search, taxonomy_import) and the resources `catalog://feed-variables` and `catalog://feed-rules`, under the catalogue's scopes and permissions. Every write takes `dry_run`, and the address with its key goes only to a connection that may write. An unknown variable in a template is now answered with the similar names, in the panel too.
+- cd801c7: Панель товарных фидов: список с адресом и пересборкой, «Новый фид» из пресета и экран
+  `catalog.feed-form` с вкладками «Основное», «Шаблон», «Отбор», «Исключения», «Маппинги», «Метки» и
+  «Журнал». Редактор трёх частей подсказывает переменные своей части, предпросмотр рендерит шаблон в
+  браузере на значениях с сервера, «Перевыпустить ключ» предупреждает, что старый адрес перестанет
+  работать. У формата CSV форма предупреждает: значения не защищены от формул, файл рассчитан на
+  чтение программами.
+
+  Новые маршруты `catalog/feeds`: `GET variables`, `GET facets`, `POST count`, `POST sample`,
+  `POST {feed}/rebuild`, `GET {feed}/builds`, `GET {feed}/builds/{build}`, `{feed}/exclusions`.
+  `GET meta` отдаёт ещё валюту сайта и статусы склада.
+
+  В `module-catalog` контракты `StockStatuses` (его даёт `module-catalog-stock`) и `TypedFacet` (его
+  реализует текстовое свойство в `module-catalog-properties`).
+
+- cd801c7: Пресеты товарных фидов в `module-catalog-feeds`: Google Merchant (RSS 2.0, `g:`, только основной
+  `gtin`) и плоские JSON, XML, CSV. `POST catalog/feeds` с `preset` копирует пресет в новый фид, поля
+  формы сильнее него, неизвестный ключ — 422. `GET catalog/feeds/meta` отдаёт пресеты, форматы и
+  источники меток. Свой пресет — `FeedPresets::register()`.
+
+  Предупреждение про `availability_date` теперь есть и у `backorder`: Google требует дату для обоих.
+
+  В `module-catalog` запасная переменная `brand`: на сайте без спутника брендов она пустая, и шаблон с
+  `{{brand}}` проходит проверку имён.
+
+- cd801c7: New satellite of the catalogue, `webx-ui/module-catalog-feeds` and `@webx-ui/module-catalog-feeds`: the tables of product feeds, the feeds' CRUD API under `catalog/feeds` and the section «Catalog» → «Feeds» in the panel, with an empty list for now. The address with the feed's key goes only to `catalog.manage`, and a feed is always in the site's currency (`WEBX_CATALOG_CURRENCY`). Building and serving a file come next. After updating: `php artisan migrate`.
+- cd801c7: Проверка товарного фида при сохранении и предпросмотр в `module-catalog-feeds`: синтаксис Mustache,
+  неизвестные переменные, CDATA, пробная сборка на настоящих товарах кодом сборки и разбор XML, JSON и
+  CSV с номером строки, частью шаблона и фрагментом. Невалидный фид не сохраняется (422 под нужным
+  полем), предупреждения приходят в `warnings`. `POST catalog/feeds/preview` отвечает тем же, ничего
+  не записывая. Сборка фида, чья валюта разошлась с валютой сайта, падает, пока фид не пересохранят.
+
+  Новая зависимость `seld/jsonlint`. Шаблоны фида и разделитель CSV больше не обрезаются `TrimStrings`:
+  перевод строки в конце шапки CSV доходит до сборки; остальные поля формы по-прежнему обрезаются, а
+  пустая строка в них становится `null`. В конфиге появился `sample`.
+
+- cd801c7: Посадочные: корзина стала вкладкой над списком, как в подборках и «Прессе», отбор «в корзине» из фильтра убран. В корзине — «Восстановить» и окончательное удаление с подтверждением: маршрут `DELETE {id}/purge` (право `catalog.manage`) и инструмент `catalog_landings_purge` с `dry_run`. Удалить навсегда можно только запись в корзине; адрес и прежние адреса отдают 404, как у страницы, а адрес и набор освобождаются.
+- cd801c7: The product gets a manufacturer part number and additional barcodes. `mpn` is a column beside `barcode` (`webx-catalog.fields.mpn`, `WEBX_CATALOG_MPN`): on the form, in `ProductResource`, the exchange and `catalog_products_*`. The additional barcodes live in `catalog_product_barcodes`: a list under the main barcode on the form, the `barcodes` column of the exchange (through `;`, an empty cell leaves it, `empty_clears` erases it; a row is never matched by them), `barcodes` in `catalog_products_get`, `_create`, `_update`, and `Product::allBarcodes()` for a theme, the main one first. The search of both engines finds a product by any of its barcodes.
+
+  **After the update:** `php artisan migrate`, and on Manticore `php artisan webx:catalog:index --rebuild` — the document has a new field `barcodes`, and an additional barcode is not found until the product is indexed again.
+
+- cd801c7: A slug is ASCII on every door. `HasLatinSlug` (`webx-ui/localization`; `HasUrl` brings it) transliterates a slug being written, by the language of the value, on the model: the panel, the exchange, MCP and a plain `save()` all pass through it. A slug that leaves nothing — only hieroglyphs or signs — becomes `<type>-<id>` (`product-123`). `SlugType` passes only `[a-z0-9]` and separators, after that transliteration, and the page, article and tag dialogs now check by it. A saved slug nobody touches keeps its spelling: `php artisan webx:slugs:latin` lists those, and with `--apply` moves them, a 301 through `module-seo` from every address that moved, the ones below in a tree included. `webx:doctor` warns while any are left.
+- cd801c7: `webx-ui/payment-liqpay`: `LiqPayCheckoutType` shows the marks of what a method's switches offer. A switch turned off takes its mark away, `qr` has no mark, and with nothing on there are none: the cabinet decides then.
+- cd801c7: Order lines lead to their products: on «Thank you», on the order page, in «My orders» and in the checkout's «Order contents» the name is a link while the product has a page. A deleted product, one taken off the site or one with no address in the language stays plain text; a cart line of such a product no longer links to a 404.
+- cd801c7: Справка панели: `GET /api/cms/help/{key}` отдаёт справку экрана на языке панели — текст из файлов, подписи, подсказки и вкладки из дерева экрана, с теми же правами, что у формы. В манифесте появился список ключей `help`. Новая настройка `webx-admin.docs_url` (`WEBX_ADMIN_DOCS_URL`, по умолчанию пусто) включает ссылку на гайд.
+- cd801c7: Справка панели для ядра каталога на `en`, `ru`, `uk`: товары, форма товара, удалённые, категории, форма категории, обмен, импорт, профили. У этих экранов появилась кнопка «?». Поля спутников в форме товара пока в `help-pending.json`, их описания придут со следующей волной.
+- cd801c7: Панель: справка спутников каталога и конфигуратора на en, ru, uk, включая их поля в форме товара и категории.
+- cd801c7: Панель: справка контентных разделов на en, ru, uk: страницы, блоки, медиа, меню, блог, услуги, баннеры, вопросы, отзывы, команда, пресса, рецепты, события, вакансии, тарифы. Вкладка блоков категории услуг лежит в экране, а сайт без настройки снимает её патчем.
+- cd801c7: Покрытие справки панели включено: `AssertsHelp` и `HelpCoverageTest` в каждом пакете с экраном, патчем или разделом, `HelpPackagesCoverageTest`, `scripts/help-coverage.test.mjs`, команда `webx:help --check`, гайд `panel-help`. Всё, что ещё без текста, перечислено в `help-pending.json` и вычёркивается волнами наполнения. Пакеты регистрируют `resources/help`, у всех маршрутов панели есть `meta.help`, формы в панели списка передают ключ своей шапке. Кнопка появится, когда у экрана будет текст.
+- cd801c7: Справка панели через MCP: инструменты `help_list` и `help_get` (у поля ещё `name` и `type`), ресурсы `help://screens` и `help://screens/{key}` (Markdown), скоуп `help:read`. Инструменты стоят за любым правом, объявленным модулями. В инструкции сервера появилась строка про `help_get`. Обработчик `McpResource` теперь получает вторым аргументом администратора, как обработчик инструмента.
+- cd801c7: Панель: справка заказов, доставки, оплаты, посетителей и заявок на en, ru, uk.
+- cd801c7: Справка панели: реестр `HelpRegistry` в `module-admin` читает файлы `resources/help/<язык>/<ключ>.md` пакетов, собирает части одного ключа (владелец, спутники, проект, общий `_fields.md`) и берёт каждую часть на языке панели, а если файла нет — на английском. Показывать справку панель начнёт на следующих этапах.
+- cd801c7: Справка панели в интерфейсе: кнопка «?» в шапке экрана открывает немодальную боковую панель `WxHelpPanel` со справкой экрана, форма рядом остаётся доступной. Новое: `useHelp()`, проп `help` у `WxScreenHead` и `WxListScreen`, `meta.help` у маршрутов, `loadHelp` в контексте панели, слова `webx-admin::help.*` на 10 языках. Кнопка видна, только если ключ есть в манифесте. Стили прозы `.wx-help` вынесены в общий файл.
+- cd801c7: Панель: справка настроек и системных разделов на en, ru, uk: настройки сайта, SEO, общие поля SEO в формах разделов, код на сайте, уведомления, аудит, администраторы, агенты, кеш, задачи, согласие на cookie и капча. Список незаполненной справки `help-pending.json` удалён: теперь экран без справки сразу роняет тест. `HelpAudit::problems()` больше не принимает `$pending`. Поле заголовка блока ссылок лежит на вкладке SEO, а сайт без перелинковки снимает его патчем.
+- cd801c7: `webx-ui/module-payments`: a method of Apple Pay alone is offered only where Apple Pay can work. Its row carries `data-apple-pay-only`, and `methods.js` asks the browser's own `ApplePaySession.canMakePayments()`, with no script of anyone else: the answer «no» takes such rows and every `apple-pay` mark off the list, the check failing or the script not running keeps them, and a list that would be left empty keeps everything. A group left with one method folds into one row, one group left loses its head, and one method left on the list is chosen and written. A choice that went with a row moves to the first method left in its group; with nobody left there, the new `DELETE /api/payments/selection` drops it and the step is simply not ready. Either way the checkout draws the step again: `webx:checkout:slot-changed` takes `redraw` for a slot that changed by itself, not by the buyer. Google Pay always stays. The server does not know the device: `check()` passes such a method as before.
+- cd801c7: `webx-ui/module-payments`: the base of the groups of payment methods, with nothing changed for the buyer yet. `webx-payments.groups` lists three groups out of the box (a site's own list replaces it whole, an empty one is a flat list), the table `payment_groups` keeps only the manager's edits over the config, `payment_methods.group_key` keeps only a manager's move (`null` — the group of the type, so existing methods are in place without a write). `MethodGroups` merges the two on reading, `Contracts\DeclaresGroup` is the optional way for a type to stand elsewhere than its kind suggests, `Methods::grouped()` gives a list by groups, `<x-webx-payments::pictogram>` draws the set of pictograms. The migration gives the groups in use a position by their first enabled method, so a configured site keeps its first item first. `webx:doctor` names a move to a group the config lost, a method whose group is gone, a type declaring an unknown group and a pictogram outside the set.
+- cd801c7: `webx-ui/module-payments`: the groups of methods for an agent. New tools `payments_groups_list`, `payments_groups_save` and `payments_groups_reorder`, behind `payments:read` / `payments:write` with `payments.view` / `payments.manage`: a group is edited over the config by the panel's own form, with `dry_run`, and no tool creates or removes one. `payments_methods_save` takes `group` and answers `warnings`, `payments_methods_reorder` also takes `groups: [{ key, methods }]` and moves a method as the panel does, `payments_available` says `group` and `apple_pay_only`, and `payments://catalog` lists the groups, the pictograms and the marks. The guide has a section for the developer of a site: `groups` in the config and official files of the marks.
+- cd801c7: `webx-ui/module-payments`: the groups of methods in the panel. The screen of methods lists the groups in their order with their methods: drag a group, drag a method inside its group or into another. «Edit» changes a group's title and description by language and its pictogram, as edits over `webx-payments.groups`: the config is not touched, and the panel has nothing to create or remove a group with. The form of a method gets the field «Group», the way to move it from the keyboard: it goes to the end of the group chosen, and the group of its type stores nothing. Two enabled methods of one group with the same marks are warned of in the list, over the form and after a save, which is never refused. New routes `GET groups` and `PUT groups/{key}`, behind `payments.view` and `payments.manage`; `PUT methods/order` also takes `{ groups: [{ key, methods }] }`, and `ids` still serves a site without groups. A row of `GET methods` has `group`, `group_key`, `marks` and `similar_to`, and the answer has `marks`.
+- cd801c7: `webx-ui/module-payments`: the payment step of the checkout is a list group → method, `<x-webx-payments::methods>`. Choosing a group chooses its first method at once; a group of one method is one row that speaks for the method; one group on the site is the flat list it was, without heads. A group's pictogram and the marks of the payment systems stand in the rows, and on a step narrower than 480 px an open group leaves its marks to its methods. The buyer will notice one thing: methods of one group now stand together, so an order like «card, on receipt, instalments» becomes «card, instalments, on receipt». Without JavaScript all of it works by the stylesheet and the form: `PUT /api/payments/selection` also takes `group`, read by `Methods::picked()`. `GET /api/payments/methods` answers `groups`, and the new script `methods.js` is served beside `step.js`. For a theme: `webx-payments__methods`, `__method`, `__method-text`, `__method-title` and `__method-note` are now `webx-payments__groups`, `__option`, `__row-text`, `__row-title` and `__row-note`, the rest is under `### Classes` in `AGENTS.md`; a copy of `step.blade.php` keeps working, but loses the look of those classes and should print `<x-webx-payments::methods>`.
+- cd801c7: `webx-ui/module-payments`: the marks of the payment systems, with nothing changed for the buyer yet. `Contracts\ProvidesPaymentMarks` lets a type say which systems a method takes, `PaymentMarks` is the registry a satellite adds to, and `MethodOption` carries `marks` and `applePayOnly` (`marks` and `apple_pay_only` in `GET /api/payments/methods`). Visa, Mastercard, Apple Pay and Google Pay ship as SVG cards based on Simple Icons, served with a cache for good from `webx/payments/marks/{key}.svg`; `resources/marks/NOTICE.md` says whose the trademarks are. A mark without a file is a text plate, and `<x-webx-payments::mark>` draws both. A file is replaced without code: only its `viewBox` is read. `webx:doctor` names a mark nobody registered.
+- cd801c7: `webx-ui/module-payments`, `webx-ui/module-orders`: the page of an order on receipt offers «Pay online now». Such an order awaits nothing, so nothing led its buyer to the page of payment, the only place that had the list. `BlockDefinition` takes `offer`, HTML for an order that does not await payment and may still be paid, and the order's page shows it under the scale in `$order['offer']`; `webx:doctor` names a theme's copy of `order/body.blade.php` without it.
+- cd801c7: `webx-ui/module-payments`: the page of payment offers the list of the checkout's step. «Choose another method» is `<x-webx-payments::methods>`, group → method, with one «Continue» under it, and `methods.js` takes Apple Pay away there too. An order «on receipt» no longer has a button per online method and a separate offline list: it has this same list of every other method of the order, by the rules of its delivery and amount, standing open as «Pay online now» when any of them is online. `POST /pay/{number}/method` reads `group` and `method` by the rule of the step, never falls to the order's own method, and now says why when nothing is chosen or the method has gone. A theme's copy of `pay/page` or `pay/others` keeps working as it was, its `{ key, title }` are still there, but it does not get the list: Apple Pay stays on it, and the classes `webx-payments-others__form` and `__choice` have no base look any more.
+- cd801c7: The catalogue gets `ProductVariables`, the registry of what a template may say about a product: the columns of the exchange by themselves, the computed values of a product feed (absolute addresses, pictures, prices, texts, `gtin`, `identifier_exists`, `product_type`) and the variables of the brands, labels, stock and properties satellites, `property.<code>` among them. Values are read for a page of products at a time. A site adds its own with `ProductVariable` or `ProductVariableProvider`; an exchange column that must stay out of templates implements `PrivateColumn`. `module-catalog` and the four satellites now require `webx-ui/templates`.
+- cd801c7: New library `webx-ui/templates`: the Mustache of the notifications, for everything that keeps a template in the database. `Template`, `TemplateError` and `Html` moved there from `WebxUi\Notifications\Templates` to `WebxUi\Templates`, with no alias; the refusals moved to `webx-templates::errors`. `Events\Variable` of the notifications now extends `WebxUi\Templates\Variable`. New: `Template::compile()` for rendering many records, `Escapes` (xml, json, csv, text), `Cdata`, `Template::refuseInCdata()`, `first` and `last` on the elements of every list. `module-notifications` no longer requires `mustache/mustache`.
+
+### Patch Changes
+
+- cd801c7: «Купить» теперь во всех карточках товара: ветки кнопки вынесены со страницы товара в общий partial
+  `webx-catalog::buy`, его включают `product.blade.php` и `card.blade.php`. Если купить нельзя, на
+  месте кнопки стоит название статуса, а строка `webx-catalog-stock::status` на карточке молчит;
+  на странице товара она остаётся. Тема со своей карточкой без этого partial больше не показывает на
+  карточке статус, который нельзя купить: нужно включить в неё `webx-catalog::buy`.
+- cd801c7: Подборки: корзина — вкладкой «Корзина» над списком, как в других разделах, с действием «Восстановить»; отбор «В корзине» из фильтров убран.
+- cd801c7: Хранимый набор фасетов и список фасетов основы переехали из посадочных в ядро каталога:
+  `WebxUi\CatalogLandings\Catalog\LandingSet` теперь `WebxUi\Catalog\Filter\FacetSet`,
+  `WebxUi\CatalogLandings\Catalog\BaseFacets` — `WebxUi\Catalog\Filter\BaseFacets`. Спутник может брать
+  набор, не завися от посадочных. Поведение посадочных не изменилось.
+- cd801c7: Поле набора фасетов стало общим компонентом `WxCatalogFacetSet` в `@webx-ui/module-catalog`: фасеты и
+  число товаров приходят пропсами, набор уходит через `v-model`, в API компонент не ходит. Там же
+  `cleanSet` и типы `BaseFacet`, `SetChoice`, `FacetSetValue`. Посадочная оставила обёртку с запросами и
+  предупреждением о дубликате, её экспорты прежние. Восемь строк поля переехали из группы `landing`
+  посадочных в `panel` каталога (`facet-set-*`): переопределения этих строк на сайте надо перенести.
+- cd801c7: `GoogleFeedRulesTest` в `module-catalog-feeds`: правила Google разбираются по готовому файлу фида, собранному
+  на демо-данных или переданному через `WEBX_FEED_FILE`.
+- cd801c7: `products()->take(8)` больше не грузит весь каталог: язык товара проверяется в SQL
+  (`Product::withUrlIn()`), а `RecordQuery` получил защищённый признак `limitsInSql()`, по которому
+  лимит ставится в запрос. Остальные модули и выборки с `only()` считают лимит как раньше.
+
+  `StorefrontParts` сбрасывает подготовленное частями в конце запроса и перед задачей очереди:
+  страница без листинга в долгоживущем воркере не дописывает к данным прошлой страницы.
+
+- cd801c7: `webx-ui/module-orders`: the checkout changes the cart in place. «Order contents» is open by default and each line has a stepper and «Remove» on the cart's own API, with and without JavaScript; the totals, delivery and payment are counted again, what the buyer typed in a step stays, the focus stays, and the last line removed leaves the page of an empty cart. A site's copy of `checkout/summary.blade.php` keeps working, without the controls.
+- cd801c7: Панель: поля, зависящие от сайта, лежат в JSON экрана, а патчи их снимают: `delivery_keys` у способа оплаты и строки обязательности встроенных полей посетителя.
+- cd801c7: Справка панели: `HelpAudit` разрешает описывать поле, которое на этом сайте убрала настройка: `id` сверяется со всеми шагами экрана (`ScreenRegistry::stages()`), а не только с итоговым деревом. Описание `id`, которого нет ни на одном шаге, остаётся ошибкой, а панель и `help_get` по-прежнему показывают только поля сайта. В форме категории каталога описано поле `facets`.
+- cd801c7: `webx-ui/module-payments`, `webx-ui/module-orders`: «Pay online now» of an order on receipt is held on «Thank you» too. The page prints the order's body, so the block came with it; tests now keep it there, the form's way to the gateway from this page included, and the specs say so.
+
 ## 0.93.0
 
 ### Minor Changes

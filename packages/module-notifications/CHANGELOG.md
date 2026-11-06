@@ -1,5 +1,20 @@
 # @webx-ui/module-notifications
 
+## 0.5.2
+
+### Patch Changes
+
+- cd801c7: Покрытие справки панели включено: `AssertsHelp` и `HelpCoverageTest` в каждом пакете с экраном, патчем или разделом, `HelpPackagesCoverageTest`, `scripts/help-coverage.test.mjs`, команда `webx:help --check`, гайд `panel-help`. Всё, что ещё без текста, перечислено в `help-pending.json` и вычёркивается волнами наполнения. Пакеты регистрируют `resources/help`, у всех маршрутов панели есть `meta.help`, формы в панели списка передают ключ своей шапке. Кнопка появится, когда у экрана будет текст.
+- cd801c7: The Mustache preview moved from `@webx-ui/module-notifications` to `@webx-ui/core`: `renderTemplate`, `TemplateRefusal`, `knows`, `escapeHtml`, `htmlPlain`, `snippetOf`, with the `mustache` dependency; the notifications keep exporting what they exported. New in core: `escapeForFormat` (xml, json, csv, text), `refuseInCdata`, `templateMessages`, values given as `{ $cdata }`, and `first` and `last` on the elements of every list, in the preview and in the editor's suggestions.
+- Updated dependencies [cd801c7]
+- Updated dependencies [cd801c7]
+- Updated dependencies [cd801c7]
+- Updated dependencies [cd801c7]
+- Updated dependencies [cd801c7]
+  - @webx-ui/core@0.47.0
+  - @webx-ui/module-admin@0.36.0
+  - @webx-ui/schema@0.11.1
+
 ## 0.5.1
 
 ### Patch Changes

@@ -1,5 +1,31 @@
 # @webx-ui/module-catalog
 
+## 0.11.0
+
+### Minor Changes
+
+- cd801c7: Поле набора фасетов стало общим компонентом `WxCatalogFacetSet` в `@webx-ui/module-catalog`: фасеты и
+  число товаров приходят пропсами, набор уходит через `v-model`, в API компонент не ходит. Там же
+  `cleanSet` и типы `BaseFacet`, `SetChoice`, `FacetSetValue`. Посадочная оставила обёртку с запросами и
+  предупреждением о дубликате, её экспорты прежние. Восемь строк поля переехали из группы `landing`
+  посадочных в `panel` каталога (`facet-set-*`): переопределения этих строк на сайте надо перенести.
+
+### Patch Changes
+
+- cd801c7: The product gets a manufacturer part number and additional barcodes. `mpn` is a column beside `barcode` (`webx-catalog.fields.mpn`, `WEBX_CATALOG_MPN`): on the form, in `ProductResource`, the exchange and `catalog_products_*`. The additional barcodes live in `catalog_product_barcodes`: a list under the main barcode on the form, the `barcodes` column of the exchange (through `;`, an empty cell leaves it, `empty_clears` erases it; a row is never matched by them), `barcodes` in `catalog_products_get`, `_create`, `_update`, and `Product::allBarcodes()` for a theme, the main one first. The search of both engines finds a product by any of its barcodes.
+
+  **After the update:** `php artisan migrate`, and on Manticore `php artisan webx:catalog:index --rebuild` — the document has a new field `barcodes`, and an additional barcode is not found until the product is indexed again.
+
+- cd801c7: Покрытие справки панели включено: `AssertsHelp` и `HelpCoverageTest` в каждом пакете с экраном, патчем или разделом, `HelpPackagesCoverageTest`, `scripts/help-coverage.test.mjs`, команда `webx:help --check`, гайд `panel-help`. Всё, что ещё без текста, перечислено в `help-pending.json` и вычёркивается волнами наполнения. Пакеты регистрируют `resources/help`, у всех маршрутов панели есть `meta.help`, формы в панели списка передают ключ своей шапке. Кнопка появится, когда у экрана будет текст.
+- Updated dependencies [cd801c7]
+- Updated dependencies [cd801c7]
+- Updated dependencies [cd801c7]
+- Updated dependencies [cd801c7]
+- Updated dependencies [cd801c7]
+  - @webx-ui/core@0.47.0
+  - @webx-ui/module-admin@0.36.0
+  - @webx-ui/schema@0.11.1
+
 ## 0.10.2
 
 ### Patch Changes
