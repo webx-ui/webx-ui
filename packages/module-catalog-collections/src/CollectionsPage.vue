@@ -14,8 +14,10 @@ import {
   WxTable,
   WxText,
   WxTooltip,
+  type TabItem,
   type TableColumn,
   type TableState,
+  type TabValue,
 } from '@webx-ui/core'
 import {
   rowMenuWidth,
@@ -37,8 +39,8 @@ import type { CollectionQuery, CollectionRow, CollectionsPage } from './types'
 
 /**
  * The collections (§6.1 of the collections spec): title and key, how it is filled, the view, the
- * state and the mark of attention; filtered by «needs attention», «turned off» and the bin; searched
- * by title and key. The key is copied with its tag, which is what a developer pastes. The filters
+ * state and the mark of attention; filtered by «needs attention» and «turned off»; searched by title
+ * and key. The bin is a tab over the list, the way it is in every section that has one. The key is copied with its tag, which is what a developer pastes. The filters
  * live in the address, so coming back from a collection lands where the list was left. «Places: 3»
  * opens where it stands (§6.4); a site without blocks has neither the column nor the note under it.
  */
@@ -72,8 +74,24 @@ const search = ref(String(route.query.q ?? ''))
 const pageNumber = ref(Number(route.query.page ?? 1) || 1)
 const attention = ref(flag('attention'))
 const disabled = ref(flag('disabled'))
-const trashed = ref(flag('trashed'))
 let perPage = 25
+
+const view = computed<TabValue>({
+  get: () => (route.query.view === 'trashed' ? 'trashed' : ''),
+  set: (value) => {
+    // A new view is a new list: the page it was on belongs to the view it was on.
+    void router.replace({
+      query: { ...route.query, view: value === '' ? undefined : String(value), page: undefined },
+    })
+  },
+})
+
+const inBin = computed(() => view.value === 'trashed')
+
+const views = computed<TabItem[]>(() => [
+  { value: '', label: t('panel.view-all') },
+  { value: 'trashed', label: t('panel.bin'), icon: 'trash' },
+])
 
 const title = computed(
   () =>
@@ -87,7 +105,6 @@ const applied = computed<AppliedFilter[]>(() => {
   for (const [key, on, word] of [
     ['attention', attention, 'panel.filter-attention'],
     ['disabled', disabled, 'panel.filter-disabled'],
-    ['trashed', trashed, 'panel.filter-trashed'],
   ] as const) {
     if (on.value) chips.push({ key, label: t(word), clear: () => (on.value = false) })
   }
@@ -98,7 +115,6 @@ const applied = computed<AppliedFilter[]>(() => {
 function clearFilters(): void {
   attention.value = false
   disabled.value = false
-  trashed.value = false
 }
 
 function query(state?: TableState): CollectionQuery {
@@ -106,7 +122,7 @@ function query(state?: TableState): CollectionQuery {
     q: state?.search ?? search.value,
     attention: attention.value || undefined,
     enabled: disabled.value ? false : undefined,
-    trashed: trashed.value || undefined,
+    trashed: inBin.value || undefined,
     page: state?.page ?? pageNumber.value,
     per_page: state?.perPage ?? perPage,
   }
@@ -137,7 +153,7 @@ function remember(): void {
   if (pageNumber.value > 1) wanted.page = String(pageNumber.value)
   if (attention.value) wanted.attention = '1'
   if (disabled.value) wanted.disabled = '1'
-  if (trashed.value) wanted.trashed = '1'
+  if (inBin.value) wanted.view = 'trashed'
 
   void router.replace({ query: wanted })
 }
@@ -147,9 +163,14 @@ function onState(state: TableState): void {
   void load(state)
 }
 
-watch([attention, disabled, trashed], () => {
+watch([attention, disabled], () => {
   pageNumber.value = 1
   remember()
+  void load()
+})
+
+watch(view, () => {
+  pageNumber.value = 1
   void load()
 })
 
@@ -165,7 +186,12 @@ const columns = computed<TableColumn<CollectionRow>[]>(() => [
   ...(counted.value
     ? [{ key: 'places', label: t('panel.column-places'), width: 110, hideBelow: 700 }]
     : []),
-  { key: 'updated_at', label: t('panel.column-updated'), width: 130, hideBelow: 1000 },
+  {
+    key: 'updated_at',
+    label: inBin.value ? t('panel.column-deleted') : t('panel.column-updated'),
+    width: 130,
+    hideBelow: 1000,
+  },
   { key: 'actions', label: '', width: rowMenuWidth, align: 'right' },
 ])
 
@@ -258,7 +284,7 @@ function actionsFor(row: CollectionRow): RowAction[] {
 }
 
 const actions = computed<ScreenAction[]>(() =>
-  canManage.value
+  canManage.value && !inBin.value
     ? [
         {
           key: 'new',
@@ -271,14 +297,16 @@ const actions = computed<ScreenAction[]>(() =>
     : [],
 )
 
-const emptyText = computed(() =>
-  applied.value.length > 0 || search.value ? t('panel.nothing-found') : t('panel.empty'),
-)
+const emptyText = computed(() => {
+  if (applied.value.length > 0 || search.value) return t('panel.nothing-found')
+
+  return inBin.value ? t('panel.empty-bin') : t('panel.empty')
+})
 </script>
 
 <template>
   <div class="wx-catalog-collections">
-    <wx-list-screen :title="title" :actions="actions">
+    <wx-list-screen v-model:view="view" :title="title" :views="views" :actions="actions">
       <wx-table
         v-model:search="search"
         v-model:page="pageNumber"
@@ -287,8 +315,8 @@ const emptyText = computed(() =>
         :columns="columns"
         row-key="id"
         searchable
-        clickable
-        hover
+        :clickable="!inBin"
+        :hover="!inBin"
         flush
         :loading="loading"
         layout="fixed"
@@ -306,9 +334,6 @@ const emptyText = computed(() =>
           </wx-form-item>
           <wx-form-item>
             <wx-switch v-model="disabled" size="sm" :label="t('panel.filter-disabled')" />
-          </wx-form-item>
-          <wx-form-item>
-            <wx-switch v-model="trashed" size="sm" :label="t('panel.filter-trashed')" />
           </wx-form-item>
 
           <wx-button v-if="applied.length > 0" variant="text" size="sm" block @click="clearFilters">
@@ -350,8 +375,7 @@ const emptyText = computed(() =>
 
         <template #cell-state="{ row }">
           <div class="wx-catalog-collections__state">
-            <wx-badge v-if="row.deleted_at" dot size="sm">{{ t('panel.in-bin') }}</wx-badge>
-            <wx-badge v-else :type="row.is_enabled ? 'success' : 'default'" dot size="sm">
+            <wx-badge :type="row.is_enabled ? 'success' : 'default'" dot size="sm">
               {{ t(row.is_enabled ? 'panel.enabled' : 'panel.disabled') }}
             </wx-badge>
             <wx-tooltip v-if="row.attention" :content="t(`collection.attention-${row.attention}`)">
@@ -368,7 +392,7 @@ const emptyText = computed(() =>
         </template>
 
         <template #cell-updated_at="{ row }">
-          <wx-date :value="row.updated_at" compact />
+          <wx-date :value="inBin ? row.deleted_at : row.updated_at" compact />
         </template>
 
         <template #cell-actions="{ row }">

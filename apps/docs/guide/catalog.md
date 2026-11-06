@@ -569,8 +569,9 @@ by name), and the block `product-collection` on a page or in a region after
 `php artisan webx:blocks:offered --install`. The `limit` of a placement can only lower the
 collection's own.
 
-A collection that is off, empty or in the bin prints nothing, and the page lives. Deleting one needs
-no confirmation: restoring it brings it back in every place, because its key stays taken. «Where»
+A collection that is off, empty or in the bin prints nothing, and the page lives. Deleting one is
+not refused for being in use: it waits in the «Bin» tab over the list, and «Restore» brings it back
+in every place, because its key stays taken. «Where»
 in the panel lists blocks and regions only; brackets in a text and tags in templates are not
 counted, so a collection with no places may still be in use.
 

@@ -30,7 +30,8 @@ createAdmin({
 `catalogCollections()` is one section, «Catalog» → «Product collections»:
 
 - the list: title and key, how it is filled, the view, the state and the mark of attention; filtered
-  by «needs attention», «turned off» and the bin; the key is copied with its tag;
+  by «needs attention» and «turned off»; deleted ones wait in the «Bin» tab over the list, with
+  «Restore»; the key is copied with its tag;
 - the page of one, new at `…/collections/new`: the title and the key, which cannot change after the
   first save, the limit, the view, the link «All products», and the products: a list found by name or
   SKU and put in order by dragging, or a filter with its presets, category, set, «on sale only» and
