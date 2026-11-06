@@ -1,5 +1,28 @@
 # @webx-ui/admin
 
+## 0.36.0
+
+### Minor Changes
+
+- cd801c7: `[product-collection key=cameras view=carousel limit=4]` puts a product collection in a rich text. `webx-ui/module-admin` gets block shortcodes: `Shortcodes::register(block: true)` prints only in `htmlIn()`, out of its paragraph, and nothing in a line or in plain text; `register(menu: fn)` gives the panel's `[` a ready bracket per row in place of the bare name, and `GET /api/cms/shortcodes` answers with those rows. `htmlIn()` and `PageText::html()` take `blocks: false` for HTML that leaves the page. Text no longer comes from the printed HTML: `SeoData::fallback()` takes the stored lead and reads its shortcodes before the cut, category and author descriptions, the `Person` of an author and the answers of `FAQPage` pass it the stored text, the description of `JobPosting` and the description variables of feeds leave block shortcodes out, and a question whose answer has no words of its own gets no `FAQPage` entry. `TokenOption` in `@webx-ui/core` takes `text`, the whole bracket a row writes, so several rows can share a name. `@webx-ui/module-admin` and `@webx-ui/module-blocks` keep block shortcodes out of lines and paragraphs.
+- cd801c7: Справка панели в интерфейсе: кнопка «?» в шапке экрана открывает немодальную боковую панель `WxHelpPanel` со справкой экрана, форма рядом остаётся доступной. Новое: `useHelp()`, проп `help` у `WxScreenHead` и `WxListScreen`, `meta.help` у маршрутов, `loadHelp` в контексте панели, слова `webx-admin::help.*` на 10 языках. Кнопка видна, только если ключ есть в манифесте. Стили прозы `.wx-help` вынесены в общий файл.
+
+### Patch Changes
+
+- cd801c7: Доставка товарного фида в `module-catalog-feeds`: постоянный адрес `/feeds/{key}.{ext}` с ETag,
+  Last-Modified и 304, перевыпуск ключа (`POST catalog/feeds/{id}/reissue-key`), сторож
+  `webx:catalog:feeds` с защитой от частых сборок, чистка `webx:catalog:feeds-prune` и проверка
+  `FeedsCheck` в `webx:doctor`. Файлы фида удаляются вместе с ним. Миграция `catalog_feeds`:
+  `php artisan migrate`. Сторож и чистка идут по расписанию сайта, нужен работающий `schedule:run`.
+
+  В журнале появилось событие `key_reissued` (`HistoryEntry::KEY_REISSUED`): ключ в строку не попадает.
+
+- cd801c7: Покрытие справки панели включено: `AssertsHelp` и `HelpCoverageTest` в каждом пакете с экраном, патчем или разделом, `HelpPackagesCoverageTest`, `scripts/help-coverage.test.mjs`, команда `webx:help --check`, гайд `panel-help`. Всё, что ещё без текста, перечислено в `help-pending.json` и вычёркивается волнами наполнения. Пакеты регистрируют `resources/help`, у всех маршрутов панели есть `meta.help`, формы в панели списка передают ключ своей шапке. Кнопка появится, когда у экрана будет текст.
+- Updated dependencies [cd801c7]
+- Updated dependencies [cd801c7]
+  - @webx-ui/core@0.47.0
+  - @webx-ui/schema@0.11.1
+
 ## 0.35.0
 
 ### Minor Changes

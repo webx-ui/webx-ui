@@ -1,5 +1,19 @@
 # @webx-ui/module-media
 
+## 0.12.3
+
+### Patch Changes
+
+- cd801c7: Справка панели в интерфейсе: кнопка «?» в шапке экрана открывает немодальную боковую панель `WxHelpPanel` со справкой экрана, форма рядом остаётся доступной. Новое: `useHelp()`, проп `help` у `WxScreenHead` и `WxListScreen`, `meta.help` у маршрутов, `loadHelp` в контексте панели, слова `webx-admin::help.*` на 10 языках. Кнопка видна, только если ключ есть в манифесте. Стили прозы `.wx-help` вынесены в общий файл.
+- Updated dependencies [cd801c7]
+- Updated dependencies [cd801c7]
+- Updated dependencies [cd801c7]
+- Updated dependencies [cd801c7]
+- Updated dependencies [cd801c7]
+  - @webx-ui/core@0.47.0
+  - @webx-ui/module-admin@0.36.0
+  - @webx-ui/schema@0.11.1
+
 ## 0.12.2
 
 ### Patch Changes

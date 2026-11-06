@@ -1,5 +1,0 @@
----
-'@webx-ui/php': minor
----
-
-`webx-ui/module-payments`: a method of Apple Pay alone is offered only where Apple Pay can work. Its row carries `data-apple-pay-only`, and `methods.js` asks the browser's own `ApplePaySession.canMakePayments()`, with no script of anyone else: the answer «no» takes such rows and every `apple-pay` mark off the list, the check failing or the script not running keeps them, and a list that would be left empty keeps everything. A group left with one method folds into one row, one group left loses its head, and one method left on the list is chosen and written. A choice that went with a row moves to the first method left in its group; with nobody left there, the new `DELETE /api/payments/selection` drops it and the step is simply not ready. Either way the checkout draws the step again: `webx:checkout:slot-changed` takes `redraw` for a slot that changed by itself, not by the buyer. Google Pay always stays. The server does not know the device: `check()` passes such a method as before.

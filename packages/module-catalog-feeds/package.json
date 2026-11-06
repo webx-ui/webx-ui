@@ -1,6 +1,6 @@
 {
   "name": "@webx-ui/module-catalog-feeds",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Product feeds for the catalogue of the WebX UI admin panel: files for marketplaces and ad platforms, made from a template and served at a permanent address.",
   "license": "MIT",
   "type": "module",
