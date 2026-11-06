@@ -26,8 +26,8 @@
         "illuminate/database": "^13.0",
         "illuminate/http": "^13.0",
         "illuminate/support": "^13.0",
-        "webx-ui/localization": "^0.93.0",
-        "webx-ui/module-payments": "^0.93.0"
+        "webx-ui/localization": "^0.94.0",
+        "webx-ui/module-payments": "^0.94.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",

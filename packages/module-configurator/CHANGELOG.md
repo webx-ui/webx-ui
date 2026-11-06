@@ -1,5 +1,20 @@
 # @webx-ui/module-configurator
 
+## 0.1.3
+
+### Patch Changes
+
+- cd801c7: Покрытие справки панели включено: `AssertsHelp` и `HelpCoverageTest` в каждом пакете с экраном, патчем или разделом, `HelpPackagesCoverageTest`, `scripts/help-coverage.test.mjs`, команда `webx:help --check`, гайд `panel-help`. Всё, что ещё без текста, перечислено в `help-pending.json` и вычёркивается волнами наполнения. Пакеты регистрируют `resources/help`, у всех маршрутов панели есть `meta.help`, формы в панели списка передают ключ своей шапке. Кнопка появится, когда у экрана будет текст.
+- Updated dependencies [cd801c7]
+- Updated dependencies [cd801c7]
+- Updated dependencies [cd801c7]
+- Updated dependencies [cd801c7]
+- Updated dependencies [cd801c7]
+  - @webx-ui/core@0.47.0
+  - @webx-ui/module-admin@0.36.0
+  - @webx-ui/module-media@0.12.3
+  - @webx-ui/schema@0.11.1
+
 ## 0.1.2
 
 ### Patch Changes

@@ -1,5 +1,23 @@
 # @webx-ui/module-payments
 
+## 0.3.0
+
+### Minor Changes
+
+- cd801c7: `webx-ui/module-payments`: the groups of methods in the panel. The screen of methods lists the groups in their order with their methods: drag a group, drag a method inside its group or into another. «Edit» changes a group's title and description by language and its pictogram, as edits over `webx-payments.groups`: the config is not touched, and the panel has nothing to create or remove a group with. The form of a method gets the field «Group», the way to move it from the keyboard: it goes to the end of the group chosen, and the group of its type stores nothing. Two enabled methods of one group with the same marks are warned of in the list, over the form and after a save, which is never refused. New routes `GET groups` and `PUT groups/{key}`, behind `payments.view` and `payments.manage`; `PUT methods/order` also takes `{ groups: [{ key, methods }] }`, and `ids` still serves a site without groups. A row of `GET methods` has `group`, `group_key`, `marks` and `similar_to`, and the answer has `marks`.
+
+### Patch Changes
+
+- cd801c7: Покрытие справки панели включено: `AssertsHelp` и `HelpCoverageTest` в каждом пакете с экраном, патчем или разделом, `HelpPackagesCoverageTest`, `scripts/help-coverage.test.mjs`, команда `webx:help --check`, гайд `panel-help`. Всё, что ещё без текста, перечислено в `help-pending.json` и вычёркивается волнами наполнения. Пакеты регистрируют `resources/help`, у всех маршрутов панели есть `meta.help`, формы в панели списка передают ключ своей шапке. Кнопка появится, когда у экрана будет текст.
+- Updated dependencies [cd801c7]
+- Updated dependencies [cd801c7]
+- Updated dependencies [cd801c7]
+- Updated dependencies [cd801c7]
+- Updated dependencies [cd801c7]
+  - @webx-ui/core@0.47.0
+  - @webx-ui/module-admin@0.36.0
+  - @webx-ui/schema@0.11.1
+
 ## 0.2.0
 
 ### Minor Changes

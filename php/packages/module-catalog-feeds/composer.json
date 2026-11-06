@@ -37,11 +37,11 @@
         "illuminate/support": "^13.0",
         "illuminate/validation": "^13.0",
         "seld/jsonlint": "^1.11",
-        "webx-ui/localization": "^0.93.0",
-        "webx-ui/mcp": "^0.93.0",
-        "webx-ui/module-admin": "^0.93.0",
-        "webx-ui/module-catalog": "^0.93.0",
-        "webx-ui/templates": "^0.93.0"
+        "webx-ui/localization": "^0.94.0",
+        "webx-ui/mcp": "^0.94.0",
+        "webx-ui/module-admin": "^0.94.0",
+        "webx-ui/module-catalog": "^0.94.0",
+        "webx-ui/templates": "^0.94.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
@@ -66,7 +66,7 @@
         "webx": {
             "module": "catalog-feeds",
             "npm": {
-                "@webx-ui/module-catalog-feeds": "^0.0.0"
+                "@webx-ui/module-catalog-feeds": "^0.1.0"
             },
             "panel": {
                 "import": "import { catalogFeeds } from '@webx-ui/module-catalog-feeds'",

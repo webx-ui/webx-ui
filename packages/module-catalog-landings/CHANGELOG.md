@@ -1,5 +1,33 @@
 # @webx-ui/module-catalog-landings
 
+## 0.3.0
+
+### Minor Changes
+
+- cd801c7: Посадочные: корзина стала вкладкой над списком, как в подборках и «Прессе», отбор «в корзине» из фильтра убран. В корзине — «Восстановить» и окончательное удаление с подтверждением: маршрут `DELETE {id}/purge` (право `catalog.manage`) и инструмент `catalog_landings_purge` с `dry_run`. Удалить навсегда можно только запись в корзине; адрес и прежние адреса отдают 404, как у страницы, а адрес и набор освобождаются.
+
+### Patch Changes
+
+- cd801c7: Поле набора фасетов стало общим компонентом `WxCatalogFacetSet` в `@webx-ui/module-catalog`: фасеты и
+  число товаров приходят пропсами, набор уходит через `v-model`, в API компонент не ходит. Там же
+  `cleanSet` и типы `BaseFacet`, `SetChoice`, `FacetSetValue`. Посадочная оставила обёртку с запросами и
+  предупреждением о дубликате, её экспорты прежние. Восемь строк поля переехали из группы `landing`
+  посадочных в `panel` каталога (`facet-set-*`): переопределения этих строк на сайте надо перенести.
+- cd801c7: Рекомендованные товары посадочной: после выбора товара поле поиска очищается, и следующий товар
+  находится сразу. Раньше в поле оставался id, и он приклеивался к следующему запросу.
+- cd801c7: Покрытие справки панели включено: `AssertsHelp` и `HelpCoverageTest` в каждом пакете с экраном, патчем или разделом, `HelpPackagesCoverageTest`, `scripts/help-coverage.test.mjs`, команда `webx:help --check`, гайд `panel-help`. Всё, что ещё без текста, перечислено в `help-pending.json` и вычёркивается волнами наполнения. Пакеты регистрируют `resources/help`, у всех маршрутов панели есть `meta.help`, формы в панели списка передают ключ своей шапке. Кнопка появится, когда у экрана будет текст.
+- Updated dependencies [cd801c7]
+- Updated dependencies [cd801c7]
+- Updated dependencies [cd801c7]
+- Updated dependencies [cd801c7]
+- Updated dependencies [cd801c7]
+- Updated dependencies [cd801c7]
+- Updated dependencies [cd801c7]
+  - @webx-ui/core@0.47.0
+  - @webx-ui/module-admin@0.36.0
+  - @webx-ui/module-catalog@0.11.0
+  - @webx-ui/schema@0.11.1
+
 ## 0.2.5
 
 ### Patch Changes

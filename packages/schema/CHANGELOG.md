@@ -1,5 +1,13 @@
 # @webx-ui/schema
 
+## 0.11.1
+
+### Patch Changes
+
+- Updated dependencies [cd801c7]
+- Updated dependencies [cd801c7]
+  - @webx-ui/core@0.47.0
+
 ## 0.11.0
 
 ### Minor Changes
