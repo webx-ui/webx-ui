@@ -63,6 +63,7 @@ export function tariffs(options: TariffsOptions = {}): AdminModule[] {
         {
           path,
           name: 'webx.tariffs',
+          meta: { help: 'tariffs.index' },
           component: () => import('./TariffsPage.vue'),
           props: { base: path },
         },

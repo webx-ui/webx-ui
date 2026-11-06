@@ -8,6 +8,7 @@ use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Categories\CategorySources;
+use WebxUi\Admin\Help\HelpRegistry;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Snapshots\SnapshotTables;
@@ -59,6 +60,8 @@ class StockServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->app->make(HelpRegistry::class)->directory(__DIR__.'/../resources/help');
+
         // What moves between stands with webx:snapshot, and what stays where it is.
         $this->callAfterResolving(SnapshotTables::class, static function (SnapshotTables $tables): void {
             $tables->content('catalog_stock_statuses', 'catalog_product_stock');

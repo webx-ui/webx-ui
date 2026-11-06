@@ -36,6 +36,7 @@ use WebxUi\Admin\Console\CachePruneCommand;
 use WebxUi\Admin\Console\CacheResetCommand;
 use WebxUi\Admin\Console\DemoCommand;
 use WebxUi\Admin\Console\DoctorCommand;
+use WebxUi\Admin\Console\HelpCommand;
 use WebxUi\Admin\Console\InstallCommand;
 use WebxUi\Admin\Console\MakeModuleCommand;
 use WebxUi\Admin\Console\ModuleAddCommand;
@@ -335,6 +336,8 @@ class AdminServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->app->make(HelpRegistry::class)->directory(__DIR__.'/../resources/help');
+
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-admin');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-admin');
         $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
@@ -390,6 +393,7 @@ class AdminServiceProvider extends ServiceProvider
             CacheResetCommand::class,
             DemoCommand::class,
             DoctorCommand::class,
+            HelpCommand::class,
             InstallCommand::class,
             MakeModuleCommand::class,
             ModuleAddCommand::class,

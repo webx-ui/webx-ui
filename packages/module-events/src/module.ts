@@ -60,12 +60,14 @@ export function events(options: EventsOptions = {}): AdminModule[] {
         {
           path,
           name: 'webx.events',
+          meta: { help: 'events.index' },
           component: () => import('./EventsPage.vue'),
           props: { base: path },
         },
         {
           path: `${path}/:id(\\d+)`,
           name: 'webx.events.edit',
+          meta: { help: 'events.form' },
           component: () => import('./EventEditorPage.vue'),
           props: { base: path },
         },

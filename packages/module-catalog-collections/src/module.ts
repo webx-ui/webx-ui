@@ -32,18 +32,21 @@ export function catalogCollections(options: CatalogCollectionsOptions = {}): Adm
         {
           path: `${catalog}/collections`,
           name: 'webx.catalog-collections',
+          meta: { help: 'catalog-collections.index' },
           component: () => import('./CollectionsPage.vue'),
           props,
         },
         {
           path: `${catalog}/collections/new`,
           name: 'webx.catalog-collections.new',
+          meta: { help: 'catalog.collection-form' },
           component: () => import('./CollectionEditorPage.vue'),
           props,
         },
         {
           path: `${catalog}/collections/:id(\\d+)`,
           name: 'webx.catalog-collections.edit',
+          meta: { help: 'catalog.collection-form' },
           component: () => import('./CollectionEditorPage.vue'),
           props,
         },

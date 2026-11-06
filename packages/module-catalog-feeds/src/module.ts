@@ -34,18 +34,21 @@ export function catalogFeeds(options: CatalogFeedsOptions = {}): AdminModule[] {
         {
           path: `${catalog}/feeds`,
           name: 'webx.catalog-feeds',
+          meta: { help: 'catalog-feeds.index' },
           component: () => import('./FeedsPage.vue'),
           props,
         },
         {
           path: `${catalog}/feeds/new`,
           name: 'webx.catalog-feeds.new',
+          meta: { help: 'catalog.feed-form' },
           component: () => import('./FeedEditorPage.vue'),
           props,
         },
         {
           path: `${catalog}/feeds/:id(\\d+)`,
           name: 'webx.catalog-feeds.edit',
+          meta: { help: 'catalog.feed-form' },
           component: () => import('./FeedEditorPage.vue'),
           props,
         },

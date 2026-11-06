@@ -114,6 +114,10 @@ scripts/                                # lab-site, link-panel, starter-site, sy
 - **Пятое — панель на сайте, оно не молчит:** раздел с адресами (`RouteType`) в том же коммите
   регистрирует каждый тип в `SiteBar::entity()`, иначе падает `SiteBarCoverageTest`. Всё для панели
   на сайте — через реестр и `siteBarTabs`, не в Blade (гайд `apps/docs/guide/site-bar-modules.md`).
+- **Новый экран или поле — справка в том же коммите** (`resources/help/<en|ru|uk>/<ключ>.md`, поле — по `id` узла;
+  маршрут называет ключ в `meta.help`), иначе падает `HelpCoverageTest` пакета: гайд `apps/docs/guide/panel-help.md`.
+  Новый пакет с экраном или разделом — ещё `HelpCoverageTest` и `directory()` в провайдере (держит
+  `HelpPackagesCoverageTest`). Новый экран в `help-pending.json` не заносить.
 - **`AGENTS.md` пакета** — формат `docs/architecture/WEBX_UI_AGENT_DOCS.md`, ≤150 строк, держит
   `AgentDocsCoverageTest`.
 

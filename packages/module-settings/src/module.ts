@@ -17,6 +17,13 @@ export function settings(options: SettingsOptions = {}): AdminModule {
   return {
     id: 'settings',
     path,
-    routes: [{ path, name: 'webx.settings', component: () => import('./SettingsPage.vue') }],
+    routes: [
+      {
+        path,
+        name: 'webx.settings',
+        meta: { help: 'settings.index' },
+        component: () => import('./SettingsPage.vue'),
+      },
+    ],
   }
 }

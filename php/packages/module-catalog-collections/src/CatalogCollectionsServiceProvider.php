@@ -7,6 +7,7 @@ namespace WebxUi\CatalogCollections;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
+use WebxUi\Admin\Help\HelpRegistry;
 use WebxUi\Admin\History\HistoryTypes;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Relations\RelationTargets;
@@ -74,6 +75,8 @@ class CatalogCollectionsServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->app->make(HelpRegistry::class)->directory(__DIR__.'/../resources/help');
+
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-catalog-collections');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-catalog-collections');

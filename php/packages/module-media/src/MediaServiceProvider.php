@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Contracts\AssetUrls;
 use WebxUi\Admin\Events\StoredContentRewritten;
+use WebxUi\Admin\Help\HelpRegistry;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\FieldType;
 use WebxUi\Admin\Screens\FieldTypes;
@@ -74,6 +75,8 @@ class MediaServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->app->make(HelpRegistry::class)->directory(__DIR__.'/../resources/help');
+
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-media');
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');

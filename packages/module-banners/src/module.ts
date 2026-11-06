@@ -25,6 +25,7 @@ export function banners(options: BannersOptions = {}): AdminModule {
       {
         path,
         name: 'webx.banners',
+        meta: { help: 'banners.index' },
         component: () => import('./BannersPage.vue'),
         props: { base: path },
       },
@@ -32,12 +33,14 @@ export function banners(options: BannersOptions = {}): AdminModule {
       {
         path: `${path}/new`,
         name: 'webx.banners.new',
+        meta: { help: 'banners.form' },
         component: () => import('./BannerEditorPage.vue'),
         props: { base: path },
       },
       {
         path: `${path}/:id(\\d+)`,
         name: 'webx.banners.edit',
+        meta: { help: 'banners.form' },
         component: () => import('./BannerEditorPage.vue'),
         props: { base: path },
       },

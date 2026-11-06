@@ -397,6 +397,7 @@ async function copy(text: string): Promise<void> {
     <template v-else>
       <wx-screen-head
         :level="3"
+        help="payments.method-form"
         :back="!inline"
         :title="title"
         :subtitle="typeTitle === title ? undefined : typeTitle"

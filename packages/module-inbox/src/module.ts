@@ -35,18 +35,21 @@ export function inbox(options: InboxOptions = {}): AdminModule {
       {
         path,
         name: 'webx.inbox',
+        meta: { help: 'inbox.index' },
         component: () => import('./InboxPage.vue'),
         props: { base: path },
       },
       {
         path: `${path}/statuses`,
         name: 'webx.inbox.statuses',
+        meta: { help: 'inbox.statuses' },
         component: () => import('./StatusesPage.vue'),
         props: { base: path },
       },
       {
         path: `${path}/forms/:id(\\d+)`,
         name: 'webx.inbox.form',
+        meta: { help: 'inbox.form' },
         component: () => import('./FormEditorPage.vue'),
         props: { base: path },
       },
@@ -55,6 +58,7 @@ export function inbox(options: InboxOptions = {}): AdminModule {
       {
         path: `${path}/submissions/:id(\\d+)`,
         name: 'webx.inbox.submission',
+        meta: { help: 'inbox.submission' },
         component: () => import('./SubmissionPage.vue'),
         props: { base: path },
       },

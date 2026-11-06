@@ -11,6 +11,7 @@ use Illuminate\Support\ServiceProvider;
 use InvalidArgumentException;
 use WebxUi\Admin\Categories\CategorySources;
 use WebxUi\Admin\Editing\EditedRecords;
+use WebxUi\Admin\Help\HelpRegistry;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
@@ -64,6 +65,8 @@ class VacanciesServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->app->make(HelpRegistry::class)->directory(__DIR__.'/../resources/help');
+
         $this->callAfterResolving(SlugModels::class, static function (SlugModels $models): void {
             $models->register(VacancyCategory::class);
         });

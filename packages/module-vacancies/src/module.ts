@@ -62,12 +62,14 @@ export function vacancies(options: VacanciesOptions = {}): AdminModule[] {
         {
           path,
           name: 'webx.vacancies',
+          meta: { help: 'vacancies.index' },
           component: () => import('./VacanciesPage.vue'),
           props: { base: path },
         },
         {
           path: `${path}/:id(\\d+)`,
           name: 'webx.vacancies.edit',
+          meta: { help: 'vacancies.form' },
           component: () => import('./VacancyEditorPage.vue'),
           props: { base: path },
         },

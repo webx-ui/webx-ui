@@ -20,7 +20,13 @@ export function team(options: TeamOptions = {}): AdminModule {
     // One route: the open person is in the address (`?member=`), beside the list they were
     // opened from, so a link to them is a link to both.
     routes: [
-      { path, name: 'webx.team', component: () => import('./TeamPage.vue'), props: { base: path } },
+      {
+        path,
+        name: 'webx.team',
+        meta: { help: 'team.index' },
+        component: () => import('./TeamPage.vue'),
+        props: { base: path },
+      },
     ],
   }
 }

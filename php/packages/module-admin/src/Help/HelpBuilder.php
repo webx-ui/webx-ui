@@ -112,6 +112,18 @@ final readonly class HelpBuilder
     }
 
     /**
+     * The groups of one page alone, without what it includes.
+     *
+     * @param  callable(string): bool  $can
+     * @param  callable(string): string  $translate
+     * @return list<HelpGroup>
+     */
+    public function groupsOf(HelpPage $page, callable $can, callable $translate): array
+    {
+        return $this->groups($page, $can, $translate, false);
+    }
+
+    /**
      * @param  callable(string): bool  $can
      * @param  callable(string): string  $translate
      * @return list<HelpGroup>

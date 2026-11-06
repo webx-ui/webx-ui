@@ -32,18 +32,21 @@ export function notifications(options: NotificationsOptions = {}): AdminModule {
       {
         path,
         name: 'webx.notifications',
+        meta: { help: 'notifications.index' },
         component: () => import('./NotificationsPage.vue'),
         props: { base: path },
       },
       {
         path: `${path}/channels/new`,
         name: 'webx.notifications.new',
+        meta: { help: 'notifications.channel' },
         component: () => import('./ChannelPage.vue'),
         props: { base: path },
       },
       {
         path: `${path}/channels/:id(\\d+)`,
         name: 'webx.notifications.channel',
+        meta: { help: 'notifications.channel' },
         component: () => import('./ChannelPage.vue'),
         props: { base: path },
       },

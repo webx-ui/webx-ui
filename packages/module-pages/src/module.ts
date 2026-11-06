@@ -24,12 +24,14 @@ export function pages(options: PagesOptions = {}): AdminModule {
       {
         path,
         name: 'webx.pages',
+        meta: { help: 'pages.index' },
         component: () => import('./PagesPage.vue'),
         props: { base: path },
       },
       {
         path: `${path}/:id(\\d+)`,
         name: 'webx.pages.edit',
+        meta: { help: 'pages.form' },
         component: () => import('./PageEditorPage.vue'),
         props: { base: path },
       },

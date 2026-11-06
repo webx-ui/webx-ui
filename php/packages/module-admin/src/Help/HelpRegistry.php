@@ -39,6 +39,14 @@ final class HelpRegistry
     }
 
     /**
+     * @return list<string>
+     */
+    public function directories(): array
+    {
+        return $this->directories;
+    }
+
+    /**
      * Every key a page can be put together for, sorted. The English files decide: `en` is the
      * reference of what exists (§2.5), and the list must not depend on the reader's language.
      *

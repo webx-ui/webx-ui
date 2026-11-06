@@ -27,12 +27,14 @@ export function configurators(options: ConfiguratorsOptions = {}): AdminModule[]
         {
           path,
           name: 'webx.configurators',
+          meta: { help: 'configurators.index' },
           component: () => import('./ConfiguratorsPage.vue'),
           props: { base: path },
         },
         {
           path: `${path}/:id(\\d+)`,
           name: 'webx.configurators.editor',
+          meta: { help: 'configurators.editor' },
           component: () => import('./ConfiguratorEditorPage.vue'),
           props: { base: path },
         },

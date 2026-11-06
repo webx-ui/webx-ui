@@ -26,6 +26,7 @@ export function payments(options: PaymentsOptions = {}): AdminModule[] {
       {
         path: slug === '' ? path : `${path}/${slug}`,
         name,
+        meta: { help: slug === '' ? 'payments.index' : `payments.${slug}` },
         component: page as never,
       },
     ],

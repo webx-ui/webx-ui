@@ -38,12 +38,14 @@ export function seo(options: SeoOptions = {}): AdminModule {
       {
         path,
         name: 'webx.seo',
+        meta: { help: 'seo.index' },
         component: () => import('./SeoUrlsPage.vue'),
         props: { base: path, mediaField },
       },
       {
         path: `${path}/redirects`,
         name: 'webx.seo.redirects',
+        meta: { help: 'seo.redirects' },
         component: () => import('./SeoRedirectsPage.vue'),
         props: { base: path },
       },
@@ -53,6 +55,7 @@ export function seo(options: SeoOptions = {}): AdminModule {
       {
         path: `${path}/aliases`,
         name: 'webx.seo.aliases',
+        meta: { help: 'seo.aliases' },
         component: () => import('./SeoAliasesPage.vue'),
         props: { base: path },
       },
@@ -62,6 +65,7 @@ export function seo(options: SeoOptions = {}): AdminModule {
       {
         path: `${path}/links`,
         name: 'webx.seo.links',
+        meta: { help: 'seo.links' },
         component: () => import('./SeoLinksPage.vue'),
         props: { base: path },
       },
