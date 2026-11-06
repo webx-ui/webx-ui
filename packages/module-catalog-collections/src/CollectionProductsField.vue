@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import {
   WxAutocomplete,
   WxBadge,
@@ -105,10 +105,16 @@ async function search(q: string): Promise<void> {
 function pick(option: AutocompleteOption): void {
   const id = Number(option.value)
 
+  // The box writes the option's value, an id here, into itself after this handler: emptied any
+  // earlier, the id stays and prefixes the next search. The id rather than the name, because the
+  // box keys its options by value and two products may share a name.
+  void nextTick(() => {
+    term.value = ''
+  })
+
   if (!Number.isFinite(id) || full.value || (value.value ?? []).includes(id)) return
 
   value.value = [...(value.value ?? []), id]
-  term.value = ''
   options.value = []
 }
 
