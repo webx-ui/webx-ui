@@ -154,6 +154,25 @@ final class ApiTest extends TestCase
     }
 
     #[Test]
+    public function a_limit_that_is_no_whole_number_and_words_that_are_no_text_are_refused(): void
+    {
+        $manager = $this->manager();
+
+        foreach ([[1], 1.5, true, 'many'] as $limit) {
+            $this->actingAs($manager, 'cms')->postJson($this->api(), ['title' => 'Picks', 'limit' => $limit])
+                ->assertUnprocessable()
+                ->assertJsonPath('errors.limit.0', 'The limit is a number from 1 to 48.');
+        }
+
+        $this->actingAs($manager, 'cms')->postJson($this->api('preview'), ['source' => 'manual', 'limit' => [1]])->assertUnprocessable();
+        $this->actingAs($manager, 'cms')->postJson($this->api(), ['title' => 'Picks', 'link_text' => ['en' => ['x']]])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('link_text.en');
+
+        $this->assertSame(0, ProductCollection::query()->count());
+    }
+
+    #[Test]
     public function the_limit_names_the_ceiling_in_its_refusal(): void
     {
         $this->actingAs($this->manager(), 'cms')->postJson($this->api(), ['title' => 'Picks', 'limit' => 49])

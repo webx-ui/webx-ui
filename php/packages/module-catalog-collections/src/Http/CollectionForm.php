@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\CatalogCollections\Http;
 
+use Closure;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
@@ -89,9 +90,25 @@ final class CollectionForm
             'sort' => ['nullable', 'string', 'max:32'],
             'source' => ['sometimes', 'string', 'max:16'],
             'view' => ['sometimes', 'string', 'max:16'],
+            'limit' => ['nullable', self::wholeNumber(...)],
+            'title.*' => ['nullable', 'string'],
+            'link_text.*' => ['nullable', 'string'],
             'products' => ['sometimes', 'nullable', 'array'],
             'products.*' => ['integer'],
         ])->validate();
+    }
+
+    /**
+     * The shape only: the range is the model's, which asks it of a limit being changed. The model
+     * cannot ask this one, because its cast has made `[1]` and `1.5` into a 1 by the time it looks.
+     *
+     * @param  Closure(string): mixed  $fail
+     */
+    private static function wholeNumber(string $attribute, mixed $value, Closure $fail): void
+    {
+        if (is_bool($value) || filter_var($value, FILTER_VALIDATE_INT) === false) {
+            $fail((string) __('webx-catalog-collections::errors.limit-range', ['max' => ProductCollection::maxLimit()]));
+        }
     }
 
     /**

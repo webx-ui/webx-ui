@@ -19,7 +19,9 @@ use WebxUi\Mcp\Exceptions\ToolFailure;
  * slug, in the language the call names and then in any other. It is stored by ids, as the panel
  * stores it, and read back with both.
  *
- * Unlike a landing's, an empty set is legal: «New arrivals» has none (§3.5).
+ * Unlike a landing's, an empty set is legal: «New arrivals» has none (§3.5). A facet named with
+ * nothing readable in it is not: {@see FacetSet} would drop it without a word, and the collection
+ * the agent believes it narrowed would print the whole catalogue.
  */
 final class CollectionSet
 {
@@ -50,16 +52,17 @@ final class CollectionSet
             $facet = $this->facet((string) $code, $locale);
 
             if ($facet->kind() === FacetKind::Range) {
-                if (! is_array($choice) || array_is_list($choice)) {
-                    throw new ToolFailure('«'.$facet->label().'» is a range: { "min": …, "max": … }, either end may be left out.');
-                }
-
-                $stored[$facet->key()] = ['min' => $choice['min'] ?? null, 'max' => $choice['max'] ?? null];
+                $stored[$facet->key()] = $this->range($facet, $choice);
 
                 continue;
             }
 
             $slugs = is_array($choice) ? array_map(self::word(...), array_values($choice)) : [self::word($choice)];
+
+            if ($slugs === []) {
+                throw new ToolFailure('«'.$facet->label().'» needs at least one value. catalog_collections_facets lists the values a base has.');
+            }
+
             $stored[$facet->key()] = ['values' => $this->values($facet, $slugs, $locale)];
         }
 
@@ -138,6 +141,25 @@ final class CollectionSet
         }
 
         return $offered;
+    }
+
+    /**
+     * @return array{min: mixed, max: mixed}
+     */
+    private function range(Facet $facet, mixed $choice): array
+    {
+        $ends = is_array($choice) && ! array_is_list($choice) && array_diff_key($choice, ['min' => 0, 'max' => 0]) === []
+            ? ['min' => $choice['min'] ?? null, 'max' => $choice['max'] ?? null]
+            : null;
+
+        $numbers = array_filter($ends ?? [], is_numeric(...));
+
+        if ($numbers === [] || count($numbers) !== count(array_filter($ends ?? [], static fn (mixed $end): bool => $end !== null))) {
+            throw new ToolFailure('«'.$facet->label().'» is a range: { "min": …, "max": … }, at least one end, each a number. '
+                .'catalog_collections_facets gives its ends.');
+        }
+
+        return $ends;
     }
 
     /**

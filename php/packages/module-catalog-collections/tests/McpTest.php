@@ -349,6 +349,19 @@ final class McpTest extends TestCase
             ['catalog_collections_create', ['preset' => 'new', 'values' => ['title' => 'A', 'source' => 'manual']], 'sort:'],
             ['catalog_collections_update', ['collection' => 'picks', 'values' => ['sort' => 'new']], 'sort:'],
 
+            // What would break a page, or be read as something else.
+            ['catalog_collections_create', ['values' => ['title' => 'A', 'link_text' => ['en' => ['x']]]], '`link_text` in "en"'],
+            ['catalog_collections_create', ['values' => ['title' => 'A', 'link_text' => ['en' => 5]]], '`link_text` in "en"'],
+            ['catalog_collections_create', ['values' => ['title' => ['en' => 'A', 'ru' => ['x']]]], '`title` in "ru"'],
+            ['catalog_collections_update', ['collection' => 'picks', 'values' => ['link_text' => ['en' => ['x']]]], '`link_text` in "en"'],
+            ['catalog_collections_preview', ['values' => ['link_text' => ['en' => ['x']]]], '`link_text` in "en"'],
+            ['catalog_collections_create', ['values' => ['title' => 'A', 'limit' => [1]]], 'limit: The limit is a number from 1 to 48'],
+            ['catalog_collections_create', ['values' => ['title' => 'A', 'limit' => [1]], 'dry_run' => true], 'from 1 to 48'],
+            ['catalog_collections_create', ['values' => ['title' => 'A', 'limit' => 1.5]], 'from 1 to 48'],
+            ['catalog_collections_create', ['values' => ['title' => 'A', 'limit' => true]], 'from 1 to 48'],
+            ['catalog_collections_update', ['collection' => 'picks', 'values' => ['limit' => [1]]], 'from 1 to 48'],
+            ['catalog_collections_update', ['collection' => 'picks', 'values' => ['limit' => 1.5]], 'from 1 to 48'],
+
             // Presets.
             ['catalog_collections_create', ['preset' => 'mystery', 'values' => ['title' => 'A']], 'no preset "mystery": new, on-sale, label'],
             ['catalog_collections_create', ['preset' => ['new'], 'values' => ['title' => 'A']], 'no preset'],
@@ -378,7 +391,28 @@ final class McpTest extends TestCase
             ['catalog_collections_preview', ['values' => ['source' => 'filter', 'sort' => 'mystery']], 'no sort «mystery»'],
             ['catalog_collections_preview', ['values' => ['products' => range(1, 49)]], 'at most 48'],
             ['catalog_collections_preview', ['values' => ['products' => 'all']], '`products`'],
+            ['catalog_collections_preview', ['values' => ['limit' => 49]], 'limit: The limit is a number from 1 to 48'],
+            ['catalog_collections_preview', ['values' => ['limit' => 'many']], 'from 1 to 48'],
+            ['catalog_collections_preview', ['values' => ['limit' => [1]]], 'from 1 to 48'],
+            ['catalog_collections_preview', ['values' => ['limit' => null]], 'from 1 to 48'],
+            ['catalog_collections_preview', ['collection' => 'picks', 'values' => ['limit' => 49]], 'from 1 to 48'],
+            ['catalog_collections_preview', ['values' => ['view' => 'list']], 'no view called «list»'],
         ];
+
+        // A facet named with nothing readable in it: dropped, it would open the whole catalogue.
+        foreach ([
+            [['price' => ['min' => 'abc']], 'is a range'],
+            [['price' => ['min' => [1]]], 'is a range'],
+            [['price' => ['min' => 5, 'max' => 'abc']], 'is a range'],
+            [['price' => ['mni' => 5]], 'is a range'],
+            [['price' => ['min' => null]], 'is a range'],
+            [['price' => []], 'is a range'],
+            [['brand' => []], 'at least one value. catalog_collections_facets'],
+        ] as [$set, $says]) {
+            $refusals[] = ['catalog_collections_create', ['values' => ['title' => 'A', 'source' => 'filter', 'set' => $set]], $says];
+            $refusals[] = ['catalog_collections_update', ['collection' => 'sale', 'values' => ['set' => $set]], $says];
+            $refusals[] = ['catalog_collections_preview', ['values' => ['source' => 'filter', 'set' => $set]], $says];
+        }
 
         foreach ($refusals as [$tool, $arguments, $says]) {
             $this->refused($tool, $arguments, $says);
@@ -387,6 +421,37 @@ final class McpTest extends TestCase
         $this->assertSame(['picks', 'sale'], ProductCollection::query()->orderBy('id')->pluck('key')->all());
         $this->assertSame(0, DB::table(ProductCollection::PRODUCTS)->count());
         $this->assertTrue($filter->refresh()->on_sale);
+    }
+
+    #[Test]
+    public function what_is_legal_stays_legal_past_the_refusals(): void
+    {
+        $this->product('Camera');
+
+        // A set empty as a whole says nothing was narrowed: «New arrivals» is one.
+        $empty = $this->content($this->agent('catalog_collections_create', ['values' => ['title' => 'All', 'source' => 'filter', 'set' => []]]))['collection'];
+        $this->assertEmpty((array) $empty['filters']);
+        $this->assertSame('new', $this->content($this->agent('catalog_collections_create', ['preset' => 'new', 'values' => ['title' => 'Fresh']]))['collection']['preset']);
+        $this->assertSame(1, $this->content($this->agent('catalog_collections_preview', ['values' => ['source' => 'filter', 'set' => []]]))['count']);
+
+        // One end of a range is enough, a number may come as a string, and null clears a language.
+        $range = $this->content($this->agent('catalog_collections_create', ['values' => ['title' => 'Cheap', 'source' => 'filter', 'set' => ['price' => ['max' => '50']], 'limit' => '4']]))['collection'];
+        $this->assertEquals(['price' => ['min' => null, 'max' => 50]], (array) $range['filters']);
+        $this->assertSame(4, $range['limit']);
+        $this->agent('catalog_collections_update', ['collection' => 'cheap', 'values' => ['link_text' => 'Every one']])->assertOk();
+        $cleared = $this->content($this->agent('catalog_collections_update', ['collection' => 'cheap', 'values' => ['link_text' => ['en' => null]]]))['collection'];
+        $this->assertArrayNotHasKey('en', (array) $cleared['link_text']);
+    }
+
+    #[Test]
+    public function a_preview_judges_what_was_sent_and_not_a_limit_saved_under_a_higher_ceiling(): void
+    {
+        $this->manual('picks', ['limit' => 8]);
+        config()->set('webx-catalog-collections.max_limit', 4);
+
+        $this->assertSame(4, $this->content($this->agent('catalog_collections_preview', ['collection' => 'picks', 'values' => ['view' => 'carousel']]))['limit']);
+        $this->assertSame(4, $this->content($this->agent('catalog_collections_preview', ['values' => ['source' => 'filter']]))['limit']);
+        $this->refused('catalog_collections_preview', ['collection' => 'picks', 'values' => ['limit' => 5]], 'from 1 to 4');
     }
 
     #[Test]

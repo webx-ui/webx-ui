@@ -155,6 +155,22 @@ class ProductCollection extends Model
     }
 
     /**
+     * What `saving` would say of a view and a limit, for a preview, which never saves. Only what
+     * was sent is judged: a limit saved under a higher ceiling is no mistake of the caller's.
+     *
+     * @param  array<string, mixed>  $values  Past the form's rules, so the view is a string.
+     */
+    public static function refuseValues(array $values): void
+    {
+        $collection = new self(array_intersect_key($values, array_flip(['view', 'limit'])));
+        $collection->settleChoices();
+
+        if (array_key_exists('limit', $values)) {
+            $collection->settleLimit();
+        }
+    }
+
+    /**
      * @return list<string>
      */
     public function translatable(): array

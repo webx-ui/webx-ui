@@ -72,7 +72,8 @@ final class CollectionTools
         $words = ['type' => ['string', 'object'], 'description' => 'One language (the call\'s) as a string, or several as { "en": "…" }; a language left out keeps what it had.'];
         $values = ['type' => 'object', 'description' => 'The fields: title, key (on create only), source (manual, filter), category, set, on_sale, sort, '
             .'only_purchasable, limit, view (grid, carousel), link, link_text, is_enabled. set, category, on_sale and sort are read by a filter only. '
-            .'set: facet code → a list of value slugs, or { "min": …, "max": … } for a range, from catalog_collections_facets. '
+            .'set: facet code → a list of value slugs, or { "min": …, "max": … } for a range with at least one end, from '
+            .'catalog_collections_facets; a facet named with nothing in it is refused. '
             .'title and link_text: a string in the call\'s language, or { "en": "…" }.', 'properties' => [
                 'title' => $words,
                 'link_text' => $words,
@@ -287,7 +288,11 @@ final class CollectionTools
 
         $this->refuseUnread($input, $named);
 
-        return $this->preview->of($this->form->draft($named === null ? $input : [...$this->saved($named), ...$input]), $picked, $locale);
+        $draft = $this->form->draft($named === null ? $input : [...$this->saved($named), ...$input]);
+        // A preview of values no write would keep would promise the agent what it cannot have.
+        ProductCollection::refuseValues($input);
+
+        return $this->preview->of($draft, $picked, $locale);
     }
 
     /**
@@ -542,8 +547,12 @@ final class CollectionTools
             throw new ToolFailure("`{$field}` is a string in the call's language, or { \"en\": \"…\" }.");
         }
 
-        foreach (array_keys($value) as $language) {
+        foreach ($value as $language => $text) {
             $this->locale(['locale' => $language]);
+
+            if ($text !== null && ! is_string($text)) {
+                throw new ToolFailure("`{$field}` in \"{$language}\" is a string, or null to clear it.");
+            }
         }
 
         return [...($collection?->getTranslations($field) ?? []), ...$value];
