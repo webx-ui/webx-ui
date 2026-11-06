@@ -25,6 +25,7 @@
             <directory>packages/module-cart/tests</directory>
             <directory>packages/module-catalog/tests</directory>
             <directory>packages/module-catalog-brands/tests</directory>
+            <directory>packages/module-catalog-collections/tests</directory>
             <directory>packages/module-catalog-feeds/tests</directory>
             <directory>packages/module-catalog-labels/tests</directory>
             <directory>packages/module-catalog-manticore/tests</directory>
@@ -81,6 +82,7 @@
             <directory>packages/module-cart/src</directory>
             <directory>packages/module-catalog/src</directory>
             <directory>packages/module-catalog-brands/src</directory>
+            <directory>packages/module-catalog-collections/src</directory>
             <directory>packages/module-catalog-feeds/src</directory>
             <directory>packages/module-catalog-labels/src</directory>
             <directory>packages/module-catalog-manticore/src</directory>
