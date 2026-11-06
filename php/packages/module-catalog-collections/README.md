@@ -6,9 +6,9 @@ filter. A satellite of `webx-ui/module-catalog`.
 
 Specification: `docs/architecture/WEBX_UI_CATALOG_COLLECTIONS.md` in the monorepo.
 
-This package is being built in stages. So far a collection can be made in code, says which products
-it holds, prints with a tag, stands on a page as a block and goes into a text as a shortcode. It has
-no section in the panel yet.
+This package is being built in stages. So far a collection can be made in code, in its section of
+the panel or by an agent (`catalog_collections_*`, `catalog://collections`), says which products it
+holds, prints with a tag, stands on a page as a block and goes into a text as a shortcode.
 
 ## Requirements
 

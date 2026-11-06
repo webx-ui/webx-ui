@@ -14,6 +14,7 @@ use WebxUi\Blocks\Models\Region;
 use WebxUi\Blocks\Tests\Fixtures\Page;
 use WebxUi\CatalogCollections\Models\ProductCollection;
 use WebxUi\CatalogCollections\Panel\CollectionUsage;
+use WebxUi\Mcp\Registry\ToolRegistry;
 
 /**
  * Where a collection stands (§6.4): a block in a draft, in what the site shows and in a region, the
@@ -80,6 +81,23 @@ final class UsageTest extends TestCase
         $this->assertTrue($place['draft']);
         $this->assertFalse($place['published']);
         $this->assertNull($place['region']);
+    }
+
+    #[Test]
+    public function an_agent_reads_the_same_places_and_is_told_what_they_leave_out(): void
+    {
+        $page = Page::query()->create(['title' => 'Home']);
+        $page->saveDraft(['blocks' => $page->storeBlocks([$this->node('picks')])]);
+
+        $registry = $this->app->make(ToolRegistry::class);
+        $usage = ($registry->tool('catalog_collections_usage')->tool->handler)(['collection' => 'picks']);
+
+        $this->assertSame('Home', $usage['places'][0]['title']);
+        $this->assertStringContainsString('shortcode', $usage['not_counted']);
+
+        $list = ($registry->tool('catalog_collections_list')->tool->handler)([]);
+
+        $this->assertSame(['picks' => 1, 'other' => 0], array_column($list['collections'], 'places', 'key'));
     }
 
     #[Test]

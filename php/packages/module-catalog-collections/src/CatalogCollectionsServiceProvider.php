@@ -17,10 +17,13 @@ use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Blocks\BlockOffers;
 use WebxUi\Cache\CacheGroups;
 use WebxUi\Catalog\Events\FacetValueRetargeted;
+use WebxUi\Catalog\Mcp\SatelliteTools;
 use WebxUi\Catalog\Rendering\ProductQuery;
 use WebxUi\CatalogCollections\Catalog\CollectionPreset;
 use WebxUi\CatalogCollections\Catalog\CollectionPresets;
 use WebxUi\CatalogCollections\Catalog\CollectionRepairs;
+use WebxUi\CatalogCollections\Mcp\CollectionsResource;
+use WebxUi\CatalogCollections\Mcp\CollectionTools;
 use WebxUi\CatalogCollections\Models\ProductCollection;
 use WebxUi\CatalogCollections\Panel\CollectionsModule;
 use WebxUi\CatalogCollections\Relations\CollectionTarget;
@@ -35,7 +38,7 @@ use WebxUi\CatalogCollections\Storefront\LiveCollections;
  * Product collections of the catalogue (`WEBX_UI_CATALOG_COLLECTIONS.md`): a satellite that knows
  * only the core. What it registers so far: the tables, what moves between stands, the journal, what
  * a collection holds, its cache, the tag that prints it, the block that places it, the shortcode
- * that puts it in a text, and the section of the panel with its API.
+ * that puts it in a text, the section of the panel with its API, and the agent's tools.
  */
 class CatalogCollectionsServiceProvider extends ServiceProvider
 {
@@ -85,6 +88,12 @@ class CatalogCollectionsServiceProvider extends ServiceProvider
         $this->registerPanel();
 
         $this->app->make(Dispatcher::class)->listen(FacetValueRetargeted::class, [CollectionRepairs::class, 'handle']);
+
+        // The agent's tools and `catalog://collections` are the catalogue's (§7): its names, scopes
+        // and permissions. Built when an agent asks, not at boot.
+        $mcp = $this->app->make(SatelliteTools::class);
+        $mcp->tools(fn (): array => $this->app->make(CollectionTools::class)->all());
+        $mcp->resources(fn (): array => [$this->app->make(CollectionsResource::class)->resource()]);
 
         if (! $this->app->runningInConsole()) {
             return;

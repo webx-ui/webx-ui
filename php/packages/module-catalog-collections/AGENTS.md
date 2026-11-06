@@ -5,8 +5,7 @@ together once, by hand or by a filter. It has no address of its own: for a page 
 SEO, use `webx-ui/module-catalog-landings`. This package is a satellite of `webx-ui/module-catalog`;
 for the filter, its facets and the product card, read the core's `AGENTS.md`. The package is being
 built in stages: so far it holds the tables, the model, what a collection contains, the tag that
-prints it, the block that places it, the shortcode and the section of the panel; the agent's tools
-come later.
+prints it, the block that places it, the shortcode, the section of the panel and the agent's tools.
 
 ## What it owns
 
@@ -51,13 +50,20 @@ come later.
   the live tree and in the draft, from one walk on the cache group `block-usage`. The list shows
   «Places: N», `GET {id}/usage` names them. Shortcodes in texts and tags in templates are not counted,
   and the panel says so. Without `webx-ui/module-blocks`, `places` is null and the panel shows neither.
+- **MCP** tools `catalog_collections_list`, `_get`, `_facets`, `_preview`, `_usage`, `_create`,
+  `_update`, `_products`, `_delete`, `_restore` (`Mcp\CollectionTools`), served through the core's
+  `SatelliteTools`, so the names, scopes and permissions are the catalogue's. Resource:
+  `catalog://collections` (the house rules). A set is codes and slugs (`Mcp\CollectionSet`), stored
+  by ids. A write goes through `Http\CollectionForm`; a `dry_run` is that write rolled back.
 - **Repairs** `Catalog\CollectionRepairs` listens to `FacetValueRetargeted`: a merge moves the set,
   a deletion marks `attention`, and a filter's set left empty turns the collection off.
 
 ### Permissions
 
 None of its own: `catalog.view` reads the section and asks the preview, `catalog.manage` writes and
-sends to the bin. The section is visible to whoever holds either (`visibleWith()`).
+sends to the bin. The section is visible to whoever holds either (`visibleWith()`). The tools follow:
+`_list`, `_get`, `_facets`, `_preview` and `_usage` ask for either, under `catalog:read`; `_create`,
+`_update`, `_products`, `_delete` and `_restore` ask for `catalog.manage`, under `catalog:write`.
 
 ## Change it without forking
 
@@ -93,6 +99,8 @@ sends to the bin. The section is visible to whoever holds either (`visibleWith()
   link live in the model. Save through `ProductCollection`.
 - Do not write `catalog_collection_products` without saving the collection: the save moves the
   group. A path with no save calls `CacheGroups::bump('catalog-collections')`.
+- Do not let a tool save what nothing reads: a condition on a manual collection and a list on a filter
+  are refused in `Mcp\CollectionTools`, or an agent believes it changed what the site shows.
 - Do not cache a list per `limit` of a place: the entry is on the collection's own limit, and a
   smaller one cuts it.
 
@@ -115,6 +123,8 @@ sends to the bin. The section is visible to whoever holds either (`visibleWith()
   «Products», and the preview beside them says what the site would show before anything is saved.
 - Put the block on a page and save the draft: the list says «Places: 1», and the words open the page's
   name, marked as a draft until it is published.
+- With MCP: read `catalog://collections`, then `catalog_collections_facets`, `_create` with `dry_run`, and
+  `_preview`; `_update` with another `key` is refused, and says why.
 - `vendor/bin/phpunit packages/module-catalog-collections/tests` in the monorepo's `php/`.
 
 ## Read more
