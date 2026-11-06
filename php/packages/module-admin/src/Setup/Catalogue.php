@@ -254,6 +254,22 @@ final class Catalogue
             'requires' => ['catalog', 'seo'],
             'demo' => ['en'],
         ],
+        'catalog-collections' => [
+            'package' => 'webx-ui/module-catalog-collections',
+            'npm' => '@webx-ui/module-catalog-collections',
+            'label' => 'Catalog collections — «New arrivals», «On sale»: a named block of products, picked by hand or by a filter, put on any page as a block, in a text or by a tag (needs the catalog)',
+            'default' => false,
+            'requires' => ['catalog'],
+            'demo' => [],
+        ],
+        'catalog-feeds' => [
+            'package' => 'webx-ui/module-catalog-feeds',
+            'npm' => '@webx-ui/module-catalog-feeds',
+            'label' => 'Catalog feeds — product files for marketplaces and ad platforms, built from a template and served at a permanent address (needs the catalog)',
+            'default' => false,
+            'requires' => ['catalog'],
+            'demo' => ['en'],
+        ],
         'catalog-manticore' => [
             'package' => 'webx-ui/module-catalog-manticore',
             'npm' => '@webx-ui/module-catalog-manticore',

@@ -6,6 +6,7 @@ namespace WebxUi\Team;
 
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Collections\CollectionSources;
+use WebxUi\Admin\Help\HelpRegistry;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Relations\RelationTargets;
 use WebxUi\Admin\Screens\ScreenRegistry;
@@ -36,6 +37,8 @@ class TeamServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->app->make(HelpRegistry::class)->directory(__DIR__.'/../resources/help');
+
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-team');
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');

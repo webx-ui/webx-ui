@@ -71,9 +71,10 @@ final class SqlEngine implements CatalogEngine
 
             if ($exact !== []) {
                 $model = $page->getModel();
+                $extra = 'EXISTS (SELECT 1 FROM catalog_product_barcodes WHERE catalog_product_barcodes.product_id = '.$model->qualifyColumn('id').' AND catalog_product_barcodes.barcode = ?)';
                 $page->orderByRaw(
-                    'CASE WHEN '.$model->qualifyColumn('sku').' = ? OR '.$model->qualifyColumn('barcode').' = ? OR '.$model->qualifyColumn('external_id').' = ? THEN 0 ELSE 1 END',
-                    [$term, $term, $term],
+                    'CASE WHEN '.$model->qualifyColumn('sku').' = ? OR '.$model->qualifyColumn('barcode').' = ? OR '.$model->qualifyColumn('external_id').' = ? OR '.$extra.' THEN 0 ELSE 1 END',
+                    [$term, $term, $term, $term],
                 );
             }
 

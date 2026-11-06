@@ -42,6 +42,10 @@ cart's button leads to the route named `checkout` by itself.
   (`draft_days`, 30 by default) and runs daily.
 - **Signing in** from the contacts step joins the guest's cart and draft to the account's, and the
   page redraws without a reload.
+- **The cart changes on the page.** «Order contents» has a stepper and «Remove» on each line, through
+  the cart's own API, with and without JavaScript. The totals, delivery and payment are counted
+  again, what the buyer typed in the other steps stays, and the last line gone leaves the page of
+  an empty cart.
 - **The amount is checked.** The column carries the amount the buyer saw. If the cart counts more
   at the confirmation — a price went up, a discount ended — the buyer gets the new column and
   confirms again; if it counts less, the order is placed at once and «Thank you» says by how

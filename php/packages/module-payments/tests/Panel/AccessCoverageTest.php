@@ -104,6 +104,8 @@ final class AccessCoverageTest extends TestCase
         $this->getJson($this->api('methods'))->assertOk();
         $this->getJson($this->api('attempts'))->assertOk();
         $this->getJson($this->api('exchange'))->assertOk();
+        $this->getJson($this->api('groups'))->assertOk();
+        $this->putJson($this->api('groups/online'), ['titles' => []])->assertForbidden();
         $this->putJson($this->api('methods/order'), ['ids' => []])->assertForbidden();
         $this->postJson($this->api('methods/1/test'))->assertForbidden();
         $this->putJson($this->api('methods/1'), ['values' => []])->assertForbidden();
@@ -124,6 +126,8 @@ final class AccessCoverageTest extends TestCase
         $this->getJson($this->api('methods'))->assertForbidden();
         $this->getJson($this->api('attempts'))->assertForbidden();
         $this->getJson($this->api('exchange'))->assertForbidden();
+        $this->getJson($this->api('groups'))->assertForbidden();
+        $this->putJson($this->api('groups/online'), ['titles' => []])->assertForbidden();
         $this->putJson($this->api('methods/order'), ['ids' => []])->assertForbidden();
     }
 

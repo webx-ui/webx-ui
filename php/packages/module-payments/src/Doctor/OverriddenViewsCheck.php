@@ -23,8 +23,9 @@ final class OverriddenViewsCheck implements Check
 
     /** The template, the word it cannot do without, and what is lost without it. */
     private const array NEEDS = [
-        'webx-orders::order.body' => ['prompt', 'print $order[\'prompt\'], or the buyer gets neither «Awaiting payment» nor the buttons to pay'],
-        'webx-payments::pay.page' => ['declined', 'handle the state `declined`, or the buyer the bank turned down reads nothing'],
+        ['webx-orders::order.body', 'prompt', 'print $order[\'prompt\'], or the buyer gets neither «Awaiting payment» nor the buttons to pay'],
+        ['webx-orders::order.body', 'offer', 'print $order[\'offer\'], or the buyer of an order on receipt gets no «Pay online now»'],
+        ['webx-payments::pay.page', 'declined', 'handle the state `declined`, or the buyer the bank turned down reads nothing'],
     ];
 
     public function __construct(private readonly Factory $views) {}
@@ -33,7 +34,7 @@ final class OverriddenViewsCheck implements Check
     {
         $found = [];
 
-        foreach (self::NEEDS as $view => [$word, $lost]) {
+        foreach (self::NEEDS as [$view, $word, $lost]) {
             try {
                 $path = $this->views->getFinder()->find($view);
             } catch (InvalidArgumentException) {

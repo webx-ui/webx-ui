@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import { mount } from '@vue/test-utils'
 import { WebxUI } from '@webx-ui/core'
+import { routeLocationKey } from 'vue-router'
+import { createHelp, helpKey } from './help'
 import { createI18n, i18nKey } from './i18n'
 import { adminMessages } from './messages'
 import ScreenHead from './ScreenHead.vue'
@@ -205,5 +207,63 @@ describe('WxScreenHead', () => {
     const slotted = draw({}, { subtitle: '<span>about-us</span>' })
     expect(slotted.classes()).toContain('has-subtitle')
     slotted.unmount()
+  })
+})
+
+describe('the «?» of a head', () => {
+  function withHelp(props: Record<string, unknown>, meta: Record<string, unknown> = {}) {
+    const i18n = createI18n({ locale: 'en' })
+    i18n.defaults('webx-admin', adminMessages)
+
+    const help = createHelp({ state: { manifest: { help: ['a.index', 'a.form'] } } } as never)
+
+    const wrapper = mount(ScreenHead, {
+      props: { title: 'About us', ...props },
+      global: {
+        plugins: [WebxUI],
+        provide: {
+          [i18nKey as symbol]: i18n,
+          [helpKey as symbol]: help,
+          [routeLocationKey as symbol]: { meta },
+        },
+        stubs: { RouterLink: true },
+      },
+      attachTo: document.body,
+    })
+
+    return { wrapper, help, button: () => wrapper.find('.wx-screen-head__help') }
+  }
+
+  it('takes the key from the route on a screen', () => {
+    expect(withHelp({}, { help: 'a.index' }).button().exists()).toBe(true)
+  })
+
+  it('is not there when the server has no such page', () => {
+    expect(withHelp({}, { help: 'b.index' }).button().exists()).toBe(false)
+  })
+
+  it('is not there when the screen says no', () => {
+    expect(withHelp({ help: false }, { help: 'a.index' }).button().exists()).toBe(false)
+  })
+
+  it('leaves the route alone in a pane, which says its own key', () => {
+    expect(withHelp({ level: 3 }, { help: 'a.index' }).button().exists()).toBe(false)
+    expect(withHelp({ level: 3, help: 'a.form' }).button().exists()).toBe(true)
+  })
+
+  it('is not there outside a shell', () => {
+    expect(draw({ help: 'a.index' }).find('.wx-screen-head__help').exists()).toBe(false)
+  })
+
+  it('opens the page and says it is open', async () => {
+    const { help, button } = withHelp({}, { help: 'a.index' })
+
+    expect(button().attributes('aria-haspopup')).toBe('dialog')
+    expect(button().attributes('aria-expanded')).toBe('false')
+
+    await button().trigger('click')
+
+    expect(help.key.value).toBe('a.index')
+    expect(button().attributes('aria-expanded')).toBe('true')
   })
 })

@@ -59,22 +59,23 @@
 
 ### `catalog_products`
 
-| Колонка                                  | Тип                           | Примечание                                           |
-| ---------------------------------------- | ----------------------------- | ---------------------------------------------------- |
-| `id`                                     | bigint                        | ещё и суффикс адреса                                 |
-| `sku`                                    | string(64), null, **unique**  | уникальность включает удалённые                      |
-| `barcode`                                | string(64), null, index       | колонка есть всегда, конфиг прячет                   |
-| `external_id`                            | string(64), null, unique      | ключ учётной системы (GUID 1С) для интегратора       |
-| `name`                                   | json                          | переводимое                                          |
-| `slug`                                   | json                          | переводимое; из названия, не уникально (§4)          |
-| `summary`                                | json, null                    | короткий текст без разметки: сетка, фиды, meta       |
-| `description`                            | json, null                    | rich-text                                            |
-| `category_id`                            | FK `catalog_categories`, null | основная; `restrictOnDelete` — категории soft        |
-| `price`, `old_price`                     | decimal(12,2), null           | колонки есть всегда, конфиг прячет                   |
-| `unit`                                   | string(16), null              | ключ из `webx-catalog.units`; пусто — `default_unit` |
-| `priority`                               | int, default 0, index         | ручной вес для сортировки по умолчанию               |
-| `is_published`                           | bool, index                   |                                                      |
-| `deleted_at`, `created_at`, `updated_at` |                               | index на `deleted_at` и `created_at`                 |
+| Колонка                                  | Тип                           | Примечание                                                                                                                                         |
+| ---------------------------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                                     | bigint                        | ещё и суффикс адреса                                                                                                                               |
+| `sku`                                    | string(64), null, **unique**  | уникальность включает удалённые                                                                                                                    |
+| `barcode`                                | string(64), null, index       | колонка есть всегда, конфиг прячет                                                                                                                 |
+| `mpn`                                    | string(70), null, index       | код производителя; без уникальности, конфиг `fields.mpn`; дополнительные штрихкоды — `catalog_product_barcodes` (`WEBX_UI_CATALOG_FEEDS.md` §14.1) |
+| `external_id`                            | string(64), null, unique      | ключ учётной системы (GUID 1С) для интегратора                                                                                                     |
+| `name`                                   | json                          | переводимое                                                                                                                                        |
+| `slug`                                   | json                          | переводимое; из названия, не уникально (§4)                                                                                                        |
+| `summary`                                | json, null                    | короткий текст без разметки: сетка, фиды, meta                                                                                                     |
+| `description`                            | json, null                    | rich-text                                                                                                                                          |
+| `category_id`                            | FK `catalog_categories`, null | основная; `restrictOnDelete` — категории soft                                                                                                      |
+| `price`, `old_price`                     | decimal(12,2), null           | колонки есть всегда, конфиг прячет                                                                                                                 |
+| `unit`                                   | string(16), null              | ключ из `webx-catalog.units`; пусто — `default_unit`                                                                                               |
+| `priority`                               | int, default 0, index         | ручной вес для сортировки по умолчанию                                                                                                             |
+| `is_published`                           | bool, index                   |                                                                                                                                                    |
+| `deleted_at`, `created_at`, `updated_at` |                               | index на `deleted_at` и `created_at`                                                                                                               |
 
 SEO — `HasSeo` из `module-seo` (своя таблица), как у всех сущностей.
 
@@ -242,7 +243,7 @@ $locale)` — свой заголовок первого уровня вмест
 
 ### 7.6. `ExchangeColumns`
 
-Контракт — в спеке обмена. Колонки ядра: `id`, `sku`, `barcode`\*, `external_id`, `name`,
+Контракт — в спеке обмена. Колонки ядра: `id`, `sku`, `barcode`\*, `barcodes`\*, `mpn`\*, `external_id`, `name`,
 `slug`, `summary`, `description`, `category` (путь или `#id`), `categories`, `price`\*,
 `old_price`\*, `unit`, `priority`, `is_published`, `images` (адреса, загрузка по адресу).
 \* — не объявляются, если выключены.
@@ -267,6 +268,17 @@ $locale)` — свой заголовок первого уровня вмест
 ### 7.8. `PopularitySignals`
 
 `key()`, `values(array $productIds): array` пачкой. Ядро: `views`. Веса — конфиг (§9).
+
+### 7.9. `ProductVariables`
+
+Что шаблон может сказать о товаре: `WebxUi\Catalog\Variables`, спека — `WEBX_UI_CATALOG_FEEDS.md` §4.
+Значения считаются пачкой на страницу: `values($products, $locale, $only, $overrides)` отдаёт
+`id товара → имя → значение`, в конце страницы забывает `RequestMemo`. Кто сильнее: `$overrides` вызова
+(настройки фида), зарегистрированная переменная, `fallback()`, колонка `ExchangeColumns`. Колонки
+провайдеров переменными не становятся: провайдер `ProductVariableProvider` сам говорит, какие имена
+отдать (`property.<код>`). Колонка с маркером `PrivateColumn` в реестр не попадает. Переменная с
+несколькими значениями в одном тексте реализует `FirstValues`: первое значение отдаётся целиком, текст
+по разделителю не режут, потому что разделитель может быть частью значения.
 
 ## 8. Движок
 
@@ -661,7 +673,7 @@ services. Переводимые — картой языков, которая �
 return [
     'root' => ['enabled' => false, 'prefix' => 'catalog'],  // WEBX_CATALOG_ROOT, WEBX_CATALOG_ROOT_PREFIX
     'price' => ['enabled' => true, 'currency' => null],    // ISO 4217; без неё нет Offer в разметке
-    'fields' => ['barcode' => true, 'facets' => false, 'video' => true],
+    'fields' => ['barcode' => true, 'mpn' => true, 'facets' => false, 'video' => true],
     'units' => ['pcs', 'kg', 'g', 'm', 'm2', 'm3', 'l', 'pack', 'set'], 'default_unit' => 'pcs',
     'facet_codes' => [],                                   // ['price' => ['ru' => 'cena']]
     'engine' => 'sql',                                     // 'manticore' — из module-catalog-manticore

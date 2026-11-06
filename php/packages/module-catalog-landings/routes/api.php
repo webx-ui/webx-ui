@@ -31,6 +31,7 @@ Route::prefix((string) config('webx-admin.api_path'))
             Route::put($path.'/{landing}', [LandingController::class, 'update'])->whereNumber('landing')->name('update');
             Route::delete($path.'/{landing}', [LandingController::class, 'destroy'])->whereNumber('landing')->name('destroy');
             Route::post($path.'/{landing}/restore', [LandingController::class, 'restore'])->whereNumber('landing')->name('restore');
+            Route::delete($path.'/{landing}/purge', [LandingController::class, 'purge'])->whereNumber('landing')->name('purge');
             Route::post($path.'/{landing}/publish', [LandingController::class, 'publish'])->whereNumber('landing')->name('publish');
             Route::post($path.'/{landing}/unpublish', [LandingController::class, 'unpublish'])->whereNumber('landing')->name('unpublish');
         });

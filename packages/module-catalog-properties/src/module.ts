@@ -100,12 +100,14 @@ export function catalogProperties(options: CatalogPropertiesOptions = {}): Admin
         {
           path: `${catalog}/properties`,
           name: 'webx.catalog-properties',
+          meta: { help: 'catalog-properties.index' },
           component: () => import('./PropertiesPage.vue'),
           props,
         },
         {
           path: `${catalog}/properties/:id(\\d+)`,
           name: 'webx.catalog-properties.edit',
+          meta: { help: 'catalog.property-form' },
           component: () => import('./PropertyEditorPage.vue'),
           props,
         },

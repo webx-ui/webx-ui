@@ -17,7 +17,8 @@ only through the core's registries. For products, the filter, the card, the engi
   with the code `stock` and the status's own name. The rule comes after the core's «not on sale»
   check and before «price on request».
 - **View** `webx-catalog-stock::status`, the status line at `catalog.card.meta` and
-  `catalog.product.aside`.
+  `catalog.product.aside`. On a card it is silent for a status that cannot be bought: the name stands
+  in place of the button (`webx-catalog::buy`).
 - **Panel**: module `catalog-stock` in the catalogue's group, under «Dictionaries»; screen
   `catalog.stock-status-form`. The API is `catalog/stock` under the panel's API path. A status
   saved moves the `catalog` cache group; a page's products' statuses are read once a request (`Stock::of`).

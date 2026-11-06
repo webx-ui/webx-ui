@@ -52,5 +52,6 @@ return [
         'unfinished' => 'Pagamento não concluído',
         'pay_again' => 'Pagar novamente',
         'other_method' => 'Escolher outro método',
+        'continue' => 'Continuar',
     ],
 ];

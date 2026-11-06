@@ -57,6 +57,9 @@ parameter per facet: `f.category=2,5`, `f.price=100-500`, `f.in-stock=1`.
 | `wx-catalog-facets`   | a category's own facet setting, or where it inherits one from                 |
 | `wx-catalog-gallery`  | the product's pictures: added, ordered and captioned by requests of their own |
 
+`WxCatalogFacetSet` is the field of a stored set of facets for the sections that keep one: the facets
+and the number of products come as props, the set leaves as `v-model`, and it never calls the API.
+
 ## License
 
 MIT

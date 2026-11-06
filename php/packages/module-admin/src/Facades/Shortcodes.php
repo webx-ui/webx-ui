@@ -12,14 +12,15 @@ use WebxUi\Admin\Shortcodes\Shortcodes as Registry;
 use WebxUi\Admin\Shortcodes\ShortcodeText;
 
 /**
- * @method static void register(string $name, Closure|string $html, Closure|string|null $plain = null, ?string $description = null)
+ * @method static void register(string $name, Closure|string $html, Closure|string|null $plain = null, ?string $description = null, bool $block = false, ?Closure $menu = null)
  * @method static void source(Closure $source)
  * @method static array<string, Shortcode> all()
  * @method static bool has(string $name)
  * @method static Shortcode|null get(string $name)
- * @method static list<array{name: string, description: string|null, html: string, plain: string, origin: string}> list()
+ * @method static list<array{name: string, description: string|null, html: string, plain: string, origin: string, block: bool}> list()
+ * @method static list<array{name: string, description: string|null, html: string, plain: string, origin: string, block: bool, insert: string|null}> menu()
  * @method static string html(string|Stringable|null $text)
- * @method static string htmlIn(?string $html)
+ * @method static string htmlIn(?string $html, bool $blocks = true)
  * @method static string plain(string|Stringable|null $text)
  * @method static string text(string|Stringable|null $html)
  * @method static string|ShortcodeText|null resolve(?string $text)

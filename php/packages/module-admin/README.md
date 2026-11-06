@@ -122,6 +122,11 @@ The tab icon is the panel's own and is served under its prefix — `/cms/favicon
 `/favicon.ico` and arrives with `composer update`. `WEBX_ADMIN_ICONS` points at a directory with
 the same file names to replace it file by file.
 
+Help in the panel links to the developers' guide of a screen only on a site that sets
+`WEBX_ADMIN_DOCS_URL`: by default there is no link. With `webx-ui/mcp` the same help reaches an
+agent through `help_list`, `help_get` and the resources `help://screens`. `php artisan webx:help --check`
+says which screens and fields of this site have no text, your own patches included.
+
 ## Responses
 
 Laravel already has the two shapes that matter, and the WebX UI front end is built against them:

@@ -93,12 +93,14 @@ export function recipes(options: RecipesOptions = {}): AdminModule[] {
         {
           path,
           name: 'webx.recipes',
+          meta: { help: 'recipes.index' },
           component: () => import('./RecipesPage.vue'),
           props: { base: path },
         },
         {
           path: `${path}/:id(\\d+)`,
           name: 'webx.recipes.edit',
+          meta: { help: 'recipes.form' },
           component: () => import('./RecipeEditorPage.vue'),
           props: { base: path },
         },

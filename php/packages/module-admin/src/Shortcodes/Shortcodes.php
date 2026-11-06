@@ -34,6 +34,9 @@ use Throwable;
  *   never escaped a second time.
  * - In text ({@see self::plain()}) every shortcode prints its plain rendering and nothing is
  *   escaped — the caller prints text the way that place prints text.
+ * - A block shortcode ({@see Shortcode::$block}) prints only in a rich text ({@see self::htmlIn()}),
+ *   which lifts it out of its paragraph. In a line of text it prints nothing: a grid of products
+ *   has no place in a heading.
  */
 final class Shortcodes
 {
@@ -51,6 +54,9 @@ final class Shortcodes
     /** Elements whose text is shown as written: a page about shortcodes shows them there. */
     private const VERBATIM = ['code', 'pre', 'script', 'style', 'textarea'];
 
+    /** Where a block shortcode stands until its paragraph is dealt with: no text holds a NUL. */
+    private const PLACE = "\0%d\0";
+
     /** @var array<string, Shortcode> */
     private array $registered = [];
 
@@ -61,15 +67,17 @@ final class Shortcodes
      * A shortcode of the site's: its HTML, and its text where HTML cannot go.
      *
      * @param  Closure(array<string, string>): string|string  $html  Trusted HTML, printed as it is.
-     * @param  Closure(array<string, string>): string|string|null  $plain  Left out: the HTML without its tags.
+     * @param  Closure(array<string, string>): string|string|null  $plain  Left out: the HTML without its tags; nothing for a block.
+     * @param  bool  $block  A section of a page: printed only in a rich text, outside any paragraph.
+     * @param  (Closure(): iterable<array{insert: string, description: string|null}>)|null  $menu  Ready brackets for the panel's `[`, in place of the bare name.
      */
-    public function register(string $name, Closure|string $html, Closure|string|null $plain = null, ?string $description = null): void
+    public function register(string $name, Closure|string $html, Closure|string|null $plain = null, ?string $description = null, bool $block = false, ?Closure $menu = null): void
     {
         if (preg_match(self::NAME, $name) !== 1) {
             throw new InvalidArgumentException(sprintf('A shortcode name is lowercase letters, digits, "-" and "_", starting with a letter; "%s" is not.', $name));
         }
 
-        $this->registered[$name] = new Shortcode($name, $html, $plain, $description);
+        $this->registered[$name] = new Shortcode($name, $html, $plain, $description, block: $block, menu: $menu);
     }
 
     /**
@@ -126,11 +134,33 @@ final class Shortcodes
     /**
      * What the panel and agents are shown: every shortcode with both its renderings.
      *
-     * @return list<array{name: string, description: string|null, html: string, plain: string, origin: string}>
+     * @return list<array{name: string, description: string|null, html: string, plain: string, origin: string, block: bool}>
      */
     public function list(): array
     {
         return array_values(array_map(static fn (Shortcode $shortcode): array => $shortcode->toArray(), $this->all()));
+    }
+
+    /**
+     * What the panel's `[` offers: {@see self::list()}, with a shortcode that brought rows of its
+     * own as those rows. Rows that cannot be read — a table before its migration — are left out
+     * rather than taking every text field's suggestions with them.
+     *
+     * @return list<array{name: string, description: string|null, html: string, plain: string, origin: string, block: bool, insert: string|null}>
+     */
+    public function menu(): array
+    {
+        $rows = [];
+
+        foreach ($this->all() as $shortcode) {
+            try {
+                $rows = [...$rows, ...$shortcode->menu()];
+            } catch (Throwable) {
+                continue;
+            }
+        }
+
+        return $rows;
     }
 
     /**
@@ -144,15 +174,19 @@ final class Shortcodes
             return $text->toHtml();
         }
 
-        return $this->walk((string) $text, e(...), static fn (Shortcode $code, array $args): string => $code->html($args))[0];
+        return $this->walk((string) $text, e(...), $this->inLine(...))[0];
     }
 
     /**
      * Shortcodes inside HTML that is already trusted — a rich text field, sanitised when it was
      * stored. Only the text between tags is read: a bracket in an attribute stays as written,
      * and so does one inside `<code>` or `<pre>`, where a page shows what to type.
+     *
+     * A block shortcode comes out of its paragraph ({@see self::lifted()}). With `$blocks` off it
+     * prints nothing and costs no render: for HTML that leaves the page — JSON-LD, a feed — where
+     * a section of cards means nothing.
      */
-    public function htmlIn(?string $html): string
+    public function htmlIn(?string $html, bool $blocks = true): string
     {
         $html ??= '';
 
@@ -163,6 +197,17 @@ final class Shortcodes
         $parts = preg_split('/(<[^>]*>)/', $html, -1, PREG_SPLIT_DELIM_CAPTURE) ?: [$html];
         $verbatim = 0;
         $out = '';
+        $lifted = [];
+
+        $print = static function (Shortcode $code, array $args) use (&$lifted, $blocks): string {
+            if (! $code->block) {
+                return $code->html($args);
+            }
+
+            $lifted[] = $blocks ? $code->html($args) : '';
+
+            return sprintf(self::PLACE, count($lifted) - 1);
+        };
 
         foreach ($parts as $part) {
             if (str_starts_with($part, '<')) {
@@ -185,11 +230,60 @@ final class Shortcodes
             // looks like; written back escaped. A segment with nothing to replace is left byte
             // for byte as it was.
             $text = html_entity_decode($part, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-            [$resolved, $changed] = $this->walk($text, e(...), static fn (Shortcode $code, array $args): string => $code->html($args));
+            [$resolved, $changed] = $this->walk($text, e(...), $print);
             $out .= $changed ? $resolved : $part;
         }
 
-        return $out;
+        return $lifted === [] ? $out : $this->lifted($out, $lifted);
+    }
+
+    /**
+     * The block shortcodes put in their places, out of the paragraphs they were typed in: a
+     * `<section>` inside a `<p>` makes the browser close the paragraph early and scatter what
+     * follows. Alone in its paragraph it replaces it, so one that prints nothing leaves nothing;
+     * with text beside it the paragraph is cut in two around it.
+     *
+     * Inside anything else that holds it — a list item, a cell, a `<strong>` — it stays where it
+     * was typed: that is a place the editor chose, and there is no paragraph to cut cleanly.
+     *
+     * @param  list<string>  $blocks
+     */
+    private function lifted(string $html, array $blocks): string
+    {
+        $html = preg_replace_callback('/(<p(?:\s[^>]*)?>)(.*?)<\/p>/s', static function (array $paragraph): string {
+            if (! str_contains($paragraph[2], "\0")) {
+                return $paragraph[0];
+            }
+
+            $pieces = preg_split('/(\0\d+\0)/', $paragraph[2], -1, PREG_SPLIT_DELIM_CAPTURE) ?: [];
+
+            foreach ($pieces as $piece) {
+                // A tag left open in a piece: the place is inside it, and a cut would break it.
+                if (preg_match_all('/<(\/?)(?!br\b|img\b|hr\b)[a-z][^>]*>/i', $piece, $tags) > 0 && count(array_filter($tags[1])) * 2 !== count($tags[1])) {
+                    return $paragraph[0];
+                }
+            }
+
+            $out = '';
+
+            foreach ($pieces as $piece) {
+                if (str_starts_with($piece, "\0")) {
+                    $out .= $piece;
+                } elseif (preg_match('/^(?:\s|&nbsp;|\x{A0}|<br\s*\/?>)*$/iu', $piece) !== 1) {
+                    $out .= $paragraph[1].$piece.'</p>';
+                }
+            }
+
+            return $out;
+        }, $html) ?? $html;
+
+        $places = [];
+
+        foreach ($blocks as $index => $block) {
+            $places[sprintf(self::PLACE, $index)] = $block;
+        }
+
+        return strtr($html, $places);
     }
 
     /**
@@ -229,7 +323,7 @@ final class Shortcodes
             return $text;
         }
 
-        [$html, $changed] = $this->walk($text, e(...), static fn (Shortcode $code, array $args): string => $code->html($args));
+        [$html, $changed] = $this->walk($text, e(...), $this->inLine(...));
 
         return $changed ? new ShortcodeText($text, $html, $this->plain($text)) : $text;
     }
@@ -324,6 +418,16 @@ final class Shortcodes
         }
 
         return [$out.$literal(substr($text, $position)), $changed];
+    }
+
+    /**
+     * A shortcode in a line of text, where a block has no place.
+     *
+     * @param  array<string, string>  $args
+     */
+    private function inLine(Shortcode $code, array $args): string
+    {
+        return $code->block ? '' : $code->html($args);
     }
 
     /**

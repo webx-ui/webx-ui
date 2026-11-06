@@ -8,6 +8,7 @@ use Illuminate\Container\Container;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Facades\URL;
+use WebxUi\Localization\HasLatinSlug;
 use WebxUi\Localization\Locales;
 use WebxUi\Routing\Models\Route;
 
@@ -32,6 +33,8 @@ use WebxUi\Routing\Models\Route;
  */
 trait HasUrl
 {
+    use HasLatinSlug;
+
     /**
      * The events by hand rather than `static::observe()`: `observe()` builds an instance of the
      * model to ask it which events it has, and doing that while the model is still booting is a
@@ -42,8 +45,13 @@ trait HasUrl
     {
         // `restored` fires only on a model with `SoftDeletes`; on any other it is never raised.
         foreach (['created', 'updated', 'deleted', 'restored', 'moved'] as $event) {
-            static::registerModelEvent($event, static function (Model $entity) use ($event): void {
+            static::registerModelEvent($event, static function (self $entity) use ($event): void {
                 try {
+                    // Before the registry reads it: this trait boots ahead of the one it uses.
+                    if ($event === 'created') {
+                        $entity->settleLatinSlug();
+                    }
+
                     Container::getInstance()->make(RouteObserver::class)->{$event}($entity);
                 } finally {
                     // The registry was just rewritten for this entity; the rows it holds in

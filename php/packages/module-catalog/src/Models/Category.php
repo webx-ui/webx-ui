@@ -201,12 +201,17 @@ class Category extends Model implements HasBreadcrumbs, HasListingTexts, HasSeoF
         return $cover instanceof MediaFile ? Container::getInstance()->make(FileUrls::class)->url($cover) : null;
     }
 
-    /** The name, the description and the cover, for a category whose SEO card leaves them empty. */
+    /**
+     * The name, the description and the cover, for a category whose SEO card leaves them empty. The
+     * description as stored rather than {@see textAbove()}: only its words reach the snippet.
+     */
     public function seoFallback(?string $locale = null): ?SeoData
     {
+        $description = $this->getTranslation('description', $locale ?? app()->getLocale());
+
         return SeoData::fallback(
             $this->displayName($locale),
-            $this->textAbove($locale ?? app()->getLocale()),
+            is_string($description) ? $description : null,
             $this->coverUrl(),
         );
     }

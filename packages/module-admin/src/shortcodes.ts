@@ -11,6 +11,10 @@ export interface Shortcode {
   plain: string
   /** Declared by a package in code, or added by hand in the settings. */
   origin: 'code' | 'settings'
+  /** A section of a page rather than words in a line: the site prints it only in a rich text. */
+  block?: boolean
+  /** The ready bracket of this row, for a shortcode that is nothing without its arguments. */
+  insert?: string | null
 }
 
 /**
@@ -21,6 +25,8 @@ export interface ShortcodeToken {
   name: string
   value?: string
   description?: string
+  text?: string
+  block?: boolean
 }
 
 export function shortcodeToken(shortcode: Shortcode): ShortcodeToken {
@@ -28,7 +34,18 @@ export function shortcodeToken(shortcode: Shortcode): ShortcodeToken {
     name: shortcode.name,
     value: shortcode.plain,
     description: shortcode.description ?? undefined,
+    text: shortcode.insert ?? undefined,
+    block: shortcode.block || undefined,
   }
+}
+
+/**
+ * What a line or a paragraph may offer: everything but the block shortcodes, which the site prints
+ * only in a rich text. Offered in a heading, a grid of products would insert a bracket that prints
+ * nothing.
+ */
+export function lineShortcodes(tokens: readonly ShortcodeToken[]): ShortcodeToken[] {
+  return tokens.filter((token) => !token.block)
 }
 
 /*

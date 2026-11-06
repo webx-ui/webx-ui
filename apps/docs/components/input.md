@@ -63,6 +63,10 @@ value keeps the brackets exactly as typed.
 
 `WxTextarea` and `WxRichText` take the same three props.
 
+A placeholder that is nothing without its arguments brings them along: `text` is the whole bracket
+a row writes, and several rows may share a `name`, so a list can offer one row per thing to print:
+`{ name: 'gallery', text: '[gallery key=summer]', description: 'Summer' }`.
+
 ## Props
 
 | Prop           | Type                                                                        | Default                  | Description                                                            |

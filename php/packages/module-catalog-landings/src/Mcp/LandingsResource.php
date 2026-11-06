@@ -33,6 +33,9 @@ final class LandingsResource
         'attention' => 'A landing marked value_removed lost a value of its set to a deletion; duplicate — its set became '
             .'another landing\'s; empty_set — nothing is left of it, and it was unpublished. Fix the set (or delete the '
             .'landing); saving clears the mark.',
+        'deleting' => 'catalog_landings_delete puts a landing in the bin: its address stops answering, its set stays taken, and '
+            .'catalog_landings_restore brings it back. catalog_landings_purge, only from the bin, cannot be undone: the address '
+            .'answers 404 with no redirect left, former addresses included, and the address and the set are free again.',
         'texts' => 'text_above and text_below are HTML shown on the plain landing only — not on its second page, not once a '
             .'reader adds a filter. Write for the reader of that selection; do not paste the category\'s text.',
     ];

@@ -130,14 +130,18 @@ class ServiceCategory extends Model implements Category, HasBreadcrumbs, HasSeoF
         return app(PageText::class)->html($stored, $locale);
     }
 
-    /** The name, the introduction and the cover, for a category nobody wrote an SEO card for. */
+    /**
+     * The name, the introduction and the cover, for a category nobody wrote an SEO card for. The
+     * introduction as stored rather than {@see leadHtml()}: only its words reach the snippet.
+     */
     public function seoFallback(?string $locale = null): ?SeoData
     {
         $locale ??= app()->getLocale();
+        $lead = $this->getTranslation('lead', $locale);
 
         return SeoData::fallback(
             (string) $this->getTranslation('title', $locale),
-            $this->leadHtml($locale),
+            is_string($lead) ? $lead : null,
             $this->coverUrl(),
         );
     }

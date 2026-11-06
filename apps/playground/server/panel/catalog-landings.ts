@@ -738,6 +738,16 @@ export function registerLandings(on: On, fail: Fail, line: Line, categories: Cat
     return { data: detail(record, locale) }
   })
 
+  on('DELETE', '/catalog/landings/(\\d+)/purge', ({ params }) => {
+    const record = find(params[0]!, true)
+
+    if (record.deleted_at === null) throw fail(404, 'No such landing.')
+
+    landings.splice(landings.indexOf(record), 1)
+
+    return null
+  })
+
   on('POST', '/catalog/landings/(\\d+)/(publish|unpublish)', ({ params, locale }) => {
     const record = find(params[0]!)
 

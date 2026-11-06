@@ -50,7 +50,12 @@
   font-size: var(--site-font-size-6);
 }
 
-.webx-payments__methods {
+/*
+ * The list of methods (groups spec §6): a box per group, its head a row, the methods of the chosen
+ * group under it. On a flat list a method is a box itself. `is-chosen` is said by the view and
+ * `methods.js`; the opening of a group is the stylesheet's alone, so nothing jumps on load.
+ */
+.webx-payments__groups {
   display: grid;
   gap: var(--site-space-2);
   min-width: 0;
@@ -65,46 +70,76 @@
   font-weight: 600;
 }
 
-.webx-payments__method {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+.webx-payments__group,
+.webx-payments__groups.is-flat .webx-payments__option {
+  min-width: 0;
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-md);
+  background: var(--site-color-surface);
+}
+
+.webx-payments__group.is-chosen,
+.webx-payments__groups.is-flat .webx-payments__option.is-chosen {
+  border-color: var(--site-color-accent);
+}
+
+.webx-payments__group-head,
+.webx-payments__option {
+  display: flex;
   align-items: center;
   gap: var(--site-space-3);
   min-width: 0;
   min-height: 44px;
   padding: var(--site-space-3) var(--site-space-4);
-  border: 1px solid var(--site-color-border);
-  border-radius: var(--site-radius-md);
-  background: var(--site-color-surface);
   cursor: pointer;
 }
 
-.webx-payments__method.is-chosen {
-  border-color: var(--site-color-accent);
+.webx-payments__group-methods {
+  display: none;
+  gap: var(--site-space-1);
+  min-width: 0;
+  margin: 0;
+  padding: 0 0 var(--site-space-2) var(--site-space-4);
+  border: 0;
 }
 
-/* With an icon the row has one column more; the text keeps the room that is left. */
-.webx-payments__method:has(.webx-payments__icon) {
-  grid-template-columns: auto var(--webx-payments-icon-size) minmax(0, 1fr);
+/* The chosen group is open. A browser without `:has()` keeps every list open: longer, but it works. */
+.webx-payments__group:has(> .webx-payments__group-head input:checked)
+  > .webx-payments__group-methods {
+  display: grid;
+}
+
+@supports not selector(:has(*)) {
+  .webx-payments__group-methods {
+    display: grid;
+  }
+}
+
+/* Named for a reader, and out of sight: the head right above says the same. */
+.webx-payments__group-legend,
+.webx-payments-others .webx-payments__methods-title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 /* One method is one line: nothing to choose between, no radio to tick. */
-.webx-payments__methods.is-single .webx-payments__method {
-  grid-template-columns: minmax(0, 1fr);
+.webx-payments__groups.is-single .webx-payments__group-head,
+.webx-payments__groups.is-single .webx-payments__option {
   cursor: default;
 }
 
-.webx-payments__methods.is-single .webx-payments__method:has(.webx-payments__icon) {
-  grid-template-columns: var(--webx-payments-icon-size) minmax(0, 1fr);
-}
-
-.webx-payments__methods.is-single .webx-payments__radio {
+.webx-payments__groups.is-single .webx-payments__radio {
   position: absolute;
   opacity: 0;
   pointer-events: none;
 }
 
 .webx-payments__radio {
+  flex: none;
   width: 20px;
   height: 20px;
   margin: 0;
@@ -112,26 +147,77 @@
 }
 
 .webx-payments__icon {
+  flex: none;
   width: var(--webx-payments-icon-size);
   height: var(--webx-payments-icon-size);
   object-fit: contain;
 }
 
-.webx-payments__method-text {
+.webx-payments__pictogram {
+  flex: none;
+  color: var(--site-color-text-muted);
+}
+
+.webx-payments__row-text {
   display: grid;
+  flex: 1 1 0;
   gap: var(--site-space-1);
   min-width: 0;
 }
 
-.webx-payments__method-title {
+.webx-payments__row-title {
   font-weight: 600;
   overflow-wrap: anywhere;
 }
 
-.webx-payments__method-note {
+.webx-payments__row-note {
   color: var(--site-color-text-muted);
   font-size: var(--site-font-size-6);
   overflow-wrap: anywhere;
+}
+
+/* On the right of a row at any width: past half of it they wrap, and the text keeps the rest. */
+.webx-payments__marks {
+  display: flex;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--site-space-2);
+  min-width: 0;
+  max-width: 50%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* A theme's prose spaces the items of a list: here they are a row of cards. */
+.webx-payments__marks-item {
+  display: flex;
+  margin: 0;
+}
+
+/*
+ * A narrow step (§3.4): the marks of a closed head go under its text. An open head has none, the
+ * same marks stand right below at its methods.
+ */
+@container webx-payments (max-width: 479px) {
+  .webx-payments__group-head {
+    flex-wrap: wrap;
+  }
+
+  .webx-payments__group-head .webx-payments__marks {
+    flex-basis: 100%;
+    justify-content: flex-start;
+    max-width: none;
+  }
+
+  .webx-payments__group:has(> .webx-payments__group-methods):has(
+      > .webx-payments__group-head input:checked
+    )
+    > .webx-payments__group-head
+    .webx-payments__marks {
+    display: none;
+  }
 }
 
 .webx-payments__save {
@@ -202,7 +288,8 @@
 
 /*
  * The way on from the page of payment and the order's page (§8.4, §8.5): «Pay», and every other
- * method of the order behind one button — `details`, so it opens without the script.
+ * method of the order behind one button — `details`, so it opens without the script. The button
+ * names the list, so the list's own title is for a screen reader alone.
  */
 .webx-payments-prompt {
   display: grid;
@@ -210,8 +297,7 @@
   min-width: 0;
 }
 
-.webx-payments-prompt__form,
-.webx-payments-others__form {
+.webx-payments-prompt__form {
   margin: 0;
 }
 
@@ -220,7 +306,7 @@
 }
 
 .webx-payments-prompt__button,
-.webx-payments-others__choice {
+.webx-payments-others__continue {
   justify-self: start;
   min-height: 44px;
   max-width: 100%;
@@ -231,11 +317,6 @@
   color: var(--site-color-accent-contrast);
   font: inherit;
   cursor: pointer;
-}
-
-.webx-payments-others__choice {
-  background: transparent;
-  color: var(--site-color-text);
 }
 
 .webx-payments-others {
@@ -250,4 +331,30 @@
   display: grid;
   gap: var(--site-space-2);
   margin-top: var(--site-space-3);
+}
+
+/*
+ * A payment mark (groups spec §3.3): a file keeps its own colours and its white card in any scheme,
+ * so only a plate — a mark without a file — takes the theme's. Both stand at the same height.
+ */
+.webx-payments__mark {
+  display: block;
+  flex: none;
+  height: 24px;
+}
+
+.webx-payments__mark.is-text {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 38px;
+  padding-inline: var(--site-space-1);
+  border: 1px solid var(--site-color-border);
+  border-radius: var(--site-radius-sm);
+  background: var(--site-color-surface-muted);
+  color: var(--site-color-text-muted);
+  font-size: 11px;
+  line-height: 1;
+  white-space: nowrap;
 }

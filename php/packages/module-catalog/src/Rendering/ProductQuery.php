@@ -8,7 +8,6 @@ use Closure;
 use Illuminate\Container\Container;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Traits\Macroable;
 use WebxUi\Admin\Collections\RecordQuery;
 use WebxUi\Catalog\Models\Category;
@@ -88,8 +87,8 @@ final class ProductQuery extends RecordQuery
         // Only the product's own columns: a sort by popularity joins a table of its own. The main
         // category is not eager-loaded: {@see models()} takes it from the request's pool. Nor are
         // the registry rows: noted as the rows arrive, they are read with the page's other
-        // addresses by the first one asked — `shownIn()` — and none on a warm page.
-        $query = Product::query()->select('catalog_products.*')->visible()->with(['categories', 'images'])
+        // addresses by the first one asked, and none on a warm page.
+        $query = Product::query()->select('catalog_products.*')->visible()->withUrlIn($locale)->with(['categories', 'images', ...Product::barcodeRelations()])
             ->afterQuery(static fn (iterable $products) => Container::getInstance()->make(RouteCache::class)->preload($products));
         $key = $this->step('sort');
 
@@ -98,9 +97,10 @@ final class ProductQuery extends RecordQuery
         return $query;
     }
 
-    protected function shownIn(Model $record, string $locale): bool
+    /** The language is in {@see newQuery()}: "the eight newest" of a large catalogue loads eight. */
+    protected function limitsInSql(): bool
     {
-        return $record instanceof Product && $record->hasUrlIn($locale);
+        return true;
     }
 
     protected function narrow(Builder $query, string $locale): void

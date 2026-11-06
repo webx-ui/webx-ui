@@ -1,0 +1,5 @@
+/*
+ * The feeds draw with the panel's screens and the core's components. The file is here because a
+ * site imports it — `extra.webx.panel.style` of the Composer half — and a stylesheet that is not
+ * there fails the build that imports it.
+ */

@@ -57,6 +57,15 @@ final class PropertySource implements RelevantFacets, SearchContributor
         return $facets;
     }
 
+    /** Every property, in the filter or not; a text has no facet of its own for the storefront. */
+    public function allFacets(string $locale): array
+    {
+        return array_values(array_map(
+            static fn (Property $property): PropertyFacet => $property->isText() ? new TextFacet($property, $locale) : PropertyFacet::for($property),
+            $this->properties->all(),
+        ));
+    }
+
     public function relevant(FilterContext $context, FilterState $state, QueryBuilder $products): array
     {
         $category = $this->category($context, $state);

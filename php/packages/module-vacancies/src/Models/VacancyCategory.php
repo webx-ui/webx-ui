@@ -15,6 +15,7 @@ use WebxUi\Admin\Categories\CategoryKind;
 use WebxUi\Admin\Categories\IsCategory;
 use WebxUi\Admin\Screens\HasExtra;
 use WebxUi\Admin\Screens\Types\SlugType;
+use WebxUi\Localization\HasLatinSlug;
 use WebxUi\Localization\HasTranslations;
 
 /**
@@ -40,6 +41,7 @@ use WebxUi\Localization\HasTranslations;
 class VacancyCategory extends Model implements Category
 {
     use HasExtra;
+    use HasLatinSlug;
     use HasTranslations;
     use IsCategory;
     use SoftDeletes;

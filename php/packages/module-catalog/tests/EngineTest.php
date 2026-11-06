@@ -6,6 +6,7 @@ namespace WebxUi\Catalog\Tests;
 
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Catalog\Catalog;
+use WebxUi\Catalog\Panel\ProductForm;
 
 /**
  * §8.2 and §16: `SqlEngine` — the questions every engine answers alike ({@see EngineScenarios}),
@@ -24,6 +25,16 @@ final class EngineTest extends EngineScenarios
 
         $this->assertSame([$byName->id], $this->search(search: 'thinkpad')->ids);
         $this->assertEqualsCanonicalizing([$bySku->id, $byBarcode->id], $this->search(search: '777')->ids);
+    }
+
+    #[Test]
+    public function the_search_looks_inside_the_additional_barcodes_too(): void
+    {
+        $product = $this->product('Third', $this->category('laptops'));
+        $this->app->make(ProductForm::class)->save($product, ['barcodes' => ['2000000777018']]);
+
+        $this->assertSame([$product->id], $this->search(search: '777')->ids);
+        $this->assertSame([], $this->search(search: '777')->exact);
     }
 
     #[Test]

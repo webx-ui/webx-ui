@@ -32,6 +32,7 @@ export function media(options: MediaOptions = {}): AdminModule {
         path,
         name: 'webx.media',
         component: MediaPage,
+        meta: { help: 'media.index' },
       },
     ],
     // What a screen means by these four: the fields over the library. The server registers the

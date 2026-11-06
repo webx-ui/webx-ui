@@ -224,6 +224,7 @@ const actions = computed<ScreenAction[]>(() =>
     <template v-else>
       <wx-screen-head
         :level="3"
+        help="delivery.method-form"
         :back="!inline"
         :title="title"
         :subtitle="typeTitle"

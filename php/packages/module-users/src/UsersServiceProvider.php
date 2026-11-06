@@ -22,6 +22,7 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use WebxUi\Admin\Doctor\DoctorChecks;
+use WebxUi\Admin\Help\HelpRegistry;
 use WebxUi\Admin\History\HistoryTypes;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
@@ -92,6 +93,8 @@ class UsersServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->app->make(HelpRegistry::class)->directory(__DIR__.'/../resources/help');
+
         Auth::provider(self::PROVIDER, static fn (Application $app, array $config): UserProvider => new UserProvider(
             $app->make('hash'),
             is_string($config['model'] ?? null) ? $config['model'] : User::class,

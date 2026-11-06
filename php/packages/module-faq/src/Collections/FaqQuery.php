@@ -44,6 +44,7 @@ final class FaqQuery extends RecordQuery
             'categories' => $question->categoryIds(),
             'question' => $question->questionText($locale),
             'answer' => $question->answerHtml($locale),
+            'text' => $question->answerText($locale),
         ], $records);
     }
 }

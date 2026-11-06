@@ -13,6 +13,7 @@ use WebxUi\Catalog\Catalog;
 use WebxUi\Catalog\Engine\CatalogEngines;
 use WebxUi\Catalog\Engine\Indexer;
 use WebxUi\Catalog\Models\Product;
+use WebxUi\Catalog\Panel\ProductForm;
 use WebxUi\Catalog\Tests\Fixtures\IndexingEngine;
 
 /**
@@ -97,6 +98,19 @@ final class QueueTest extends TestCase
 
         $this->assertSame($first, $this->engine()->documents);
         $this->assertCount(1, $this->engine()->documents);
+    }
+
+    #[Test]
+    #[DefineEnvironment('withAnIndex')]
+    public function a_new_list_of_barcodes_marks_the_product_for_the_index(): void
+    {
+        $product = $this->product('ThinkPad', $this->category('laptops'));
+        DB::table('catalog_index_queue')->delete();
+
+        // Written beside the product's row, which does not change: no model event would say so.
+        $this->app->make(ProductForm::class)->save($product, ['barcodes' => ['2000000000017']]);
+
+        $this->assertSame(1, DB::table('catalog_index_queue')->where('product_id', $product->id)->count());
     }
 
     #[Test]

@@ -21,6 +21,18 @@ function bound(page: Component, options: CategoriesOptions): Component {
 }
 
 /**
+ * The key of a page with no tree: its route without `webx.`, and a route of one word gets
+ * `.index` (WEBX_UI_PANEL_HELP.md §2.3). From the name and not from `options.module`: that one is
+ * the module's id, which says `rubrics` where the route says `blog.rubrics`, and the groups of
+ * properties share it with the list of properties, whose text they would have opened.
+ */
+function listHelpKey(name: string): string {
+  const key = name.replace(/^webx\./, '')
+
+  return key.includes('.') ? key : `${key}.index`
+}
+
+/**
  * The two screens of a module's categories — the list and the page of one — as routes to put
  * into the module's section:
  *
@@ -31,11 +43,17 @@ function bound(page: Component, options: CategoriesOptions): Component {
  */
 export function categoryRoutes(options: CategoriesOptions): RouteRecordRaw[] {
   return [
-    { path: options.path, name: options.name, component: bound(CategoriesPage, options) },
+    {
+      path: options.path,
+      name: options.name,
+      component: bound(CategoriesPage, options),
+      meta: { help: listHelpKey(options.name) },
+    },
     {
       path: `${options.path}/:id(\\d+)`,
       name: `${options.name}.edit`,
       component: bound(CategoryEditorPage, options),
+      meta: { help: options.screen },
     },
   ]
 }

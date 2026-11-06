@@ -22,7 +22,8 @@ use WebxUi\Localization\Locales;
  * A batch costs the same whatever its size: the products with their pictures and addresses in
  * one go, and the purchase rules asked of all of them at once. A deleted product is gone (null);
  * one taken off the site, out of stock or with its price on request is a line that cannot be
- * bought now (`available = false`), its name and picture still live.
+ * bought now (`available = false`), its name and picture still live. The address comes only with
+ * a page to open: a product off the site, or with no address in this language, has none.
  *
  * Found for the panel's «New order» by name, article number, barcode or id — the same match as the
  * product list — the unpublished among them marked unavailable rather than hidden; the hint is the
@@ -50,6 +51,8 @@ final class ProductPurchasable implements FindsPurchasables, Purchasable
         $products = Product::query()->withTrashed()->whereKey($refs)->with(['images', 'routes'])->get();
         $live = $products->reject(static fn (Product $product): bool => $product->trashed());
         $verdicts = $this->purchasability->forMany($live);
+        // Remembered for the request: the rule of the verdicts above has just asked the same.
+        $visible = Product::visibleAmong(array_map(intval(...), $live->modelKeys()));
         // The catalogue's currency is the one its prices are in; without one, the cart's.
         $currency = $this->config->get('webx-catalog.price.currency');
         $currency = is_string($currency) && $currency !== '' ? strtoupper($currency) : ($this->currencies->currency() ?? 'XXX');
@@ -66,7 +69,7 @@ final class ProductPurchasable implements FindsPurchasables, Purchasable
                 price: $price,
                 currency: $currency,
                 image: $image === null ? null : ($image->thumbUrl(self::THUMB) ?? $image->url()),
-                url: $product->listedUrl($locale),
+                url: in_array((int) $product->id, $visible, true) && $product->routeCanonical($locale) !== null ? $product->listedUrl($locale) : null,
                 available: ($verdict === null || $verdict->purchasable) && $price > 0,
                 names: $this->names($product),
             );

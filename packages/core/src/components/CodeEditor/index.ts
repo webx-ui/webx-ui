@@ -19,3 +19,15 @@ export {
   scanMustache,
 } from './mustache'
 export type { MustacheProblems, MustacheTag, MustacheTagKind } from './mustache'
+export {
+  escapeForFormat,
+  escapeHtml,
+  htmlPlain,
+  knows,
+  refuseInCdata,
+  renderTemplate,
+  snippetOf,
+  templateMessages,
+  TemplateRefusal,
+} from './template'
+export type { Escape, TemplateFormat, TemplateValues } from './template'

@@ -334,6 +334,14 @@ refresh() {
         note 'every dist is newer than its sources'
     fi
 
+    step 'Composer: webx-ui/* from this checkout'
+    # Before the first artisan: vendor/webx-ui/* are links, so a package here already calls a
+    # library it gained, and the lab cannot boot until the update has loaded that library. The
+    # registry is excluded for webx-ui/* (point_composer), so nothing of ours is downloaded; the
+    # update follows a version raised here and a requirement a package gained.
+    point_composer "$SITE"
+    ( cd "$SITE" && composer_bin update 'webx-ui/*' --no-interaction )
+
     step 'Modules the catalogue has and the lab does not'
     local missing
     missing="$(artisan webx:modules --json | node -e '
@@ -343,22 +351,17 @@ refresh() {
             process.stdout.write(modules.filter((module) => !module.installed).map((module) => module.id + " " + module.package).join("\n"))
         })
     ')"
-    point_composer "$SITE"
     if [ -n "$missing" ]; then
         # Two steps, not `composer require`: a partial update holds the neighbours to the lock
         # (docs/pitfalls/packages-and-demo-sites.md).
         local packages=()
         while read -r _ package; do packages+=("$package:*"); done <<< "$missing"
         ( cd "$SITE" && composer_bin require "${packages[@]}" --no-update --no-interaction )
+        ( cd "$SITE" && composer_bin update 'webx-ui/*' --no-interaction )
         done+=("installed $(echo "$missing" | cut -d' ' -f1 | tr '\n' ' ')")
     else
         note 'none'
     fi
-
-    step 'Composer: webx-ui/* from this checkout'
-    # The registry is excluded for webx-ui/* (point_composer), so nothing of ours is downloaded;
-    # the update follows a version raised here and a requirement a package gained.
-    ( cd "$SITE" && composer_bin update 'webx-ui/*' --no-interaction )
 
     step 'Migrations'
     artisan migrate --force --no-interaction

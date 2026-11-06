@@ -11,16 +11,15 @@ here: that is `webx-ui/module-auth`; languages are `webx-ui/localization`; the M
 
 - **Shell** — every address under `webx-admin.path` (default `cms`) serves one page that mounts `#webx-app`; routing
   inside belongs to the front end. Its JSON lives under `webx-admin.api_path` (default `api/cms`): `manifest`,
-  `screens/{name}`, `links/*`, `collections`, `relations/{target}`, `entities/{type}/{id}/notes`, `history/{type}/{id}`,
+  `screens/{name}`, `help/{key}`, `links/*`, `collections`, `relations/{target}`, `entities/{type}/{id}/notes`, `history/{type}/{id}`,
   `history/runs/{id}`, `uploads`, `locales`, `translations/{locale}`, `cache`. The panel's icons are served under its prefix too.
 - **Auth** — none of its own (see Do not). Modules put their API behind the middleware group `webx.panel` (`web`, `webx.panel-locale`, `cms.auth`, `webx.history`).
 - **Site visitors** — the seam, not the accounts: `Visitors\Visitors` (`current()`, `find()`, `findByEmail()`, `signInUrl()`) bound to `NullVisitors` until `webx-ui/module-users` binds its own; events in `Visitors\Events`; `webx.visitor[:verified]` (404 without a visitors module), `@visitor`, `@visitorVerified`.
-- **Modules** — `ModuleRegistry`: a module (`AbstractModule`, `id()` required) is registered from a
-  provider and lands in the manifest with its title, icon, order, group and permissions. Two modules with one id are refused.
+- **Modules** — `ModuleRegistry`: a module (`AbstractModule`, `id()` required) is registered from a provider and lands in the manifest with its title, icon, order, group and permissions. Two modules with one id are refused.
 - **Screens** — `ScreenRegistry` behind the `Screens` facade; field types in `FieldTypes`
   (`wx-input`, `wx-link`, `wx-repeater`, `wx-relations`, …), which check and cast what a screen saves; `Screens::rules()` tells the rules a module checks a screen by: a bare `required` gives the asterisk.
-- **Drafts and versions** — traits `HasDraft` (the `$table->draft()` macro: `draft`, `published_at`) and `HasVersions` (table `cms_versions`; `publish()` writes a version,
-  `restoreVersion()` puts one back into the draft). `HasExtra` stores fields a patch adds in `extra`.
+- **Help** — `Help\HelpRegistry`: `directory()` from a provider, then `keys()`, `page($key, $locale)`, `parts()`, `shared()`. Texts are `resources/help/<en|ru|uk>/<key>.md`; `_fields.md` describes the ids a package adds to other screens; the chain is the panel's language → `en`, each part on its own. `Help\HelpBuilder` adds the labels, hints and tabs from the tree the form gets; the manifest carries only the keys in `help`, and `webx-admin.docs_url` (default `null`) turns the link to the guide on. In the browser: `meta.help` on a route (or `help` on `WxScreenHead`) draws the «?», `WxHelpPanel` in `AdminShell` shows the page. With `webx-ui/mcp`: MCP tools `help_list`, `help_get` (each field also has its `name` and `type`), resources `help://screens`, `help://screens/{key}` (Markdown), scope `help:read`.
+- **Drafts and versions** — traits `HasDraft` (the `$table->draft()` macro: `draft`, `published_at`) and `HasVersions` (table `cms_versions`; `publish()` writes a version, `restoreVersion()` puts one back into the draft). `HasExtra` stores fields a patch adds in `extra`.
 - **History** — table `cms_history`, trait `RecordsHistory`, facade `History`, types in `HistoryTypes`. With `webx-ui/mcp`: MCP tools `history_get`, `history_runs`, resource
   `history://types`, scope `history:read` (the frame registers a type of its own, so they are always there).
 - **Cache** — «System → Cache» (client half `cache()` from `@webx-ui/module-admin`, wired by `webx:panel --sync`), `webx:cache:reset`, MCP `cache_reset`
@@ -31,7 +30,7 @@ here: that is `webx-ui/module-auth`; languages are `webx-ui/localization`; the M
 - **Fetching an address** — `Remote\RemoteFetcher`: `get()`, `download()`, `head()`, `check()` (a pin for a client of your own); public internet only, checked after DNS and on every redirect, `FetchRefused` with a `reason`; hosts of the site's network — `WEBX_REMOTE_TRUSTED_HOSTS`, the only hosts — `WEBX_REMOTE_ONLY_HOSTS`.
 - **Shortcodes** — the registry `WebxUi\Admin\Shortcodes\Shortcodes` (facade `Shortcodes`): `register()`, `source()`,
   `html()`, `htmlIn()`, `plain()`, `text()`; directives `@shortcodes`, `@shortcodesIn`, `@shortcodesPlain`; `GET /api/cms/shortcodes`
-  for the panel's text fields. `wx_text($value)` makes a string or a `ShortcodeText` a `ShortcodeText`, whose `trim*`, `strip*`
+  (`menu()`) for the panel's text fields. `register(block: true)` is a section of a page: it prints only in `htmlIn()`, out of its `<p>`, and not with `blocks: false` (HTML that leaves the page); text is read from the stored field, never from the printed HTML; `register(menu: fn)` gives `[` ready brackets, one row each, in place of the bare name. `wx_text($value)` makes a string or a `ShortcodeText` a `ShortcodeText`, whose `trim*`, `strip*`
   and `map()` change the typed text and stay HTML.
 - **Testing** — `Testing\CountsQueries` in a Testbench case: `assertQueriesWithin(N, fn () => $this->get(…))`
   fails over the budget listing every statement, repeated ones (an N+1) called out; `assertNoRepeatedQueries()`, `recordQueries()`; `Testing\FakeHostResolver` — DNS for `RemoteFetcher` without a network; `Testing\MigratesOnce` — `artisan migrate` once per schema on sqlite `:memory:`, replayed into every next test; `Testing\TemporaryFiles` — `temporaryFile($prefix, $extension)`, removed with the test.
@@ -83,7 +82,7 @@ Everything else here is open to every signed-in administrator and asks inside: t
 section shows to whoever holds one of its `permissions()`, or of `visibleWith()` with
 `HasVisibility`; with neither — to everybody), screens (nodes behind a permission are cut out),
 links, collections, relations, notes, history (`history_get`, `history_runs`), editing, uploads —
-each by the permission its registered source, type, record or upload purpose names. A route or
+each by the permission its registered source, type, record or upload purpose names. Help (`help/{key}`) cuts out the fields behind a permission; `help_list`, `help_get` ask any permission a module declares. A route or
 screen node the site adds next to the module asks for its own module's: `cms.can:<id>.view,<id>.manage`
 to read, `cms.can:<id>.manage` to write (next to the cache: `cms.can:cache.view,cache.reset`, `cms.can:cache.reset`).
 
@@ -99,6 +98,7 @@ to read, `cms.can:<id>.manage` to write (next to the cache: `cms.can:cache.view,
 | A field with a value until it is set    | `"default": …` on the node: drawn in the panel and read by the site, never written by itself                                                                                                          |
 | An email, address or phone field        | `wx-input` with `"props": { "type": "email" }` (or `url`, `tel`); the server holds the format too                                                                                                     |
 | A screen of your own                    | `Screens::register('<module>.<screen>', $pathOrTree)` from a provider                                                                                                                                 |
+| Help for a screen or field of yours     | `resources/help/en/<key>.md`, then `$this->app->make(HelpRegistry::class)->directory(resource_path('help'))` in `boot()`                                                                              |
 | A section of your own                   | `php artisan webx:make-module <Name>`, register it in `ModuleRegistry` from a provider                                                                                                                |
 | A navigation group or caption           | `groups` in `config/webx-admin.php` (`php artisan vendor:publish --tag=webx-admin-config`)                                                                                                            |
 | Your own lines in the panel's JS        | anywhere in `resources/js/admin.ts` outside the three `webx:` regions                                                                                                                                 |

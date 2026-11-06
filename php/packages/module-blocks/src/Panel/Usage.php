@@ -109,17 +109,7 @@ final class Usage
                 continue;
             }
 
-            $found[] = [
-                'model' => $entity::class,
-                'id' => $entity->getKey(),
-                'title' => $this->title($entity),
-                'published' => method_exists($entity, 'isPublished') ? (bool) $entity->isPublished() : true,
-                'live' => $inLive,
-                'draft' => $inDraft,
-                'url' => $this->url($entity),
-                // A region is named, not numbered, wherever a tool takes one.
-                'region' => $entity instanceof Region ? $entity->name : null,
-            ];
+            $found[] = $this->place($entity, $inLive, $inDraft);
         }
 
         return $found;
@@ -144,16 +134,32 @@ final class Usage
             $inDraft = $fragments->placed($draft);
 
             foreach (array_unique([...$inLive, ...$inDraft]) as $name) {
-                $found[$name][] = [
-                    'model' => $entity::class,
-                    'id' => $entity->getKey(),
-                    'title' => $this->title($entity),
-                    'published' => method_exists($entity, 'isPublished') ? (bool) $entity->isPublished() : true,
-                    'live' => in_array($name, $inLive, true),
-                    'draft' => in_array($name, $inDraft, true),
-                    'url' => $this->url($entity),
-                    'region' => $entity instanceof Region ? $entity->name : null,
-                ];
+                $found[$name][] = $this->place($entity, in_array($name, $inLive, true), in_array($name, $inDraft, true));
+            }
+        }
+
+        return $found;
+    }
+
+    /**
+     * Where each value of a field of a type stands: the same walk and the same row as
+     * `fragments()`, for a type that names something by a plain string (a block that holds the
+     * key of a collection). An entity with the value twice is one place. What is not a non-empty
+     * string names nothing and is not here.
+     *
+     * @return array<string, list<array{model: string, id: int|string, title: string|null, published: bool, live: bool, draft: bool, url: string|null, region: string|null}>>
+     */
+    public function valued(string $slug, string $field): array
+    {
+        $found = [];
+
+        foreach ($this->entities() as $entity) {
+            [$live, $draft] = $this->trees($entity, separately: true);
+            $inLive = $this->valuesIn($live, $slug, $field);
+            $inDraft = $this->valuesIn($draft, $slug, $field);
+
+            foreach (array_unique([...$inLive, ...$inDraft]) as $value) {
+                $found[$value][] = $this->place($entity, in_array($value, $inLive, true), in_array($value, $inDraft, true));
             }
         }
 
@@ -188,6 +194,47 @@ final class Usage
         }
 
         return $found;
+    }
+
+    /**
+     * The row every list of places answers with.
+     *
+     * @return array{model: string, id: int|string, title: string|null, published: bool, live: bool, draft: bool, url: string|null, region: string|null}
+     */
+    private function place(Model $entity, bool $live, bool $draft): array
+    {
+        return [
+            'model' => $entity::class,
+            'id' => $entity->getKey(),
+            'title' => $this->title($entity),
+            'published' => method_exists($entity, 'isPublished') ? (bool) $entity->isPublished() : true,
+            'live' => $live,
+            'draft' => $draft,
+            'url' => $this->url($entity),
+            // A region is named, not numbered, wherever a tool takes one.
+            'region' => $entity instanceof Region ? $entity->name : null,
+        ];
+    }
+
+    /**
+     * The values a field of a type holds in a tree, each once.
+     *
+     * @param  list<array<string, mixed>>  $tree
+     * @return list<string>
+     */
+    private function valuesIn(array $tree, string $slug, string $field): array
+    {
+        $values = [];
+
+        Content::walk($tree, static function (array $node) use ($slug, $field, &$values): void {
+            $value = $node['type'] === $slug ? ($node['values'][$field] ?? null) : null;
+
+            if (is_string($value) && $value !== '') {
+                $values[$value] = true;
+            }
+        });
+
+        return array_map(strval(...), array_keys($values));
     }
 
     /**

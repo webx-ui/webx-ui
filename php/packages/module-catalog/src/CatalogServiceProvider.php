@@ -8,11 +8,13 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Collections\CollectionSources;
 use WebxUi\Admin\Doctor\DoctorChecks;
+use WebxUi\Admin\Help\HelpRegistry;
 use WebxUi\Admin\History\HistoryTypes;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\ModuleRegistry;
@@ -44,6 +46,7 @@ use WebxUi\Catalog\Documents\CoreDocument;
 use WebxUi\Catalog\Documents\Documents;
 use WebxUi\Catalog\Engine\CatalogEngines;
 use WebxUi\Catalog\Engine\SqlEngine;
+use WebxUi\Catalog\Exchange\Columns\BarcodesColumn;
 use WebxUi\Catalog\Exchange\Columns\CategoryColumn;
 use WebxUi\Catalog\Exchange\Columns\ExternalIdColumn;
 use WebxUi\Catalog\Exchange\Columns\IdColumn;
@@ -96,6 +99,8 @@ use WebxUi\Catalog\Sorts\Sorts;
 use WebxUi\Catalog\Storefront\StorefrontCache;
 use WebxUi\Catalog\Storefront\StorefrontParts;
 use WebxUi\Catalog\Support\RequestMemo;
+use WebxUi\Catalog\Variables\CoreVariables;
+use WebxUi\Catalog\Variables\ProductVariables;
 use WebxUi\Compositions\Compositions;
 use WebxUi\Localization\Http\Middleware\OneSpellingPerAddress;
 use WebxUi\Routing\Formatters\Slug;
@@ -124,7 +129,7 @@ class CatalogServiceProvider extends ServiceProvider
     {
         // What moves between stands with webx:snapshot, and what stays where it is.
         $this->callAfterResolving(SnapshotTables::class, static function (SnapshotTables $tables): void {
-            $tables->content('catalog_products', 'catalog_categories', 'catalog_category_product', 'catalog_category_facets', 'catalog_product_images', 'catalog_filter_aliases', 'catalog_exchange_profiles');
+            $tables->content('catalog_products', 'catalog_categories', 'catalog_category_product', 'catalog_category_facets', 'catalog_product_images', 'catalog_product_barcodes', 'catalog_filter_aliases', 'catalog_exchange_profiles');
             // Runs, their errors, the index queue and the view counts are what happened on this stand.
             $tables->stand('catalog_bulk_runs', 'catalog_bulk_run_items', 'catalog_exchange_runs', 'catalog_exchange_run_items', 'catalog_exchange_errors', 'catalog_index_queue', 'catalog_product_popularity');
         });
@@ -148,6 +153,7 @@ class CatalogServiceProvider extends ServiceProvider
         $this->app->singleton(FilterAliases::class);
         $this->app->singleton(SatelliteTools::class);
         $this->app->singleton(ExchangeColumns::class);
+        $this->app->singleton(ProductVariables::class);
         $this->app->singleton(ExchangeFormats::class);
 
         $this->app->singleton(Catalog::class);
@@ -160,6 +166,8 @@ class CatalogServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->app->make(HelpRegistry::class)->directory(__DIR__.'/../resources/help');
+
         $this->registerSiteBar();
 
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
@@ -202,6 +210,7 @@ class CatalogServiceProvider extends ServiceProvider
         $this->registerBulk();
         $this->registerVideo();
         $this->registerExchange();
+        $this->app->make(CoreVariables::class)->register($this->app->make(ProductVariables::class));
         $this->registerSources();
 
         if (! $this->app->runningInConsole()) {
@@ -297,6 +306,10 @@ class CatalogServiceProvider extends ServiceProvider
             $patch[] = ['op' => 'remove', 'target' => 'barcode-col'];
         }
 
+        if (! (bool) $this->config()->get('webx-catalog.fields.mpn', true)) {
+            $patch[] = ['op' => 'remove', 'target' => 'mpn'];
+        }
+
         // What the gallery field needs to offer videos (§7 of the video spec): the flag, and the
         // limits it checks a file against before sending a byte of it.
         $patch[] = [
@@ -332,7 +345,7 @@ class CatalogServiceProvider extends ServiceProvider
 
         $product = [];
 
-        foreach (['name', 'slug', 'sku', 'barcode', 'summary', 'description', 'category_id', 'categories', 'price', 'old_price', 'unit', 'priority', 'is_published', 'images'] as $field) {
+        foreach (['name', 'slug', 'sku', 'barcode', 'barcodes', 'mpn', 'summary', 'description', 'category_id', 'categories', 'price', 'old_price', 'unit', 'priority', 'is_published', 'images'] as $field) {
             $product[$field] = 'webx-catalog::product.'.$field;
         }
 
@@ -421,7 +434,13 @@ class CatalogServiceProvider extends ServiceProvider
         // for a request; a worker's next job is another request.
         $this->app->make(Dispatcher::class)->listen(JobProcessing::class, function (): void {
             $this->app->make(Facets::class)->flush();
+            $this->app->make(StorefrontParts::class)->flush();
             RequestMemo::forget();
+        });
+
+        // One page's parts are that page's: the next request of the same process starts clean.
+        $this->app->make(Dispatcher::class)->listen(RequestHandled::class, function (): void {
+            $this->app->make(StorefrontParts::class)->flush();
         });
     }
 
@@ -542,6 +561,11 @@ class CatalogServiceProvider extends ServiceProvider
 
         if ((bool) $this->config()->get('webx-catalog.fields.barcode', true)) {
             $columns->register(new ValueColumn('barcode'));
+            $columns->register(new BarcodesColumn);
+        }
+
+        if ((bool) $this->config()->get('webx-catalog.fields.mpn', true)) {
+            $columns->register(new ValueColumn('mpn'));
         }
 
         $columns->register(new ExternalIdColumn);

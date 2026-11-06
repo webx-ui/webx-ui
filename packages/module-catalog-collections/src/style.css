@@ -1,0 +1,14 @@
+/*
+ * The collections draw with the panel's screens and the core's components, and their few styles are
+ * scoped to the components. The file is here because a site imports it — `extra.webx.panel.style`
+ * of the Composer half — and a stylesheet that is not there fails the build that imports it.
+ */
+
+/*
+ * A row of a screen stops at the width of one field, to keep two halves of a field together. The
+ * conditions and their preview are two columns of their own, so this row takes the card's width and
+ * its columns answer to that.
+ */
+.wx-screen__row.wx-catalog-collection-split {
+  max-width: none;
+}

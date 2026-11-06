@@ -6,8 +6,10 @@ namespace WebxUi\CatalogLabels;
 
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Categories\CategorySources;
+use WebxUi\Admin\Help\HelpRegistry;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Snapshots\SnapshotTables;
@@ -23,6 +25,8 @@ use WebxUi\Catalog\Rendering\ProductQuery;
 use WebxUi\Catalog\Storefront\StorefrontCache;
 use WebxUi\Catalog\Storefront\StorefrontParts;
 use WebxUi\Catalog\Support\RequestMemo;
+use WebxUi\Catalog\Variables\ComputedVariable;
+use WebxUi\Catalog\Variables\ProductVariables;
 use WebxUi\CatalogLabels\Catalog\BadgesPart;
 use WebxUi\CatalogLabels\Catalog\LabelAction;
 use WebxUi\CatalogLabels\Catalog\LabelFacet;
@@ -33,6 +37,7 @@ use WebxUi\CatalogLabels\Catalog\LabelsExchangeColumn;
 use WebxUi\CatalogLabels\Catalog\LabelsPart;
 use WebxUi\CatalogLabels\Models\Label;
 use WebxUi\CatalogLabels\Panel\LabelsModule;
+use WebxUi\Templates\Variable;
 
 /**
  * Labels (§2.1 of the dictionaries spec): a satellite of the catalogue, and almost all of it is
@@ -53,6 +58,8 @@ class LabelsServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->app->make(HelpRegistry::class)->directory(__DIR__.'/../resources/help');
+
         // What moves between stands with webx:snapshot, and what stays where it is.
         $this->callAfterResolving(SnapshotTables::class, static function (SnapshotTables $tables): void {
             $tables->content('catalog_labels', 'catalog_label_product');
@@ -144,6 +151,22 @@ class LabelsServiceProvider extends ServiceProvider
         $this->app->make(ProductColumns::class)->register(new LabelsColumn);
         // The column of exchange files (§7.2 of the exchange spec).
         $this->app->make(ExchangeColumns::class)->register(new LabelsExchangeColumn);
+        // A list with its names, where a file has only codes (§4.2 of the feeds spec).
+        $this->app->make(ProductVariables::class)->register(new ComputedVariable(
+            new Variable(LabelsPart::KEY, 'webx-catalog-labels::product.labels', [['code' => 'sale', 'name' => 'Sale']], [
+                'code' => 'webx-catalog::variables.fields.code',
+                'name' => 'webx-catalog::variables.fields.name',
+            ]),
+            static function (Collection $products, string $locale): array {
+                $lists = [];
+
+                foreach (Labels::on($products->map(static fn (Product $product): int => (int) $product->id)->all()) as $id => $labels) {
+                    $lists[$id] = array_map(static fn (Label $label): array => ['code' => $label->code, 'name' => $label->displayName($locale)], $labels);
+                }
+
+                return $lists;
+            },
+        ));
         $this->app->make(Facets::class)->register(new LabelFacet);
         $this->app->make(Documents::class)->register(new LabelsDocument);
         $this->app->make(StorefrontParts::class)->register(new BadgesPart);

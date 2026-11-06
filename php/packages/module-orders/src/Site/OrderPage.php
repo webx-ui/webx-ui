@@ -7,7 +7,9 @@ namespace WebxUi\Orders\Site;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use WebxUi\Cache\CacheGroups;
+use WebxUi\Cart\CartRef;
 use WebxUi\Cart\Money;
+use WebxUi\Cart\Resolver;
 use WebxUi\Orders\Balance;
 use WebxUi\Orders\Blocks\OrderBlocks;
 use WebxUi\Orders\Milestone;
@@ -30,6 +32,10 @@ use WebxUi\Orders\Models\PublicStatus;
  * pay»: what is left to pay on a paid order, what the shop will give back. The edit's reason and
  * who made it never.
  *
+ * A line's name leads to the page of what was bought, asked of its provider now, a batch of a type
+ * at a time: the order keeps the name, not the address, which moves. Deleted, off the site or with
+ * no address — no link, and the name of the order stands.
+ *
  * Both sets of statuses come from the cache of the group `order-statuses` (§16), dropped when a
  * status is saved; an order costs its own queries and nothing a status more.
  */
@@ -42,6 +48,7 @@ final readonly class OrderPage
         private CacheGroups $groups,
         private Money $money,
         private OrderBlocks $blocks,
+        private Resolver $resolver,
     ) {}
 
     /**
@@ -82,6 +89,8 @@ final readonly class OrderPage
             'awaiting_payment' => $awaiting,
             // The owner of the payment says it over the status, with the way to pay (§13.1).
             'prompt' => $awaiting ? $this->blocks->prompt($order, $locale) : null,
+            // Not waiting is not «cannot pay»: an order on receipt may still be paid now.
+            'offer' => $awaiting ? null : $this->blocks->offer($order, $locale),
             'changed_at' => $order->items_changed_at,
             'items' => $this->items($order->items, $locale, $money),
             'adjustments' => $order->adjustments->map(static fn (OrderAdjustment $adjustment): array => [
@@ -256,7 +265,7 @@ final readonly class OrderPage
     }
 
     /**
-     * The lines, the parts of a set under their set.
+     * The lines, the parts of a set under their set; `url` is null where there is no page to open.
      *
      * @param  Collection<int, OrderItem>  $items
      * @param  callable(int): string  $money
@@ -265,9 +274,11 @@ final readonly class OrderPage
     private function items(Collection $items, string $locale, callable $money): array
     {
         $children = $items->whereNotNull('parent_id')->groupBy('parent_id');
+        $links = $this->links($items, $locale);
 
         return $items->whereNull('parent_id')->map(static fn (OrderItem $item): array => [
             'name' => $item->nameIn($locale),
+            'url' => $links[$item->id] ?? null,
             'options' => $item->options_label,
             'sku' => $item->sku,
             'image' => $item->image,
@@ -276,8 +287,32 @@ final readonly class OrderPage
             'total' => $money($item->total),
             'parts' => ($children[$item->id] ?? collect())->map(static fn (OrderItem $part): array => [
                 'name' => $part->nameIn($locale),
+                'url' => $links[$part->id] ?? null,
                 'qty' => $part->qty,
             ])->values()->all(),
         ])->values()->all();
+    }
+
+    /**
+     * The pages of the lines, by the line's id: one question a type, whatever the number of lines.
+     *
+     * @param  Collection<int, OrderItem>  $items
+     * @return array<int, string>
+     */
+    private function links(Collection $items, string $locale): array
+    {
+        $links = [];
+
+        foreach ($items->groupBy('type') as $type => $lines) {
+            $refs = $lines->map(static fn (OrderItem $item): CartRef => new CartRef((string) $item->id, $item->ref_id, $item->options ?? []))->values()->all();
+
+            foreach ($this->resolver->resolve((string) $type, $refs, $locale) as $id => $line) {
+                if ($line?->url !== null && $line->url !== '') {
+                    $links[(int) $id] = $line->url;
+                }
+            }
+        }
+
+        return $links;
     }
 }

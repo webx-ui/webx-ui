@@ -24,6 +24,7 @@ export function snippets(options: SnippetsOptions = {}): AdminModule {
       {
         path,
         name: 'webx.snippets',
+        meta: { help: 'snippets.index' },
         component: () => import('./SnippetsPage.vue'),
         props: { base: path },
       },

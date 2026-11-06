@@ -14,6 +14,7 @@ use WebxUi\Admin\Contracts\HasPermissions;
 use WebxUi\Admin\Contracts\HasVisibility;
 use WebxUi\Admin\Contracts\Module;
 use WebxUi\Admin\Contracts\SiteUrls;
+use WebxUi\Admin\Help\HelpRegistry;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Cache\CacheGroups;
@@ -48,6 +49,7 @@ final class ManifestBuilder
         private readonly ?CacheGroups $cache = null,
         private readonly ?DictionaryBuilder $dictionary = null,
         private readonly ?AccessPolicy $policy = null,
+        private readonly ?HelpRegistry $help = null,
     ) {}
 
     /**
@@ -64,6 +66,7 @@ final class ManifestBuilder
      *     groups: list<array{id: string, title: string, icon: string|null, order: int, sections: list<array{id: string, title: string, order: int}>}>,
      *     modules: list<array<string, mixed>>,
      *     screens: list<string>,
+     *     help: list<string>,
      *     backup: array{at: string|null, bytes: int|null}|null,
      * }
      */
@@ -100,6 +103,9 @@ final class ManifestBuilder
             'modules' => array_map(fn (Module $module): array => $this->describe($module, $words['modules'][$module->id()] ?? $module->title(), $user), $modules),
             // Only the names: a screen travels on its own, when the page that needs it opens.
             'screens' => $this->screens->names(),
+            // Only the keys, and for the same reason. A screen without help shows no «?» rather
+            // than a button that answers with an error (WEBX_UI_PANEL_HELP.md §3.1).
+            'help' => $this->help?->keys() ?? [],
             'backup' => $this->backup(),
         ];
     }

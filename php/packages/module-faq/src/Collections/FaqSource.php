@@ -91,16 +91,17 @@ final class FaqSource implements CollectionSource
         $gathered = $this->gathered();
 
         foreach ($items as $item) {
-            $answer = trim(preg_replace('/\s+/u', ' ', html_entity_decode(
-                strip_tags(str_replace(['</p>', '<br>', '<br/>', '<br />', '</li>'], ["</p>\n", "\n", "\n", "\n", "</li>\n"], (string) $item['answer'])),
-                ENT_QUOTES | ENT_HTML5,
-            )) ?? '');
+            // An answer with no words of its own — a picture, a section of cards — is on the page,
+            // but `FAQPage` has nothing to say for it.
+            if ($item['text'] === '') {
+                continue;
+            }
 
             // `+=`: a question shown by an earlier block stays where that block put it.
             $gathered += [(int) $item['id'] => [
                 '@type' => 'Question',
                 'name' => (string) $item['question'],
-                'acceptedAnswer' => ['@type' => 'Answer', 'text' => $answer],
+                'acceptedAnswer' => ['@type' => 'Answer', 'text' => (string) $item['text']],
             ]];
         }
 

@@ -7,6 +7,7 @@ namespace WebxUi\Orders;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Doctor\DoctorChecks;
+use WebxUi\Admin\Help\HelpRegistry;
 use WebxUi\Admin\History\HistoryTypes;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
@@ -68,6 +69,8 @@ class OrdersServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->app->make(HelpRegistry::class)->directory(__DIR__.'/../resources/help');
+
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-orders');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-orders');

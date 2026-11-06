@@ -110,6 +110,7 @@ export {
 } from './links'
 export {
   forgetShortcodes,
+  lineShortcodes,
   loadShortcodes,
   shortcodeToken,
   takesShortcodes,
@@ -220,6 +221,15 @@ export { default as WxBackButton } from './BackButton.vue'
 export { default as WxAddressNote } from './AddressNote.vue'
 export { default as WxRenameButton } from './RenameButton.vue'
 export { default as WxHelpButton } from './HelpButton.vue'
+export { default as WxHelpPanel } from './HelpPanel.vue'
+export {
+  useHelp,
+  type Help,
+  type HelpField,
+  type HelpGroup,
+  type HelpHowto,
+  type HelpPage,
+} from './help'
 export { default as WxDate } from './DateText.vue'
 export { default as WxNotes } from './NotesFeed.vue'
 export { default as WxNotesList } from './NotesList.vue'

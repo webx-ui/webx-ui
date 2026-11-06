@@ -14,6 +14,7 @@ final class PurchasableLine
      * @param  int  $price  minor units of $currency; 0 — price on request
      * @param  string  $currency  ISO 4217, upper case
      * @param  string|null  $image  absolute or root-relative URL
+     * @param  string|null  $url  the page of the record; null — no page a buyer can open
      * @param  int|null  $maxQty  null — no stock to check
      * @param  array<string, string>|null  $names  locale → name in every language of the site, for
      *                                             the snapshot a line keeps; null — $name alone

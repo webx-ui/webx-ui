@@ -37,6 +37,7 @@ final class IndexField
      * @param  bool  $code  A code of the product — the article number, the barcode: an engine with
      *                      an index searches it as written and as its letters and digits alone, by
      *                      any part of it, and puts the product whose code is the search first.
+     *                      With `multi`, each value is a code of its own.
      */
     public function __construct(
         public readonly string $name,

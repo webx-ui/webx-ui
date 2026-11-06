@@ -17,6 +17,7 @@ use WebxUi\Admin\Screens\HasExtra;
 use WebxUi\Catalog\Catalog;
 use WebxUi\Catalog\Filter\FilterAliases;
 use WebxUi\Catalog\Models\Product;
+use WebxUi\Localization\HasLatinSlug;
 use WebxUi\Localization\HasTranslations;
 use WebxUi\Localization\Slug;
 use WebxUi\Media\Models\MediaFile;
@@ -50,6 +51,7 @@ use WebxUi\NestedSet\HasNestedSet;
 class PropertyValue extends Model
 {
     use HasExtra;
+    use HasLatinSlug;
     use HasNestedSet;
     use HasTranslations;
     use RecordsHistory {

@@ -36,6 +36,7 @@ use WebxUi\Admin\Console\CachePruneCommand;
 use WebxUi\Admin\Console\CacheResetCommand;
 use WebxUi\Admin\Console\DemoCommand;
 use WebxUi\Admin\Console\DoctorCommand;
+use WebxUi\Admin\Console\HelpCommand;
 use WebxUi\Admin\Console\InstallCommand;
 use WebxUi\Admin\Console\MakeModuleCommand;
 use WebxUi\Admin\Console\ModuleAddCommand;
@@ -61,6 +62,8 @@ use WebxUi\Admin\Events\StoredContentRewritten;
 use WebxUi\Admin\Gate\CloseSite;
 use WebxUi\Admin\Gate\KeepOutOfSearch;
 use WebxUi\Admin\Gate\Openings;
+use WebxUi\Admin\Help\HelpRegistry;
+use WebxUi\Admin\Help\Mcp\HelpModule;
 use WebxUi\Admin\History\HistoryContext;
 use WebxUi\Admin\History\HistoryTypes;
 use WebxUi\Admin\History\Journal;
@@ -133,6 +136,10 @@ class AdminServiceProvider extends ServiceProvider
         // Same for screens and the field types they are written in: modules and the project
         // add theirs from `boot()`, and the endpoints read the sum.
         $this->app->singleton(ScreenRegistry::class);
+
+        // The directories of help: modules and the project add theirs from `boot()` as well, and
+        // the parts of a key are put together when somebody opens it (WEBX_UI_PANEL_HELP.md §2).
+        $this->app->singleton(HelpRegistry::class);
 
         // The drafted records an open editor keeps watch over, and who has them open.
         $this->app->singleton(EditedRecords::class);
@@ -322,12 +329,15 @@ class AdminServiceProvider extends ServiceProvider
                 $app->make(CacheGroups::class),
                 $app->make(DictionaryBuilder::class),
                 $app->make(AccessPolicy::class),
+                $app->make(HelpRegistry::class),
             ),
         );
     }
 
     public function boot(): void
     {
+        $this->app->make(HelpRegistry::class)->directory(__DIR__.'/../resources/help');
+
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-admin');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-admin');
         $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
@@ -383,6 +393,7 @@ class AdminServiceProvider extends ServiceProvider
             CacheResetCommand::class,
             DemoCommand::class,
             DoctorCommand::class,
+            HelpCommand::class,
             InstallCommand::class,
             MakeModuleCommand::class,
             ModuleAddCommand::class,
@@ -579,6 +590,12 @@ class AdminServiceProvider extends ServiceProvider
                 ? $this->app->make(McpCacheModule::class)
                 : $this->app->make(CacheModule::class),
         );
+
+        // The help for an agent: the frame does not require `webx-ui/mcp`, and nothing loads the
+        // class without it. Help has no page, so this is a module for its tools alone.
+        if (interface_exists(ProvidesMcpTools::class)) {
+            $this->app->make(ModuleRegistry::class)->register($this->app->make(HelpModule::class));
+        }
     }
 
     /**

@@ -14,13 +14,27 @@
 // - «Thank you» says `webx:checkout:placed` with the number, the amount and the currency (§30).
 // - «Place the order» saves a step not done or typed in first, as its «Save» would, and goes on
 //   after the redraw; a step refused keeps its errors at its fields and no order is sent.
+// - «Order contents» changes the cart (§23.5): its forms go in place, the stepper 300 ms after the
+//   last press. The slots' steps and the column follow, and a slot's fields the buyer changed go
+//   over by name: a slot writes as it is typed, but the server refuses a half-done address, so the
+//   drawing has none of it. The last line gone, the page is the empty cart's. The focus stays on
+//   the control pressed, and «Place the order» waits for a press still on its way.
 
 const ROOT = '.webx-orders-checkout'
 const STEP = '.webx-orders-checkout__step'
 const SUMMARY = '#checkout-summary'
+const LINES = '.webx-orders-checkout__lines'
+const LINE = '.webx-orders-checkout__line'
+const WARNINGS = '#checkout-warnings'
+// The pause of the cart's own stepper: several presses are one write.
+const STEP_PAUSE = 300
 const PLACE = 'checkout-place'
 // A field the buyer fills: not a hidden one, nor the honeypot of the antispam (§28).
 const FIELD = 'input:not([type="hidden"], [tabindex="-1"]), select, textarea'
+// A field with a value of its own. A choice of radios stays the server's: it resets what the cart
+// no longer allows (§23.5).
+const VALUE =
+  'input:not([type="hidden"], [type="radio"], [type="checkbox"], [type="file"], [tabindex="-1"]), select:not([multiple]), textarea'
 
 const webx = () => (typeof window !== 'undefined' ? (window.webx ?? {}) : {})
 
@@ -30,6 +44,14 @@ export const server = {
     fetch(url, { credentials: 'same-origin', headers: { Accept: 'text/html' } }).then((r) =>
       r.ok ? r.text() : Promise.reject(new Error(String(r.status))),
     ),
+  send: (url, body) =>
+    fetch(url, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+      body,
+    }).then(async (r) => ({ status: r.status, body: await r.json().catch(() => ({})) })),
+  reload: () => window.location.reload(),
 }
 
 const parse = (html) => new DOMParser().parseFromString(html, 'text/html')
@@ -41,6 +63,44 @@ function swap(old, fresh) {
   old.replaceWith(fresh)
   webx().mount?.(fresh)
   return fresh
+}
+
+/** Where the focus is in the column: the control by name, its line by id and by place. */
+function focused(column) {
+  const active = column?.ownerDocument.activeElement
+  const control = active instanceof Element ? active.closest('[data-control]') : null
+  if (!control || !column.contains(control)) return null
+  const line = control.closest(LINE)
+  return {
+    id: line?.getAttribute('data-line'),
+    index: Array.from(column.querySelectorAll(LINE)).indexOf(line),
+    control: control.getAttribute('data-control'),
+  }
+}
+
+/** The same control after a redraw; its line gone — the next one's; no lines — the title. */
+function refocus(column, { id, index, control }) {
+  const lines = Array.from(column.querySelectorAll(LINE))
+  const line =
+    lines.find((el) => el.getAttribute('data-line') === id) ?? lines[index] ?? lines[index - 1]
+  const target =
+    line?.querySelector(`[data-control="${control}"]:not(:disabled)`) ??
+    line?.querySelector('[data-control]:not(:disabled)') ??
+    column.querySelector('.webx-orders-checkout__summary-title')
+  target?.focus({ preventScroll: true })
+}
+
+/** A fresh column: «Order contents» as the buyer left it, the focus where it was. */
+function column(root, fresh) {
+  const old = root.querySelector(SUMMARY)
+  const lines = old?.querySelector(LINES)
+  const focus = focused(old)
+  const placed = swap(old, fresh)
+  if (!placed) return null
+  const details = placed.querySelector(LINES)
+  if (details && lines) details.open = lines.open
+  if (focus) refocus(placed, focus)
+  return placed
 }
 
 function collapsing(root) {
@@ -59,7 +119,7 @@ export async function redrawSummary(root) {
   const url = root.querySelector('[data-summary]')?.getAttribute('data-summary')
   if (!url) return null
   const fresh = parse(await server.fetch(url)).querySelector(SUMMARY)
-  const placed = swap(root.querySelector(SUMMARY), fresh)
+  const placed = column(root, fresh)
   sticky(root)
   return placed
 }
@@ -70,7 +130,33 @@ export async function redrawSummary(root) {
  * typing (the dialog of the sign-in gives the focus back to its opener).
  */
 export async function redrawPage(root, keys = null) {
-  const doc = parse(await server.fetch(window.location.href))
+  draw(root, parse(await server.fetch(window.location.href)), keys)
+}
+
+/** The value the server printed: a list without a `selected` shows its first option. */
+function printed(field) {
+  if (field.tagName !== 'SELECT') return field.defaultValue
+  const options = Array.from(field.options)
+  return (options.find((option) => option.defaultSelected) ?? options[0])?.value ?? ''
+}
+
+/**
+ * What the buyer changed in a step, into its new drawing by name; a field the drawing no longer
+ * has takes nothing along. An option found by the server's search is not among those printed.
+ */
+function carry(old, fresh) {
+  const fields = Array.from(fresh.querySelectorAll(VALUE))
+  for (const field of old.querySelectorAll(VALUE)) {
+    const same = fields.find((el) => el.name === field.name)
+    if (!field.name || !same || field.value === printed(field)) continue
+    if (same.options && !Array.from(same.options).some((el) => el.value === field.value)) {
+      same.append(new Option(field.selectedOptions?.[0]?.text ?? field.value, field.value))
+    }
+    same.value = field.value
+  }
+}
+
+function draw(root, doc, keys, keep = false) {
   for (const fresh of doc.querySelectorAll(STEP)) {
     const key = fresh.getAttribute('data-step')
     const old = root.querySelector(`${STEP}[data-step="${key}"]`)
@@ -78,8 +164,13 @@ export async function redrawPage(root, keys = null) {
     const active = root.ownerDocument.activeElement
     const typing = active instanceof Element && active.matches(FIELD) && old.contains(active)
     if ((keys === null || keys.includes(key)) && !typing) {
+      if (old.classList.contains('is-editing')) fresh.classList.add('is-editing')
+      if (keep) carry(old, fresh)
       swap(old, fresh)
     } else {
+      const head = fresh.querySelector('.webx-orders-checkout__step-head')
+      const title = old.querySelector('.webx-orders-checkout__step-head')
+      if (head && title) title.textContent = head.textContent
       old.classList.toggle('is-done', fresh.classList.contains('is-done'))
       old.classList.toggle('is-open', fresh.classList.contains('is-open'))
       const summary = fresh.querySelector('.webx-orders-checkout__step-summary')
@@ -88,8 +179,173 @@ export async function redrawPage(root, keys = null) {
       else if (summary) old.querySelector('.webx-orders-checkout__step-head')?.after(summary)
     }
   }
-  swap(root.querySelector(SUMMARY), doc.querySelector(SUMMARY))
+  column(root, doc.querySelector(SUMMARY))
   sticky(root)
+}
+
+/** The steps the server lists now: what the cart no longer needs goes, what it needs comes in place. */
+function followSteps(root, doc) {
+  const fresh = Array.from(doc.querySelectorAll(STEP))
+  const keys = fresh.map((step) => step.getAttribute('data-step'))
+  for (const old of root.querySelectorAll(STEP)) {
+    if (keys.includes(old.getAttribute('data-step'))) continue
+    webx().unmount?.(old)
+    old.remove()
+  }
+  let previous = null
+  for (const step of fresh) {
+    const key = step.getAttribute('data-step')
+    let old = root.querySelector(`${STEP}[data-step="${key}"]`)
+    if (!old) {
+      old = step.cloneNode(true)
+      if (previous) previous.after(old)
+      else root.querySelector('.webx-orders-checkout__steps')?.prepend(old)
+      webx().mount?.(old)
+    }
+    previous = old
+  }
+}
+
+/** The lines the server warns about now: the list goes with the last of them. */
+function followWarnings(root, doc) {
+  const old = root.querySelector(WARNINGS)
+  const fresh = doc.querySelector(WARNINGS)
+  if (old && fresh) old.replaceWith(fresh)
+  else if (old) old.remove()
+  else if (fresh) root.querySelector('.webx-orders-checkout__title')?.after(fresh)
+}
+
+/**
+ * The page after the cart changed (§23.5): delivery and payment count from the lines, so the
+ * slots' steps are drawn again, with what the buyer typed in them; the buyer's other steps only
+ * keep their state and number. The last line gone, the page is the empty cart's own.
+ */
+export async function redrawCart(root) {
+  const doc = parse(await server.fetch(window.location.href))
+  if (doc.querySelector(`${ROOT}.is-empty`)) {
+    server.reload()
+    return
+  }
+  followSteps(root, doc)
+  followWarnings(root, doc)
+  const slots = Array.from(doc.querySelectorAll(`${STEP}[data-slot]`))
+  draw(
+    root,
+    doc,
+    slots.map((step) => step.getAttribute('data-step')),
+    true,
+  )
+}
+
+/** The refusal of a line, under it; the column drawn since has no trace of the press. */
+function refuse(root, id, message) {
+  const line = Array.from(root.querySelectorAll(`${SUMMARY} ${LINE}`)).find(
+    (el) => el.getAttribute('data-line') === id,
+  )
+  if (!line || !message) return
+  const note = document.createElement('p')
+  note.className = 'webx-orders-checkout__line-error'
+  note.setAttribute('role', 'alert')
+  note.textContent = message
+  line.append(note)
+}
+
+/** The number on the screen; a button that stops being one gives the focus to its neighbour. */
+function showQty(form, qty) {
+  const max = Number(form.getAttribute('data-max')) || Infinity
+  const value = form.querySelector('[data-qty]')
+  if (value) value.textContent = String(qty)
+  const less = form.querySelector('[data-control="decrease"]')
+  const more = form.querySelector('[data-control="increase"]')
+  const active = form.ownerDocument.activeElement
+  if (less) less.disabled = qty <= 1
+  if (more) more.disabled = qty >= max
+  if (active === less && less?.disabled) more?.focus({ preventScroll: true })
+  if (active === more && more?.disabled) less?.focus({ preventScroll: true })
+}
+
+/**
+ * «Order contents» in place. Writes go one after another, and only the last one redraws: the
+ * number of a press after it would be drawn back. `flush` sends what waits for its pause and
+ * says whether all of it went through.
+ */
+function watchLines(root, redraw) {
+  const waiting = new Map()
+  let queue = Promise.resolve(true)
+  let latest = 0
+  let flying = 0
+
+  const send = (form, qty) => {
+    const mine = ++latest
+    // A refusal of before is said and done: it does not hold the next batch back.
+    if (flying === 0) queue = Promise.resolve(true)
+    flying += 1
+    const id = form.closest(LINE)?.getAttribute('data-line') ?? null
+    const body = new FormData(form)
+    if (qty !== null) body.set('qty', String(qty))
+    const url = form.getAttribute('action')
+    queue = queue.then(async (fine) => {
+      try {
+        const { status, body: answer } = await server.send(url, body)
+        // The line is gone from another tab, or the session from under the page.
+        if (status === 404 || status === 419) {
+          server.reload()
+          return false
+        }
+        if (mine === latest && waiting.size === 0) await redraw()
+        if (status >= 400) refuse(root, id, answer?.errors?.qty?.[0] ?? answer?.message)
+        return fine && status < 400
+      } catch {
+        // No answer: the page as it is still works, a reload shows the truth.
+        return false
+      } finally {
+        flying -= 1
+      }
+    })
+    return queue
+  }
+
+  const hold = (form, qty) => {
+    const id = form.closest(LINE)?.getAttribute('data-line')
+    clearTimeout(waiting.get(id)?.timer)
+    const timer = setTimeout(() => {
+      waiting.delete(id)
+      send(form, qty)
+    }, STEP_PAUSE)
+    waiting.set(id, { timer, form, qty })
+  }
+
+  root.addEventListener('click', (event) => {
+    const target = event.target instanceof Element ? event.target : null
+    const button = target?.closest(`${SUMMARY} ${LINE} button[data-control]`)
+    const form = button?.closest('form')
+    if (!form) return
+    event.preventDefault()
+    const name = button.getAttribute('data-control')
+    if (name === 'remove') {
+      const id = form.closest(LINE)?.getAttribute('data-line')
+      clearTimeout(waiting.get(id)?.timer)
+      waiting.delete(id)
+      send(form, null)
+      return
+    }
+    const now = Number(form.querySelector('[data-qty]')?.textContent) || 1
+    const qty = now + (name === 'increase' ? 1 : -1)
+    showQty(form, qty)
+    hold(form, qty)
+  })
+
+  return {
+    busy: () => waiting.size > 0 || flying > 0,
+    flush: () => {
+      for (const [id, { timer, form, qty }] of waiting) {
+        clearTimeout(timer)
+        waiting.delete(id)
+        send(form, qty)
+      }
+      return queue
+    },
+  }
 }
 
 /** The first step with an error of the confirmation: opened, its field in focus (§20.1). */
@@ -230,9 +486,19 @@ export function start(doc = document) {
   let passed = null
   let pressing = null
 
+  const lines = watchLines(root, () => keep(redrawCart(root)))
+
   root.addEventListener('webx:form:submit', (event) => {
     const place = event.target instanceof Element ? event.target : null
     if (place?.id !== PLACE) return
+    // A press still on its way is part of the order: the column comes back with its amount.
+    if (lines.busy()) {
+      event.preventDefault()
+      lines.flush().then((fine) => {
+        if (fine) root.querySelector(`#${PLACE}`)?.requestSubmit()
+      })
+      return
+    }
     passed ??= new Set()
     const next = unsaved(root, typed, passed)
     if (!next) {
@@ -293,10 +559,15 @@ export function start(doc = document) {
   if (slotEvent) {
     doc.addEventListener(slotEvent, (event) => {
       // Delivery changes what payment offers (§22.3); a part of the column changes only the column.
-      const keys = event.detail?.slot === 'delivery' ? ['payment'] : []
+      // `redraw`: the slot changed by itself, and its own step, maybe folded, says the old choice.
+      const { slot, redraw } = event.detail ?? {}
+      const keys = slot === 'delivery' ? ['payment'] : redraw ? [slot] : []
       keep(keys.length ? redrawPage(root, keys) : redrawSummary(root))
     })
   }
+
+  // The cart's own widget, where the layout has one, changes the same lines.
+  doc.addEventListener('webx:cart:change', () => keep(redrawCart(root)))
 
   doc.addEventListener('webx:users:signed-in', (event) => {
     event.preventDefault()

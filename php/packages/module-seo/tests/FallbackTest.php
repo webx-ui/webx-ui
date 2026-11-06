@@ -143,6 +143,21 @@ final class FallbackTest extends TestCase
         $this->assertStringEndsWith('word…', (string) $long->description);
     }
 
+    /* A lead as stored: the shortcodes are text before the cut, or it could land inside a bracket. */
+    #[Test]
+    public function the_fallback_lead_reads_its_shortcodes_before_it_is_cut(): void
+    {
+        app(Shortcodes::class)->register('phone', '<a href="tel:+8001">+800 1</a>', plain: '+800 1');
+        app(Shortcodes::class)->register('section', '<section><h2>Picks</h2>Trail camera 10.00 Buy</section>', block: true);
+
+        $this->assertSame('Call +800 1 now.', SeoData::fallback('A', '<p>Call [phone] now.</p>')->description);
+        $this->assertSame('Intro words.', SeoData::fallback('A', '<p>Intro words.</p><p>[section]</p>')->description);
+
+        $long = (string) SeoData::fallback('A', str_repeat('word ', 59).'[section key=a-rather-long-key-that-crosses-the-cut]')->description;
+
+        $this->assertStringNotContainsString('[', $long);
+    }
+
     #[Test]
     public function the_chain_shows_the_fallback_as_a_step_of_its_own(): void
     {

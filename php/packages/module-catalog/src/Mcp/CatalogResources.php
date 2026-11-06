@@ -45,7 +45,7 @@ final class CatalogResources
             new McpResource(
                 'catalog://fields',
                 'Units and switched-off fields',
-                'The units of measure this site uses and the one a product without a unit is priced in; whether price, barcode, the filters of a category and videos '
+                'The units of measure this site uses and the one a product without a unit is priced in; whether price, barcodes, the manufacturer part number (mpn), the filters of a category and videos '
                 .'in the gallery are on, and how large a video file may be. A switched-off field '
                 .'is not on the form and is refused — do not offer it.',
                 fn (): array => $this->fields(),
@@ -111,6 +111,8 @@ final class CatalogResources
             'price' => (bool) $config->get('webx-catalog.price.enabled', true),
             'currency' => $config->get('webx-catalog.price.currency'),
             'barcode' => (bool) $config->get('webx-catalog.fields.barcode', true),
+            'barcodes' => (bool) $config->get('webx-catalog.fields.barcode', true),
+            'mpn' => (bool) $config->get('webx-catalog.fields.mpn', true),
             'facets' => (bool) $config->get('webx-catalog.fields.facets', false),
             'video' => (bool) $config->get('webx-catalog.fields.video', true),
             'video_max_size_mb' => max(1, (int) $config->get('webx-catalog.videos.max_size_mb', 2048)),

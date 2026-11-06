@@ -38,6 +38,6 @@ final class ServiceRequest extends FormRequest
     {
         $slug = trim((string) $this->input('slug', ''));
 
-        return $slug !== '' ? $slug : Slug::make($this->title(), $locale);
+        return $slug !== '' ? $slug : Slug::address($this->title(), $locale);
     }
 }

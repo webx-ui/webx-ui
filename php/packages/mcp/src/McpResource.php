@@ -9,6 +9,10 @@ use Closure;
 /**
  * Something an agent can read by address rather than by calling: an audit listing, a report,
  * a rendered preview. Named McpResource because `Resource` is a reserved word in PHP 8.
+ *
+ * The handler is `fn (array $arguments, ?Authenticatable $user = null)`, as a tool's: the variables
+ * of the address, and the administrator asking — null on the local stdio server. A resource has no
+ * door of its own, so one that answers differently by person asks inside.
  */
 final class McpResource
 {

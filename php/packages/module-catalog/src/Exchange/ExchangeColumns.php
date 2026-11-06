@@ -60,6 +60,17 @@ final class ExchangeColumns
     }
 
     /**
+     * The columns registered by code, without what providers make up: the ones that are variables
+     * of a template by themselves.
+     *
+     * @return array<string, ExchangeColumn>
+     */
+    public function registered(): array
+    {
+        return $this->columns;
+    }
+
+    /**
      * Every column, the registered first, in the order they came.
      *
      * @return array<string, ExchangeColumn>

@@ -1,33 +1,21 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
-import {
-  WxAlert,
-  WxBadge,
-  WxButton,
-  WxIcon,
-  WxInputNumber,
-  WxLink,
-  WxSelect,
-  WxText,
-  type SelectOption,
-  WxPopconfirm,
-} from '@webx-ui/core'
-import { useAdmin, useErrorText, useRemoveConfirm, useTranslate } from '@webx-ui/module-admin'
+import { WxAlert, WxLink } from '@webx-ui/core'
+import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
+import { WxCatalogFacetSet } from '@webx-ui/module-catalog'
 import { cleanSet, createLandingsApi } from './api'
 import { useLandingEditor } from './editor'
 import { NAMESPACE, useCatalogLandingsMessages } from './i18n'
-import type { BaseFacet, LandingFilters, SetChoice, SetCount } from './types'
+import type { BaseFacet, LandingFilters, SetCount } from './types'
 
 /**
- * `wx-catalog-landing-set`: the set of a landing (§8.2 of the landings spec) — «add a facet» out of
- * the facets the base offers, its values in the same controls the products' filter uses (a list
- * of values with search, a range from–to), and beside them the live number of products and a
- * warning when another landing of the base already holds the set.
+ * `wx-catalog-landing-set`: the set of a landing (§8.2 of the landings spec). The field itself is
+ * the catalogue's `WxCatalogFacetSet`; what is a landing's lives here — the facets its base offers,
+ * the live number of products, the slugs the set suggests, and the warning when another landing of
+ * the base already holds the set.
  *
- * The facets are asked again when the base changes; a facet of the set the new base does not offer
- * stays, labelled by its key, so that changing the base never drops a choice silently — the save
- * says whether the set still makes sense.
+ * The facets are asked again when the base changes.
  */
 defineOptions({ name: 'WxCatalogLandingSet' })
 
@@ -39,8 +27,6 @@ const editor = useLandingEditor()
 useCatalogLandingsMessages()
 
 const t = useTranslate(NAMESPACE)
-const askRemove = useRemoveConfirm()
-const panel = useTranslate('webx-admin')
 const message = useErrorText()
 
 const locked = computed(() => editor?.locked.value ?? false)
@@ -55,14 +41,6 @@ const offered = ref<BaseFacet[]>([])
 const loadFailed = ref('')
 const set = computed<LandingFilters>(() =>
   value.value && !Array.isArray(value.value) ? value.value : {},
-)
-
-const facetOf = (key: string) => offered.value.find((facet) => facet.key === key)
-
-const adding = computed<SelectOption[]>(() =>
-  offered.value
-    .filter((facet) => !(facet.key in set.value))
-    .map((facet) => ({ value: facet.key, label: facet.label })),
 )
 
 let asked = 0
@@ -83,78 +61,9 @@ async function loadFacets(): Promise<void> {
 
 watch(category, () => void loadFacets(), { immediate: true })
 
-function isRange(key: string, choice: SetChoice): boolean {
-  const facet = facetOf(key)
-
-  return facet ? facet.kind === 'range' : !('values' in choice)
-}
-
-function write(next: LandingFilters): void {
-  value.value = next
-}
-
-function add(key: unknown): void {
-  const facet = facetOf(String(key))
-
-  if (!facet) return
-
-  write({
-    ...set.value,
-    [facet.key]: facet.kind === 'range' ? { min: null, max: null } : { values: [] },
-  })
-}
-
-function remove(key: string): void {
-  const next = { ...set.value }
-
-  delete next[key]
-  write(next)
-}
-
-function valuesOf(choice: SetChoice): string[] {
-  return 'values' in choice ? choice.values : []
-}
-
-function rangeOf(choice: SetChoice): { min: number | null; max: number | null } {
-  return 'values' in choice ? { min: null, max: null } : choice
-}
-
-function optionsOf(key: string, choice: SetChoice): SelectOption[] {
-  const known = facetOf(key)?.values ?? []
-  const options: SelectOption[] = known.map((one) => ({
-    value: one.value,
-    label: `${one.label} (${one.count})`,
-  }))
-
-  // A chosen value the base has no products of is still a choice: shown, not dropped.
-  for (const chosen of valuesOf(choice)) {
-    if (!known.some((one) => one.value === chosen)) {
-      const word = chipWord(key, chosen)
-      options.push({ value: chosen, label: `${word} (0)` })
-    }
-  }
-
-  return options
-}
-
 /** The saved landing's chip says what a value is called when the base no longer counts it. */
-function chipWord(key: string, chosen: string): string {
-  return editor?.landing.value?.chips.find((chip) => chip.key === key)?.text ?? `#${chosen}`
-}
-
-function pick(key: string, picked: unknown): void {
-  write({ ...set.value, [key]: { values: Array.isArray(picked) ? picked.map(String) : [] } })
-}
-
-function bound(key: string, end: 'min' | 'max', picked: number | null | undefined): void {
-  const choice = set.value[key]
-  const range = choice ? rangeOf(choice) : { min: null, max: null }
-
-  write({ ...set.value, [key]: { ...range, [end]: picked ?? null } })
-}
-
-function labelOf(key: string): string {
-  return facetOf(key)?.label ?? key
+function chipWord(key: string): string | undefined {
+  return editor?.landing.value?.chips.find((chip) => chip.key === key)?.text
 }
 
 /* -------------------------------------------------------------------- the count --- */
@@ -219,109 +128,14 @@ const takenLink = computed(() =>
   <div class="wx-catalog-landing-set">
     <wx-alert v-if="loadFailed" type="danger">{{ loadFailed }}</wx-alert>
 
-    <wx-text v-if="Object.keys(set).length === 0" tone="muted" size="sm">
-      {{ t('landing.set-empty') }}
-    </wx-text>
-
-    <div
-      v-for="(choice, key) in set"
-      :key="key"
-      class="wx-catalog-landing-set__row"
-      :data-facet="key"
-    >
-      <wx-text class="wx-catalog-landing-set__label" size="sm" weight="medium">
-        {{ labelOf(String(key)) }}
-      </wx-text>
-
-      <div v-if="isRange(String(key), choice)" class="wx-catalog-landing-set__range">
-        <wx-input-number
-          :model-value="rangeOf(choice).min"
-          :controls="false"
-          :disabled="locked"
-          size="sm"
-          :placeholder="facetOf(String(key))?.min?.toString() ?? t('landing.set-from')"
-          :aria-label="`${labelOf(String(key))}: ${t('landing.set-from')}`"
-          @update:model-value="
-            (picked: number | null | undefined) => bound(String(key), 'min', picked)
-          "
-        />
-        <wx-input-number
-          :model-value="rangeOf(choice).max"
-          :controls="false"
-          :disabled="locked"
-          size="sm"
-          :placeholder="facetOf(String(key))?.max?.toString() ?? t('landing.set-to')"
-          :aria-label="`${labelOf(String(key))}: ${t('landing.set-to')}`"
-          @update:model-value="
-            (picked: number | null | undefined) => bound(String(key), 'max', picked)
-          "
-        />
-      </div>
-
-      <wx-select
-        v-else
-        :empty-text="panel('filters.nothing-found')"
-        class="wx-catalog-landing-set__values"
-        :model-value="valuesOf(choice)"
-        :options="optionsOf(String(key), choice)"
-        multiple
-        filterable
-        clearable
-        size="sm"
-        :disabled="locked"
-        :placeholder="t('landing.set-values')"
-        :aria-label="labelOf(String(key))"
-        @update:model-value="(picked: unknown) => pick(String(key), picked)"
-      />
-
-      <wx-popconfirm
-        :title="askRemove.confirm"
-        :confirm-text="askRemove.confirmText"
-        :cancel-text="askRemove.cancelText"
-        confirm-type="danger"
-        :disabled="locked"
-        @confirm="remove(String(key))"
-      >
-        <template #trigger>
-          <wx-button
-            variant="text"
-            size="sm"
-            :disabled="locked"
-            :aria-label="t('landing.set-remove')"
-            :title="t('landing.set-remove')"
-          >
-            <template #icon><wx-icon name="close" /></template>
-          </wx-button>
-        </template>
-      </wx-popconfirm>
-    </div>
-
-    <div class="wx-catalog-landing-set__foot">
-      <wx-select
-        v-if="adding.length > 0"
-        :empty-text="panel('filters.nothing-found')"
-        class="wx-catalog-landing-set__add"
-        :model-value="null"
-        :options="adding"
-        filterable
-        size="sm"
-        :disabled="locked"
-        :placeholder="t('landing.set-add')"
-        :aria-label="t('landing.set-add')"
-        @update:model-value="add"
-      />
-
-      <wx-text v-if="counting" size="sm" tone="muted">{{ t('landing.set-counting') }}</wx-text>
-      <wx-badge
-        v-else-if="counted"
-        class="wx-catalog-landing-set__count"
-        :type="counted.count > 0 ? 'success' : 'warning'"
-        size="sm"
-        round
-      >
-        {{ t('landing.set-count', { count: counted.count }) }}
-      </wx-badge>
-    </div>
+    <wx-catalog-facet-set
+      v-model="value"
+      :facets="offered"
+      :disabled="locked"
+      :count="counted?.count ?? null"
+      :counting="counting"
+      :value-label="chipWord"
+    />
 
     <wx-alert v-if="countFailed" type="danger">{{ countFailed }}</wx-alert>
 
@@ -339,42 +153,6 @@ const takenLink = computed(() =>
   display: flex;
   flex-direction: column;
   gap: var(--wx-space-8);
-  container-type: inline-size;
   min-width: 0;
-}
-
-.wx-catalog-landing-set__row {
-  display: grid;
-  grid-template-columns: minmax(96px, 160px) minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--wx-space-8);
-}
-
-.wx-catalog-landing-set__range {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--wx-space-8);
-}
-
-.wx-catalog-landing-set__foot {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--wx-space-12);
-}
-
-.wx-catalog-landing-set__add {
-  width: 240px;
-  max-width: 100%;
-}
-
-@container (max-width: 480px) {
-  .wx-catalog-landing-set__row {
-    grid-template-columns: minmax(0, 1fr) auto;
-  }
-
-  .wx-catalog-landing-set__label {
-    grid-column: 1 / -1;
-  }
 }
 </style>

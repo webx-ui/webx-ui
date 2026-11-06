@@ -36,6 +36,9 @@ use WebxUi\Payments\GatewayUnavailable;
 use WebxUi\Payments\HoldRefused;
 use WebxUi\Payments\Kind;
 use WebxUi\Payments\MarkRefused;
+use WebxUi\Payments\Method;
+use WebxUi\Payments\MethodGroup;
+use WebxUi\Payments\MethodGroups;
 use WebxUi\Payments\Methods;
 use WebxUi\Payments\MethodTypes;
 use WebxUi\Payments\Models\Payment;
@@ -47,10 +50,12 @@ use WebxUi\Payments\Panel\AttemptRows;
 use WebxUi\Payments\Panel\EventNames;
 use WebxUi\Payments\Panel\EventRows;
 use WebxUi\Payments\Panel\ExchangeQuery;
+use WebxUi\Payments\Panel\GroupForm;
 use WebxUi\Payments\Panel\MethodForm;
 use WebxUi\Payments\Panel\OrderPaymentCard;
 use WebxUi\Payments\Panel\PaymentsSection;
 use WebxUi\Payments\PaymentContext;
+use WebxUi\Payments\PaymentMarks;
 use WebxUi\Payments\Payments;
 use WebxUi\Payments\PaymentStatus;
 use WebxUi\Payments\ProblemRefused;
@@ -59,9 +64,9 @@ use WebxUi\Payments\Words;
 
 /**
  * The payments for an agent (spec §16) — by the panel's own doors, so the two never tell two
- * stories: a method is saved by {@see MethodForm}, the lists are {@see AttemptQuery} and
- * {@see ExchangeQuery}, an order's payment is {@see OrderPaymentCard}, and every action is a call
- * of {@see Payments} with the source `mcp`.
+ * stories: a method is saved by {@see MethodForm}, a group and the order by {@see GroupForm}, the
+ * lists are {@see AttemptQuery} and {@see ExchangeQuery}, an order's payment is
+ * {@see OrderPaymentCard}, and every action is a call of {@see Payments} with the source `mcp`.
  *
  * The gateway's keys are neither shown nor taken: a method says which keys are set, never their
  * values (§15.2). The exchange journal is read only (decision 31): a list without bodies for
@@ -103,7 +108,9 @@ final class PaymentsTools
                 'The payment methods in the order of the checkout: key, type and its title, kind (offline, online), the '
                 .'gateway, the title in the language of the site and by language, enabled, position, the rule of delivery, '
                 .'the limits of the amount (minor units and in words), the settings of the type (the bank details of a '
-                .'transfer), the hold, the address the gateway posts its notifications to, and the keys as '
+                .'transfer), the hold, the address the gateway posts its notifications to, the group it stands in (`group`; '
+                .'`group_key` — the move a manager made, null — it follows its type), its `marks`, `similar_to` — the '
+                .'methods of its group a buyer could mistake it for, and the keys as '
                 .'`credentials: ["secret_key: set", "shop_id: missing"]` — never their values.',
                 fn (): array => $this->methods(),
                 permission: self::READ,
@@ -112,11 +119,13 @@ final class PaymentsTools
             Tool::mutating(
                 'methods_save',
                 'Create a method of a type (`type`, as payments://catalog lists them) or change one by its `key`. `values`: '
-                .'titles and descriptions (a string — the default language — or { "en": "…" }), enabled, delivery_mode '
+                .'titles and descriptions (a string — the default language — or { "en": "…" }), enabled, group (a key of '
+                .'payments_groups_list, the method goes to its end; null — the group of its type), delivery_mode '
                 .'(any, on_hand, methods, except) with delivery_methods (keys of delivery methods), min_amount and '
                 .'max_amount in major units (4.5 is 4.50; null — no limit), settings (the fields of the type: the bank '
                 .'details of a transfer by language, the gateway\'s settings, `hold`; a pair the type does not allow is refused). A field left out keeps what it '
-                .'had; a new method is switched off until `enabled: true`. The gateway\'s keys are set in the panel only.',
+                .'had; a new method is switched off until `enabled: true`. The gateway\'s keys are set in the panel only. '
+                .'`warnings`: what the panel would warn of, such as a method of the group with the same marks; never a refusal.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->saveMethod($arguments, $user)),
                 ['properties' => [
                     'key' => $method,
@@ -127,19 +136,58 @@ final class PaymentsTools
 
             Tool::mutating(
                 'methods_reorder',
-                'Put the methods in a new order — the order the checkout lists them in. Name them by key, first to last; '
-                .'those left out follow in the order they had.',
+                'Put the methods in a new order — the order the checkout lists them in inside their groups. `methods`: '
+                .'keys, first to last, those left out follow in the order they had; no method changes group. `groups`: '
+                .'[{ "key": "online", "methods": ["…"] }] — the methods of each group named, first to last, as dragged in the '
+                .'panel: one named under another group moves there, one left out stays in its group after those named. The '
+                .'order of the groups themselves is payments_groups_reorder.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->reorder($arguments)),
                 ['properties' => [
                     'methods' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Method keys, first to last.'],
-                ], 'required' => ['methods']],
+                    'groups' => ['type' => 'array', 'items' => ['type' => 'object'], 'description' => 'Instead of `methods`: { key, methods } of the groups to change.'],
+                ]],
+            ),
+
+            Tool::read(
+                'groups_list',
+                'The groups of the checkout in the order the buyer sees them, empty ones too: key, title and description in '
+                .'the language of the site and by language (`titles`, `descriptions` — the manager\'s edits; `config_title` — '
+                .'what an empty title falls back to), the pictogram, the keys of its methods (switched off too) and the marks '
+                .'its enabled methods show. Which groups there are is the site\'s config: an empty list means a flat checkout.',
+                fn (): array => $this->groups(),
+                permission: self::READ,
+            ),
+
+            Tool::mutating(
+                'groups_save',
+                'Change a group by its `key`, as «Edit» of the panel: `values` — titles and descriptions (a string — the '
+                .'default language — or { "en": "…" }; the languages not named stay, an empty one goes back to the config, '
+                .'null clears them all) and pictogram (a name of payments://catalog; null — the config\'s). A field left out '
+                .'keeps what it had. A group is neither created nor removed here: that is the site\'s config.',
+                fn (array $arguments): array => $this->attempt(fn (): array => $this->saveGroup($arguments)),
+                ['properties' => [
+                    'key' => ['type' => 'string', 'description' => 'The group, as payments_groups_list gives it.'],
+                    'values' => ['type' => 'object', 'description' => 'Field → value; see the description.'],
+                ], 'required' => ['key', 'values']],
+            ),
+
+            Tool::mutating(
+                'groups_reorder',
+                'Put the groups in the order the buyer sees them. Name them by key, first to last; those left out follow '
+                .'in the order they had. The methods stay in their groups.',
+                fn (array $arguments): array => $this->attempt(fn (): array => $this->reorderGroups($arguments)),
+                ['properties' => [
+                    'groups' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Group keys, first to last.'],
+                ], 'required' => ['groups']],
             ),
 
             Tool::read(
                 'available',
                 'A trial of the checkout\'s step: every enabled method for an amount, a currency and a delivery — or for '
                 .'a real cart (`cart_id`) as its checkout stands — with whether it is offered and, if not, why (nothing '
-                .'to pay, the type not installed, the currency, the limits, the rule of delivery, no keys). Nothing is kept.',
+                .'to pay, the type not installed, the currency, the limits, the rule of delivery, no keys), its `group`, and '
+                .'`apple_pay_only`: such a method is offered here, yet the buyer\'s browser decides whether it is shown '
+                .'(`apple_pay` says so). Nothing is kept.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->available($arguments)),
                 ['properties' => [
                     'amount' => ['type' => 'integer', 'description' => '«To pay» in minor units.'],
@@ -335,7 +383,15 @@ final class PaymentsTools
     /** @return array<string, mixed> */
     private function method(PaymentMethod $method, MethodForm $form): array
     {
-        $described = $form->describe($method);
+        return $this->described($method, $form->describe($method));
+    }
+
+    /**
+     * @param  array<string, mixed>  $described  of `MethodForm::describe()`
+     * @return array<string, mixed>
+     */
+    private function described(PaymentMethod $method, array $described): array
+    {
         $row = $described['method'];
         $currency = $this->currency();
         $money = $this->money();
@@ -380,7 +436,7 @@ final class PaymentsTools
             }
         }
 
-        Arguments::refuseUnknown($values, ['titles', 'descriptions', 'enabled', 'delivery_mode', 'delivery_methods', 'min_amount', 'max_amount', 'settings'], 'payments_methods_save');
+        Arguments::refuseUnknown($values, ['titles', 'descriptions', 'enabled', 'group', 'delivery_mode', 'delivery_methods', 'min_amount', 'max_amount', 'settings'], 'payments_methods_save');
 
         $key = $arguments['key'] ?? null;
         $types = $this->container->make(MethodTypes::class);
@@ -422,16 +478,25 @@ final class PaymentsTools
             }
         }
 
+        if (array_key_exists('group', $values)) {
+            $screen['group_key'] = $values['group'];
+        }
+
         $created = ! $method->exists;
         $form = $this->container->make(MethodForm::class);
         $can = $user instanceof HasPermissions
             ? static fn (string $permission): bool => $user->hasPermission($permission)
             : null;
 
-        $work = fn (): array => $this->method($form->save($method, $screen, $settings, null, null, $can), $form);
+        $work = function () use ($form, $method, $screen, $settings, $can): array {
+            $saved = $form->save($method, $screen, $settings, null, null, $can);
+            $described = $form->describe($saved);
+
+            return ['method' => $this->described($saved, $described), 'warnings' => $described['warnings']];
+        };
         $dryRun = $this->dryRun($arguments);
 
-        return ['method' => $dryRun ? $this->rehearse($work) : $work(), 'created' => $created, 'dry_run' => $dryRun];
+        return [...($dryRun ? $this->rehearse($work) : $work()), 'created' => $created, 'dry_run' => $dryRun];
     }
 
     /**
@@ -458,6 +523,10 @@ final class PaymentsTools
     private function reorder(array $arguments): array
     {
         $given = $arguments['methods'] ?? null;
+
+        if (array_key_exists('groups', $arguments)) {
+            return $given === null ? $this->reorderInGroups($arguments) : throw new ToolFailure('Name `methods` or `groups`, not both.');
+        }
 
         if (! is_array($given) || $given === [] || array_filter($given, 'is_string') !== $given) {
             throw new ToolFailure('`methods` is a list of method keys, first to last.');
@@ -491,6 +560,241 @@ final class PaymentsTools
     }
 
     /**
+     * The methods as dragged in the panel, of the groups named: the rest of the list stays as it is.
+     *
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function reorderInGroups(array $arguments): array
+    {
+        $form = $this->container->make(GroupForm::class);
+        $layout = $form->layout();
+        $named = $this->namedInGroups($arguments['groups'], array_keys($layout));
+        $ids = [];
+
+        foreach (array_merge([], ...array_values($layout)) as $row) {
+            $ids[$row->key] = $row->id;
+        }
+
+        $all = array_merge([], ...array_values($named));
+        $unknown = array_values(array_diff($all, array_keys($ids)));
+
+        if ($unknown !== []) {
+            throw new ToolFailure('No such method: '.implode(', ', $unknown).'. payments_methods_list names them.');
+        }
+
+        $twice = array_values(array_unique(array_diff_assoc($all, array_unique($all))));
+
+        if ($twice !== []) {
+            throw new ToolFailure('Named twice: '.implode(', ', $twice).'.');
+        }
+
+        $order = [];
+
+        foreach ($layout as $key => $rows) {
+            $stayed = array_map(static fn (PaymentMethod $row): string => $row->key, $rows);
+            $order[$key] = [...($named[$key] ?? []), ...array_values(array_diff($stayed, $all))];
+        }
+
+        return $this->writeOrder($form, $order, $ids, $arguments);
+    }
+
+    /**
+     * @param  list<string>  $known  the keys of the groups of the site
+     * @return array<string, list<string>> the method keys named, by group
+     */
+    private function namedInGroups(mixed $groups, array $known): array
+    {
+        $named = [];
+
+        foreach (is_array($groups) && $groups !== [] ? $groups : [null] as $group) {
+            $key = is_array($group) ? ($group['key'] ?? null) : null;
+            $methods = is_array($group) ? ($group['methods'] ?? null) : null;
+
+            if (! is_string($key) || ! is_array($methods) || ! array_is_list($methods) || array_filter($methods, 'is_string') !== $methods) {
+                throw new ToolFailure('`groups` is a list of { "key": "<group>", "methods": ["<method key>", …] }.');
+            }
+
+            if (! in_array($key, $known, true)) {
+                throw $this->unknownGroup($key);
+            }
+
+            if (array_key_exists($key, $named)) {
+                throw new ToolFailure("Named twice: {$key}.");
+            }
+
+            $named[$key] = $methods;
+        }
+
+        return $named;
+    }
+
+    /**
+     * The panel's own write of the order, so a move keeps what it keeps there (groups spec §7).
+     *
+     * @param  array<string, list<string>>  $order  method keys by group
+     * @param  array<string, int>  $ids  method ids by key
+     * @param  array<string, mixed>  $arguments
+     * @return array{groups: list<array{key: string, methods: list<string>}>, dry_run: bool}
+     */
+    private function writeOrder(GroupForm $form, array $order, array $ids, array $arguments): array
+    {
+        $groups = [];
+        $lines = [];
+
+        foreach ($order as $key => $methods) {
+            $groups[] = ['key' => $key, 'methods' => array_map(static fn (string $method): int => $ids[$method], $methods)];
+            $lines[] = ['key' => $key, 'methods' => $methods];
+        }
+
+        $dryRun = $this->dryRun($arguments);
+        $work = static fn () => $form->order($groups);
+        $dryRun ? $this->rehearse($work) : $work();
+
+        return ['groups' => $lines, 'dry_run' => $dryRun];
+    }
+
+    // Groups
+
+    /** @return array<string, mixed> */
+    private function groups(): array
+    {
+        $form = $this->container->make(GroupForm::class);
+        $layout = $form->layout();
+
+        return [
+            'groups' => array_map(fn (array $row): array => [
+                ...$row,
+                'methods' => array_map(static fn (PaymentMethod $method): string => $method->key, $layout[$row['key']]),
+                'marks' => $this->marksOf($layout[$row['key']]),
+            ], $form->rows()),
+        ];
+    }
+
+    /**
+     * What the enabled methods of a group show: once each, in the order of the page.
+     *
+     * @param  list<PaymentMethod>  $rows
+     * @return list<string>
+     */
+    private function marksOf(array $rows): array
+    {
+        $types = $this->container->make(MethodTypes::class);
+        $marks = $this->container->make(PaymentMarks::class);
+        $shown = [];
+
+        foreach ($rows as $row) {
+            if ($row->enabled && $types->has($row->type)) {
+                $shown = [...$shown, ...$marks->of(Method::of($row), $types->get($row->type))];
+            }
+        }
+
+        return $marks->known($shown);
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function saveGroup(array $arguments): array
+    {
+        $key = $arguments['key'] ?? null;
+        $values = $arguments['values'] ?? null;
+        $group = null;
+
+        foreach ($this->container->make(MethodGroups::class)->all() as $one) {
+            $group = $one->key === $key ? $one : $group;
+        }
+
+        if (! $group instanceof MethodGroup) {
+            throw $this->unknownGroup($this->scalar($key));
+        }
+
+        if (! is_array($values)) {
+            throw new ToolFailure('`values` is an object of field → value.');
+        }
+
+        Arguments::refuseUnknown($values, ['titles', 'descriptions', 'pictogram'], 'payments_groups_save');
+
+        $input = [];
+
+        foreach (['titles' => $group->titles, 'descriptions' => $group->descriptions] as $field => $kept) {
+            if (array_key_exists($field, $values)) {
+                $input[$field] = $this->edited($values[$field], $kept, $field);
+            }
+        }
+
+        if (array_key_exists('pictogram', $values)) {
+            $input['pictogram'] = $values['pictogram'];
+        }
+
+        $form = $this->container->make(GroupForm::class);
+        $work = static fn (): array => $form->save($group->key, $input);
+        $dryRun = $this->dryRun($arguments);
+
+        return ['group' => $dryRun ? $this->rehearse($work) : $work(), 'dry_run' => $dryRun];
+    }
+
+    /**
+     * The words of a group after an edit. The panel always sends every language; an agent names
+     * one, and that must not wipe the others. An empty one is kept empty here: the form drops it.
+     *
+     * @param  array<string, string>  $kept
+     * @return array<string, string>
+     */
+    private function edited(mixed $value, array $kept, string $field): array
+    {
+        if ($value === null) {
+            return [];
+        }
+
+        $texts = $this->texts($value, $field);
+
+        return [...$kept, ...(is_array($value) ? array_fill_keys(array_map('strval', array_keys($value)), '') : []), ...$texts];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function reorderGroups(array $arguments): array
+    {
+        $given = $arguments['groups'] ?? null;
+
+        if (! is_array($given) || $given === [] || array_filter($given, 'is_string') !== $given) {
+            throw new ToolFailure('`groups` is a list of group keys, first to last.');
+        }
+
+        $form = $this->container->make(GroupForm::class);
+        $layout = $form->layout();
+        $unknown = array_values(array_diff($given, array_keys($layout)));
+
+        if ($unknown !== []) {
+            throw $this->unknownGroup(implode(', ', $unknown));
+        }
+
+        $order = [];
+        $ids = [];
+
+        foreach (array_unique([...$given, ...array_keys($layout)]) as $key) {
+            $order[$key] = array_map(static fn (PaymentMethod $row): string => $row->key, $layout[$key]);
+
+            foreach ($layout[$key] as $row) {
+                $ids[$row->key] = $row->id;
+            }
+        }
+
+        return $this->writeOrder($form, $order, $ids, $arguments);
+    }
+
+    private function unknownGroup(string $key): ToolFailure
+    {
+        return new ToolFailure("Unknown group: {$key}. payments_groups_list names them; a group is added or removed in the site's config, not here.");
+    }
+
+    // The trial
+
+    /**
      * @param  array<string, mixed>  $arguments
      * @return array<string, mixed>
      */
@@ -502,9 +806,12 @@ final class PaymentsTools
 
         foreach ($methods->explain($context) as $key => $availability) {
             $method = $methods->find($key);
+            $option = $method !== null ? $methods->option($method, $context) : null;
             $answers[] = [
                 'key' => $key,
-                'title' => $method !== null ? $methods->option($method, $context)->title : $key,
+                'title' => $option->title ?? $key,
+                'group' => $option?->group,
+                'apple_pay_only' => $option->applePayOnly ?? false,
                 'available' => $availability->available,
                 'reason' => $availability->reason,
                 'reason_text' => $availability->message($context->locale),
@@ -519,6 +826,10 @@ final class PaymentsTools
             // The step would say «Choose delivery first»: some methods wait for it (§7.3).
             'waiting_for_delivery' => $methods->waitingForDelivery($context),
             'methods' => $answers,
+            // The server cannot know the buyer's device: the page asks the browser (groups spec §4).
+            'apple_pay' => in_array(true, array_column($answers, 'apple_pay_only'), true)
+                ? 'A method marked `apple_pay_only` is shown only where the buyer\'s browser says Apple Pay works: `available` here is not the last word.'
+                : null,
         ];
     }
 
@@ -908,8 +1219,9 @@ final class PaymentsTools
             ->orderByDesc('id')->limit(50)->get(['id', 'number', 'payment_failed_at']);
 
         $form = $this->container->make(MethodForm::class);
+        $similar = $form->similar();
         $keyless = PaymentMethod::query()->where('enabled', true)->orderBy('position')->get()
-            ->map(static fn (PaymentMethod $method): array => $form->row($method))
+            ->map(static fn (PaymentMethod $method): array => $form->row($method, $similar))
             ->filter(static fn (array $row): bool => array_intersect($row['warnings'], ['no_credentials', 'credentials_unreadable', 'gateway_missing', 'type_missing']) !== [])
             ->map(static fn (array $row): array => ['key' => $row['key'], 'title' => $row['title'], 'warnings' => $row['warnings']])
             ->values()->all();

@@ -48,10 +48,23 @@ final class OverriddenViewsCheckTest extends TestCase
 
         $found = $this->app->make(OverriddenViewsCheck::class)->run();
 
-        $this->assertCount(1, $found);
+        $this->assertCount(2, $found);
         $this->assertSame(Diagnosis::WARN, $found[0]->state);
         $this->assertStringContainsString($path, $found[0]->detail);
         $this->assertStringContainsString('prompt', $found[0]->detail);
+        $this->assertStringContainsString('offer', $found[1]->detail);
+    }
+
+    #[Test]
+    public function an_order_page_from_before_the_offer_is_named(): void
+    {
+        $path = $this->override('webx-orders', 'order/body.blade.php', '{!! $order[\'prompt\'][\'html\'] ?? \'\' !!}');
+
+        $found = $this->app->make(OverriddenViewsCheck::class)->run();
+
+        $this->assertCount(1, $found);
+        $this->assertStringContainsString($path, $found[0]->detail);
+        $this->assertStringContainsString('Pay online now', $found[0]->detail);
     }
 
     #[Test]
@@ -68,7 +81,7 @@ final class OverriddenViewsCheckTest extends TestCase
     #[Test]
     public function a_copy_brought_up_to_date_says_nothing(): void
     {
-        $this->override('webx-orders', 'order/body.blade.php', '{!! $order[\'prompt\'][\'html\'] ?? \'\' !!}');
+        $this->override('webx-orders', 'order/body.blade.php', '{!! $order[\'prompt\'][\'html\'] ?? \'\' !!} {!! $order[\'offer\'] !!}');
         $this->override('webx-payments', 'pay/page.blade.php', '@case(\'declined\')');
 
         $this->assertSame([], $this->app->make(OverriddenViewsCheck::class)->run());

@@ -29,11 +29,17 @@ use WebxUi\Payments\Exchange\ExchangeKind;
 use WebxUi\Payments\Gateways;
 use WebxUi\Payments\Method;
 use WebxUi\Payments\MethodCredentials;
+use WebxUi\Payments\MethodGroup;
+use WebxUi\Payments\MethodGroups;
+use WebxUi\Payments\Methods;
 use WebxUi\Payments\MethodTypes;
 use WebxUi\Payments\Models\PaymentMethod;
 use WebxUi\Payments\Online\GatewayCalls;
 use WebxUi\Payments\Online\PaymentLinks;
 use WebxUi\Payments\PaymentContext;
+use WebxUi\Payments\PaymentMark;
+use WebxUi\Payments\PaymentMarks;
+use WebxUi\Payments\SimilarMethods;
 use WebxUi\Payments\Words;
 
 /**
@@ -51,7 +57,7 @@ final readonly class MethodForm
     public const string SCREEN = 'payments.method-form';
 
     /** The columns the screen writes; the rule and the amounts are put together from its fields. */
-    private const array OWN = ['titles', 'descriptions', 'enabled', 'delivery_mode', 'delivery_methods', 'delivery_keys', 'min_amount', 'max_amount'];
+    private const array OWN = ['titles', 'descriptions', 'enabled', 'group_key', 'delivery_mode', 'delivery_methods', 'delivery_keys', 'min_amount', 'max_amount'];
 
     /** The setting a type that holds money keeps its switch under (§9.5). */
     public const string HOLD = 'hold';
@@ -66,6 +72,10 @@ final readonly class MethodForm
         private Locales $locales,
         private Money $money,
         private CurrencySource $currencies,
+        private MethodGroups $groups,
+        private Methods $methods,
+        private PaymentMarks $marks,
+        private SimilarMethods $similarMethods,
     ) {}
 
     /**
@@ -92,9 +102,54 @@ final readonly class MethodForm
         return $rows;
     }
 
-    /** @return array<string, mixed> a line of the list */
-    public function row(PaymentMethod $method): array
+    /**
+     * Which enabled methods the buyer could mistake for one another (groups spec §5), by key, each
+     * with what to call it. Worked out once for a whole list: `row()` takes it.
+     *
+     * @return array<string, list<array{key: string, title: string}>>
+     */
+    public function similar(): array
     {
+        $locale = $this->locales->current();
+        $enabled = $this->methods->enabled();
+        $titles = [];
+
+        foreach ($enabled as $method) {
+            $type = $this->types->has($method->type) ? $this->types->get($method->type) : null;
+            $titles[$method->key] = Words::pick($method->titles, $locale) ?? ($type !== null ? $this->typeTitle($type, $locale) : $method->key);
+        }
+
+        return array_map(
+            static fn (array $keys): array => array_map(static fn (string $key): array => ['key' => $key, 'title' => $titles[$key]], $keys),
+            $this->similarMethods->of($enabled),
+        );
+    }
+
+    /**
+     * How the marks of these rows are drawn: a mark is read-only in the panel (decision 2).
+     *
+     * @param  list<array<string, mixed>>  $rows
+     * @return array<string, array{alt: string, url: string|null, width: int, height: int}>
+     */
+    public function marks(array $rows): array
+    {
+        $marks = [];
+
+        foreach ($this->marks->known(array_merge(...array_map(static fn (array $row): array => $row['marks'], [['marks' => []], ...$rows]))) as $key) {
+            $mark = $this->marks->get($key);
+            $marks[$key] = ['alt' => $mark->alt, 'url' => $mark->url(), 'width' => $mark->width, 'height' => PaymentMark::HEIGHT];
+        }
+
+        return $marks;
+    }
+
+    /**
+     * @param  array<string, list<array{key: string, title: string}>>|null  $similar  of `similar()`, for a list
+     * @return array<string, mixed> a line of the list
+     */
+    public function row(PaymentMethod $method, ?array $similar = null): array
+    {
+        $similar ??= $this->similar();
         $locale = $this->locales->current();
         $type = $this->types->has($method->type) ? $this->types->get($method->type) : null;
         $gateway = $type !== null ? $this->gateway($type) : null;
@@ -127,6 +182,10 @@ final readonly class MethodForm
             'warnings' => $warnings,
             'enabled' => $method->enabled,
             'position' => $method->position,
+            'group' => $this->groups->current($one = Method::of($method), $type),
+            'group_key' => $method->group_key,
+            'marks' => $type !== null ? $this->marks->of($one, $type) : [],
+            'similar_to' => $similar[$method->key] ?? [],
         ];
     }
 
@@ -135,11 +194,32 @@ final readonly class MethodForm
     {
         $type = $this->types->has($method->type) ? $this->types->get($method->type) : null;
 
+        $row = $this->row($method);
+
         return [
-            'method' => $this->row($method),
+            'method' => $row,
             'values' => $this->values($method),
+            'warnings' => $this->warnings($row),
             ...$this->typeParts($type, $method),
         ];
+    }
+
+    /**
+     * What the form says over its fields, and the answer of a save with it (groups spec §5). It
+     * warns and never refuses: several gateways on one site are allowed (decision 5).
+     *
+     * @param  array<string, mixed>  $row
+     * @return list<string>
+     */
+    private function warnings(array $row): array
+    {
+        if ($row['similar_to'] === []) {
+            return [];
+        }
+
+        return [count($row['marks']) === 1
+            ? (string) __('webx-payments::panel.method.similar-one', ['mark' => $this->marks->get($row['marks'][0])->alt])
+            : (string) __('webx-payments::panel.method.similar-many')];
     }
 
     /**
@@ -183,6 +263,10 @@ final readonly class MethodForm
             $method->enabled = (bool) $own['enabled'];
         }
 
+        if (array_key_exists('group_key', $own)) {
+            $method->group_key = $this->groupKey($method, $type, $own['group_key']);
+        }
+
         if (array_key_exists('delivery_mode', $own)) {
             $method->delivery_rule = $this->rule($own);
         }
@@ -212,9 +296,13 @@ final readonly class MethodForm
         }
 
         return DB::transaction(function () use ($method): PaymentMethod {
+            // A method chosen into another group goes to its end: where its old place falls there is chance.
+            if (! $method->exists || $method->isDirty('group_key')) {
+                $method->position = (int) PaymentMethod::query()->max('position') + 1;
+            }
+
             if (! $method->exists) {
                 $method->key = $this->key($method->type);
-                $method->position = (int) PaymentMethod::query()->max('position') + 1;
             }
 
             $method->save();
@@ -279,6 +367,7 @@ final readonly class MethodForm
         $one = $method !== null ? Method::of($method) : null;
 
         return [
+            'groups' => $this->groupOptions($type),
             'settings' => [
                 'fields' => $fields,
                 'values' => (object) array_intersect_key($method->settings ?? [], array_flip(array_column($fields, 'name'))),
@@ -443,12 +532,53 @@ final readonly class MethodForm
             'titles' => $method->title,
             'descriptions' => $method->description ?? [],
             'enabled' => $method->enabled,
+            // A move to a group the site no longer has reads as the type's: it is not on the list.
+            'group_key' => $method->group_key !== null && $this->groups->has($method->group_key) ? $method->group_key : '',
             'delivery_mode' => $rule->mode,
             'delivery_methods' => $rule->methods,
             'delivery_keys' => implode(', ', $rule->methods),
             'min_amount' => $method->min_amount === null ? null : $this->major($method->min_amount),
             'max_amount' => $method->max_amount === null ? null : $this->major($method->max_amount),
         ];
+    }
+
+    /**
+     * The choice of the field «Group» (groups spec §7): the group of the type under its own name,
+     * then the groups of the site. No group on the site, no choice: the form drops the field.
+     *
+     * @return list<array{value: string, label: string}>
+     */
+    private function groupOptions(?MethodType $type): array
+    {
+        $groups = $this->groups->all();
+
+        if ($groups === []) {
+            return [];
+        }
+
+        $locale = $this->locales->current();
+        $own = $type !== null ? $this->groups->ofType($type) : $groups[0]->key;
+        $default = array_values(array_filter($groups, static fn (MethodGroup $group): bool => $group->key === $own))[0] ?? $groups[0];
+
+        return [
+            ['value' => '', 'label' => (string) __('webx-payments::panel.method.group-default', ['group' => $default->title($locale)])],
+            ...array_map(static fn (MethodGroup $group): array => ['value' => $group->key, 'label' => $group->title($locale)], $groups),
+        ];
+    }
+
+    /** What the row keeps of the field «Group»: choosing the type's own group is no move at all. */
+    private function groupKey(PaymentMethod $method, MethodType $type, mixed $value): ?string
+    {
+        if ($value === null || $value === '') {
+            // The form could not show a move to a group gone from the config: keep it for its return (§2.6).
+            return $method->group_key !== null && ! $this->groups->has($method->group_key) ? $method->group_key : null;
+        }
+
+        if (! is_string($value) || ! $this->groups->has($value)) {
+            throw ValidationException::withMessages(['group_key' => [__('webx-payments::panel.errors.unknown_group', ['key' => is_scalar($value) ? (string) $value : ''])]]);
+        }
+
+        return $this->groups->moved($value, $type);
     }
 
     /**

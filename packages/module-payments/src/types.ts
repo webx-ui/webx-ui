@@ -1,3 +1,4 @@
+import type { LocalizedValue } from '@webx-ui/core'
 import type { ScreenModel } from '@webx-ui/schema'
 
 export interface Option {
@@ -28,6 +29,46 @@ export type MethodRow = {
   warnings: MethodWarning[]
   enabled: boolean
   position: number
+  /** The group it stands in; null — the site has no groups. */
+  group: string | null
+  /** Where a manager moved it; null — it follows its type. */
+  group_key: string | null
+  /** Keys of `marks` beside the list: read-only, the type sets them (decision 2). */
+  marks: string[]
+  /** The enabled methods of its group a buyer could mistake it for (groups spec §5). */
+  similar_to: { key: string; title: string }[]
+}
+
+/** How a payment mark is drawn: a file, or a plate of its words where `url` is null. */
+export interface PaymentMark {
+  alt: string
+  url: string | null
+  width: number
+  height: number
+}
+
+/** A group of the site (groups spec §2): the config's, with the manager's edits over it. */
+export interface MethodGroup {
+  key: string
+  title: string
+  description: string | null
+  /** The word an empty title falls back to. */
+  config_title: string
+  titles: Record<string, string>
+  descriptions: Record<string, string>
+  pictogram: string | null
+}
+
+/** A pictogram of the package's set: the inside of a 24 × 24 `<svg>`. */
+export interface Pictogram {
+  name: string
+  svg: string
+}
+
+export interface GroupSave {
+  titles: LocalizedValue
+  descriptions: LocalizedValue
+  pictogram: string | null
 }
 
 /** A type «Add method» offers. */
@@ -64,6 +105,8 @@ export interface KeyField {
 }
 
 export interface TypeParts {
+  /** The choice of the field «Group»; empty — the site has no groups. */
+  groups: Option[]
   settings: { fields: SettingField[]; values: Record<string, unknown> }
   credentials: KeyField[]
   credentials_unreadable: boolean
@@ -76,6 +119,8 @@ export interface TypeParts {
 export interface MethodDetail extends TypeParts {
   method: MethodRow
   values: ScreenModel
+  /** Said over the form and after a save; never a refusal (groups spec §5). */
+  warnings: string[]
 }
 
 export interface MethodBlank extends TypeParts {

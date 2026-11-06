@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use WebxUi\Payments\Http\Panel\AttemptController;
 use WebxUi\Payments\Http\Panel\ExchangeController;
+use WebxUi\Payments\Http\Panel\GroupController;
 use WebxUi\Payments\Http\Panel\MethodController;
 use WebxUi\Payments\Http\Panel\OrderPaymentController;
 
@@ -26,6 +27,8 @@ Route::prefix((string) config('webx-admin.api_path'))
                 Route::get('methods/blank', [MethodController::class, 'blank'])->name('methods.blank');
                 Route::get('methods/{method}', [MethodController::class, 'show'])->whereNumber('method')->name('methods.show');
 
+                Route::get('groups', [GroupController::class, 'index'])->name('groups.index');
+
                 Route::get('attempts', [AttemptController::class, 'index'])->name('attempts.index');
                 Route::get('attempts/{payment}', [AttemptController::class, 'show'])->whereNumber('payment')->name('attempts.show');
 
@@ -46,6 +49,8 @@ Route::prefix((string) config('webx-admin.api_path'))
                 Route::put('methods/order', [MethodController::class, 'order'])->name('methods.order');
                 Route::put('methods/{method}', [MethodController::class, 'update'])->whereNumber('method')->name('methods.update');
                 Route::post('methods/{method}/test', [MethodController::class, 'test'])->whereNumber('method')->name('methods.test');
+                // Only the edit of a group the config lists: the panel neither creates nor removes one (decision 12).
+                Route::put('groups/{key}', [GroupController::class, 'update'])->name('groups.update');
             });
 
             // Actions on an order: whoever works the orders (§13.1), not a second right for the same.

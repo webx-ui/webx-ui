@@ -40,6 +40,7 @@ final class AccessCoverageTest extends TestCase
         $this->assertPanelRoutesNeedPermission('WebxUi\\Admin\\Http\\', [
             'GET api/cms/manifest' => 'the shape of the panel, no data; the menu hides what the person may not open',
             'GET api/cms/screens/{name}' => 'the shape of a screen, no data; nodes behind a permission are cut out inside',
+            'GET api/cms/help/{key}' => 'the words of the panel, no data; fields behind a permission are cut out inside',
             'GET api/cms/shortcodes' => 'the names of the shortcodes the editor offers, no data',
             'GET api/cms/links/routes' => 'the kinds of address a link can take, no data',
             'GET api/cms/links/sources' => 'the sources of links, each filtered by its own permission inside',
@@ -66,6 +67,6 @@ final class AccessCoverageTest extends TestCase
             'DELETE api/cms/uploads/{id}' => 'only your own upload',
         ]);
 
-        $this->assertToolsNeedPermission('cache', 'history');
+        $this->assertToolsNeedPermission('cache', 'history', 'help');
     }
 }

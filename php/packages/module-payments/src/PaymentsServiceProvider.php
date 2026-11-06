@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Doctor\DoctorChecks;
+use WebxUi\Admin\Help\HelpRegistry;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Cache\CacheGroups;
@@ -29,7 +30,9 @@ use WebxUi\Payments\Console\ExchangePruneCommand;
 use WebxUi\Payments\Console\PollCommand;
 use WebxUi\Payments\Console\SelectionsPruneCommand;
 use WebxUi\Payments\Doctor\ExchangeSizeCheck;
+use WebxUi\Payments\Doctor\MethodGroupsCheck;
 use WebxUi\Payments\Doctor\OverriddenViewsCheck;
+use WebxUi\Payments\Doctor\PaymentMarksCheck;
 use WebxUi\Payments\Events\PaymentProblem;
 use WebxUi\Payments\Exchange\ExchangeConnection;
 use WebxUi\Payments\Exchange\ExchangeJournal;
@@ -37,6 +40,7 @@ use WebxUi\Payments\Exchange\ExchangeMasker;
 use WebxUi\Payments\Exchange\InProcessHosts;
 use WebxUi\Payments\Mcp\PaymentsModule;
 use WebxUi\Payments\Models\Payment;
+use WebxUi\Payments\Models\PaymentGroup;
 use WebxUi\Payments\Models\PaymentMethod;
 use WebxUi\Payments\Notifications\PaymentNotices;
 use WebxUi\Payments\Online\Checks;
@@ -101,6 +105,8 @@ class PaymentsServiceProvider extends ServiceProvider
         $this->app->singleton(Poll::class);
         $this->app->singleton(Notifications::class);
         $this->app->singleton(Returns::class);
+        $this->app->singleton(MethodGroups::class);
+        $this->app->singleton(PaymentMarks::class);
         $this->app->singleton(Methods::class);
         $this->app->singleton(Payments::class);
         $this->app->singleton(PaymentsCheckoutSlot::class);
@@ -131,6 +137,8 @@ class PaymentsServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->app->make(HelpRegistry::class)->directory(__DIR__.'/../resources/help');
+
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-payments');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-payments');
@@ -148,7 +156,7 @@ class PaymentsServiceProvider extends ServiceProvider
         // The enabled methods are read by every request of the payment step (§18).
         $groups = $this->app->make(CacheGroups::class);
         $groups->declare(Methods::GROUP, 'webx-payments::module.cache');
-        $groups->bumpOn(Methods::GROUP, PaymentMethod::class);
+        $groups->bumpOn(Methods::GROUP, PaymentMethod::class, PaymentGroup::class);
 
         // The checkout's slot «payment» (§10; §22.3 of the orders spec).
         $this->callAfterResolving(CheckoutSlots::class, function (CheckoutSlots $slots): void {
@@ -185,6 +193,12 @@ class PaymentsServiceProvider extends ServiceProvider
                         app(PayPage::class)->promptable($orders),
                         (string) trans('webx-payments::buyer.status.awaiting', [], $locale),
                     ),
+                    // «Pay online now» of an order on receipt (§8.5), which awaits nothing.
+                    offer: static function (array $block, Order $order): ?string {
+                        $offer = app(PayPage::class)->offer($order);
+
+                        return $offer === null ? null : view('webx-payments::pay.offer', ['offer' => $offer])->render();
+                    },
                     details: static function (array $block, Order $order, string $locale): ?string {
                         if (! $order->awaiting_payment || $order->paid_at !== null || $order->cancelled_at !== null) {
                             return null;
@@ -202,12 +216,15 @@ class PaymentsServiceProvider extends ServiceProvider
             Event::listen(PaymentProblem::class, [PaymentNotices::class, 'problem']);
         }
 
-        // The size of the journal and the templates a theme keeps from an older release in
-        // `webx:doctor`, where the panel's frame is installed.
+        // The size of the journal, the templates a theme keeps from an older release, what the
+        // config of the groups left behind and the marks nobody registered in `webx:doctor`, where
+        // the panel's frame is installed.
         if (class_exists(DoctorChecks::class)) {
             $this->callAfterResolving(DoctorChecks::class, static function (DoctorChecks $checks): void {
                 $checks->register(ExchangeSizeCheck::class);
                 $checks->register(OverriddenViewsCheck::class);
+                $checks->register(MethodGroupsCheck::class);
+                $checks->register(PaymentMarksCheck::class);
             });
         }
 
@@ -295,21 +312,14 @@ class PaymentsServiceProvider extends ServiceProvider
         $screens->register(MethodForm::SCREEN, __DIR__.'/../resources/screens/method.json');
 
         // The delivery methods a rule names: the delivery module's list, or their keys as text
-        // where it is not installed (§13.3). Read when the screen is asked for, not at boot.
+        // where it is not installed (§13.3). Both fields are in the screen and the patch takes one
+        // off, so the help of either is checked on any site. Read when the screen is asked for.
         $screens->extend(MethodForm::SCREEN, fn (): array => ($options = $this->app->make(MethodForm::class)->deliveryOptions()) !== null
-            ? [['op' => 'set', 'target' => 'delivery_methods', 'props' => ['options' => $options]]]
-            : [
-                ['op' => 'remove', 'target' => 'delivery_methods'],
-                ['op' => 'add', 'target' => 'rules', 'position' => 'after:delivery_mode', 'node' => [
-                    'id' => 'delivery_keys',
-                    'type' => 'wx-input',
-                    'name' => 'delivery_keys',
-                    'label' => 'trans::webx-payments::panel.method.delivery-keys',
-                    'help' => 'trans::webx-payments::panel.method.delivery-keys-help',
-                    'visible' => ['when' => 'delivery_mode', 'in' => ['methods', 'except']],
-                    'props' => ['maxlength' => 500],
-                ]],
-            ]);
+            ? [
+                ['op' => 'set', 'target' => 'delivery_methods', 'props' => ['options' => $options]],
+                ['op' => 'remove', 'target' => 'delivery_keys'],
+            ]
+            : [['op' => 'remove', 'target' => 'delivery_methods']]);
 
         // The tab «Payment» of the order's card, before «Customer» — after «Delivery» where it is
         // (§13.4): the node reads the order's id from the card. A static `can`, not a closure: the

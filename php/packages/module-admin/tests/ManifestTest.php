@@ -25,15 +25,15 @@ final class ManifestTest extends TestCase
             ->assertJsonPath('data.title', 'WebX UI')
             ->assertJsonPath('data.path', '/cms')
             ->assertJsonPath('data.apiPath', '/api/cms')
-            // The frame's own come with every panel: the journal's tools first (order 0), «Cache» last.
-            ->assertJsonPath('data.modules.0.id', 'history')
-            ->assertJsonPath('data.modules.1.id', 'media-library')
-            ->assertJsonPath('data.modules.2.id', 'pages')
-            ->assertJsonPath('data.modules.2.title', 'Pages')
-            ->assertJsonPath('data.modules.2.icon', 'file-text')
-            ->assertJsonPath('data.modules.2.order', 10)
-            ->assertJsonPath('data.modules.2.permissions', ['pages.view', 'pages.manage'])
-            ->assertJsonPath('data.modules.2.meta.tree', true);
+            // The frame's own come with every panel: the tools of help and the journal first (order 0), «Cache» last.
+            ->assertJsonPath('data.modules.1.id', 'history')
+            ->assertJsonPath('data.modules.2.id', 'media-library')
+            ->assertJsonPath('data.modules.3.id', 'pages')
+            ->assertJsonPath('data.modules.3.title', 'Pages')
+            ->assertJsonPath('data.modules.3.icon', 'file-text')
+            ->assertJsonPath('data.modules.3.order', 10)
+            ->assertJsonPath('data.modules.3.permissions', ['pages.view', 'pages.manage'])
+            ->assertJsonPath('data.modules.3.meta.tree', true);
     }
 
     #[Test]
@@ -75,20 +75,20 @@ final class ManifestTest extends TestCase
                 ['id' => 'lists', 'title' => 'Lists', 'order' => 100],
                 ['id' => 'late', 'title' => 'Late', 'order' => 200],
             ])
-            ->assertJsonPath('data.modules.1.id', 'labels')
-            ->assertJsonPath('data.modules.1.section', 'lists')
-            ->assertJsonPath('data.modules.2.section', null)
-            ->assertJsonPath('data.modules.3.id', 'cache')
-            ->assertJsonPath('data.modules.3.section', 'search');
+            ->assertJsonPath('data.modules.2.id', 'labels')
+            ->assertJsonPath('data.modules.2.section', 'lists')
+            ->assertJsonPath('data.modules.3.section', null)
+            ->assertJsonPath('data.modules.4.id', 'cache')
+            ->assertJsonPath('data.modules.4.section', 'search');
     }
 
     #[Test]
     public function a_panel_without_modules_still_answers(): void
     {
-        // Nothing but the frame's own: the journal's tools and «System → Cache».
+        // Nothing but the frame's own: the tools of help and the journal, and «System → Cache».
         $this->getJson('/api/cms/manifest')
             ->assertOk()
-            ->assertJsonPath('data.modules.*.id', ['history', 'cache']);
+            ->assertJsonPath('data.modules.*.id', ['help', 'history', 'cache']);
     }
 
     #[Test]
@@ -112,9 +112,9 @@ final class ManifestTest extends TestCase
 
         $this->getJson('/api/cms/manifest')
             ->assertOk()
-            ->assertJsonPath('data.modules.1.id', 'sneaky')
-            ->assertJsonPath('data.modules.1.permissions', [])
-            ->assertJsonPath('data.modules.1.meta.id', 'something-else');
+            ->assertJsonPath('data.modules.2.id', 'sneaky')
+            ->assertJsonPath('data.modules.2.permissions', [])
+            ->assertJsonPath('data.modules.2.meta.id', 'something-else');
     }
 
     #[Test]

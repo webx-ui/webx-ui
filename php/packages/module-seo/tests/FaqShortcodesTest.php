@@ -55,6 +55,29 @@ final class FaqShortcodesTest extends TestCase
         $this->assertSame('<p>Call [phone] today.</p>', SeoUrl::query()->firstOrFail()->faqItems->first()?->getTranslation('answer', 'ru'));
     }
 
+    /* The section is on the page, under the answer; the answer of `FAQPage` is its words. */
+    #[Test]
+    public function a_block_shortcode_in_an_answer_stays_out_of_the_faq_page(): void
+    {
+        app(Shortcodes::class)->register('section', '<section><h2>Picks</h2>Trail camera 10.00 Buy</section>', block: true);
+
+        $rule = SeoUrl::query()->create(['match_type' => UrlMatcher::EXACT, 'pattern' => '/returns']);
+        app(PageFaq::class)->write($rule, [
+            ['question' => ['ru' => 'What to take?'], 'answer' => ['ru' => '<p>Call [phone] today.</p><p>[section]</p>']],
+            ['question' => ['ru' => 'Only cards?'], 'answer' => ['ru' => '<p>[section]</p>']],
+        ]);
+
+        $questions = app(PageFaq::class)->questions($rule->refresh(), 'ru');
+
+        $this->assertCount(1, $questions, 'a section alone is no answer');
+        $this->assertStringContainsString('Trail camera', $questions[0]['answer']);
+
+        $head = (string) app(Seo::class)->head(null, '/returns', 'ru');
+
+        $this->assertStringContainsString('"text":"Call +800 1234 5678 today."', $head);
+        $this->assertStringNotContainsString('Trail camera', $head);
+    }
+
     #[Test]
     public function the_faq_page_carries_the_plain_text(): void
     {

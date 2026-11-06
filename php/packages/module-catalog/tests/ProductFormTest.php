@@ -14,6 +14,7 @@ use RuntimeException;
 use WebxUi\Admin\History\HistoryEntry;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Catalog\Models\Product;
+use WebxUi\Catalog\Panel\ProductForm;
 use WebxUi\Catalog\Parts\ProductParts;
 use WebxUi\Catalog\Tests\Fixtures\NotePart;
 
@@ -87,6 +88,128 @@ final class ProductFormTest extends TestCase
             ->assertJsonPath('data.values.categories', [$sale->id]);
 
         $this->assertSame(1, HistoryEntry::query()->where('subject_type', 'catalog.product')->where('subject_id', $id)->where('event', 'created')->count());
+    }
+
+    #[Test]
+    public function the_part_number_and_the_additional_barcodes_are_saved_from_the_form(): void
+    {
+        $response = $this->actingAs($this->editor(), 'cms')->postJson($this->api('products'), [
+            'values' => [
+                'name' => ['en' => 'Coil'],
+                'barcode' => '2000000000000',
+                'barcodes' => [' 2000000000017 ', '2000000000000', '2000000000024'],
+                'mpn' => ' WX-9001-A ',
+            ],
+        ])->assertCreated();
+
+        $id = (int) $response->json('data.product.id');
+
+        $response
+            ->assertJsonPath('data.product.mpn', 'WX-9001-A')
+            ->assertJsonPath('data.values.mpn', 'WX-9001-A')
+            // The main one is not among the additional ones, and the order is the one sent.
+            ->assertJsonPath('data.values.barcodes', ['2000000000017', '2000000000024']);
+
+        $this->assertSame(
+            ['2000000000000', '2000000000017', '2000000000024'],
+            Product::query()->findOrFail($id)->allBarcodes(),
+        );
+
+        // Left out, the list stays; emptied, it goes.
+        $this->actingAs($this->editor(), 'cms')->putJson($this->api("products/{$id}"), ['values' => ['priority' => 2]])
+            ->assertOk()->assertJsonPath('data.values.barcodes', ['2000000000017', '2000000000024']);
+        $this->actingAs($this->editor(), 'cms')->putJson($this->api("products/{$id}"), ['values' => ['barcodes' => []]])
+            ->assertOk()->assertJsonPath('data.values.barcodes', []);
+        $this->assertSame(['2000000000000'], Product::query()->findOrFail($id)->allBarcodes());
+    }
+
+    #[Test]
+    public function a_barcode_that_becomes_the_main_one_leaves_the_additional_ones(): void
+    {
+        $product = $this->product('Coil', null, ['barcode' => '2000000000000']);
+        $form = $this->app->make(ProductForm::class);
+        $form->save($product, ['barcodes' => ['2000000000017', '2000000000024']]);
+
+        $form->save($product, ['barcode' => '2000000000017']);
+
+        $this->assertSame(['2000000000017', '2000000000024'], $product->refresh()->allBarcodes());
+        $this->assertSame(1, $product->barcodes()->count());
+    }
+
+    #[Test]
+    public function a_change_of_the_list_is_a_line_of_the_journal(): void
+    {
+        $product = $this->product('Coil');
+        $form = $this->app->make(ProductForm::class);
+        $form->save($product, ['barcodes' => ['2000000000017']]);
+
+        $entry = HistoryEntry::query()->where('subject_id', $product->id)->latest('id')->firstOrFail();
+        $this->assertSame([['field' => 'barcodes', 'from' => [], 'to' => ['2000000000017']]], array_values($entry->changes));
+
+        // The same list again is no change at all.
+        $entries = HistoryEntry::query()->where('subject_id', $product->id)->count();
+        $form->save($product, ['barcodes' => ['2000000000017']]);
+        $this->assertSame($entries, HistoryEntry::query()->where('subject_id', $product->id)->count());
+    }
+
+    #[Test]
+    public function a_barcode_longer_than_its_column_or_a_part_number_longer_than_seventy_is_refused(): void
+    {
+        $product = $this->product('Coil');
+        $admin = $this->editor();
+
+        $this->actingAs($admin, 'cms')->putJson($this->api("products/{$product->id}"), ['values' => ['barcodes' => [str_repeat('1', 65)]]])
+            ->assertUnprocessable()->assertJsonValidationErrors('barcodes');
+        $this->actingAs($admin, 'cms')->putJson($this->api("products/{$product->id}"), ['values' => ['mpn' => str_repeat('1', 71)]])
+            ->assertUnprocessable()->assertJsonValidationErrors('mpn');
+        $this->actingAs($admin, 'cms')->putJson($this->api("products/{$product->id}"), ['values' => ['mpn' => str_repeat('1', 70), 'barcodes' => [str_repeat('1', 64)]]])
+            ->assertOk();
+    }
+
+    #[Test]
+    public function a_list_of_products_loads_the_barcodes_at_once(): void
+    {
+        $category = $this->category('coils');
+        $form = $this->app->make(ProductForm::class);
+
+        foreach (range(1, 4) as $number) {
+            $form->save($this->product("Coil {$number}", $category, ['barcode' => "200000000000{$number}"]), ['barcodes' => ["201000000000{$number}"]]);
+        }
+
+        $products = products()->category('coils')->take(4)->models();
+
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+        $codes = $products->map(static fn (Product $product): array => $product->allBarcodes())->all();
+
+        $this->assertSame([], DB::getQueryLog());
+        $this->assertCount(4, $codes);
+        $this->assertCount(2, $codes[0]);
+    }
+
+    #[Test]
+    #[DefineEnvironment('withoutBarcodeAndPartNumber')]
+    public function a_site_without_them_has_neither_field(): void
+    {
+        $product = $this->product('Coil', null, ['barcode' => '2000000000000']);
+
+        $response = $this->actingAs($this->editor(), 'cms')->putJson($this->api("products/{$product->id}"), [
+            'values' => ['mpn' => 'WX-9001', 'barcodes' => ['2000000000017']],
+        ])->assertOk();
+
+        $this->assertArrayNotHasKey('mpn', $response->json('data.product'));
+        $this->assertNull($product->refresh()->mpn);
+        $this->assertSame(0, $product->barcodes()->count());
+        $this->assertSame([], $product->allBarcodes());
+    }
+
+    /**
+     * @param  Application  $app
+     */
+    protected function withoutBarcodeAndPartNumber($app): void
+    {
+        $app['config']->set('webx-catalog.fields.barcode', false);
+        $app['config']->set('webx-catalog.fields.mpn', false);
     }
 
     #[Test]

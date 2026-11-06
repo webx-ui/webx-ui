@@ -236,9 +236,15 @@ class Author extends Model implements HasBreadcrumbs, HasSeoFallback, HasStructu
     /** The few lines about them, through the allowlist of their field type and with the shortcodes replaced, as the page prints them. */
     public function bioHtml(?string $locale = null): string
     {
+        return Container::getInstance()->make(PageText::class)->html($this->bio($locale), $locale);
+    }
+
+    /** The bio as stored, for what only takes its words: the description and the `Person`. */
+    private function bio(?string $locale): ?string
+    {
         $stored = $this->getTranslation('bio', $locale ?? app()->getLocale());
 
-        return Container::getInstance()->make(PageText::class)->html($stored, $locale);
+        return is_string($stored) && trim($stored) !== '' ? $stored : null;
     }
 
     /**
@@ -249,7 +255,7 @@ class Author extends Model implements HasBreadcrumbs, HasSeoFallback, HasStructu
     public function seoFallback(?string $locale = null): ?SeoData
     {
         $name = $this->name($locale);
-        $data = SeoData::fallback($name !== '' ? $name : null, $this->bioHtml($locale) ?: null, $this->photoUrl(), $name !== '' ? $name : null);
+        $data = SeoData::fallback($name !== '' ? $name : null, $this->bio($locale), $this->photoUrl(), $name !== '' ? $name : null);
 
         return $this->hasPublished() ? $data : $data->with(robots: self::ROBOTS_EMPTY);
     }
@@ -297,7 +303,7 @@ class Author extends Model implements HasBreadcrumbs, HasSeoFallback, HasStructu
             $person['jobTitle'] = trim($role);
         }
 
-        $bio = SeoData::fallback(null, $this->bioHtml($locale) ?: null)->description;
+        $bio = SeoData::fallback(null, $this->bio($locale))->description;
 
         if ($bio !== null && $bio !== '') {
             $person['description'] = $bio;

@@ -14,6 +14,7 @@ return [
     'event-published' => 'Yayımlandı',
     'event-unpublished' => 'Yayından kaldırıldı',
     'event-refused' => 'Reddedildi',
+    'event-key_reissued' => 'Anahtar yeniden verildi',
     'event-run' => 'Çalıştırma',
     'source-panel' => 'panelde',
     'source-mcp' => 'bir ajan aracılığıyla',

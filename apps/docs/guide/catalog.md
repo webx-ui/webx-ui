@@ -13,15 +13,16 @@ of [`webx-ui/routing`](/guide/routing), the tree is `webx-ui/nested-set`, the sc
 journal are `module-admin`, what a page says about itself is [`module-seo`](/guide/seo), the
 previews are [`module-media`](/guide/media), the languages are `webx-ui/localization`.
 
-| Package                     | What it adds                                                         |
-| --------------------------- | -------------------------------------------------------------------- |
-| `module-catalog`            | products, categories, price, gallery, filter, storefront, CSV/XLSX   |
-| `module-catalog-properties` | typed properties, their values and sets per category — most filters  |
-| `module-catalog-stock`      | stock statuses and whether a product can be bought                   |
-| `module-catalog-brands`     | brands, one per product, each with a page of its own                 |
-| `module-catalog-labels`     | labels — top, sale, new — as badges and a filter                     |
-| `module-catalog-landings`   | landing pages: a filter set under an address, a text and an SEO card |
-| `module-catalog-manticore`  | Manticore Search as the engine, for catalogues past a few thousand   |
+| Package                      | What it adds                                                         |
+| ---------------------------- | -------------------------------------------------------------------- |
+| `module-catalog`             | products, categories, price, gallery, filter, storefront, CSV/XLSX   |
+| `module-catalog-properties`  | typed properties, their values and sets per category — most filters  |
+| `module-catalog-stock`       | stock statuses and whether a product can be bought                   |
+| `module-catalog-brands`      | brands, one per product, each with a page of its own                 |
+| `module-catalog-labels`      | labels — top, sale, new — as badges and a filter                     |
+| `module-catalog-landings`    | landing pages: a filter set under an address, a text and an SEO card |
+| `module-catalog-collections` | collections: a named block of products, placed anywhere              |
+| `module-catalog-manticore`   | Manticore Search as the engine, for catalogues past a few thousand   |
 
 Each is a pair, a Composer package and an npm package of the same name, like every section of
 the panel. The cart, orders, customers, payment and delivery are outside the family; the one
@@ -164,7 +165,8 @@ else's filters.
     'currency' => env('WEBX_CATALOG_CURRENCY'),   // ISO 4217, one for the site
 ],
 'fields' => [
-    'barcode' => (bool) env('WEBX_CATALOG_BARCODE', true),
+    'barcode' => (bool) env('WEBX_CATALOG_BARCODE', true),   // the main one and the additional ones
+    'mpn' => (bool) env('WEBX_CATALOG_MPN', true),
     'facets' => (bool) env('WEBX_CATALOG_CATEGORY_FACETS', false),
     'video' => (bool) env('WEBX_CATALOG_VIDEO', true),
 ],
@@ -542,6 +544,52 @@ to the queue. The number of products per landing is recounted after each indexin
 by `webx:catalog-landings:count --all`. The design is
 `docs/architecture/WEBX_UI_CATALOG_LANDINGS.md`.
 
+**The bin** is a tab over the list, «All» and «Bin», at `?view=trashed`. A deleted landing stops
+answering and keeps its set; **Restore** brings it back. **Delete for good** asks first and cannot be
+undone: as with a page, the address answers 404 with no redirect left, former addresses included,
+and the address and the set are free for a new landing. An agent does the same with
+`catalog_landings_purge`: it takes a landing in the bin only, and `dry_run` shows what would go.
+
+## Product collections
+
+`webx-ui/module-catalog-collections` is a named block of products a manager puts together once and
+the site prints wherever it is placed. It has no address of its own: it is a piece of a page.
+
+A collection is filled by hand, in the order of the list, or by a filter: the same set of facets a
+landing page has, a category and a preset («New arrivals», «On sale», «By label»). Its own `limit`
+is at most 48, and by default it shows only what can be bought: the flag of the stock status, not
+the warehouse. The cards are the catalogue's, «Buy» included.
+
+There are three ways to place one, and all three print the same thing:
+
+```blade
+<x-webx-catalog-collections::collection key="new-arrivals" view="carousel" limit="4" />
+```
+
+```text
+[product-collection key=new-arrivals view=carousel limit=4]
+```
+
+The tag goes in a template, the bracket in a rich text (the panel's `[` menu offers each collection
+by name), and the block `product-collection` on a page or in a region after
+`php artisan webx:blocks:offered --install`. The `limit` of a placement can only lower the
+collection's own.
+
+A collection that is off, empty or in the bin prints nothing, and the page lives. Deleting one is
+not refused for being in use: it waits in the «Bin» tab over the list, and «Restore» brings it back
+in every place, because its key stays taken. «Where»
+in the panel lists blocks and regions only; brackets in a text and tags in templates are not
+counted, so a collection with no places may still be in use.
+
+«Delete for good» in the same tab asks first and cannot be undone. It is offered only in the bin,
+and it is not refused for being in use either: the places that name the key print nothing, and the
+key is free, so a new collection with that key prints in all of them. An agent does the same with
+`catalog_collections_purge`: it takes a collection in the bin only, and `dry_run` names the blocks
+and regions that hold it, without deleting anything.
+
+`php artisan webx:demo` seeds six collections on the demo shop, with blocks on the home page and
+brackets in an article. A site that has collections already is left alone.
+
 ## Import and export
 
 Products go in and out as CSV or XLSX files. A column of a file is a field of the product form —
@@ -598,7 +646,7 @@ the place everything is written to, and a product page is always read from it.
 **`SqlEngine`** is the database itself and the default. It needs nothing installed and is honest
 up to a couple of thousand live products (`webx-catalog.sql_engine_limit`, 2000). Past that, `webx:doctor`
 and the products list in the panel say so. Its search is `like` on the name, the article number and
-the barcode.
+every barcode of the product.
 
 **Manticore** comes with `webx-ui/module-catalog-manticore` and makes a Manticore Search server
 (29 or later) the engine: a table per language with that language's morphology, facets and counts
@@ -722,6 +770,7 @@ provider:
 | the storefront    | a facet, a piece of the card, a narrowing of `products()` | `Facets`, `StorefrontParts`, `ProductQuery::macro` |
 | bulk actions      | «set the brand» on forty thousand products                | `BulkActions`                                      |
 | the exchange      | columns of CSV and XLSX                                   | `ExchangeColumns`                                  |
+| a product feed    | values a template prints, a page of products at a time    | `ProductVariables`                                 |
 | buying            | a rule that may refuse                                    | `Purchasability`                                   |
 
 The product form is one form that several modules write. The core opens a transaction, saves the
@@ -822,7 +871,7 @@ that changes something accepts `dry_run: true`.
 | labels     | `catalog_labels_list`, `_create`, `_update`, `_delete`, `_reorder`                                                                                                                                      |
 | stock      | `catalog_stock_list`, `_create`, `_update`, `_delete`, `_reorder`                                                                                                                                       |
 | brands     | `catalog_brands_list`, `_create`, `_update`, `_delete`, `_reorder`                                                                                                                                      |
-| landings   | `catalog_landings_list`, `_get`, `_facets`, `_count`, `_create`, `_update`, `_publish`, `_unpublish`, `_delete`, `_restore`, `_generate`, `_generation`                                                 |
+| landings   | `catalog_landings_list`, `_get`, `_facets`, `_count`, `_create`, `_update`, `_publish`, `_unpublish`, `_delete`, `_restore`, `_purge`, `_generate`, `_generation`                                       |
 | manticore  | `catalog_index_status` — read only: a rebuild is minutes of load, and its time is a person's to choose                                                                                                  |
 
 A product's share in a satellite is written through `catalog_products_update` by the part's key —

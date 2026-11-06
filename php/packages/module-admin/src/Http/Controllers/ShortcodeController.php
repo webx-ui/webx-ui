@@ -19,6 +19,6 @@ final class ShortcodeController
 
     public function __invoke(): JsonResponse
     {
-        return ApiResponse::data($this->shortcodes->list());
+        return ApiResponse::data($this->shortcodes->menu());
     }
 }

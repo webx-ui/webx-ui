@@ -160,7 +160,7 @@ final class CategoryForm
                 continue;
             }
 
-            $made = Slug::make($title, (string) $code);
+            $made = Slug::address($title, (string) $code);
 
             if ($made !== '') {
                 $slugs[$code] = $made;

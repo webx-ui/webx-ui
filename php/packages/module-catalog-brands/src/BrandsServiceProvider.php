@@ -8,10 +8,12 @@ use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Categories\CategoryLinkSource;
 use WebxUi\Admin\Categories\CategorySources;
+use WebxUi\Admin\Help\HelpRegistry;
 use WebxUi\Admin\History\HistoryTypes;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\ModuleRegistry;
@@ -31,6 +33,8 @@ use WebxUi\Catalog\Rendering\ProductQuery;
 use WebxUi\Catalog\Storefront\StorefrontCache;
 use WebxUi\Catalog\Storefront\StorefrontParts;
 use WebxUi\Catalog\Support\RequestMemo;
+use WebxUi\Catalog\Variables\ComputedVariable;
+use WebxUi\Catalog\Variables\ProductVariables;
 use WebxUi\CatalogBrands\Catalog\BrandAction;
 use WebxUi\CatalogBrands\Catalog\BrandColumn;
 use WebxUi\CatalogBrands\Catalog\BrandDocument;
@@ -38,6 +42,7 @@ use WebxUi\CatalogBrands\Catalog\BrandExchangeColumn;
 use WebxUi\CatalogBrands\Catalog\BrandFacet;
 use WebxUi\CatalogBrands\Catalog\BrandLine;
 use WebxUi\CatalogBrands\Catalog\BrandPart;
+use WebxUi\CatalogBrands\Catalog\Brands;
 use WebxUi\CatalogBrands\Models\Brand;
 use WebxUi\CatalogBrands\Panel\BrandsModule;
 use WebxUi\CatalogBrands\Storefront\BrandHandler;
@@ -52,6 +57,7 @@ use WebxUi\Routing\OnConflict;
 use WebxUi\Routing\RouteType;
 use WebxUi\Routing\RouteTypes;
 use WebxUi\Seo\Sitemap\SitemapRoutes;
+use WebxUi\Templates\Variable;
 
 /**
  * Brands (§2.3 of the dictionaries spec): a satellite of the catalogue whose records have pages.
@@ -78,6 +84,8 @@ class BrandsServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->app->make(HelpRegistry::class)->directory(__DIR__.'/../resources/help');
+
         $this->registerSiteBar();
 
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
@@ -210,6 +218,19 @@ class BrandsServiceProvider extends ServiceProvider
         $this->app->make(ProductColumns::class)->register(new BrandColumn);
         // The column of exchange files (§7.2 of the exchange spec).
         $this->app->make(ExchangeColumns::class)->register(new BrandExchangeColumn);
+        // A file names a brand by its slug, a template by what a buyer reads (§4.2 of the feeds spec).
+        $this->app->make(ProductVariables::class)->register(new ComputedVariable(
+            new Variable(BrandPart::KEY, 'webx-catalog-brands::product.brand', 'Northwind'),
+            static function (Collection $products, string $locale): array {
+                $names = [];
+
+                foreach (Brands::of($products->map(static fn (Product $product): int => (int) $product->id)->all()) as $id => $brand) {
+                    $names[$id] = $brand->displayName($locale);
+                }
+
+                return $names;
+            },
+        ));
         $this->app->make(Facets::class)->register(new BrandFacet);
         $this->app->make(Documents::class)->register(new BrandDocument);
         $this->app->make(BulkActions::class)->register(new BrandAction);

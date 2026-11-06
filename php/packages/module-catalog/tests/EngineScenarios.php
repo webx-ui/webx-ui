@@ -15,6 +15,7 @@ use WebxUi\Catalog\Facets\Facets;
 use WebxUi\Catalog\Facets\FacetValue;
 use WebxUi\Catalog\Facets\PriceFacet;
 use WebxUi\Catalog\Models\Product;
+use WebxUi\Catalog\Panel\ProductForm;
 use WebxUi\Catalog\Storefront\Listing;
 use WebxUi\Catalog\Tests\Fixtures\ColourFacet;
 use WebxUi\Catalog\Tests\Fixtures\FixtureDocument;
@@ -229,6 +230,44 @@ abstract class EngineScenarios extends TestCase
         $this->product('Unrelated', $laptops);
 
         $this->assertSame([$byName->id], $this->search(search: 'thinkpad')->ids);
+    }
+
+    #[Test]
+    public function an_additional_barcode_finds_the_product_as_the_main_one_does(): void
+    {
+        $plugs = $this->category('plugs');
+        $mention = $this->product('Adapter for 2000000000017 and others', $plugs, ['priority' => 9]);
+        $coil = $this->product('Ignition coil', $plugs, ['barcode' => '2000000000000']);
+        $form = $this->app->make(ProductForm::class);
+        $form->save($coil, ['barcodes' => ['2000000000017', '2000000000024']]);
+
+        foreach (['2000000000000', '2000000000024'] as $code) {
+            $this->assertSame([$coil->id], $this->search(search: $code)->exact, $code);
+        }
+
+        // Above a higher priority, as any code of the product is.
+        $found = $this->search(search: '2000000000017');
+        $this->assertSame([$coil->id, $mention->id], $found->ids);
+        $this->assertSame([$coil->id], $found->exact);
+
+        // Taken off the list, it is nobody's code any more.
+        $form->save($coil, ['barcodes' => ['2000000000024']]);
+        $this->assertSame([], $this->search(search: '2000000000017')->exact);
+    }
+
+    #[Test]
+    public function two_products_may_share_a_barcode_and_neither_is_the_answer_alone(): void
+    {
+        $plugs = $this->category('plugs');
+        $first = $this->product('Ignition coil', $plugs, ['barcode' => '2000000000031']);
+        $second = $this->product('Glow plug', $plugs);
+        $this->app->make(ProductForm::class)->save($second, ['barcodes' => ['2000000000031']]);
+
+        $found = $this->search(search: '2000000000031');
+
+        $this->assertEqualsCanonicalizing([$first->id, $second->id], $found->ids);
+        // Two exact matches: the storefront goes to the product only when there is one.
+        $this->assertEqualsCanonicalizing([$first->id, $second->id], $found->exact);
     }
 
     #[Test]

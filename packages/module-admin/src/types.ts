@@ -6,6 +6,13 @@ import type { AdminContext } from './admin'
 import type { LocaleDescriptor } from './i18n'
 import type { SiteBarTab } from './siteBar'
 
+declare module 'vue-router' {
+  interface RouteMeta {
+    /** The key of the screen's page of help, which is what its head's «?» opens. */
+    help?: string
+  }
+}
+
 /**
  * What `GET /api/cms/manifest` answers with — the panel's own description of itself, and the
  * first thing the front end asks for. Mirrors `WebxUi\Admin\Manifest\ManifestBuilder`.
@@ -40,6 +47,8 @@ export interface Manifest {
   modules: ManifestModule[]
   /** Names of the screens the server can hand out — the trees themselves travel on request. */
   screens?: string[]
+  /** Keys of the pages of help the server has; a screen with no page shows no «?». */
+  help?: string[]
   /**
    * When the database was last dumped. Absent or `null` on a site that has switched the
    * nightly backup off, and present with `at: null` on one that has it on and has never

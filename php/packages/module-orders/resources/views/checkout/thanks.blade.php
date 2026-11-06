@@ -1,7 +1,8 @@
 {{--
     «Thank you» after the checkout (spec §26), only for the session that placed the order: its
     number, where the confirmation went, how much less it came to than the buyer saw (§24.4), the
-    order as its page prints it, and the link to that page. Nobody but the buyer reads it:
+    order as its page prints it — with it «Pay online now» of an order on receipt —, and the link to
+    that page. Nobody but the buyer reads it:
     `noindex`, `no-store`.
 
     $order — `WebxUi\Orders\Site\OrderPage::of()`; $email — null when no letter goes to the buyer;

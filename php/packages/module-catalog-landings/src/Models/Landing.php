@@ -16,13 +16,13 @@ use Illuminate\Validation\ValidationException;
 use WebxUi\Admin\History\RecordsHistory;
 use WebxUi\Admin\Shortcodes\PageText;
 use WebxUi\Catalog\Facets\Facets;
+use WebxUi\Catalog\Filter\FacetSet;
 use WebxUi\Catalog\Filter\FilterState;
 use WebxUi\Catalog\Models\Category;
 use WebxUi\Catalog\Models\Product;
 use WebxUi\Catalog\Storefront\HasDefaultSort;
 use WebxUi\Catalog\Storefront\HasListingTexts;
 use WebxUi\Catalog\Storefront\ListingSubject;
-use WebxUi\CatalogLandings\Catalog\LandingSet;
 use WebxUi\Localization\HasTranslations;
 use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\HasUrl;
@@ -132,7 +132,7 @@ class Landing extends Model implements HasDefaultSort, HasListingTexts, ListingS
                 }
             }
 
-            $set = LandingSet::from($landing->filters);
+            $set = FacetSet::from($landing->filters);
             $landing->filters = $set->all();
 
             // A set waiting for an editor holds no key, so the landing it collided with keeps its.
@@ -168,9 +168,9 @@ class Landing extends Model implements HasDefaultSort, HasListingTexts, ListingS
             ->orderByPivot('position');
     }
 
-    public function set(): LandingSet
+    public function set(): FacetSet
     {
-        return LandingSet::from($this->filters);
+        return FacetSet::from($this->filters);
     }
 
     /** The set as the storefront starts from it; facets the registry lost are left out. */

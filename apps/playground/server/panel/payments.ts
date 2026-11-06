@@ -42,6 +42,7 @@ interface Method {
   enabled: boolean
   position: number
   delivery_rule: { mode: string; methods?: string[] }
+  group_key?: string | null
   min_amount: number | null
   max_amount: number | null
   settings: Record<string, unknown>
@@ -193,6 +194,88 @@ let methods: Method[] = [
     environment: true,
   },
 ]
+
+/* The config's groups (groups spec §2): the panel edits them and never adds or removes one. */
+const PICTOGRAMS: Record<string, string> = {
+  card: '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>',
+  cash: '<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/>',
+  document: '<path d="M6 2h8l4 4v16H6z"/><path d="M14 2v4h4"/>',
+  bank: '<path d="M3 10l9-6 9 6"/><path d="M5 10v8M12 10v8M19 10v8M3 20h18"/>',
+  wallet: '<rect x="3" y="6" width="18" height="14" rx="2"/><path d="M16 13h2"/>',
+  truck: '<path d="M2 6h12v10H2zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="2"/>',
+  store: '<path d="M4 9l2-5h12l2 5"/><path d="M5 9v11h14V9"/>',
+  qr: '<path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/>',
+}
+
+interface Group {
+  key: string
+  config_title: string
+  config_pictogram: string
+  titles: Record<string, string>
+  descriptions: Record<string, string>
+  pictogram: string | null
+}
+
+let groups: Group[] = [
+  {
+    key: 'on_receipt',
+    config_title: 'Pay on receipt',
+    config_pictogram: 'cash',
+    titles: {},
+    descriptions: {},
+    pictogram: null,
+  },
+  {
+    key: 'online',
+    config_title: 'Pay online',
+    config_pictogram: 'card',
+    titles: {},
+    descriptions: {},
+    pictogram: null,
+  },
+  {
+    key: 'transfer',
+    config_title: 'Bank transfer',
+    config_pictogram: 'document',
+    titles: {},
+    descriptions: {},
+    pictogram: null,
+  },
+]
+
+const groupOfType = (type: string) =>
+  type === 'store.on_receipt'
+    ? 'on_receipt'
+    : type === 'store.bank_transfer'
+      ? 'transfer'
+      : 'online'
+
+const groupOf = (method: Method) => method.group_key ?? groupOfType(method.type)
+
+const groupTitle = (group: Group, locale: string) => group.titles[locale] ?? group.config_title
+
+/* Marks as a gateway's type sets them: both online methods of a card take the same two here. */
+const MARKS: Record<string, string[]> = {
+  'gateway-a.card': ['visa', 'mastercard'],
+  'gateway-a.unsigned': ['visa', 'mastercard'],
+}
+const MARK_WORDS: Record<string, string> = { visa: 'Visa', mastercard: 'Mastercard' }
+
+const marksOf = (method: Method) => MARKS[method.type] ?? []
+
+const similarTo = (method: Method) => {
+  const own = marksOf(method).join(' ')
+
+  return !method.enabled || own === ''
+    ? []
+    : methods.filter(
+        (one) =>
+          one.id !== method.id &&
+          one.enabled &&
+          groupOf(one) === groupOf(method) &&
+          marksOf(one).join(' ') === own,
+      )
+}
 
 const TYPES = [
   { key: 'store.on_receipt', kind: 'offline', gateway: null, title: 'Payment on receipt' },
@@ -714,6 +797,13 @@ export function registerPayments(on: On, fail: Fail, line: Line): void {
       warnings: keys === 'missing' ? ['no_credentials'] : [],
       enabled: method.enabled,
       position: method.position,
+      group: groupOf(method),
+      group_key: method.group_key ?? null,
+      marks: marksOf(method),
+      similar_to: similarTo(method).map((one) => ({
+        key: one.key,
+        title: pick(one.title, locale) ?? typeTitle(one.type, locale),
+      })),
     }
   }
 
@@ -787,6 +877,19 @@ export function registerPayments(on: On, fail: Fail, line: Line): void {
             ]
 
     return {
+      groups: [
+        {
+          value: '',
+          label: panel(locale, 'method.group-default').replace(
+            ':group',
+            groupTitle(
+              groups.find((one) => one.key === groupOfType(type))!,
+              locale,
+            ),
+          ),
+        },
+        ...groups.map((one) => ({ value: one.key, label: groupTitle(one, locale) })),
+      ],
       settings: {
         fields,
         values: Object.fromEntries(
@@ -822,6 +925,7 @@ export function registerPayments(on: On, fail: Fail, line: Line): void {
     titles: method.title,
     descriptions: method.description,
     enabled: method.enabled,
+    group_key: method.group_key ?? '',
     delivery_mode: method.delivery_rule.mode,
     delivery_methods: method.delivery_rule.methods ?? [],
     delivery_keys: (method.delivery_rule.methods ?? []).join(', '),
@@ -832,7 +936,28 @@ export function registerPayments(on: On, fail: Fail, line: Line): void {
   const describe = (method: Method, locale: string) => ({
     method: row(method, locale),
     values: values(method),
+    warnings:
+      similarTo(method).length === 0
+        ? []
+        : [
+            marksOf(method).length === 1
+              ? panel(locale, 'method.similar-one').replaceAll(
+                  ':mark',
+                  MARK_WORDS[marksOf(method)[0]!] ?? '',
+                )
+              : panel(locale, 'method.similar-many'),
+          ],
     ...parts(method.type, method, locale),
+  })
+
+  const groupRow = (group: Group, locale: string) => ({
+    key: group.key,
+    title: groupTitle(group, locale),
+    description: group.descriptions[locale] ?? null,
+    config_title: group.config_title,
+    titles: group.titles,
+    descriptions: group.descriptions,
+    pictogram: group.pictogram ?? group.config_pictogram,
   })
 
   const save = (method: Method, body: Record<string, unknown>, locale: string) => {
@@ -855,6 +980,11 @@ export function registerPayments(on: On, fail: Fail, line: Line): void {
     if ('titles' in own) method.title = (own.titles ?? {}) as Localized
     if ('descriptions' in own) method.description = (own.descriptions ?? {}) as Localized
     if ('enabled' in own) method.enabled = Boolean(own.enabled)
+    if ('group_key' in own) {
+      const key = String(own.group_key ?? '')
+
+      method.group_key = key === '' || key === groupOfType(method.type) ? null : key
+    }
     if ('delivery_mode' in own) {
       const mode = String(own.delivery_mode)
       method.delivery_rule = ['methods', 'except'].includes(mode)
@@ -906,8 +1036,34 @@ export function registerPayments(on: On, fail: Fail, line: Line): void {
         gateway: one.gateway,
         gateway_title: one.gateway ? GATEWAY_TITLE : null,
       })),
+      marks: Object.fromEntries(
+        Object.entries(MARK_WORDS).map(([key, alt]) => [
+          key,
+          { alt, url: null, width: 38, height: 24 },
+        ]),
+      ),
     },
   }))
+
+  on('GET', '/payments/groups', ({ locale }) => ({
+    data: {
+      groups: groups.map((one) => groupRow(one, locale)),
+      pictograms: Object.entries(PICTOGRAMS).map(([name, svg]) => ({ name, svg })),
+    },
+  }))
+
+  /* Only an edit: a key the config does not list is not found, as on the server. */
+  on('PUT', '/payments/groups/([a-z_]+)', ({ params, body, locale }) => {
+    const group = groups.find((one) => one.key === params[0])
+
+    if (!group) throw fail(404, 'Not found')
+
+    group.titles = (body.titles ?? {}) as Record<string, string>
+    group.descriptions = (body.descriptions ?? {}) as Record<string, string>
+    group.pictogram = body.pictogram === group.config_pictogram ? null : (body.pictogram as string)
+
+    return { data: groupRow(group, locale) }
+  })
 
   on('GET', '/payments/methods/blank', ({ query, locale }) => {
     const type = query.get('type') ?? ''
@@ -959,6 +1115,23 @@ export function registerPayments(on: On, fail: Fail, line: Line): void {
   })
 
   on('PUT', '/payments/methods/order', ({ body, locale }) => {
+    if (Array.isArray(body.groups)) {
+      const sent = body.groups as { key: string; methods: number[] }[]
+      let position = 0
+
+      groups = sent.map((one) => groups.find((group) => group.key === one.key)!)
+      for (const one of sent) {
+        for (const id of one.methods) {
+          const method = find(id)
+
+          method.position = position++
+          method.group_key = one.key === groupOfType(method.type) ? null : one.key
+        }
+      }
+
+      return new Reply(204, undefined)
+    }
+
     const ids = ((body.ids ?? []) as number[]).map(Number)
 
     if (

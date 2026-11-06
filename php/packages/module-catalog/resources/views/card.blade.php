@@ -1,7 +1,8 @@
 {{--
     One product in a grid: the main picture, the name, the price, and two points for the
     satellites — `catalog.card.badges` over the picture (labels: "new", "sale") and
-    `catalog.card.meta` under the price (the stock). `$verdict` says whether it can be bought.
+    `catalog.card.meta` under the price (the stock). `$verdict` says whether it can be bought, and
+    `webx-catalog::buy` prints the answer, outside the link: it may be a form.
 --}}
 @php($image = $product->mainImage())
 @php($priced = (bool) config('webx-catalog.price.enabled', true))
@@ -27,4 +28,5 @@
         </p>
     @endif
     @webxPart('catalog.card.meta', ['product' => $product, 'verdict' => $verdict], 'webx-catalog::points.card-meta')
+    @include('webx-catalog::buy', ['product' => $product, 'verdict' => $verdict, 'block' => 'webx-catalog-card', 'options' => []])
 </article>

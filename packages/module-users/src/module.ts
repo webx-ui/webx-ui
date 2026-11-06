@@ -27,16 +27,24 @@ export function users(options: UsersOptions = {}): AdminModule[] {
       id: 'users',
       path,
       routes: [
-        { path, name: 'webx.users', component: () => import('./UsersPage.vue'), props },
+        {
+          path,
+          name: 'webx.users',
+          meta: { help: 'users.index' },
+          component: () => import('./UsersPage.vue'),
+          props,
+        },
         {
           path: `${path}/new`,
           name: 'webx.users.new',
+          meta: { help: 'users.form' },
           component: () => import('./UserEditorPage.vue'),
           props,
         },
         {
           path: `${path}/:id(\\d+)`,
           name: 'webx.users.edit',
+          meta: { help: 'users.form' },
           component: () => import('./UserEditorPage.vue'),
           props,
         },
@@ -53,6 +61,7 @@ export function users(options: UsersOptions = {}): AdminModule[] {
         {
           path: `${path}/groups`,
           name: 'webx.users.groups',
+          meta: { help: 'users.groups' },
           component: () => import('./GroupsPage.vue'),
           props,
         },
@@ -65,6 +74,7 @@ export function users(options: UsersOptions = {}): AdminModule[] {
         {
           path: `${path}/settings`,
           name: 'webx.users.settings',
+          meta: { help: 'users.settings' },
           component: () => import('./SettingsPage.vue'),
           props,
         },

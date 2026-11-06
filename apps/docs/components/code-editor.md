@@ -91,6 +91,16 @@ words beside the suggestions are English; pass the second argument —
 `mustacheCompletions(variables, { list: '…', field: '… :list' })` — to say them in another
 language.
 
+Inside a list `first` and `last` are suggested too: every element of a list has them, `'1'` or
+empty, and `{{#images}}{{^first}},{{/first}}"{{url}}"{{/images}}` is how a comma goes between two.
+
+For a preview, `renderTemplate(template, values, escape)` renders by the rules of the server's
+`webx-ui/templates` — `'0'` is empty, nothing is printed raw — and `escapeForFormat('xml' | 'json' |
+'csv' | 'text', { delimiter })` is its escaping by format. A template the server would refuse throws
+`TemplateRefusal`, with the key of its words in `webx-templates::errors` (`templateMessages` has the
+English). `refuseInCdata(template)` adds the check of a template that writes XML, and a value given
+as `{ $cdata: '…' }` goes into XML whole, as `<![CDATA[…]]>`.
+
 `mustacheProblems(text, variables?)` reads a template the same way and answers `unclosed`
 (sections never closed), `stray` (a close of nothing), `refused` (partials, delimiters, pragmas),
 `broken` (`{{` without `}}`) and — only when variables are given — `unknown`: names that are

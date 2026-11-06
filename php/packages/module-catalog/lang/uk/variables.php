@@ -1,0 +1,43 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'url' => 'Адреса товару',
+    'image_link' => 'Адреса головного зображення',
+    'images' => 'Усі зображення',
+    'additional_images' => 'Зображення після головного',
+    'availability' => 'Наявність',
+    'brand' => 'Бренд',
+    'id' => 'ID товару',
+    'group_id' => 'Група варіантів',
+    'price' => 'Поточна ціна',
+    'old_price' => 'Стара ціна',
+    'price_with_currency' => 'Поточна ціна з валютою',
+    'list_price' => 'Звичайна ціна',
+    'list_price_with_currency' => 'Звичайна ціна з валютою',
+    'sale_price' => 'Ціна зі знижкою',
+    'sale_price_with_currency' => 'Ціна зі знижкою і валютою',
+    'sale_price_effective_date' => 'Дати знижки',
+    'description_html' => 'Опис (HTML)',
+    'description_cdata' => 'Опис (CDATA)',
+    'description_text' => 'Опис текстом',
+    'title' => 'Назва для майданчика',
+    'long_text' => 'Довгий текст для майданчика',
+    'mpn' => 'Артикул виробника',
+    'gtin' => 'GTIN',
+    'gtins' => 'Усі GTIN',
+    'identifier_exists' => 'Є ідентифікатор',
+    'product_type' => 'Шлях категорії',
+    'category_id' => 'ID категорії',
+    'platform_category' => 'Категорія майданчика',
+    'google_product_category' => 'Категорія товару Google',
+    'custom_label' => 'Власна мітка',
+    'fields' => [
+        'url' => 'Адреса',
+        'alt' => 'Альтернативний текст',
+        'value' => 'Значення',
+        'code' => 'Код',
+        'name' => 'Назва',
+    ],
+];

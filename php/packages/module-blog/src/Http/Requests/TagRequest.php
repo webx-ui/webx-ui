@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Blog\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use WebxUi\Admin\Screens\Types\SlugType;
 use WebxUi\Localization\Slug;
 
 /**
@@ -28,17 +29,9 @@ final class TagRequest extends FormRequest
     {
         return [
             'title' => [$this->isMethod('POST') ? 'required' : 'sometimes', 'string', 'max:190'],
-            'slug' => ['nullable', 'string', 'max:190', 'regex:/^[\p{L}\p{N}]+(?:[-_][\p{L}\p{N}]+)*$/u'],
+            'slug' => SlugType::checks(),
             'noindex' => ['sometimes', 'boolean'],
         ];
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    public function messages(): array
-    {
-        return ['slug.regex' => (string) __('webx-blog::errors.slug-shape')];
     }
 
     /**
@@ -62,7 +55,7 @@ final class TagRequest extends FormRequest
             $values['slug'] = $slug;
         } elseif ($this->isMethod('POST')) {
             // Made out of the title, transliterated, the way every address in this package is.
-            $values['slug'] = Slug::make((string) ($values['title'] ?? ''), $locale ?? app()->getLocale());
+            $values['slug'] = Slug::address((string) ($values['title'] ?? ''), $locale ?? app()->getLocale());
         }
 
         if ($this->has('noindex')) {

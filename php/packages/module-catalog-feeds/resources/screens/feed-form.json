@@ -1,0 +1,359 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "catalog.feed-form",
+  "model": "catalog.feed",
+  "root": [
+    {
+      "id": "tabs",
+      "type": "wx-tabs",
+      "children": [
+        {
+          "id": "main",
+          "type": "wx-tab",
+          "label": "trans::webx-catalog-feeds::feed.tab-main",
+          "children": [
+            {
+              "id": "basics",
+              "type": "wx-card",
+              "children": [
+                {
+                  "id": "name",
+                  "type": "wx-input",
+                  "name": "name",
+                  "label": "trans::webx-catalog-feeds::feed.name",
+                  "props": {
+                    "maxlength": 120
+                  }
+                },
+                {
+                  "id": "basics-row",
+                  "type": "wx-row",
+                  "props": {
+                    "gutter": 16
+                  },
+                  "children": [
+                    {
+                      "id": "format-col",
+                      "type": "wx-col",
+                      "visible": {
+                        "when": "driver",
+                        "is": null
+                      },
+                      "props": {
+                        "span": 24,
+                        "sm": 12
+                      },
+                      "children": [
+                        {
+                          "id": "format",
+                          "type": "wx-select",
+                          "name": "format",
+                          "label": "trans::webx-catalog-feeds::feed.format",
+                          "help": "trans::webx-catalog-feeds::feed.format-help",
+                          "props": {
+                            "options": [
+                              {
+                                "value": "xml",
+                                "label": "trans::webx-catalog-feeds::feed.format-xml"
+                              },
+                              {
+                                "value": "json",
+                                "label": "trans::webx-catalog-feeds::feed.format-json"
+                              },
+                              {
+                                "value": "csv",
+                                "label": "trans::webx-catalog-feeds::feed.format-csv"
+                              },
+                              {
+                                "value": "text",
+                                "label": "trans::webx-catalog-feeds::feed.format-text"
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "locale-col",
+                      "type": "wx-col",
+                      "props": {
+                        "span": 24,
+                        "sm": 12
+                      },
+                      "children": [
+                        {
+                          "id": "locale",
+                          "type": "wx-catalog-feed-locale",
+                          "name": "locale",
+                          "label": "trans::webx-catalog-feeds::feed.locale",
+                          "help": "trans::webx-catalog-feeds::feed.locale-help"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "currency-col",
+                      "type": "wx-col",
+                      "props": {
+                        "span": 24,
+                        "sm": 12
+                      },
+                      "children": [
+                        {
+                          "id": "currency",
+                          "type": "wx-input",
+                          "name": "currency",
+                          "label": "trans::webx-catalog-feeds::feed.currency",
+                          "help": "trans::webx-catalog-feeds::feed.currency-help",
+                          "props": {
+                            "disabled": true
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "format-csv-warning",
+                  "type": "wx-alert",
+                  "visible": {
+                    "when": "format",
+                    "is": "csv"
+                  },
+                  "props": {
+                    "type": "warning",
+                    "description": "trans::webx-catalog-feeds::feed.format-csv-warning"
+                  }
+                },
+                {
+                  "id": "is-active",
+                  "type": "wx-switch",
+                  "name": "is_active",
+                  "label": "trans::webx-catalog-feeds::feed.is_active",
+                  "help": "trans::webx-catalog-feeds::feed.is-active-help"
+                }
+              ]
+            },
+            {
+              "id": "address",
+              "type": "wx-card",
+              "label": "trans::webx-catalog-feeds::feed.card-address",
+              "children": [
+                {
+                  "id": "address-field",
+                  "type": "wx-catalog-feed-address"
+                }
+              ]
+            },
+            {
+              "id": "schedule-card",
+              "type": "wx-card",
+              "label": "trans::webx-catalog-feeds::feed.card-schedule",
+              "children": [
+                {
+                  "id": "schedule-row",
+                  "type": "wx-row",
+                  "props": {
+                    "gutter": 16
+                  },
+                  "children": [
+                    {
+                      "id": "schedule-col",
+                      "type": "wx-col",
+                      "props": {
+                        "span": 24,
+                        "sm": 12
+                      },
+                      "children": [
+                        {
+                          "id": "schedule",
+                          "type": "wx-select",
+                          "name": "schedule",
+                          "label": "trans::webx-catalog-feeds::feed.schedule",
+                          "props": {
+                            "options": [
+                              {
+                                "value": "manual",
+                                "label": "trans::webx-catalog-feeds::feed.schedule-manual"
+                              },
+                              {
+                                "value": "hourly",
+                                "label": "trans::webx-catalog-feeds::feed.schedule-hourly"
+                              },
+                              {
+                                "value": "every_6_hours",
+                                "label": "trans::webx-catalog-feeds::feed.schedule-every_6_hours"
+                              },
+                              {
+                                "value": "daily",
+                                "label": "trans::webx-catalog-feeds::feed.schedule-daily"
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "schedule-at-col",
+                      "type": "wx-col",
+                      "props": {
+                        "span": 24,
+                        "sm": 12
+                      },
+                      "children": [
+                        {
+                          "id": "schedule-at",
+                          "type": "wx-time-picker",
+                          "name": "schedule_at",
+                          "label": "trans::webx-catalog-feeds::feed.schedule_at",
+                          "help": "trans::webx-catalog-feeds::feed.schedule-at-help",
+                          "visible": {
+                            "when": "schedule",
+                            "is": "daily"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "rebuild-on-change",
+                  "type": "wx-switch",
+                  "name": "rebuild_on_change",
+                  "label": "trans::webx-catalog-feeds::feed.rebuild_on_change",
+                  "help": "trans::webx-catalog-feeds::feed.rebuild-on-change-help"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "template",
+          "type": "wx-tab",
+          "label": "trans::webx-catalog-feeds::feed.tab-template",
+          "children": [
+            {
+              "id": "template-field",
+              "type": "wx-catalog-feed-template"
+            }
+          ]
+        },
+        {
+          "id": "selection",
+          "type": "wx-tab",
+          "label": "trans::webx-catalog-feeds::feed.tab-selection",
+          "children": [
+            {
+              "id": "selection-card",
+              "type": "wx-card",
+              "children": [
+                {
+                  "id": "filter",
+                  "type": "wx-catalog-feed-filter",
+                  "name": "filter"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "exclusions",
+          "type": "wx-tab",
+          "label": "trans::webx-catalog-feeds::feed.tab-exclusions",
+          "children": [
+            {
+              "id": "exclusions-card",
+              "type": "wx-card",
+              "children": [
+                {
+                  "id": "exclusions-field",
+                  "type": "wx-catalog-feed-exclusions"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "mappings",
+          "type": "wx-tab",
+          "label": "trans::webx-catalog-feeds::feed.tab-mappings",
+          "children": [
+            {
+              "id": "stock-card",
+              "type": "wx-card",
+              "label": "trans::webx-catalog-feeds::feed.card-stock",
+              "children": [
+                {
+                  "id": "stock-map",
+                  "type": "wx-catalog-feed-stock-map",
+                  "name": "stock_map"
+                }
+              ]
+            },
+            {
+              "id": "categories-card",
+              "type": "wx-card",
+              "label": "trans::webx-catalog-feeds::feed.card-categories",
+              "children": [
+                {
+                  "id": "taxonomy",
+                  "type": "wx-select",
+                  "name": "taxonomy",
+                  "label": "trans::webx-catalog-feeds::feed.taxonomy",
+                  "help": "trans::webx-catalog-feeds::feed.taxonomy-help",
+                  "props": {
+                    "clearable": true,
+                    "placeholder": "trans::webx-catalog-feeds::feed.taxonomy-none",
+                    "options": [
+                      {
+                        "value": "google",
+                        "label": "trans::webx-catalog-feeds::feed.taxonomy-google"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "categories-field",
+                  "type": "wx-catalog-feed-categories"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "labels",
+          "type": "wx-tab",
+          "label": "trans::webx-catalog-feeds::feed.tab-labels",
+          "children": [
+            {
+              "id": "labels-card",
+              "type": "wx-card",
+              "children": [
+                {
+                  "id": "labels-field",
+                  "type": "wx-catalog-feed-labels"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "journal",
+          "type": "wx-tab",
+          "label": "trans::webx-catalog-feeds::feed.tab-journal",
+          "children": [
+            {
+              "id": "journal-card",
+              "type": "wx-card",
+              "children": [
+                {
+                  "id": "builds-field",
+                  "type": "wx-catalog-feed-builds"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -13,7 +13,7 @@
   `@webx-ui/module-*` — фронт разделов панели. `@webx-ui/adapter-laravel` не начинался.
 - **composer** (`php/packages/*`, вендор `webx-ui/*`, namespace `WebxUi`, одна общая версия):
   разделы панели `module-*` и библиотеки `cache`, `compositions`, `localization`, `mcp`, `nested-set`, `routing`,
-  `themes`, `theme-default`, `widgets`. Список и назначение — `ls php/packages` и реестр
+  `templates`, `themes`, `theme-default`, `widgets`. Список и назначение — `ls php/packages` и реестр
   `docs/architecture/WEBX_UI_COMPOSER_PACKAGES.md`.
 
 **Имена.** Всё, из чего состоит панель, — с префиксом `module-` (каркас `module-admin`, разделы);
@@ -114,6 +114,10 @@ scripts/                                # lab-site, link-panel, starter-site, sy
 - **Пятое — панель на сайте, оно не молчит:** раздел с адресами (`RouteType`) в том же коммите
   регистрирует каждый тип в `SiteBar::entity()`, иначе падает `SiteBarCoverageTest`. Всё для панели
   на сайте — через реестр и `siteBarTabs`, не в Blade (гайд `apps/docs/guide/site-bar-modules.md`).
+- **Новый экран или поле — справка в том же коммите** (`resources/help/<en|ru|uk>/<ключ>.md`, поле — по `id` узла;
+  маршрут называет ключ в `meta.help`), иначе падает `HelpCoverageTest` пакета: гайд `apps/docs/guide/panel-help.md`.
+  Новый пакет с экраном или разделом — ещё `HelpCoverageTest` и `directory()` в провайдере (держит
+  `HelpPackagesCoverageTest`).
 - **`AGENTS.md` пакета** — формат `docs/architecture/WEBX_UI_AGENT_DOCS.md`, ≤150 строк, держит
   `AgentDocsCoverageTest`.
 

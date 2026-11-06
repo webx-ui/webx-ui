@@ -74,12 +74,14 @@ export function blog(options: BlogOptions = {}): AdminModule[] {
         {
           path: `${path}/articles`,
           name: 'webx.blog.articles',
+          meta: { help: 'blog.articles' },
           component: () => import('./ArticlesPage.vue'),
           props: { base: path },
         },
         {
           path: `${path}/articles/:id(\\d+)`,
           name: 'webx.blog.articles.edit',
+          meta: { help: 'blog.article-form' },
           component: () => import('./ArticleEditorPage.vue'),
           props: { base: path },
         },
@@ -121,6 +123,7 @@ export function blog(options: BlogOptions = {}): AdminModule[] {
         {
           path: `${path}/tags`,
           name: 'webx.blog.tags',
+          meta: { help: 'blog.tags' },
           component: () => import('./TagsPage.vue'),
           props: { base: path },
         },
@@ -135,6 +138,7 @@ export function blog(options: BlogOptions = {}): AdminModule[] {
         {
           path: `${path}/authors`,
           name: 'webx.blog.authors',
+          meta: { help: 'blog.authors' },
           component: () => import('./AuthorsPage.vue'),
           props: { base: path },
         },

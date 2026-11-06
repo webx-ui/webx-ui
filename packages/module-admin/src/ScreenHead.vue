@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, useSlots, useTemplateRef } from 'vue'
+import { computed, inject, useSlots, useTemplateRef } from 'vue'
 import { WxAction, WxButton, WxHeading, WxIcon, WxText, useElementWidth } from '@webx-ui/core'
 import type { HeadingLevel } from '@webx-ui/core'
-import type { RouteLocationRaw } from 'vue-router'
+import { routeLocationKey, type RouteLocationRaw } from 'vue-router'
 import WxBackButton from './BackButton.vue'
 import WxRowMenu from './RowMenu.vue'
+import { HELP_PANEL_ID, useHelp } from './help'
 import { useTranslate } from './i18n'
 import type { ScreenAction } from './types'
 
@@ -65,6 +66,11 @@ const props = withDefaults(
      * never scrolls away and needs an edge of its own; a head that scrolls does not.
      */
     divider?: boolean
+    /**
+     * The key of the page of help behind the «?». A head of a screen takes it from its route's
+     * `meta.help`; a pane has a screen of its own and says which; `false` draws no button.
+     */
+    help?: string | false
   }>(),
   {
     title: undefined,
@@ -75,6 +81,7 @@ const props = withDefaults(
     actions: undefined,
     collapseBelow: 720,
     divider: false,
+    help: undefined,
   },
 )
 
@@ -131,6 +138,23 @@ const backTo = computed<RouteLocationRaw | null>(() =>
   props.back && props.back !== true ? (props.back as RouteLocationRaw) : null,
 )
 
+const panel = useHelp()
+// Optional: a head is mounted without a router in tests and in the docs.
+const route = inject(routeLocationKey, null)
+
+/** The page behind the «?»: none at all unless the server has one, so a button never fails. */
+const helpKey = computed<string | null>(() => {
+  const key = props.help ?? (props.level === 2 ? route?.meta.help : undefined)
+
+  return typeof key === 'string' && panel?.available(key) ? key : null
+})
+
+const helpOpen = computed(() => panel?.open.value === true && panel.key.value === helpKey.value)
+
+function toggleHelp(event: MouseEvent) {
+  if (helpKey.value) panel?.toggle(helpKey.value, event.currentTarget as HTMLElement | null)
+}
+
 const hasActions = computed(
   () => buttons.value.length > 0 || menu.value.length > 0 || Boolean(slots.extra),
 )
@@ -176,6 +200,21 @@ const hasActions = computed(
         {{ title }}
       </wx-heading>
       <slot name="title-after" />
+      <!-- Here and not among the actions: those fold into the `···` on a narrow head, and a
+           narrow head is where the help is wanted most. -->
+      <wx-action
+        v-if="helpKey"
+        class="wx-screen-head__help"
+        type="details"
+        icon="question"
+        tone="neutral"
+        size="sm"
+        :title="t('help.open')"
+        aria-haspopup="dialog"
+        :aria-expanded="helpOpen"
+        :aria-controls="HELP_PANEL_ID"
+        @click="toggleHelp"
+      />
     </div>
 
     <wx-text

@@ -13,11 +13,11 @@ use WebxUi\Catalog\Facets\CategoryFacet;
 use WebxUi\Catalog\Facets\Facet;
 use WebxUi\Catalog\Facets\FacetKind;
 use WebxUi\Catalog\Facets\Facets;
+use WebxUi\Catalog\Filter\BaseFacets;
+use WebxUi\Catalog\Filter\FacetSet;
 use WebxUi\Catalog\Models\Category;
-use WebxUi\CatalogLandings\Catalog\BaseFacets;
 use WebxUi\CatalogLandings\Catalog\LandingCounter;
 use WebxUi\CatalogLandings\Catalog\LandingGenerator;
-use WebxUi\CatalogLandings\Catalog\LandingSet;
 use WebxUi\CatalogLandings\Catalog\LandingWords;
 use WebxUi\CatalogLandings\Http\LandingForm;
 use WebxUi\CatalogLandings\Http\LandingResource;
@@ -160,7 +160,7 @@ final class LandingTools
 
             Tool::mutating(
                 'landings_delete',
-                'Put a landing in the bin. Its set stays taken until it is gone for good: landings_restore brings it back.',
+                'Put a landing in the bin. Its set stays taken until catalog_landings_purge: catalog_landings_restore brings it back.',
                 fn (array $arguments): array => $this->write($arguments, fn (): array => $this->delete($arguments)),
                 ['properties' => ['landing' => $landing], 'required' => ['landing']],
             ),
@@ -169,6 +169,15 @@ final class LandingTools
                 'landings_restore',
                 'Take a landing out of the bin.',
                 fn (array $arguments): array => $this->write($arguments, fn (): array => $this->restore($arguments)),
+                ['properties' => ['landing' => $landing], 'required' => ['landing']],
+            ),
+
+            Tool::mutating(
+                'landings_purge',
+                'Delete a landing in the bin for good, with its recommended products and SEO card. Cannot be undone. Only a landing in '
+                .'the bin: catalog_landings_delete puts it there first. Its address answers 404 with no redirect left, former addresses '
+                .'included, and the address and the set are free for a new landing.',
+                fn (array $arguments): array => $this->write($arguments, fn (): array => $this->purge($arguments)),
                 ['properties' => ['landing' => $landing], 'required' => ['landing']],
             ),
 
@@ -307,7 +316,7 @@ final class LandingTools
     {
         $locale = $this->locale($arguments);
         $category = isset($arguments['category']) ? $this->category($arguments['category']) : null;
-        $set = LandingSet::from($this->stored($arguments['set'] ?? null, $locale));
+        $set = FacetSet::from($this->stored($arguments['set'] ?? null, $locale));
 
         if ($set->isEmpty()) {
             throw new ToolFailure((string) __('webx-catalog-landings::errors.set-empty'));
@@ -333,7 +342,7 @@ final class LandingTools
         $locale = $this->locale($arguments);
         $category = isset($arguments['category']) ? $this->category($arguments['category']) : null;
         $filters = $this->stored($arguments['set'] ?? null, $locale);
-        $set = LandingSet::from($filters);
+        $set = FacetSet::from($filters);
 
         $input = [
             ...$this->fields($arguments, $locale, null),
@@ -416,6 +425,30 @@ final class LandingTools
         $landing->restore();
 
         return ['landing' => $this->answer($landing->refresh(), $this->locale($arguments))];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function purge(array $arguments): array
+    {
+        $landing = $this->landing($arguments['landing'] ?? null, true);
+
+        if ($landing->deleted_at === null) {
+            throw new ToolFailure("The landing {$landing->id} is not in the bin: catalog_landings_delete puts it there first.");
+        }
+
+        // Read before it goes: the words are the landing's.
+        $answer = [
+            'purged' => (int) $landing->id,
+            'name' => $landing->label($this->locale($arguments)),
+            'slug' => $landing->getTranslations('slug'),
+        ];
+
+        $landing->forceDelete();
+
+        return $answer;
     }
 
     /**
@@ -562,7 +595,7 @@ final class LandingTools
      *
      * @return list<array<string, mixed>>
      */
-    private function described(LandingSet $set, string $locale): array
+    private function described(FacetSet $set, string $locale): array
     {
         $described = [];
 

@@ -43,6 +43,16 @@ final class ShortcodesTest extends TestCase
     }
 
     #[Test]
+    public function a_block_shortcode_in_a_category_lead_stays_out_of_its_description(): void
+    {
+        app(Shortcodes::class)->register('section', '<section><h2>Picks</h2>Trail camera 10.00 Buy</section>', block: true);
+        $category = $this->category('implants');
+        $category->update(['lead' => '<p>Ask us: [phone]</p><p>[section]</p>']);
+
+        $this->assertSame('Ask us: +800 1234 5678', $category->seoFallback('en')?->description);
+    }
+
+    #[Test]
     public function the_json_ld_and_the_meta_of_a_service_carry_the_plain_text(): void
     {
         $this->withLead('crowns');

@@ -60,6 +60,7 @@ export function reviews(options: ReviewsOptions = {}): AdminModule[] {
         {
           path,
           name: 'webx.reviews',
+          meta: { help: 'reviews.index' },
           component: () => import('./ReviewsPage.vue'),
           props: { base: path },
         },

@@ -15,6 +15,7 @@ use WebxUi\Catalog\Http\Resources\ImageResource;
 use WebxUi\Catalog\Http\Resources\ProductResource;
 use WebxUi\Catalog\Models\Category;
 use WebxUi\Catalog\Models\Product;
+use WebxUi\Catalog\Models\ProductBarcode;
 use WebxUi\Catalog\Parts\ProductParts;
 use WebxUi\Localization\Locales;
 use WebxUi\Seo\Fields;
@@ -24,9 +25,10 @@ use WebxUi\Seo\Fields;
  * §11.2).
  *
  * The screen is `catalog.product-form`, keyed by field name. The core's own fields are columns of
- * the product; the additional categories are a pivot; the SEO card is `module-seo`'s; everything
- * else on the screen belongs to a satellite's part, named `<part>.<field>`. A save is one
- * transaction: the product, its categories, its card, every part that was sent, one journal row
+ * the product; the additional categories are a pivot, the additional barcodes a table of their
+ * own; the SEO card is `module-seo`'s; everything else on the screen belongs to a satellite's part,
+ * named `<part>.<field>`. A save is one transaction: the product, its categories and barcodes, its
+ * card, every part that was sent, one journal row
  * with all of their changes together, and one mark for the index. Any part that throws takes it
  * all back — a product saved without its stock status is a product the site sells wrongly.
  *
@@ -36,12 +38,12 @@ final class ProductForm
 {
     /** The product's own columns on the screen. */
     private const OWN = [
-        'name', 'slug', 'sku', 'barcode', 'summary', 'description', 'category_id',
+        'name', 'slug', 'sku', 'barcode', 'mpn', 'summary', 'description', 'category_id',
         'price', 'old_price', 'unit', 'priority', 'is_published',
     ];
 
-    /** Fields stored somewhere other than a column: the pivot and the SEO card. */
-    private const TAKEN = ['categories', Fields::SCREEN];
+    /** Fields stored somewhere other than a column: the pivot, the barcodes and the SEO card. */
+    private const TAKEN = ['categories', 'barcodes', Fields::SCREEN];
 
     public function __construct(
         private readonly ScreenRecord $record,
@@ -80,6 +82,8 @@ final class ProductForm
             'slug' => $product->getTranslations('slug'),
             'sku' => $product->sku,
             'barcode' => $product->barcode,
+            'barcodes' => $this->extraBarcodes($product),
+            'mpn' => $product->mpn,
             'summary' => $product->getTranslations('summary'),
             'description' => $product->getTranslations('description'),
             'category_id' => $product->category_id,
@@ -121,6 +125,8 @@ final class ProductForm
         $own = $split->own;
         $taken = $split->taken;
 
+        $this->assertBarcodesFit($taken['barcodes'] ?? null);
+
         DB::transaction(function () use ($product, $own, $taken, $shares): void {
             $created = ! $product->exists;
             $wasPublished = (bool) $product->getOriginal('is_published');
@@ -142,6 +148,13 @@ final class ProductForm
             } elseif (array_key_exists('category_id', $own)) {
                 // A new main category that was an additional one stops being additional (decision 2).
                 $product->categories()->detach($product->category_id);
+            }
+
+            if (array_key_exists('barcodes', $taken)) {
+                $changes = [...$changes, ...$this->syncBarcodes($product, $taken['barcodes'])];
+            } elseif (array_key_exists('barcode', $own)) {
+                // A new main barcode that was an additional one stops being additional.
+                $changes = [...$changes, ...$this->syncBarcodes($product, $this->extraBarcodes($product))];
             }
 
             if (array_key_exists(Fields::SCREEN, $taken)) {
@@ -262,6 +275,64 @@ final class ProductForm
             ->map(static fn (mixed $id): int => (int) $id)->all();
 
         return $ids;
+    }
+
+    /**
+     * The tags field knows only its own limit, and the column is shorter.
+     *
+     * @throws ValidationException
+     */
+    private function assertBarcodesFit(mixed $value): void
+    {
+        foreach (is_array($value) ? $value : [] as $code) {
+            if (is_string($code) && mb_strlen($code) > ProductBarcode::LENGTH) {
+                throw ValidationException::withMessages(['barcodes' => [(string) __('validation.max.string', [
+                    'attribute' => (string) __('webx-catalog::product.barcodes'),
+                    'max' => ProductBarcode::LENGTH,
+                ])]]);
+            }
+        }
+    }
+
+    /**
+     * The additional barcodes, the main one left out of them: it stands first already.
+     *
+     * @return list<array{field: string, from: mixed, to: mixed}>
+     */
+    private function syncBarcodes(Product $product, mixed $value): array
+    {
+        $before = $this->extraBarcodes($product);
+        $codes = is_array($value) ? array_filter($value, is_string(...)) : [];
+        $after = array_values(array_diff(array_unique($codes), [(string) $product->barcode]));
+
+        if ($before === $after) {
+            return [];
+        }
+
+        ProductBarcode::query()->where('product_id', $product->getKey())->delete();
+
+        foreach ($after as $position => $code) {
+            ProductBarcode::query()->create(['product_id' => $product->getKey(), 'barcode' => $code, 'position' => $position]);
+        }
+
+        $product->unsetRelation('barcodes');
+
+        return [['field' => 'barcodes', 'from' => $before, 'to' => $after]];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function extraBarcodes(Product $product): array
+    {
+        if (! $product->exists) {
+            return [];
+        }
+
+        /** @var list<string> $codes */
+        $codes = $product->barcodes()->pluck('barcode')->map(static fn (mixed $code): string => (string) $code)->all();
+
+        return $codes;
     }
 
     /**

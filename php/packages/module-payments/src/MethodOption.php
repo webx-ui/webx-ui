@@ -12,6 +12,7 @@ use WebxUi\Payments\Contracts\MethodType;
  */
 final readonly class MethodOption
 {
+    /** @param  list<string>  $marks  keys of `PaymentMarks`, in its order */
     public function __construct(
         public Method $method,
         public MethodType $type,
@@ -19,6 +20,9 @@ final readonly class MethodOption
         public ?string $note,
         public ?string $icon,
         public Kind $kind,
+        public ?string $group,
+        public array $marks = [],
+        public bool $applePayOnly = false,
     ) {}
 
     public function key(): string
@@ -26,7 +30,7 @@ final readonly class MethodOption
         return $this->method->key;
     }
 
-    /** @return array{key: string, title: string, note: string|null, icon: string|null, kind: string} */
+    /** @return array{key: string, title: string, note: string|null, icon: string|null, kind: string, group: string|null, marks: list<string>, apple_pay_only: bool} */
     public function toArray(): array
     {
         return [
@@ -35,6 +39,9 @@ final readonly class MethodOption
             'note' => $this->note,
             'icon' => $this->icon,
             'kind' => $this->kind->value,
+            'group' => $this->group,
+            'marks' => $this->marks,
+            'apple_pay_only' => $this->applePayOnly,
         ];
     }
 }

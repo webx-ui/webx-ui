@@ -9,8 +9,8 @@ use WebxUi\Notifications\Contracts\Provider;
 use WebxUi\Notifications\Contracts\WritesHtml;
 use WebxUi\Notifications\Events\EventDefinition;
 use WebxUi\Notifications\Models\Channel;
-use WebxUi\Notifications\Templates\Html;
-use WebxUi\Notifications\Templates\Template;
+use WebxUi\Templates\Html;
+use WebxUi\Templates\Template;
 
 /**
  * A channel's template and the values of an event made into one message (§7).

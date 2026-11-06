@@ -23,6 +23,7 @@ export function press(options: PressOptions = {}): AdminModule {
       {
         path,
         name: 'webx.press',
+        meta: { help: 'press.index' },
         component: () => import('./PressPage.vue'),
         props: { base: path },
       },

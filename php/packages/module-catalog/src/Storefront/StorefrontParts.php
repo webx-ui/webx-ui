@@ -16,8 +16,10 @@ use WebxUi\Catalog\Models\Product;
  * the point, in the order the modules booted. So a site can take a point over entirely, and
  * without that the satellites add to it without knowing about each other.
  *
- * Prepared data belongs to one page, so each {@see prepare()} replaces the last one's whole: a
- * worker serving the next request from the same process must not print this one's badges.
+ * Prepared data belongs to one page, so each {@see prepare()} replaces the last one's whole, and
+ * {@see flush()} clears it when a request ends: a page without a listing never calls `prepare()`,
+ * and its {@see extend()} must not add to the page a worker served before it. The class stays a
+ * singleton because the parts themselves are registered once, at boot; `scoped` would lose them.
  */
 final class StorefrontParts
 {
@@ -60,8 +62,7 @@ final class StorefrontParts
      */
     public function prepare(Collection $products): void
     {
-        $this->prepared = [];
-        $this->preparedIds = [];
+        $this->flush();
 
         foreach ($this->parts as $parts) {
             foreach ($parts as $part) {
@@ -104,6 +105,13 @@ final class StorefrontParts
         foreach ($products as $product) {
             $this->preparedIds[(int) $product->getKey()] = true;
         }
+    }
+
+    /** Forget the page; the parts stay. */
+    public function flush(): void
+    {
+        $this->prepared = [];
+        $this->preparedIds = [];
     }
 
     /**

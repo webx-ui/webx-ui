@@ -7,6 +7,7 @@ namespace WebxUi\Tasks;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Events\Dispatcher as Events;
 use Illuminate\Support\ServiceProvider;
+use WebxUi\Admin\Help\HelpRegistry;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Snapshots\SnapshotTables;
@@ -55,6 +56,8 @@ class TasksServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->app->make(HelpRegistry::class)->directory(__DIR__.'/../resources/help');
+
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-tasks');
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');

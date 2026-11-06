@@ -80,14 +80,15 @@ not that the logic is right.
 
 ## Packages
 
-| Package                | Purpose                                                    |
-| ---------------------- | ---------------------------------------------------------- |
-| `webx-ui/module-admin` | The frame: module contract, manifest, panel routes         |
-| `webx-ui/mcp`          | What a module offers an AI agent, and the registry for it  |
-| `webx-ui/module-auth`  | Administrators, roles, sign-in — and what closes the panel |
-| `webx-ui/nested-set`   | Nested set trees for Eloquent (`HasNestedSet`)             |
-| `webx-ui/cache`        | Cache on versioned keys (`CacheGroups`), on any store      |
-| `webx-ui/compositions` | Compound views as trees patched by id, compiled into Blade |
+| Package                | Purpose                                                                    |
+| ---------------------- | -------------------------------------------------------------------------- |
+| `webx-ui/module-admin` | The frame: module contract, manifest, panel routes                         |
+| `webx-ui/mcp`          | What a module offers an AI agent, and the registry for it                  |
+| `webx-ui/module-auth`  | Administrators, roles, sign-in — and what closes the panel                 |
+| `webx-ui/nested-set`   | Nested set trees for Eloquent (`HasNestedSet`)                             |
+| `webx-ui/cache`        | Cache on versioned keys (`CacheGroups`), on any store                      |
+| `webx-ui/compositions` | Compound views as trees patched by id, compiled into Blade                 |
+| `webx-ui/templates`    | Safe Mustache for templates kept in a database: checks, escaping by format |
 
 The roadmap for the rest lives in
 [`docs/architecture/WEBX_UI_COMPOSER_PACKAGES.md`](../docs/architecture/WEBX_UI_COMPOSER_PACKAGES.md).

@@ -34,6 +34,7 @@ export function delivery(options: DeliveryOptions = {}): AdminModule[] {
       {
         path: slug === '' ? path : `${path}/${slug}`,
         name,
+        meta: { help: slug === '' ? 'delivery.index' : `delivery.${slug}` },
         component: page as never,
       },
     ],

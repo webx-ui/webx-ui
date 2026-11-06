@@ -33,6 +33,48 @@
           "id": "fields-help",
           "type": "wx-alert",
           "props": { "type": "info", "description": "trans::webx-users::screen.fields-help" }
+        },
+        {
+          "id": "require-first-name",
+          "type": "wx-segmented",
+          "name": "users.fields.first_name",
+          "label": "trans::webx-users::screen.first-name",
+          "default": "optional",
+          "props": {
+            "options": [
+              { "value": "hidden", "label": "trans::webx-users::screen.requirement-hidden" },
+              { "value": "optional", "label": "trans::webx-users::screen.requirement-optional" },
+              { "value": "required", "label": "trans::webx-users::screen.requirement-required" }
+            ]
+          }
+        },
+        {
+          "id": "require-last-name",
+          "type": "wx-segmented",
+          "name": "users.fields.last_name",
+          "label": "trans::webx-users::screen.last-name",
+          "default": "optional",
+          "props": {
+            "options": [
+              { "value": "hidden", "label": "trans::webx-users::screen.requirement-hidden" },
+              { "value": "optional", "label": "trans::webx-users::screen.requirement-optional" },
+              { "value": "required", "label": "trans::webx-users::screen.requirement-required" }
+            ]
+          }
+        },
+        {
+          "id": "require-phone",
+          "type": "wx-segmented",
+          "name": "users.fields.phone",
+          "label": "trans::webx-users::screen.phone",
+          "default": "optional",
+          "props": {
+            "options": [
+              { "value": "hidden", "label": "trans::webx-users::screen.requirement-hidden" },
+              { "value": "optional", "label": "trans::webx-users::screen.requirement-optional" },
+              { "value": "required", "label": "trans::webx-users::screen.requirement-required" }
+            ]
+          }
         }
       ]
     }

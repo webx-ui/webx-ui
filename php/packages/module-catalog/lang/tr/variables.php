@@ -1,0 +1,43 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'url' => 'Ürün adresi',
+    'image_link' => 'Ana görsel adresi',
+    'images' => 'Tüm görseller',
+    'additional_images' => 'Ana görselden sonraki görseller',
+    'availability' => 'Stok durumu',
+    'brand' => 'Marka',
+    'id' => 'Ürün kimliği',
+    'group_id' => 'Varyant grubu',
+    'price' => 'Güncel fiyat',
+    'old_price' => 'Eski fiyat',
+    'price_with_currency' => 'Para birimli güncel fiyat',
+    'list_price' => 'Normal fiyat',
+    'list_price_with_currency' => 'Para birimli normal fiyat',
+    'sale_price' => 'İndirimli fiyat',
+    'sale_price_with_currency' => 'Para birimli indirimli fiyat',
+    'sale_price_effective_date' => 'İndirim tarihleri',
+    'description_html' => 'Açıklama (HTML)',
+    'description_cdata' => 'Açıklama (CDATA)',
+    'description_text' => 'Metin olarak açıklama',
+    'title' => 'Pazar yeri başlığı',
+    'long_text' => 'Pazar yeri uzun metni',
+    'mpn' => 'Üretici parça numarası',
+    'gtin' => 'GTIN',
+    'gtins' => 'Tüm GTIN’ler',
+    'identifier_exists' => 'Tanımlayıcı var',
+    'product_type' => 'Kategori yolu',
+    'category_id' => 'Kategori kimliği',
+    'platform_category' => 'Pazar yeri kategorisi',
+    'google_product_category' => 'Google ürün kategorisi',
+    'custom_label' => 'Özel etiket',
+    'fields' => [
+        'url' => 'Adres',
+        'alt' => 'Alternatif metin',
+        'value' => 'Değer',
+        'code' => 'Kod',
+        'name' => 'Ad',
+    ],
+];

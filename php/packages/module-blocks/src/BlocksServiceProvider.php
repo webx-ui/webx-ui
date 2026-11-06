@@ -20,6 +20,7 @@ use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Admin\Editing\EditedRecords;
 use WebxUi\Admin\Events\StoredContentRewritten;
 use WebxUi\Admin\Gate\Openings;
+use WebxUi\Admin\Help\HelpRegistry;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
@@ -126,6 +127,8 @@ class BlocksServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->app->make(HelpRegistry::class)->directory(__DIR__.'/../resources/help');
+
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-blocks');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-blocks');

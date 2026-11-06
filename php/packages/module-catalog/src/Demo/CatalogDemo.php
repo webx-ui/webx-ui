@@ -26,6 +26,9 @@ use WebxUi\Routing\Reserved;
  * from a short list, the prices a formula — nothing that looks like somebody's real catalogue. The
  * pictures are the library's two gradients (`module-media/resources/demo`), put into each gallery
  * through the same door an editor's upload uses.
+ *
+ * What a product feed has to get right is here too (§14.2 of the feeds spec): a sale, a real GTIN
+ * and a shop's own code, a product with no identifier at all, and the two names of {@see SAMPLES}.
  */
 final class CatalogDemo
 {
@@ -60,6 +63,15 @@ final class CatalogDemo
     private const PRODUCTS = 150;
 
     private const PICTURES = ['demo-wide.jpg', 'demo-square.jpg'];
+
+    /**
+     * Name => shelf. One written in Cyrillic, whose address still comes out in Latin letters, and
+     * one with everything a file format has to escape.
+     */
+    private const SAMPLES = [
+        'Кружка керамическая' => 'Cookware',
+        'Knife & board set "Pro" <20 cm>' => 'Knives',
+    ];
 
     /**
      * The one video of the demo: Big Buck Bunny, the Blender Foundation's open film on its own
@@ -120,6 +132,12 @@ final class CatalogDemo
         foreach (['Unsorted sample', 'Loose sample'] as $n => $name) {
             $this->product(self::PRODUCTS + $n, null, null, null, $locale, $ledger, $name);
         }
+
+        $i = self::PRODUCTS + 2;
+
+        foreach (self::SAMPLES as $name => $shelf) {
+            $this->product($i++, $shelf, $leaves[$shelf], null, $locale, $ledger, $name);
+        }
     }
 
     private function category(string $name, ?Category $parent, string $locale, DemoLedger $ledger): Category
@@ -150,6 +168,31 @@ final class CatalogDemo
         return $taken($slug) ? $slug.'-shop' : $slug;
     }
 
+    /**
+     * Every sixth a code from the range kept for a shop's own, which a marketplace is not given; the
+     * rest of every third a GTIN with its check digit right, under a prefix GS1 has given to nobody.
+     * Made up either way: no such product exists.
+     */
+    private function barcode(int $i): ?string
+    {
+        if ($i % 3 !== 0) {
+            return null;
+        }
+
+        if ($i % 2 === 0) {
+            return sprintf('200%010d', $i + 1);
+        }
+
+        $digits = sprintf('190%09d', $i + 1);
+        $sum = 0;
+
+        foreach (str_split(strrev($digits)) as $at => $digit) {
+            $sum += (int) $digit * ($at % 2 === 0 ? 3 : 1);
+        }
+
+        return $digits.((10 - $sum % 10) % 10);
+    }
+
     private function product(int $i, ?string $shelf, ?Category $main, ?Category $extra, string $locale, DemoLedger $ledger, ?string $name = null): Product
     {
         $name ??= self::ADJECTIVES[$i % count(self::ADJECTIVES)].' '.self::NOUNS[(string) $shelf].' '.(intdiv($i, 9) + 1);
@@ -158,8 +201,11 @@ final class CatalogDemo
         $product = Product::query()->create([
             'name' => [$locale => $name],
             'summary' => [$locale => 'A demo product: no such thing is for sale.'],
-            'description' => [$locale => '<p>'.$name.' is part of the demo catalogue. Its price, its article number and its picture are made up.</p>'],
+            'description' => [$locale => '<p>'.e($name).' is part of the demo catalogue. Its price, its article number and its picture are made up.</p>'],
             'sku' => sprintf('DEMO-%04d', $i + 1),
+            'barcode' => $this->barcode($i),
+            // With the barcodes this leaves every mix: both, either one, neither.
+            'mpn' => $i % 2 === 0 || $i % 12 === 3 ? sprintf('DEMO-MPN-%04d', $i + 1) : null,
             'category_id' => $main?->getKey(),
             'price' => $price,
             'old_price' => $i % 6 === 0 ? round($price * 1.25, 2) : null,
@@ -168,6 +214,11 @@ final class CatalogDemo
             'is_published' => $main !== null,
         ]);
         $ledger->created($product, $name);
+
+        // Every sixth comes in a second packaging, with a code of its own.
+        if ($i % 6 === 0) {
+            $product->barcodes()->create(['barcode' => sprintf('201%010d', $i + 1), 'position' => 0]);
+        }
 
         // Every fifth is filed on a second shelf too, the way a real catalogue files a gift set.
         if ($extra !== null && $i % 5 === 0 && $extra->getKey() !== $main?->getKey()) {

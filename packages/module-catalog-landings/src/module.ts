@@ -30,18 +30,21 @@ export function catalogLandings(options: CatalogLandingsOptions = {}): AdminModu
         {
           path: `${catalog}/landings`,
           name: 'webx.catalog-landings',
+          meta: { help: 'catalog-landings.index' },
           component: () => import('./LandingsPage.vue'),
           props,
         },
         {
           path: `${catalog}/landings/new`,
           name: 'webx.catalog-landings.new',
+          meta: { help: 'catalog.landing-form' },
           component: () => import('./LandingEditorPage.vue'),
           props,
         },
         {
           path: `${catalog}/landings/:id(\\d+)`,
           name: 'webx.catalog-landings.edit',
+          meta: { help: 'catalog.landing-form' },
           component: () => import('./LandingEditorPage.vue'),
           props,
         },

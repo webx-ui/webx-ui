@@ -325,6 +325,7 @@ const actions = computed<ScreenAction[]>(() => {
     <template v-else>
       <wx-screen-head
         :level="3"
+        help="blog.author-form"
         :back="!props.inline"
         :back-label="t('author.back')"
         :title="title"

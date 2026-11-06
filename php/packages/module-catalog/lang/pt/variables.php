@@ -1,0 +1,43 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'url' => 'Endereço do produto',
+    'image_link' => 'Endereço da imagem principal',
+    'images' => 'Todas as imagens',
+    'additional_images' => 'Imagens após a principal',
+    'availability' => 'Disponibilidade',
+    'brand' => 'Marca',
+    'id' => 'ID do produto',
+    'group_id' => 'Grupo de variantes',
+    'price' => 'Preço atual',
+    'old_price' => 'Preço antigo',
+    'price_with_currency' => 'Preço atual com moeda',
+    'list_price' => 'Preço normal',
+    'list_price_with_currency' => 'Preço normal com moeda',
+    'sale_price' => 'Preço promocional',
+    'sale_price_with_currency' => 'Preço promocional com moeda',
+    'sale_price_effective_date' => 'Datas da promoção',
+    'description_html' => 'Descrição (HTML)',
+    'description_cdata' => 'Descrição (CDATA)',
+    'description_text' => 'Descrição em texto',
+    'title' => 'Título para a plataforma',
+    'long_text' => 'Texto longo para a plataforma',
+    'mpn' => 'Referência do fabricante',
+    'gtin' => 'GTIN',
+    'gtins' => 'Todos os GTIN',
+    'identifier_exists' => 'Tem identificador',
+    'product_type' => 'Caminho da categoria',
+    'category_id' => 'ID da categoria',
+    'platform_category' => 'Categoria da plataforma',
+    'google_product_category' => 'Categoria de produto Google',
+    'custom_label' => 'Etiqueta personalizada',
+    'fields' => [
+        'url' => 'Endereço',
+        'alt' => 'Texto alternativo',
+        'value' => 'Valor',
+        'code' => 'Código',
+        'name' => 'Nome',
+    ],
+];

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Notifications\Contracts;
 
-use WebxUi\Notifications\Templates\Html;
+use WebxUi\Templates\Html;
 
 /**
  * A provider whose templates may be text or HTML, told apart by the template itself — a letter

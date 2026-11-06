@@ -17,6 +17,6 @@ export function cache(options: CacheOptions = {}): AdminModule {
   return {
     id: 'cache',
     path,
-    routes: [{ path, name: 'webx.cache', component: CachePage }],
+    routes: [{ path, name: 'webx.cache', meta: { help: 'cache.index' }, component: CachePage }],
   }
 }

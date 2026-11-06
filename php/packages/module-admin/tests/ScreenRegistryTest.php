@@ -33,6 +33,26 @@ final class ScreenRegistryTest extends PhpUnitTestCase
     }
 
     #[Test]
+    public function the_stages_keep_what_a_later_patch_took_away(): void
+    {
+        $screens = new ScreenRegistry;
+        $screens->register('settings.index', self::FIXTURE);
+        $screens->extend('settings.index', [
+            ['op' => 'add', 'target' => 'main', 'node' => ['id' => 'phone', 'type' => 'wx-input', 'name' => 'contacts.phone']],
+            ['op' => 'remove', 'target' => 'phone'],
+        ]);
+        $screens->extend('settings.index', static fn (): array => [['op' => 'remove', 'target' => 'map']]);
+
+        $stages = $screens->stages('settings.index');
+
+        $this->assertCount(4, $stages);
+        $this->assertNotNull(Tree::find($stages[0], 'map'));
+        $this->assertNotNull(Tree::find($stages[1], 'phone'));
+        $this->assertNull(Tree::find($stages[2], 'phone'));
+        $this->assertNull(Tree::find($stages[3], 'map'));
+    }
+
+    #[Test]
     public function a_patch_registered_before_the_screen_still_applies(): void
     {
         $screens = new ScreenRegistry;

@@ -12,6 +12,7 @@ use Illuminate\Support\HtmlString;
 use PHPUnit\Framework\Attributes\After;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Cart\Events\CartsMerging;
+use WebxUi\Cart\PurchasableLine;
 use WebxUi\Compositions\Compositions;
 use WebxUi\Compositions\Inspector;
 use WebxUi\Compositions\Testing\IsolatedCompositions;
@@ -48,6 +49,18 @@ final class CheckoutViewTest extends CheckoutTestCase
             (new Filesystem)->deleteDirectory($this->theme);
             $this->theme = null;
         }
+    }
+
+    #[Test]
+    public function a_line_of_the_column_leads_to_its_product_when_it_has_a_page(): void
+    {
+        $this->products->lines[1] = new PurchasableLine(name: 'Item A', sku: null, price: 4999, currency: 'EUR', url: 'https://shop.example.test/item-a');
+        $cart = $this->cart([['type' => 'test.product', 'ref' => 1], ['type' => 'test.product', 'ref' => 3]]);
+
+        $html = (string) $this->visit($cart, '/checkout')->assertOk()->getContent();
+
+        $this->assertStringContainsString('<span><a class="webx-orders-checkout__line-link" href="https://shop.example.test/item-a">Item A</a> </span>', $html);
+        $this->assertStringContainsString('<span>Part C </span>', $html);
     }
 
     #[Test]
@@ -129,7 +142,8 @@ final class CheckoutViewTest extends CheckoutTestCase
         $this->assertStringStartsWith('text/javascript', (string) $response->headers->get('Content-Type'));
         $this->assertStringContainsString('immutable', (string) $response->headers->get('Cache-Control'));
         $this->assertStringContainsString('webx:users:signed-in', (string) $response->getContent());
-        $this->assertLessThan(4096, strlen((string) gzencode(ScriptController::contents(), 9)), 'checkout.js is small (§27.3)');
+        // 7 KB, comments included: the cart edited in «Order contents» (§23.5) took it from 4; the page alone loads it.
+        $this->assertLessThan(7168, strlen((string) gzencode(ScriptController::contents(), 9)), 'checkout.js is small (§27.3)');
     }
 
     #[Test]

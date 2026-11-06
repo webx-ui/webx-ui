@@ -11,6 +11,7 @@ use Illuminate\Support\ServiceProvider;
 use InvalidArgumentException;
 use WebxUi\Admin\Categories\CategorySources;
 use WebxUi\Admin\Editing\EditedRecords;
+use WebxUi\Admin\Help\HelpRegistry;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
@@ -20,6 +21,7 @@ use WebxUi\Admin\SiteBar\SiteBar;
 use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Compositions\Compositions;
 use WebxUi\Localization\Http\Middleware\OneSpellingPerAddress;
+use WebxUi\Localization\SlugModels;
 use WebxUi\Routing\Formatters\Prefixed;
 use WebxUi\Routing\Formatters\Slug;
 use WebxUi\Routing\OnConflict;
@@ -63,6 +65,12 @@ class VacanciesServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->app->make(HelpRegistry::class)->directory(__DIR__.'/../resources/help');
+
+        $this->callAfterResolving(SlugModels::class, static function (SlugModels $models): void {
+            $models->register(VacancyCategory::class);
+        });
+
         $this->registerSiteBar();
 
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-vacancies');

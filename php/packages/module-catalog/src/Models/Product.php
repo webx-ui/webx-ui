@@ -25,6 +25,7 @@ use WebxUi\Catalog\Routing\CatalogMisses;
 use WebxUi\Catalog\Seo\ProductMarkup;
 use WebxUi\Catalog\Support\RequestMemo;
 use WebxUi\Localization\HasTranslations;
+use WebxUi\Localization\LocaleCatalogue;
 use WebxUi\Localization\Locales;
 use WebxUi\Localization\Slug;
 use WebxUi\Routing\Contracts\Visible;
@@ -56,6 +57,7 @@ use WebxUi\Seo\Rendering\SeoData;
  * @property int $id
  * @property string|null $sku
  * @property string|null $barcode
+ * @property string|null $mpn
  * @property string|null $external_id
  * @property array<string, string>|string|null $name
  * @property array<string, string>|string|null $slug
@@ -98,7 +100,7 @@ class Product extends Model implements HasBreadcrumbs, HasSeoFallback, HasStruct
 
     /** @var list<string> */
     protected $fillable = [
-        'sku', 'barcode', 'external_id', 'name', 'slug', 'summary', 'description',
+        'sku', 'barcode', 'mpn', 'external_id', 'name', 'slug', 'summary', 'description',
         'category_id', 'price', 'old_price', 'unit', 'priority', 'is_published',
     ];
 
@@ -190,6 +192,20 @@ class Product extends Model implements HasBreadcrumbs, HasSeoFallback, HasStruct
         return $this->hasTranslation('slug', $locale);
     }
 
+    /**
+     * {@see hasUrlIn()} as SQL. Both halves: an empty slug is no address, and neither is a JSON
+     * null, which `!= ''` alone would let through on MariaDB as the word "null". Qualified,
+     * because a sort may join a table with a slug of its own.
+     *
+     * @param  Builder<self>  $query
+     */
+    public function scopeWithUrlIn(Builder $query, string $locale): void
+    {
+        $path = $this->qualifyColumn('slug').'->'.LocaleCatalogue::normalise($locale);
+
+        $query->whereNotNull($path)->where($path, '!=', '');
+    }
+
     /** @return BelongsTo<Category, $this> */
     public function category(): BelongsTo
     {
@@ -210,6 +226,52 @@ class Product extends Model implements HasBreadcrumbs, HasSeoFallback, HasStruct
     public function images(): HasMany
     {
         return $this->hasMany(ProductImage::class, 'product_id')->orderBy('position')->orderBy('id');
+    }
+
+    /**
+     * The additional barcodes, in the order the form keeps them; the main one is a column.
+     *
+     * @return HasMany<ProductBarcode, $this>
+     */
+    public function barcodes(): HasMany
+    {
+        return $this->hasMany(ProductBarcode::class, 'product_id')->orderBy('position')->orderBy('id');
+    }
+
+    /**
+     * Every barcode of the product, the main one first: what a theme prints. A list loads them
+     * with {@see barcodeRelations()}, so that a card asking costs no query of its own.
+     *
+     * @return list<string>
+     */
+    public function allBarcodes(): array
+    {
+        if (! self::barcodesOn()) {
+            return [];
+        }
+
+        $codes = $this->barcodes->map(static fn (ProductBarcode $row): string => $row->barcode)->all();
+
+        return array_values(array_unique(array_filter(
+            [$this->barcode, ...$codes],
+            static fn (?string $code): bool => $code !== null && $code !== '',
+        )));
+    }
+
+    /**
+     * What a list of products eager-loads for {@see allBarcodes()}: nothing on a site without
+     * barcodes.
+     *
+     * @return list<string>
+     */
+    public static function barcodeRelations(): array
+    {
+        return self::barcodesOn() ? ['barcodes'] : [];
+    }
+
+    private static function barcodesOn(): bool
+    {
+        return (bool) config('webx-catalog.fields.barcode', true);
     }
 
     /** The first picture of the gallery, which is the main one. */
@@ -353,8 +415,8 @@ class Product extends Model implements HasBreadcrumbs, HasSeoFallback, HasStruct
     }
 
     /**
-     * A code of the product — the article number, the barcode, the external id — that is the term
-     * itself, as the database compares it.
+     * A code of the product — the article number, any of its barcodes, the external id — that is
+     * the term itself, as the database compares it.
      *
      * @param  Builder<covariant Model>  $query
      * @return Builder<covariant Model>
@@ -365,12 +427,22 @@ class Product extends Model implements HasBreadcrumbs, HasSeoFallback, HasStruct
 
         return $query->where(static fn (Builder $any): Builder => $any->where($table.'.sku', $term)
             ->orWhere($table.'.barcode', $term)
-            ->orWhere($table.'.external_id', $term));
+            ->orWhere($table.'.external_id', $term)
+            ->orWhereExists(static fn (QueryBuilder $extra): QueryBuilder => self::extraBarcodes($extra, $table)
+                ->where('catalog_product_barcodes.barcode', $term)));
+    }
+
+    /** The rows of the additional barcodes of the product the outer query stands on. */
+    private static function extraBarcodes(QueryBuilder $query, string $table): QueryBuilder
+    {
+        return $query->selectRaw('1')
+            ->from('catalog_product_barcodes')
+            ->whereColumn('catalog_product_barcodes.product_id', $table.'.id');
     }
 
     /**
-     * Name, article number, barcode or external id containing the words; the id itself when the
-     * words are one.
+     * Name, article number, any barcode or external id containing the words; the id itself when
+     * the words are one.
      *
      * @param  Builder<covariant Model>  $query
      * @return Builder<covariant Model>
@@ -384,7 +456,9 @@ class Product extends Model implements HasBreadcrumbs, HasSeoFallback, HasStruct
             $nested->where(static fn (Builder $half): Builder => $half->whereTranslationLikeAny('name', $like))
                 ->orWhere($table.'.sku', 'like', $like)
                 ->orWhere($table.'.barcode', 'like', $like)
-                ->orWhere($table.'.external_id', 'like', $like);
+                ->orWhere($table.'.external_id', 'like', $like)
+                ->orWhereExists(static fn (QueryBuilder $extra): QueryBuilder => self::extraBarcodes($extra, $table)
+                    ->where('catalog_product_barcodes.barcode', 'like', $like));
 
             if (ctype_digit($term)) {
                 $nested->orWhere($table.'.id', (int) $term);
@@ -574,7 +648,7 @@ class Product extends Model implements HasBreadcrumbs, HasSeoFallback, HasStruct
     /** An empty code is no code: `''` in a unique column would be a second product's clash. */
     private function normaliseCodes(): void
     {
-        foreach (['sku', 'barcode', 'external_id'] as $column) {
+        foreach (['sku', 'barcode', 'mpn', 'external_id'] as $column) {
             $value = $this->getAttribute($column);
 
             if (is_string($value)) {
@@ -604,16 +678,14 @@ class Product extends Model implements HasBreadcrumbs, HasSeoFallback, HasStruct
                 continue;
             }
 
-            $slug = Slug::make($name, (string) $locale);
-
-            if ($slug !== '') {
-                $slugs[$locale] = $slug;
-                $changed = true;
-            }
+            $slugs[$locale] = Slug::address($name, (string) $locale);
+            $changed = true;
         }
 
         if ($changed) {
             $this->setTranslations('slug', $slugs);
+            // This event runs after the trait's: a name that left nothing is still to be settled.
+            $this->latinizeSlug();
         }
     }
 

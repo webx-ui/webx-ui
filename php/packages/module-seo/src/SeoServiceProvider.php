@@ -11,6 +11,7 @@ use Illuminate\Foundation\Http\Kernel;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
+use WebxUi\Admin\Help\HelpRegistry;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
@@ -22,6 +23,7 @@ use WebxUi\Cache\CacheGroups;
 use WebxUi\Compositions\Compositions;
 use WebxUi\Compositions\CompositionsServiceProvider;
 use WebxUi\Media\MediaServiceProvider;
+use WebxUi\Routing\Contracts\AddressRedirects;
 use WebxUi\Routing\Contracts\Spelling;
 use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\Models\Route as RouteRow;
@@ -46,6 +48,7 @@ use WebxUi\Seo\Panel\SeoRules;
 use WebxUi\Seo\Panel\SiteBarSeo;
 use WebxUi\Seo\Panel\UrlMatcher;
 use WebxUi\Seo\Panel\UrlRuleSource;
+use WebxUi\Seo\Redirects\SeoAddressRedirects;
 use WebxUi\Seo\Rendering\Alternates;
 use WebxUi\Seo\Rendering\Breadcrumbs;
 use WebxUi\Seo\Rendering\EntitySource;
@@ -89,6 +92,7 @@ class SeoServiceProvider extends ServiceProvider
 
         $this->mergeConfigFrom(__DIR__.'/../config/webx-seo.php', 'webx-seo');
 
+        $this->app->bind(AddressRedirects::class, SeoAddressRedirects::class);
         $this->app->singleton(SeoSources::class);
         $this->app->singleton(SeoRules::class);
         $this->app->singleton(UrlMatcher::class);
@@ -113,6 +117,8 @@ class SeoServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->app->make(HelpRegistry::class)->directory(__DIR__.'/../resources/help');
+
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-seo');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-seo');
@@ -146,9 +152,11 @@ class SeoServiceProvider extends ServiceProvider
 
         $screens->extend(Settings::SCREEN, __DIR__.'/../resources/screens/settings.json');
 
-        // The default heading of interlinking blocks, only where interlinking exists (§18.1, 2).
-        if (Features::links()) {
-            $screens->extend(Settings::SCREEN, __DIR__.'/../resources/screens/settings.links.json');
+        // The default heading of interlinking blocks, only where interlinking exists (§18.1, 2). It is
+        // in the JSON and a site without it loses it here: what depends on the site has to be on a
+        // step of the screen for its help to be checked.
+        if (! Features::links()) {
+            $screens->extend(Settings::SCREEN, [['op' => 'remove', 'target' => 'links-heading']]);
         }
 
         // The card on the page editor, for the same reason and by the same mechanism: a

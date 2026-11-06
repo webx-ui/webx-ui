@@ -26,6 +26,10 @@ use WebxUi\Admin\Screens\FieldTypes;
  *   `nl2br(e(...))`, since `e()` hands an Htmlable its HTML as it is.
  * - {@see self::plain()} and {@see self::plainFromHtml()} — text where HTML cannot go: JSON-LD,
  *   a meta description, a feed's summary, a search index.
+ *
+ * Text is read from what is stored, never from {@see self::html()} with the tags taken out: a block
+ * shortcode prints a whole section, and its cards would come out as words. HTML that leaves the
+ * page — JSON-LD that takes HTML, a marketplace's feed — asks {@see self::html()} with `$blocks` off.
  */
 final readonly class PageText
 {
@@ -34,8 +38,8 @@ final readonly class PageText
         private FieldTypes $types,
     ) {}
 
-    /** A rich text field as a page prints it — '' for nothing written. */
-    public function html(mixed $stored, ?string $locale = null): string
+    /** A rich text field as a page prints it — '' for nothing written. `$blocks` off leaves the block shortcodes out. */
+    public function html(mixed $stored, ?string $locale = null, bool $blocks = true): string
     {
         if (! is_string($stored) || trim($stored) === '') {
             return '';
@@ -44,7 +48,7 @@ final readonly class PageText
         $type = $this->types->get('wx-rich-text');
         $resolved = $type === null ? $stored : $type->resolve($stored, [], $locale);
 
-        return $this->shortcodes->htmlIn(is_string($resolved) ? $resolved : $stored);
+        return $this->shortcodes->htmlIn(is_string($resolved) ? $resolved : $stored, $blocks);
     }
 
     /** A line or a paragraph an editor wrote, for a template to print. */

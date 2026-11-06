@@ -12,6 +12,7 @@ use WebxUi\Admin\Categories\CategoryLinkSource;
 use WebxUi\Admin\Categories\CategorySources;
 use WebxUi\Admin\Collections\CollectionSources;
 use WebxUi\Admin\Editing\EditedRecords;
+use WebxUi\Admin\Help\HelpRegistry;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Relations\RelationTargets;
@@ -67,6 +68,8 @@ class ServicesServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->app->make(HelpRegistry::class)->directory(__DIR__.'/../resources/help');
+
         $this->registerSiteBar();
 
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
@@ -217,8 +220,10 @@ class ServicesServiceProvider extends ServiceProvider
         $screens->register(Service::SCREEN, __DIR__.'/../resources/screens/form.json');
         $screens->register(ServiceCategory::SCREEN, __DIR__.'/../resources/screens/category-form.json');
 
-        if ((bool) $this->config()->get('webx-services.categories.blocks', false)) {
-            $screens->extend(ServiceCategory::SCREEN, __DIR__.'/../resources/screens/category-blocks.json');
+        // The tab is in the JSON and a site without it loses it here, not the other way round: what
+        // depends on the site has to be on a step of the screen for its help to be checked.
+        if (! (bool) $this->config()->get('webx-services.categories.blocks', false)) {
+            $screens->extend(ServiceCategory::SCREEN, [['op' => 'remove', 'target' => 'blocks-tab']]);
         }
 
         // `wx-categories` on the service form names its categories by the path they answer at;

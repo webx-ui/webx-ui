@@ -1,6 +1,6 @@
 import { computed, defineComponent, h, useAttrs, type Component } from 'vue'
 import { useTranslate } from './i18n'
-import { takesShortcodes, useShortcodesWhen } from './shortcodes'
+import { lineShortcodes, takesShortcodes, useShortcodesWhen } from './shortcodes'
 
 /**
  * `wx-input` and `wx-textarea` on a panel screen: the core's field, with the site's shortcodes
@@ -26,12 +26,14 @@ export function shortcodeTextField(control: Component, type: string, name: strin
         const rest: Record<string, unknown> = { ...attrs }
         delete rest.shortcodes
 
-        return wanted() && tokens.value.length > 0
+        const offered = lineShortcodes(tokens.value)
+
+        return wanted() && offered.length > 0
           ? {
               tokensTitle: t('shortcodes.title'),
               tokensLabel: t('shortcodes.insert'),
               ...rest,
-              tokens: tokens.value,
+              tokens: offered,
             }
           : rest
       })

@@ -13,8 +13,8 @@ use WebxUi\Notifications\Models\Channel;
 use WebxUi\Notifications\NotificationEvents;
 use WebxUi\Notifications\Providers;
 use WebxUi\Notifications\Refusal;
-use WebxUi\Notifications\Templates\Template;
-use WebxUi\Notifications\Templates\TemplateError;
+use WebxUi\Templates\Template;
+use WebxUi\Templates\TemplateError;
 
 /**
  * What a channel may hold (§3.3), checked the same way for every door that writes one — the

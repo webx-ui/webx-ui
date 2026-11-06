@@ -15,7 +15,7 @@ use WebxUi\Routing\Models\Route;
  * A product as a row of the list and as the head of the editor (§11.2).
  *
  * The name is in the panel's language, with the usual fallback — what a row shows. The editor
- * gets every language from `values`. Price, old price and barcode are left out when the site has
+ * gets every language from `values`. Price, old price, barcode and mpn are left out when the site has
  * them switched off, so a panel cannot show what the site does not have.
  *
  * `visible` is §5's answer: published and in at least one visible category. A list primes it for
@@ -45,6 +45,10 @@ final class ProductResource extends JsonResource
 
         if ((bool) config('webx-catalog.fields.barcode', true)) {
             $row['barcode'] = $product->barcode;
+        }
+
+        if ((bool) config('webx-catalog.fields.mpn', true)) {
+            $row['mpn'] = $product->mpn;
         }
 
         if ($priced) {

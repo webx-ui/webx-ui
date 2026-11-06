@@ -16,6 +16,9 @@ use Illuminate\Support\Str;
  */
 final class Slug
 {
+    /** The longest slug a form takes. */
+    public const int LENGTH = 190;
+
     /**
      * @param  string|null  $prefix  put before a result with no letter in it, or used alone for an empty one
      * @param  string  $separator  between words: `-` in an address, `_` in a machine name
@@ -49,5 +52,46 @@ final class Slug
         }
 
         return $prefix ?? '';
+    }
+
+    /**
+     * A name as the value of a slug field: its slug, or the name itself when nothing of it
+     * survives transliteration — so that {@see HasLatinSlug} sees a slug that came to nothing,
+     * which it answers with `<type>-<id>`, and not a language with no address at all.
+     */
+    public static function address(string $text, string $locale, int $max = 255): string
+    {
+        $slug = self::make($text, $locale, $max);
+
+        return $slug !== '' ? $slug : trim($text);
+    }
+
+    /**
+     * A slug someone wrote, brought to ASCII: the rule of the platform, whatever door it came in by.
+     *
+     * Only what is not ASCII is rewritten. An ASCII slug is returned as it came — a wrong shape
+     * of it is the form's to refuse in words, not this method's to quietly repair — and `_` stays,
+     * because it means something in a slug (`make()` would turn it into a hyphen). An answer of
+     * `''` means nothing was left: only hieroglyphs, or only signs.
+     */
+    public static function latin(string $slug, string $locale, int $max = self::LENGTH): string
+    {
+        if (self::isLatin($slug)) {
+            return preg_match('/[a-zA-Z0-9]/', $slug) === 1 ? $slug : '';
+        }
+
+        $parts = array_map(
+            // `Str::slug()` keeps a letter of a script it has no table for.
+            static fn (string $part): string => trim((string) preg_replace('/[^\x00-\x7F]+/', '', Str::slug($part, '-', $locale)), '-'),
+            explode('_', $slug),
+        );
+
+        return rtrim(substr(implode('_', array_filter($parts, static fn (string $part): bool => $part !== '')), 0, $max), '-_');
+    }
+
+    /** Nothing in it but ASCII: what an address may hold without being percent-encoded. */
+    public static function isLatin(string $slug): bool
+    {
+        return preg_match('/[^\x00-\x7F]/', $slug) !== 1;
     }
 }

@@ -48,6 +48,31 @@ final class ShortcodesTest extends TestCase
         $this->assertStringNotContainsString('[phone]', $body);
     }
 
+    /* The section is on the page, under the answer; the answer of `FAQPage` is its words. */
+    #[Test]
+    public function a_block_shortcode_in_an_answer_stays_out_of_the_faq_page(): void
+    {
+        app(Shortcodes::class)->register('section', '<section><h2>Picks</h2>Trail camera 10.00 Buy</section>', block: true);
+        $this->installBlock();
+        $this->question('Refunds', answer: ['en' => '<p>Call [phone] today.</p><p>[section]</p>']);
+        $this->question('Cards only', answer: ['en' => '<p>[section]</p>']);
+
+        $home = Page::home();
+        $this->assertInstanceOf(Page::class, $home);
+        $page = new Page(['title' => 'FAQ', 'slug' => 'faq']);
+        $page->appendTo($home);
+        $page->blocks = [['key' => 'k1', 'type' => 'faq', 'values' => []]];
+        $page->save();
+        $page->publish();
+
+        $body = (string) $this->get('/faq')->assertOk()->getContent();
+
+        $this->assertStringContainsString('<section><h2>Picks</h2>', $body);
+        $this->assertStringContainsString('"text":"Call +800 1234 5678 today."', $body);
+        $this->assertStringNotContainsString('"name":"Cards only"', $body);
+        $this->assertStringNotContainsString('Buy"', $body);
+    }
+
     #[Test]
     public function an_answer_an_agent_writes_keeps_the_bracket(): void
     {

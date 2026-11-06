@@ -37,7 +37,7 @@ final class McpTest extends TestCase
         $this->assertContains('menu:write', $registry->scopes());
 
         $this->assertSame(
-            ['history://types', 'menu://menus'],
+            ['help://screens', 'help://screens/{key}', 'history://types', 'menu://menus'],
             array_map(static fn ($resource): string => $resource->uri, $registry->resources()),
         );
     }
@@ -302,7 +302,7 @@ final class McpTest extends TestCase
     public function the_resource_carries_the_catalogue_and_the_house_rules(): void
     {
         $registry = $this->app->make(ToolRegistry::class);
-        $resource = $registry->resources()[1];
+        $resource = $registry->resources()[3];
 
         /** @var array<string, mixed> $document */
         $document = ($resource->handler)();

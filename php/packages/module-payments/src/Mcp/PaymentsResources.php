@@ -16,19 +16,22 @@ use WebxUi\Payments\Exchange\Direction;
 use WebxUi\Payments\Exchange\ExchangeKind;
 use WebxUi\Payments\Exchange\Outcome;
 use WebxUi\Payments\Gateways;
+use WebxUi\Payments\MethodGroup;
+use WebxUi\Payments\MethodGroups;
 use WebxUi\Payments\MethodTypes;
 use WebxUi\Payments\Models\PaymentMethod;
 use WebxUi\Payments\Online\PaymentLinks;
 use WebxUi\Payments\Panel\MethodForm;
+use WebxUi\Payments\PaymentMarks;
 use WebxUi\Payments\PaymentStatus;
 use WebxUi\Payments\SettleResult;
 
 /**
  * What an agent reads before it touches the payments (§16): the types the registry has and what
- * each can do, the rules of delivery, the statuses of an attempt with where each may go (§8.1), the
- * problems, the words of the exchange journal, and the address each online method takes the
- * gateway's notifications at. From the registries and the enums — nothing typed by hand here, so
- * the catalogue says what the site has.
+ * each can do, the groups with the pictograms and the marks, the rules of delivery, the statuses of
+ * an attempt with where each may go (§8.1), the problems, the words of the exchange journal, and the
+ * address each online method takes the gateway's notifications at. From the registries and the
+ * enums — nothing typed by hand here, so the catalogue says what the site has.
  */
 final readonly class PaymentsResources
 {
@@ -60,8 +63,9 @@ final readonly class PaymentsResources
             new McpResource(
                 'payments://catalog',
                 'Payments catalog',
-                'The types of payment methods (key, gateway, kind, whether the order awaits payment, whether the gateway '
-                .'can cancel, hold and capture, complete an approval), the rules of delivery, the statuses of an attempt '
+                'The types of payment methods (key, gateway, kind, the group they stand in, whether the order awaits payment, '
+                .'whether the gateway can cancel, hold and capture, complete an approval), the keys of the groups, the '
+                .'pictograms a group may take, the marks of payment systems, the rules of delivery, the statuses of an attempt '
                 .'and where each may go, the kinds of problems, the words of the exchange journal (directions, kinds, '
                 .'decisions), and the address each online method takes the gateway\'s notifications at. Read it before '
                 .'creating a method or reading the journal.',
@@ -78,6 +82,8 @@ final readonly class PaymentsResources
         $links = $this->container->make(PaymentLinks::class);
         $locale = $this->container->make(Locales::class)->content();
         $titles = array_column($this->container->make(MethodForm::class)->types(), 'title', 'key');
+        $groups = $this->container->make(MethodGroups::class);
+        $marks = $this->container->make(PaymentMarks::class);
         $rows = [];
 
         foreach ($types->all() as $type) {
@@ -88,6 +94,7 @@ final readonly class PaymentsResources
                 'gateway' => $gateway?->key(),
                 'gateway_title' => $gateway?->title($locale),
                 'kind' => $type->kind()->value,
+                'group' => $groups->ofType($type),
                 'awaits_payment' => $type->awaitsPayment(),
                 'currencies' => $type->currencies(),
                 'cancels' => $type instanceof CancelsPayments,
@@ -114,6 +121,18 @@ final readonly class PaymentsResources
 
         return [
             'types' => $rows,
+            'groups' => array_map(static fn (MethodGroup $group): array => [
+                'key' => $group->key,
+                'title' => $group->title($locale),
+                'pictogram' => $group->pictogram,
+            ], $groups->all()),
+            'pictograms' => MethodGroups::PICTOGRAMS,
+            // Read only: a method's type decides its marks, a manager does not (groups spec, decision 2).
+            'marks' => array_map(static fn (string $key): array => [
+                'key' => $key,
+                'alt' => $marks->get($key)->alt,
+                'plate' => $marks->get($key)->isPlate(),
+            ], $marks->keys()),
             'delivery_rules' => array_map(static fn (string $mode, string $does): array => ['mode' => $mode, 'does' => $does], array_keys(self::RULES), self::RULES),
             'statuses' => array_map(static fn (PaymentStatus $status): array => [
                 'status' => $status->value,

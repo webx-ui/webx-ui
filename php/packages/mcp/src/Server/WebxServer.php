@@ -52,6 +52,9 @@ final class WebxServer extends Server
      */
     public const FILE_FIELDS = 'media://fields';
 
+    /** What a field means, served by `webx-ui/module-admin` from the same files as the panel's help. */
+    public const HELP_TOOL = 'help_get';
+
     protected string $instructions = <<<'MARKDOWN'
         This is the admin panel of a site built on WebX UI. Every tool belongs to a module of
         the panel and is named `<module>_<tool>`.
@@ -123,6 +126,15 @@ final class WebxServer extends Server
                 $this->instructions .= "\n\nA field that holds a file from the media library — a cover, a photo, a logo, a gallery — "
                     .'takes the file by its id, as { "id": … }, by its key { "path": "media/…" }, or as the object media_get_file '
                     .'returns; `'.self::FILE_FIELDS.'` says it in full.';
+
+                break;
+            }
+        }
+
+        foreach ($registry->tools() as $tool) {
+            if ($tool->fullName() === self::HELP_TOOL && ! str_contains($this->instructions, self::HELP_TOOL)) {
+                $this->instructions .= "\n\nNot sure what a field means or what changing it does? Call `".self::HELP_TOOL.'` for its screen: '
+                    .'the same help a manager reads in the panel, with each field\'s `name`. `help_list` lists the screens.';
 
                 break;
             }

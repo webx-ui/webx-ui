@@ -6,6 +6,7 @@ namespace WebxUi\CatalogLandings\Catalog;
 
 use WebxUi\Catalog\Facets\FacetKind;
 use WebxUi\Catalog\Facets\Facets;
+use WebxUi\Catalog\Filter\FacetSet;
 use WebxUi\Catalog\Models\Category;
 use WebxUi\Localization\Locales;
 
@@ -31,7 +32,7 @@ final class LandingWords
      *
      * @return array<string, string>
      */
-    public function slugs(?Category $category, LandingSet $set, string $template = '{category}-{value}'): array
+    public function slugs(?Category $category, FacetSet $set, string $template = '{category}-{value}'): array
     {
         $result = [];
 
@@ -64,7 +65,7 @@ final class LandingWords
      *
      * @return array<string, string>
      */
-    public function names(?Category $category, LandingSet $set, string $template = '{category} {value}'): array
+    public function names(?Category $category, FacetSet $set, string $template = '{category} {value}'): array
     {
         $result = [];
 
@@ -98,7 +99,7 @@ final class LandingWords
      *
      * @return list<string>|null
      */
-    private function pieces(LandingSet $set, string $locale, bool $slugs): ?array
+    private function pieces(FacetSet $set, string $locale, bool $slugs): ?array
     {
         $pieces = [];
 

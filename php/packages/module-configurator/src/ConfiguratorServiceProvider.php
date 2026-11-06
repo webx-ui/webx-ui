@@ -7,6 +7,7 @@ namespace WebxUi\Configurator;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Editing\EditedRecords;
+use WebxUi\Admin\Help\HelpRegistry;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Relations\RelationTargets;
 use WebxUi\Admin\Screens\FieldTypes;
@@ -54,6 +55,8 @@ class ConfiguratorServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->app->make(HelpRegistry::class)->directory(__DIR__.'/../resources/help');
+
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-configurator');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-configurator');
@@ -126,6 +129,9 @@ class ConfiguratorServiceProvider extends ServiceProvider
         if (! class_exists(ProductParts::class) || ! $this->app->bound(ProductParts::class)) {
             return;
         }
+
+        // Apart from resources/help: on a site with no catalogue this text would have no screen.
+        $this->app->make(HelpRegistry::class)->directory(__DIR__.'/../resources/help-catalog');
 
         $this->app->make(ProductParts::class)->register(new ConfiguratorPart);
         $this->app->make(StorefrontParts::class)->register($this->app->make(OpenConfiguratorPart::class));

@@ -87,6 +87,15 @@ final class TableSchemaTest extends TestCase
         $this->assertSame('AT-1234/56 4601234567890', $row[TableSchema::CODES]);
         $this->assertSame('at123456 4601234567890', $row[TableSchema::CODES_FLAT]);
         $this->assertSame(['at123456', '4601234567890'], $row[TableSchema::CODE_KEYS]);
+
+        // Several values of a field are several codes, not one long one.
+        $row = $schema->row(['barcode' => '4601234567890', 'barcodes' => ['2000000000017', '20-00']]);
+        $this->assertSame('4601234567890 2000000000017 20-00', $row[TableSchema::CODES]);
+        $this->assertSame(['4601234567890', '2000000000017', '2000'], $row[TableSchema::CODE_KEYS]);
+        $this->assertSame(['2000000000017', '20-00'], $row['barcodes']);
+
+        $row = $schema->row(['sku' => 'AT-1234/56', 'barcode' => '4601234567890', 'external_id' => null]);
+
         // The article number is still an attribute of its own.
         $this->assertSame('AT-1234/56', $row['sku']);
         $this->assertSame([], $schema->row([])[TableSchema::CODE_KEYS]);
@@ -106,6 +115,7 @@ final class TableSchemaTest extends TestCase
                 new IndexField('name_de', IndexField::TEXT),
                 new IndexField('sku', IndexField::STRING, code: true),
                 new IndexField('barcode', IndexField::STRING, code: true),
+                new IndexField('barcodes', IndexField::STRING, multi: true, code: true),
                 new IndexField('external_id', IndexField::STRING, code: true),
             ],
             $locale,

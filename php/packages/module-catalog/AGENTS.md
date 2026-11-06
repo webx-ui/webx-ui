@@ -33,7 +33,7 @@ question is about one of them.
 - **Storefront points** that satellites print into: `catalog.card.badges`, `catalog.card.meta`,
   `catalog.product.aside`, `catalog.product.tabs`, `catalog.product.unavailable`,
   `catalog.listing.top`, `catalog.listing.bottom`; `catalog.product.quick` — the orders' «Buy in one
-  click» beside the cart's button while `orders` is a registered module (`Orders\QuickButton`). With the cart, `Cart\ProductPurchasable` is `catalog.product` and `FindsPurchasables` (the orders' «New order»: `matching()`, unpublished — unavailable).
+  click» beside the cart's button while `orders` is a registered module (`Orders\QuickButton`). The button of a card and of the page is one partial, `webx-catalog::buy` (`$block` — the BEM block), `$verdict` decides. With the cart, `Cart\ProductPurchasable` is `catalog.product` and `FindsPurchasables` (the orders' «New order»: `matching()`, unpublished — unavailable).
 - **Panel screens** `catalog.product-form` (tabs `main`, `description-tab`, `images-tab`,
   `seo-tab`, `settings-tab`, `history-tab`) and `catalog.category-form` (`main`, `filters-tab`,
   `seo-tab`, `history-tab`). Also the exchange forms `catalog.exchange-import` and `catalog.exchange-profile`. The API is under `/api/cms/catalog`.
@@ -43,8 +43,8 @@ question is about one of them.
   twice is kept on the request (`Support\RequestMemo`); categories by id, bounds and visibility — `Storefront\CategoryIndex`.
   Query budgets of every public page: `tests/PerformanceTest.php` (`WEBX_PERF_PRINT=1` prints the tallies).
 - **Registries** (singletons a satellite fills from its provider): `ProductParts`, `Facets`, `Sorts`, `Documents`,
-  `ProductColumns`, `BulkActions`, `ExchangeColumns`, `ExchangeFormats`, `StorefrontParts`, `Purchasability`,
-  `PopularitySignals`, `CatalogEngines`, `FilterUrls`, `SearchContributors`, `VideoProviders`, `SatelliteTools`.
+  `ProductColumns`, `BulkActions`, `ExchangeColumns`, `ExchangeFormats`, `ProductVariables`, `StorefrontParts`, `Purchasability`,
+  `PopularitySignals`, `CatalogEngines`, `FilterUrls`, `SearchContributors`, `VideoProviders`, `SatelliteTools`. A stored filter: `Filter\FacetSet`, `Filter\BaseFacets`.
 - **MCP** tools `catalog_products_*` (list, get, create, update, publish, unpublish, delete, restore),
   `catalog_products_gallery*`, `catalog_categories_*` (tree, create, update, move, delete, restore),
   `catalog_bulk`, `catalog_import`, `catalog_export`, `catalog_exchange_columns`, `_run`, `_profiles`.
@@ -76,7 +76,7 @@ adds next to the module asks the same: `cms.can:catalog.view,catalog.manage,cata
 | Different markup of a catalogue page         | `php artisan vendor:publish --tag=webx-catalog-views`, keep only the files you change                                                                                    |
 | A catalogue without prices                   | `WEBX_CATALOG_PRICE=false` (form, facet, sorts, exchange and markup all go)                                                                                              |
 | `Offer` in the product's structured data     | `WEBX_CATALOG_CURRENCY` (ISO 4217)                                                                                                                                       |
-| No barcode / no videos                       | `WEBX_CATALOG_BARCODE=false` / `WEBX_CATALOG_VIDEO=false`                                                                                                                |
+| No barcodes / no MPN / no videos             | `WEBX_CATALOG_BARCODE=false` / `WEBX_CATALOG_MPN=false` / `WEBX_CATALOG_VIDEO=false`                                                                                     |
 | Each category picks its own filters          | `WEBX_CATALOG_CATEGORY_FACETS=true` (the «Filters» tab)                                                                                                                  |
 | A `/catalog` page over everything            | `WEBX_CATALOG_ROOT=true`; `WEBX_CATALOG_ROOT_PREFIX` moves it and the search                                                                                             |
 | Translated filter codes in addresses         | `facet_codes` in `config/webx-catalog.php` (`--tag=webx-catalog-config`)                                                                                                 |
@@ -91,11 +91,11 @@ adds next to the module asks the same: `cms.can:catalog.view,catalog.manage,cata
 | Something in a card or on a product page     | a `StorefrontPart` registered at one of the points above                                                                                                                 |
 | A shelf of products in any template          | `products()->category('laptops')->sort('popular')->take(8)`; narrow it with `ProductQuery::macro`                                                                        |
 | A refusal to sell                            | a `PurchaseRule` in `Purchasability`                                                                                                                                     |
+| A value for a template of a product feed     | a `ProductVariable` in `ProductVariables`, a whole page per call; a column of `ExchangeColumns` is one by itself unless it is a `PrivateColumn`                          |
 
-Fields that are switched off are removed from the screen at boot, and so are never validated or
-saved. A satellite's fields on `catalog.product-form` are named `<part key>.<field>`. The core
+Fields that are switched off are removed from the screen at boot, and so are never validated or saved. A satellite's fields on `catalog.product-form` are named `<part key>.<field>`. The core
 saves its own data and every part in one transaction, which produces one journal entry. Product
-form node ids: `naming`, `name`, `slug`, `is_published`, `codes`, `sku`, `barcode-col`, `pricing`,
+form node ids: `naming`, `name`, `slug`, `is_published`, `codes`, `sku`, `mpn`, `barcode-col`, `barcode`, `barcodes`, `pricing`,
 `prices`, `price`, `old_price`, `unit`, `placement`, `category_id`, `categories`, `summary`,
 `description`, `gallery`, `seo`, `priority`, `history`. Category form node ids: `naming`, `name`,
 `slug`, `is_published`, `presentation`, `cover`, `description`, `facets`, `seo`, `history`.
@@ -136,7 +136,7 @@ form node ids: `naming`, `name`, `slug`, `is_published`, `codes`, `sku`, `barcod
 - With Manticore: run `php artisan webx:catalog:index` (schedule and queue worker needed) and the
   product shows up in search.
 - With MCP: read `catalog://fields` and `catalog://product-parts` first. Every write tool takes
-  `dry_run: true`. `catalog_products_get` shows what was saved.
+  `dry_run: true`. A theme prints every barcode with `$product->allBarcodes()`. `catalog_products_get` shows what was saved.
 - `tests/PerformanceTest.php`: query budgets of public pages and the panel's list, the site follows an edit, a move,
   a bulk action, an import at once; `StorefrontCacheTest`: every write path moves the generation.
 

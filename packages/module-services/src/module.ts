@@ -63,12 +63,14 @@ export function services(options: ServicesOptions = {}): AdminModule[] {
         {
           path,
           name: 'webx.services',
+          meta: { help: 'services.index' },
           component: () => import('./ServicesPage.vue'),
           props: { base: path },
         },
         {
           path: `${path}/:id(\\d+)`,
           name: 'webx.services.edit',
+          meta: { help: 'services.form' },
           component: () => import('./ServiceEditorPage.vue'),
           props: { base: path },
         },

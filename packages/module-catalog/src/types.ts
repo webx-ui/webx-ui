@@ -18,7 +18,7 @@ export interface CategoryRef {
 /**
  * One product as a row of the list and as the head of its editor (§11.2).
  *
- * `price`, `old_price` and `barcode` are absent — not null — when the site has them switched off,
+ * `price`, `old_price`, `barcode` and `mpn` are absent — not null — when the site has them switched off,
  * so the panel cannot show a column the site does not have.
  */
 export interface ProductRow {
@@ -27,6 +27,7 @@ export interface ProductRow {
   name: string
   sku: string | null
   barcode?: string | null
+  mpn?: string | null
   price?: number | null
   old_price?: number | null
   unit: string | null
@@ -231,6 +232,22 @@ export interface FacetSetting {
 }
 
 export type FacetKind = 'terms' | 'range' | 'toggle' | 'tree'
+
+/** One facet of a stored set: values of a list, or the ends of a range. */
+export type SetChoice = { values: string[] } | { min: number | null; max: number | null }
+
+/** A stored set as the server keeps it (`FacetSet`): facet key → choice. */
+export type FacetSetValue = Record<string, SetChoice>
+
+/** A facet a set can take, with its values counted (`BaseFacets`). */
+export interface BaseFacet {
+  key: string
+  label: string
+  kind: string
+  min: number | null
+  max: number | null
+  values: { value: string; label: string; count: number }[]
+}
 
 /**
  * One facet of the registry. Its values are not here: the list counts them for what it shows

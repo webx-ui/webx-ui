@@ -1,6 +1,6 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { WebxUI } from '@webx-ui/core'
+import { toast, WebxUI } from '@webx-ui/core'
 import { adminKey, createI18n, i18nKey, type AdminContext } from '@webx-ui/module-admin'
 import MethodPane from './MethodPane.vue'
 import type { MethodDetail, SettingField } from './types'
@@ -44,8 +44,14 @@ function detail(fields: SettingField[], settings: Record<string, unknown>, hold 
       warnings: [],
       enabled: true,
       position: 1,
+      group: null,
+      group_key: null,
+      marks: [],
+      similar_to: [],
     },
     values: { titles: {}, enabled: true },
+    warnings: [],
+    groups: [],
     settings: { fields, values: settings },
     credentials: [],
     credentials_unreadable: false,
@@ -67,7 +73,16 @@ async function render(data: MethodDetail) {
     state: { manifest: null, user: null, status: 'ready', error: null },
     can: () => true,
     loadScreen: () =>
-      Promise.resolve([{ id: 'settings', type: 'wx-card', visible: false, children: [] }]),
+      Promise.resolve([
+        {
+          id: 'group_key',
+          type: 'wx-select',
+          name: 'group_key',
+          label: 'Group',
+          props: { options: [] },
+        },
+        { id: 'settings', type: 'wx-card', visible: false, children: [] },
+      ]),
     screenPatch: () => [],
   } as unknown as AdminContext
 
@@ -160,5 +175,48 @@ describe('a field taken away by a switch', () => {
 
     expect(switches(wrapper).own.attributes('disabled')).toBeUndefined()
     wrapper.unmount()
+  })
+})
+
+describe('a method like another in its group', () => {
+  const words = 'This group already has a method with Google Pay'
+
+  it('says so over the fields, and a save goes through and says it again', async () => {
+    const data = { ...detail([], {}), warnings: [words] }
+    const warned = vi.spyOn(toast, 'warning')
+    const { wrapper, put } = await render(data)
+
+    expect(wrapper.find('[data-test="method-similar"]').text()).toContain(words)
+
+    await switches(wrapper).own.setValue(true)
+    await wrapper.find('[data-test="method-save"]').trigger('click')
+    await flushPromises()
+
+    expect(put).toHaveBeenCalledOnce()
+    expect(wrapper.find('[data-test="method-similar"]').text()).toContain(words)
+    expect(warned).toHaveBeenCalledWith(words)
+  })
+
+  it('says nothing when there is nothing to say', async () => {
+    const { wrapper } = await render(detail([], {}))
+
+    expect(wrapper.find('[data-test="method-similar"]').exists()).toBe(false)
+  })
+})
+
+describe('the field «Group»', () => {
+  const groups = [
+    { value: '', label: 'Default (Pay online)' },
+    { value: 'transfer', label: 'Bank transfer' },
+  ]
+
+  it('stands in the form of a site with groups, and not of a site without', async () => {
+    const grouped = await render({ ...detail([], {}), groups })
+
+    expect(grouped.wrapper.find('.wx-select').exists()).toBe(true)
+
+    const flat = await render(detail([], {}))
+
+    expect(flat.wrapper.find('.wx-select').exists()).toBe(false)
   })
 })

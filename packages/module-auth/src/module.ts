@@ -42,21 +42,37 @@ export function admins(options: AdminsOptions = {}): AdminModule {
     id: 'admins',
     path,
     routes: [
-      { path, name: 'webx.admins', component: page('admins') },
+      { path, name: 'webx.admins', meta: { help: 'admins.index' }, component: page('admins') },
       // The roles: what the people above are allowed, as named sets of permissions.
-      { path: `${path}/roles`, name: 'webx.admins.roles', component: page('roles') },
+      {
+        path: `${path}/roles`,
+        name: 'webx.admins.roles',
+        meta: { help: 'admins.roles' },
+        component: page('roles'),
+      },
       // What their agents did, which agents they let in, and their keys: more views of the same
       // section, each with an address of its own so that its filters survive a trip to the
       // people and back.
-      { path: `${path}/calls`, name: 'webx.admins.calls', component: page('calls') },
+      {
+        path: `${path}/calls`,
+        name: 'webx.admins.calls',
+        meta: { help: 'admins.calls' },
+        component: page('calls'),
+      },
       {
         path: `${path}/connections`,
         name: 'webx.admins.connections',
+        meta: { help: 'admins.connections' },
         component: page('connections'),
       },
       // Keys for programs: a connection without a browser, issued by somebody who manages
       // the people it acts as.
-      { path: `${path}/keys`, name: 'webx.admins.keys', component: page('keys') },
+      {
+        path: `${path}/keys`,
+        name: 'webx.admins.keys',
+        meta: { help: 'admins.keys' },
+        component: page('keys'),
+      },
     ],
   }
 }
@@ -83,6 +99,13 @@ export function connect(options: ConnectOptions = {}): AdminModule {
   return {
     id: 'connect',
     path,
-    routes: [{ path, name: 'webx.connect', component: () => import('./ConnectPage.vue') }],
+    routes: [
+      {
+        path,
+        name: 'webx.connect',
+        meta: { help: 'connect.index' },
+        component: () => import('./ConnectPage.vue'),
+      },
+    ],
   }
 }

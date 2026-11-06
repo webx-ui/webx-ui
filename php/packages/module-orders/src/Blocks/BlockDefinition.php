@@ -42,6 +42,10 @@ final readonly class BlockDefinition
      *                                                                             the orders passed, the id of each the buyer can
      *                                                                             pay now and the `title` it reads over the public
      *                                                                             status — all at once, a list asks nothing per row
+     * @param  (Closure(array<string, mixed>, Order, string): ?string)|null  $offer  an order that does not await payment and the
+     *                                                                               buyer may still pay now, as HTML under the scale —
+     *                                                                               an order on receipt; the public status stays, it is
+     *                                                                               true; null — nothing to offer
      */
     public function __construct(
         public string $key,
@@ -55,5 +59,6 @@ final readonly class BlockDefinition
         public ?Closure $held = null,
         public ?Closure $prompt = null,
         public ?Closure $awaiting = null,
+        public ?Closure $offer = null,
     ) {}
 }

@@ -73,7 +73,8 @@ final class CatalogTools
         $values = [
             'type' => 'object',
             'description' => 'Field name → value, as catalog_products_get returns them. Text fields take one language as a string '
-                .'or every language as { "en": "…" }. A satellite\'s field is "<part>.<field>" — read catalog://product-parts first.',
+                .'or every language as { "en": "…" }. barcode is the main barcode; barcodes is the list of additional ones, '
+                .'and a list sent replaces the one there. A satellite\'s field is "<part>.<field>" — read catalog://product-parts first.',
         ];
         $image = ['type' => 'integer', 'description' => 'The picture id, as catalog_products_gallery returns it.'];
         $words = ['description' => 'One language as a string, or every language as { "en": "…" }; a language left out keeps what it had.'];
@@ -86,12 +87,12 @@ final class CatalogTools
         return [
             Tool::read(
                 'products_list',
-                'Find products the way the panel\'s list does: a search over name, article number and barcode, the '
+                'Find products the way the panel\'s list does: a search over name, article number and every barcode, the '
                 .'facets of catalog://facets, a state (published, unpublished, no-category) and a sort. Every '
                 .'product, on the site or not; with each page, what every facet counts for the list as filtered.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->list($arguments)),
                 ['properties' => [
-                    'q' => ['type' => 'string', 'description' => 'Words in the name, the article number or the barcode; an id.'],
+                    'q' => ['type' => 'string', 'description' => 'Words in the name, the article number or any barcode; an id.'],
                     'state' => ['type' => 'string', 'enum' => [CatalogQuery::STATE_PUBLISHED, CatalogQuery::STATE_UNPUBLISHED, CatalogQuery::STATE_NO_CATEGORY]],
                     'facets' => ['type' => 'object', 'description' => 'Facet key → chosen values: { "category": ["3"], "price": { "min": 100 } }.'],
                     'sort' => ['type' => 'string', 'description' => 'A sort key from catalog://facets; the default order when omitted.'],

@@ -42,7 +42,7 @@ final class DemoTest extends TestCase
 
         $statuses = StockStatus::query()->pluck('code', 'id');
         $counts = DB::table(StockStatus::LINKS)->get()->countBy(static fn (object $row): string => (string) $statuses[$row->status_id]);
-        $this->assertSame(15, $counts['out-of-stock']);
+        $this->assertSame(16, $counts['out-of-stock']);
         $this->assertSame(15, $counts['on-order']);
         $this->assertGreaterThan(0, $counts['in-stock']);
         $this->assertSame(3, StockStatus::query()->count(), 'Nothing of its own: the statuses are the migration\'s.');

@@ -82,12 +82,13 @@ final class JobPostingMarkup
 
     /**
      * The description, then each list under its heading — HTML, which is what Google takes here.
-     * The lead where nothing else is written: the property is required.
+     * The lead where nothing else is written: the property is required. A block shortcode stays
+     * on the page: a section of cards is no part of a job's description.
      */
     private function description(Vacancy $vacancy, string $locale): string
     {
         $parts = [];
-        $html = trim($vacancy->descriptionHtml($locale));
+        $html = trim($this->text->html($vacancy->getTranslation('description', $locale, false), $locale, blocks: false));
 
         if ($html !== '') {
             $parts[] = $html;

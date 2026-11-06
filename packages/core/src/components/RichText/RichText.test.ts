@@ -785,6 +785,31 @@ describe('WxRichText placeholders', () => {
     return wrapper.findAll('.ProseMirror .wx-token').map((chip) => chip.text())
   }
 
+  it('writes a row’s whole bracket, with several rows under one name', async () => {
+    const wrapper = await mountEditor({
+      tokens: [
+        { name: 'gallery', text: '[gallery key=summer]', description: 'Summer' },
+        { name: 'gallery', text: '[gallery key=winter]', description: 'Winter' },
+      ],
+    })
+    const editor = editorOf(wrapper)
+
+    editor.commands.focus()
+    editor.commands.insertContent('[gal')
+    await flush()
+    expect(options().map((option) => option.textContent)).toEqual([
+      '[gallery key=summer]Summer',
+      '[gallery key=winter]Winter',
+    ])
+
+    await wrapper.get('.ProseMirror').trigger('keydown', { key: 'ArrowDown' })
+    await wrapper.get('.ProseMirror').trigger('keydown', { key: 'Enter' })
+    await flush()
+
+    expect(editor.getHTML()).toBe('<p>[gallery key=winter]</p>')
+    expect(chips(wrapper)).toEqual(['[gallery key=winter]'])
+  })
+
   it('suggests on a bracket and replaces the typed part on Enter', async () => {
     const wrapper = await mountEditor({ tokens })
     const editor = editorOf(wrapper)

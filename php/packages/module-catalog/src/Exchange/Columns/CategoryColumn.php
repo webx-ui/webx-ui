@@ -51,7 +51,7 @@ final class CategoryColumn implements DescribesCell, ExchangeColumn
     public function export(Collection $products, ?string $locale): array
     {
         $paths = new CategoryPaths(app(Locales::class)->defaultCode());
-        $ids = $this->multiple ? $this->extra($products) : [];
+        $ids = $this->multiple ? self::extra($products) : [];
         $cells = [];
 
         foreach ($products as $product) {
@@ -89,7 +89,7 @@ final class CategoryColumn implements DescribesCell, ExchangeColumn
      * @param  Collection<int, Product>  $products
      * @return array<int, list<int>>
      */
-    private function extra(Collection $products): array
+    public static function extra(Collection $products): array
     {
         $ids = [];
 

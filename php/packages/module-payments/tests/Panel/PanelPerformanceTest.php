@@ -26,6 +26,7 @@ final class PanelPerformanceTest extends PanelCase
         // The budgets count the panel's own work: the session, the administrator and the roles.
         return [
             'methods' => ['methods', 12],
+            'groups' => ['groups', 12],
             'attempts' => ['attempts', 12],
             'exchange' => ['exchange', 12],
             'exchange of an order' => ['exchange?errors=1&kind=notify', 12],

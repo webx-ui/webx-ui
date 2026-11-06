@@ -61,6 +61,7 @@ export function faq(options: FaqOptions = {}): AdminModule[] {
         {
           path,
           name: 'webx.faq',
+          meta: { help: 'faq.index' },
           component: () => import('./QuestionsPage.vue'),
           props: { base: path },
         },

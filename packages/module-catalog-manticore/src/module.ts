@@ -21,7 +21,12 @@ export function catalogManticore(options: CatalogManticoreOptions = {}): AdminMo
       id: 'search-index',
       path,
       routes: [
-        { path, name: 'webx.search-index', component: () => import('./SearchIndexPage.vue') },
+        {
+          path,
+          name: 'webx.search-index',
+          meta: { help: 'search-index.index' },
+          component: () => import('./SearchIndexPage.vue'),
+        },
       ],
     },
   ]

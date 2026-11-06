@@ -64,14 +64,14 @@ property in the bin drops out of every set at the next count. Saving the landing
 ## API
 
 `/api/cms/catalog/landings` — the list (`q`, `category` — an id or `root` — `attention`,
-`published`, `empty`, `trashed`), a landing, `POST`, `PUT`, `DELETE`, `restore`, `publish`,
-`unpublish`; `POST count` (a set → the number of products, and the landing that already holds it)
+`published`, `empty`, `trashed` — the bin, last deleted first), a landing, `POST`, `PUT`, `DELETE`,
+`restore`, `DELETE {id}/purge` (from the bin only), `publish`, `unpublish`; `POST count` (a set → the number of products, and the landing that already holds it)
 and `GET facets?category=` (the facets of a base with their values).
 
 ## To an agent
 
 The tools are the catalogue's — `catalog_landings_list`, `_get`, `_facets`, `_count`,
-`_create`, `_update`, `_publish`, `_unpublish`, `_delete`, `_restore`, `_generate` (with
+`_create`, `_update`, `_publish`, `_unpublish`, `_delete`, `_restore`, `_purge`, `_generate` (with
 `dry_run` — the preview) and `_generation` — under the scopes `catalog:read` and
 `catalog:write`. A set is written in facet codes and value slugs, as an address spells them —
 `{ "brand": ["apple"], "price": { "max": 50000 } }` — and every answer gives the ids it is stored

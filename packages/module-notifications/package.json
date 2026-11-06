@@ -51,11 +51,9 @@
   "dependencies": {
     "@webx-ui/core": "workspace:^",
     "@webx-ui/module-admin": "workspace:^",
-    "@webx-ui/schema": "workspace:^",
-    "mustache": "^4.2.0"
+    "@webx-ui/schema": "workspace:^"
   },
   "devDependencies": {
-    "@types/mustache": "^4.2.6",
     "@types/node": "^24.10.1",
     "@vitejs/plugin-vue": "^6.0.1",
     "typescript": "^5.9.3",

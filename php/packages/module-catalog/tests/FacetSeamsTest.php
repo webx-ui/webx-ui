@@ -121,6 +121,21 @@ final class FacetSeamsTest extends TestCase
     }
 
     #[Test]
+    public function a_selection_reads_the_facets_of_a_source_without_touching_the_storefronts(): void
+    {
+        $source = new PropertySource(['material']);
+        $facets = $this->app->make(Facets::class);
+        $facets->source($source);
+
+        $this->assertArrayHasKey('p.material', $facets->selectable('en'));
+        $this->assertArrayHasKey('colour', $facets->selectable('en'));
+        $this->assertSame(2, $source->asked, 'a selection is not kept: each read asks the source');
+
+        $facets->flush();
+        $this->assertSame(['category', 'price', 'colour', 'p.material'], $facets->keys());
+    }
+
+    #[Test]
     public function the_source_of_facets_is_asked_once_until_it_is_flushed(): void
     {
         $source = new PropertySource(['material', 'size']);

@@ -21,6 +21,13 @@ export function menu(options: MenuOptions = {}): AdminModule {
   return {
     id: 'menu',
     path,
-    routes: [{ path, name: 'webx.menus', component: () => import('./MenusPage.vue') }],
+    routes: [
+      {
+        path,
+        name: 'webx.menus',
+        meta: { help: 'menus.index' },
+        component: () => import('./MenusPage.vue'),
+      },
+    ],
   }
 }

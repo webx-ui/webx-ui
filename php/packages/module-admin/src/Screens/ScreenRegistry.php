@@ -201,6 +201,34 @@ final class ScreenRegistry
     }
 
     /**
+     * The screen as it stood at every step: the reference tree, then the tree after each operation
+     * of each patch, with nothing withdrawn. What a setting of the site takes away is still on the
+     * steps before it, so together they are every node the screen has on any site with the
+     * packages loaded here. Nobody draws this: it is for telling a field a site has switched off
+     * from one that does not exist.
+     *
+     * @return list<list<Node>>
+     */
+    public function stages(string $name): array
+    {
+        if (! isset($this->trees[$name])) {
+            throw ScreenException::unknown($name);
+        }
+
+        $root = $this->trees[$name];
+        $stages = [$root];
+
+        foreach ($this->patches[$name] ?? [] as $patch) {
+            foreach ($patch instanceof Closure ? $this->deferred($name, $patch) : $patch as $operation) {
+                $root = Patcher::apply($name, $root, [$operation]);
+                $stages[] = $root;
+            }
+        }
+
+        return $stages;
+    }
+
+    /**
      * What one administrator gets to see: nodes without their permission cut out, and every
      * `trans::` string turned into words in their language.
      *

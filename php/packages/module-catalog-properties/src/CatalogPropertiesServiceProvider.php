@@ -10,6 +10,7 @@ use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Categories\CategorySources;
+use WebxUi\Admin\Help\HelpRegistry;
 use WebxUi\Admin\History\HistoryTypes;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
@@ -28,6 +29,7 @@ use WebxUi\Catalog\Search\SearchContributors;
 use WebxUi\Catalog\Storefront\StorefrontCache;
 use WebxUi\Catalog\Storefront\StorefrontParts;
 use WebxUi\Catalog\Support\RequestMemo;
+use WebxUi\Catalog\Variables\ProductVariables;
 use WebxUi\CatalogProperties\Catalog\ProductValues;
 use WebxUi\CatalogProperties\Catalog\Properties;
 use WebxUi\CatalogProperties\Catalog\PropertiesDocument;
@@ -35,6 +37,7 @@ use WebxUi\CatalogProperties\Catalog\PropertiesPart;
 use WebxUi\CatalogProperties\Catalog\PropertyActions;
 use WebxUi\CatalogProperties\Catalog\PropertySets;
 use WebxUi\CatalogProperties\Exchange\PropertyExchangeColumns;
+use WebxUi\CatalogProperties\Exchange\PropertyVariables;
 use WebxUi\CatalogProperties\Facets\PropertySource;
 use WebxUi\CatalogProperties\Mcp\PropertiesResource;
 use WebxUi\CatalogProperties\Mcp\PropertyTools;
@@ -49,6 +52,7 @@ use WebxUi\CatalogProperties\Storefront\ProductProperties;
 use WebxUi\CatalogProperties\Storefront\PropertyQuery;
 use WebxUi\CatalogProperties\Storefront\SpecsTable;
 use WebxUi\Localization\Locales;
+use WebxUi\Localization\SlugModels;
 
 /**
  * The properties of products (`WEBX_UI_CATALOG_PROPERTIES.md`): a satellite of the catalogue whose
@@ -86,6 +90,13 @@ class CatalogPropertiesServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->app->make(HelpRegistry::class)->directory(__DIR__.'/../resources/help');
+
+        $this->callAfterResolving(SlugModels::class, static function (SlugModels $models): void {
+            $models->register(PropertyValue::class);
+            $models->register(PropertyInterval::class);
+        });
+
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-catalog-properties');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-catalog-properties');
@@ -163,6 +174,7 @@ class CatalogPropertiesServiceProvider extends ServiceProvider
         $this->app->make(ProductParts::class)->register($this->app->make(PropertiesPart::class));
         $this->app->make(ProductColumns::class)->source($this->app->make(PropertyColumns::class));
         $this->app->make(ExchangeColumns::class)->provider(PropertyExchangeColumns::class);
+        $this->app->make(ProductVariables::class)->provider(PropertyVariables::class);
         $this->app->make(Documents::class)->register($this->app->make(PropertiesDocument::class));
 
         $source = $this->app->make(PropertySource::class);

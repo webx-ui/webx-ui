@@ -6,6 +6,7 @@ import {
   type EditorView,
   type ViewUpdate,
 } from '@codemirror/view'
+import { knows, POSITIONS } from './template'
 import type {
   CodeEditorCompleter,
   CodeEditorCompletion,
@@ -142,20 +143,6 @@ export function mustacheProblems(text: string, variables?: MustacheVariable[]): 
     broken: false,
   }
   const open: string[] = []
-  const lists = new Map((variables ?? []).map((variable) => [variable.name, variable]))
-
-  const known = (name: string): boolean => {
-    for (const section of [...open].reverse()) {
-      if (lists.get(section)?.fields?.some((field) => field.name === name)) return true
-    }
-
-    return (variables ?? []).some(
-      (variable) =>
-        variable.name === name ||
-        (variable.name.endsWith('.*') && name.startsWith(variable.name.slice(0, -1))),
-    )
-  }
-
   const unknown = new Set<string>()
 
   for (const tag of tags) {
@@ -172,7 +159,10 @@ export function mustacheProblems(text: string, variables?: MustacheVariable[]): 
       continue
     }
 
-    if (variables !== undefined && tag.name !== '' && !known(tag.name)) unknown.add(tag.name)
+    if (variables !== undefined && tag.name !== '' && !knows(variables, tag.name, open)) {
+      unknown.add(tag.name)
+    }
+
     if (tag.kind === 'section' || tag.kind === 'inverted') open.push(tag.name)
   }
 
@@ -304,6 +294,11 @@ export function mustacheCompletions(
     const to = pos + rest.length + (after.slice(rest.length).startsWith('}}') ? 2 : 0)
     const open = openSections(scanMustache(text.slice(0, start)), start)
     const options: CodeEditorCompletion[] = []
+    const list = [...open].reverse().find((name) => {
+      const variable = byName.get(name)
+
+      return variable !== undefined && isList(variable)
+    })
 
     if (sigil === '/') {
       ;[...open].reverse().forEach((name, depth) => {
@@ -320,6 +315,17 @@ export function mustacheCompletions(
     }
 
     if (sigil === '#' || sigil === '^') {
+      // `{{^first}},{{/first}}` is what these two are for: a comma between the elements.
+      for (const name of list === undefined ? [] : POSITIONS) {
+        options.push({
+          label: name,
+          apply: sectionOf(name, sigil, false).slice(1),
+          detail: say(sigil === '#' ? said.section : said.inverted, { name }),
+          type: 'property',
+          boost: 2,
+        })
+      }
+
       for (const variable of variables) {
         if (variable.name.endsWith('.*')) continue
 
@@ -353,6 +359,16 @@ export function mustacheCompletions(
         })
       }
     })
+
+    for (const name of list === undefined ? [] : POSITIONS) {
+      options.push({
+        label: name,
+        apply: `${name}}}`,
+        detail: say(said.field, { list: list ?? '' }),
+        type: 'property',
+        boost: 30,
+      })
+    }
 
     for (const variable of variables) {
       if (variable.name.endsWith('.*')) {

@@ -25,6 +25,8 @@ interface ProductLike {
   slug: Map
   sku: string | null
   barcode: string | null
+  barcodes: string[]
+  mpn: string | null
   summary: Map
   description: Map
   category_id: number | null
@@ -80,6 +82,8 @@ const COLUMNS: Column[] = [
   { key: 'id', field: 'id', localized: false, label: 'exchange.columns.id' },
   { key: 'sku', field: 'sku', localized: false, label: 'product.sku' },
   { key: 'barcode', field: 'barcode', localized: false, label: 'product.barcode' },
+  { key: 'barcodes', field: 'barcodes', localized: false, label: 'product.barcodes' },
+  { key: 'mpn', field: 'mpn', localized: false, label: 'product.mpn' },
   {
     key: 'external_id',
     field: 'external_id',
@@ -639,7 +643,17 @@ export function registerExchange(
         }
         case 'sku':
         case 'barcode':
+        case 'mpn':
           values[column.key] = empty ? null : cell.trim()
+
+          return
+        case 'barcodes':
+          values.barcodes = empty
+            ? []
+            : cell
+                .split(';')
+                .map((one) => one.trim())
+                .filter(Boolean)
 
           return
         case 'unit':
@@ -902,6 +916,8 @@ export function registerExchange(
         return product.category_id === null ? '' : categoryPath(product.category_id)
       case 'categories':
         return product.categories.map(categoryPath).join(';')
+      case 'barcodes':
+        return product.barcodes.join(';')
       case 'is_published':
         return product.is_published ? '1' : '0'
       default: {

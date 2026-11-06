@@ -1,0 +1,1965 @@
+[
+  {
+    "name": "google",
+    "feed": {
+      "format": "xml",
+      "head": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<rss xmlns:g=\"http://base.google.com/ns/1.0\" version=\"2.0\">\n  <channel>\n    <title>{{shop.name}}</title>\n    <link>{{shop.url}}</link>\n    <description>{{shop.description}}{{^shop.description}}{{shop.name}}{{/shop.description}}</description>\n",
+      "item": "    <item>\n      <g:id>{{id}}</g:id>\n      <g:title>{{title}}</g:title>\n      {{#long_text}}<g:description>{{long_text}}</g:description>{{/long_text}}\n      <g:link>{{url}}</g:link>\n      <g:image_link>{{image_link}}</g:image_link>\n      {{#additional_images}}<g:additional_image_link>{{url}}</g:additional_image_link>{{/additional_images}}\n      <g:availability>{{availability}}</g:availability>\n      <g:price>{{list_price_with_currency}}</g:price>\n      {{#sale_price}}<g:sale_price>{{sale_price_with_currency}}</g:sale_price>{{/sale_price}}\n      <g:condition>new</g:condition>\n      {{#brand}}<g:brand>{{brand}}</g:brand>{{/brand}}\n      {{#gtin}}<g:gtin>{{gtin}}</g:gtin>{{/gtin}}\n      {{#mpn}}<g:mpn>{{mpn}}</g:mpn>{{/mpn}}\n      <g:identifier_exists>{{identifier_exists}}</g:identifier_exists>\n      {{#google_product_category}}<g:google_product_category>{{google_product_category}}</g:google_product_category>{{/google_product_category}}\n      {{#product_type}}<g:product_type>{{product_type}}</g:product_type>{{/product_type}}\n      {{#group_id}}<g:item_group_id>{{group_id}}</g:item_group_id>{{/group_id}}\n      {{#custom_label_0}}<g:custom_label_0>{{custom_label_0}}</g:custom_label_0>{{/custom_label_0}}\n      {{#custom_label_1}}<g:custom_label_1>{{custom_label_1}}</g:custom_label_1>{{/custom_label_1}}\n      {{#custom_label_2}}<g:custom_label_2>{{custom_label_2}}</g:custom_label_2>{{/custom_label_2}}\n      {{#custom_label_3}}<g:custom_label_3>{{custom_label_3}}</g:custom_label_3>{{/custom_label_3}}\n      {{#custom_label_4}}<g:custom_label_4>{{custom_label_4}}</g:custom_label_4>{{/custom_label_4}}\n    </item>",
+      "foot": "\n  </channel>\n</rss>\n",
+      "separator": "\n"
+    },
+    "sample": {
+      "products": [
+        {
+          "id": 1,
+          "name": "Classic shirt 1",
+          "sku": "TEST-0001",
+          "values": {
+            "id": "1",
+            "sku": "TEST-0001",
+            "barcode": "",
+            "barcodes": [],
+            "mpn": "",
+            "external_id": "",
+            "name": "Classic shirt 1",
+            "slug": "classic-shirt-1",
+            "summary": "A made-up product: no such thing is for sale.",
+            "description": "<p>Classic shirt 1 is part of a made-up catalogue.</p>",
+            "category": "Clothing/Men/Shirts",
+            "categories": "Clothing/Women/Skirts",
+            "price": "9.90",
+            "old_price": "12.38",
+            "unit": "pcs",
+            "priority": "10",
+            "is_published": "1",
+            "images": [
+              {
+                "url": "http://localhost/storage/catalog/000-0.jpg",
+                "alt": "Classic shirt 1"
+              },
+              {
+                "url": "http://localhost/storage/catalog/000-1.jpg",
+                "alt": "Classic shirt 1"
+              }
+            ],
+            "brand": "Northwind",
+            "labels": [
+              {
+                "code": "top",
+                "name": "Top"
+              },
+              {
+                "code": "sale",
+                "name": "Sale"
+              },
+              {
+                "code": "newsletter",
+                "name": "Newsletter"
+              }
+            ],
+            "stock": "in-stock",
+            "availability": "in_stock",
+            "identifier_exists": "no",
+            "group_id": "",
+            "url": "http://localhost/classic-shirt-1-1",
+            "image_link": "http://localhost/storage/catalog/000-0.jpg",
+            "additional_images": [
+              {
+                "url": "http://localhost/storage/catalog/000-1.jpg",
+                "alt": "Classic shirt 1"
+              }
+            ],
+            "price_with_currency": "9.90 EUR",
+            "list_price": "12.38",
+            "list_price_with_currency": "12.38 EUR",
+            "sale_price": "9.90",
+            "sale_price_with_currency": "9.90 EUR",
+            "sale_price_effective_date": "",
+            "description_html": "<p>Classic shirt 1 is part of a made-up catalogue.</p>",
+            "description_cdata": {
+              "$cdata": "<p>Classic shirt 1 is part of a made-up catalogue.</p>"
+            },
+            "description_text": "Classic shirt 1 is part of a made-up catalogue.",
+            "title": "Classic shirt 1",
+            "long_text": "Classic shirt 1 is part of a made-up catalogue.",
+            "gtin": "",
+            "gtins": [],
+            "category_id": "3",
+            "product_type": "Clothing > Men > Shirts",
+            "platform_category": "",
+            "google_product_category": "",
+            "custom_label_0": "",
+            "custom_label_1": "",
+            "custom_label_2": "",
+            "custom_label_3": "",
+            "custom_label_4": "",
+            "stock_name": "In stock",
+            "is_purchasable": "1",
+            "property.color": "Black;Grey",
+            "property.material": "",
+            "property.weight": "",
+            "property.diagonal": "",
+            "property.wi_fi": "",
+            "property.contents": ""
+          }
+        },
+        {
+          "id": 2,
+          "name": "Linen trousers 1",
+          "sku": "TEST-0002",
+          "values": {
+            "id": "2",
+            "sku": "TEST-0002",
+            "barcode": "",
+            "barcodes": [],
+            "mpn": "",
+            "external_id": "",
+            "name": "Linen trousers 1",
+            "slug": "linen-trousers-1",
+            "summary": "A made-up product: no such thing is for sale.",
+            "description": "<p>Linen trousers 1 is part of a made-up catalogue.</p>",
+            "category": "Clothing/Men/Trousers",
+            "categories": "",
+            "price": "46.90",
+            "old_price": "",
+            "unit": "pcs",
+            "priority": "0",
+            "is_published": "1",
+            "images": [
+              {
+                "url": "http://localhost/storage/catalog/001-0.jpg",
+                "alt": "Linen trousers 1"
+              }
+            ],
+            "brand": "Contoso",
+            "labels": [
+              {
+                "code": "new",
+                "name": "New"
+              }
+            ],
+            "stock": "in-stock",
+            "availability": "in_stock",
+            "identifier_exists": "no",
+            "group_id": "",
+            "url": "http://localhost/linen-trousers-1-2",
+            "image_link": "http://localhost/storage/catalog/001-0.jpg",
+            "additional_images": [],
+            "price_with_currency": "46.90 EUR",
+            "list_price": "46.90",
+            "list_price_with_currency": "46.90 EUR",
+            "sale_price": "",
+            "sale_price_with_currency": "",
+            "sale_price_effective_date": "",
+            "description_html": "<p>Linen trousers 1 is part of a made-up catalogue.</p>",
+            "description_cdata": {
+              "$cdata": "<p>Linen trousers 1 is part of a made-up catalogue.</p>"
+            },
+            "description_text": "Linen trousers 1 is part of a made-up catalogue.",
+            "title": "Linen trousers 1",
+            "long_text": "Linen trousers 1 is part of a made-up catalogue.",
+            "gtin": "",
+            "gtins": [],
+            "category_id": "4",
+            "product_type": "Clothing > Men > Trousers",
+            "platform_category": "",
+            "google_product_category": "",
+            "custom_label_0": "",
+            "custom_label_1": "",
+            "custom_label_2": "",
+            "custom_label_3": "",
+            "custom_label_4": "",
+            "stock_name": "In stock",
+            "is_purchasable": "1",
+            "property.color": "White",
+            "property.material": "",
+            "property.weight": "",
+            "property.diagonal": "",
+            "property.wi_fi": "",
+            "property.contents": ""
+          }
+        },
+        {
+          "id": 3,
+          "name": "Everyday dress 1",
+          "sku": "TEST-0003",
+          "values": {
+            "id": "3",
+            "sku": "TEST-0003",
+            "barcode": "",
+            "barcodes": [],
+            "mpn": "",
+            "external_id": "",
+            "name": "Everyday dress 1",
+            "slug": "everyday-dress-1",
+            "summary": "A made-up product: no such thing is for sale.",
+            "description": "<p>Everyday dress 1 is part of a made-up catalogue.</p>",
+            "category": "Clothing/Women/Dresses",
+            "categories": "",
+            "price": "83.90",
+            "old_price": "",
+            "unit": "pcs",
+            "priority": "0",
+            "is_published": "1",
+            "images": [
+              {
+                "url": "http://localhost/storage/catalog/002-0.jpg",
+                "alt": "Everyday dress 1"
+              }
+            ],
+            "brand": "Fabrikam",
+            "labels": [],
+            "stock": "in-stock",
+            "availability": "in_stock",
+            "identifier_exists": "no",
+            "group_id": "",
+            "url": "http://localhost/everyday-dress-1-3",
+            "image_link": "http://localhost/storage/catalog/002-0.jpg",
+            "additional_images": [],
+            "price_with_currency": "83.90 EUR",
+            "list_price": "83.90",
+            "list_price_with_currency": "83.90 EUR",
+            "sale_price": "",
+            "sale_price_with_currency": "",
+            "sale_price_effective_date": "",
+            "description_html": "<p>Everyday dress 1 is part of a made-up catalogue.</p>",
+            "description_cdata": {
+              "$cdata": "<p>Everyday dress 1 is part of a made-up catalogue.</p>"
+            },
+            "description_text": "Everyday dress 1 is part of a made-up catalogue.",
+            "title": "Everyday dress 1",
+            "long_text": "Everyday dress 1 is part of a made-up catalogue.",
+            "gtin": "",
+            "gtins": [],
+            "category_id": "6",
+            "product_type": "Clothing > Women > Dresses",
+            "platform_category": "",
+            "google_product_category": "",
+            "custom_label_0": "",
+            "custom_label_1": "",
+            "custom_label_2": "",
+            "custom_label_3": "",
+            "custom_label_4": "",
+            "stock_name": "In stock",
+            "is_purchasable": "1",
+            "property.color": "Grey",
+            "property.material": "",
+            "property.weight": "",
+            "property.diagonal": "",
+            "property.wi_fi": "",
+            "property.contents": ""
+          }
+        },
+        {
+          "id": 4,
+          "name": "Travel skirt 1",
+          "sku": "TEST-0004",
+          "values": {
+            "id": "4",
+            "sku": "TEST-0004",
+            "barcode": "",
+            "barcodes": [],
+            "mpn": "",
+            "external_id": "",
+            "name": "Travel skirt 1",
+            "slug": "travel-skirt-1",
+            "summary": "A made-up product: no such thing is for sale.",
+            "description": "<p>Travel skirt 1 is part of a made-up catalogue.</p>",
+            "category": "Clothing/Women/Skirts",
+            "categories": "",
+            "price": "120.90",
+            "old_price": "",
+            "unit": "pcs",
+            "priority": "0",
+            "is_published": "1",
+            "images": [
+              {
+                "url": "http://localhost/storage/catalog/003-0.jpg",
+                "alt": "Travel skirt 1"
+              },
+              {
+                "url": "http://localhost/storage/catalog/003-1.jpg",
+                "alt": "Travel skirt 1"
+              }
+            ],
+            "brand": "",
+            "labels": [],
+            "stock": "out-of-stock",
+            "availability": "out_of_stock",
+            "identifier_exists": "no",
+            "group_id": "",
+            "url": "http://localhost/travel-skirt-1-4",
+            "image_link": "http://localhost/storage/catalog/003-0.jpg",
+            "additional_images": [
+              {
+                "url": "http://localhost/storage/catalog/003-1.jpg",
+                "alt": "Travel skirt 1"
+              }
+            ],
+            "price_with_currency": "120.90 EUR",
+            "list_price": "120.90",
+            "list_price_with_currency": "120.90 EUR",
+            "sale_price": "",
+            "sale_price_with_currency": "",
+            "sale_price_effective_date": "",
+            "description_html": "<p>Travel skirt 1 is part of a made-up catalogue.</p>",
+            "description_cdata": {
+              "$cdata": "<p>Travel skirt 1 is part of a made-up catalogue.</p>"
+            },
+            "description_text": "Travel skirt 1 is part of a made-up catalogue.",
+            "title": "Travel skirt 1",
+            "long_text": "Travel skirt 1 is part of a made-up catalogue.",
+            "gtin": "",
+            "gtins": [],
+            "category_id": "7",
+            "product_type": "Clothing > Women > Skirts",
+            "platform_category": "",
+            "google_product_category": "",
+            "custom_label_0": "",
+            "custom_label_1": "",
+            "custom_label_2": "",
+            "custom_label_3": "",
+            "custom_label_4": "",
+            "stock_name": "Out of stock",
+            "is_purchasable": "",
+            "property.color": "",
+            "property.material": "",
+            "property.weight": "",
+            "property.diagonal": "",
+            "property.wi_fi": "",
+            "property.contents": ""
+          }
+        },
+        {
+          "id": 5,
+          "name": "Summer sneakers 1",
+          "sku": "TEST-0005",
+          "values": {
+            "id": "5",
+            "sku": "TEST-0005",
+            "barcode": "",
+            "barcodes": [],
+            "mpn": "",
+            "external_id": "",
+            "name": "Summer sneakers 1",
+            "slug": "summer-sneakers-1",
+            "summary": "A made-up product: no such thing is for sale.",
+            "description": "<p>Summer sneakers 1 is part of a made-up catalogue.</p>",
+            "category": "Shoes/Sneakers",
+            "categories": "",
+            "price": "157.90",
+            "old_price": "",
+            "unit": "pcs",
+            "priority": "0",
+            "is_published": "1",
+            "images": [
+              {
+                "url": "http://localhost/storage/catalog/004-0.jpg",
+                "alt": "Summer sneakers 1"
+              }
+            ],
+            "brand": "Litware",
+            "labels": [],
+            "stock": "in-stock",
+            "availability": "in_stock",
+            "identifier_exists": "no",
+            "group_id": "",
+            "url": "http://localhost/summer-sneakers-1-5",
+            "image_link": "http://localhost/storage/catalog/004-0.jpg",
+            "additional_images": [],
+            "price_with_currency": "157.90 EUR",
+            "list_price": "157.90",
+            "list_price_with_currency": "157.90 EUR",
+            "sale_price": "",
+            "sale_price_with_currency": "",
+            "sale_price_effective_date": "",
+            "description_html": "<p>Summer sneakers 1 is part of a made-up catalogue.</p>",
+            "description_cdata": {
+              "$cdata": "<p>Summer sneakers 1 is part of a made-up catalogue.</p>"
+            },
+            "description_text": "Summer sneakers 1 is part of a made-up catalogue.",
+            "title": "Summer sneakers 1",
+            "long_text": "Summer sneakers 1 is part of a made-up catalogue.",
+            "gtin": "",
+            "gtins": [],
+            "category_id": "9",
+            "product_type": "Shoes > Sneakers",
+            "platform_category": "",
+            "google_product_category": "",
+            "custom_label_0": "",
+            "custom_label_1": "",
+            "custom_label_2": "",
+            "custom_label_3": "",
+            "custom_label_4": "",
+            "stock_name": "In stock",
+            "is_purchasable": "1",
+            "property.color": "Blue",
+            "property.material": "",
+            "property.weight": "0.8",
+            "property.diagonal": "",
+            "property.wi_fi": "",
+            "property.contents": ""
+          }
+        }
+      ],
+      "frame": {
+        "shop.name": "Laravel",
+        "shop.url": "https://example.test",
+        "shop.description": "",
+        "shop.email": "",
+        "shop.phone": "",
+        "feed.name": "Spare parts",
+        "feed.locale": "en",
+        "feed.currency": "EUR",
+        "generated_at": "2026-11-05T12:00:00+00:00",
+        "generated_at_rfc822": "Thu, 05 Nov 26 12:00:00 +0000",
+        "currencies": [
+          {
+            "code": "EUR",
+            "rate": "1"
+          }
+        ],
+        "categories": [
+          {
+            "id": "1",
+            "parent_id": "",
+            "name": "Clothing",
+            "path": "Clothing",
+            "url": "http://localhost/clothing"
+          },
+          {
+            "id": "2",
+            "parent_id": "1",
+            "name": "Men",
+            "path": "Clothing > Men",
+            "url": "http://localhost/men"
+          },
+          {
+            "id": "3",
+            "parent_id": "2",
+            "name": "Shirts",
+            "path": "Clothing > Men > Shirts",
+            "url": "http://localhost/shirts"
+          },
+          {
+            "id": "4",
+            "parent_id": "2",
+            "name": "Trousers",
+            "path": "Clothing > Men > Trousers",
+            "url": "http://localhost/trousers"
+          },
+          {
+            "id": "5",
+            "parent_id": "1",
+            "name": "Women",
+            "path": "Clothing > Women",
+            "url": "http://localhost/women"
+          },
+          {
+            "id": "6",
+            "parent_id": "5",
+            "name": "Dresses",
+            "path": "Clothing > Women > Dresses",
+            "url": "http://localhost/dresses"
+          },
+          {
+            "id": "7",
+            "parent_id": "5",
+            "name": "Skirts",
+            "path": "Clothing > Women > Skirts",
+            "url": "http://localhost/skirts"
+          },
+          {
+            "id": "8",
+            "parent_id": "",
+            "name": "Shoes",
+            "path": "Shoes",
+            "url": "http://localhost/shoes"
+          },
+          {
+            "id": "9",
+            "parent_id": "8",
+            "name": "Sneakers",
+            "path": "Shoes > Sneakers",
+            "url": "http://localhost/sneakers"
+          }
+        ],
+        "products_count": "5"
+      }
+    },
+    "text": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<rss xmlns:g=\"http://base.google.com/ns/1.0\" version=\"2.0\">\n  <channel>\n    <title>Laravel</title>\n    <link>https://example.test</link>\n    <description>Laravel</description>\n    <item>\n      <g:id>1</g:id>\n      <g:title>Classic shirt 1</g:title>\n      <g:description>Classic shirt 1 is part of a made-up catalogue.</g:description>\n      <g:link>http://localhost/classic-shirt-1-1</g:link>\n      <g:image_link>http://localhost/storage/catalog/000-0.jpg</g:image_link>\n      <g:additional_image_link>http://localhost/storage/catalog/000-1.jpg</g:additional_image_link>\n      <g:availability>in_stock</g:availability>\n      <g:price>12.38 EUR</g:price>\n      <g:sale_price>9.90 EUR</g:sale_price>\n      <g:condition>new</g:condition>\n      <g:brand>Northwind</g:brand>\n      \n      \n      <g:identifier_exists>no</g:identifier_exists>\n      \n      <g:product_type>Clothing &gt; Men &gt; Shirts</g:product_type>\n      \n      \n      \n      \n      \n      \n    </item>\n    <item>\n      <g:id>2</g:id>\n      <g:title>Linen trousers 1</g:title>\n      <g:description>Linen trousers 1 is part of a made-up catalogue.</g:description>\n      <g:link>http://localhost/linen-trousers-1-2</g:link>\n      <g:image_link>http://localhost/storage/catalog/001-0.jpg</g:image_link>\n      \n      <g:availability>in_stock</g:availability>\n      <g:price>46.90 EUR</g:price>\n      \n      <g:condition>new</g:condition>\n      <g:brand>Contoso</g:brand>\n      \n      \n      <g:identifier_exists>no</g:identifier_exists>\n      \n      <g:product_type>Clothing &gt; Men &gt; Trousers</g:product_type>\n      \n      \n      \n      \n      \n      \n    </item>\n    <item>\n      <g:id>3</g:id>\n      <g:title>Everyday dress 1</g:title>\n      <g:description>Everyday dress 1 is part of a made-up catalogue.</g:description>\n      <g:link>http://localhost/everyday-dress-1-3</g:link>\n      <g:image_link>http://localhost/storage/catalog/002-0.jpg</g:image_link>\n      \n      <g:availability>in_stock</g:availability>\n      <g:price>83.90 EUR</g:price>\n      \n      <g:condition>new</g:condition>\n      <g:brand>Fabrikam</g:brand>\n      \n      \n      <g:identifier_exists>no</g:identifier_exists>\n      \n      <g:product_type>Clothing &gt; Women &gt; Dresses</g:product_type>\n      \n      \n      \n      \n      \n      \n    </item>\n    <item>\n      <g:id>4</g:id>\n      <g:title>Travel skirt 1</g:title>\n      <g:description>Travel skirt 1 is part of a made-up catalogue.</g:description>\n      <g:link>http://localhost/travel-skirt-1-4</g:link>\n      <g:image_link>http://localhost/storage/catalog/003-0.jpg</g:image_link>\n      <g:additional_image_link>http://localhost/storage/catalog/003-1.jpg</g:additional_image_link>\n      <g:availability>out_of_stock</g:availability>\n      <g:price>120.90 EUR</g:price>\n      \n      <g:condition>new</g:condition>\n      \n      \n      \n      <g:identifier_exists>no</g:identifier_exists>\n      \n      <g:product_type>Clothing &gt; Women &gt; Skirts</g:product_type>\n      \n      \n      \n      \n      \n      \n    </item>\n    <item>\n      <g:id>5</g:id>\n      <g:title>Summer sneakers 1</g:title>\n      <g:description>Summer sneakers 1 is part of a made-up catalogue.</g:description>\n      <g:link>http://localhost/summer-sneakers-1-5</g:link>\n      <g:image_link>http://localhost/storage/catalog/004-0.jpg</g:image_link>\n      \n      <g:availability>in_stock</g:availability>\n      <g:price>157.90 EUR</g:price>\n      \n      <g:condition>new</g:condition>\n      <g:brand>Litware</g:brand>\n      \n      \n      <g:identifier_exists>no</g:identifier_exists>\n      \n      <g:product_type>Shoes &gt; Sneakers</g:product_type>\n      \n      \n      \n      \n      \n      \n    </item>\n  </channel>\n</rss>\n"
+  },
+  {
+    "name": "json",
+    "feed": {
+      "format": "json",
+      "head": "{\"generated_at\":\"{{generated_at}}\",\"currency\":\"{{feed.currency}}\",\"products\":[",
+      "item": "{\"id\":{{id}},\"sku\":\"{{sku}}\",\"name\":\"{{name}}\",\"url\":\"{{url}}\",\"price\":{{price}},\n\"images\":[{{#images}}{{^first}},{{/first}}\"{{url}}\"{{/images}}],\"available\":\"{{availability}}\"}",
+      "foot": "]}",
+      "separator": ","
+    },
+    "sample": {
+      "products": [
+        {
+          "id": 1,
+          "name": "Classic shirt 1",
+          "sku": "TEST-0001",
+          "values": {
+            "id": "1",
+            "sku": "TEST-0001",
+            "barcode": "",
+            "barcodes": [],
+            "mpn": "",
+            "external_id": "",
+            "name": "Classic shirt 1",
+            "slug": "classic-shirt-1",
+            "summary": "A made-up product: no such thing is for sale.",
+            "description": "<p>Classic shirt 1 is part of a made-up catalogue.</p>",
+            "category": "Clothing/Men/Shirts",
+            "categories": "Clothing/Women/Skirts",
+            "price": "9.90",
+            "old_price": "12.38",
+            "unit": "pcs",
+            "priority": "10",
+            "is_published": "1",
+            "images": [
+              {
+                "url": "http://localhost/storage/catalog/000-0.jpg",
+                "alt": "Classic shirt 1"
+              },
+              {
+                "url": "http://localhost/storage/catalog/000-1.jpg",
+                "alt": "Classic shirt 1"
+              }
+            ],
+            "brand": "Northwind",
+            "labels": [
+              {
+                "code": "top",
+                "name": "Top"
+              },
+              {
+                "code": "sale",
+                "name": "Sale"
+              },
+              {
+                "code": "newsletter",
+                "name": "Newsletter"
+              }
+            ],
+            "stock": "in-stock",
+            "availability": "in_stock",
+            "identifier_exists": "no",
+            "group_id": "",
+            "url": "http://localhost/classic-shirt-1-1",
+            "image_link": "http://localhost/storage/catalog/000-0.jpg",
+            "additional_images": [
+              {
+                "url": "http://localhost/storage/catalog/000-1.jpg",
+                "alt": "Classic shirt 1"
+              }
+            ],
+            "price_with_currency": "9.90 EUR",
+            "list_price": "12.38",
+            "list_price_with_currency": "12.38 EUR",
+            "sale_price": "9.90",
+            "sale_price_with_currency": "9.90 EUR",
+            "sale_price_effective_date": "",
+            "description_html": "<p>Classic shirt 1 is part of a made-up catalogue.</p>",
+            "description_cdata": {
+              "$cdata": "<p>Classic shirt 1 is part of a made-up catalogue.</p>"
+            },
+            "description_text": "Classic shirt 1 is part of a made-up catalogue.",
+            "title": "Classic shirt 1",
+            "long_text": "Classic shirt 1 is part of a made-up catalogue.",
+            "gtin": "",
+            "gtins": [],
+            "category_id": "3",
+            "product_type": "Clothing > Men > Shirts",
+            "platform_category": "",
+            "google_product_category": "",
+            "custom_label_0": "",
+            "custom_label_1": "",
+            "custom_label_2": "",
+            "custom_label_3": "",
+            "custom_label_4": "",
+            "stock_name": "In stock",
+            "is_purchasable": "1",
+            "property.color": "Black;Grey",
+            "property.material": "",
+            "property.weight": "",
+            "property.diagonal": "",
+            "property.wi_fi": "",
+            "property.contents": ""
+          }
+        },
+        {
+          "id": 2,
+          "name": "Linen trousers 1",
+          "sku": "TEST-0002",
+          "values": {
+            "id": "2",
+            "sku": "TEST-0002",
+            "barcode": "",
+            "barcodes": [],
+            "mpn": "",
+            "external_id": "",
+            "name": "Linen trousers 1",
+            "slug": "linen-trousers-1",
+            "summary": "A made-up product: no such thing is for sale.",
+            "description": "<p>Linen trousers 1 is part of a made-up catalogue.</p>",
+            "category": "Clothing/Men/Trousers",
+            "categories": "",
+            "price": "46.90",
+            "old_price": "",
+            "unit": "pcs",
+            "priority": "0",
+            "is_published": "1",
+            "images": [
+              {
+                "url": "http://localhost/storage/catalog/001-0.jpg",
+                "alt": "Linen trousers 1"
+              }
+            ],
+            "brand": "Contoso",
+            "labels": [
+              {
+                "code": "new",
+                "name": "New"
+              }
+            ],
+            "stock": "in-stock",
+            "availability": "in_stock",
+            "identifier_exists": "no",
+            "group_id": "",
+            "url": "http://localhost/linen-trousers-1-2",
+            "image_link": "http://localhost/storage/catalog/001-0.jpg",
+            "additional_images": [],
+            "price_with_currency": "46.90 EUR",
+            "list_price": "46.90",
+            "list_price_with_currency": "46.90 EUR",
+            "sale_price": "",
+            "sale_price_with_currency": "",
+            "sale_price_effective_date": "",
+            "description_html": "<p>Linen trousers 1 is part of a made-up catalogue.</p>",
+            "description_cdata": {
+              "$cdata": "<p>Linen trousers 1 is part of a made-up catalogue.</p>"
+            },
+            "description_text": "Linen trousers 1 is part of a made-up catalogue.",
+            "title": "Linen trousers 1",
+            "long_text": "Linen trousers 1 is part of a made-up catalogue.",
+            "gtin": "",
+            "gtins": [],
+            "category_id": "4",
+            "product_type": "Clothing > Men > Trousers",
+            "platform_category": "",
+            "google_product_category": "",
+            "custom_label_0": "",
+            "custom_label_1": "",
+            "custom_label_2": "",
+            "custom_label_3": "",
+            "custom_label_4": "",
+            "stock_name": "In stock",
+            "is_purchasable": "1",
+            "property.color": "White",
+            "property.material": "",
+            "property.weight": "",
+            "property.diagonal": "",
+            "property.wi_fi": "",
+            "property.contents": ""
+          }
+        },
+        {
+          "id": 3,
+          "name": "Everyday dress 1",
+          "sku": "TEST-0003",
+          "values": {
+            "id": "3",
+            "sku": "TEST-0003",
+            "barcode": "",
+            "barcodes": [],
+            "mpn": "",
+            "external_id": "",
+            "name": "Everyday dress 1",
+            "slug": "everyday-dress-1",
+            "summary": "A made-up product: no such thing is for sale.",
+            "description": "<p>Everyday dress 1 is part of a made-up catalogue.</p>",
+            "category": "Clothing/Women/Dresses",
+            "categories": "",
+            "price": "83.90",
+            "old_price": "",
+            "unit": "pcs",
+            "priority": "0",
+            "is_published": "1",
+            "images": [
+              {
+                "url": "http://localhost/storage/catalog/002-0.jpg",
+                "alt": "Everyday dress 1"
+              }
+            ],
+            "brand": "Fabrikam",
+            "labels": [],
+            "stock": "in-stock",
+            "availability": "in_stock",
+            "identifier_exists": "no",
+            "group_id": "",
+            "url": "http://localhost/everyday-dress-1-3",
+            "image_link": "http://localhost/storage/catalog/002-0.jpg",
+            "additional_images": [],
+            "price_with_currency": "83.90 EUR",
+            "list_price": "83.90",
+            "list_price_with_currency": "83.90 EUR",
+            "sale_price": "",
+            "sale_price_with_currency": "",
+            "sale_price_effective_date": "",
+            "description_html": "<p>Everyday dress 1 is part of a made-up catalogue.</p>",
+            "description_cdata": {
+              "$cdata": "<p>Everyday dress 1 is part of a made-up catalogue.</p>"
+            },
+            "description_text": "Everyday dress 1 is part of a made-up catalogue.",
+            "title": "Everyday dress 1",
+            "long_text": "Everyday dress 1 is part of a made-up catalogue.",
+            "gtin": "",
+            "gtins": [],
+            "category_id": "6",
+            "product_type": "Clothing > Women > Dresses",
+            "platform_category": "",
+            "google_product_category": "",
+            "custom_label_0": "",
+            "custom_label_1": "",
+            "custom_label_2": "",
+            "custom_label_3": "",
+            "custom_label_4": "",
+            "stock_name": "In stock",
+            "is_purchasable": "1",
+            "property.color": "Grey",
+            "property.material": "",
+            "property.weight": "",
+            "property.diagonal": "",
+            "property.wi_fi": "",
+            "property.contents": ""
+          }
+        },
+        {
+          "id": 4,
+          "name": "Travel skirt 1",
+          "sku": "TEST-0004",
+          "values": {
+            "id": "4",
+            "sku": "TEST-0004",
+            "barcode": "",
+            "barcodes": [],
+            "mpn": "",
+            "external_id": "",
+            "name": "Travel skirt 1",
+            "slug": "travel-skirt-1",
+            "summary": "A made-up product: no such thing is for sale.",
+            "description": "<p>Travel skirt 1 is part of a made-up catalogue.</p>",
+            "category": "Clothing/Women/Skirts",
+            "categories": "",
+            "price": "120.90",
+            "old_price": "",
+            "unit": "pcs",
+            "priority": "0",
+            "is_published": "1",
+            "images": [
+              {
+                "url": "http://localhost/storage/catalog/003-0.jpg",
+                "alt": "Travel skirt 1"
+              },
+              {
+                "url": "http://localhost/storage/catalog/003-1.jpg",
+                "alt": "Travel skirt 1"
+              }
+            ],
+            "brand": "",
+            "labels": [],
+            "stock": "out-of-stock",
+            "availability": "out_of_stock",
+            "identifier_exists": "no",
+            "group_id": "",
+            "url": "http://localhost/travel-skirt-1-4",
+            "image_link": "http://localhost/storage/catalog/003-0.jpg",
+            "additional_images": [
+              {
+                "url": "http://localhost/storage/catalog/003-1.jpg",
+                "alt": "Travel skirt 1"
+              }
+            ],
+            "price_with_currency": "120.90 EUR",
+            "list_price": "120.90",
+            "list_price_with_currency": "120.90 EUR",
+            "sale_price": "",
+            "sale_price_with_currency": "",
+            "sale_price_effective_date": "",
+            "description_html": "<p>Travel skirt 1 is part of a made-up catalogue.</p>",
+            "description_cdata": {
+              "$cdata": "<p>Travel skirt 1 is part of a made-up catalogue.</p>"
+            },
+            "description_text": "Travel skirt 1 is part of a made-up catalogue.",
+            "title": "Travel skirt 1",
+            "long_text": "Travel skirt 1 is part of a made-up catalogue.",
+            "gtin": "",
+            "gtins": [],
+            "category_id": "7",
+            "product_type": "Clothing > Women > Skirts",
+            "platform_category": "",
+            "google_product_category": "",
+            "custom_label_0": "",
+            "custom_label_1": "",
+            "custom_label_2": "",
+            "custom_label_3": "",
+            "custom_label_4": "",
+            "stock_name": "Out of stock",
+            "is_purchasable": "",
+            "property.color": "",
+            "property.material": "",
+            "property.weight": "",
+            "property.diagonal": "",
+            "property.wi_fi": "",
+            "property.contents": ""
+          }
+        },
+        {
+          "id": 5,
+          "name": "Summer sneakers 1",
+          "sku": "TEST-0005",
+          "values": {
+            "id": "5",
+            "sku": "TEST-0005",
+            "barcode": "",
+            "barcodes": [],
+            "mpn": "",
+            "external_id": "",
+            "name": "Summer sneakers 1",
+            "slug": "summer-sneakers-1",
+            "summary": "A made-up product: no such thing is for sale.",
+            "description": "<p>Summer sneakers 1 is part of a made-up catalogue.</p>",
+            "category": "Shoes/Sneakers",
+            "categories": "",
+            "price": "157.90",
+            "old_price": "",
+            "unit": "pcs",
+            "priority": "0",
+            "is_published": "1",
+            "images": [
+              {
+                "url": "http://localhost/storage/catalog/004-0.jpg",
+                "alt": "Summer sneakers 1"
+              }
+            ],
+            "brand": "Litware",
+            "labels": [],
+            "stock": "in-stock",
+            "availability": "in_stock",
+            "identifier_exists": "no",
+            "group_id": "",
+            "url": "http://localhost/summer-sneakers-1-5",
+            "image_link": "http://localhost/storage/catalog/004-0.jpg",
+            "additional_images": [],
+            "price_with_currency": "157.90 EUR",
+            "list_price": "157.90",
+            "list_price_with_currency": "157.90 EUR",
+            "sale_price": "",
+            "sale_price_with_currency": "",
+            "sale_price_effective_date": "",
+            "description_html": "<p>Summer sneakers 1 is part of a made-up catalogue.</p>",
+            "description_cdata": {
+              "$cdata": "<p>Summer sneakers 1 is part of a made-up catalogue.</p>"
+            },
+            "description_text": "Summer sneakers 1 is part of a made-up catalogue.",
+            "title": "Summer sneakers 1",
+            "long_text": "Summer sneakers 1 is part of a made-up catalogue.",
+            "gtin": "",
+            "gtins": [],
+            "category_id": "9",
+            "product_type": "Shoes > Sneakers",
+            "platform_category": "",
+            "google_product_category": "",
+            "custom_label_0": "",
+            "custom_label_1": "",
+            "custom_label_2": "",
+            "custom_label_3": "",
+            "custom_label_4": "",
+            "stock_name": "In stock",
+            "is_purchasable": "1",
+            "property.color": "Blue",
+            "property.material": "",
+            "property.weight": "0.8",
+            "property.diagonal": "",
+            "property.wi_fi": "",
+            "property.contents": ""
+          }
+        }
+      ],
+      "frame": {
+        "shop.name": "Laravel",
+        "shop.url": "https://example.test",
+        "shop.description": "",
+        "shop.email": "",
+        "shop.phone": "",
+        "feed.name": "Spare parts",
+        "feed.locale": "en",
+        "feed.currency": "EUR",
+        "generated_at": "2026-11-05T12:00:00+00:00",
+        "generated_at_rfc822": "Thu, 05 Nov 26 12:00:00 +0000",
+        "currencies": [
+          {
+            "code": "EUR",
+            "rate": "1"
+          }
+        ],
+        "categories": [
+          {
+            "id": "1",
+            "parent_id": "",
+            "name": "Clothing",
+            "path": "Clothing",
+            "url": "http://localhost/clothing"
+          },
+          {
+            "id": "2",
+            "parent_id": "1",
+            "name": "Men",
+            "path": "Clothing > Men",
+            "url": "http://localhost/men"
+          },
+          {
+            "id": "3",
+            "parent_id": "2",
+            "name": "Shirts",
+            "path": "Clothing > Men > Shirts",
+            "url": "http://localhost/shirts"
+          },
+          {
+            "id": "4",
+            "parent_id": "2",
+            "name": "Trousers",
+            "path": "Clothing > Men > Trousers",
+            "url": "http://localhost/trousers"
+          },
+          {
+            "id": "5",
+            "parent_id": "1",
+            "name": "Women",
+            "path": "Clothing > Women",
+            "url": "http://localhost/women"
+          },
+          {
+            "id": "6",
+            "parent_id": "5",
+            "name": "Dresses",
+            "path": "Clothing > Women > Dresses",
+            "url": "http://localhost/dresses"
+          },
+          {
+            "id": "7",
+            "parent_id": "5",
+            "name": "Skirts",
+            "path": "Clothing > Women > Skirts",
+            "url": "http://localhost/skirts"
+          },
+          {
+            "id": "8",
+            "parent_id": "",
+            "name": "Shoes",
+            "path": "Shoes",
+            "url": "http://localhost/shoes"
+          },
+          {
+            "id": "9",
+            "parent_id": "8",
+            "name": "Sneakers",
+            "path": "Shoes > Sneakers",
+            "url": "http://localhost/sneakers"
+          }
+        ],
+        "products_count": "5"
+      }
+    },
+    "text": "{\"generated_at\":\"2026-11-05T12:00:00+00:00\",\"currency\":\"EUR\",\"products\":[{\"id\":1,\"sku\":\"TEST-0001\",\"name\":\"Classic shirt 1\",\"url\":\"http://localhost/classic-shirt-1-1\",\"price\":9.90,\n\"images\":[\"http://localhost/storage/catalog/000-0.jpg\",\"http://localhost/storage/catalog/000-1.jpg\"],\"available\":\"in_stock\"},{\"id\":2,\"sku\":\"TEST-0002\",\"name\":\"Linen trousers 1\",\"url\":\"http://localhost/linen-trousers-1-2\",\"price\":46.90,\n\"images\":[\"http://localhost/storage/catalog/001-0.jpg\"],\"available\":\"in_stock\"},{\"id\":3,\"sku\":\"TEST-0003\",\"name\":\"Everyday dress 1\",\"url\":\"http://localhost/everyday-dress-1-3\",\"price\":83.90,\n\"images\":[\"http://localhost/storage/catalog/002-0.jpg\"],\"available\":\"in_stock\"},{\"id\":4,\"sku\":\"TEST-0004\",\"name\":\"Travel skirt 1\",\"url\":\"http://localhost/travel-skirt-1-4\",\"price\":120.90,\n\"images\":[\"http://localhost/storage/catalog/003-0.jpg\",\"http://localhost/storage/catalog/003-1.jpg\"],\"available\":\"out_of_stock\"},{\"id\":5,\"sku\":\"TEST-0005\",\"name\":\"Summer sneakers 1\",\"url\":\"http://localhost/summer-sneakers-1-5\",\"price\":157.90,\n\"images\":[\"http://localhost/storage/catalog/004-0.jpg\"],\"available\":\"in_stock\"}]}"
+  },
+  {
+    "name": "xml",
+    "feed": {
+      "format": "xml",
+      "head": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<products currency=\"{{feed.currency}}\">\n",
+      "item": "<product id=\"{{id}}\">\n  <sku>{{sku}}</sku>\n  <name>{{name}}</name>\n  <url>{{url}}</url>\n  <price>{{price}}</price>\n  <description>{{description_cdata}}</description>\n  {{#images}}<image>{{url}}</image>{{/images}}\n</product>",
+      "foot": "\n</products>\n",
+      "separator": "\n"
+    },
+    "sample": {
+      "products": [
+        {
+          "id": 1,
+          "name": "Classic shirt 1",
+          "sku": "TEST-0001",
+          "values": {
+            "id": "1",
+            "sku": "TEST-0001",
+            "barcode": "",
+            "barcodes": [],
+            "mpn": "",
+            "external_id": "",
+            "name": "Classic shirt 1",
+            "slug": "classic-shirt-1",
+            "summary": "A made-up product: no such thing is for sale.",
+            "description": "<p>Classic shirt 1 is part of a made-up catalogue.</p>",
+            "category": "Clothing/Men/Shirts",
+            "categories": "Clothing/Women/Skirts",
+            "price": "9.90",
+            "old_price": "12.38",
+            "unit": "pcs",
+            "priority": "10",
+            "is_published": "1",
+            "images": [
+              {
+                "url": "http://localhost/storage/catalog/000-0.jpg",
+                "alt": "Classic shirt 1"
+              },
+              {
+                "url": "http://localhost/storage/catalog/000-1.jpg",
+                "alt": "Classic shirt 1"
+              }
+            ],
+            "brand": "Northwind",
+            "labels": [
+              {
+                "code": "top",
+                "name": "Top"
+              },
+              {
+                "code": "sale",
+                "name": "Sale"
+              },
+              {
+                "code": "newsletter",
+                "name": "Newsletter"
+              }
+            ],
+            "stock": "in-stock",
+            "availability": "in_stock",
+            "identifier_exists": "no",
+            "group_id": "",
+            "url": "http://localhost/classic-shirt-1-1",
+            "image_link": "http://localhost/storage/catalog/000-0.jpg",
+            "additional_images": [
+              {
+                "url": "http://localhost/storage/catalog/000-1.jpg",
+                "alt": "Classic shirt 1"
+              }
+            ],
+            "price_with_currency": "9.90 EUR",
+            "list_price": "12.38",
+            "list_price_with_currency": "12.38 EUR",
+            "sale_price": "9.90",
+            "sale_price_with_currency": "9.90 EUR",
+            "sale_price_effective_date": "",
+            "description_html": "<p>Classic shirt 1 is part of a made-up catalogue.</p>",
+            "description_cdata": {
+              "$cdata": "<p>Classic shirt 1 is part of a made-up catalogue.</p>"
+            },
+            "description_text": "Classic shirt 1 is part of a made-up catalogue.",
+            "title": "Classic shirt 1",
+            "long_text": "Classic shirt 1 is part of a made-up catalogue.",
+            "gtin": "",
+            "gtins": [],
+            "category_id": "3",
+            "product_type": "Clothing > Men > Shirts",
+            "platform_category": "",
+            "google_product_category": "",
+            "custom_label_0": "",
+            "custom_label_1": "",
+            "custom_label_2": "",
+            "custom_label_3": "",
+            "custom_label_4": "",
+            "stock_name": "In stock",
+            "is_purchasable": "1",
+            "property.color": "Black;Grey",
+            "property.material": "",
+            "property.weight": "",
+            "property.diagonal": "",
+            "property.wi_fi": "",
+            "property.contents": ""
+          }
+        },
+        {
+          "id": 2,
+          "name": "Linen trousers 1",
+          "sku": "TEST-0002",
+          "values": {
+            "id": "2",
+            "sku": "TEST-0002",
+            "barcode": "",
+            "barcodes": [],
+            "mpn": "",
+            "external_id": "",
+            "name": "Linen trousers 1",
+            "slug": "linen-trousers-1",
+            "summary": "A made-up product: no such thing is for sale.",
+            "description": "<p>Linen trousers 1 is part of a made-up catalogue.</p>",
+            "category": "Clothing/Men/Trousers",
+            "categories": "",
+            "price": "46.90",
+            "old_price": "",
+            "unit": "pcs",
+            "priority": "0",
+            "is_published": "1",
+            "images": [
+              {
+                "url": "http://localhost/storage/catalog/001-0.jpg",
+                "alt": "Linen trousers 1"
+              }
+            ],
+            "brand": "Contoso",
+            "labels": [
+              {
+                "code": "new",
+                "name": "New"
+              }
+            ],
+            "stock": "in-stock",
+            "availability": "in_stock",
+            "identifier_exists": "no",
+            "group_id": "",
+            "url": "http://localhost/linen-trousers-1-2",
+            "image_link": "http://localhost/storage/catalog/001-0.jpg",
+            "additional_images": [],
+            "price_with_currency": "46.90 EUR",
+            "list_price": "46.90",
+            "list_price_with_currency": "46.90 EUR",
+            "sale_price": "",
+            "sale_price_with_currency": "",
+            "sale_price_effective_date": "",
+            "description_html": "<p>Linen trousers 1 is part of a made-up catalogue.</p>",
+            "description_cdata": {
+              "$cdata": "<p>Linen trousers 1 is part of a made-up catalogue.</p>"
+            },
+            "description_text": "Linen trousers 1 is part of a made-up catalogue.",
+            "title": "Linen trousers 1",
+            "long_text": "Linen trousers 1 is part of a made-up catalogue.",
+            "gtin": "",
+            "gtins": [],
+            "category_id": "4",
+            "product_type": "Clothing > Men > Trousers",
+            "platform_category": "",
+            "google_product_category": "",
+            "custom_label_0": "",
+            "custom_label_1": "",
+            "custom_label_2": "",
+            "custom_label_3": "",
+            "custom_label_4": "",
+            "stock_name": "In stock",
+            "is_purchasable": "1",
+            "property.color": "White",
+            "property.material": "",
+            "property.weight": "",
+            "property.diagonal": "",
+            "property.wi_fi": "",
+            "property.contents": ""
+          }
+        },
+        {
+          "id": 3,
+          "name": "Everyday dress 1",
+          "sku": "TEST-0003",
+          "values": {
+            "id": "3",
+            "sku": "TEST-0003",
+            "barcode": "",
+            "barcodes": [],
+            "mpn": "",
+            "external_id": "",
+            "name": "Everyday dress 1",
+            "slug": "everyday-dress-1",
+            "summary": "A made-up product: no such thing is for sale.",
+            "description": "<p>Everyday dress 1 is part of a made-up catalogue.</p>",
+            "category": "Clothing/Women/Dresses",
+            "categories": "",
+            "price": "83.90",
+            "old_price": "",
+            "unit": "pcs",
+            "priority": "0",
+            "is_published": "1",
+            "images": [
+              {
+                "url": "http://localhost/storage/catalog/002-0.jpg",
+                "alt": "Everyday dress 1"
+              }
+            ],
+            "brand": "Fabrikam",
+            "labels": [],
+            "stock": "in-stock",
+            "availability": "in_stock",
+            "identifier_exists": "no",
+            "group_id": "",
+            "url": "http://localhost/everyday-dress-1-3",
+            "image_link": "http://localhost/storage/catalog/002-0.jpg",
+            "additional_images": [],
+            "price_with_currency": "83.90 EUR",
+            "list_price": "83.90",
+            "list_price_with_currency": "83.90 EUR",
+            "sale_price": "",
+            "sale_price_with_currency": "",
+            "sale_price_effective_date": "",
+            "description_html": "<p>Everyday dress 1 is part of a made-up catalogue.</p>",
+            "description_cdata": {
+              "$cdata": "<p>Everyday dress 1 is part of a made-up catalogue.</p>"
+            },
+            "description_text": "Everyday dress 1 is part of a made-up catalogue.",
+            "title": "Everyday dress 1",
+            "long_text": "Everyday dress 1 is part of a made-up catalogue.",
+            "gtin": "",
+            "gtins": [],
+            "category_id": "6",
+            "product_type": "Clothing > Women > Dresses",
+            "platform_category": "",
+            "google_product_category": "",
+            "custom_label_0": "",
+            "custom_label_1": "",
+            "custom_label_2": "",
+            "custom_label_3": "",
+            "custom_label_4": "",
+            "stock_name": "In stock",
+            "is_purchasable": "1",
+            "property.color": "Grey",
+            "property.material": "",
+            "property.weight": "",
+            "property.diagonal": "",
+            "property.wi_fi": "",
+            "property.contents": ""
+          }
+        },
+        {
+          "id": 4,
+          "name": "Travel skirt 1",
+          "sku": "TEST-0004",
+          "values": {
+            "id": "4",
+            "sku": "TEST-0004",
+            "barcode": "",
+            "barcodes": [],
+            "mpn": "",
+            "external_id": "",
+            "name": "Travel skirt 1",
+            "slug": "travel-skirt-1",
+            "summary": "A made-up product: no such thing is for sale.",
+            "description": "<p>Travel skirt 1 is part of a made-up catalogue.</p>",
+            "category": "Clothing/Women/Skirts",
+            "categories": "",
+            "price": "120.90",
+            "old_price": "",
+            "unit": "pcs",
+            "priority": "0",
+            "is_published": "1",
+            "images": [
+              {
+                "url": "http://localhost/storage/catalog/003-0.jpg",
+                "alt": "Travel skirt 1"
+              },
+              {
+                "url": "http://localhost/storage/catalog/003-1.jpg",
+                "alt": "Travel skirt 1"
+              }
+            ],
+            "brand": "",
+            "labels": [],
+            "stock": "out-of-stock",
+            "availability": "out_of_stock",
+            "identifier_exists": "no",
+            "group_id": "",
+            "url": "http://localhost/travel-skirt-1-4",
+            "image_link": "http://localhost/storage/catalog/003-0.jpg",
+            "additional_images": [
+              {
+                "url": "http://localhost/storage/catalog/003-1.jpg",
+                "alt": "Travel skirt 1"
+              }
+            ],
+            "price_with_currency": "120.90 EUR",
+            "list_price": "120.90",
+            "list_price_with_currency": "120.90 EUR",
+            "sale_price": "",
+            "sale_price_with_currency": "",
+            "sale_price_effective_date": "",
+            "description_html": "<p>Travel skirt 1 is part of a made-up catalogue.</p>",
+            "description_cdata": {
+              "$cdata": "<p>Travel skirt 1 is part of a made-up catalogue.</p>"
+            },
+            "description_text": "Travel skirt 1 is part of a made-up catalogue.",
+            "title": "Travel skirt 1",
+            "long_text": "Travel skirt 1 is part of a made-up catalogue.",
+            "gtin": "",
+            "gtins": [],
+            "category_id": "7",
+            "product_type": "Clothing > Women > Skirts",
+            "platform_category": "",
+            "google_product_category": "",
+            "custom_label_0": "",
+            "custom_label_1": "",
+            "custom_label_2": "",
+            "custom_label_3": "",
+            "custom_label_4": "",
+            "stock_name": "Out of stock",
+            "is_purchasable": "",
+            "property.color": "",
+            "property.material": "",
+            "property.weight": "",
+            "property.diagonal": "",
+            "property.wi_fi": "",
+            "property.contents": ""
+          }
+        },
+        {
+          "id": 5,
+          "name": "Summer sneakers 1",
+          "sku": "TEST-0005",
+          "values": {
+            "id": "5",
+            "sku": "TEST-0005",
+            "barcode": "",
+            "barcodes": [],
+            "mpn": "",
+            "external_id": "",
+            "name": "Summer sneakers 1",
+            "slug": "summer-sneakers-1",
+            "summary": "A made-up product: no such thing is for sale.",
+            "description": "<p>Summer sneakers 1 is part of a made-up catalogue.</p>",
+            "category": "Shoes/Sneakers",
+            "categories": "",
+            "price": "157.90",
+            "old_price": "",
+            "unit": "pcs",
+            "priority": "0",
+            "is_published": "1",
+            "images": [
+              {
+                "url": "http://localhost/storage/catalog/004-0.jpg",
+                "alt": "Summer sneakers 1"
+              }
+            ],
+            "brand": "Litware",
+            "labels": [],
+            "stock": "in-stock",
+            "availability": "in_stock",
+            "identifier_exists": "no",
+            "group_id": "",
+            "url": "http://localhost/summer-sneakers-1-5",
+            "image_link": "http://localhost/storage/catalog/004-0.jpg",
+            "additional_images": [],
+            "price_with_currency": "157.90 EUR",
+            "list_price": "157.90",
+            "list_price_with_currency": "157.90 EUR",
+            "sale_price": "",
+            "sale_price_with_currency": "",
+            "sale_price_effective_date": "",
+            "description_html": "<p>Summer sneakers 1 is part of a made-up catalogue.</p>",
+            "description_cdata": {
+              "$cdata": "<p>Summer sneakers 1 is part of a made-up catalogue.</p>"
+            },
+            "description_text": "Summer sneakers 1 is part of a made-up catalogue.",
+            "title": "Summer sneakers 1",
+            "long_text": "Summer sneakers 1 is part of a made-up catalogue.",
+            "gtin": "",
+            "gtins": [],
+            "category_id": "9",
+            "product_type": "Shoes > Sneakers",
+            "platform_category": "",
+            "google_product_category": "",
+            "custom_label_0": "",
+            "custom_label_1": "",
+            "custom_label_2": "",
+            "custom_label_3": "",
+            "custom_label_4": "",
+            "stock_name": "In stock",
+            "is_purchasable": "1",
+            "property.color": "Blue",
+            "property.material": "",
+            "property.weight": "0.8",
+            "property.diagonal": "",
+            "property.wi_fi": "",
+            "property.contents": ""
+          }
+        }
+      ],
+      "frame": {
+        "shop.name": "Laravel",
+        "shop.url": "https://example.test",
+        "shop.description": "",
+        "shop.email": "",
+        "shop.phone": "",
+        "feed.name": "Spare parts",
+        "feed.locale": "en",
+        "feed.currency": "EUR",
+        "generated_at": "2026-11-05T12:00:00+00:00",
+        "generated_at_rfc822": "Thu, 05 Nov 26 12:00:00 +0000",
+        "currencies": [
+          {
+            "code": "EUR",
+            "rate": "1"
+          }
+        ],
+        "categories": [
+          {
+            "id": "1",
+            "parent_id": "",
+            "name": "Clothing",
+            "path": "Clothing",
+            "url": "http://localhost/clothing"
+          },
+          {
+            "id": "2",
+            "parent_id": "1",
+            "name": "Men",
+            "path": "Clothing > Men",
+            "url": "http://localhost/men"
+          },
+          {
+            "id": "3",
+            "parent_id": "2",
+            "name": "Shirts",
+            "path": "Clothing > Men > Shirts",
+            "url": "http://localhost/shirts"
+          },
+          {
+            "id": "4",
+            "parent_id": "2",
+            "name": "Trousers",
+            "path": "Clothing > Men > Trousers",
+            "url": "http://localhost/trousers"
+          },
+          {
+            "id": "5",
+            "parent_id": "1",
+            "name": "Women",
+            "path": "Clothing > Women",
+            "url": "http://localhost/women"
+          },
+          {
+            "id": "6",
+            "parent_id": "5",
+            "name": "Dresses",
+            "path": "Clothing > Women > Dresses",
+            "url": "http://localhost/dresses"
+          },
+          {
+            "id": "7",
+            "parent_id": "5",
+            "name": "Skirts",
+            "path": "Clothing > Women > Skirts",
+            "url": "http://localhost/skirts"
+          },
+          {
+            "id": "8",
+            "parent_id": "",
+            "name": "Shoes",
+            "path": "Shoes",
+            "url": "http://localhost/shoes"
+          },
+          {
+            "id": "9",
+            "parent_id": "8",
+            "name": "Sneakers",
+            "path": "Shoes > Sneakers",
+            "url": "http://localhost/sneakers"
+          }
+        ],
+        "products_count": "5"
+      }
+    },
+    "text": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<products currency=\"EUR\">\n<product id=\"1\">\n  <sku>TEST-0001</sku>\n  <name>Classic shirt 1</name>\n  <url>http://localhost/classic-shirt-1-1</url>\n  <price>9.90</price>\n  <description><![CDATA[<p>Classic shirt 1 is part of a made-up catalogue.</p>]]></description>\n  <image>http://localhost/storage/catalog/000-0.jpg</image><image>http://localhost/storage/catalog/000-1.jpg</image>\n</product>\n<product id=\"2\">\n  <sku>TEST-0002</sku>\n  <name>Linen trousers 1</name>\n  <url>http://localhost/linen-trousers-1-2</url>\n  <price>46.90</price>\n  <description><![CDATA[<p>Linen trousers 1 is part of a made-up catalogue.</p>]]></description>\n  <image>http://localhost/storage/catalog/001-0.jpg</image>\n</product>\n<product id=\"3\">\n  <sku>TEST-0003</sku>\n  <name>Everyday dress 1</name>\n  <url>http://localhost/everyday-dress-1-3</url>\n  <price>83.90</price>\n  <description><![CDATA[<p>Everyday dress 1 is part of a made-up catalogue.</p>]]></description>\n  <image>http://localhost/storage/catalog/002-0.jpg</image>\n</product>\n<product id=\"4\">\n  <sku>TEST-0004</sku>\n  <name>Travel skirt 1</name>\n  <url>http://localhost/travel-skirt-1-4</url>\n  <price>120.90</price>\n  <description><![CDATA[<p>Travel skirt 1 is part of a made-up catalogue.</p>]]></description>\n  <image>http://localhost/storage/catalog/003-0.jpg</image><image>http://localhost/storage/catalog/003-1.jpg</image>\n</product>\n<product id=\"5\">\n  <sku>TEST-0005</sku>\n  <name>Summer sneakers 1</name>\n  <url>http://localhost/summer-sneakers-1-5</url>\n  <price>157.90</price>\n  <description><![CDATA[<p>Summer sneakers 1 is part of a made-up catalogue.</p>]]></description>\n  <image>http://localhost/storage/catalog/004-0.jpg</image>\n</product>\n</products>\n"
+  },
+  {
+    "name": "csv",
+    "feed": {
+      "format": "csv",
+      "head": "id,sku,name,url,price,availability\n",
+      "item": "{{id}},{{sku}},{{name}},{{url}},{{price}},{{availability}}",
+      "foot": "\n",
+      "separator": "\n",
+      "options": {
+        "delimiter": ","
+      }
+    },
+    "sample": {
+      "products": [
+        {
+          "id": 1,
+          "name": "Classic shirt 1",
+          "sku": "TEST-0001",
+          "values": {
+            "id": "1",
+            "sku": "TEST-0001",
+            "barcode": "",
+            "barcodes": [],
+            "mpn": "",
+            "external_id": "",
+            "name": "Classic shirt 1",
+            "slug": "classic-shirt-1",
+            "summary": "A made-up product: no such thing is for sale.",
+            "description": "<p>Classic shirt 1 is part of a made-up catalogue.</p>",
+            "category": "Clothing/Men/Shirts",
+            "categories": "Clothing/Women/Skirts",
+            "price": "9.90",
+            "old_price": "12.38",
+            "unit": "pcs",
+            "priority": "10",
+            "is_published": "1",
+            "images": [
+              {
+                "url": "http://localhost/storage/catalog/000-0.jpg",
+                "alt": "Classic shirt 1"
+              },
+              {
+                "url": "http://localhost/storage/catalog/000-1.jpg",
+                "alt": "Classic shirt 1"
+              }
+            ],
+            "brand": "Northwind",
+            "labels": [
+              {
+                "code": "top",
+                "name": "Top"
+              },
+              {
+                "code": "sale",
+                "name": "Sale"
+              },
+              {
+                "code": "newsletter",
+                "name": "Newsletter"
+              }
+            ],
+            "stock": "in-stock",
+            "availability": "in_stock",
+            "identifier_exists": "no",
+            "group_id": "",
+            "url": "http://localhost/classic-shirt-1-1",
+            "image_link": "http://localhost/storage/catalog/000-0.jpg",
+            "additional_images": [
+              {
+                "url": "http://localhost/storage/catalog/000-1.jpg",
+                "alt": "Classic shirt 1"
+              }
+            ],
+            "price_with_currency": "9.90 EUR",
+            "list_price": "12.38",
+            "list_price_with_currency": "12.38 EUR",
+            "sale_price": "9.90",
+            "sale_price_with_currency": "9.90 EUR",
+            "sale_price_effective_date": "",
+            "description_html": "<p>Classic shirt 1 is part of a made-up catalogue.</p>",
+            "description_cdata": {
+              "$cdata": "<p>Classic shirt 1 is part of a made-up catalogue.</p>"
+            },
+            "description_text": "Classic shirt 1 is part of a made-up catalogue.",
+            "title": "Classic shirt 1",
+            "long_text": "Classic shirt 1 is part of a made-up catalogue.",
+            "gtin": "",
+            "gtins": [],
+            "category_id": "3",
+            "product_type": "Clothing > Men > Shirts",
+            "platform_category": "",
+            "google_product_category": "",
+            "custom_label_0": "",
+            "custom_label_1": "",
+            "custom_label_2": "",
+            "custom_label_3": "",
+            "custom_label_4": "",
+            "stock_name": "In stock",
+            "is_purchasable": "1",
+            "property.color": "Black;Grey",
+            "property.material": "",
+            "property.weight": "",
+            "property.diagonal": "",
+            "property.wi_fi": "",
+            "property.contents": ""
+          }
+        },
+        {
+          "id": 2,
+          "name": "Linen trousers 1",
+          "sku": "TEST-0002",
+          "values": {
+            "id": "2",
+            "sku": "TEST-0002",
+            "barcode": "",
+            "barcodes": [],
+            "mpn": "",
+            "external_id": "",
+            "name": "Linen trousers 1",
+            "slug": "linen-trousers-1",
+            "summary": "A made-up product: no such thing is for sale.",
+            "description": "<p>Linen trousers 1 is part of a made-up catalogue.</p>",
+            "category": "Clothing/Men/Trousers",
+            "categories": "",
+            "price": "46.90",
+            "old_price": "",
+            "unit": "pcs",
+            "priority": "0",
+            "is_published": "1",
+            "images": [
+              {
+                "url": "http://localhost/storage/catalog/001-0.jpg",
+                "alt": "Linen trousers 1"
+              }
+            ],
+            "brand": "Contoso",
+            "labels": [
+              {
+                "code": "new",
+                "name": "New"
+              }
+            ],
+            "stock": "in-stock",
+            "availability": "in_stock",
+            "identifier_exists": "no",
+            "group_id": "",
+            "url": "http://localhost/linen-trousers-1-2",
+            "image_link": "http://localhost/storage/catalog/001-0.jpg",
+            "additional_images": [],
+            "price_with_currency": "46.90 EUR",
+            "list_price": "46.90",
+            "list_price_with_currency": "46.90 EUR",
+            "sale_price": "",
+            "sale_price_with_currency": "",
+            "sale_price_effective_date": "",
+            "description_html": "<p>Linen trousers 1 is part of a made-up catalogue.</p>",
+            "description_cdata": {
+              "$cdata": "<p>Linen trousers 1 is part of a made-up catalogue.</p>"
+            },
+            "description_text": "Linen trousers 1 is part of a made-up catalogue.",
+            "title": "Linen trousers 1",
+            "long_text": "Linen trousers 1 is part of a made-up catalogue.",
+            "gtin": "",
+            "gtins": [],
+            "category_id": "4",
+            "product_type": "Clothing > Men > Trousers",
+            "platform_category": "",
+            "google_product_category": "",
+            "custom_label_0": "",
+            "custom_label_1": "",
+            "custom_label_2": "",
+            "custom_label_3": "",
+            "custom_label_4": "",
+            "stock_name": "In stock",
+            "is_purchasable": "1",
+            "property.color": "White",
+            "property.material": "",
+            "property.weight": "",
+            "property.diagonal": "",
+            "property.wi_fi": "",
+            "property.contents": ""
+          }
+        },
+        {
+          "id": 3,
+          "name": "Everyday dress 1",
+          "sku": "TEST-0003",
+          "values": {
+            "id": "3",
+            "sku": "TEST-0003",
+            "barcode": "",
+            "barcodes": [],
+            "mpn": "",
+            "external_id": "",
+            "name": "Everyday dress 1",
+            "slug": "everyday-dress-1",
+            "summary": "A made-up product: no such thing is for sale.",
+            "description": "<p>Everyday dress 1 is part of a made-up catalogue.</p>",
+            "category": "Clothing/Women/Dresses",
+            "categories": "",
+            "price": "83.90",
+            "old_price": "",
+            "unit": "pcs",
+            "priority": "0",
+            "is_published": "1",
+            "images": [
+              {
+                "url": "http://localhost/storage/catalog/002-0.jpg",
+                "alt": "Everyday dress 1"
+              }
+            ],
+            "brand": "Fabrikam",
+            "labels": [],
+            "stock": "in-stock",
+            "availability": "in_stock",
+            "identifier_exists": "no",
+            "group_id": "",
+            "url": "http://localhost/everyday-dress-1-3",
+            "image_link": "http://localhost/storage/catalog/002-0.jpg",
+            "additional_images": [],
+            "price_with_currency": "83.90 EUR",
+            "list_price": "83.90",
+            "list_price_with_currency": "83.90 EUR",
+            "sale_price": "",
+            "sale_price_with_currency": "",
+            "sale_price_effective_date": "",
+            "description_html": "<p>Everyday dress 1 is part of a made-up catalogue.</p>",
+            "description_cdata": {
+              "$cdata": "<p>Everyday dress 1 is part of a made-up catalogue.</p>"
+            },
+            "description_text": "Everyday dress 1 is part of a made-up catalogue.",
+            "title": "Everyday dress 1",
+            "long_text": "Everyday dress 1 is part of a made-up catalogue.",
+            "gtin": "",
+            "gtins": [],
+            "category_id": "6",
+            "product_type": "Clothing > Women > Dresses",
+            "platform_category": "",
+            "google_product_category": "",
+            "custom_label_0": "",
+            "custom_label_1": "",
+            "custom_label_2": "",
+            "custom_label_3": "",
+            "custom_label_4": "",
+            "stock_name": "In stock",
+            "is_purchasable": "1",
+            "property.color": "Grey",
+            "property.material": "",
+            "property.weight": "",
+            "property.diagonal": "",
+            "property.wi_fi": "",
+            "property.contents": ""
+          }
+        },
+        {
+          "id": 4,
+          "name": "Travel skirt 1",
+          "sku": "TEST-0004",
+          "values": {
+            "id": "4",
+            "sku": "TEST-0004",
+            "barcode": "",
+            "barcodes": [],
+            "mpn": "",
+            "external_id": "",
+            "name": "Travel skirt 1",
+            "slug": "travel-skirt-1",
+            "summary": "A made-up product: no such thing is for sale.",
+            "description": "<p>Travel skirt 1 is part of a made-up catalogue.</p>",
+            "category": "Clothing/Women/Skirts",
+            "categories": "",
+            "price": "120.90",
+            "old_price": "",
+            "unit": "pcs",
+            "priority": "0",
+            "is_published": "1",
+            "images": [
+              {
+                "url": "http://localhost/storage/catalog/003-0.jpg",
+                "alt": "Travel skirt 1"
+              },
+              {
+                "url": "http://localhost/storage/catalog/003-1.jpg",
+                "alt": "Travel skirt 1"
+              }
+            ],
+            "brand": "",
+            "labels": [],
+            "stock": "out-of-stock",
+            "availability": "out_of_stock",
+            "identifier_exists": "no",
+            "group_id": "",
+            "url": "http://localhost/travel-skirt-1-4",
+            "image_link": "http://localhost/storage/catalog/003-0.jpg",
+            "additional_images": [
+              {
+                "url": "http://localhost/storage/catalog/003-1.jpg",
+                "alt": "Travel skirt 1"
+              }
+            ],
+            "price_with_currency": "120.90 EUR",
+            "list_price": "120.90",
+            "list_price_with_currency": "120.90 EUR",
+            "sale_price": "",
+            "sale_price_with_currency": "",
+            "sale_price_effective_date": "",
+            "description_html": "<p>Travel skirt 1 is part of a made-up catalogue.</p>",
+            "description_cdata": {
+              "$cdata": "<p>Travel skirt 1 is part of a made-up catalogue.</p>"
+            },
+            "description_text": "Travel skirt 1 is part of a made-up catalogue.",
+            "title": "Travel skirt 1",
+            "long_text": "Travel skirt 1 is part of a made-up catalogue.",
+            "gtin": "",
+            "gtins": [],
+            "category_id": "7",
+            "product_type": "Clothing > Women > Skirts",
+            "platform_category": "",
+            "google_product_category": "",
+            "custom_label_0": "",
+            "custom_label_1": "",
+            "custom_label_2": "",
+            "custom_label_3": "",
+            "custom_label_4": "",
+            "stock_name": "Out of stock",
+            "is_purchasable": "",
+            "property.color": "",
+            "property.material": "",
+            "property.weight": "",
+            "property.diagonal": "",
+            "property.wi_fi": "",
+            "property.contents": ""
+          }
+        },
+        {
+          "id": 5,
+          "name": "Summer sneakers 1",
+          "sku": "TEST-0005",
+          "values": {
+            "id": "5",
+            "sku": "TEST-0005",
+            "barcode": "",
+            "barcodes": [],
+            "mpn": "",
+            "external_id": "",
+            "name": "Summer sneakers 1",
+            "slug": "summer-sneakers-1",
+            "summary": "A made-up product: no such thing is for sale.",
+            "description": "<p>Summer sneakers 1 is part of a made-up catalogue.</p>",
+            "category": "Shoes/Sneakers",
+            "categories": "",
+            "price": "157.90",
+            "old_price": "",
+            "unit": "pcs",
+            "priority": "0",
+            "is_published": "1",
+            "images": [
+              {
+                "url": "http://localhost/storage/catalog/004-0.jpg",
+                "alt": "Summer sneakers 1"
+              }
+            ],
+            "brand": "Litware",
+            "labels": [],
+            "stock": "in-stock",
+            "availability": "in_stock",
+            "identifier_exists": "no",
+            "group_id": "",
+            "url": "http://localhost/summer-sneakers-1-5",
+            "image_link": "http://localhost/storage/catalog/004-0.jpg",
+            "additional_images": [],
+            "price_with_currency": "157.90 EUR",
+            "list_price": "157.90",
+            "list_price_with_currency": "157.90 EUR",
+            "sale_price": "",
+            "sale_price_with_currency": "",
+            "sale_price_effective_date": "",
+            "description_html": "<p>Summer sneakers 1 is part of a made-up catalogue.</p>",
+            "description_cdata": {
+              "$cdata": "<p>Summer sneakers 1 is part of a made-up catalogue.</p>"
+            },
+            "description_text": "Summer sneakers 1 is part of a made-up catalogue.",
+            "title": "Summer sneakers 1",
+            "long_text": "Summer sneakers 1 is part of a made-up catalogue.",
+            "gtin": "",
+            "gtins": [],
+            "category_id": "9",
+            "product_type": "Shoes > Sneakers",
+            "platform_category": "",
+            "google_product_category": "",
+            "custom_label_0": "",
+            "custom_label_1": "",
+            "custom_label_2": "",
+            "custom_label_3": "",
+            "custom_label_4": "",
+            "stock_name": "In stock",
+            "is_purchasable": "1",
+            "property.color": "Blue",
+            "property.material": "",
+            "property.weight": "0.8",
+            "property.diagonal": "",
+            "property.wi_fi": "",
+            "property.contents": ""
+          }
+        }
+      ],
+      "frame": {
+        "shop.name": "Laravel",
+        "shop.url": "https://example.test",
+        "shop.description": "",
+        "shop.email": "",
+        "shop.phone": "",
+        "feed.name": "Spare parts",
+        "feed.locale": "en",
+        "feed.currency": "EUR",
+        "generated_at": "2026-11-05T12:00:00+00:00",
+        "generated_at_rfc822": "Thu, 05 Nov 26 12:00:00 +0000",
+        "currencies": [
+          {
+            "code": "EUR",
+            "rate": "1"
+          }
+        ],
+        "categories": [
+          {
+            "id": "1",
+            "parent_id": "",
+            "name": "Clothing",
+            "path": "Clothing",
+            "url": "http://localhost/clothing"
+          },
+          {
+            "id": "2",
+            "parent_id": "1",
+            "name": "Men",
+            "path": "Clothing > Men",
+            "url": "http://localhost/men"
+          },
+          {
+            "id": "3",
+            "parent_id": "2",
+            "name": "Shirts",
+            "path": "Clothing > Men > Shirts",
+            "url": "http://localhost/shirts"
+          },
+          {
+            "id": "4",
+            "parent_id": "2",
+            "name": "Trousers",
+            "path": "Clothing > Men > Trousers",
+            "url": "http://localhost/trousers"
+          },
+          {
+            "id": "5",
+            "parent_id": "1",
+            "name": "Women",
+            "path": "Clothing > Women",
+            "url": "http://localhost/women"
+          },
+          {
+            "id": "6",
+            "parent_id": "5",
+            "name": "Dresses",
+            "path": "Clothing > Women > Dresses",
+            "url": "http://localhost/dresses"
+          },
+          {
+            "id": "7",
+            "parent_id": "5",
+            "name": "Skirts",
+            "path": "Clothing > Women > Skirts",
+            "url": "http://localhost/skirts"
+          },
+          {
+            "id": "8",
+            "parent_id": "",
+            "name": "Shoes",
+            "path": "Shoes",
+            "url": "http://localhost/shoes"
+          },
+          {
+            "id": "9",
+            "parent_id": "8",
+            "name": "Sneakers",
+            "path": "Shoes > Sneakers",
+            "url": "http://localhost/sneakers"
+          }
+        ],
+        "products_count": "5"
+      }
+    },
+    "text": "id,sku,name,url,price,availability\n1,TEST-0001,Classic shirt 1,http://localhost/classic-shirt-1-1,9.90,in_stock\n2,TEST-0002,Linen trousers 1,http://localhost/linen-trousers-1-2,46.90,in_stock\n3,TEST-0003,Everyday dress 1,http://localhost/everyday-dress-1-3,83.90,in_stock\n4,TEST-0004,Travel skirt 1,http://localhost/travel-skirt-1-4,120.90,out_of_stock\n5,TEST-0005,Summer sneakers 1,http://localhost/summer-sneakers-1-5,157.90,in_stock\n"
+  }
+]

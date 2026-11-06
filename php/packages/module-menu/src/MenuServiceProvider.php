@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Contracts\SiteUrls;
 use WebxUi\Admin\Events\StoredContentRewritten;
+use WebxUi\Admin\Help\HelpRegistry;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\Links\LinkUrls;
 use WebxUi\Admin\ModuleRegistry;
@@ -55,6 +56,8 @@ class MenuServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->app->make(HelpRegistry::class)->directory(__DIR__.'/../resources/help');
+
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-menu');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-menu');

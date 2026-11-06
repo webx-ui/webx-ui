@@ -288,4 +288,12 @@ return [
     'exchange-profile-edit' => 'Bearbeiten',
     'exchange-profile-up' => 'Nach oben',
     'exchange-profile-down' => 'Nach unten',
+    'facet-set-add' => 'Facette hinzufügen',
+    'facet-set-empty' => 'Fügen Sie eine Facette hinzu und wählen Sie ihre Werte.',
+    'facet-set-remove' => 'Facette entfernen',
+    'facet-set-values' => 'Werte wählen',
+    'facet-set-from' => 'Von',
+    'facet-set-to' => 'Bis',
+    'facet-set-count' => 'Produkte: :count',
+    'facet-set-counting' => 'Wird gezählt…',
 ];

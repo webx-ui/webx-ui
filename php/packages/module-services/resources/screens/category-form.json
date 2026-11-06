@@ -78,6 +78,18 @@
           ]
         },
         {
+          "id": "blocks-tab",
+          "type": "wx-tab",
+          "label": "trans::webx-services::category.tab-blocks",
+          "children": [
+            {
+              "id": "blocks",
+              "type": "wx-blocks",
+              "name": "blocks"
+            }
+          ]
+        },
+        {
           "id": "seo",
           "type": "wx-tab",
           "label": "trans::webx-services::category.tab-seo",

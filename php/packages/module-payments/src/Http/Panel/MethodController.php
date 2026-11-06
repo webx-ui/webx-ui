@@ -14,6 +14,7 @@ use WebxUi\Cache\CacheGroups;
 use WebxUi\Payments\Methods;
 use WebxUi\Payments\MethodTypes;
 use WebxUi\Payments\Models\PaymentMethod;
+use WebxUi\Payments\Panel\GroupForm;
 use WebxUi\Payments\Panel\MethodForm;
 
 /**
@@ -29,12 +30,16 @@ final class MethodController
 
     public function index(): JsonResponse
     {
+        $similar = $this->form->similar();
+        $rows = PaymentMethod::query()->orderBy('position')->orderBy('id')->get()
+            ->map(fn (PaymentMethod $method): array => $this->form->row($method, $similar))
+            ->values()
+            ->all();
+
         return ApiResponse::data([
-            'methods' => PaymentMethod::query()->orderBy('position')->orderBy('id')->get()
-                ->map(fn (PaymentMethod $method): array => $this->form->row($method))
-                ->values()
-                ->all(),
+            'methods' => $rows,
             'types' => $this->form->types(),
+            'marks' => (object) $this->form->marks($rows),
         ]);
     }
 
@@ -62,9 +67,18 @@ final class MethodController
         return ApiResponse::data($this->form->describe($this->save($request, $method)));
     }
 
-    /** The order of the checkout, as dragged: every id of the list once. */
-    public function order(Request $request, CacheGroups $groups): JsonResponse
+    /**
+     * The order of the checkout, as dragged: every id of the list once — by group where the site
+     * has groups (`GroupForm::order()`), as one list where it has none.
+     */
+    public function order(Request $request, CacheGroups $groups, GroupForm $form): JsonResponse
     {
+        if ($request->has('groups')) {
+            $form->order($request->input('groups'));
+
+            return ApiResponse::noContent();
+        }
+
         $ids = array_values(array_unique(array_map('intval', (array) $request->input('ids', []))));
         $known = PaymentMethod::query()->pluck('id')->map(intval(...))->sort()->values()->all();
         $sorted = $ids;

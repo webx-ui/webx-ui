@@ -25,11 +25,12 @@ final class McpPerformanceTest extends McpCase
     /** @return array<string, array{0: string, 1: array<string, mixed>, 2: int}> */
     public static function lists(): array
     {
-        // Each budget counts the server's own line in `mcp_calls`: the methods are one query, the
+        // Each budget counts the server's own line in `mcp_calls`: the methods and the groups are one query, the
         // attempts their page, its count and the orders' numbers, the problems four lists and the
         // methods, the journal its page and the names of its orders, attempts and methods.
         return [
             'methods' => ['payments_methods_list', [], 2],
+            'groups' => ['payments_groups_list', [], 2],
             'attempts' => ['payments_list', [], 4],
             'problems' => ['payments_problems', [], 5],
             'exchange' => ['payments_exchange_list', [], 5],

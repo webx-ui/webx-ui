@@ -24,6 +24,8 @@ final readonly class Methods
         private MethodTypes $types,
         private Gateways $gateways,
         private MethodCredentials $credentials,
+        private MethodGroups $methodGroups,
+        private PaymentMarks $marks,
     ) {}
 
     /**
@@ -182,6 +184,75 @@ final readonly class Methods
         $type = $this->types->get($method->type);
         $presented = $type->present($method, $context);
 
-        return new MethodOption($method, $type, $presented->title, $presented->note, $method->icon, $type->kind());
+        $marks = $this->marks->of($method, $type);
+
+        return new MethodOption($method, $type, $presented->title, $presented->note, $method->icon, $type->kind(), $this->methodGroups->of($method, $type), $marks, $marks === [PaymentMarks::APPLE_PAY]);
+    }
+
+    /**
+     * A list of options as the buyer reads it (groups spec §2.6): the groups in their order, those
+     * with nothing to offer left out, the methods inside by their position. It takes a list already
+     * filtered, so the step and the page of payment each pass their own. A site without groups gets
+     * one view, which is what a flat list is.
+     *
+     * @param  list<MethodOption>  $options
+     * @return list<MethodGroupView>
+     */
+    public function grouped(array $options): array
+    {
+        usort($options, static fn (MethodOption $a, MethodOption $b): int => $a->method->position <=> $b->method->position);
+
+        if ($options === []) {
+            return [];
+        }
+
+        $groups = $this->methodGroups->all();
+
+        if ($groups === []) {
+            return [$this->view(MethodGroup::none(), $options)];
+        }
+
+        $inGroup = [];
+
+        foreach ($options as $option) {
+            $inGroup[(string) $option->group][] = $option;
+        }
+
+        $views = [];
+
+        foreach ($groups as $group) {
+            if (isset($inGroup[$group->key])) {
+                $views[] = $this->view($group, $inGroup[$group->key]);
+            }
+        }
+
+        return $views;
+    }
+
+    /**
+     * What a form that sends both a group and a method means (groups spec §6.4): the method if it is
+     * of that group, otherwise the group's first. A form without the script sends the radio of the
+     * group it left along with the new group, and a row of one method has no radio `method` at all.
+     * Without a group the method alone decides; null — nothing of this is on offer.
+     *
+     * @param  list<MethodOption>  $options
+     */
+    public function picked(array $options, ?string $group, ?string $method): ?MethodOption
+    {
+        $among = $group === null ? $options : array_values(array_filter($options, static fn (MethodOption $option): bool => $option->group === $group));
+
+        foreach ($among as $option) {
+            if ($option->key() === $method) {
+                return $option;
+            }
+        }
+
+        return $group === null || $among === [] ? null : $this->grouped($among)[0]->options[0];
+    }
+
+    /** @param  non-empty-list<MethodOption>  $options */
+    private function view(MethodGroup $group, array $options): MethodGroupView
+    {
+        return new MethodGroupView($group, $options, $this->marks->known(array_merge(...array_map(static fn (MethodOption $option): array => $option->marks, $options))));
     }
 }

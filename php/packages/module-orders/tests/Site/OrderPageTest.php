@@ -11,6 +11,7 @@ use RuntimeException;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Testing\CountsQueries;
 use WebxUi\Cart\Money;
+use WebxUi\Cart\PurchasableLine;
 use WebxUi\Orders\Blocks\BlockDefinition;
 use WebxUi\Orders\Blocks\OrderBlocks;
 use WebxUi\Orders\ItemsEdit;
@@ -71,6 +72,45 @@ final class OrderPageTest extends PlaceTestCase
             ->assertDontSee('Taken into work')
             // «Cancelled» is no step ahead of an order that is not.
             ->assertDontSee('Cancelled');
+    }
+
+    #[Test]
+    public function a_name_leads_to_the_product_only_while_it_has_a_page(): void
+    {
+        $order = $this->place($this->cart([['type' => 'test.product', 'ref' => 1], ['type' => 'test.product', 'ref' => 2], ['type' => 'test.product', 'ref' => 3]]));
+        $this->products->lines[1] = new PurchasableLine(name: 'Item A', sku: null, price: 4999, currency: 'EUR', url: 'https://shop.example.test/item-a');
+        // Set B is still there without an address; Part C was deleted after the order was placed.
+        unset($this->products->lines[3]);
+
+        $page = $this->get($this->link($order))->assertOk();
+
+        $page->assertSee('<a class="webx-order__link" href="https://shop.example.test/item-a">Item A</a>', false)
+            ->assertSee('<span>Set B</span>', false)
+            ->assertSee('<span>Part C</span>', false);
+        $this->assertSame(1, substr_count((string) $page->getContent(), 'webx-order__link'));
+    }
+
+    #[Test]
+    public function a_part_of_a_set_leads_to_its_product_as_a_line_does(): void
+    {
+        $order = $this->place($this->cart([['type' => 'test.product', 'ref' => 1], ['type' => 'test.product', 'ref' => 2]]));
+        $this->products->lines[2] = new PurchasableLine(name: 'Set B', sku: null, price: 4999, currency: 'EUR', url: 'https://shop.example.test/set-b');
+        $items = OrderItem::query()->where('order_id', $order->id)->orderBy('id')->get();
+        $items[1]->update(['parent_id' => $items[0]->id]);
+
+        $this->get($this->link($order))->assertOk()
+            ->assertSee('<li><a class="webx-order__link" href="https://shop.example.test/set-b">Set B</a> × 1</li>', false);
+    }
+
+    #[Test]
+    public function a_line_of_a_type_nobody_sells_any_more_is_its_name(): void
+    {
+        $order = $this->place($this->cart());
+        OrderItem::query()->where('order_id', $order->id)->update(['type' => 'gone.product']);
+
+        $this->get($this->link($order))->assertOk()
+            ->assertSee('<span>Item A</span>', false)
+            ->assertDontSee('webx-order__link', false);
     }
 
     #[Test]

@@ -9,7 +9,7 @@ use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Notifications\Models\Channel;
 use WebxUi\Notifications\Providers;
 use WebxUi\Notifications\Sending\Renderer;
-use WebxUi\Notifications\Templates\TemplateError;
+use WebxUi\Templates\TemplateError;
 
 /**
  * The panel draws a channel's message as it is typed, with `mustache.js` (stage 4, §7.5); the

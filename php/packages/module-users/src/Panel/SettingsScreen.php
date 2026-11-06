@@ -51,17 +51,6 @@ final readonly class SettingsScreen
             'label' => 'trans::webx-users::screen.requirement-'.$requirement->value,
         ], Requirement::cases());
 
-        foreach (Requirements::BUILT_IN as $name) {
-            $patch[] = ['op' => 'add', 'target' => 'fields-card', 'node' => [
-                'id' => 'require-'.str_replace('_', '-', $name),
-                'type' => 'wx-segmented',
-                'name' => Requirements::PREFIX.$name,
-                'label' => 'trans::webx-users::screen.'.str_replace('_', '-', $name),
-                'default' => Requirement::Optional->value,
-                'props' => ['options' => $options],
-            ]];
-        }
-
         foreach ($this->fields->all() as $field) {
             if (! $field->in(Placement::Registration) && ! $field->in(Placement::Profile)) {
                 continue;

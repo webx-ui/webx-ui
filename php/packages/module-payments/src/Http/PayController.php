@@ -61,7 +61,7 @@ final readonly class PayController
         $method = is_string($block['method'] ?? null) ? $this->page->online((string) $block['method']) : null;
 
         if ($order->paid_at !== null && $request->filled('method')) {
-            $method = $this->offered($order, $request->string('method')->toString(), online: true);
+            $method = $this->offered($order, $request->string('method')->toString());
         }
 
         if ($method === null) {
@@ -78,21 +78,30 @@ final readonly class PayController
     }
 
     /**
-     * «Pay online now», «Choose another method» (§8.5): the method switched, then the gateway — an
-     * offline one has none, the page says what comes next. The block of a paid order tells of its
-     * first payment and stays.
+     * «Continue» under the list of methods (§8.5, groups spec §6.8): the method switched, then the
+     * gateway — an offline one has none, the page says what comes next. The block of a paid order
+     * tells of its first payment and stays. The form sends a group and a method, read by §6.4.
      */
     public function method(Request $request, Payments $payments): RedirectResponse
     {
         $order = $this->order($request);
-        $method = $order->paid_at === null ? $this->offered($order, $request->string('method')->toString()) : null;
 
-        if ($method === null) {
+        if ($order->paid_at !== null) {
             return $this->redirect->to($this->links->page($order), 303);
         }
 
+        $key = self::word($request->input('method'));
+        $group = self::word($request->input('group'));
+        $option = $this->page->picked($order, $group, $key);
+
+        if ($option === null) {
+            $word = $key !== null || $group !== null ? 'method_gone' : 'choose_method';
+
+            return $this->redirect->to($this->links->page($order), 303)->with(Handoffs::FLASH, (string) trans('webx-payments::buyer.errors.'.$word, [], (string) $order->locale));
+        }
+
         try {
-            $payment = $payments->switchMethod($order, $method, 'pay-page');
+            $payment = $payments->switchMethod($order, $option->method, 'pay-page');
         } catch (BeginRefused $refused) {
             return $this->redirect->to($this->links->page($order), 303)->with(Handoffs::FLASH, $refused->getMessage());
         }
@@ -132,10 +141,16 @@ final readonly class PayController
         ]);
     }
 
-    /** A method the page offers this order now; null — anything else. */
-    private function offered(Order $order, string $key, bool $online = false): ?Method
+    /** A field of the form as sent: an empty one or an array says nothing. */
+    private static function word(mixed $value): ?string
     {
-        foreach ($online ? $this->page->onlineOptions($order) : $this->page->options($order) as $option) {
+        return is_string($value) && $value !== '' ? $value : null;
+    }
+
+    /** An online method the page offers a top-up of this order now; null — anything else. */
+    private function offered(Order $order, string $key): ?Method
+    {
+        foreach ($this->page->onlineOptions($order) as $option) {
             if ($option->method->key === $key) {
                 return $option->method;
             }

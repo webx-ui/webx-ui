@@ -6,6 +6,7 @@ namespace WebxUi\Catalog\Manticore;
 
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Doctor\DoctorChecks;
+use WebxUi\Admin\Help\HelpRegistry;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Catalog\Engine\CatalogEngines;
@@ -38,6 +39,8 @@ class ManticoreServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->app->make(HelpRegistry::class)->directory(__DIR__.'/../resources/help');
+
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-catalog-manticore');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-catalog-manticore');
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');

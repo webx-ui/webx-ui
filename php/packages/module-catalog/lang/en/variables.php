@@ -1,0 +1,43 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'url' => 'Product address',
+    'image_link' => 'Main picture address',
+    'images' => 'All pictures',
+    'additional_images' => 'Pictures after the main one',
+    'availability' => 'Availability',
+    'brand' => 'Brand',
+    'id' => 'Product ID',
+    'group_id' => 'Variant group',
+    'price' => 'Current price',
+    'old_price' => 'Old price',
+    'price_with_currency' => 'Current price with currency',
+    'list_price' => 'Regular price',
+    'list_price_with_currency' => 'Regular price with currency',
+    'sale_price' => 'Sale price',
+    'sale_price_with_currency' => 'Sale price with currency',
+    'sale_price_effective_date' => 'Sale dates',
+    'description_html' => 'Description (HTML)',
+    'description_cdata' => 'Description (CDATA)',
+    'description_text' => 'Description as text',
+    'title' => 'Title for a marketplace',
+    'long_text' => 'Long text for a marketplace',
+    'mpn' => 'Manufacturer part number',
+    'gtin' => 'GTIN',
+    'gtins' => 'All GTINs',
+    'identifier_exists' => 'Has an identifier',
+    'product_type' => 'Category path',
+    'category_id' => 'Category ID',
+    'platform_category' => 'Marketplace category',
+    'google_product_category' => 'Google product category',
+    'custom_label' => 'Custom label',
+    'fields' => [
+        'url' => 'Address',
+        'alt' => 'Alternative text',
+        'value' => 'Value',
+        'code' => 'Code',
+        'name' => 'Name',
+    ],
+];

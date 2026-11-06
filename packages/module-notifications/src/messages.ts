@@ -6,7 +6,7 @@ import type { Messages } from '@webx-ui/module-admin'
  * these; `messages.test.ts` keeps the two sets of keys equal.
  *
  * `panel` is this package's own; the groups after it are the lines of the server's groups the
- * panel says too — a refusal of a template in the preview speaks the words of the save.
+ * panel says too. A refusal of a template speaks `webx-templates`, `templateMessages` of the core.
  */
 export const notificationsMessages: Record<string, Messages> = {
   module: {
@@ -182,17 +182,5 @@ export const notificationsMessages: Record<string, Messages> = {
     filters: 'Filters',
     'pick-channels': 'Choose channels',
     'set-up-channels': 'Set up channels',
-  },
-  errors: {
-    'template-unclosed': 'The section {{#:section}} is not closed: end it with {{/:section}}.',
-    'template-unexpected': '{{/:section}} closes a section that was never opened.',
-    'template-tag': 'The tag {{:tag is not closed: end it with }}.',
-    'template-name':
-      '{{:name}} is not a variable name: lowercase letters, digits and _, one dot at most.',
-    'template-partial': 'Partials ({{>name}}) are not available in a message template.',
-    'template-delimiters':
-      'Changing the delimiters ({{=<% %>=}}) is not available in a message template.',
-    'template-pragma':
-      'Pragmas and blocks ({{%…}}, {{$…}}) are not available in a message template.',
   },
 }

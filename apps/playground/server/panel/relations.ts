@@ -1,6 +1,7 @@
 import type { RelationCandidate } from '../../../../packages/module-admin/src/relations/api'
 import { recipes, row as recipeRow, visible as recipeVisible, type RecipeRecord } from './recipes'
 import { row as serviceRow, services, type ServiceRecord } from './services'
+import { collectionCandidates } from './catalog-collections'
 import { configuratorCandidates } from './configurators'
 import { forms } from './inbox'
 import { notifyCandidates } from './notifications'
@@ -81,6 +82,8 @@ const TARGETS: Record<string, Target> = {
   },
   /* `ConfiguratorTarget` of `module-configurator`: what `wx-configurator` picks, kept by `key`. */
   configurator: { all: configuratorCandidates },
+  /* `CollectionTarget` of `module-catalog-collections`: what `wx-catalog-collection` picks. */
+  'catalog-collection': { all: collectionCandidates },
   recipe: {
     all: (locale) =>
       [...recipes]

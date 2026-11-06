@@ -6,9 +6,11 @@ namespace WebxUi\Routing\Tests;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route as Router;
 use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Routing\Models\Route;
 use WebxUi\Routing\Resolver;
 use WebxUi\Routing\RouteTypes;
 use WebxUi\Routing\Tests\Fixtures\Category;
@@ -157,9 +159,13 @@ class ResolutionTest extends TestCase
     }
 
     #[Test]
-    public function an_address_written_in_another_alphabet_survives_the_round_trip(): void
+    public function an_address_saved_in_another_alphabet_survives_the_round_trip(): void
     {
-        Category::create(['name' => 'Ремни', 'slug' => 'ремни']);
+        // As an older version left it, past the model: nothing writes one now, but a site keeps
+        // answering at it until `webx:slugs:latin` moves it.
+        $category = Category::create(['name' => 'Ремни', 'slug' => 'belts']);
+        DB::table($category->getTable())->where('id', $category->id)->update(['slug' => 'ремни']);
+        Route::query()->forEntity($category)->update(['path' => 'ремни']);
 
         $this->get('/'.rawurlencode('ремни'))->assertOk()->assertJsonPath('tail', '');
     }

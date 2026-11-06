@@ -1,0 +1,43 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'url' => 'Адрес товара',
+    'image_link' => 'Адрес главной картинки',
+    'images' => 'Все картинки',
+    'additional_images' => 'Картинки после главной',
+    'availability' => 'Наличие',
+    'brand' => 'Бренд',
+    'id' => 'ID товара',
+    'group_id' => 'Группа вариантов',
+    'price' => 'Текущая цена',
+    'old_price' => 'Старая цена',
+    'price_with_currency' => 'Текущая цена с валютой',
+    'list_price' => 'Обычная цена',
+    'list_price_with_currency' => 'Обычная цена с валютой',
+    'sale_price' => 'Цена со скидкой',
+    'sale_price_with_currency' => 'Цена со скидкой и валютой',
+    'sale_price_effective_date' => 'Даты скидки',
+    'description_html' => 'Описание (HTML)',
+    'description_cdata' => 'Описание (CDATA)',
+    'description_text' => 'Описание текстом',
+    'title' => 'Название для площадки',
+    'long_text' => 'Длинный текст для площадки',
+    'mpn' => 'Артикул производителя',
+    'gtin' => 'GTIN',
+    'gtins' => 'Все GTIN',
+    'identifier_exists' => 'Есть идентификатор',
+    'product_type' => 'Путь категории',
+    'category_id' => 'ID категории',
+    'platform_category' => 'Категория площадки',
+    'google_product_category' => 'Категория товара Google',
+    'custom_label' => 'Своя метка',
+    'fields' => [
+        'url' => 'Адрес',
+        'alt' => 'Альтернативный текст',
+        'value' => 'Значение',
+        'code' => 'Код',
+        'name' => 'Название',
+    ],
+];

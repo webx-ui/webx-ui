@@ -15,6 +15,11 @@ export interface TokenOption {
   value?: string
   /** One line about what it is, for a name that does not say. */
   description?: string
+  /**
+   * The whole bracket this row writes, for a placeholder that is nothing without its arguments:
+   * `[gallery key=summer]`. Several rows may share a name. Left out, the row writes `[name]`.
+   */
+  text?: string
 }
 
 /** The props every field that offers placeholders shares. */
@@ -99,7 +104,7 @@ export function tokenQuery(before: string): { from: number; query: string } | nu
 
 /** The text a chosen placeholder is written as. */
 export function tokenText(token: TokenOption): string {
-  return `[${token.name}]`
+  return token.text ?? `[${token.name}]`
 }
 
 /** Where the list hangs from: a rectangle in the viewport, and the element it scrolls with. */

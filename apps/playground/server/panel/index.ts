@@ -259,6 +259,7 @@ import {
   type VacancyRecord,
 } from './vacancies'
 import { screen, screenNames } from './screens'
+import { help, helpKeys } from './help'
 import { historyOf, historyRun } from './history'
 import {
   catalogBytes,
@@ -299,6 +300,8 @@ import { handleSeoLinkFiles, registerSeoLinks } from './seo-links'
 import { registerManticore } from './catalog-manticore'
 import { brandHistory, registerDictionaries } from './catalog-dictionaries'
 import { propertyHistory, registerProperties } from './catalog-properties'
+import { registerFeeds } from './catalog-feeds'
+import { collectionHistory, registerCollections } from './catalog-collections'
 import { landingHistory, registerLandings } from './catalog-landings'
 import { Reply } from './reply'
 import { handleUploads } from './uploads'
@@ -706,6 +709,26 @@ function manifestOf(locale: string) {
         title: line(locale, 'webx-catalog-landings', 'module.title'),
         icon: 'filter',
         order: 303,
+        group: 'catalog',
+        permissions: [],
+        meta: {},
+      },
+      /* Feeds: after the landings (§11 of the feeds spec), no permissions of their own. */
+      {
+        id: 'catalog-feeds',
+        title: line(locale, 'webx-catalog-feeds', 'module.title'),
+        icon: 'file-text',
+        order: 304,
+        group: 'catalog',
+        permissions: [],
+        meta: {},
+      },
+      /* Collections: below the landings (§6 of the collections spec), no permissions of their own. */
+      {
+        id: 'catalog-collections',
+        title: line(locale, 'webx-catalog-collections', 'module.title'),
+        icon: 'grid',
+        order: 305,
         group: 'catalog',
         permissions: [],
         meta: {},
@@ -1131,6 +1154,7 @@ function manifestOf(locale: string) {
       },
     ],
     screens: screenNames,
+    help: helpKeys,
   }
 }
 
@@ -1147,6 +1171,17 @@ on('GET', '/locales', () => ({ data: { panel: PANEL, content: CONTENT } }))
 on('GET', '/translations/([\\w-]+)', ({ params }) => ({
   data: { locale: params[0], fallback: 'en', namespaces: dictionary(params[0]) },
 }))
+
+/* Help of a screen, asked for when «?» is pressed: the same word for an unknown key as a screen. */
+on('GET', '/help/([\\w.-]+)', ({ params, locale }) => {
+  const page = help(params[0], locale)
+
+  if (page === null) {
+    throw new HttpFailure(404, `No screen named ${params[0]}.`)
+  }
+
+  return { data: page }
+})
 
 on('GET', '/screens/([\\w.-]+)', ({ params, locale }) => {
   const tree = screen(params[0])
@@ -2689,6 +2724,7 @@ on('GET', '/history/([\\w.-]+)/(\\d+)', ({ params, query }) => {
     brandHistory(params[0]!, Number(params[1]), page) ??
     propertyHistory(params[0]!) ??
     landingHistory(params[0]!) ??
+    collectionHistory(params[0]!) ??
     snippetHistory(params[0]!, Number(params[1])) ??
     notificationsHistory(params[0]!, Number(params[1]))
 
@@ -2775,6 +2811,16 @@ registerLandings(
   line,
   categoryLookup,
 )
+
+/* Its collections (WEBX_UI_CATALOG_COLLECTIONS.md): the list, the form, the preview. */
+registerCollections(
+  on,
+  (status, message, errors) => new HttpFailure(status, message, undefined, errors),
+  line,
+)
+
+/* Its feeds (WEBX_UI_CATALOG_FEEDS.md): the list, the form, the journal, builds by a timer. */
+registerFeeds(on, (status, message, errors) => new HttpFailure(status, message, undefined, errors))
 
 on('GET', '/entities/([\\w-]+)/(\\d+)/notes', ({ params }) => ({
   data: notes.get(`${params[0]}:${params[1]}`) ?? [],
@@ -3029,6 +3075,24 @@ on('GET', '/shortcodes', () => ({
       html: '<a href="tel:+15550100">+1 555 0100</a>',
       plain: '+1 555 0100',
       origin: 'settings',
+    },
+    {
+      name: 'product-collection',
+      description: 'Cameras for beginners',
+      html: '',
+      plain: '',
+      origin: 'code',
+      block: true,
+      insert: '[product-collection key=cameras]',
+    },
+    {
+      name: 'product-collection',
+      description: 'Winter sale (off)',
+      html: '',
+      plain: '',
+      origin: 'code',
+      block: true,
+      insert: '[product-collection key=winter-sale-for-the-whole-family-and-friends]',
     },
   ],
 }))

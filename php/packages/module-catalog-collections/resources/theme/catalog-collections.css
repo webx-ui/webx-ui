@@ -1,0 +1,111 @@
+/*
+ * module-catalog-collections: the base look of a collection (THEMES §10.2).
+ *
+ * The rules of `.webx-catalog-grid` live only in the catalogue's document for a site without a
+ * layout, so on a page of a theme that grid would be a column: the collection carries its own
+ * under its own class. Two columns on a phone, wider cards once the collection has the room.
+ *
+ * The card belongs to the catalogue and nothing styles it on a theme's page, where it stands in
+ * the main column and gets the typography of prose: a name the size of a heading, bullets on its
+ * badges, a gap over every card but the first. What is here puts that right inside a collection,
+ * by tag, with the class in `:where()`: over the prose of a theme, and under any class of the card.
+ */
+
+.webx-catalog-collection {
+  --webx-catalog-collection-card: 140px;
+
+  container: webx-catalog-collection / inline-size;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--site-space-4);
+}
+
+.webx-catalog-collection__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--site-space-2) var(--site-space-4);
+}
+
+.webx-catalog-collection__title {
+  margin: 0;
+}
+
+.webx-catalog-collection__grid {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(min(100%, var(--webx-catalog-collection-card)), 1fr)
+  );
+  gap: var(--site-space-5) var(--site-space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@container webx-catalog-collection (min-width: 640px) {
+  .webx-catalog-collection__grid {
+    --webx-catalog-collection-card: 200px;
+  }
+}
+
+.webx-catalog-collection__item {
+  min-width: 0;
+  margin: 0;
+}
+
+:where(.webx-catalog-collection__item) article > a {
+  position: relative;
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+:where(.webx-catalog-collection__item) article > a:hover {
+  text-decoration: underline;
+}
+
+/* Every picture the same shape, so the names of a row start on one line. */
+:where(.webx-catalog-collection__item) img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+
+:where(.webx-catalog-collection__item) h2 {
+  margin: var(--site-space-3) 0 var(--site-space-2);
+  font-size: var(--site-font-size-6);
+  overflow-wrap: break-word;
+}
+
+:where(.webx-catalog-collection__item) ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+:where(.webx-catalog-collection__item) li {
+  margin: 0;
+}
+
+/* The badges lie on the picture rather than push it down. */
+:where(.webx-catalog-collection__item a) ul {
+  position: absolute;
+  top: var(--site-space-2);
+  left: var(--site-space-2);
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--site-space-1);
+}
+
+/* A tone is the site's to paint: until it does, the words still have to read over a picture. */
+:where(.webx-catalog-collection__item a) li {
+  padding: 0 var(--site-space-2);
+  border-radius: var(--site-radius-sm);
+  background: var(--site-color-surface);
+  color: var(--site-color-text);
+}

@@ -53,12 +53,14 @@ export function blocks(options: BlocksOptions = {}): AdminModule {
       {
         path,
         name: 'webx.blocks',
+        meta: { help: 'blocks.index' },
         component: () => import('./BlocksPage.vue'),
         props: { base: path },
       },
       {
         path: `${path}/:id(\\d+)`,
         name: 'webx.blocks.edit',
+        meta: { help: 'blocks.edit' },
         component: () => import('./BlockEditorPage.vue'),
         props: { base: path },
       },
@@ -115,12 +117,14 @@ export function regions(options: RegionsOptions = {}): AdminModule {
       {
         path,
         name: 'webx.regions',
+        meta: { help: 'regions.index' },
         component: () => import('./RegionsPage.vue'),
         props: { base: path },
       },
       {
         path: `${path}/:name`,
         name: 'webx.regions.edit',
+        meta: { help: 'regions.form' },
         component: () => import('./RegionEditorPage.vue'),
         props: { base: path },
       },

@@ -9,6 +9,7 @@ use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Contracts\BrandingSource;
 use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Admin\Events\StoredContentRewritten;
+use WebxUi\Admin\Help\HelpRegistry;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Shortcodes\Shortcodes;
@@ -47,6 +48,8 @@ class SettingsServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->app->make(HelpRegistry::class)->directory(__DIR__.'/../resources/help');
+
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-settings');
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');

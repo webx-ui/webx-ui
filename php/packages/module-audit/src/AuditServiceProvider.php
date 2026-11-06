@@ -9,6 +9,7 @@ use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\ServiceProvider;
 use Throwable;
+use WebxUi\Admin\Help\HelpRegistry;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Snapshots\SnapshotTables;
@@ -203,6 +204,8 @@ class AuditServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->app->make(HelpRegistry::class)->directory(__DIR__.'/../resources/help');
+
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-audit');
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');

@@ -14,6 +14,7 @@ return [
     'event-published' => 'Опубликовано',
     'event-unpublished' => 'Снято с публикации',
     'event-refused' => 'Отклонено',
+    'event-key_reissued' => 'Ключ перевыпущен',
     'event-run' => 'Прогон',
     'source-panel' => 'в панели',
     'source-mcp' => 'через агента',

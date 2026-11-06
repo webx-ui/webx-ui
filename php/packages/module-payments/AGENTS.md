@@ -20,8 +20,9 @@ Orders, their milestones and balance are `webx-ui/module-orders`; the cart is `w
   `explain()` gives the reason of each (`webx-payments::reasons`). Cache group `payments`.
 - **Checkout** `Checkout\PaymentsCheckoutSlot` in the slot «payment»: view `webx-payments::step`,
   the choice in `payment_selections` through `GET /api/payments/methods` and
-  `PUT /api/payments/selection` (`method`); script `resources/js/step.js`. A choice the delivery took
+  `PUT /api/payments/selection` (`method`, or `group` and `method`: `Methods::picked()`); scripts `resources/js/step.js` and, for the list `<x-webx-payments::methods>`, `methods.js`. A choice the delivery took
   away is dropped with a word; methods waiting for the delivery say «Choose delivery first».
+- **Groups** `MethodGroups` (`webx-payments.groups`, a manager's edits in `payment_groups`, `Models\PaymentGroup`; `Contracts\DeclaresGroup`), `Methods::grouped()`, `Panel\GroupForm`. **Marks** `PaymentMarks` (`Contracts\ProvidesPaymentMarks`, `resources/marks/`; no file — a plate), `SimilarMethods`; the method «only Apple Pay» is hidden by the browser.
 - **Order block** `payment` (`PaymentSnapshot`): `method`, `type`, `kind`, `title` by language,
   `instructions` of a transfer. While the order awaits payment its page and «Thank you» show
   `<x-webx-payments::instructions>`; `<x-webx-payments::status :order>` is the line «Paid» / «Awaiting
@@ -51,57 +52,44 @@ Orders, their milestones and balance are `webx-ui/module-orders`; the cart is `w
 - **Online payment** `Payments::begin(order, method, source)` — an attempt `created` for the debt, earlier `pending` ones
   asked and closed first (`BeginRefused`); `GET /pay/go/{uuid}` (`Online\Handoffs`) calls `start()` once, journals
   `browser/handoff`; the signed page `GET /pay/{number}` (`PaymentLinks::page()`) — «Pay», «we are checking», «Top up»,
-  «Pay online now» (`switchMethod()`). Checkout: `PaymentsCheckoutSlot::next()` opens the attempt of an online method
+  «Pay online now» (`switchMethod()`), also on the page and «Thank you» of an order on receipt (`PayPage::offer()`, the block's `offer`). Checkout: `PaymentsCheckoutSlot::next()` opens the attempt of an online method
   after the order (no network, never throws) → `/pay/go`; `payAgainUrl()` — the page while the order awaits money.
-- **Hold** `Payments::capture(payment, ?amount, source, dryRun)` / `void()` (`HoldRefused`, problem
-  `capture_failed`); «Capture» / «Release the hold» on the order's tab with a `dry_run` line first. Milestone «paid» only if the capture covers the order; less — `recordPayment(part: true)`, the rest due. Events `internal/captured` / `released`. **Poll** `webx:payments:poll` every 5 minutes: unfinished attempts (backing off 10, 20, 40… min, `meta.poll`), `expired`,
-  `hold_expiring`. **Problems**: events `PaymentSucceeded`, `PaymentFailed`, `PaymentProblem`;
-  `Payments::resolveProblem()` (`ProblemRefused`). `Payments::cashOnDelivery(OrderData)` — for a waybill.
-- **Settling** `Payments::settle(payment, GatewayStatus)` → `SettleResult`, the only door to the attempt
-  and the order; `check()` asks `fetchStatus()` under the lock first. `POST /payments/notify/{method}` (no
-  middleware) journals `in/notify` before parsing (503 if it cannot); `GET|POST /pay/return/{uuid}` asks the API.
+- **Hold** `Payments::capture(payment, ?amount, source, dryRun)` / `void()` (`HoldRefused`, problem `capture_failed`); «Capture» / «Release the hold» on the order's tab with a `dry_run` line first. Milestone «paid» only if the capture covers the order; less — `recordPayment(part: true)`, the rest due. Events `internal/captured` / `released`. **Poll** `webx:payments:poll` every 5 minutes: unfinished attempts (backing off 10, 20, 40… min, `meta.poll`), `expired`, `hold_expiring`. **Problems**: events `PaymentSucceeded`, `PaymentFailed`, `PaymentProblem`; `Payments::resolveProblem()` (`ProblemRefused`). `Payments::cashOnDelivery(OrderData)` — for a waybill.
+- **Settling** `Payments::settle(payment, GatewayStatus)` → `SettleResult`, the only door to the attempt and the order; `check()` asks `fetchStatus()` under the lock first. `POST /payments/notify/{method}` (no middleware) journals `in/notify` before parsing (503 if it cannot); `GET|POST /pay/return/{uuid}` asks the API.
 - **Gateway A** `Testing\FakeGateway` (`gateway-a`, card: `instalments` a hold rules out; `GatewayANotCards` — with `DeclaresNotCardFields`): `GatewayACard`, `GatewayAForm`, `GatewayAUnsigned`;
   API `FakeGatewayServer` on `gateway-a.test` in the process, page `GET /pay/fake/{uuid}`; only with `WEBX_PAYMENTS_FAKE_GATEWAY=true`, never in production
   (`FakeGatewaySite::methods()` adds its methods). Contract test: trait `Testing\GatewayContract`.
-- **Commands** `webx:payments:exchange-prune --days=N [--dry-run] [--force]` — the only removal of
-  events, `N` ≥ 365; `webx:payments:selections-prune` — nightly, choices of carts that are gone;
-  `Doctor\ExchangeSizeCheck` (with module-admin): a note over `exchange.warn_size`; `Doctor\OverriddenViewsCheck`: a theme's copy without `prompt` / `declined`.
-- **Panel** (with module-admin; `routes/panel.php`, npm `@webx-ui/module-payments`): «Methods» — keys
-  «set / replace / remove», never sent back, «Test the connection» journaled `out/connection`
-  (`Panel\MethodForm`, screen `payments.method-form`); «Attempts»; «Gateway exchange» — keyset pages,
-  no route writes an event; the tab «Payment» of `orders.show` (node `wx-payments-order`). The panel's lists and the
-  tab are `Panel\AttemptQuery`, `Panel\ExchangeQuery`, `Panel\OrderPaymentCard` — the agent's tools read the same.
-- **MCP** (with `webx-ui/mcp`, `Mcp\PaymentsModule`): `payments_methods_list`, `_methods_save`, `_methods_reorder`,
+- **Commands** `webx:payments:exchange-prune --days=N [--dry-run] [--force]` — the only removal of events, `N` ≥ 365; `webx:payments:selections-prune` — nightly, choices of carts that are gone; `Doctor\ExchangeSizeCheck` (with module-admin): a note over `exchange.warn_size`; `Doctor\OverriddenViewsCheck`: a theme's copy without `prompt` / `declined`.
+- **Panel** (with module-admin; `routes/panel.php`, npm `@webx-ui/module-payments`): «Methods» — keys «set / replace / remove», never sent back, «Test the connection» journaled `out/connection` (`Panel\MethodForm`, screen `payments.method-form`); «Attempts»; «Gateway exchange» — keyset pages, no route writes an event; the tab «Payment» of `orders.show` (node `wx-payments-order`). The panel's lists and the tab are `Panel\AttemptQuery`, `Panel\ExchangeQuery`, `Panel\OrderPaymentCard` — the agent's tools read the same.
+- **MCP** (with `webx-ui/mcp`, `Mcp\PaymentsModule`): `payments_methods_list`, `_methods_save`, `_methods_reorder`, `_groups_list`, `_groups_save`, `_groups_reorder`,
   `_available`, `_list`, `_get`, `_check`, `_capture`, `_void`, `_mark_paid`, `_switch_method`, `_pay_link`, `_problems`, `_resolve_problem`,
   `_exchange_list`, `_exchange_get` (read only, bodies ≤ 64 KB); resource `payments://catalog`. Keys never shown nor taken.
-- **Letters** (with `webx-ui/module-notifications`, `Notifications\PaymentNotices`): `orders.*` get `payment_url`,
-  `payment_instructions`, `payment_method`; event `payments.problem`, channels — setting `payments.notify.problem`
-  (tab «Payments» of the site's settings), else `webx-payments.notices.problem`.
+- **Letters** (with `webx-ui/module-notifications`, `Notifications\PaymentNotices`): `orders.*` get `payment_url`, `payment_instructions`, `payment_method`; event `payments.problem`, channels — setting `payments.notify.problem` (tab «Payments» of the site's settings), else `webx-payments.notices.problem`.
 - **Words** `webx-payments::` `module`, `methods`, `buyer`, `reasons`, `errors`, `exchange`, `panel`, `statuses`, `notifications`.
 
 ### Permissions
 
-| Permission          | Opens                                                                                      |
-| ------------------- | ------------------------------------------------------------------------------------------ |
-| `payments.view`     | methods without keys, attempts, the exchange without bodies, the tab «Payment» of an order |
-| `payments.manage`   | methods: on, order, words, rules, limits, settings, the gateway's keys and their test      |
-| `payments.exchange` | raw headers and bodies of the exchange, «Download»; only the super-admin by default        |
+| Permission          | Opens                                                                                                                         |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `payments.view`     | methods without keys, groups, attempts, the exchange without bodies, the tab «Payment» of an order                            |
+| `payments.manage`   | methods: on, order, words, rules, limits, settings, group, the gateway's keys and their test; groups: words, pictogram, order |
+| `payments.exchange` | raw headers and bodies of the exchange, «Download»; only the super-admin by default                                           |
 
 Actions on an order (mark paid, check, capture or release a hold, change the method, payment link, problem resolved) — `orders.manage`, in the
-panel and as tools; `payments_exchange_get` — `payments.exchange`; the other tools read with `payments.view`.
+panel and as tools; `payments_exchange_get` — `payments.exchange`; the other tools read with `payments.view`, `payments_groups_save` and `_reorder` write with `payments.manage`.
 
 ### Classes
 
 The theme's contract, in `resources/theme/payments.css`; restyle with the same class:
 `webx-payments` (`is-live`, `is-loading`), `webx-payments__form`, `webx-payments__hint`, `webx-payments__notice`,
-`webx-payments__error`, `webx-payments__methods` (`is-single`), `webx-payments__methods-title`,
-`webx-payments__method` (`is-chosen`), `webx-payments__radio`, `webx-payments__icon`, `webx-payments__method-text`,
-`webx-payments__method-title`, `webx-payments__method-note`, `webx-payments__save`, `webx-payments__nojs`,
+`webx-payments__error`, `webx-payments__groups` (`is-flat`, `is-single`), `webx-payments__methods-title`,
+`webx-payments__group` (`is-chosen`), `webx-payments__group-head`, `webx-payments__group-methods`, `webx-payments__group-legend`, `webx-payments__option` (`is-chosen`), `webx-payments__radio`, `webx-payments__icon`, `webx-payments__pictogram`, `webx-payments__row-text`,
+`webx-payments__row-title`, `webx-payments__row-note`, `webx-payments__marks`, `webx-payments__marks-item`, `webx-payments__mark` (`is-text`), `webx-payments__save`, `webx-payments__nojs`,
 `webx-payments-instructions`, `webx-payments-instructions__title`, `webx-payments-instructions__list`,
 `webx-payments-instructions__row` (+ `webx-payments-instructions__row--<field>`), `webx-payments-instructions__label`,
 `webx-payments-instructions__value`, `webx-payments-status` (+ `webx-payments-status--<state>`), `webx-payments-status__pay`,
 `webx-payments-pay`, `webx-payments-pay__title`, `webx-payments-pay__amount`, `webx-payments-pay__message` (+ `--error`),
-`webx-payments-pay__form`, `webx-payments-pay__button`, `webx-payments-pay__link`, `webx-payments-handoff`, `webx-payments-prompt`, `webx-payments-prompt__form`, `webx-payments-prompt__button`, `webx-payments-prompt__message`, `webx-payments-others`, `webx-payments-others__toggle`, `webx-payments-others__list`, `webx-payments-others__form`, `webx-payments-others__choice`.
+`webx-payments-pay__form`, `webx-payments-pay__button`, `webx-payments-pay__link`, `webx-payments-handoff`, `webx-payments-prompt`, `webx-payments-prompt__form`, `webx-payments-prompt__button`, `webx-payments-prompt__message`, `webx-payments-others`, `webx-payments-others__toggle`, `webx-payments-others__list`, `webx-payments-others__continue`.
 
 ## Change it without forking
 
@@ -109,6 +97,8 @@ The theme's contract, in `resources/theme/payments.css`; restyle with the same c
 | ----------------------------------------- | ------------------------------------------------------------------------------------------ |
 | offer a method only with some deliveries  | `delivery_rule` of the method: `{"mode": "methods", "methods": ["store-pickup"]}`          |
 | change the step or the bank details       | `vendor:publish --tag=webx-payments-views`, edit `step.blade.php` or `components/*`        |
+| have other groups, or none                | `webx-payments.groups` of the site replaces the list whole; empty — a flat list            |
+| show an official file of a mark           | `PaymentMarks::register('visa', 'Visa', <path>)` through `callAfterResolving`, an SVG      |
 | add a gateway                             | a satellite `payment-<gateway>`: `Gateways::register()`, its types, `GatewayContract` test |
 | keep live keys out of the database        | `WEBX_PAYMENTS_<METHOD>_<FIELD>` in the site's environment, stronger than the column       |
 | try online payment without a gateway      | `WEBX_PAYMENTS_FAKE_GATEWAY=true` (not in production), then `webx:demo --module=payments`  |
@@ -145,6 +135,6 @@ The theme's contract, in `resources/theme/payments.css`; restyle with the same c
 
 ## Read more
 
-- Guides: `apps/docs/guide/payments.md` (the shop), `payment-gateways.md` (a satellite). `README.md` here. Spec: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_PAYMENTS.md
+- Guides: `apps/docs/guide/payments.md` (the shop, groups and marks), `payment-gateways.md` (a satellite). `README.md` here. Groups: `WEBX_UI_PAYMENT_GROUPS.md`. Spec: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_PAYMENTS.md
   (§5 tables, §6 contracts, §7 methods, §8 online payment, §10 the step, §11.5 letters, §12 built-in methods,
   §14 a satellite, §16 MCP, §20 the journal, §21 gateway A, §23 the plan).

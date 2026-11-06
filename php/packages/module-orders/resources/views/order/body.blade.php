@@ -1,9 +1,10 @@
 {{--
     An order as the buyer reads it (spec §13.1) — the signed page and «My orders» print the same:
     the date, the public status with its description — or, while the buyer can pay, the words and the
-    way to pay of the payment's owner —, the marks, the scale of the public statuses,
-    the lines, the money, the delivery and the payment as one line each — with what their owner adds
-    under it, such as the bank details of a transfer — the contacts. After an edit
+    way to pay of the payment's owner —, the marks, the scale of the public statuses, under it what
+    the payment's owner offers an order that does not wait for payment,
+    the lines — a name leads to the product while it has a page —, the money, the delivery and the
+    payment as one line each — with what their owner adds under it, such as the bank details of a transfer — the contacts. After an edit
     (§40.1) — «Items changed» with its date and the balance under the money. Never the internal
     status, never the manager's note, never the reason of an edit.
 
@@ -12,7 +13,7 @@
     Override: <layer>/views/vendor/webx-orders/order/body.blade.php.
     Classes: webx-order, __head, __date, __status (--<code>), __description, __marks, __mark (--<key>),
     __scale, __step (is-done, is-current), __prompt, __notice, __section, __heading, __items, __item, __image,
-    __changed, __name, __options, __parts, __qty, __total, __sums, __sum (is-strong),
+    __changed, __name, __link, __options, __parts, __qty, __total, __sums, __sum (is-strong),
     __balance (--due, --over), __facts, __fact, __details (--<block>).
 --}}
 <div class="webx-order">
@@ -47,6 +48,8 @@
         <div class="webx-order__prompt">{!! $order['prompt']['html'] !!}</div>
     @elseif ($order['awaiting_payment'])
         <p class="webx-order__notice" role="status">{{ __('webx-orders::site.order.awaiting_payment') }}</p>
+    @elseif ($order['offer'] !== null)
+        <div class="webx-order__prompt">{!! $order['offer'] !!}</div>
     @endif
 
     <section class="webx-order__section">
@@ -61,14 +64,18 @@
                         <img class="webx-order__image" src="{{ $item['image'] }}" alt="" loading="lazy" width="56" height="56">
                     @endif
                     <div class="webx-order__name">
-                        <span>{{ $item['name'] }}</span>
+                        @if (($item['url'] ?? null) !== null)
+                            <a class="webx-order__link" href="{{ $item['url'] }}">{{ $item['name'] }}</a>
+                        @else
+                            <span>{{ $item['name'] }}</span>
+                        @endif
                         @if ($item['options'])
                             <span class="webx-order__options">{{ $item['options'] }}</span>
                         @endif
                         @if ($item['parts'] !== [])
                             <ul class="webx-order__parts">
                                 @foreach ($item['parts'] as $part)
-                                    <li>{{ $part['name'] }} × {{ $part['qty'] }}</li>
+                                    <li>@if (($part['url'] ?? null) !== null)<a class="webx-order__link" href="{{ $part['url'] }}">{{ $part['name'] }}</a>@else{{ $part['name'] }}@endif × {{ $part['qty'] }}</li>
                                 @endforeach
                             </ul>
                         @endif

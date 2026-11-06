@@ -29,6 +29,10 @@ parameters:
         - packages/module-catalog/src
         - packages/module-catalog/tests
         - packages/module-catalog-brands/src
+        - packages/module-catalog-collections/src
+        - packages/module-catalog-collections/tests
+        - packages/module-catalog-feeds/src
+        - packages/module-catalog-feeds/tests
         - packages/module-catalog-labels/src
         - packages/module-catalog-brands/tests
         - packages/module-catalog-labels/tests
@@ -98,6 +102,8 @@ parameters:
         - packages/nested-set/tests
         - packages/routing/src
         - packages/routing/tests
+        - packages/templates/src
+        - packages/templates/tests
         - packages/themes/src
         - packages/themes/tests
         - packages/theme-default/tests

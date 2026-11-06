@@ -1,0 +1,43 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'url' => 'Produktadresse',
+    'image_link' => 'Adresse des Hauptbilds',
+    'images' => 'Alle Bilder',
+    'additional_images' => 'Bilder nach dem Hauptbild',
+    'availability' => 'Verfügbarkeit',
+    'brand' => 'Marke',
+    'id' => 'Produkt-ID',
+    'group_id' => 'Variantengruppe',
+    'price' => 'Aktueller Preis',
+    'old_price' => 'Alter Preis',
+    'price_with_currency' => 'Aktueller Preis mit Währung',
+    'list_price' => 'Normalpreis',
+    'list_price_with_currency' => 'Normalpreis mit Währung',
+    'sale_price' => 'Angebotspreis',
+    'sale_price_with_currency' => 'Angebotspreis mit Währung',
+    'sale_price_effective_date' => 'Angebotszeitraum',
+    'description_html' => 'Beschreibung (HTML)',
+    'description_cdata' => 'Beschreibung (CDATA)',
+    'description_text' => 'Beschreibung als Text',
+    'title' => 'Titel für den Marktplatz',
+    'long_text' => 'Langtext für den Marktplatz',
+    'mpn' => 'Herstellerartikelnummer',
+    'gtin' => 'GTIN',
+    'gtins' => 'Alle GTINs',
+    'identifier_exists' => 'Kennung vorhanden',
+    'product_type' => 'Kategoriepfad',
+    'category_id' => 'Kategorie-ID',
+    'platform_category' => 'Marktplatz-Kategorie',
+    'google_product_category' => 'Google-Produktkategorie',
+    'custom_label' => 'Benutzerdefiniertes Label',
+    'fields' => [
+        'url' => 'Adresse',
+        'alt' => 'Alternativtext',
+        'value' => 'Wert',
+        'code' => 'Code',
+        'name' => 'Name',
+    ],
+];

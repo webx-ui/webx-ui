@@ -13,6 +13,7 @@ use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Passport\Passport;
 use WebxUi\Admin\Doctor\DoctorChecks;
+use WebxUi\Admin\Help\HelpRegistry;
 use WebxUi\Admin\History\HistoryTypes;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Snapshots\SnapshotTables;
@@ -55,6 +56,8 @@ class AuthServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->app->make(HelpRegistry::class)->directory(__DIR__.'/../resources/help');
+
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-auth');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-auth');

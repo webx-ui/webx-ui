@@ -14,6 +14,7 @@ return [
     'event-published' => 'Veröffentlicht',
     'event-unpublished' => 'Veröffentlichung zurückgenommen',
     'event-refused' => 'Abgelehnt',
+    'event-key_reissued' => 'Schlüssel neu ausgestellt',
     'event-run' => 'Lauf',
     'source-panel' => 'im Panel',
     'source-mcp' => 'über einen Agenten',
