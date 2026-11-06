@@ -76,6 +76,27 @@ public function boot(): void
 }
 ```
 
+A shortcode that prints a section of a page rather than a few words says so with `block: true`:
+
+```php
+Shortcodes::register(
+    'gallery',
+    fn (array $args): string => view('galleries.section', $args)->render(),
+    block: true,
+    // What `[` offers instead of the bare name: an editor picks, and never types a key.
+    menu: fn (): array => Gallery::all()->map(fn (Gallery $gallery): array => [
+        'insert' => "[gallery key={$gallery->key}]",
+        'description' => $gallery->title,
+    ])->all(),
+);
+```
+
+A block shortcode prints only in a rich text. Alone in a paragraph it replaces the paragraph, so a
+`<section>` never ends up inside a `<p>` and one that prints nothing leaves nothing; with text beside
+it the paragraph is cut in two around it. In a line of text it prints nothing, and the panel does
+not offer it there. Plain text prints nothing for it either, unless it has a `plain` of its own.
+With no arguments it has to answer with an empty string: the list of shortcodes draws every one.
+
 The HTML of a registered shortcode is trusted: it is written by the site's developer and printed
 raw. Anything built from an argument goes through `e()`, as above. A name registered in code wins
 over a panel row with the same name.

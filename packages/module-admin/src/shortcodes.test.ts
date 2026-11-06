@@ -2,7 +2,13 @@ import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import { adminKey, type AdminContext } from './admin'
-import { loadShortcodes, useShortcodes, type ShortcodeToken } from './shortcodes'
+import {
+  lineShortcodes,
+  loadShortcodes,
+  shortcodeToken,
+  useShortcodes,
+  type ShortcodeToken,
+} from './shortcodes'
 
 const answer = {
   data: [
@@ -42,6 +48,32 @@ describe('shortcodes', () => {
       { name: 'email', value: 'hello@example.com', description: undefined },
       { name: 'phone', value: '+1 555 0100', description: 'The main line' },
     ])
+  })
+
+  it('keeps the ready bracket of a row and says it is a block', () => {
+    const token = shortcodeToken({
+      name: 'product-collection',
+      description: 'Cameras',
+      html: '',
+      plain: '',
+      origin: 'code',
+      block: true,
+      insert: '[product-collection key=cameras]',
+    })
+
+    expect(token).toEqual({
+      name: 'product-collection',
+      value: '',
+      description: 'Cameras',
+      text: '[product-collection key=cameras]',
+      block: true,
+    })
+  })
+
+  it('leaves the block shortcodes out of what a line offers', () => {
+    const phone = { name: 'phone' }
+
+    expect(lineShortcodes([phone, { name: 'product-collection', block: true }])).toEqual([phone])
   })
 
   it('answers with nothing when the request fails, and asks again next time', async () => {

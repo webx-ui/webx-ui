@@ -216,20 +216,29 @@ function takesShortcodes(node: ScreenNode): boolean {
  * Here and not in the panel's field types: the same `wx-input` is a slug or a search box on
  * other screens, and only block content is printed through the shortcodes. `words` are the
  * field's own words for them — core's defaults speak of placeholders, the panel of shortcodes.
+ * A block shortcode goes to a rich text only: the site prints nothing for it in a line.
  */
-export function withShortcodes<T>(
+export function withShortcodes<T extends { name: string; block?: boolean }>(
   nodes: ScreenNode[],
   tokens: readonly T[],
   words: { tokensTitle?: string; tokensLabel?: string } = {},
 ): ScreenNode[] {
   if (tokens.length === 0) return nodes
 
+  const inLine = tokens.some((token) => token.block)
+    ? tokens.filter((token) => !token.block)
+    : tokens
+
   return nodes.map((node) => {
     const children = node.children ? withShortcodes(node.children, tokens, words) : node.children
     const next = children === node.children ? node : { ...node, children }
 
-    return takesShortcodes(node) && next.props?.tokens === undefined
-      ? { ...next, props: { ...words, ...(next.props ?? {}), tokens } }
+    if (!takesShortcodes(node) || next.props?.tokens !== undefined) return next
+
+    const offered = node.type === 'wx-rich-text' ? tokens : inLine
+
+    return offered.length > 0
+      ? { ...next, props: { ...words, ...(next.props ?? {}), tokens: offered } }
       : next
   })
 }

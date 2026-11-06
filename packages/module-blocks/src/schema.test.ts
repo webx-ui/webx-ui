@@ -139,6 +139,30 @@ describe('a plain field that holds markup', () => {
 })
 
 describe('withShortcodes', () => {
+  it('hands a block shortcode to a rich text and not to a line', () => {
+    const phone = { name: 'phone' }
+    const section = { name: 'product-collection', block: true }
+    const form = withShortcodes(
+      [
+        { id: 'heading', type: 'wx-input', name: 'heading' },
+        { id: 'lead', type: 'wx-textarea', name: 'lead' },
+        { id: 'body', type: 'wx-rich-text', name: 'body' },
+      ],
+      [phone, section],
+    )
+
+    expect(form.map((node) => node.props?.tokens)).toEqual([[phone], [phone], [phone, section]])
+  })
+
+  it('gives a line nothing when it has only block shortcodes', () => {
+    const form = withShortcodes(
+      [{ id: 'heading', type: 'wx-input', name: 'heading' }],
+      [{ name: 'product-collection', block: true }],
+    )
+
+    expect(form[0]?.props?.tokens).toBeUndefined()
+  })
+
   const tokens = [{ name: 'phone', value: '+1 555 0100' }]
   const tokensOf = (node: ScreenNode | undefined) => node?.props?.tokens
 

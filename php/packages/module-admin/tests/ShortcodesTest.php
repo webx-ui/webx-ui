@@ -227,7 +227,128 @@ final class ShortcodesTest extends TestCase
                 'html' => '<span class="accent-dot">.</span>',
                 'plain' => '.',
                 'origin' => 'code',
+                'block' => false,
+                'insert' => null,
             ])
             ->assertJsonPath('data.1.name', 'phone');
+    }
+
+    private function registerSection(): void
+    {
+        $this->shortcodes->register(
+            'section',
+            static fn (array $args): string => ($args['key'] ?? '') === '' ? '' : '<section>'.$args['key'].'</section>',
+            block: true,
+        );
+    }
+
+    #[Test]
+    public function a_block_shortcode_alone_in_a_paragraph_takes_its_place(): void
+    {
+        $this->registerSection();
+
+        $this->assertSame('<p>a</p><section>x</section><p>b</p>', $this->shortcodes->htmlIn('<p>a</p><p>[section key=x]</p><p>b</p>'));
+        $this->assertSame('<section>x</section>', $this->shortcodes->htmlIn('<p class="lead"> [section key=x]&nbsp;<br></p>'));
+        // Printing nothing, it leaves no empty paragraph behind.
+        $this->assertSame('<p>a</p>', $this->shortcodes->htmlIn('<p>a</p><p>[section]</p>'));
+    }
+
+    #[Test]
+    public function a_block_shortcode_with_text_beside_it_cuts_the_paragraph(): void
+    {
+        $this->registerSection();
+
+        $this->assertSame(
+            '<p class="lead">one <a href="/x">two</a> </p><section>x</section><p class="lead"> three</p>',
+            $this->shortcodes->htmlIn('<p class="lead">one <a href="/x">two</a> [section key=x] three</p>'),
+        );
+        $this->assertSame(
+            '<section>x</section><p> and </p><section>y</section>',
+            $this->shortcodes->htmlIn('<p>[section key=x] and [section key=y]</p>'),
+        );
+    }
+
+    /* A cut would leave the `<strong>` open in one half; the other paragraphs are still dealt with. */
+    #[Test]
+    public function a_block_shortcode_inside_an_inline_tag_stays_where_it_was_typed(): void
+    {
+        $this->registerSection();
+
+        $this->assertSame(
+            '<p><strong>a <section>x</section></strong></p><section>y</section>',
+            $this->shortcodes->htmlIn('<p><strong>a [section key=x]</strong></p><p>[section key=y]</p>'),
+        );
+    }
+
+    #[Test]
+    public function a_block_shortcode_outside_a_paragraph_prints_where_it_stands(): void
+    {
+        $this->registerSection();
+
+        $this->assertSame('<ul><li><section>x</section></li></ul>', $this->shortcodes->htmlIn('<ul><li>[section key=x]</li></ul>'));
+        $this->assertSame('<section>x</section>', $this->shortcodes->htmlIn('[section key=x]'));
+    }
+
+    #[Test]
+    public function a_block_shortcode_shown_as_written_is_left_alone(): void
+    {
+        $this->registerSection();
+
+        $this->assertSame('<p><code>[section key=x]</code></p>', $this->shortcodes->htmlIn('<p><code>[section key=x]</code></p>'));
+        $this->assertSame('<p>[section key=x]</p>', $this->shortcodes->htmlIn('<p>[[section key=x]]</p>'));
+    }
+
+    /* A paragraph with no block in it is not touched, on a page that has one elsewhere. */
+    #[Test]
+    public function the_paragraphs_around_a_block_shortcode_keep_their_inline_shortcodes(): void
+    {
+        $this->registerSection();
+
+        $this->assertSame(
+            '<p>a<span class="accent-dot">.</span></p><section>x</section>',
+            $this->shortcodes->htmlIn('<p>a[dot]</p><p>[section key=x]</p>'),
+        );
+    }
+
+    #[Test]
+    public function a_block_shortcode_prints_nothing_in_a_line_and_in_plain_text(): void
+    {
+        $this->registerSection();
+
+        $this->assertSame('a  b', $this->shortcodes->html('a [section key=x] b'));
+        $this->assertSame('a  b', (string) $this->shortcodes->resolve('a [section key=x] b'));
+        $this->assertSame('a  b', $this->shortcodes->plain('a [section key=x] b'));
+        $this->assertSame('', $this->shortcodes->text('<p>[section key=x]</p>'));
+    }
+
+    #[Test]
+    public function a_block_shortcode_with_a_plain_rendering_of_its_own_keeps_it(): void
+    {
+        $this->shortcodes->register('map', '<section>map</section>', plain: 'Our map', block: true);
+
+        $this->assertSame('Our map', $this->shortcodes->plain('[map]'));
+    }
+
+    #[Test]
+    public function the_menu_has_a_shortcode_as_itself_or_as_the_rows_it_brought(): void
+    {
+        $this->shortcodes->register('section', '', block: true, menu: static fn (): array => [
+            ['insert' => '[section key=x]', 'description' => 'The x'],
+            ['insert' => '[section key=y]', 'description' => null],
+        ]);
+
+        $this->assertSame(['dot', 'phone', 'section', 'section'], array_column($this->shortcodes->menu(), 'name'));
+        $this->assertSame([null, null, '[section key=x]', '[section key=y]'], array_column($this->shortcodes->menu(), 'insert'));
+        $this->assertSame('The x', $this->shortcodes->menu()[2]['description']);
+        $this->assertSame(['dot', 'phone', 'section'], array_column($this->shortcodes->list(), 'name'));
+    }
+
+    /* The table of the rows may not be there yet; the other suggestions still are. */
+    #[Test]
+    public function rows_that_cannot_be_read_leave_the_rest_of_the_menu(): void
+    {
+        $this->shortcodes->register('section', '', menu: static fn (): array => throw new RuntimeException('no table'));
+
+        $this->assertSame(['dot', 'phone'], array_column($this->shortcodes->menu(), 'name'));
     }
 }

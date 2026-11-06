@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { nextTick, ref, watch } from 'vue'
 import { PopoverAnchor, PopoverContent, PopoverPortal, PopoverRoot } from 'reka-ui'
-import { rectOf, type TokenAnchor, type TokenOption } from '../composables/useTokens'
+import { rectOf, tokenText, type TokenAnchor, type TokenOption } from '../composables/useTokens'
 
 /**
  * The list of placeholders under a field's caret.
@@ -101,7 +101,7 @@ watch(
           <div
             v-for="(item, index) in items"
             :id="`${listId}-${index}`"
-            :key="item.name"
+            :key="tokenText(item)"
             class="wx-token-menu__option"
             :class="{ 'is-active': index === active }"
             role="option"
@@ -110,7 +110,7 @@ watch(
             @mouseenter="emit('hover', index)"
             @click="emit('choose', item)"
           >
-            <span class="wx-token-menu__name">[{{ item.name }}]</span>
+            <span class="wx-token-menu__name">{{ tokenText(item) }}</span>
             <span v-if="item.value" class="wx-token-menu__value">{{ item.value }}</span>
             <span v-if="item.description" class="wx-token-menu__description">{{
               item.description
@@ -153,7 +153,7 @@ watch(
 
 .wx-token-menu__option {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
   align-items: baseline;
   gap: 0 var(--wx-space-10);
   padding: var(--wx-space-6) var(--wx-space-8);
@@ -167,9 +167,11 @@ watch(
 }
 
 .wx-token-menu__name {
+  overflow: hidden;
   color: var(--wx-text-strong);
   font-family: var(--wx-font-family-mono);
   font-size: var(--wx-font-size-xs);
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 

@@ -17,6 +17,15 @@ const answer = {
       plain: '+800 1234 5678',
       origin: 'settings',
     },
+    {
+      name: 'product-collection',
+      description: 'Cameras',
+      html: '',
+      plain: '',
+      origin: 'code',
+      block: true,
+      insert: '[product-collection key=cameras]',
+    },
   ],
 }
 
@@ -105,7 +114,7 @@ describe('shortcodes in a screen’s text fields', () => {
 
     const [description, raw] = wrapper.findAllComponents(Editor)
 
-    expect(description!.props('tokens')).toHaveLength(1)
+    expect(description!.props('tokens')).toHaveLength(2)
     expect(description!.props('tokensTitle')).toBe('Shortcodes')
     expect(raw!.props('tokens')).toBeUndefined()
   })

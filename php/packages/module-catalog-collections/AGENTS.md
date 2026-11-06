@@ -5,7 +5,7 @@ together once, by hand or by a filter. It has no address of its own: for a page 
 SEO, use `webx-ui/module-catalog-landings`. This package is a satellite of `webx-ui/module-catalog`;
 for the filter, its facets and the product card, read the core's `AGENTS.md`. The package is being
 built in stages: so far it holds the tables, the model, what a collection contains, the tag that
-prints it and the block that places it; the shortcode and the panel come later.
+prints it, the block that places it and the shortcode; the panel comes later.
 
 ## What it owns
 
@@ -36,6 +36,10 @@ prints it and the block that places it; the shortcode and the panel come later.
   block. Its field `wx-catalog-collection` (`Screens\CollectionFieldType`) keeps the key and refuses
   an unknown one only when it is written; the relation target `catalog-collection`
   (`Relations\CollectionTarget`) lists the collections, behind no permission.
+- **Shortcode** `[product-collection key=cameras view=carousel limit=4]`
+  (`Storefront\CollectionShortcode`): the tag in a rich text, a block shortcode of `module-admin`.
+  In a line of text and in anything plain it prints nothing. The panel's `[` offers a row for each
+  collection, so the key is chosen, not typed.
 - **Repairs** `Catalog\CollectionRepairs` listens to `FacetValueRetargeted`: a merge moves the set,
   a deletion marks `attention`, and a filter's set left empty turns the collection off.
 
@@ -88,6 +92,8 @@ prints it and the block that places it; the shortcode and the panel come later.
 - `php artisan webx:blocks:offered --install --module=catalog-collections` gives the block type
   `product-collection`; a block with a key nobody has is refused on save, and the refusal lists the
   keys there are.
+- Write `[product-collection key=new-arrivals]` alone in a paragraph of a rich text: the page has the
+  section and no `<p>` around it; the same bracket in a title prints nothing.
 - `vendor/bin/phpunit packages/module-catalog-collections/tests` in the monorepo's `php/`.
 
 ## Read more

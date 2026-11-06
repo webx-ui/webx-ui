@@ -110,6 +110,7 @@ export {
 } from './links'
 export {
   forgetShortcodes,
+  lineShortcodes,
   loadShortcodes,
   shortcodeToken,
   takesShortcodes,

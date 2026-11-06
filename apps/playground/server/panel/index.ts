@@ -3044,6 +3044,24 @@ on('GET', '/shortcodes', () => ({
       plain: '+1 555 0100',
       origin: 'settings',
     },
+    {
+      name: 'product-collection',
+      description: 'Cameras for beginners',
+      html: '',
+      plain: '',
+      origin: 'code',
+      block: true,
+      insert: '[product-collection key=cameras]',
+    },
+    {
+      name: 'product-collection',
+      description: 'Winter sale (off)',
+      html: '',
+      plain: '',
+      origin: 'code',
+      block: true,
+      insert: '[product-collection key=winter-sale-for-the-whole-family-and-friends]',
+    },
   ],
 }))
 

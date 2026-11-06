@@ -10,6 +10,7 @@ use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\History\HistoryTypes;
 use WebxUi\Admin\Relations\RelationTargets;
 use WebxUi\Admin\Screens\FieldTypes;
+use WebxUi\Admin\Shortcodes\Shortcodes;
 use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Blocks\BlockOffers;
 use WebxUi\Cache\CacheGroups;
@@ -23,12 +24,14 @@ use WebxUi\CatalogCollections\Resolvers\CollectionResolvers;
 use WebxUi\CatalogCollections\Resolvers\FilterResolver;
 use WebxUi\CatalogCollections\Resolvers\ManualResolver;
 use WebxUi\CatalogCollections\Screens\CollectionFieldType;
+use WebxUi\CatalogCollections\Storefront\CollectionShortcode;
 use WebxUi\CatalogCollections\Storefront\LiveCollections;
 
 /**
  * Product collections of the catalogue (`WEBX_UI_CATALOG_COLLECTIONS.md`): a satellite that knows
  * only the core. What it registers so far: the tables, what moves between stands, the journal, what
- * a collection holds, its cache, the tag that prints it and the block that places it.
+ * a collection holds, its cache, the tag that prints it, the block that places it and the shortcode
+ * that puts it in a text.
  */
 class CatalogCollectionsServiceProvider extends ServiceProvider
 {
@@ -70,6 +73,7 @@ class CatalogCollectionsServiceProvider extends ServiceProvider
         $this->registerHistory();
         $this->registerCache();
         $this->registerBlock();
+        $this->registerShortcode();
 
         $this->app->make(Dispatcher::class)->listen(FacetValueRetargeted::class, [CollectionRepairs::class, 'handle']);
 
@@ -114,6 +118,24 @@ class CatalogCollectionsServiceProvider extends ServiceProvider
         if (class_exists(BlockOffers::class) && $this->app->bound(BlockOffers::class)) {
             $this->app->make(BlockOffers::class)->offer(self::MODULE, __DIR__.'/../resources/blocks');
         }
+    }
+
+    /**
+     * A collection in a rich text (§4.3). `plain: ''` keeps it out of excerpts, meta descriptions,
+     * feeds and the search index; the description is what agents read, the panel shows the rows.
+     */
+    private function registerShortcode(): void
+    {
+        $shortcode = fn (): CollectionShortcode => $this->app->make(CollectionShortcode::class);
+
+        $this->app->make(Shortcodes::class)->register(
+            CollectionShortcode::NAME,
+            static fn (array $args): string => $shortcode()->html($args),
+            plain: '',
+            description: 'A product collection as a section of the page, in a rich text only: [product-collection key=cameras view=carousel limit=4]. Give it a paragraph of its own.',
+            block: true,
+            menu: static fn (): array => $shortcode()->menu(),
+        );
     }
 
     /**

@@ -7,8 +7,8 @@ filter. A satellite of `webx-ui/module-catalog`.
 Specification: `docs/architecture/WEBX_UI_CATALOG_COLLECTIONS.md` in the monorepo.
 
 This package is being built in stages. So far a collection can be made in code, says which products
-it holds, prints with a tag and stands on a page as a block. It has no shortcode and no section in
-the panel yet.
+it holds, prints with a tag, stands on a page as a block and goes into a text as a shortcode. It has
+no section in the panel yet.
 
 ## Requirements
 
@@ -79,6 +79,19 @@ goes on a page or in a region like any other block, and its template is the tag 
 `limit` can only lower the collection's own. A key no collection has is refused when it is written,
 and the refusal lists the keys there are. A collection put in the bin later does not stop the page
 from being saved, and restoring it brings the block back.
+
+## In a text
+
+```text
+[product-collection key=cameras]
+[product-collection key=cameras view=carousel limit=4]
+```
+
+Works in a rich text: a text block of a page or an article, a description of a category, a brand or a
+product. In the panel, `[` offers a row for each collection, so the key is picked rather than typed.
+Alone in a paragraph, it replaces the paragraph; with text beside it, the paragraph is cut in two around
+it. `limit` can only lower the collection's own. A title, a meta description, a feed or an excerpt
+prints nothing for it. A typo in the key is not told from a collection turned off: both print nothing.
 
 ## What a collection holds
 
