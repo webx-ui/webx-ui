@@ -20,7 +20,7 @@ use WebxUi\Admin\Shortcodes\ShortcodeText;
  * @method static list<array{name: string, description: string|null, html: string, plain: string, origin: string, block: bool}> list()
  * @method static list<array{name: string, description: string|null, html: string, plain: string, origin: string, block: bool, insert: string|null}> menu()
  * @method static string html(string|Stringable|null $text)
- * @method static string htmlIn(?string $html)
+ * @method static string htmlIn(?string $html, bool $blocks = true)
  * @method static string plain(string|Stringable|null $text)
  * @method static string text(string|Stringable|null $html)
  * @method static string|ShortcodeText|null resolve(?string $text)

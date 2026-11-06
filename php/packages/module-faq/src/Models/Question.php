@@ -141,6 +141,27 @@ class Question extends Model
         return app(PageText::class)->html($stored, $locale);
     }
 
+    /**
+     * The answer as text, for the `FAQPage`: a line break where a paragraph or an item ended, the
+     * shortcodes as their plain text. Read from what is stored: a block shortcode prints a section
+     * of cards on the page, and those are not words of the answer.
+     */
+    public function answerText(string $locale): string
+    {
+        $stored = $this->getTranslation('answer', $locale, fallback: false);
+
+        if (! is_string($stored)) {
+            return '';
+        }
+
+        $text = html_entity_decode(
+            strip_tags(str_replace(['</p>', '<br>', '<br/>', '<br />', '</li>'], ["</p>\n", "\n", "\n", "\n", "</li>\n"], $stored)),
+            ENT_QUOTES | ENT_HTML5,
+        );
+
+        return trim(preg_replace('/\s+/u', ' ', app(PageText::class)->plain($text)) ?? '');
+    }
+
     /** The question in this language, and only this one. */
     public function questionText(string $locale): string
     {

@@ -8,6 +8,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Collection;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Shortcodes\Shortcodes;
 use WebxUi\Admin\Testing\CountsQueries;
 use WebxUi\Catalog\Exchange\ExchangeColumn;
 use WebxUi\Catalog\Exchange\ExchangeColumns;
@@ -193,6 +194,18 @@ final class ProductVariablesTest extends TestCase
 
         $this->assertSame('Only a summary.', $rows[$bare->id]['long_text']);
         $this->assertSame('', $rows[$bare->id]['description_cdata']);
+    }
+
+    /* A marketplace gets the product's words, not the section of cards the site prints among them. */
+    #[Test]
+    public function a_block_shortcode_stays_out_of_every_form_of_the_description(): void
+    {
+        app(Shortcodes::class)->register('section', '<section><h2>Picks</h2>Trail camera 10.00 Buy</section>', block: true);
+        $product = $this->product('Pads', $this->shop->category('Boots'), ['description' => '<p>Ceramic</p><p>[section]</p>']);
+        $row = $this->rows([$product])[$product->id];
+
+        $this->assertSame('<p>Ceramic</p>', $row['description_html']);
+        $this->assertSame('Ceramic', $row['description_text']);
     }
 
     #[Test]

@@ -182,9 +182,11 @@ final class Shortcodes
      * stored. Only the text between tags is read: a bracket in an attribute stays as written,
      * and so does one inside `<code>` or `<pre>`, where a page shows what to type.
      *
-     * A block shortcode comes out of its paragraph ({@see self::lifted()}).
+     * A block shortcode comes out of its paragraph ({@see self::lifted()}). With `$blocks` off it
+     * prints nothing and costs no render: for HTML that leaves the page — JSON-LD, a feed — where
+     * a section of cards means nothing.
      */
-    public function htmlIn(?string $html): string
+    public function htmlIn(?string $html, bool $blocks = true): string
     {
         $html ??= '';
 
@@ -195,16 +197,16 @@ final class Shortcodes
         $parts = preg_split('/(<[^>]*>)/', $html, -1, PREG_SPLIT_DELIM_CAPTURE) ?: [$html];
         $verbatim = 0;
         $out = '';
-        $blocks = [];
+        $lifted = [];
 
-        $print = static function (Shortcode $code, array $args) use (&$blocks): string {
+        $print = static function (Shortcode $code, array $args) use (&$lifted, $blocks): string {
             if (! $code->block) {
                 return $code->html($args);
             }
 
-            $blocks[] = $code->html($args);
+            $lifted[] = $blocks ? $code->html($args) : '';
 
-            return sprintf(self::PLACE, count($blocks) - 1);
+            return sprintf(self::PLACE, count($lifted) - 1);
         };
 
         foreach ($parts as $part) {
@@ -232,7 +234,7 @@ final class Shortcodes
             $out .= $changed ? $resolved : $part;
         }
 
-        return $blocks === [] ? $out : $this->lifted($out, $blocks);
+        return $lifted === [] ? $out : $this->lifted($out, $lifted);
     }
 
     /**

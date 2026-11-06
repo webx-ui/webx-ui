@@ -302,7 +302,8 @@ final readonly class CoreVariables
     /**
      * The descriptions of a page as the site prints them: the bracket of a shortcode means nothing
      * to a marketplace. `PageText::html()` would ask where the library's pictures live once per
-     * product; here the keys of the whole page are asked at once.
+     * product; here the keys of the whole page are asked at once. A block shortcode stays on the
+     * site: a section of cards inside a product's description is nothing a marketplace can show.
      *
      * @param  Collection<int, Product>  $products
      * @return array<int, string>
@@ -329,7 +330,7 @@ final readonly class CoreVariables
             $shortcodes = $this->container->make(Shortcodes::class);
 
             return array_map(
-                static fn (string $html): string => $html === '' ? '' : $shortcodes->htmlIn(RichText::rewrite($html, static fn (): array => $urls)),
+                static fn (string $html): string => $html === '' ? '' : $shortcodes->htmlIn(RichText::rewrite($html, static fn (): array => $urls), blocks: false),
                 $stored,
             );
         });

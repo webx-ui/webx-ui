@@ -107,15 +107,19 @@ class EventCategory extends Model implements Category, HasBreadcrumbs, HasSeoFal
         return Trail::of($locale, new Crumb((string) $this->getTranslation('title', $locale), $this->url($locale)));
     }
 
-    /** The name, the introduction and the picture the page prints under its heading. */
+    /**
+     * The name, the introduction and the picture the page prints under its heading. The
+     * introduction as stored rather than {@see leadHtml()}: only its words reach the snippet.
+     */
     public function seoFallback(?string $locale = null): ?SeoData
     {
         $locale ??= app()->getLocale();
         $picture = $this->picture($locale);
+        $lead = $this->getTranslation('lead', $locale, false);
 
         return SeoData::fallback(
             (string) $this->getTranslation('title', $locale),
-            $this->leadHtml($locale),
+            is_string($lead) ? $lead : null,
             is_string($picture['url'] ?? null) ? $picture['url'] : null,
             is_string($picture['alt'] ?? null) ? $picture['alt'] : null,
         );

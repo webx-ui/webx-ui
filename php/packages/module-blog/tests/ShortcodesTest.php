@@ -108,6 +108,33 @@ final class ShortcodesTest extends TestCase
         $this->assertStringNotContainsString('[phone]', $body);
     }
 
+    /* The section is the page's: the description and the `Person` take the words around it. */
+    #[Test]
+    public function a_block_shortcode_in_the_bio_stays_out_of_the_description_and_the_person(): void
+    {
+        config()->set('webx-blog.authors', true);
+        app(Shortcodes::class)->register('section', '<section><h2>Picks</h2>Trail camera 10.00 Buy</section>', block: true);
+
+        $user = CmsUser::query()->create([
+            'name' => 'Login Anna',
+            'email' => 'anna@example.test',
+            'password' => 'correct-horse-battery',
+            'is_super' => false,
+            'is_active' => true,
+        ]);
+        $author = Author::query()->create([
+            'user_id' => $user->getKey(),
+            'title' => 'Anna Writer',
+            'slug' => 'anna',
+            'bio' => '<p>Questions: [phone]</p><p>[section]</p>',
+            'is_public' => true,
+        ]);
+
+        $this->assertSame('Questions: +800 1234 5678', $author->seoFallback('en')?->description);
+        $this->assertSame('Questions: +800 1234 5678', $author->person('en')['description'] ?? null);
+        $this->assertStringContainsString('Trail camera', $author->bioHtml('en'));
+    }
+
     /** An article whose lead holds a shortcode, written before it goes live. */
     private function withLead(string $slug): Article
     {

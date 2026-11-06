@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Seo\Rendering;
 
+use WebxUi\Admin\Shortcodes\Shortcodes;
 use WebxUi\Seo\Contracts\HasSeoFallback;
 
 /**
@@ -64,21 +65,23 @@ final class SeoData
     /**
      * What an entity says about itself when nobody wrote it a card ({@see HasSeoFallback}).
      *
-     * The lead is what an editor typed for the page, often in the rich-text editor: the markup
-     * comes out, the whitespace is squeezed, and it is cut at a word near 300 characters — a
-     * description is a snippet, not the article. A picture on this site's own path is made
+     * The lead is what an editor typed for the page, often in the rich-text editor, as stored and
+     * not as the page prints it: a block shortcode prints a section of cards, and its words are no
+     * description. The markup comes out, the shortcodes become their plain text, the whitespace is
+     * squeezed, and it is cut at a word near 300 characters — a description is a snippet, not the
+     * article. The shortcodes go first, or the cut could land inside a bracket. A picture on this site's own path is made
      * absolute — a relative `og:image` is no picture at all to a social network — and anything
      * else that is not an http(s) address is left out.
      */
     public static function fallback(?string $title, ?string $description = null, ?string $image = null, ?string $imageAlt = null): self
     {
-        $description = $description === null ? null : trim((string) preg_replace(
-            '/\s+/u',
-            ' ',
+        if ($description !== null) {
             // A block or a line break is a gap between words; inline markup is not — "on <em>it</em>."
             // must not come out as "on it .".
-            html_entity_decode(strip_tags((string) preg_replace('~<(?:br|/?(?:p|div|li|ul|ol|h[1-6]|blockquote|tr|td|th))\b[^>]*>~i', ' $0', $description)), ENT_QUOTES | ENT_HTML5, 'UTF-8'),
-        ));
+            $description = html_entity_decode(strip_tags((string) preg_replace('~<(?:br|/?(?:p|div|li|ul|ol|h[1-6]|blockquote|tr|td|th))\b[^>]*>~i', ' $0', $description)), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            $description = str_contains($description, '[') ? app(Shortcodes::class)->plain($description) : $description;
+            $description = trim((string) preg_replace('/\s+/u', ' ', $description));
+        }
 
         if ($description !== null && mb_strlen($description) > 300) {
             $cut = mb_substr($description, 0, 300);

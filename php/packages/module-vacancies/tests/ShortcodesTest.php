@@ -49,6 +49,22 @@ final class ShortcodesTest extends TestCase
         $this->assertSame('Answer +800 1234 5678', $posting['responsibilities']);
     }
 
+    /* The posting's description is HTML, but it is the job's: the section stays on the page. */
+    #[Test]
+    public function a_block_shortcode_in_the_description_stays_out_of_the_posting(): void
+    {
+        $this->app->make(Shortcodes::class)->register('section', '<section><h2>Picks</h2>Trail camera 10.00 Buy</section>', block: true);
+        $this->organisation();
+        $this->vacancy('php-developer', attributes: ['description' => '<p>Call the team at [phone].</p><p>[section]</p>']);
+
+        $page = (string) $this->get('/careers/php-developer')->assertOk()->getContent();
+        $posting = $this->jsonLd($page, 'JobPosting');
+
+        $this->assertStringContainsString('<section><h2>Picks</h2>', $page);
+        $this->assertIsArray($posting);
+        $this->assertSame('<p>Call the team at '.self::LINK.'.</p>', $posting['description']);
+    }
+
     #[Test]
     public function the_card_in_the_list_prints_the_lead(): void
     {

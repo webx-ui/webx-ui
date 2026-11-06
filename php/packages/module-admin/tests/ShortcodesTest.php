@@ -253,6 +253,23 @@ final class ShortcodesTest extends TestCase
         $this->assertSame('<p>a</p>', $this->shortcodes->htmlIn('<p>a</p><p>[section]</p>'));
     }
 
+    /* HTML that leaves the page: no section, no empty paragraph, and no render to throw away. */
+    #[Test]
+    public function html_with_the_blocks_off_leaves_them_out_and_keeps_the_rest(): void
+    {
+        $rendered = 0;
+        $this->shortcodes->register('section', static function () use (&$rendered): string {
+            $rendered++;
+
+            return '<section>x</section>';
+        }, block: true);
+        $this->shortcodes->register('dot', '<span>.</span>', plain: '.');
+
+        $this->assertSame('<p>a<span>.</span></p><p>b</p>', $this->shortcodes->htmlIn('<p>a[dot]</p><p>[section]</p><p>b</p>', blocks: false));
+        $this->assertSame('<p>a </p><p> b</p>', $this->shortcodes->htmlIn('<p>a [section] b</p>', blocks: false));
+        $this->assertSame(0, $rendered);
+    }
+
     #[Test]
     public function a_block_shortcode_with_text_beside_it_cuts_the_paragraph(): void
     {

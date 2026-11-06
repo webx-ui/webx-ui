@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 use WebxUi\Admin\Shortcodes\PageText;
 use WebxUi\Localization\HasTranslations;
+use WebxUi\Seo\Faq\PageFaq;
 
 /**
  * One question of a page's FAQ (§18.5), on the exact rule of that page.
@@ -72,5 +73,16 @@ class SeoFaqItem extends Model
         $stored = $this->getTranslation('answer', $locale, fallback: false);
 
         return app(PageText::class)->html($stored, $locale);
+    }
+
+    /**
+     * The answer as text, read from what is stored: a block shortcode prints a section of cards on
+     * the page, and those are not words of the answer. An answer that is nothing else has no text.
+     */
+    public function answerText(string $locale): string
+    {
+        $stored = $this->getTranslation('answer', $locale, fallback: false);
+
+        return is_string($stored) ? trim((string) preg_replace('/\s+/u', ' ', app(PageText::class)->plain(PageFaq::plain($stored)))) : '';
     }
 }

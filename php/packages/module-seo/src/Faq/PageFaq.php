@@ -26,7 +26,7 @@ final class PageFaq
     /**
      * The questions of a rule that have both halves in this language, in order.
      *
-     * @return list<array{question: string, answer: string}>
+     * @return list<array{question: string, answer: string, text: string}>
      */
     public function questions(SeoUrl $rule, string $locale): array
     {
@@ -38,10 +38,10 @@ final class PageFaq
 
         foreach ($rule->faqItems as $item) {
             $question = $item->questionText($locale);
-            $answer = $item->answerHtml($locale);
+            $text = $item->answerText($locale);
 
-            if ($question !== '' && self::plain($answer) !== '') {
-                $questions[] = ['question' => $question, 'answer' => $answer];
+            if ($question !== '' && $text !== '') {
+                $questions[] = ['question' => $question, 'answer' => $item->answerHtml($locale), 'text' => $text];
             }
         }
 
@@ -51,7 +51,7 @@ final class PageFaq
     /**
      * The `FAQPage` block of these questions, or null when there are none.
      *
-     * @param  list<array{question: string, answer: string}>  $questions
+     * @param  list<array{question: string, answer: string, text: string}>  $questions
      * @return array<string, mixed>|null
      */
     public function markup(array $questions): ?array
@@ -66,7 +66,7 @@ final class PageFaq
             'mainEntity' => array_map(static fn (array $question): array => [
                 '@type' => 'Question',
                 'name' => $question['question'],
-                'acceptedAnswer' => ['@type' => 'Answer', 'text' => self::plain($question['answer'])],
+                'acceptedAnswer' => ['@type' => 'Answer', 'text' => $question['text']],
             ], $questions),
         ];
     }

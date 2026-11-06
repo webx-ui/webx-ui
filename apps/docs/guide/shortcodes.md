@@ -175,7 +175,12 @@ $locale)` for a rich text (library pictures and shortcodes), `text($text)` for a
 paragraph, `plain()` and `plainFromHtml()` for JSON-LD and feeds — so that a page, a card and
 the markup of one record agree.
 
-In PHP: `Shortcodes::html($text)`, `Shortcodes::htmlIn($html)`, `Shortcodes::plain($text)`,
+Text is taken from what is stored, not from `html()` with the tags stripped: a block shortcode
+prints a section, and its cards would come out as words in a meta description. `SeoData::fallback()`
+takes the stored text and reads the shortcodes itself. HTML that leaves the page — a feed, JSON-LD
+that takes HTML — asks `html($stored, $locale, blocks: false)`, which leaves the block shortcodes out.
+
+In PHP: `Shortcodes::html($text)`, `Shortcodes::htmlIn($html, blocks: true)`, `Shortcodes::plain($text)`,
 `Shortcodes::text($html)` (tags out, then plain), `Shortcodes::list()`.
 
 ## An accent mark or a shortcode?

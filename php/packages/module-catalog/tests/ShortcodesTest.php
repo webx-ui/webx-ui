@@ -68,6 +68,21 @@ final class ShortcodesTest extends TestCase
             ->assertDontSee('[phone]', false);
     }
 
+    /* The section is the page's: the snippet takes the words around it. */
+    #[Test]
+    public function a_block_shortcode_in_the_description_stays_out_of_the_meta_description(): void
+    {
+        app(Shortcodes::class)->register('section', '<section><h2>Picks</h2>Trail camera 10.00 Buy</section>', block: true);
+        $this->laptops->forceFill(['description' => ['en' => '<p>Intro words.</p><p>[section]</p>']])->save();
+
+        $this->assertSame('Intro words.', $this->laptops->fresh()?->seoFallback('en')?->description);
+
+        $body = (string) $this->get('/laptops')->assertOk()->getContent();
+
+        $this->assertStringContainsString('<p>Intro words.</p><section><h2>Picks</h2>Trail camera 10.00 Buy</section>', $body);
+        $this->assertStringContainsString('<meta name="description" content="Intro words.">', $body);
+    }
+
     #[Test]
     public function a_card_in_a_list_carries_the_summary_with_its_shortcodes_printed(): void
     {

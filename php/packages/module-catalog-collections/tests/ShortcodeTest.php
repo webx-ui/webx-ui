@@ -9,6 +9,7 @@ use WebxUi\Admin\Shortcodes\PageText;
 use WebxUi\Admin\Shortcodes\Shortcodes;
 use WebxUi\Admin\Shortcodes\ShortcodeText;
 use WebxUi\Auth\Models\CmsUser;
+use WebxUi\Catalog\Models\Category;
 use WebxUi\Catalog\Models\Product;
 use WebxUi\CatalogCollections\Models\ProductCollection;
 use WebxUi\CatalogCollections\Storefront\CollectionShortcode;
@@ -131,6 +132,18 @@ final class ShortcodeTest extends TestCase
         $this->assertSame('Sale ', $this->shortcodes->plain('Sale '.self::BRACKET));
         $this->assertSame('', $this->shortcodes->text('<p>'.self::BRACKET.'</p>'));
         $this->assertSame('Before After', $text->plainFromHtml('<p>Before '.self::BRACKET.'After</p>'));
+    }
+
+    /* §4.3: a category's description is printed through `PageText`, its snippet is not. */
+    #[Test]
+    public function the_meta_description_of_a_category_has_the_words_around_it(): void
+    {
+        $this->collection([$this->product('Trail camera')]);
+        $category = new Category(['name' => 'Cameras', 'slug' => 'cameras', 'is_published' => true, 'description' => ['en' => '<p>Intro words.</p><p>'.self::BRACKET.'</p>']]);
+        $category->saveAsRoot();
+
+        $this->assertSame('Intro words.', $category->seoFallback('en')?->description);
+        $this->assertStringContainsString('Trail camera', (string) $category->textAbove('en'));
     }
 
     /* A module's text reaches the site through `PageText`, not through a block. */

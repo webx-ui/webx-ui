@@ -68,6 +68,16 @@ final class ShortcodesTest extends TestCase
     }
 
     #[Test]
+    public function a_block_shortcode_in_a_category_lead_stays_out_of_its_description(): void
+    {
+        $this->app->make(Shortcodes::class)->register('section', '<section><h2>Picks</h2>Trail camera 10.00 Buy</section>', block: true);
+        $category = $this->category('breakfasts');
+        $category->update(['lead' => '<p>Ask us: [phone]</p><p>[section]</p>']);
+
+        $this->assertSame('Ask us: +800 1234 5678', $category->seoFallback('en')?->description);
+    }
+
+    #[Test]
     public function the_record_keeps_the_bracket(): void
     {
         $recipe = $this->recipe('porridge', attributes: ['lead' => 'Questions: [phone].', 'method' => '<p>Call [phone].</p>']);
