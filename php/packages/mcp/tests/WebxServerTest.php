@@ -37,7 +37,7 @@ final class WebxServerTest extends TestCase
         $context = $this->server()->createContext();
 
         $this->assertSame(
-            ['site_info', 'history_get', 'history_runs', 'media_library_find_unused', 'seo_get_seo', 'seo_bulk_update_seo', 'cache_reset'],
+            ['site_info', 'help_list', 'help_get', 'history_get', 'history_runs', 'media_library_find_unused', 'seo_get_seo', 'seo_bulk_update_seo', 'cache_reset'],
             $context->tools()->map(static fn ($tool): string => $tool->name())->values()->all(),
         );
 
@@ -52,7 +52,7 @@ final class WebxServerTest extends TestCase
         $this->assertTrue($get['annotations']['readOnlyHint']);
         $this->assertSame(['id'], $get['inputSchema']['required']);
 
-        $this->assertSame(['history://types', 'seo://audit/missing-title'], $context->resources()->map(static fn ($resource): string => $resource->uri())->values()->all());
+        $this->assertSame(['help://screens', 'history://types', 'seo://audit/missing-title'], $context->resources()->map(static fn ($resource): string => $resource->uri())->values()->all());
         $this->assertSame(['suggest_titles'], $context->prompts()->map(static fn ($prompt): string => $prompt->name())->values()->all());
     }
 
@@ -320,11 +320,11 @@ final class WebxServerTest extends TestCase
         $this->actingAs(new GenericUser(['id' => 1]), 'web')
             ->postJson('/api/cms/mcp', $this->rpc('tools/list'))
             ->assertOk()
-            ->assertJsonCount(7, 'result.tools');
+            ->assertJsonCount(9, 'result.tools');
 
         // The local stdio server, where there is no request: the tests above build the
         // context the same way, so the full list is the one they already assert.
-        $this->assertCount(7, $this->server()->createContext()->tools());
+        $this->assertCount(9, $this->server()->createContext()->tools());
     }
 
     #[Test]
@@ -358,14 +358,48 @@ final class WebxServerTest extends TestCase
     {
         $this->register(new SeoModule);
 
-        // After the frame's own `history://types`.
-        WebxServer::resource(new RegistryResource($this->tools()->resources()[1]))
+        // After the frame's own `help://screens`, its template and `history://types`.
+        WebxServer::resource(new RegistryResource($this->tools()->resources()[3]))
             ->assertOk()
             ->assertSee('[]');
 
         WebxServer::prompt(new RegistryPrompt($this->tools()->prompts()[0]), ['section' => 'news'])
             ->assertOk()
             ->assertSee('Draft a title');
+    }
+
+    #[Test]
+    public function a_resource_is_told_who_is_asking(): void
+    {
+        $this->register(new class extends AbstractModule implements ProvidesMcpTools
+        {
+            use ProvidesMcpDefaults;
+
+            public function id(): string
+            {
+                return 'mine';
+            }
+
+            public function title(): string
+            {
+                return 'Mine';
+            }
+
+            public function mcpTools(): array
+            {
+                return [];
+            }
+
+            public function mcpResources(): array
+            {
+                return [new McpResource('mine://who', 'Who', 'Who is asking.', static fn (array $arguments, mixed $user = null): string => 'asked by '.($user->id ?? 'nobody'))];
+            }
+        });
+
+        $resource = new RegistryResource($this->tools()->resources()[3]);
+
+        WebxServer::resource($resource)->assertOk()->assertSee('asked by nobody');
+        WebxServer::actingAs(new GenericUser(['id' => 7]))->resource($resource)->assertOk()->assertSee('asked by 7');
     }
 
     #[Test]
@@ -382,7 +416,7 @@ final class WebxServerTest extends TestCase
         $this->actingAs(new GenericUser(['id' => 1]), 'web')
             ->postJson('/api/cms/mcp', $this->rpc('tools/list'))
             ->assertOk()
-            ->assertJsonPath('result.tools.3.name', 'seo_get_seo');
+            ->assertJsonPath('result.tools.5.name', 'seo_get_seo');
 
         $this->actingAs(new GenericUser(['id' => 1]), 'web')
             ->postJson('/api/cms/mcp', $this->rpc('tools/call', ['name' => 'seo_get_seo', 'arguments' => ['id' => '3']]))

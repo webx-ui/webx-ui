@@ -67,6 +67,6 @@ final class AccessCoverageTest extends TestCase
             'DELETE api/cms/uploads/{id}' => 'only your own upload',
         ]);
 
-        $this->assertToolsNeedPermission('cache', 'history');
+        $this->assertToolsNeedPermission('cache', 'history', 'help');
     }
 }

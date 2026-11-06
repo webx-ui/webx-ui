@@ -53,7 +53,7 @@ class RegistryResource extends McpResourceBase
 
     public function handle(Request $request): Response
     {
-        $result = ($this->resource->handler)($request->all());
+        $result = ($this->resource->handler)($request->all(), $request->user());
 
         return Response::text(Results::toText(Container::getInstance()->make(EmptyMaps::class)->apply($result)));
     }

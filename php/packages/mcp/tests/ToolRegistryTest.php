@@ -16,7 +16,7 @@ use WebxUi\Mcp\Tool;
 final class ToolRegistryTest extends TestCase
 {
     /** What the frame itself offers before any module: the journal's two, the cache's reset. */
-    private const FRAME_TOOLS = ['history_get', 'history_runs', 'cache_reset'];
+    private const FRAME_TOOLS = ['help_list', 'help_get', 'history_get', 'history_runs', 'cache_reset'];
 
     #[Test]
     public function it_collects_the_tools_of_every_module_that_speaks_mcp(): void
@@ -25,7 +25,7 @@ final class ToolRegistryTest extends TestCase
 
         // The frame's own around them: the journal's two first, the cache's reset last.
         $this->assertSame(
-            ['history_get', 'history_runs', 'media_library_find_unused', 'seo_get_seo', 'seo_bulk_update_seo', 'cache_reset'],
+            ['help_list', 'help_get', 'history_get', 'history_runs', 'media_library_find_unused', 'seo_get_seo', 'seo_bulk_update_seo', 'cache_reset'],
             array_map(fn ($tool) => $tool->fullName(), $this->tools()->tools()),
         );
     }
@@ -42,7 +42,7 @@ final class ToolRegistryTest extends TestCase
         });
 
         $this->assertSame(self::FRAME_TOOLS, array_map(fn ($tool) => $tool->fullName(), $this->tools()->tools()));
-        $this->assertSame(['cache:write', 'history:read'], $this->tools()->scopes());
+        $this->assertSame(['cache:write', 'help:read', 'history:read'], $this->tools()->scopes());
     }
 
     #[Test]
@@ -50,7 +50,7 @@ final class ToolRegistryTest extends TestCase
     {
         $this->register(new SeoModule, new MediaLibraryModule);
 
-        $this->assertSame(['cache:write', 'history:read', 'media:audit', 'seo:read', 'seo:write'], $this->tools()->scopes());
+        $this->assertSame(['cache:write', 'help:read', 'history:read', 'media:audit', 'seo:read', 'seo:write'], $this->tools()->scopes());
     }
 
     #[Test]
@@ -156,7 +156,7 @@ final class ToolRegistryTest extends TestCase
         $this->register(new SeoModule, new MediaLibraryModule);
 
         $this->assertSame(
-            ['history://types', 'seo://audit/missing-title'],
+            ['help://screens', 'help://screens/{key}', 'history://types', 'seo://audit/missing-title'],
             array_map(fn ($resource) => $resource->uri, $this->tools()->resources()),
         );
 
@@ -170,7 +170,7 @@ final class ToolRegistryTest extends TestCase
     public function nothing_registered_means_the_frames_own_and_no_error(): void
     {
         $this->assertSame(self::FRAME_TOOLS, array_map(fn ($tool) => $tool->fullName(), $this->tools()->tools()));
-        $this->assertSame(['history://types'], array_map(fn ($resource) => $resource->uri, $this->tools()->resources()));
+        $this->assertSame(['help://screens', 'help://screens/{key}', 'history://types'], array_map(fn ($resource) => $resource->uri, $this->tools()->resources()));
         $this->assertSame([], $this->tools()->prompts());
     }
 

@@ -62,6 +62,7 @@ use WebxUi\Admin\Gate\CloseSite;
 use WebxUi\Admin\Gate\KeepOutOfSearch;
 use WebxUi\Admin\Gate\Openings;
 use WebxUi\Admin\Help\HelpRegistry;
+use WebxUi\Admin\Help\Mcp\HelpModule;
 use WebxUi\Admin\History\HistoryContext;
 use WebxUi\Admin\History\HistoryTypes;
 use WebxUi\Admin\History\Journal;
@@ -585,6 +586,12 @@ class AdminServiceProvider extends ServiceProvider
                 ? $this->app->make(McpCacheModule::class)
                 : $this->app->make(CacheModule::class),
         );
+
+        // The help for an agent: the frame does not require `webx-ui/mcp`, and nothing loads the
+        // class without it. Help has no page, so this is a module for its tools alone.
+        if (interface_exists(ProvidesMcpTools::class)) {
+            $this->app->make(ModuleRegistry::class)->register($this->app->make(HelpModule::class));
+        }
     }
 
     /**

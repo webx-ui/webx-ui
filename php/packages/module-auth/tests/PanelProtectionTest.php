@@ -27,8 +27,8 @@ final class PanelProtectionTest extends TestCase
         $this->actingAs($this->admin(), 'cms')
             ->getJson('/api/cms/manifest')
             ->assertOk()
-            // After the frame's own: the journal's tools and «System → Cache».
-            ->assertJsonPath('data.modules.2.id', 'admins');
+            // After the frame's own: the tools of help and the journal, and «System → Cache».
+            ->assertJsonPath('data.modules.3.id', 'admins');
     }
 
     #[Test]

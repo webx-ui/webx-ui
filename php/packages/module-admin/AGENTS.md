@@ -18,7 +18,7 @@ here: that is `webx-ui/module-auth`; languages are `webx-ui/localization`; the M
 - **Modules** — `ModuleRegistry`: a module (`AbstractModule`, `id()` required) is registered from a provider and lands in the manifest with its title, icon, order, group and permissions. Two modules with one id are refused.
 - **Screens** — `ScreenRegistry` behind the `Screens` facade; field types in `FieldTypes`
   (`wx-input`, `wx-link`, `wx-repeater`, `wx-relations`, …), which check and cast what a screen saves; `Screens::rules()` tells the rules a module checks a screen by: a bare `required` gives the asterisk.
-- **Help** — `Help\HelpRegistry`: `directory()` from a provider, then `keys()`, `page($key, $locale)`, `parts()`, `shared()`. Texts are `resources/help/<en|ru|uk>/<key>.md`; `_fields.md` describes the ids a package adds to other screens; the chain is the panel's language → `en`, each part on its own. `Help\HelpBuilder` adds the labels, hints and tabs from the tree the form gets; the manifest carries only the keys in `help`, and `webx-admin.docs_url` (default `null`) turns the link to the guide on. In the browser: `meta.help` on a route (or `help` on `WxScreenHead`) draws the «?», `WxHelpPanel` in `AdminShell` shows the page.
+- **Help** — `Help\HelpRegistry`: `directory()` from a provider, then `keys()`, `page($key, $locale)`, `parts()`, `shared()`. Texts are `resources/help/<en|ru|uk>/<key>.md`; `_fields.md` describes the ids a package adds to other screens; the chain is the panel's language → `en`, each part on its own. `Help\HelpBuilder` adds the labels, hints and tabs from the tree the form gets; the manifest carries only the keys in `help`, and `webx-admin.docs_url` (default `null`) turns the link to the guide on. In the browser: `meta.help` on a route (or `help` on `WxScreenHead`) draws the «?», `WxHelpPanel` in `AdminShell` shows the page. With `webx-ui/mcp`: MCP tools `help_list`, `help_get` (each field also has its `name` and `type`), resources `help://screens`, `help://screens/{key}` (Markdown), scope `help:read`.
 - **Drafts and versions** — traits `HasDraft` (the `$table->draft()` macro: `draft`, `published_at`) and `HasVersions` (table `cms_versions`; `publish()` writes a version, `restoreVersion()` puts one back into the draft). `HasExtra` stores fields a patch adds in `extra`.
 - **History** — table `cms_history`, trait `RecordsHistory`, facade `History`, types in `HistoryTypes`. With `webx-ui/mcp`: MCP tools `history_get`, `history_runs`, resource
   `history://types`, scope `history:read` (the frame registers a type of its own, so they are always there).
@@ -82,7 +82,7 @@ Everything else here is open to every signed-in administrator and asks inside: t
 section shows to whoever holds one of its `permissions()`, or of `visibleWith()` with
 `HasVisibility`; with neither — to everybody), screens (nodes behind a permission are cut out),
 links, collections, relations, notes, history (`history_get`, `history_runs`), editing, uploads —
-each by the permission its registered source, type, record or upload purpose names. A route or
+each by the permission its registered source, type, record or upload purpose names. Help (`help/{key}`) cuts out the fields behind a permission; `help_list`, `help_get` ask any permission a module declares. A route or
 screen node the site adds next to the module asks for its own module's: `cms.can:<id>.view,<id>.manage`
 to read, `cms.can:<id>.manage` to write (next to the cache: `cms.can:cache.view,cache.reset`, `cms.can:cache.reset`).
 
