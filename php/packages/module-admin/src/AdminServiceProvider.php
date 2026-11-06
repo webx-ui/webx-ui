@@ -61,6 +61,7 @@ use WebxUi\Admin\Events\StoredContentRewritten;
 use WebxUi\Admin\Gate\CloseSite;
 use WebxUi\Admin\Gate\KeepOutOfSearch;
 use WebxUi\Admin\Gate\Openings;
+use WebxUi\Admin\Help\HelpRegistry;
 use WebxUi\Admin\History\HistoryContext;
 use WebxUi\Admin\History\HistoryTypes;
 use WebxUi\Admin\History\Journal;
@@ -133,6 +134,10 @@ class AdminServiceProvider extends ServiceProvider
         // Same for screens and the field types they are written in: modules and the project
         // add theirs from `boot()`, and the endpoints read the sum.
         $this->app->singleton(ScreenRegistry::class);
+
+        // The directories of help: modules and the project add theirs from `boot()` as well, and
+        // the parts of a key are put together when somebody opens it (WEBX_UI_PANEL_HELP.md §2).
+        $this->app->singleton(HelpRegistry::class);
 
         // The drafted records an open editor keeps watch over, and who has them open.
         $this->app->singleton(EditedRecords::class);
