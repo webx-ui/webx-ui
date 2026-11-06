@@ -13,15 +13,16 @@ of [`webx-ui/routing`](/guide/routing), the tree is `webx-ui/nested-set`, the sc
 journal are `module-admin`, what a page says about itself is [`module-seo`](/guide/seo), the
 previews are [`module-media`](/guide/media), the languages are `webx-ui/localization`.
 
-| Package                     | What it adds                                                         |
-| --------------------------- | -------------------------------------------------------------------- |
-| `module-catalog`            | products, categories, price, gallery, filter, storefront, CSV/XLSX   |
-| `module-catalog-properties` | typed properties, their values and sets per category — most filters  |
-| `module-catalog-stock`      | stock statuses and whether a product can be bought                   |
-| `module-catalog-brands`     | brands, one per product, each with a page of its own                 |
-| `module-catalog-labels`     | labels — top, sale, new — as badges and a filter                     |
-| `module-catalog-landings`   | landing pages: a filter set under an address, a text and an SEO card |
-| `module-catalog-manticore`  | Manticore Search as the engine, for catalogues past a few thousand   |
+| Package                      | What it adds                                                         |
+| ---------------------------- | -------------------------------------------------------------------- |
+| `module-catalog`             | products, categories, price, gallery, filter, storefront, CSV/XLSX   |
+| `module-catalog-properties`  | typed properties, their values and sets per category — most filters  |
+| `module-catalog-stock`       | stock statuses and whether a product can be bought                   |
+| `module-catalog-brands`      | brands, one per product, each with a page of its own                 |
+| `module-catalog-labels`      | labels — top, sale, new — as badges and a filter                     |
+| `module-catalog-landings`    | landing pages: a filter set under an address, a text and an SEO card |
+| `module-catalog-collections` | collections: a named block of products, placed anywhere              |
+| `module-catalog-manticore`   | Manticore Search as the engine, for catalogues past a few thousand   |
 
 Each is a pair, a Composer package and an npm package of the same name, like every section of
 the panel. The cart, orders, customers, payment and delivery are outside the family; the one
@@ -542,6 +543,39 @@ previewed as a table with the conflicts (slug taken, set taken, no products) ski
 to the queue. The number of products per landing is recounted after each indexing batch and nightly
 by `webx:catalog-landings:count --all`. The design is
 `docs/architecture/WEBX_UI_CATALOG_LANDINGS.md`.
+
+## Product collections
+
+`webx-ui/module-catalog-collections` is a named block of products a manager puts together once and
+the site prints wherever it is placed. It has no address of its own: it is a piece of a page.
+
+A collection is filled by hand, in the order of the list, or by a filter: the same set of facets a
+landing page has, a category and a preset («New arrivals», «On sale», «By label»). Its own `limit`
+is at most 48, and by default it shows only what can be bought: the flag of the stock status, not
+the warehouse. The cards are the catalogue's, «Buy» included.
+
+There are three ways to place one, and all three print the same thing:
+
+```blade
+<x-webx-catalog-collections::collection key="new-arrivals" view="carousel" limit="4" />
+```
+
+```text
+[product-collection key=new-arrivals view=carousel limit=4]
+```
+
+The tag goes in a template, the bracket in a rich text (the panel's `[` menu offers each collection
+by name), and the block `product-collection` on a page or in a region after
+`php artisan webx:blocks:offered --install`. The `limit` of a placement can only lower the
+collection's own.
+
+A collection that is off, empty or in the bin prints nothing, and the page lives. Deleting one needs
+no confirmation: restoring it brings it back in every place, because its key stays taken. «Where»
+in the panel lists blocks and regions only; brackets in a text and tags in templates are not
+counted, so a collection with no places may still be in use.
+
+`php artisan webx:demo` seeds six collections on the demo shop, with blocks on the home page and
+brackets in an article. A site that has collections already is left alone.
 
 ## Import and export
 

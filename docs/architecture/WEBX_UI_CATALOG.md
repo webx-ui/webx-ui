@@ -325,6 +325,7 @@ PHP.
 | `module-catalog-landings`                      | выпущен                                          | [`WEBX_UI_CATALOG_LANDINGS.md`](WEBX_UI_CATALOG_LANDINGS.md)                                                     |
 | `-links`, `-groups`, `-configurable`, `-sizes` | волна B, не начаты                               | —                                                                                                                |
 | `module-catalog-feeds`                         | в работе, не выпущен                             | [`WEBX_UI_CATALOG_FEEDS.md`](WEBX_UI_CATALOG_FEEDS.md)                                                           |
+| `module-catalog-collections`                   | сделан, не выпущен                               | [`WEBX_UI_CATALOG_COLLECTIONS.md`](WEBX_UI_CATALOG_COLLECTIONS.md)                                               |
 | форматы YML, CommerceML                        | волна B, не начаты (пакеты на `ExchangeFormats`) | —                                                                                                                |
 | API для 1С                                     | не начато (решение 15)                           | —                                                                                                                |
 

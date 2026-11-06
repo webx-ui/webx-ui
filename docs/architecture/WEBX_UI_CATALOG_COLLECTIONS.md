@@ -6,7 +6,7 @@
 [`WEBX_UI_MODULE_CATALOG.md`](WEBX_UI_MODULE_CATALOG.md), образец спутника —
 [`WEBX_UI_CATALOG_LANDINGS.md`](WEBX_UI_CATALOG_LANDINGS.md); здесь они не повторяются.
 
-Статус: предложена на приёмку (webx-ui#121). Кода нет.
+Статус: сделано (webx-ui#124), демо на lab-сайте; релиз — вместе с первой версией npm-пакета.
 
 ## 1. Назначение и границы
 

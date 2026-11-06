@@ -159,67 +159,68 @@ Packagist ([`WEBX_UI_PHP_RELEASE.md`](WEBX_UI_PHP_RELEASE.md)). Версия у 
 
 Все пакеты ниже выпущены. Статус в карточке указан только там, где что-то не доделано.
 
-| Пакет                       | Что это                                                               | npm-пара                             |
-| --------------------------- | --------------------------------------------------------------------- | ------------------------------------ |
-| **Библиотеки**              |                                                                       |                                      |
-| `nested-set`                | деревья Eloquent (nested set)                                         | —                                    |
-| `cache`                     | кеш на версионных ключах: группы, версии, `remember` с зависимостями  | — (экран «Кеш» в `module-admin`)     |
-| `compositions`              | составные виды деревом с id: слои, патчи темы, компиляция в Blade     | —                                    |
-| `localization`              | языки сайта, переводимые атрибуты, словарь панели                     | — (i18n в `module-admin`)            |
-| `geography`                 | общая география: страны, регионы, пункты, ключ имён, подсказки        | — (экраны в `module-delivery`)       |
-| `mcp`                       | контракт инструментов модуля, MCP-сервер, OAuth и ключи агентов       | экраны в `module-auth`               |
-| `routing`                   | плоский реестр публичных адресов и резолвер                           | —                                    |
-| `templates`                 | безопасный Mustache: рендер, проверка, экранирование по формату       | — (JS-половина в `@webx-ui/core`)    |
-| `themes`                    | темы слоями: порядок вьюх, токены, ассеты                             | —                                    |
-| `widgets`                   | интерактивные куски сайта: логика и доступность без внешнего вида     | —                                    |
-| `theme-default`             | тема, на которой стоит каждый новый сайт                              | —                                    |
-| **Каркас панели**           |                                                                       |                                      |
-| `module-admin`              | контракт модуля, манифест, общие механизмы разделов, `webx:*`-команды | `@webx-ui/module-admin`              |
-| `module-auth`               | администраторы, роли, вход, доступ агентов                            | `@webx-ui/module-auth`               |
-| `module-settings`           | настройки сайта экраном-описанием, контакты, правила контента         | `@webx-ui/module-settings`           |
-| **Разделы: основа сайта**   |                                                                       |                                      |
-| `module-media`              | файловый менеджер на любом диске Laravel                              | `@webx-ui/module-media`              |
-| `module-blocks`             | конструктор блоков, рендер содержимого, зоны лейаута, общие блоки     | `@webx-ui/module-blocks`             |
-| `module-pages`              | дерево страниц из блоков                                              | `@webx-ui/module-pages`              |
-| `module-menu`               | меню сайта                                                            | `@webx-ui/module-menu`               |
-| `module-seo`                | правила адресов, редиректы, дефолты и `<head>`                        | `@webx-ui/module-seo`                |
-| `module-inbox`              | формы сайта и заявки                                                  | `@webx-ui/module-inbox`              |
-| `module-audit`              | аудит сайта без внешних сервисов                                      | `@webx-ui/module-audit`              |
-| `module-snippets`           | коды внешних сервисов в `<head>`/`<body>`                             | `@webx-ui/module-snippets`           |
-| `module-notifications`      | каналы уведомлений: Telegram, e-mail, шаблоны, журнал отправок        | `@webx-ui/module-notifications`      |
-| `module-debug`              | отладочная панель снизу страницы и MCP `debug_page`, не на проде      | —                                    |
-| `module-users`              | посетители сайта: вход, кабинет, соцсети, раздел «Клиенты»            | `@webx-ui/module-users`              |
-| **Разделы: контент**        |                                                                       |                                      |
-| `module-blog`               | статьи, рубрики, теги, лента                                          | `@webx-ui/module-blog`               |
-| `module-services`           | каталог услуг                                                         | `@webx-ui/module-services`           |
-| `module-faq`                | вопросы и ответы                                                      | `@webx-ui/module-faq`                |
-| `module-reviews`            | отзывы                                                                | `@webx-ui/module-reviews`            |
-| `module-recipes`            | рецепты                                                               | `@webx-ui/module-recipes`            |
-| `module-events`             | события                                                               | `@webx-ui/module-events`             |
-| `module-press`              | пресса о нас                                                          | `@webx-ui/module-press`              |
-| `module-team`               | команда                                                               | `@webx-ui/module-team`               |
-| `module-banners`            | баннеры в именованных местах                                          | `@webx-ui/module-banners`            |
-| `module-vacancies`          | вакансии                                                              | `@webx-ui/module-vacancies`          |
-| `module-tariffs`            | тарифы                                                                | `@webx-ui/module-tariffs`            |
-| `module-configurator`       | конфигуратор товара под размер: шаги, площадь, цена с разбивкой       | `@webx-ui/module-configurator`       |
-| **Разделы: каталог**        |                                                                       |                                      |
-| `module-catalog`            | ядро каталога: товары, категории, реестры спутников, обмен            | `@webx-ui/module-catalog`            |
-| `module-catalog-labels`     | метки товаров                                                         | `@webx-ui/module-catalog-labels`     |
-| `module-catalog-stock`      | статусы наличия                                                       | `@webx-ui/module-catalog-stock`      |
-| `module-catalog-brands`     | бренды                                                                | `@webx-ui/module-catalog-brands`     |
-| `module-catalog-properties` | свойства товаров и фасеты                                             | `@webx-ui/module-catalog-properties` |
-| `module-catalog-landings`   | посадочные страницы каталога                                          | `@webx-ui/module-catalog-landings`   |
-| `module-catalog-feeds`      | товарные фиды: шаблон, сборка, постоянный адрес с ключом              | `@webx-ui/module-catalog-feeds`      |
-| `module-catalog-manticore`  | Manticore Search как движок каталога                                  | `@webx-ui/module-catalog-manticore`  |
-| **Разделы: коммерция**      |                                                                       |                                      |
-| `module-cart`               | гостевая корзина: контракт `Purchasable`, цепочка итогов, `cart()`    | —                                    |
-| `module-orders`             | заказы и оформление: снимок корзины, статусы и вехи, `/checkout`      | `@webx-ui/module-orders`             |
-| `module-delivery`           | доставка: реестры служб и типов, свои точки и курьер, способы пункта  | `@webx-ui/module-delivery`           |
-| `delivery-novaposhta`       | спутник доставки: «Нова пошта» — справочники, накладная, трекинг      | —                                    |
-| `module-payments`           | оплата: способы, онлайн-шлюзы спутниками, холд, журнал обмена         | `@webx-ui/module-payments`           |
-| `payment-liqpay`            | спутник оплаты: шлюз LiqPay — страница, статусы, холд                 | —                                    |
-| **Разделы: работа**         |                                                                       |                                      |
-| `module-tasks`              | очередь работы между людьми и агентами                                | `@webx-ui/module-tasks`              |
+| Пакет                        | Что это                                                                        | npm-пара                              |
+| ---------------------------- | ------------------------------------------------------------------------------ | ------------------------------------- |
+| **Библиотеки**               |                                                                                |                                       |
+| `nested-set`                 | деревья Eloquent (nested set)                                                  | —                                     |
+| `cache`                      | кеш на версионных ключах: группы, версии, `remember` с зависимостями           | — (экран «Кеш» в `module-admin`)      |
+| `compositions`               | составные виды деревом с id: слои, патчи темы, компиляция в Blade              | —                                     |
+| `localization`               | языки сайта, переводимые атрибуты, словарь панели                              | — (i18n в `module-admin`)             |
+| `geography`                  | общая география: страны, регионы, пункты, ключ имён, подсказки                 | — (экраны в `module-delivery`)        |
+| `mcp`                        | контракт инструментов модуля, MCP-сервер, OAuth и ключи агентов                | экраны в `module-auth`                |
+| `routing`                    | плоский реестр публичных адресов и резолвер                                    | —                                     |
+| `templates`                  | безопасный Mustache: рендер, проверка, экранирование по формату                | — (JS-половина в `@webx-ui/core`)     |
+| `themes`                     | темы слоями: порядок вьюх, токены, ассеты                                      | —                                     |
+| `widgets`                    | интерактивные куски сайта: логика и доступность без внешнего вида              | —                                     |
+| `theme-default`              | тема, на которой стоит каждый новый сайт                                       | —                                     |
+| **Каркас панели**            |                                                                                |                                       |
+| `module-admin`               | контракт модуля, манифест, общие механизмы разделов, `webx:*`-команды          | `@webx-ui/module-admin`               |
+| `module-auth`                | администраторы, роли, вход, доступ агентов                                     | `@webx-ui/module-auth`                |
+| `module-settings`            | настройки сайта экраном-описанием, контакты, правила контента                  | `@webx-ui/module-settings`            |
+| **Разделы: основа сайта**    |                                                                                |                                       |
+| `module-media`               | файловый менеджер на любом диске Laravel                                       | `@webx-ui/module-media`               |
+| `module-blocks`              | конструктор блоков, рендер содержимого, зоны лейаута, общие блоки              | `@webx-ui/module-blocks`              |
+| `module-pages`               | дерево страниц из блоков                                                       | `@webx-ui/module-pages`               |
+| `module-menu`                | меню сайта                                                                     | `@webx-ui/module-menu`                |
+| `module-seo`                 | правила адресов, редиректы, дефолты и `<head>`                                 | `@webx-ui/module-seo`                 |
+| `module-inbox`               | формы сайта и заявки                                                           | `@webx-ui/module-inbox`               |
+| `module-audit`               | аудит сайта без внешних сервисов                                               | `@webx-ui/module-audit`               |
+| `module-snippets`            | коды внешних сервисов в `<head>`/`<body>`                                      | `@webx-ui/module-snippets`            |
+| `module-notifications`       | каналы уведомлений: Telegram, e-mail, шаблоны, журнал отправок                 | `@webx-ui/module-notifications`       |
+| `module-debug`               | отладочная панель снизу страницы и MCP `debug_page`, не на проде               | —                                     |
+| `module-users`               | посетители сайта: вход, кабинет, соцсети, раздел «Клиенты»                     | `@webx-ui/module-users`               |
+| **Разделы: контент**         |                                                                                |                                       |
+| `module-blog`                | статьи, рубрики, теги, лента                                                   | `@webx-ui/module-blog`                |
+| `module-services`            | каталог услуг                                                                  | `@webx-ui/module-services`            |
+| `module-faq`                 | вопросы и ответы                                                               | `@webx-ui/module-faq`                 |
+| `module-reviews`             | отзывы                                                                         | `@webx-ui/module-reviews`             |
+| `module-recipes`             | рецепты                                                                        | `@webx-ui/module-recipes`             |
+| `module-events`              | события                                                                        | `@webx-ui/module-events`              |
+| `module-press`               | пресса о нас                                                                   | `@webx-ui/module-press`               |
+| `module-team`                | команда                                                                        | `@webx-ui/module-team`                |
+| `module-banners`             | баннеры в именованных местах                                                   | `@webx-ui/module-banners`             |
+| `module-vacancies`           | вакансии                                                                       | `@webx-ui/module-vacancies`           |
+| `module-tariffs`             | тарифы                                                                         | `@webx-ui/module-tariffs`             |
+| `module-configurator`        | конфигуратор товара под размер: шаги, площадь, цена с разбивкой                | `@webx-ui/module-configurator`        |
+| **Разделы: каталог**         |                                                                                |                                       |
+| `module-catalog`             | ядро каталога: товары, категории, реестры спутников, обмен                     | `@webx-ui/module-catalog`             |
+| `module-catalog-labels`      | метки товаров                                                                  | `@webx-ui/module-catalog-labels`      |
+| `module-catalog-stock`       | статусы наличия                                                                | `@webx-ui/module-catalog-stock`       |
+| `module-catalog-brands`      | бренды                                                                         | `@webx-ui/module-catalog-brands`      |
+| `module-catalog-properties`  | свойства товаров и фасеты                                                      | `@webx-ui/module-catalog-properties`  |
+| `module-catalog-landings`    | посадочные страницы каталога                                                   | `@webx-ui/module-catalog-landings`    |
+| `module-catalog-feeds`       | товарные фиды: шаблон, сборка, постоянный адрес с ключом                       | `@webx-ui/module-catalog-feeds`       |
+| `module-catalog-collections` | подборки товаров: блок вручную или по фильтру, вставка блоком, в текст и тегом | `@webx-ui/module-catalog-collections` |
+| `module-catalog-manticore`   | Manticore Search как движок каталога                                           | `@webx-ui/module-catalog-manticore`   |
+| **Разделы: коммерция**       |                                                                                |                                       |
+| `module-cart`                | гостевая корзина: контракт `Purchasable`, цепочка итогов, `cart()`             | —                                     |
+| `module-orders`              | заказы и оформление: снимок корзины, статусы и вехи, `/checkout`               | `@webx-ui/module-orders`              |
+| `module-delivery`            | доставка: реестры служб и типов, свои точки и курьер, способы пункта           | `@webx-ui/module-delivery`            |
+| `delivery-novaposhta`        | спутник доставки: «Нова пошта» — справочники, накладная, трекинг               | —                                     |
+| `module-payments`            | оплата: способы, онлайн-шлюзы спутниками, холд, журнал обмена                  | `@webx-ui/module-payments`            |
+| `payment-liqpay`             | спутник оплаты: шлюз LiqPay — страница, статусы, холд                          | —                                     |
+| **Разделы: работа**          |                                                                                |                                       |
+| `module-tasks`               | очередь работы между людьми и агентами                                         | `@webx-ui/module-tasks`               |
 
 Новый раздел регистрируется ещё в четырёх местах, и все молчат, если забыть: `Setup\Catalogue` в
 `module-admin`, `extra.webx.npm` и `extra.webx.panel` в его composer.json, список модулей
@@ -666,6 +667,12 @@ ES-модуль в самом пакете.
 Спека — [`WEBX_UI_CATALOG_FEEDS.md`](WEBX_UI_CATALOG_FEEDS.md). Файлы для площадок: шаблон из шапки,
 товара и подвала, сборка в очереди, постоянный адрес с ключом. Своих прав нет, раздел открывают
 права каталога. Строится этапами: выпущены только каркас, таблицы и CRUD.
+
+### `webx-ui/module-catalog-collections` — подборки
+
+Именованный блок товаров: вручную или по фильтру посадочных, сетка или карусель, своя граница `limit`.
+Вставка — тег `<x-webx-catalog-collections::collection>`, блок `product-collection` и шорткод
+`[product-collection key=…]`. Панель, MCP, демо. Спека — `WEBX_UI_CATALOG_COLLECTIONS.md`.
 
 ### `webx-ui/module-catalog-manticore` — движок Manticore
 

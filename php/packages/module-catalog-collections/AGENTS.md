@@ -106,6 +106,8 @@ sends to the bin. The section is visible to whoever holds either (`visibleWith()
 
 ## Check your work
 
+- `php artisan webx:demo --module=catalog-collections`: six collections, blocks on the home page and
+  brackets in the first article that is out; `--remove` puts both back.
 - `php artisan migrate`, then create one in `php artisan tinker`:
   `ProductCollection::query()->create(['title' => 'New arrivals'])->key` gives `new-arrivals`.
 - A `limit` of 49 and a link to `javascript:alert(1)` throw a `ValidationException` under `limit`
