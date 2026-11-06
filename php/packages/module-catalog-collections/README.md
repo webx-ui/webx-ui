@@ -7,7 +7,8 @@ filter. A satellite of `webx-ui/module-catalog`.
 Specification: `docs/architecture/WEBX_UI_CATALOG_COLLECTIONS.md` in the monorepo.
 
 This package is being built in stages. So far a collection can be made in code, says which products
-it holds and prints with a tag. It has no block, no shortcode and no section in the panel yet.
+it holds, prints with a tag and stands on a page as a block. It has no shortcode and no section in
+the panel yet.
 
 ## Requirements
 
@@ -62,6 +63,22 @@ bin keeps its row and is back in its place when restored.
 A collection that is off, in the bin, unknown or left empty prints nothing, not even the heading. The
 cards are the catalogue's `webx-catalog::card`, and the carousel is `<x-webx-slider>`. A theme gets the
 base look from `resources/theme/catalog-collections.css` after `php artisan webx:theme:sync`.
+
+## As a block
+
+`php artisan webx:blocks:offered --install` puts the block type `product-collection` on the site. It
+goes on a page or in a region like any other block, and its template is the tag above.
+
+| Field        | Type                    | Empty means                      |
+| ------------ | ----------------------- | -------------------------------- |
+| `collection` | `wx-catalog-collection` | no collection, nothing is drawn  |
+| `title`      | `wx-input`, localized   | the collection's title; `-` none |
+| `view`       | `wx-select`             | the collection's view            |
+| `limit`      | `wx-input-number`       | the collection's limit           |
+
+`limit` can only lower the collection's own. A key no collection has is refused when it is written,
+and the refusal lists the keys there are. A collection put in the bin later does not stop the page
+from being saved, and restoring it brings the block back.
 
 ## What a collection holds
 

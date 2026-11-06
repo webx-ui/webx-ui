@@ -4,8 +4,8 @@ Product collections for the catalogue. A collection is a named block of products
 together once, by hand or by a filter. It has no address of its own: for a page with an address and
 SEO, use `webx-ui/module-catalog-landings`. This package is a satellite of `webx-ui/module-catalog`;
 for the filter, its facets and the product card, read the core's `AGENTS.md`. The package is being
-built in stages: so far it holds the tables, the model, what a collection contains and the tag that
-prints it; the block, the shortcode and the panel come later.
+built in stages: so far it holds the tables, the model, what a collection contains, the tag that
+prints it and the block that places it; the shortcode and the panel come later.
 
 ## What it owns
 
@@ -31,6 +31,11 @@ prints it; the block, the shortcode and the panel come later.
   `carousel`, `limit` can only lower the collection's own, `title` is empty for the collection's
   title and `-` for none. Off, in the bin, unknown or empty prints nothing. The card is
   `webx-catalog::card`.
+- **Block** `product-collection` (`resources/blocks/product-collection.json`), offered under the
+  module id `catalog-collections`, a thin template over the tag. It stands in a region like any
+  block. Its field `wx-catalog-collection` (`Screens\CollectionFieldType`) keeps the key and refuses
+  an unknown one only when it is written; the relation target `catalog-collection`
+  (`Relations\CollectionTarget`) lists the collections, behind no permission.
 - **Repairs** `Catalog\CollectionRepairs` listens to `FacetValueRetargeted`: a merge moves the set,
   a deletion marks `attention`, and a filter's set left empty turns the collection off.
 
@@ -80,6 +85,9 @@ prints it; the block, the shortcode and the panel come later.
   it is gone from the next call.
 - Put `<x-webx-catalog-collections::collection key="new-arrivals" />` in a template: the cards print;
   turn the collection off and nothing does, not even the heading.
+- `php artisan webx:blocks:offered --install --module=catalog-collections` gives the block type
+  `product-collection`; a block with a key nobody has is refused on save, and the refusal lists the
+  keys there are.
 - `vendor/bin/phpunit packages/module-catalog-collections/tests` in the monorepo's `php/`.
 
 ## Read more

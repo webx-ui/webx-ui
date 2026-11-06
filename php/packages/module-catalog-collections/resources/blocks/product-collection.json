@@ -1,0 +1,63 @@
+{
+  "slug": "product-collection",
+  "title": "Product collection",
+  "description": "A collection of the catalogue on any page or region: the same cards as in a listing, as a grid or a carousel. Nothing is printed while it is off, empty or in the bin.",
+  "icon": null,
+  "group": "content",
+  "sort": 0,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "collection",
+      "type": "wx-catalog-collection",
+      "label": "Collection"
+    },
+    {
+      "id": "title",
+      "type": "wx-input",
+      "label": "Heading",
+      "localized": true,
+      "help": "Empty — the title of the collection; a dash (-) — no heading."
+    },
+    {
+      "id": "view",
+      "type": "wx-select",
+      "label": "View",
+      "help": "Empty — as in the collection.",
+      "props": {
+        "clearable": true,
+        "options": [
+          {
+            "value": "grid",
+            "label": "Grid"
+          },
+          {
+            "value": "carousel",
+            "label": "Carousel"
+          }
+        ]
+      }
+    },
+    {
+      "id": "limit",
+      "type": "wx-input-number",
+      "label": "How many",
+      "help": "Empty — as in the collection. It can only lower the collection’s own limit.",
+      "props": {
+        "min": 1
+      }
+    }
+  ],
+  "template": "{{-- Thin on purpose: the markup is the module’s view and updates with it (§4.2). --}}\n@if ($collection)\n<div class=\"b-product-collection\" data-wx-block=\"product-collection\">\n    <x-webx-catalog-collections::collection :key=\"$collection\" :view=\"$view\" :limit=\"$limit\" :title=\"$title\" />\n</div>\n@endif\n",
+  "styles": "",
+  "script": "",
+  "sample": {
+    "collection": null,
+    "title": "",
+    "view": null,
+    "limit": null
+  }
+}

@@ -8,25 +8,33 @@ use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\History\HistoryTypes;
+use WebxUi\Admin\Relations\RelationTargets;
+use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Snapshots\SnapshotTables;
+use WebxUi\Blocks\BlockOffers;
 use WebxUi\Cache\CacheGroups;
 use WebxUi\Catalog\Events\FacetValueRetargeted;
 use WebxUi\CatalogCollections\Catalog\CollectionPreset;
 use WebxUi\CatalogCollections\Catalog\CollectionPresets;
 use WebxUi\CatalogCollections\Catalog\CollectionRepairs;
 use WebxUi\CatalogCollections\Models\ProductCollection;
+use WebxUi\CatalogCollections\Relations\CollectionTarget;
 use WebxUi\CatalogCollections\Resolvers\CollectionResolvers;
 use WebxUi\CatalogCollections\Resolvers\FilterResolver;
 use WebxUi\CatalogCollections\Resolvers\ManualResolver;
+use WebxUi\CatalogCollections\Screens\CollectionFieldType;
 use WebxUi\CatalogCollections\Storefront\LiveCollections;
 
 /**
  * Product collections of the catalogue (`WEBX_UI_CATALOG_COLLECTIONS.md`): a satellite that knows
  * only the core. What it registers so far: the tables, what moves between stands, the journal, what
- * a collection holds, its cache and the tag that prints it.
+ * a collection holds, its cache, the tag that prints it and the block that places it.
  */
 class CatalogCollectionsServiceProvider extends ServiceProvider
 {
+    /** The module's id in the panel: what `webx:setup` and `--module` ask for. */
+    public const MODULE = 'catalog-collections';
+
     public function register(): void
     {
         // A collection is content: it moves between stands with webx:snapshot.
@@ -61,6 +69,7 @@ class CatalogCollectionsServiceProvider extends ServiceProvider
 
         $this->registerHistory();
         $this->registerCache();
+        $this->registerBlock();
 
         $this->app->make(Dispatcher::class)->listen(FacetValueRetargeted::class, [CollectionRepairs::class, 'handle']);
 
@@ -93,6 +102,21 @@ class CatalogCollectionsServiceProvider extends ServiceProvider
     }
 
     /**
+     * A collection is what a block chooses (§4.2): `wx-catalog-collection` keeps its key and refuses
+     * one nobody has, the picker lists them through the relation target, and the block itself is
+     * what a site installs with `webx:blocks:offered --install`.
+     */
+    private function registerBlock(): void
+    {
+        $this->app->make(RelationTargets::class)->register(new CollectionTarget);
+        $this->app->make(FieldTypes::class)->register('wx-catalog-collection', new CollectionFieldType);
+
+        if (class_exists(BlockOffers::class) && $this->app->bound(BlockOffers::class)) {
+            $this->app->make(BlockOffers::class)->offer(self::MODULE, __DIR__.'/../resources/blocks');
+        }
+    }
+
+    /**
      * What the journal shows for a collection: "Set", not `filters`. Read behind any of the
      * catalogue's permissions.
      */
@@ -109,7 +133,7 @@ class CatalogCollectionsServiceProvider extends ServiceProvider
             ProductCollection::class,
             fields: $fields,
             permission: ['catalog.view', 'catalog.manage', 'catalog.delete'],
-            module: 'catalog-collections',
+            module: self::MODULE,
             label: 'webx-catalog-collections::module.collection',
         );
     }
