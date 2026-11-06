@@ -44,7 +44,8 @@ request».
   `purchasable` of the search document;
 - the bulk action `set-stock`;
 - the status line in `catalog.card.meta` and `catalog.product.aside` — the view
-  `webx-catalog-stock::status`, published with `--tag=webx-catalog-stock-views`;
+  `webx-catalog-stock::status`, published with `--tag=webx-catalog-stock-views`; on a card a status
+  that cannot be bought says its name in place of the buy button instead;
 - `products()->inStock()` — the products whose status can be bought.
 
 To an agent: `catalog_stock_list`, `_create`, `_update`, `_delete`, `_reorder`; a product's status is

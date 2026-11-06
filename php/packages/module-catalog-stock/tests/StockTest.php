@@ -256,16 +256,53 @@ final class StockTest extends TestCase
     #[Test]
     public function the_line_is_printed_on_the_card_and_beside_the_buy_button(): void
     {
-        $product = $this->product('Belt', $this->stockStatus('out-of-stock'));
+        $product = $this->product('Belt', $this->stockStatus('on-order'));
         $parts = $this->app->make(StorefrontParts::class);
         $parts->prepare(new Collection([$product]));
 
         $card = $parts->render('catalog.card.meta', ['product' => $product]);
         $aside = $parts->render('catalog.product.aside', ['product' => $product]);
 
-        $this->assertStringContainsString('wx-catalog-stock--danger', $card);
         $this->assertStringContainsString('wx-catalog-stock--card', $card);
         $this->assertStringContainsString('wx-catalog-stock--product', $aside);
+    }
+
+    #[Test]
+    public function a_status_that_cannot_be_bought_keeps_its_line_on_the_page_and_not_on_the_card(): void
+    {
+        $product = $this->product('Belt', $this->stockStatus('out-of-stock'));
+        $parts = $this->app->make(StorefrontParts::class);
+        $parts->prepare(new Collection([$product]));
+
+        $this->assertStringNotContainsString('wx-catalog-stock', $parts->render('catalog.card.meta', ['product' => $product]));
+
+        $aside = $parts->render('catalog.product.aside', ['product' => $product]);
+        $this->assertStringContainsString('wx-catalog-stock--danger', $aside);
         $this->assertStringContainsString('>Out of stock<', $aside);
+    }
+
+    #[Test]
+    public function a_card_says_the_status_once_in_place_of_the_button(): void
+    {
+        $this->product('Belt', $this->stockStatus('out-of-stock'));
+
+        $content = (string) $this->get('/laptops')->assertOk()->getContent();
+
+        $this->assertSame(1, preg_match('~<article class="webx-catalog-card">.*?</article>~s', $content, $card));
+        $this->assertSame(1, substr_count($card[0], 'Out of stock'));
+        $this->assertStringContainsString('<p class="webx-catalog-card__refusal">Out of stock</p>', $card[0]);
+        $this->assertStringNotContainsString('<button', $card[0]);
+    }
+
+    #[Test]
+    public function a_card_that_can_be_bought_has_the_line_and_the_button(): void
+    {
+        $product = $this->product('Belt', $this->stockStatus('in-stock'));
+
+        $content = (string) $this->get('/laptops')->assertOk()->getContent();
+
+        $this->assertSame(1, preg_match('~<article class="webx-catalog-card">.*?</article>~s', $content, $card));
+        $this->assertStringContainsString('wx-catalog-stock--card', $card[0]);
+        $this->assertStringContainsString('data-product="'.$product->id.'"', $card[0]);
     }
 }

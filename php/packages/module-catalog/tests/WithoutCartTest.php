@@ -23,6 +23,13 @@ final class WithoutCartTest extends TestCase
             ->assertSee('data-product="'.$product->id.'"', false)
             ->assertDontSee('webx-cart-add', false);
 
+        // The card includes the same partial: its dynamic component must not be compiled in.
+        $this->get('/tools')
+            ->assertOk()
+            ->assertSee('class="webx-catalog-card__action" data-product="'.$product->id.'"', false)
+            ->assertSee(__('webx-catalog::storefront.buy'))
+            ->assertDontSee('webx-cart-add', false);
+
         $this->assertFalse($this->app->bound(Purchasables::class));
         $this->assertFalse($this->app->make('router')->has('webx-cart.items.store'));
     }

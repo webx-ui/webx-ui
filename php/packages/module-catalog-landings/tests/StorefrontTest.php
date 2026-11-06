@@ -203,6 +203,18 @@ final class StorefrontTest extends TestCase
     }
 
     #[Test]
+    public function the_cards_of_the_recommended_strip_have_the_buy_button(): void
+    {
+        $landing = $this->landing('laptops-apple', $this->laptops, ['brand' => $this->brands([$this->apple])]);
+        $pick = $this->product('Studio Display', $this->laptops, null, ['price' => 1500]);
+        $landing->recommended()->sync([$pick->id => ['position' => 1]]);
+
+        $this->get('/laptops-apple')
+            ->assertOk()
+            ->assertSee('class="webx-catalog-card__action" data-product="'.$pick->id.'"', false);
+    }
+
+    #[Test]
     public function the_recommended_strip_skips_a_product_off_the_site_and_takes_it_back(): void
     {
         $landing = $this->landing('laptops-apple', $this->laptops, ['brand' => $this->brands([$this->apple])]);

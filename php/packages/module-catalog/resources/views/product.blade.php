@@ -3,8 +3,8 @@
     overridden by the site in `resources/views/vendor/webx-catalog/product.blade.php`: a product
     page is the part of a shop that looks like the shop.
 
-    `$verdict` is Purchasability's answer: "Buy" when it says yes, "Ask the price" for a price on
-    request, and the reason otherwise. There is no cart yet, so the buttons are the site's to wire.
+    `$verdict` is Purchasability's answer, and `webx-catalog::buy` prints what it says — the same
+    partial a card uses.
 
     A picture with a video attached is the poster of the widgets' <x-webx-video> (§6 of the video
     spec), in the picture's own shape: a video of YouTube waits for the visitor's consent to media
@@ -95,22 +95,14 @@
                 </p>
             @endif
 
-            {{-- The cart's button when the cart is installed — a form that works without JavaScript;
-                 a dynamic component, so a site without the cart compiles this view too. --}}
-            {{-- «Buy in one click» of the orders beside it — a point of its own, so a theme removes it
-                 (an empty `parts/catalog/product/quick`) or prints the partial elsewhere. Both buttons
-                 get the same `$options` — the chosen variant a site's view composer gives, none in
-                 the core. --}}
+            {{-- «Buy in one click» of the orders beside the cart's button — a point of its own, so a
+                 theme removes it (an empty `parts/catalog/product/quick`) or prints the partial
+                 elsewhere. Both buttons get the same `$options` — the chosen variant a site's view
+                 composer gives, none in the core. --}}
+            @php($options = isset($options) && is_array($options) ? $options : [])
+            @include('webx-catalog::buy', ['product' => $product, 'verdict' => $verdict, 'block' => 'webx-catalog-product', 'options' => $options])
             @if ($verdict->purchasable && WebxUi\Catalog\Cart\CartButton::shown())
-                @php($options = isset($options) && is_array($options) ? $options : [])
-                <x-dynamic-component component="webx-cart::add" type="catalog.product" :ref="$product->id" :options="$options" class="webx-catalog-product__action">{{ __('webx-catalog::storefront.buy') }}</x-dynamic-component>
                 @webxPart('catalog.product.quick', ['product' => $product, 'options' => $options], 'webx-catalog::points.product-quick')
-            @elseif ($verdict->purchasable)
-                <button type="button" class="webx-catalog-product__action" data-product="{{ $product->id }}">{{ __('webx-catalog::storefront.buy') }}</button>
-            @elseif ($verdict->code === WebxUi\Catalog\Purchase\CoreRules::PRICE_ON_REQUEST)
-                <button type="button" class="webx-catalog-product__action" data-product="{{ $product->id }}">{{ __('webx-catalog::storefront.ask-price') }}</button>
-            @else
-                <p class="webx-catalog-product__refusal">{{ $verdict->label }}</p>
             @endif
 
             @webxPart('catalog.product.aside', ['product' => $product, 'verdict' => $verdict], 'webx-catalog::points.product-aside')
