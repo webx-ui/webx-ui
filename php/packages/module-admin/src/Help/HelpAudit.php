@@ -31,11 +31,10 @@ final readonly class HelpAudit
     ) {}
 
     /**
-     * @param  array<string, string>  $pending  Why a key, or one field as `<key>#<id>`, has no text yet.
      * @param  string|null  $guides  The folder of the guides, where it exists: only the monorepo has it.
      * @return list<string> One line per problem; empty is healthy.
      */
-    public function problems(array $pending = [], ?string $guides = null, bool $strict = false): array
+    public function problems(?string $guides = null, bool $strict = false): array
     {
         $files = $this->files($problems);
 
@@ -63,13 +62,10 @@ final readonly class HelpAudit
         }
 
         foreach ($this->screens->names() as $name) {
-            if (! array_key_exists($name, $pending)) {
-                array_push($problems, ...$this->screen($name, $pending));
-            }
+            array_push($problems, ...$this->screen($name));
         }
 
-        array_push($problems, ...$this->pages($files, $pending, $strict));
-        array_push($problems, ...$this->stale($pending));
+        array_push($problems, ...$this->pages($files, $strict));
 
         if (! $strict) {
             array_push($problems, ...$this->sharedWithoutANode());
@@ -291,10 +287,9 @@ final readonly class HelpAudit
     }
 
     /**
-     * @param  array<string, string>  $pending
      * @return list<string>
      */
-    private function screen(string $name, array $pending): array
+    private function screen(string $name): array
     {
         $page = $this->help->page($name, HelpRegistry::FALLBACK);
 
@@ -305,7 +300,7 @@ final readonly class HelpAudit
         $problems = [];
 
         foreach ($this->fields($page) as $field) {
-            if ($field['body'] === null && ! array_key_exists("{$name}#{$field['id']}", $pending)) {
+            if ($field['body'] === null) {
                 $problems[] = "{$name}: the field [{$field['id']}] is not described";
             }
         }
@@ -367,10 +362,9 @@ final readonly class HelpAudit
      * neighbour's business: `HelpPackagesCoverageTest` reads them all.
      *
      * @param  array<string, array<string, array<string, HelpFile|null>>>  $files
-     * @param  array<string, string>  $pending
      * @return list<string>
      */
-    private function pages(array $files, array $pending, bool $strict): array
+    private function pages(array $files, bool $strict): array
     {
         $problems = [];
         $keys = $this->help->keys();
@@ -383,7 +377,7 @@ final readonly class HelpAudit
                     continue;
                 }
 
-                if (! in_array($name, $keys, true) && ! array_key_exists($name, $pending)) {
+                if (! in_array($name, $keys, true)) {
                     $problems[] = "{$file->path}: nobody owns this key, no file of it has a title and # about";
                 }
 
@@ -392,28 +386,6 @@ final readonly class HelpAudit
                         $problems[] = "{$file->path}: include [{$include}] leads nowhere";
                     }
                 }
-            }
-        }
-
-        return $problems;
-    }
-
-    /**
-     * What is in the list and has its text by now: forgotten lines must not pile up (§6.5).
-     *
-     * @param  array<string, string>  $pending
-     * @return list<string>
-     */
-    private function stale(array $pending): array
-    {
-        $problems = [];
-
-        foreach (array_keys($pending) as $entry) {
-            [$key, $id] = [...explode('#', (string) $entry, 2), null];
-            $page = $this->help->page($key, HelpRegistry::FALLBACK);
-
-            if ($page !== null && ($id === null || $page->field($id) !== null)) {
-                $problems[] = "{$entry}: still in the pending list, and the text is there";
             }
         }
 

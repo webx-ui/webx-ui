@@ -16,7 +16,7 @@ use WebxUi\Admin\Help\HelpFile;
  * reads the sources of the whole monorepo (WEBX_UI_PANEL_HELP.md §6.3).
  *
  * It is also the only place that sees every package at once, so what crosses packages is checked
- * here: a list of includes, and a pending key whose text has arrived in a neighbour.
+ * here: a list of includes.
  */
 final class HelpPackagesCoverageTest extends PhpUnitTestCase
 {
@@ -105,26 +105,5 @@ final class HelpPackagesCoverageTest extends PhpUnitTestCase
         }
 
         $this->assertSame([], $problems, implode("\n", $problems));
-    }
-
-    #[Test]
-    public function a_pending_key_has_no_text_in_any_package(): void
-    {
-        $path = __DIR__.'/help-pending.json';
-
-        if (! is_file($path)) {
-            $this->markTestSkipped('The list of pending help is gone: every key has its text.');
-        }
-
-        /** @var array<string, string> $pending */
-        $pending = json_decode((string) file_get_contents($path), true, flags: JSON_THROW_ON_ERROR);
-
-        $stale = array_values(array_filter(
-            array_keys($pending),
-            static fn (string $key): bool => ! str_contains($key, '#')
-                && glob(dirname(__DIR__, 2)."/*/resources/help/en/{$key}.md") !== [],
-        ));
-
-        $this->assertSame([], $stale, 'Still pending, and the text is there: '.implode(', ', $stale));
     }
 }

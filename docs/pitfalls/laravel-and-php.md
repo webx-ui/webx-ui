@@ -742,6 +742,11 @@ true` в `defineEnvironment()`. На настоящей СУБД всё это �
   поле лишь там, где патч его добавил. Поле, которое зависит от сайта, лежит в JSON экрана, а снимают
   его патчи: так `delivery_keys` у `payments.method-form`. Замыкание добавляет только то, что заранее
   не назвать: поля, объявленные сайтом.
+- **`HelpCoverageTest` чужого пакета пишет «nobody owns this key» про файл спутника.** Пакет подтянул
+  спутника, а владельца экрана нет: `widgets` описывает вкладки `settings.index`, а `TestCase`
+  `module-orders` настройки не поднимает. Лечится в самом `HelpCoverageTest`: переопределить
+  `getPackageProviders()` и добавить владельца (`SettingsServiceProvider` и `MediaServiceProvider`).
+  Заодно тест начинает держать поля спутника.
 
 ## PHPStan
 

@@ -75,10 +75,9 @@ final class HelpAuditTest extends TestCase
     }
 
     /**
-     * @param  array<string, string>  $pending
      * @return list<string>
      */
-    private function problems(array $pending = [], bool $strict = true): array
+    private function problems(bool $strict = true): array
     {
         // A new audit reads the files anew; the registry remembers what it has parsed.
         $registry = new HelpRegistry;
@@ -94,7 +93,7 @@ final class HelpAuditTest extends TestCase
         File::ensureDirectoryExists($guides);
         File::put($guides.'/guide-of-items.md', '# Items');
 
-        $problems = $this->app->make(HelpAudit::class)->problems($pending, $guides, $strict);
+        $problems = $this->app->make(HelpAudit::class)->problems($guides, $strict);
 
         return array_map(fn (string $line): string => str_replace($this->root.'/', '', $line), $problems);
     }
@@ -294,36 +293,6 @@ final class HelpAuditTest extends TestCase
         }
 
         $this->assertSame(['satellite/en/shop.other.md: nobody owns this key, no file of it has a title and # about'], $this->problems());
-    }
-
-    #[Test]
-    public function a_pending_screen_may_go_without_a_file(): void
-    {
-        File::deleteDirectory($this->root.'/owner');
-
-        $this->assertSame([], $this->problems(['shop.item-form' => 'filling, wave A']));
-    }
-
-    #[Test]
-    public function a_pending_screen_that_got_its_file_is_red(): void
-    {
-        $this->assertSame(
-            ['shop.item-form: still in the pending list, and the text is there'],
-            $this->problems(['shop.item-form' => 'filling, wave A']),
-        );
-    }
-
-    #[Test]
-    public function one_field_may_wait_for_its_satellite_and_not_longer_than_its_text(): void
-    {
-        $this->everyLanguage(["## code\n\nOld links stop working if it changes.\n\n" => '']);
-        $this->assertSame([], $this->problems(['shop.item-form#code' => 'filling, wave B']));
-
-        $this->everyLanguage([]);
-        $this->assertSame(
-            ['shop.item-form#code: still in the pending list, and the text is there'],
-            $this->problems(['shop.item-form#code' => 'filling, wave B']),
-        );
     }
 
     #[Test]

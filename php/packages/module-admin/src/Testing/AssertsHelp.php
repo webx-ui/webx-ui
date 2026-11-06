@@ -20,35 +20,12 @@ trait AssertsHelp
 {
     protected function assertScreensHaveHelp(): void
     {
-        // In the monorepo only: the mirror of a package has neither the list nor the guides.
+        // In the monorepo only: the mirror of a package has no guides.
         $root = dirname(__DIR__, 5);
         $guides = $root.'/apps/docs/guide';
 
-        $problems = $this->app->make(HelpAudit::class)->problems(
-            self::helpStillPending(),
-            is_dir($guides) ? $guides : null,
-            strict: true,
-        );
+        $problems = $this->app->make(HelpAudit::class)->problems(is_dir($guides) ? $guides : null, strict: true);
 
         $this->assertSame([], $problems, "The help does not match the screens. See apps/docs/guide/panel-help.md:\n".implode("\n", $problems));
-    }
-
-    /**
-     * What may go without a text for now: key, or `<key>#<id>` for one field, and why (§6.5). One
-     * file for both halves: `scripts/help-coverage.test.mjs` reads it too. A wave strikes its keys
-     * out in the commit that brings their texts, and the last one deletes the file.
-     *
-     * @return array<string, string>
-     */
-    private static function helpStillPending(): array
-    {
-        $path = dirname(__DIR__, 2).'/tests/help-pending.json';
-
-        if (! is_file($path)) {
-            return [];
-        }
-
-        /** @var array<string, string> */
-        return json_decode((string) file_get_contents($path), true, flags: JSON_THROW_ON_ERROR);
     }
 }

@@ -308,7 +308,7 @@ final class HelpEndpointTest extends TestCase
         $this->actingAs(new Editor)
             ->getJson('/api/cms/manifest')
             ->assertOk()
-            ->assertJsonPath('data.help', ['shop.item-dialog', 'shop.item-form', 'shop.list', 'shop.list.archive'])
+            ->assertJsonPath('data.help', ['cache.index', 'shop.item-dialog', 'shop.item-form', 'shop.list', 'shop.list.archive'])
             ->assertDontSee('Why the section exists.');
     }
 

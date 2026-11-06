@@ -139,23 +139,6 @@ packages and fails on a route with no `meta.help` and on a key with no file.
 `HelpPackagesCoverageTest` fails on a package with something to explain that has no
 `HelpCoverageTest` or never calls `directory()`.
 
-## The list of what is still to write
-
-`php/packages/module-admin/tests/help-pending.json` holds what has no text yet, with why. It exists
-while the panel is being filled, and it only gets shorter:
-
-```json
-{
-  "catalog.product-form": "filling, wave A",
-  "catalog.product-form#stock-status": "filling, wave A"
-}
-```
-
-- Strike a key out in the commit that brings its text. A key on the list with a file is red too.
-- A new screen does not go on the list: it gets its help in the same commit.
-- `<key>#<id>` is one field. It is for the moment a form is explained and a satellite that patches
-  it is not yet.
-
 ## On a real site
 
 A package's test sees the package and its core. Fields that appear only beside a neighbour, and the

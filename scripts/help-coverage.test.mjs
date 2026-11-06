@@ -16,11 +16,6 @@ const EXEMPT = {
   '/catalog': 'A redirect to the products: there is no screen behind it.',
 }
 
-// What has no text yet, with why; shared with `AssertsHelp`. A wave strikes its keys out in the
-// commit that brings their texts, and the last one deletes the file.
-const pendingFile = join(phpPackages, 'module-admin', 'tests', 'help-pending.json')
-const PENDING = existsSync(pendingFile) ? JSON.parse(readFileSync(pendingFile, 'utf8')) : {}
-
 const manifests = readdirSync(phpPackages)
   .map((name) => join(phpPackages, name, 'composer.json'))
   .filter(existsSync)
@@ -75,15 +70,9 @@ describe('help of the panel', () => {
     expect(without).toEqual([])
   })
 
-  it('has a text for every key, or says why not yet', async () => {
+  it('has a text for every key', async () => {
     const keys = new Set((await panelRoutes()).map((route) => route.meta?.help).filter(Boolean))
 
-    expect([...keys].filter((key) => !hasText(key) && !(key in PENDING))).toEqual([])
-  })
-
-  it('keeps no key on the list once its text is there', () => {
-    const keys = Object.keys(PENDING).filter((key) => !key.includes('#'))
-
-    expect(keys.filter(hasText)).toEqual([])
+    expect([...keys].filter((key) => !hasText(key))).toEqual([])
   })
 })
