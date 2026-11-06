@@ -259,6 +259,7 @@ import {
   type VacancyRecord,
 } from './vacancies'
 import { screen, screenNames } from './screens'
+import { help, helpKeys } from './help'
 import { historyOf, historyRun } from './history'
 import {
   catalogBytes,
@@ -1153,6 +1154,7 @@ function manifestOf(locale: string) {
       },
     ],
     screens: screenNames,
+    help: helpKeys,
   }
 }
 
@@ -1169,6 +1171,17 @@ on('GET', '/locales', () => ({ data: { panel: PANEL, content: CONTENT } }))
 on('GET', '/translations/([\\w-]+)', ({ params }) => ({
   data: { locale: params[0], fallback: 'en', namespaces: dictionary(params[0]) },
 }))
+
+/* Help of a screen, asked for when «?» is pressed: the same word for an unknown key as a screen. */
+on('GET', '/help/([\\w.-]+)', ({ params, locale }) => {
+  const page = help(params[0], locale)
+
+  if (page === null) {
+    throw new HttpFailure(404, `No screen named ${params[0]}.`)
+  }
+
+  return { data: page }
+})
 
 on('GET', '/screens/([\\w.-]+)', ({ params, locale }) => {
   const tree = screen(params[0])

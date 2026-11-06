@@ -11,14 +11,14 @@ here: that is `webx-ui/module-auth`; languages are `webx-ui/localization`; the M
 
 - **Shell** — every address under `webx-admin.path` (default `cms`) serves one page that mounts `#webx-app`; routing
   inside belongs to the front end. Its JSON lives under `webx-admin.api_path` (default `api/cms`): `manifest`,
-  `screens/{name}`, `links/*`, `collections`, `relations/{target}`, `entities/{type}/{id}/notes`, `history/{type}/{id}`,
+  `screens/{name}`, `help/{key}`, `links/*`, `collections`, `relations/{target}`, `entities/{type}/{id}/notes`, `history/{type}/{id}`,
   `history/runs/{id}`, `uploads`, `locales`, `translations/{locale}`, `cache`. The panel's icons are served under its prefix too.
 - **Auth** — none of its own (see Do not). Modules put their API behind the middleware group `webx.panel` (`web`, `webx.panel-locale`, `cms.auth`, `webx.history`).
 - **Site visitors** — the seam, not the accounts: `Visitors\Visitors` (`current()`, `find()`, `findByEmail()`, `signInUrl()`) bound to `NullVisitors` until `webx-ui/module-users` binds its own; events in `Visitors\Events`; `webx.visitor[:verified]` (404 without a visitors module), `@visitor`, `@visitorVerified`.
 - **Modules** — `ModuleRegistry`: a module (`AbstractModule`, `id()` required) is registered from a provider and lands in the manifest with its title, icon, order, group and permissions. Two modules with one id are refused.
 - **Screens** — `ScreenRegistry` behind the `Screens` facade; field types in `FieldTypes`
   (`wx-input`, `wx-link`, `wx-repeater`, `wx-relations`, …), which check and cast what a screen saves; `Screens::rules()` tells the rules a module checks a screen by: a bare `required` gives the asterisk.
-- **Help** — `Help\HelpRegistry`: `directory()` from a provider, then `keys()`, `page($key, $locale)`, `parts()`, `shared()`. Texts are `resources/help/<en|ru|uk>/<key>.md`; `_fields.md` describes the ids a package adds to other screens; the chain is the panel's language → `en`, each part on its own.
+- **Help** — `Help\HelpRegistry`: `directory()` from a provider, then `keys()`, `page($key, $locale)`, `parts()`, `shared()`. Texts are `resources/help/<en|ru|uk>/<key>.md`; `_fields.md` describes the ids a package adds to other screens; the chain is the panel's language → `en`, each part on its own. `Help\HelpBuilder` adds the labels, hints and tabs from the tree the form gets; the manifest carries only the keys in `help`, and `webx-admin.docs_url` (default `null`) turns the link to the guide on.
 - **Drafts and versions** — traits `HasDraft` (the `$table->draft()` macro: `draft`, `published_at`) and `HasVersions` (table `cms_versions`; `publish()` writes a version, `restoreVersion()` puts one back into the draft). `HasExtra` stores fields a patch adds in `extra`.
 - **History** — table `cms_history`, trait `RecordsHistory`, facade `History`, types in `HistoryTypes`. With `webx-ui/mcp`: MCP tools `history_get`, `history_runs`, resource
   `history://types`, scope `history:read` (the frame registers a type of its own, so they are always there).

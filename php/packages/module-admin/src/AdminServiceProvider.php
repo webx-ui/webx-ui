@@ -327,6 +327,7 @@ class AdminServiceProvider extends ServiceProvider
                 $app->make(CacheGroups::class),
                 $app->make(DictionaryBuilder::class),
                 $app->make(AccessPolicy::class),
+                $app->make(HelpRegistry::class),
             ),
         );
     }

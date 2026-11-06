@@ -64,6 +64,21 @@ return [
 
     /*
     |---------------------------------------------------------------------------
+    | The developers' guide
+    |---------------------------------------------------------------------------
+    |
+    | Where the guides are published. Help in the panel links to the guide of a
+    | screen only when this is set: the guides are in English and written for
+    | developers, so a site's managers see no link by default.
+    |
+    |     WEBX_ADMIN_DOCS_URL=https://webx-ui.github.io/webx-ui
+    |
+    */
+
+    'docs_url' => env('WEBX_ADMIN_DOCS_URL'),
+
+    /*
+    |---------------------------------------------------------------------------
     | A site with no public part
     |---------------------------------------------------------------------------
     |

@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use WebxUi\Admin\Http\Controllers\CacheController;
 use WebxUi\Admin\Http\Controllers\CollectionController;
 use WebxUi\Admin\Http\Controllers\EditingController;
+use WebxUi\Admin\Http\Controllers\HelpController;
 use WebxUi\Admin\Http\Controllers\HistoryController;
 use WebxUi\Admin\Http\Controllers\IconController;
 use WebxUi\Admin\Http\Controllers\LinkController;
@@ -59,6 +60,13 @@ Route::prefix((string) config('webx-admin.api_path'))
         Route::get('screens/{name}', ScreenController::class)
             ->where('name', '[a-z0-9-]+\.[a-z0-9-]+')
             ->name('screens');
+
+        // The help of a screen. Any signed-in administrator, like the screen itself: these are the
+        // panel's words, and the fields behind a permission are cut out inside. Longer keys than a
+        // screen's: a page with no tree is named after its route (`catalog.exchange.profiles`).
+        Route::get('help/{key}', HelpController::class)
+            ->where('key', '[a-z0-9-]+(?:\.[a-z0-9-]+)+')
+            ->name('help');
 
         // Notes on any record that asked for them, through one address rather than one per
         // section. What may be named here is a registered alias and nothing else, and the
