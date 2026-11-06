@@ -12,8 +12,8 @@ use Illuminate\Support\Facades\View;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Catalog\Models\Category;
 use WebxUi\Catalog\Models\Product;
-use WebxUi\Catalog\Storefront\StorefrontPart;
 use WebxUi\Catalog\Storefront\StorefrontParts;
+use WebxUi\Catalog\Tests\Fixtures\RecordingPart;
 
 /**
  * What the parts prepared belongs to one page, and a worker serves many from one process: a page
@@ -23,7 +23,7 @@ final class StorefrontPartsRequestsTest extends TestCase
 {
     private Category $laptops;
 
-    private StorefrontPart $part;
+    private RecordingPart $part;
 
     protected function setUp(): void
     {
@@ -32,28 +32,7 @@ final class StorefrontPartsRequestsTest extends TestCase
         View::addNamespace('fixture', __DIR__.'/Fixtures/views');
 
         $this->laptops = $this->category('laptops');
-        $this->part = new class implements StorefrontPart
-        {
-            /** @var list<list<int>> */
-            public array $asked = [];
-
-            public function point(): string
-            {
-                return 'catalog.card.badges';
-            }
-
-            public function view(): string
-            {
-                return 'fixture::badge';
-            }
-
-            public function prepare(Collection $products): array
-            {
-                $this->asked[] = array_map(intval(...), $products->modelKeys());
-
-                return ['sale' => $products->modelKeys()];
-            }
-        };
+        $this->part = new RecordingPart;
 
         $this->app->make(StorefrontParts::class)->register($this->part);
     }
