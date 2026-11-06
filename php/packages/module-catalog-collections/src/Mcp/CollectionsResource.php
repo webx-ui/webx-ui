@@ -41,10 +41,11 @@ final class CollectionsResource
             'limit' => 'A place can only lower the collection\'s limit, never raise it. An unknown view is ignored.',
         ],
         'key' => 'Made from the title or given on create, and fixed from then on: templates and texts name the collection by it. '
-            .'A collection in the bin keeps its key, so restoring it never conflicts.',
+            .'A collection in the bin keeps its key, so restoring it never conflicts; catalog_collections_purge frees it.',
         'nothing_printed' => 'Switched off, in the bin, an unknown key and an empty collection all print nothing, heading included: '
             .'the page lives on, and a mistyped key in a text says nothing. Read catalog_collections_preview, not the page.',
         'deleting' => 'Delete goes to the bin without looking at the places: catalog_collections_restore brings every one back. '
+            .'catalog_collections_purge, only from the bin, cannot be undone: the places print nothing, until a new collection takes the key. '
             .'catalog_collections_usage names blocks and regions only; a shortcode in a text and a tag in a template are not counted.',
         'attention' => 'value-deleted: a value of the set was deleted. If that left the set empty, the collection was switched off, or '
             .'it would have become the whole catalogue. Fix the set; saving clears the mark.',

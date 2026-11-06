@@ -177,7 +177,8 @@ final class CollectionTools
 
             Tool::mutating(
                 'collections_delete',
-                'Put a collection in the bin, wherever it stands: every place prints nothing until it is restored. Its key stays taken.',
+                'Put a collection in the bin, wherever it stands: every place prints nothing until it is restored. Its key stays taken '
+                .'until catalog_collections_purge.',
                 fn (array $arguments): array => $this->write($arguments, fn (): array => $this->delete($arguments)),
                 ['properties' => ['collection' => $collection, 'locale' => $locale], 'required' => ['collection']],
             ),
@@ -186,6 +187,16 @@ final class CollectionTools
                 'collections_restore',
                 'Take a collection out of the bin: every place that names it prints it again.',
                 fn (array $arguments): array => $this->write($arguments, fn (): array => $this->restore($arguments)),
+                ['properties' => ['collection' => $collection, 'locale' => $locale], 'required' => ['collection']],
+            ),
+
+            Tool::mutating(
+                'collections_purge',
+                'Delete a collection in the bin for good, with its hand-picked list. Cannot be undone. Only a collection in the bin: '
+                .'catalog_collections_delete puts it there first. Not refused for being in use: every place that names the key '
+                .'prints nothing, and its key is free, so a new collection with that key prints there. dry_run names the blocks '
+                .'and regions that hold it; a shortcode in a text and a tag in a template are not counted.',
+                fn (array $arguments): array => $this->write($arguments, fn (): array => $this->purge($arguments)),
                 ['properties' => ['collection' => $collection, 'locale' => $locale], 'required' => ['collection']],
             ),
         ];
@@ -385,6 +396,31 @@ final class CollectionTools
         $collection->delete();
 
         return ['deleted' => (int) $collection->id, 'key' => $collection->key, 'title' => $collection->label($this->locale($arguments))];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function purge(array $arguments): array
+    {
+        $collection = $this->collection($arguments['collection'] ?? null, true);
+
+        if ($collection->deleted_at === null) {
+            throw new ToolFailure("The collection «{$collection->key}» is not in the bin: catalog_collections_delete puts it there first.");
+        }
+
+        // Read before it goes: the words are the collection's, and the places outlive it.
+        $answer = [
+            'purged' => (int) $collection->id,
+            'key' => $collection->key,
+            'title' => $collection->label($this->locale($arguments)),
+            'places' => $this->usage->available() ? $this->usage->of($collection->key) : null,
+        ];
+
+        $collection->forceDelete();
+
+        return $answer;
     }
 
     /**

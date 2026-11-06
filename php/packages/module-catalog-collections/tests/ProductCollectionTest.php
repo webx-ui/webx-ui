@@ -160,6 +160,16 @@ final class ProductCollectionTest extends TestCase
     }
 
     #[Test]
+    public function a_key_deleted_for_good_is_free_again(): void
+    {
+        $collection = $this->collection(['key' => 'kept']);
+        $collection->delete();
+        $collection->forceDelete();
+
+        $this->assertSame('kept', $this->collection(['key' => 'kept'])->key);
+    }
+
+    #[Test]
     public function a_key_never_changes_after_creation(): void
     {
         $collection = $this->collection(['key' => 'kept']);

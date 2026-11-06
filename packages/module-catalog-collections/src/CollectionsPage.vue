@@ -253,6 +253,27 @@ async function restore(row: CollectionRow): Promise<void> {
   }
 }
 
+async function purge(row: CollectionRow): Promise<void> {
+  const agreed = await confirm({
+    title: t('panel.purge-title', { name: titleOf(row) }),
+    message: t('panel.purge-text'),
+    confirmText: t('panel.purge'),
+    cancelText: t('panel.cancel'),
+    tone: 'danger',
+  })
+
+  if (!agreed) return
+
+  try {
+    await api.purge(row.id)
+    toast.success(t('panel.purged'))
+  } catch (error) {
+    toast.danger(message(error))
+  } finally {
+    await load()
+  }
+}
+
 function actionsFor(row: CollectionRow): RowAction[] {
   if (row.deleted_at !== null) {
     return canManage.value
@@ -262,6 +283,13 @@ function actionsFor(row: CollectionRow): RowAction[] {
             icon: 'refresh',
             label: t('panel.restore'),
             run: () => void restore(row),
+          },
+          {
+            key: 'purge',
+            icon: 'trash',
+            label: t('panel.purge'),
+            danger: true,
+            run: () => void purge(row),
           },
         ]
       : []

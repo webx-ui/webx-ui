@@ -97,6 +97,11 @@ export const catalogCollectionsMessages: Record<string, Messages> = {
       'It goes to the bin and stops printing where it is placed. Restoring brings it back everywhere.',
     deleted: 'The collection is in the bin.',
     restored: 'The collection is restored.',
+    purge: 'Delete for good',
+    'purge-title': 'Delete «:name» for good?',
+    'purge-text':
+      'It cannot be brought back. Places that name its key print nothing, and the key is free again.',
+    purged: 'The collection is deleted.',
     created: 'The collection is created.',
     saved: 'The collection is saved.',
     'save-failed': 'Not saved: check the fields.',

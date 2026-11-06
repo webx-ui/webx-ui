@@ -243,7 +243,8 @@ class ProductCollection extends Model
 
     /**
      * Made from the title when none is given, and fixed from then on: it lives in templates and
-     * texts, where nobody would change it (§2.2). A key in the bin is as taken as any other.
+     * texts, where nobody would change it (§2.2). A key in the bin is as taken as any other; only
+     * deleting the collection for good frees it.
      */
     private function settleKey(): void
     {

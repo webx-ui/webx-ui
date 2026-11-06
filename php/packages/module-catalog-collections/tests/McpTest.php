@@ -36,7 +36,7 @@ final class McpTest extends TestCase
 
     private const READS = ['list', 'get', 'facets', 'preview', 'usage'];
 
-    private const WRITES = ['create', 'update', 'products', 'delete', 'restore'];
+    private const WRITES = ['create', 'update', 'products', 'delete', 'restore', 'purge'];
 
     /**
      * @param  Application  $app
@@ -91,6 +91,7 @@ final class McpTest extends TestCase
             'products' => ['collection' => 'picks', 'set' => []],
             'delete' => ['collection' => 'picks'],
             'restore' => ['collection' => 'picks'],
+            'purge' => ['collection' => 'picks'],
         ];
 
         foreach ($writes as $write => $arguments) {
@@ -125,6 +126,11 @@ final class McpTest extends TestCase
 
         $back = $this->content($this->agent('catalog_collections_restore', ['collection' => 'old', 'dry_run' => true]));
         $this->assertNull($back['would_be']['collection']['deleted_at']);
+
+        $purged = $this->content($this->agent('catalog_collections_purge', ['collection' => 'old', 'dry_run' => true]));
+        $this->assertTrue($purged['dry_run']);
+        $this->assertSame('old', $purged['would_be']['key']);
+        $this->assertArrayHasKey('places', $purged['would_be']);
 
         $this->assertSame($before, $this->tables());
         $this->assertNotSoftDeleted($collection);
@@ -213,6 +219,25 @@ final class McpTest extends TestCase
 
         $this->agent('catalog_collections_restore', ['collection' => $collection->id]);
         $this->assertNotSoftDeleted($collection);
+    }
+
+    #[Test]
+    public function a_collection_is_purged_only_from_the_bin_and_its_key_is_free_after_it(): void
+    {
+        $collection = $this->manual('picks');
+
+        $this->agent('catalog_collections_purge', ['collection' => 'picks'])->assertHasErrors(['not in the bin']);
+        $this->assertNotSoftDeleted($collection);
+
+        $collection->delete();
+
+        $answer = $this->content($this->agent('catalog_collections_purge', ['collection' => 'picks']));
+        $this->assertSame($collection->id, $answer['purged']);
+        $this->assertSame('picks', $answer['key']);
+        $this->assertSame(0, ProductCollection::withTrashed()->count());
+
+        $made = $this->content($this->agent('catalog_collections_create', ['values' => ['title' => 'Again', 'key' => 'picks']]));
+        $this->assertSame('picks', $made['collection']['key']);
     }
 
     #[Test]
@@ -319,6 +344,7 @@ final class McpTest extends TestCase
             ['catalog_collections_delete', ['collection' => 'mystery'], 'There are: picks, sale'],
             ['catalog_collections_restore', ['collection' => 'mystery'], 'There are: picks, sale'],
             ['catalog_collections_restore', ['collection' => 'picks'], 'not in the bin'],
+            ['catalog_collections_purge', ['collection' => 'mystery'], 'There are: picks, sale'],
             ['catalog_collections_products', ['collection' => 'mystery', 'set' => []], 'There are: picks, sale'],
 
             // The call's own words.

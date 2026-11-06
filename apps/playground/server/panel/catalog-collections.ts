@@ -455,4 +455,14 @@ export function registerCollections(on: On, fail: Fail, line: Line): void {
 
     return { data: detail(record, locale) }
   })
+
+  on('DELETE', '/catalog/collections/(\\d+)/purge', ({ params }) => {
+    const record = find(params[0]!, true)
+
+    if (record.deleted_at === null) throw fail(404, 'No such collection.')
+
+    collections.splice(collections.indexOf(record), 1)
+
+    return null
+  })
 }

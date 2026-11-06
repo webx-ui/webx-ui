@@ -30,5 +30,6 @@ Route::prefix((string) config('webx-admin.api_path'))
             Route::put($path.'/{collection}', [CollectionController::class, 'update'])->whereNumber('collection')->name('update');
             Route::delete($path.'/{collection}', [CollectionController::class, 'destroy'])->whereNumber('collection')->name('destroy');
             Route::post($path.'/{collection}/restore', [CollectionController::class, 'restore'])->whereNumber('collection')->name('restore');
+            Route::delete($path.'/{collection}/purge', [CollectionController::class, 'purge'])->whereNumber('collection')->name('purge');
         });
     });

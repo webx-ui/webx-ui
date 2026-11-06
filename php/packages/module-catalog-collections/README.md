@@ -40,7 +40,7 @@ $collection->key; // new-arrivals
 The model refuses what it cannot keep with a `ValidationException` under the field's name:
 
 - `key` is `[a-z0-9-]`, up to 64 characters, made from the title when none is given. It stays taken by
-  a collection in the bin and cannot be changed after creation.
+  a collection in the bin until that one is deleted for good, and cannot be changed after creation.
 - `limit` is from 1 to `webx-catalog-collections.max_limit` (48 by default).
 - `link` is a `wx-link` value, read as a block's is: `javascript:` and other schemes that do not open
   a page are refused.

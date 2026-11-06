@@ -13,6 +13,13 @@ import { localesKey } from '@webx-ui/core'
 import CollectionsPage from './CollectionsPage.vue'
 import type { CollectionRow } from './types'
 
+const { confirm } = vi.hoisted(() => ({ confirm: vi.fn() }))
+
+vi.mock('@webx-ui/core', async (original) => ({
+  ...(await original<object>()),
+  confirm,
+}))
+
 function row(id: number, key: string, over: Partial<CollectionRow> = {}): CollectionRow {
   return {
     id,
@@ -55,6 +62,10 @@ function context(): AdminContext {
       bin = []
 
       return { data: binned }
+    }),
+    delete: vi.fn(async (url: string) => {
+      asked.push(`DELETE ${url}`)
+      bin = []
     }),
   }
 
@@ -102,6 +113,8 @@ describe('CollectionsPage', () => {
   beforeEach(() => {
     bin = [binned]
     asked = []
+    confirm.mockReset()
+    confirm.mockResolvedValue(true)
   })
 
   afterEach(() => {
@@ -157,12 +170,55 @@ describe('CollectionsPage', () => {
     await flushPromises()
     const items = [...document.querySelectorAll<HTMLElement>('.wx-dropdown-item')]
 
-    expect(items.map((item) => item.textContent?.trim())).toEqual(['Restore'])
+    expect(items.map((item) => item.textContent?.trim())).toEqual(['Restore', 'Delete for good'])
     items[0]!.click()
     await flushPromises()
 
     expect(asked).toContain('POST /api/cms/catalog/collections/2/restore')
     expect(wrapper.text()).toContain('The bin is empty.')
+  })
+
+  async function askToPurge() {
+    const wrapper = await open('/catalog/collections?view=trashed')
+
+    await wrapper.findAll('.wx-actions__menu button')[0]!.trigger('click')
+    await flushPromises()
+    ;[...document.querySelectorAll<HTMLElement>('.wx-dropdown-item')][1]!.click()
+    await flushPromises()
+
+    return wrapper
+  }
+
+  it('deletes a collection for good only after asking, and the bin is empty after it', async () => {
+    const wrapper = await askToPurge()
+
+    expect(confirm).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Delete «on-sale» for good?',
+        confirmText: 'Delete for good',
+        tone: 'danger',
+      }),
+    )
+    expect(asked).toContain('DELETE /api/cms/catalog/collections/2/purge')
+    expect(wrapper.text()).toContain('The bin is empty.')
+  })
+
+  it('keeps the collection when the question is turned down', async () => {
+    confirm.mockResolvedValueOnce(false)
+
+    await askToPurge()
+
+    expect(asked.some((call) => call.startsWith('DELETE'))).toBe(false)
+  })
+
+  it('offers no way to delete for good outside the bin', async () => {
+    const wrapper = await open('/catalog/collections')
+
+    await wrapper.findAll('.wx-actions__menu button')[0]!.trigger('click')
+    await flushPromises()
+    const items = [...document.querySelectorAll<HTMLElement>('.wx-dropdown-item')]
+
+    expect(items.map((item) => item.textContent?.trim())).toEqual(['Open', 'Delete'])
   })
 
   it('says the bin is empty in its own words', async () => {

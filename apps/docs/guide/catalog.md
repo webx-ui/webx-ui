@@ -575,6 +575,12 @@ in every place, because its key stays taken. «Where»
 in the panel lists blocks and regions only; brackets in a text and tags in templates are not
 counted, so a collection with no places may still be in use.
 
+«Delete for good» in the same tab asks first and cannot be undone. It is offered only in the bin,
+and it is not refused for being in use either: the places that name the key print nothing, and the
+key is free, so a new collection with that key prints in all of them. An agent does the same with
+`catalog_collections_purge`: it takes a collection in the bin only, and `dry_run` names the blocks
+and regions that hold it, without deleting anything.
+
 `php artisan webx:demo` seeds six collections on the demo shop, with blocks on the home page and
 brackets in an article. A site that has collections already is left alone.
 

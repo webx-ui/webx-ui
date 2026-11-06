@@ -35,6 +35,7 @@ export interface CatalogCollectionsApi {
   save(id: number, values: Record<string, unknown>): Promise<CollectionDetail>
   remove(id: number): Promise<void>
   restore(id: number): Promise<CollectionDetail>
+  purge(id: number): Promise<void>
   facets(categoryId: number | null): Promise<CollectionFacets>
   preview(values: Record<string, unknown>): Promise<CollectionPreview>
   usage(id: number): Promise<CollectionPlace[]>
@@ -57,6 +58,7 @@ export function createCollectionsApi(admin: AdminContext): CatalogCollectionsApi
     remove: (id) => admin.http.delete<void>(`${base}/${id}`).then(() => undefined),
     restore: (id) =>
       admin.http.post<{ data: CollectionDetail }>(`${base}/${id}/restore`, {}).then(data),
+    purge: (id) => admin.http.delete<void>(`${base}/${id}/purge`).then(() => undefined),
     facets: (categoryId) =>
       admin.http.get<CollectionFacets>(
         categoryId === null ? `${base}/facets` : `${base}/facets?category=${categoryId}`,

@@ -105,6 +105,17 @@ final class CollectionController
         return $this->answer($trashed->refresh());
     }
 
+    /**
+     * Gone for good, only from the bin, so nothing leaves the site in one click. Whatever still
+     * names the key prints nothing, as for a key nobody has (§4.4), so nothing here asks where it stands.
+     */
+    public function purge(int $collection): Response
+    {
+        ProductCollection::onlyTrashed()->findOrFail($collection)->forceDelete();
+
+        return new Response(status: 204);
+    }
+
     /** Where it stands (§6.4). A collection in the bin too: that is what restoring brings back. */
     public function usage(int $collection, CollectionUsage $usage): JsonResponse
     {

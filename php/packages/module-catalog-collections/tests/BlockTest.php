@@ -178,6 +178,12 @@ final class BlockTest extends TestCase
         $collection->delete();
 
         $this->assertSame('picks', $region->storeBlocks($tree)[0]['values']['collection']);
+
+        // Deleted for good: still the block somebody saved, and the page can be saved around it.
+        $collection->forceDelete();
+        $saved = $region->storeBlocks($tree);
+
+        $this->assertSame('picks', $saved[0]['values']['collection']);
     }
 
     #[Test]
@@ -197,6 +203,10 @@ final class BlockTest extends TestCase
         $this->assertStringContainsString('webx-catalog-collection--carousel', $html);
 
         $collection->delete();
+
+        $this->assertStringNotContainsString('data-collection="picks"', $this->region());
+
+        $collection->forceDelete();
 
         $this->assertStringNotContainsString('data-collection="picks"', $this->region());
     }

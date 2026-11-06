@@ -110,6 +110,16 @@ final class ShortcodeTest extends TestCase
     }
 
     #[Test]
+    public function a_collection_deleted_for_good_leaves_the_text_around_the_bracket(): void
+    {
+        $collection = $this->collection([$this->product('Camera')]);
+        $collection->delete();
+        $collection->forceDelete();
+
+        $this->assertSame('<p>a</p><p>b</p>', $this->shortcodes->htmlIn('<p>a</p><p>'.self::BRACKET.'</p><p>b</p>'));
+    }
+
+    #[Test]
     public function a_line_of_text_prints_nothing_for_it(): void
     {
         $this->collection([$this->product('Trail camera')]);

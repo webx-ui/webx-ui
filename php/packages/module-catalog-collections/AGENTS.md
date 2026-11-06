@@ -51,7 +51,7 @@ prints it, the block that places it, the shortcode, the section of the panel and
   «Places: N», `GET {id}/usage` names them. Shortcodes in texts and tags in templates are not counted,
   and the panel says so. Without `webx-ui/module-blocks`, `places` is null and the panel shows neither.
 - **MCP** tools `catalog_collections_list`, `_get`, `_facets`, `_preview`, `_usage`, `_create`,
-  `_update`, `_products`, `_delete`, `_restore` (`Mcp\CollectionTools`), served through the core's
+  `_update`, `_products`, `_delete`, `_restore`, `_purge` (`Mcp\CollectionTools`), served through the core's
   `SatelliteTools`, so the names, scopes and permissions are the catalogue's. Resource:
   `catalog://collections` (the house rules). A set is codes and slugs (`Mcp\CollectionSet`), stored
   by ids. A write goes through `Http\CollectionForm`; a `dry_run` is that write rolled back.
@@ -61,9 +61,9 @@ prints it, the block that places it, the shortcode, the section of the panel and
 ### Permissions
 
 None of its own: `catalog.view` reads the section and asks the preview, `catalog.manage` writes and
-sends to the bin. The section is visible to whoever holds either (`visibleWith()`). The tools follow:
+sends to the bin, restores and deletes for good. The section is visible to whoever holds either (`visibleWith()`). The tools follow:
 `_list`, `_get`, `_facets`, `_preview` and `_usage` ask for either, under `catalog:read`; `_create`,
-`_update`, `_products`, `_delete` and `_restore` ask for `catalog.manage`, under `catalog:write`.
+`_update`, `_products`, `_delete`, `_restore` and `_purge` ask for `catalog.manage`, under `catalog:write`.
 
 ## Change it without forking
 
@@ -92,7 +92,7 @@ sends to the bin. The section is visible to whoever holds either (`visibleWith()
 - Do not change `key` after creation: the model refuses it, because templates and texts name the
   collection by it. Make a new collection with the key you want instead.
 - Do not reuse the key of a collection in the bin: it stays taken so that restoring never conflicts.
-  Restore that collection, or choose another key.
+  Restore that collection, delete it for good, or choose another key.
 - Do not add a foreign key on `category_id`: `nullOnDelete` would turn a collection of one category
   into a collection of the whole catalogue. A category that is gone gives an empty selection.
 - Do not write `catalog_collections` with `DB::table()`: the checks of the key, the limit and the
@@ -125,6 +125,8 @@ sends to the bin. The section is visible to whoever holds either (`visibleWith()
   «Products», and the preview beside them says what the site would show before anything is saved.
 - Put the block on a page and save the draft: the list says «Places: 1», and the words open the page's
   name, marked as a draft until it is published.
+- In the tab «Bin», «Delete for good» asks first; the key then makes a new collection, and a block
+  still naming it prints nothing until that one exists. `DELETE {id}/purge` of a live one is a 404.
 - With MCP: read `catalog://collections`, then `catalog_collections_facets`, `_create` with `dry_run`, and
   `_preview`; `_update` with another `key` is refused, and says why.
 - `vendor/bin/phpunit packages/module-catalog-collections/tests` in the monorepo's `php/`.

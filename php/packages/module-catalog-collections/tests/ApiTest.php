@@ -267,6 +267,34 @@ final class ApiTest extends TestCase
     }
 
     #[Test]
+    public function a_collection_is_deleted_for_good_only_from_the_bin_and_frees_its_key(): void
+    {
+        $collection = ProductCollection::query()->create(['title' => 'Picks', 'key' => 'picks']);
+        $collection->products()->attach($this->product('Camera')->id, ['position' => 1]);
+        $editor = $this->manager();
+
+        // A live one is not in reach: the bin is the first step, always.
+        $this->actingAs($editor, 'cms')->deleteJson($this->api("{$collection->id}/purge"))->assertNotFound();
+        $this->assertNotSoftDeleted($collection);
+
+        $collection->delete();
+
+        // Reading the catalogue is not enough for what cannot be undone.
+        $this->actingAs($this->manager(['catalog.view']), 'cms')->deleteJson($this->api("{$collection->id}/purge"))->assertForbidden();
+
+        $this->actingAs($editor, 'cms')->deleteJson($this->api("{$collection->id}/purge"))->assertNoContent();
+
+        $this->assertSame(0, ProductCollection::withTrashed()->count());
+        $this->assertDatabaseCount(ProductCollection::PRODUCTS, 0);
+        $this->actingAs($editor, 'cms')->getJson($this->api('?trashed=1'))->assertOk()->assertJsonCount(0, 'data');
+        $this->actingAs($editor, 'cms')->getJson($this->api())->assertOk()->assertJsonCount(0, 'data');
+
+        $this->actingAs($editor, 'cms')->postJson($this->api(), ['title' => 'Again', 'key' => 'picks', 'source' => 'manual'])
+            ->assertCreated()
+            ->assertJsonPath('data.key', 'picks');
+    }
+
+    #[Test]
     public function the_facets_of_a_base_come_with_the_presets_of_the_site(): void
     {
         $category = new Category(['name' => 'Cameras', 'slug' => 'cameras', 'is_published' => true]);

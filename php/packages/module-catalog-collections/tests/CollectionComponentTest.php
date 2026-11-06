@@ -194,6 +194,24 @@ final class CollectionComponentTest extends TestCase
         $this->assertSame('', $this->render('<x-webx-catalog-collections::collection />'));
     }
 
+    #[Test]
+    public function a_collection_deleted_for_good_prints_nothing_and_a_new_one_takes_its_place(): void
+    {
+        $tag = '<x-webx-catalog-collections::collection key="picks" />';
+        $collection = $this->collection([$this->product('One')], ['key' => 'picks']);
+
+        $this->assertStringContainsString('One', $this->render($tag));
+
+        $collection->delete();
+        $collection->forceDelete();
+
+        $this->assertSame('', $this->render($tag));
+
+        $this->collection([$this->product('Two')], ['key' => 'picks']);
+
+        $this->assertStringContainsString('Two', $this->render($tag));
+    }
+
     /**
      * @return iterable<string, array{string}>
      */
