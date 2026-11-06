@@ -25,6 +25,7 @@ use WebxUi\Catalog\Routing\CatalogMisses;
 use WebxUi\Catalog\Seo\ProductMarkup;
 use WebxUi\Catalog\Support\RequestMemo;
 use WebxUi\Localization\HasTranslations;
+use WebxUi\Localization\LocaleCatalogue;
 use WebxUi\Localization\Locales;
 use WebxUi\Localization\Slug;
 use WebxUi\Routing\Contracts\Visible;
@@ -189,6 +190,20 @@ class Product extends Model implements HasBreadcrumbs, HasSeoFallback, HasStruct
     public function hasUrlIn(string $locale): bool
     {
         return $this->hasTranslation('slug', $locale);
+    }
+
+    /**
+     * {@see hasUrlIn()} as SQL. Both halves: an empty slug is no address, and neither is a JSON
+     * null, which `!= ''` alone would let through on MariaDB as the word "null". Qualified,
+     * because a sort may join a table with a slug of its own.
+     *
+     * @param  Builder<self>  $query
+     */
+    public function scopeWithUrlIn(Builder $query, string $locale): void
+    {
+        $path = $this->qualifyColumn('slug').'->'.LocaleCatalogue::normalise($locale);
+
+        $query->whereNotNull($path)->where($path, '!=', '');
     }
 
     /** @return BelongsTo<Category, $this> */

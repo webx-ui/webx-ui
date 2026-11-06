@@ -8,6 +8,7 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
@@ -430,7 +431,13 @@ class CatalogServiceProvider extends ServiceProvider
         // for a request; a worker's next job is another request.
         $this->app->make(Dispatcher::class)->listen(JobProcessing::class, function (): void {
             $this->app->make(Facets::class)->flush();
+            $this->app->make(StorefrontParts::class)->flush();
             RequestMemo::forget();
+        });
+
+        // One page's parts are that page's: the next request of the same process starts clean.
+        $this->app->make(Dispatcher::class)->listen(RequestHandled::class, function (): void {
+            $this->app->make(StorefrontParts::class)->flush();
         });
     }
 

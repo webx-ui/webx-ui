@@ -34,7 +34,8 @@ use WebxUi\Routing\RouteCache;
  *   named something and found nothing is a filter nothing passes, so a typo in a slug does not
  *   quietly become every record there is. The same for `relatedTo()` with no records;
  * - the limit counts what is shown, after the language: "the first six" on a Russian page is six
- *   Russian ones, so it is taken in php, not in SQL;
+ *   Russian ones, so it is taken in php, unless the module's SQL already knows the language
+ *   ({@see limitsInSql()});
  * - `only()` sets the order, and it wins over any other.
  *
  * A module extends this with its model, its visibility and its cards; the steps it has and others
@@ -95,6 +96,15 @@ abstract class RecordQuery implements Countable, IteratorAggregate
     protected function shownIn(Model $record, string $locale): bool
     {
         return true;
+    }
+
+    /**
+     * Whether {@see newQuery()} already keeps out everything {@see shownIn()} would, so that the
+     * limit can go into SQL and a long list is not loaded for the sake of its first rows.
+     */
+    protected function limitsInSql(): bool
+    {
+        return false;
     }
 
     /**
@@ -246,8 +256,11 @@ abstract class RecordQuery implements Countable, IteratorAggregate
         $this->narrow($query, $locale);
         $this->order($query, $categories !== null && count($categories) === 1 ? $categories[0] : null);
 
-        // No limit in SQL: whether a record is written in a language is a question of its words,
-        // and the limit counts what is shown.
+        // Not with `only()`: its order is put on below, and the limit counts in that order.
+        if ($this->limit !== null && $this->only === null && $this->limitsInSql()) {
+            $query->limit($this->limit);
+        }
+
         $records = [];
 
         foreach ($query->get() as $record) {
