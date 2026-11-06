@@ -9,11 +9,11 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use WebxUi\Catalog\Facets\CategoryFacet;
 use WebxUi\Catalog\Facets\Facets;
+use WebxUi\Catalog\Filter\FacetSet;
 use WebxUi\Catalog\Models\Category;
 use WebxUi\Catalog\Models\Product;
 use WebxUi\Catalog\Sorts\Sorts;
 use WebxUi\CatalogLandings\Catalog\LandingCounter;
-use WebxUi\CatalogLandings\Catalog\LandingSet;
 use WebxUi\CatalogLandings\Models\Landing;
 
 /**
@@ -106,7 +106,7 @@ final class LandingForm
         }
 
         if (! isset($errors['filters'])) {
-            $holder = $this->holder($landing->category_id, LandingSet::from($landing->filters), $landing->exists ? (int) $landing->getKey() : null);
+            $holder = $this->holder($landing->category_id, FacetSet::from($landing->filters), $landing->exists ? (int) $landing->getKey() : null);
 
             if ($holder !== null) {
                 $errors['filters'][] = (string) __('webx-catalog-landings::errors.set-taken', ['name' => $holder->label()]);
@@ -148,7 +148,7 @@ final class LandingForm
             }
         }
 
-        if ($errors === [] && LandingSet::from($raw)->isEmpty()) {
+        if ($errors === [] && FacetSet::from($raw)->isEmpty()) {
             $errors[] = (string) __('webx-catalog-landings::errors.set-empty');
         }
 
@@ -156,7 +156,7 @@ final class LandingForm
     }
 
     /** The landing that already holds this set on this base, in the bin or not. */
-    public function holder(?int $categoryId, LandingSet $set, ?int $except = null): ?Landing
+    public function holder(?int $categoryId, FacetSet $set, ?int $except = null): ?Landing
     {
         $hash = $set->hash($categoryId);
 

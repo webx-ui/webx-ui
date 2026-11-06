@@ -6,6 +6,7 @@ namespace WebxUi\CatalogLandings\Catalog;
 
 use WebxUi\Catalog\Events\FacetValueRetargeted;
 use WebxUi\Catalog\Facets\Facets;
+use WebxUi\Catalog\Filter\FacetSet;
 use WebxUi\CatalogLandings\Models\Landing;
 
 /**
@@ -71,7 +72,7 @@ final class LandingRepairs
      * The landing with a new set: marked by what broke, and unpublished when what is left is no
      * landing at all — nothing, or another landing's set.
      */
-    private function apply(Landing $landing, LandingSet $set, ?string $reason): void
+    private function apply(Landing $landing, FacetSet $set, ?string $reason): void
     {
         $landing->filters = $set->all();
 
@@ -88,7 +89,7 @@ final class LandingRepairs
         $landing->save();
     }
 
-    private function taken(Landing $landing, LandingSet $set): bool
+    private function taken(Landing $landing, FacetSet $set): bool
     {
         return Landing::withTrashed()
             ->where('filters_hash', $set->hash($landing->category_id))

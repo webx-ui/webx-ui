@@ -2,22 +2,21 @@
 
 declare(strict_types=1);
 
-namespace WebxUi\CatalogLandings\Catalog;
+namespace WebxUi\Catalog\Filter;
 
 use WebxUi\Catalog\Facets\CategoryFacet;
 use WebxUi\Catalog\Facets\FacetKind;
 use WebxUi\Catalog\Facets\Facets;
 use WebxUi\Catalog\Facets\FacetValue;
-use WebxUi\Catalog\Filter\FilterState;
 
 /**
- * A landing's set as it is stored (§4 of the landings spec): facet key → `{values}` or
+ * A set of facets as its owner stores it — a landing, a collection: facet key → `{values}` or
  * `{min, max}`, normalised so that one set has one spelling and one hash — keys in order, values
  * by id ascending, a range as numbers, empty facets left out.
  *
- * Immutable, like the core's {@see FilterState}: a merge or a deletion of a value makes a new set.
+ * Immutable, like {@see FilterState}: a merge or a deletion of a value makes a new set.
  */
-final class LandingSet
+final class FacetSet
 {
     /**
      * @param  array<string, array{values?: list<string>, min?: float|null, max?: float|null}>  $facets
@@ -77,15 +76,15 @@ final class LandingSet
         return isset($this->facets[$key]);
     }
 
-    /** How many facets it fixes: what makes one covering landing larger than another (§5). */
+    /** How many facets it fixes: what makes one set that covers a filter larger than another. */
     public function size(): int
     {
         return count($this->facets);
     }
 
     /**
-     * The key of the base and the set together; null for a set with nothing in it, which no
-     * landing may hold.
+     * The key of the base and the set together; null for a set with nothing in it, which has
+     * nothing to tell it from the base alone.
      */
     public function hash(?int $categoryId): ?string
     {
@@ -125,7 +124,7 @@ final class LandingSet
         return self::from($facets);
     }
 
-    /** The set without the facets the registry no longer has — a property in the bin (§9). */
+    /** The set without the facets the registry no longer has — a property in the bin. */
     public function known(Facets $facets): self
     {
         return new self(array_filter(
@@ -136,7 +135,7 @@ final class LandingSet
     }
 
     /**
-     * What the storefront starts the landing's page from. A list facet is read as a list and a
+     * What a filter by this set starts from. A list facet is read as a list and a
      * range facet as a range, whatever the stored shape says, so a set written by hand cannot
      * confuse the engine; a facet the registry does not have is left out.
      */

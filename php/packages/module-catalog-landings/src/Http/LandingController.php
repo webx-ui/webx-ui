@@ -9,11 +9,11 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use WebxUi\Catalog\Facets\Facets;
+use WebxUi\Catalog\Filter\BaseFacets;
+use WebxUi\Catalog\Filter\FacetSet;
 use WebxUi\Catalog\Models\Category;
-use WebxUi\CatalogLandings\Catalog\BaseFacets;
 use WebxUi\CatalogLandings\Catalog\LandingCounter;
 use WebxUi\CatalogLandings\Catalog\LandingGenerator;
-use WebxUi\CatalogLandings\Catalog\LandingSet;
 use WebxUi\CatalogLandings\Catalog\LandingWords;
 use WebxUi\CatalogLandings\Models\Landing;
 use WebxUi\CatalogLandings\Models\LandingRun;
@@ -161,7 +161,7 @@ final class LandingController
         }
 
         $categoryId = isset($validated['category_id']) ? (int) $validated['category_id'] : null;
-        $set = LandingSet::from($validated['filters']);
+        $set = FacetSet::from($validated['filters']);
         $holder = $this->form->holder($categoryId, $set, isset($validated['except']) ? (int) $validated['except'] : null);
 
         return new JsonResponse(['data' => [

@@ -13,11 +13,11 @@ use WebxUi\Catalog\Facets\CategoryFacet;
 use WebxUi\Catalog\Facets\Facet;
 use WebxUi\Catalog\Facets\FacetKind;
 use WebxUi\Catalog\Facets\Facets;
+use WebxUi\Catalog\Filter\BaseFacets;
+use WebxUi\Catalog\Filter\FacetSet;
 use WebxUi\Catalog\Models\Category;
-use WebxUi\CatalogLandings\Catalog\BaseFacets;
 use WebxUi\CatalogLandings\Catalog\LandingCounter;
 use WebxUi\CatalogLandings\Catalog\LandingGenerator;
-use WebxUi\CatalogLandings\Catalog\LandingSet;
 use WebxUi\CatalogLandings\Catalog\LandingWords;
 use WebxUi\CatalogLandings\Http\LandingForm;
 use WebxUi\CatalogLandings\Http\LandingResource;
@@ -307,7 +307,7 @@ final class LandingTools
     {
         $locale = $this->locale($arguments);
         $category = isset($arguments['category']) ? $this->category($arguments['category']) : null;
-        $set = LandingSet::from($this->stored($arguments['set'] ?? null, $locale));
+        $set = FacetSet::from($this->stored($arguments['set'] ?? null, $locale));
 
         if ($set->isEmpty()) {
             throw new ToolFailure((string) __('webx-catalog-landings::errors.set-empty'));
@@ -333,7 +333,7 @@ final class LandingTools
         $locale = $this->locale($arguments);
         $category = isset($arguments['category']) ? $this->category($arguments['category']) : null;
         $filters = $this->stored($arguments['set'] ?? null, $locale);
-        $set = LandingSet::from($filters);
+        $set = FacetSet::from($filters);
 
         $input = [
             ...$this->fields($arguments, $locale, null),
@@ -562,7 +562,7 @@ final class LandingTools
      *
      * @return list<array<string, mixed>>
      */
-    private function described(LandingSet $set, string $locale): array
+    private function described(FacetSet $set, string $locale): array
     {
         $described = [];
 

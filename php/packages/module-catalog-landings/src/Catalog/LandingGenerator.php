@@ -21,6 +21,7 @@ use WebxUi\Catalog\Facets\Facet;
 use WebxUi\Catalog\Facets\FacetKind;
 use WebxUi\Catalog\Facets\Facets;
 use WebxUi\Catalog\Facets\FacetValue;
+use WebxUi\Catalog\Filter\FacetSet;
 use WebxUi\Catalog\Filter\FilterContext;
 use WebxUi\Catalog\Models\Category;
 use WebxUi\CatalogLandings\Http\LandingForm;
@@ -346,7 +347,7 @@ final class LandingGenerator
      */
     private function row(Category $category, Facet $facet, string $value, int $count, array $templates, string $locale, array &$claimed): array
     {
-        $set = LandingSet::from([$facet->key() => ['values' => [$value]]]);
+        $set = FacetSet::from([$facet->key() => ['values' => [$value]]]);
         $slugs = $this->words->slugs($category, $set, $templates['slug']);
         $names = $this->words->names($category, $set, $templates['name']);
 

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WebxUi\CatalogLandings\Catalog;
+namespace WebxUi\Catalog\Filter;
 
 use WebxUi\Catalog\Catalog;
 use WebxUi\Catalog\Engine\CatalogQuery;
@@ -12,11 +12,10 @@ use WebxUi\Catalog\Facets\Facet;
 use WebxUi\Catalog\Facets\FacetKind;
 use WebxUi\Catalog\Facets\Facets;
 use WebxUi\Catalog\Facets\FacetValue;
-use WebxUi\Catalog\Filter\FilterContext;
 use WebxUi\Catalog\Models\Category;
 
 /**
- * The facets a base offers a set (§8.2 of the landings spec): the category's own set of facets, or
+ * The facets a base offers a set: the category's own set of facets, or
  * every one on the whole catalogue — the category's facet left out — each with the values its
  * products have, counted, and a range's ends. The form's builder asks it, and so does an agent.
  */

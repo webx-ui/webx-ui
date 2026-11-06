@@ -44,7 +44,7 @@ question is about one of them.
   Query budgets of every public page: `tests/PerformanceTest.php` (`WEBX_PERF_PRINT=1` prints the tallies).
 - **Registries** (singletons a satellite fills from its provider): `ProductParts`, `Facets`, `Sorts`, `Documents`,
   `ProductColumns`, `BulkActions`, `ExchangeColumns`, `ExchangeFormats`, `ProductVariables`, `StorefrontParts`, `Purchasability`,
-  `PopularitySignals`, `CatalogEngines`, `FilterUrls`, `SearchContributors`, `VideoProviders`, `SatelliteTools`.
+  `PopularitySignals`, `CatalogEngines`, `FilterUrls`, `SearchContributors`, `VideoProviders`, `SatelliteTools`. A stored filter: `Filter\FacetSet`, `Filter\BaseFacets`.
 - **MCP** tools `catalog_products_*` (list, get, create, update, publish, unpublish, delete, restore),
   `catalog_products_gallery*`, `catalog_categories_*` (tree, create, update, move, delete, restore),
   `catalog_bulk`, `catalog_import`, `catalog_export`, `catalog_exchange_columns`, `_run`, `_profiles`.
