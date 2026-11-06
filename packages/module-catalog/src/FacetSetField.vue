@@ -156,7 +156,7 @@ function labelOf(key: string): string {
           :controls="false"
           :disabled="disabled"
           size="sm"
-          :placeholder="t('panel.facet-set-from')"
+          :placeholder="facetOf(String(key))?.min?.toString() ?? t('panel.facet-set-from')"
           :aria-label="`${labelOf(String(key))}: ${t('panel.facet-set-from')}`"
           @update:model-value="
             (picked: number | null | undefined) => bound(String(key), 'min', picked)
@@ -167,7 +167,7 @@ function labelOf(key: string): string {
           :controls="false"
           :disabled="disabled"
           size="sm"
-          :placeholder="t('panel.facet-set-to')"
+          :placeholder="facetOf(String(key))?.max?.toString() ?? t('panel.facet-set-to')"
           :aria-label="`${labelOf(String(key))}: ${t('panel.facet-set-to')}`"
           @update:model-value="
             (picked: number | null | undefined) => bound(String(key), 'max', picked)

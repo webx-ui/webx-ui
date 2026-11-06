@@ -25,6 +25,28 @@ function field(modelValue: FacetSetValue | null, props: Record<string, unknown> 
   return mount(FacetSetField, { props: { modelValue, facets, ...props } })
 }
 
+/** Mounted inside a panel, so that the words are the words and not their keys. */
+function worded(props: Record<string, unknown>) {
+  const i18n = createI18n()
+
+  return mount(FacetSetField, {
+    props: { facets, ...props },
+    global: {
+      provide: {
+        [adminKey as symbol]: { i18n } as unknown as AdminContext,
+        [i18nKey as symbol]: i18n,
+      },
+    },
+  })
+}
+
+function hints(wrapper: ReturnType<typeof worded>, key: string): (string | undefined)[] {
+  return wrapper
+    .find(`[data-facet="${key}"]`)
+    .findAll('input')
+    .map((input) => input.attributes('placeholder'))
+}
+
 function written(wrapper: ReturnType<typeof field>): unknown {
   return wrapper.emitted('update:modelValue')?.at(-1)?.[0]
 }
@@ -119,18 +141,59 @@ describe('WxCatalogFacetSet', () => {
   })
 
   it('says the number in the panel’s words', () => {
-    const i18n = createI18n()
-    const wrapper = mount(FacetSetField, {
-      props: { modelValue: null, facets, count: 5 },
-      global: {
-        provide: {
-          [adminKey as symbol]: { i18n } as unknown as AdminContext,
-          [i18nKey as symbol]: i18n,
-        },
-      },
-    })
+    const wrapper = worded({ modelValue: null, count: 5 })
 
     expect(wrapper.findComponent(WxBadge).text()).toBe('Products: 5')
+  })
+
+  it('hints a range with the bounds of its facet', () => {
+    const wrapper = worded({ modelValue: { price: { min: null, max: null } } })
+
+    expect(hints(wrapper, 'price')).toEqual(['10', '900'])
+  })
+
+  it('hints a range with the words when its facet has no bounds', () => {
+    const unbound: BaseFacet = {
+      key: 'width',
+      label: 'Width',
+      kind: 'range',
+      min: null,
+      max: null,
+      values: [],
+    }
+    const wrapper = worded({
+      modelValue: { width: { min: null, max: null } },
+      facets: [unbound],
+    })
+
+    expect(hints(wrapper, 'width')).toEqual(['From', 'To'])
+  })
+
+  it('takes a bound of zero for a bound, not for a missing one', () => {
+    const zero: BaseFacet = {
+      key: 'discount',
+      label: 'Discount',
+      kind: 'range',
+      min: 0,
+      max: 0,
+      values: [],
+    }
+    const wrapper = worded({
+      modelValue: { discount: { min: null, max: null } },
+      facets: [zero],
+    })
+
+    expect(hints(wrapper, 'discount')).toEqual(['0', '0'])
+  })
+
+  it('names the ends of a range by the words, whatever the hint says', () => {
+    const wrapper = worded({ modelValue: { price: { min: null, max: null } } })
+    const labels = wrapper
+      .find('[data-facet="price"]')
+      .findAll('input')
+      .map((input) => input.attributes('aria-label'))
+
+    expect(labels).toEqual(['Price: From', 'Price: To'])
   })
 
   it('locks every control when disabled', () => {
