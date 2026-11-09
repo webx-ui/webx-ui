@@ -164,6 +164,42 @@ fetches the screen by name, lays the project's patch from `createAdmin({ screens
 and passes the panel's dictionary, registry and permissions — `<wx-screen name="settings.index"
 v-model="values" :errors="errors" />`. [Settings](/guide/settings) is the first page built on it.
 
+### Two fields side by side
+
+A `wx-row` of two `wx-col` puts short fields — latitude and longitude, from and to — on one line.
+The columns count the width of the row, not of the window ([Grid](/components/grid)), and a row on
+a screen is never wider than a field (`--wx-field-max-width`, 640px), so pick the breakpoint by
+where the screen opens:
+
+- **In a dialog or a drawer** — `xs` (from 400px of row). A dialog's form rarely has the 640px `sm`
+  waits for, so `"sm": 12` there stacks the two at every window size. With `xs` they meet on a
+  desktop dialog and stack on a phone.
+- **On a page** — `sm` (from 640px), as the forms of the sections already do.
+
+```json
+{
+  "id": "coordinates",
+  "type": "wx-row",
+  "children": [
+    {
+      "id": "lat-col",
+      "type": "wx-col",
+      "props": { "span": 24, "xs": 12 },
+      "children": [{ "id": "lat", "type": "wx-input-number", "name": "lat" }]
+    },
+    {
+      "id": "lng-col",
+      "type": "wx-col",
+      "props": { "span": 24, "xs": 12 },
+      "children": [{ "id": "lng", "type": "wx-input-number", "name": "lng" }]
+    }
+  ]
+}
+```
+
+No stylesheet of the module's own is needed for it — a rule like `.my-row > .wx-col { width: 50% }`
+is what `xs` replaces.
+
 ## The registry
 
 A type is the full component name — `wx-input`, `wx-card` — so the name says it is the UI kit.
@@ -492,7 +528,7 @@ field's width; one whose rows lay fields side by side — a `wx-row` among the c
 an editor takes the whole width.
 
 Fields of an item can stand in columns: a `wx-row` of `wx-col` among the children, as anywhere
-else on a screen. A column's `sm`/`md` count the width of the row, not of the window, so a
+else on a screen. A column's `xs`/`sm`/`md` count the width of the row, not of the window, so a
 repeater in a narrow column stacks them and a wide one lays them side by side.
 
 A condition inside a row is read against that row: `{ "when": "hq", "is": true }` on a child asks

@@ -43,8 +43,8 @@ from the track would leave two halves wider than the line they sit on.
 
 ## Responsive
 
-`span` is the base and holds at every width. `sm`, `md`, `lg` and `xl` override it from 640, 768,
-1024 and 1280px up — narrowest first, so a column that takes the whole line when there is little
+`span` is the base and holds at every width. `xs`, `sm`, `md`, `lg` and `xl` override it from 400,
+640, 768, 1024 and 1280px up — narrowest first, so a column that takes the whole line when there is little
 room and a quarter of it when there is plenty reads in that order:
 
 ```vue
@@ -60,6 +60,24 @@ Each breakpoint also takes an offset of its own:
   <wx-col :span="24" :lg="{ span: 16, offset: 4 }">…</wx-col>
 </template>
 ```
+
+### `xs` — two short fields in a dialog
+
+`xs` is the narrow one the usual set lacks. A form in a dialog or a drawer is a few hundred pixels
+wide and rarely reaches `sm`, so two short fields there — latitude and longitude, from and to —
+need a breakpoint of their own to share a line:
+
+```vue
+<template>
+  <wx-row>
+    <wx-col :span="24" :xs="12"><wx-input-number v-model="lat" /></wx-col>
+    <wx-col :span="24" :xs="12"><wx-input-number v-model="lng" /></wx-col>
+  </wx-row>
+</template>
+```
+
+From 400px of row they stand side by side, below it one under the other — a desktop dialog and a
+phone, without either knowing the window.
 
 ### The breakpoints measure the row, not the window
 
@@ -112,6 +130,7 @@ phone and last on a desktop:
 | -------- | ---------------------------------------------- | ------- | --------------------------------- |
 | `span`   | `number`                                       | `24`    | Columns out of 24, at every width |
 | `offset` | `number`                                       | —       | Empty columns before the cell     |
+| `xs`     | `number \| { span?: number; offset?: number }` | —       | From 400px of row up              |
 | `sm`     | `number \| { span?: number; offset?: number }` | —       | From 640px of row up              |
 | `md`     | `number \| { span?: number; offset?: number }` | —       | From 768px of row up              |
 | `lg`     | `number \| { span?: number; offset?: number }` | —       | From 1024px of row up             |
@@ -125,7 +144,7 @@ Both take a `default` slot and nothing else.
 
 Every width a column is given is written out as a CSS variable — `--wx-col-span`,
 `--wx-col-span-md` and so on — and the stylesheet holds one `@container` rule per breakpoint, each
-falling back to the one below it. Nothing is generated per span, so the grid costs four rules
+falling back to the one below it. Nothing is generated per span, so the grid costs five rules
 rather than the several hundred a class-per-span grid ships, and a column can be adjusted from the
 outside:
 

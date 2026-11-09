@@ -7,6 +7,7 @@ defineOptions({ name: 'WxCol' })
 const props = withDefaults(defineProps<ColProps>(), {
   span: 24,
   offset: undefined,
+  xs: undefined,
   sm: undefined,
   md: undefined,
   lg: undefined,
@@ -15,14 +16,14 @@ const props = withDefaults(defineProps<ColProps>(), {
   as: 'div',
 })
 
-const breakpoints = ['sm', 'md', 'lg', 'xl'] as const
+const breakpoints = ['xs', 'sm', 'md', 'lg', 'xl'] as const
 
 function normalize(value: ColBreakpoint) {
   return typeof value === 'number' ? { span: value } : value
 }
 
 /**
- * Every width is published as a variable and the media queries in the stylesheet
+ * Every width is published as a variable and the container queries in the stylesheet
  * pick which one wins, each falling back to the breakpoint below it. That keeps the
  * component down to one rule per breakpoint instead of the 24 spans × 4 widths a
  * class-per-span grid needs.
@@ -68,19 +69,38 @@ const style = computed(() => {
  * column that lost half its width to a sidebar then reflows because *it* is narrow,
  * which is the question a column actually wants answered. The names in the props
  * keep their usual widths, so `:md="12"` still means "from 768px of room".
+ *
+ * `xs` (400px) is the one the usual set lacks: a dialog's form rarely has 640px of row, so
+ * two short fields there — latitude and longitude, from and to — would never meet `sm`.
  */
+@container wx-row (min-width: 400px) {
+  .wx-col {
+    width: calc(var(--wx-col-span-xs, var(--wx-col-span, 24)) / 24 * 100%);
+    margin-inline-start: calc(var(--wx-col-offset-xs, var(--wx-col-offset, 0)) / 24 * 100%);
+  }
+}
+
 @container wx-row (min-width: 640px) {
   .wx-col {
-    width: calc(var(--wx-col-span-sm, var(--wx-col-span, 24)) / 24 * 100%);
-    margin-inline-start: calc(var(--wx-col-offset-sm, var(--wx-col-offset, 0)) / 24 * 100%);
+    width: calc(var(--wx-col-span-sm, var(--wx-col-span-xs, var(--wx-col-span, 24))) / 24 * 100%);
+    margin-inline-start: calc(
+      var(--wx-col-offset-sm, var(--wx-col-offset-xs, var(--wx-col-offset, 0))) / 24 * 100%
+    );
   }
 }
 
 @container wx-row (min-width: 768px) {
   .wx-col {
-    width: calc(var(--wx-col-span-md, var(--wx-col-span-sm, var(--wx-col-span, 24))) / 24 * 100%);
+    width: calc(
+      var(--wx-col-span-md, var(--wx-col-span-sm, var(--wx-col-span-xs, var(--wx-col-span, 24)))) /
+        24 * 100%
+    );
     margin-inline-start: calc(
-      var(--wx-col-offset-md, var(--wx-col-offset-sm, var(--wx-col-offset, 0))) / 24 * 100%
+      var(
+          --wx-col-offset-md,
+          var(--wx-col-offset-sm, var(--wx-col-offset-xs, var(--wx-col-offset, 0)))
+        ) /
+        24 * 100%
     );
   }
 }
@@ -88,13 +108,22 @@ const style = computed(() => {
 @container wx-row (min-width: 1024px) {
   .wx-col {
     width: calc(
-      var(--wx-col-span-lg, var(--wx-col-span-md, var(--wx-col-span-sm, var(--wx-col-span, 24)))) /
+      var(
+          --wx-col-span-lg,
+          var(
+            --wx-col-span-md,
+            var(--wx-col-span-sm, var(--wx-col-span-xs, var(--wx-col-span, 24)))
+          )
+        ) /
         24 * 100%
     );
     margin-inline-start: calc(
       var(
           --wx-col-offset-lg,
-          var(--wx-col-offset-md, var(--wx-col-offset-sm, var(--wx-col-offset, 0)))
+          var(
+            --wx-col-offset-md,
+            var(--wx-col-offset-sm, var(--wx-col-offset-xs, var(--wx-col-offset, 0)))
+          )
         ) /
         24 * 100%
     );
@@ -108,7 +137,10 @@ const style = computed(() => {
           --wx-col-span-xl,
           var(
             --wx-col-span-lg,
-            var(--wx-col-span-md, var(--wx-col-span-sm, var(--wx-col-span, 24)))
+            var(
+              --wx-col-span-md,
+              var(--wx-col-span-sm, var(--wx-col-span-xs, var(--wx-col-span, 24)))
+            )
           )
         ) /
         24 * 100%
@@ -118,7 +150,10 @@ const style = computed(() => {
           --wx-col-offset-xl,
           var(
             --wx-col-offset-lg,
-            var(--wx-col-offset-md, var(--wx-col-offset-sm, var(--wx-col-offset, 0)))
+            var(
+              --wx-col-offset-md,
+              var(--wx-col-offset-sm, var(--wx-col-offset-xs, var(--wx-col-offset, 0)))
+            )
           )
         ) /
         24 * 100%
