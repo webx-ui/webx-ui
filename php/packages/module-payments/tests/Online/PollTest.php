@@ -138,6 +138,10 @@ final class PollTest extends OnlineCase
     #[Test]
     public function a_hold_that_ends_tomorrow_is_told_once_a_day_and_its_expiry_fails_the_order(): void
     {
+        // «Once a day» is a date: from a morning, the hour later below stays on the same day. Run late
+        // in the evening, it crossed midnight and the hold was told of again.
+        $this->travelTo(now()->startOfDay()->addHours(9));
+
         [$order, $payment] = $this->attemptAtGateway(hold: true);
         $this->post(route(FakeGatewaySite::ACTION, ['uuid' => $payment->uuid, 'action' => 'pay']));
         $this->assertSame(PaymentStatus::Authorized, $payment->refresh()->status);
