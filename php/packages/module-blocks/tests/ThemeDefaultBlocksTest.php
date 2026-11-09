@@ -211,12 +211,12 @@ final class ThemeDefaultBlocksTest extends TestCase
             ['hero', self::document('hero')['schema'], ['button_url', 'second_url']],
             ['cta', self::document('cta')['schema'], ['button_url', 'second_url']],
             ['media-text', self::document('media-text')['schema'], ['button_url']],
-            ['cards', collect(self::document('cards')['schema'])->firstWhere('id', 'cards')['children'], ['link_url']],
+            ['cards', self::field(self::document('cards')['schema'], 'cards')['children'] ?? [], ['link_url']],
         ];
 
         foreach ($old as [$slug, $fields, $ids]) {
             foreach ($ids as $id) {
-                $field = collect($fields)->firstWhere('id', $id);
+                $field = self::field($fields, $id);
 
                 $this->assertSame('wx-input', $field['type'] ?? null, "{$slug}.{$id}");
                 $this->assertSame('', $field['default'] ?? null, "{$slug}.{$id}");
@@ -456,6 +456,24 @@ final class ThemeDefaultBlocksTest extends TestCase
     {
         /** @var array{schema: list<mixed>}&array<string, mixed> */
         return json_decode((string) file_get_contents(dirname(__DIR__)."/resources/demo/{$slug}.json"), true, flags: JSON_THROW_ON_ERROR);
+    }
+
+    /**
+     * The field of a schema by its id, at the top level.
+     *
+     * @param  array<mixed>  $nodes
+     * @return array<string, mixed>|null
+     */
+    private static function field(array $nodes, string $id): ?array
+    {
+        foreach ($nodes as $node) {
+            if (is_array($node) && ($node['id'] ?? null) === $id) {
+                /** @var array<string, mixed> $node */
+                return $node;
+            }
+        }
+
+        return null;
     }
 
     private static function path(): string
