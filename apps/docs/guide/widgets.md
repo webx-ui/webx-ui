@@ -482,17 +482,17 @@ On a site with `module-blocks` and `module-media` the package offers nine block 
 `php artisan webx:blocks:offered --install --module=widgets` installs them (`webx:setup` prints the
 line, it does not run it). Installed, they belong to the site: an update never overwrites them.
 
-| Block       | Fields                                                                          | Inside                     |
-| ----------- | ------------------------------------------------------------------------------- | -------------------------- |
-| `gallery`   | heading, pictures of the library, grid or slider, columns, zoom, frame, magnify | slider `gallery`, lightbox |
-| `logos`     | heading, a name, a logo and a link each                                         | slider `logos`             |
-| `video`     | heading, a link or a file (a switch), poster, caption, shape 16:9 4:3 1:1 9:16  | `<x-webx-video>`           |
-| `map`       | heading, the contacts or coordinates with an address, zoom, height              | `<x-webx-map>`             |
-| `counters`  | heading, a number, what stands before and after it, a label each                | `<x-webx-counter>`         |
-| `countdown` | heading, text, a date and a time of the site's zone, at the end a text or hide  | `<x-webx-countdown>`       |
-| `compare`   | heading, before, after, their labels, where the divider starts, caption         | `<x-webx-compare>`         |
-| `toc`       | title, the whole page or a text of its own (a switch), side, depth              | `<x-webx-toc>`             |
-| `tabs`      | heading, a title, a picture and a text each, picture above or beside, alignment | `<x-webx-tabs>`            |
+| Block       | Fields                                                                                                                                                                                           | Inside                     |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------- |
+| `gallery`   | heading, pictures of the library, grid or slider, columns, zoom, frame, magnify; the slider: slides at a time (1–3), slide or fade, arrows, dots, thumbnails, loop, autoplay and its seconds (5) | slider `gallery`, lightbox |
+| `logos`     | heading, a name, a logo and a link each                                                                                                                                                          | slider `logos`             |
+| `video`     | heading, a link or a file (a switch), poster, caption, shape 16:9 4:3 1:1 9:16                                                                                                                   | `<x-webx-video>`           |
+| `map`       | heading, the contacts or coordinates with an address, zoom, height                                                                                                                               | `<x-webx-map>`             |
+| `counters`  | heading, a number, what stands before and after it, a label each                                                                                                                                 | `<x-webx-counter>`         |
+| `countdown` | heading, text, a date and a time of the site's zone, at the end a text or hide                                                                                                                   | `<x-webx-countdown>`       |
+| `compare`   | heading, before, after, their labels, where the divider starts, caption                                                                                                                          | `<x-webx-compare>`         |
+| `toc`       | title, the whole page or a text of its own (a switch), side, depth                                                                                                                               | `<x-webx-toc>`             |
+| `tabs`      | heading, a title, a picture and a text each, picture above or beside, alignment                                                                                                                  | `<x-webx-tabs>`            |
 
 A block with nothing to show — no pictures, an unknown address, a deleted file — prints nothing.
 

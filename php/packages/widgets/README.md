@@ -277,7 +277,12 @@ prints the line for a dev copy; on staging and live a person runs it):
 
 - **Gallery** — pictures of the media library as a grid (as many columns as the column has room
   for, up to the number set) or as the slider's gallery with thumbnails; a click opens the picture
-  in the lightbox and pages through that block's pictures; a picture's title is its caption.
+  in the lightbox and pages through that block's pictures; a picture's title is its caption. The
+  slider has its settings: 1, 2 or 3 slides at a time (fewer in a narrow column; with more than one,
+  no thumbnails and pictures in 4:3 cells), slide or fade, arrows, dots, thumbnails, starting over
+  after the last, and turning on its own every N seconds (5 by default, never for a visitor who
+  asked for less motion). A block saved before them is the slider it was: one picture, arrows,
+  thumbnails.
 - **Logos** — a name, a logo and a link each, in the slider's running strip with its pause button.
 - **Video** — an address of YouTube or Vimeo or a video of the library (a switch says which), a
   poster (empty: the video's own preview), a caption under it and a shape — 16:9, 4:3, 1:1 or

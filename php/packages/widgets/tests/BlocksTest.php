@@ -186,6 +186,61 @@ final class BlocksTest extends TestCase
     }
 
     #[Test]
+    public function the_slider_takes_its_settings_and_a_block_saved_before_them_stays_as_it_was(): void
+    {
+        $pictures = array_map(fn (int $n): array => ['path' => $this->picture("photo-{$n}")->path], [1, 2, 3, 4]);
+        $config = function (array $values) use ($pictures): array {
+            preg_match('/data-webx-slider="([^"]+)"/', $this->render('gallery', ['pictures' => $pictures, 'view' => 'slider'] + $values), $match);
+            $config = json_decode(html_entity_decode($match[1] ?? ''), true);
+            $this->assertIsArray($config);
+
+            return $config;
+        };
+        $html = fn (array $values): string => $this->render('gallery', ['pictures' => $pictures, 'view' => 'slider'] + $values);
+
+        // Saved before the fields, and saved with every field at its default: the slider it always was.
+        $old = $config([]);
+        $this->assertSame(['effect' => 'slide', 'loop' => false, 'autoplay' => 0, 'thumbs' => true], array_intersect_key($old, array_flip(['effect', 'loop', 'autoplay', 'thumbs'])));
+        $this->assertSame($old, $config(['per_view' => 1, 'effect' => 'slide', 'arrows' => true, 'dots' => false, 'thumbs' => true, 'endless' => false, 'autoplay' => false, 'interval' => 5]));
+        $this->assertStringContainsString('webx-slider__prev', $html([]));
+        $this->assertStringNotContainsString('webx-slider__pagination', $html([]));
+        $this->assertStringNotContainsString('webx-slider__pause', $html([]), 'nothing moves on its own');
+        $this->assertStringNotContainsString('b-gallery--row', $html([]));
+        $this->assertStringContainsString('--webx-slider-per-view: 1;', $html([]));
+
+        // Turning on its own, every five seconds unless told otherwise, with a pause button; dots, no arrows, around.
+        $moving = $config(['autoplay' => true, 'dots' => true, 'arrows' => false, 'endless' => true, 'effect' => 'fade']);
+        $this->assertSame(['effect' => 'fade', 'loop' => true, 'autoplay' => 5000], array_intersect_key($moving, array_flip(['effect', 'loop', 'autoplay'])));
+        $this->assertSame(8000, $config(['autoplay' => true, 'interval' => 8])['autoplay']);
+        $this->assertSame(2000, $config(['autoplay' => true, 'interval' => 1])['autoplay'], 'no faster than two seconds');
+        $this->assertSame(0, $config(['autoplay' => false, 'interval' => 8])['autoplay'], 'an interval without autoplay moves nothing');
+        $shown = $html(['autoplay' => true, 'dots' => true, 'arrows' => false]);
+        $this->assertStringContainsString('webx-slider__pause', $shown);
+        $this->assertStringContainsString('webx-slider__pagination', $shown);
+        $this->assertStringNotContainsString('webx-slider__prev', $shown);
+
+        // Three at a time: by the width of the column, no thumbnails, no fade, every slide still opens the lightbox.
+        $three = $html(['per_view' => 3, 'arrows' => false, 'effect' => 'fade', 'thumbs' => true]);
+        $this->assertStringContainsString('b-gallery--slider b-gallery--row', $three);
+        $this->assertStringContainsString('--webx-slider-per-view: 1;', $three);
+        $this->assertStringContainsString('@container webx-slider (min-width: 640px) { #', $three);
+        $this->assertMatchesRegularExpression('/min-width: 960px\) \{ #[^ ]+ \{ --webx-slider-per-view: 3; \}/', $three);
+        $this->assertSame(4, preg_match_all('/data-webx-lightbox="gallery-k\d+"/', $three));
+        $this->assertSame(['effect' => 'slide', 'thumbs' => false], array_intersect_key($config(['per_view' => 3, 'effect' => 'fade', 'thumbs' => true]), array_flip(['effect', 'thumbs'])));
+        $this->assertStringContainsString('--webx-slider-per-view: 1;', $html(['per_view' => 7]), 'an unknown count is one');
+
+        // The settings are offered only to a slider, the interval only to autoplay.
+        /** @var array{schema: list<array{id: string, visible?: mixed}>} $type */
+        $type = json_decode((string) file_get_contents(__DIR__.'/../resources/blocks/gallery.json'), true);
+        $visible = array_column($type['schema'], 'visible', 'id');
+        foreach (['per_view', 'arrows', 'dots', 'endless', 'autoplay'] as $id) {
+            $this->assertSame(['when' => 'view', 'is' => 'slider'], $visible[$id], $id);
+        }
+        $this->assertSame(['all' => [['when' => 'view', 'is' => 'slider'], ['when' => 'autoplay', 'is' => true]]], $visible['interval']);
+        $this->assertSame(['all' => [['when' => 'view', 'is' => 'slider'], ['when' => 'per_view', 'is' => 1]]], $visible['effect']);
+    }
+
+    #[Test]
     public function a_gallery_with_nothing_to_show_prints_nothing(): void
     {
         $this->assertStringNotContainsString('b-gallery', $this->render('gallery', ['heading' => 'Work', 'pictures' => []]));
