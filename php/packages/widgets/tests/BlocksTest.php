@@ -31,7 +31,7 @@ use WebxUi\Widgets\Facades\Widgets;
 use WebxUi\Widgets\WidgetsServiceProvider;
 
 /**
- * The blocks `gallery`, `logos`, `video`, `map`, `counters`, `countdown`, `compare` and `toc` (§15.1, §14): offered to a site with blocks and a media
+ * The blocks `gallery`, `logos`, `video`, `map`, `counters`, `countdown`, `compare`, `toc` and `tabs` (§15.1, §14): offered to a site with blocks and a media
  * library, installed and published by `webx:blocks:offered --install` (the line `webx:setup` prints), and printed with the
  * slider, the lightbox and the video inside — pictures of the library with their sizes, one
  * group per block; a video of a provider behind the consent, a file of the library as is; a
@@ -98,7 +98,7 @@ final class BlocksTest extends TestCase
     #[Test]
     public function both_are_installed_and_published_on_their_samples(): void
     {
-        foreach (['gallery', 'logos', 'video', 'map', 'counters', 'countdown', 'compare', 'toc'] as $slug) {
+        foreach (['gallery', 'logos', 'video', 'map', 'counters', 'countdown', 'compare', 'toc', 'tabs'] as $slug) {
             $block = Block::query()->where('slug', $slug)->with('publishedVersion')->firstOrFail();
 
             $this->assertSame('Offered by widgets', $block->publishedVersion?->comment, "{$slug} is published — it draws on its sample");
@@ -471,6 +471,58 @@ final class BlocksTest extends TestCase
 
         // A text of its own with nothing in it: no block.
         $this->assertStringNotContainsString('b-toc', $this->render('toc', ['source' => 'text', 'body' => '  ']));
+    }
+
+    #[Test]
+    public function the_tabs_are_panels_of_the_tabs_component_with_a_picture_and_a_text_each(): void
+    {
+        $photo = $this->picture('room');
+        $tabs = [
+            ['title' => 'Overview', 'picture' => ['path' => $photo->path, 'alt' => 'The room'], 'text' => '<p>Bright and quiet.</p>'],
+            ['title' => 'Plan', 'picture' => ['path' => $photo->path], 'text' => ''],
+            ['title' => 'Around', 'picture' => null, 'text' => '<p>A park nearby.</p>'],
+            ['title' => '', 'picture' => ['path' => $photo->path], 'text' => '<p>No title.</p>'],
+            ['title' => 'Empty', 'picture' => ['path' => 'media/gone.webp'], 'text' => '  '],
+        ];
+
+        $html = $this->render('tabs', ['heading' => 'The flat', 'tabs' => $tabs, 'picture_side' => 'start', 'align' => 'center']);
+
+        $this->assertStringContainsString('<section class="b-tabs b-tabs--start b-tabs--center" data-wx-block="tabs">', $html);
+        $this->assertStringContainsString('<h2 class="b-tabs__heading">The flat</h2>', $html);
+        $this->assertStringContainsString('<div data-webx-tabs="" data-webx-tabs-label="The flat" class="webx-tabs b-tabs__tabs">', $html);
+        $this->assertSame(3, substr_count($html, '<section data-webx-tab="" class="webx-tabs__panel">'), 'a tab without a title or with nothing under it is left out');
+        $this->assertStringContainsString('<h3 class="webx-tabs__title">Overview</h3>', $html, 'the title is the heading without JavaScript and the tab with it');
+        $this->assertStringContainsString('<h3 class="webx-tabs__title">Around</h3>', $html);
+        $this->assertStringNotContainsString('Empty', $html);
+        $this->assertMatchesRegularExpression('#<img class="b-tabs__picture" src="[^"]*/'.preg_quote($photo->path, '#').'[^"]*" alt="The room"\s+width="1800" height="1200"\s*>#', $html);
+        $this->assertSame(1, substr_count($html, 'loading="lazy"'), 'the picture of the first tab, open when the page opens, is not put off');
+        $this->assertSame(1, substr_count($html, 'b-tabs__body b-tabs__body--picture'), 'beside only when there is both');
+        $this->assertStringContainsString('<div class="b-tabs__text"><p>A park nearby.</p></div>', $html);
+        $this->assertContains('tabs', Widgets::claimed());
+
+        // A block saved before the options: the picture above, the tabs at the start; no heading — the titles are the second level.
+        $old = $this->render('tabs', ['tabs' => [$tabs[0]]]);
+        $this->assertStringContainsString('<section class="b-tabs b-tabs--top" data-wx-block="tabs">', $old);
+        $this->assertStringContainsString('<h2 class="webx-tabs__title">Overview</h2>', $old);
+        $this->assertStringNotContainsString('data-webx-tabs-label', $old);
+
+        foreach ([['tabs' => []], ['tabs' => [$tabs[3], $tabs[4]]], []] as $case => $values) {
+            $this->assertStringNotContainsString('b-tabs', $this->render('tabs', $values), "case {$case}");
+        }
+    }
+
+    #[Test]
+    public function the_tabs_type_reads_the_fields_its_template_uses(): void
+    {
+        $type = json_decode((string) file_get_contents(__DIR__.'/../resources/blocks/tabs.json'), true);
+        $fields = array_column($type['schema'], null, 'id');
+
+        $this->assertSame(['heading', 'tabs', 'picture_side', 'align'], array_keys($fields));
+        $this->assertSame(['title', 'picture', 'text'], array_column($fields['tabs']['children'], 'id'));
+        $this->assertSame('wx-rich-text', $fields['tabs']['children'][2]['type']);
+        $this->assertTrue($fields['tabs']['children'][0]['localized'] && $fields['tabs']['children'][2]['localized']);
+        $this->assertSame(array_keys($fields), array_keys($type['sample']), 'a value for every field');
+        $this->assertCount(3, $type['sample']['tabs']);
     }
 
     /** A picture in the library, the way an upload leaves one — the bytes need not be there. */

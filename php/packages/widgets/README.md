@@ -271,7 +271,7 @@ https://webx-ui.github.io/webx-ui/guide/forms#suggestions-while-typing.
 
 ## Blocks
 
-On a site with `webx-ui/module-blocks` and `webx-ui/module-media` the package offers eight block
+On a site with `webx-ui/module-blocks` and `webx-ui/module-media` the package offers nine block
 types — `php artisan webx:blocks:offered --install --module=widgets` installs them (`webx:setup` only
 prints the line for a dev copy; on staging and live a person runs it):
 
@@ -294,6 +294,9 @@ prints the line for a dev copy; on staging and live a person runs it):
   the page's language), where the divider starts and a caption; one picture alone prints nothing.
 - **Table of contents** — of the whole page, where the block stands, or of a text of its own that
   the list stands beside (a switch says which); the side, and whether the third level is listed.
+- **Tabs** — a title, a picture and a text each, on `<x-webx-tabs>`: one tab open, a click or the
+  arrow keys open another; the picture above the text or beside it where the column has room, the
+  tabs at the start or in the middle. Without JavaScript every tab stands under its title.
 
 Installed once, they belong to the site: change them in the panel, an update never overwrites them.
 

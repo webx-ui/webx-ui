@@ -91,7 +91,7 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
   group. Events `webx:suggest:select` (cancelable), `webx:suggest:results`; the catalogue's `/catalog/suggest`.
 - **A list with a search** — `<x-webx-select name :options :value searchable :source>`: a `<select>` without
   JavaScript, with it the loaded options filtered and `source` asked (JSON `{options, more}`); `change` on the select. `:strict="false"` — text with suggestions.
-- **Blocks** — with `module-media`: `gallery` `logos` `video` `map` `counters` `countdown` `compare` `toc` (`webx:blocks:offered --install --module=widgets`).
+- **Blocks** — with `module-media`: `gallery` `logos` `video` `map` `counters` `countdown` `compare` `toc` `tabs` (`webx:blocks:offered --install --module=widgets`).
 - **Audit** (with `module-audit`) — `widgets.before_consent` (fix `widgets.wait-for-consent`),
   `widgets.banner_off` (fix `widgets.banner-on`), `lightbox_size`, `slider_pause`, `video_pause`,
   `counter_number`, `compare_range`, `toc_target`, `load_more_link`, `zoom_link`, `form_script`,

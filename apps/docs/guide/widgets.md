@@ -478,7 +478,7 @@ The fields of every form of the site — `<x-webx-field>` of fourteen types, its
 
 ## Blocks
 
-On a site with `module-blocks` and `module-media` the package offers eight block types —
+On a site with `module-blocks` and `module-media` the package offers nine block types —
 `php artisan webx:blocks:offered --install --module=widgets` installs them (`webx:setup` prints the
 line, it does not run it). Installed, they belong to the site: an update never overwrites them.
 
@@ -492,6 +492,7 @@ line, it does not run it). Installed, they belong to the site: an update never o
 | `countdown` | heading, text, a date and a time of the site's zone, at the end a text or hide  | `<x-webx-countdown>`       |
 | `compare`   | heading, before, after, their labels, where the divider starts, caption         | `<x-webx-compare>`         |
 | `toc`       | title, the whole page or a text of its own (a switch), side, depth              | `<x-webx-toc>`             |
+| `tabs`      | heading, a title, a picture and a text each, picture above or beside, alignment | `<x-webx-tabs>`            |
 
 A block with nothing to show — no pictures, an unknown address, a deleted file — prints nothing.
 
