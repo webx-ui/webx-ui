@@ -1,0 +1,189 @@
+{
+  "slug": "meeting",
+  "title": {
+    "en": "Contact us or book a meeting",
+    "ru": "Связаться или записаться на встречу",
+    "pl": "Kontakt lub umówienie spotkania"
+  },
+  "options": {
+    "description": {
+      "en": "Tell us what you need; a meeting at the sales office takes two minutes to book.",
+      "ru": "Расскажите, что вам нужно; записаться на встречу в офисе продаж — две минуты.",
+      "pl": "Napisz, czego potrzebujesz; umówienie spotkania w biurze sprzedaży zajmie dwie minuty."
+    },
+    "thank-you.heading": {
+      "en": "Thank you",
+      "ru": "Спасибо",
+      "pl": "Dziękujemy"
+    },
+    "thank-you.text": {
+      "en": "<p>We have received your request and will be in touch to confirm the time.</p>",
+      "ru": "<p>Мы получили вашу заявку и свяжемся с вами, чтобы подтвердить время.</p>",
+      "pl": "<p>Otrzymaliśmy Twoje zgłoszenie i skontaktujemy się, aby potwierdzić termin.</p>"
+    },
+    "design.submit-text": {
+      "en": "Send",
+      "ru": "Отправить",
+      "pl": "Wyślij"
+    },
+    "email_field": "email",
+    "antispam.honeypot": true,
+    "antispam.min_seconds": 3
+  },
+  "fields": [
+    {
+      "type": "step",
+      "name": "step-purpose",
+      "title": { "en": "Purpose of contact", "ru": "Цель обращения", "pl": "Cel kontaktu" }
+    },
+    {
+      "type": "radio",
+      "name": "purpose",
+      "title": {
+        "en": "How can we help?",
+        "ru": "Чем мы можем помочь?",
+        "pl": "Jak możemy pomóc?"
+      },
+      "is_required": true,
+      "in_table": true,
+      "options": {
+        "view": "cards",
+        "columns": 2,
+        "choices": [
+          {
+            "value": "direct",
+            "label": {
+              "en": "Direct inquiry",
+              "ru": "Прямой вопрос",
+              "pl": "Zapytanie bezpośrednie"
+            },
+            "description": {
+              "en": "A question about homes, prices or terms",
+              "ru": "Вопрос о квартирах, ценах или условиях",
+              "pl": "Pytanie o mieszkania, ceny lub warunki"
+            }
+          },
+          {
+            "value": "agency",
+            "label": {
+              "en": "Agency meeting",
+              "ru": "Встреча с агентством",
+              "pl": "Spotkanie z agencją"
+            },
+            "description": {
+              "en": "For real estate agents and partners",
+              "ru": "Для агентов по недвижимости и партнёров",
+              "pl": "Dla agentów nieruchomości i partnerów"
+            }
+          },
+          {
+            "value": "pre-register",
+            "label": {
+              "en": "Client pre-registration",
+              "ru": "Предварительная регистрация клиента",
+              "pl": "Wstępna rejestracja klienta"
+            },
+            "description": {
+              "en": "An agent registers a client before a visit",
+              "ru": "Агент регистрирует клиента перед визитом",
+              "pl": "Agent rejestruje klienta przed wizytą"
+            }
+          },
+          { "value": "other", "label": { "en": "Other", "ru": "Другое", "pl": "Inne" } }
+        ]
+      }
+    },
+    {
+      "type": "step",
+      "name": "step-meeting",
+      "title": {
+        "en": "Choose a meeting time",
+        "ru": "Выберите время встречи",
+        "pl": "Wybierz termin spotkania"
+      },
+      "options": { "when": { "purpose": ["agency", "pre-register"] } }
+    },
+    {
+      "type": "datetime",
+      "name": "meeting",
+      "title": { "en": "Date and time", "ru": "Дата и время", "pl": "Data i godzina" },
+      "is_required": true,
+      "in_table": true,
+      "options": {
+        "time-step": 30,
+        "time-from": "09:00",
+        "time-to": "17:00",
+        "weekdays": [1, 2, 3, 4, 5],
+        "timezone-label": {
+          "en": "time of the sales office",
+          "ru": "время офиса продаж",
+          "pl": "czas biura sprzedaży"
+        }
+      }
+    },
+    {
+      "type": "step",
+      "name": "step-contacts",
+      "title": { "en": "Your details", "ru": "Ваши данные", "pl": "Twoje dane" }
+    },
+    {
+      "type": "summary",
+      "name": "summary",
+      "title": { "en": "Your request", "ru": "Ваша заявка", "pl": "Twoje zgłoszenie" },
+      "options": { "fields": ["purpose", "meeting"] }
+    },
+    {
+      "type": "text",
+      "name": "first_name",
+      "title": { "en": "First name", "ru": "Имя", "pl": "Imię" },
+      "is_required": true,
+      "is_fullsize": false,
+      "in_table": true
+    },
+    {
+      "type": "text",
+      "name": "last_name",
+      "title": { "en": "Last name", "ru": "Фамилия", "pl": "Nazwisko" },
+      "is_required": true,
+      "is_fullsize": false,
+      "in_table": true
+    },
+    {
+      "type": "email",
+      "name": "email",
+      "title": { "en": "E-mail", "ru": "E-mail", "pl": "E-mail" },
+      "is_required": true,
+      "is_fullsize": false
+    },
+    {
+      "type": "tel",
+      "name": "phone",
+      "title": { "en": "Phone", "ru": "Телефон", "pl": "Telefon" },
+      "is_required": true,
+      "is_fullsize": false
+    },
+    {
+      "type": "text",
+      "name": "agency",
+      "title": { "en": "Agency", "ru": "Агентство", "pl": "Agencja" },
+      "options": { "when": { "purpose": ["agency", "pre-register"] } }
+    },
+    {
+      "type": "textarea",
+      "name": "message",
+      "title": { "en": "Message", "ru": "Сообщение", "pl": "Wiadomość" }
+    },
+    {
+      "type": "consent",
+      "name": "consent",
+      "is_required": true,
+      "options": {
+        "text": {
+          "en": "I agree to the processing of my personal data.",
+          "ru": "Я согласен на обработку моих персональных данных.",
+          "pl": "Wyrażam zgodę na przetwarzanie moich danych osobowych."
+        }
+      }
+    }
+  ]
+}

@@ -17,10 +17,11 @@ use WebxUi\Inbox\Panel\FormOptions;
 use WebxUi\Localization\Locales;
 
 /**
- * One feedback form, the one every site turns out to need (§9 of the new-site spec), and the
- * forms the site's theme keeps in `demo/inbox/*.json` (THEMES §15.1) — `theme-default` shows
- * every kind of field there, on its showcase. A theme's form by the slug `contact` replaces
- * the module's.
+ * One feedback form, the one every site turns out to need (§9 of the new-site spec), one form of
+ * steps — the example of FORM_STEPS §11: cards, a step shown for some answers, a date and time and
+ * a summary — and the forms the site's theme keeps in `demo/inbox/*.json` (THEMES §15.1) —
+ * `theme-default` shows every kind of field there, on its showcase. A theme's form by the slug
+ * of one of the module's replaces it.
  *
  * No recipients: a demo that mailed somebody the first time a visitor pressed Send would be a
  * demo that sent mail from an address nobody has set up yet. Submissions land in the panel,
@@ -124,7 +125,8 @@ final class InboxDemo
     }
 
     /**
-     * The theme's forms first, then the module's `contact` unless the theme brought one.
+     * The theme's forms first, then the module's `contact` and `meeting` unless the theme brought
+     * one by that slug.
      *
      * @return list<array<string, mixed>>
      */
@@ -140,7 +142,7 @@ final class InboxDemo
 
         $documents = [];
 
-        foreach ([...$files, __DIR__.'/../../resources/demo/contact.json'] as $file) {
+        foreach ([...$files, __DIR__.'/../../resources/demo/contact.json', __DIR__.'/../../resources/demo/meeting.json'] as $file) {
             $document = json_decode((string) $this->files->get($file), true);
 
             if (! is_array($document)) {

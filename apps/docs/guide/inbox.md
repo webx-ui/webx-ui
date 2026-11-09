@@ -139,7 +139,7 @@ In the panel «Step» puts a row at the end of the list; it is a heading of the 
 site counts, and dragged like a field. A step with nothing under it is marked «Empty» and skipped by
 the site; `inbox_form_save` refuses one (`step.empty`). More than ten steps are refused everywhere.
 
-**A view of the site.** `is beside`, which is still every field in one flat list.
+**A view of the site.** It gets `$steps` — each step with its controls — beside `$controls`, which is still every field in one flat list.
 A `form.blade.php` published before the steps prints the whole form on one page; the audit's
 `inbox.steps_in_old_view` names it.
 

@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace WebxUi\Inbox\Tests;
 
 use Illuminate\Foundation\Application;
+use Illuminate\Support\Carbon;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Demo\DemoLedger;
+use WebxUi\Inbox\Fields\ConditionPlan;
 use WebxUi\Inbox\Models\Field;
 use WebxUi\Inbox\Models\Form;
+use WebxUi\Inbox\Models\Submission;
 use WebxUi\Themes\ThemeChain;
 use WebxUi\Themes\ThemeManifest;
 
@@ -76,7 +79,7 @@ final class DemoTest extends TestCase
 
             $this->artisan('webx:demo')->assertSuccessful();
 
-            $this->assertSame(['contact', 'showcase'], Form::query()->orderBy('slug')->pluck('slug')->all(), 'the module\'s contact form stays beside the theme\'s');
+            $this->assertSame(['contact', 'meeting', 'showcase'], Form::query()->orderBy('slug')->pluck('slug')->all(), 'the module\'s forms stay beside the theme\'s');
 
             $fields = Form::query()->where('slug', 'showcase')->firstOrFail()->liveFields()->get()->keyBy('name');
             $this->assertSame(['a' => 'A question', 'B' => 'B'], $fields['topic']->choices());
@@ -92,6 +95,56 @@ final class DemoTest extends TestCase
             @rmdir($theme.'/demo');
             @rmdir($theme);
         }
+    }
+
+    /**
+     * The form of FORM_STEPS §11: steps, cards, a step and a field shown for some answers, a date
+     * and time and a summary — seeded as the panel and an agent would save it, and it takes a
+     * submission the way the spec's visitor sends one.
+     */
+    #[Test]
+    public function it_seeds_the_form_of_steps_from_the_spec_and_it_takes_a_meeting(): void
+    {
+        // Thursday 10 December 2026, morning in the site's zone.
+        Carbon::setTestNow(Carbon::parse('2026-12-10 08:10:00', 'UTC'));
+        $this->artisan('webx:demo')->assertSuccessful();
+
+        $form = Form::query()->where('slug', 'meeting')->firstOrFail();
+        $this->assertSame([], $form->recipients());
+        $this->assertSame(
+            ['step-purpose', 'purpose', 'step-meeting', 'meeting', 'step-contacts', 'summary', 'first_name', 'last_name', 'email', 'phone', 'agency', 'message', 'consent'],
+            $form->liveFields()->pluck('name')->all(),
+        );
+
+        // The checks the panel and inbox_form_save run on a form pass on the demo's.
+        $layout = ConditionPlan::layout($form->fields);
+        ConditionPlan::assertAll($layout, 'fields');
+        ConditionPlan::assertSteps($layout, 'fields');
+
+        $fields = $form->liveFields()->get()->keyBy('name');
+        $this->assertSame('cards', $fields['purpose']->options['view']);
+        $this->assertSame(['purpose' => ['agency', 'pre-register']], $fields['step-meeting']->options['when']);
+        $this->assertSame([1, 2, 3, 4, 5], $fields['meeting']->options['weekdays']);
+        $this->assertSame(['purpose', 'meeting'], $fields['summary']->options['fields']);
+
+        // The demo asks for three seconds before a send; a test posts at once.
+        $form->update(['options' => [...$form->options, 'antispam.min_seconds' => 0]]);
+        $visitor = ['first_name' => 'Alex', 'last_name' => 'Example', 'email' => 'alex@example.test', 'phone' => '+000 000 0000', 'consent' => '1'];
+
+        $this->postJson($this->intake('meeting'), ['fields' => [...$visitor, 'purpose' => 'agency', 'meeting' => ['date' => '2026-12-14', 'time' => '10:30'], 'agency' => 'Example Agency']])->assertOk();
+        $values = Submission::query()->latest('id')->firstOrFail()->values->keyBy('name');
+        $this->assertSame(['date' => '2026-12-14', 'time' => '10:30', 'timezone' => config('app.timezone'), 'at' => '2026-12-14T10:30:00Z'], $values['meeting']->payload);
+        $this->assertSame('Example Agency', $values['agency']->value);
+        $this->assertArrayNotHasKey('summary', $values->all(), 'a summary is not an answer');
+
+        // A direct inquiry has no meeting step and no agency: what the browser left there is dropped.
+        $this->postJson($this->intake('meeting'), ['fields' => [...$visitor, 'email' => 'sam@example.test', 'purpose' => 'direct', 'meeting' => ['date' => '2026-12-14', 'time' => '11:00'], 'agency' => 'Left over']])->assertOk();
+        $this->assertSame(
+            ['purpose', 'first_name', 'last_name', 'email', 'phone', 'consent'],
+            Submission::query()->latest('id')->firstOrFail()->values->pluck('name')->all(),
+        );
+
+        Carbon::setTestNow();
     }
 
     #[Test]
