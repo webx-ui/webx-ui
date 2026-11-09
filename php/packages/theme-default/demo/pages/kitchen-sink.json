@@ -6245,9 +6245,9 @@
                   "pl": "Jedno z kilku, kilka z kilku"
                 },
                 "note": {
-                  "en": "Three cards to a row with pictures of the media library, two to a row without; the last tick has a long word that has to break.",
-                  "ru": "Три карточки в ряд с картинками медиатеки, две в ряд без них; у последней галочки длинное слово, которое должно переноситься.",
-                  "pl": "Trzy karty w rzędzie z obrazkami z biblioteki mediów, dwie bez nich; ostatnie pole ma długie słowo, które musi się łamać."
+                  "en": "Up to three cards to a row with pictures of the media library, two to a row without; the last tick has a long word that has to break.",
+                  "ru": "До трёх карточек в ряд с картинками медиатеки, две в ряд без них; у последней галочки длинное слово, которое должно переноситься.",
+                  "pl": "Do trzech kart w rzędzie z obrazkami z biblioteki mediów, dwie bez nich; ostatnie pole ma długie słowo, które musi się łamać."
                 },
                 "width": "page",
                 "states": [
