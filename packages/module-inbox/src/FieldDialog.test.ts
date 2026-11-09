@@ -349,7 +349,11 @@ describe('WxInboxFieldDialog', () => {
     /** What the media module registers as `wx-media`: a stand-in that says what it was given. */
     const Picker = defineComponent({
       name: 'FakeMediaField',
-      props: { modelValue: { type: Object, default: null }, aspect: String, captions: Boolean },
+      props: {
+        modelValue: { type: Object, default: null },
+        aspect: { type: String, default: '' },
+        captions: Boolean,
+      },
       emits: ['update:modelValue'],
       setup: (props) => () => h('div', { class: 'fake-media' }, props.modelValue?.path ?? 'empty'),
     })
@@ -398,12 +402,10 @@ describe('WxInboxFieldDialog', () => {
         )
       expect(descriptions).toHaveLength(2)
       descriptions[0]!.vm.$emit('update:modelValue', { en: 'See the flat with an agent' })
-      wrapper
-        .findAllComponents(Picker)[0]!
-        .vm.$emit('update:modelValue', {
-          path: 'media/ab/viewing.svg',
-          url: '/storage/media/ab/viewing.svg',
-        })
+      wrapper.findAllComponents(Picker)[0]!.vm.$emit('update:modelValue', {
+        path: 'media/ab/viewing.svg',
+        url: '/storage/media/ab/viewing.svg',
+      })
       await flushPromises()
       await save(wrapper)
 
