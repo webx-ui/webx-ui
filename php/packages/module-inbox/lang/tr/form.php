@@ -10,4 +10,6 @@ return [
     'thank-you' => 'Teşekkürler, mesajınız gönderildi.',
     'failed' => 'Mesaj gönderilemedi. Lütfen tekrar deneyin.',
     'honeypot' => 'Bu alanı boş bırakın',
+    'condition-when' => 'Seçildiyse: :choices',
+    'condition-unless' => 'Seçilmediyse: :choices',
 ];

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Inbox\Panel;
 
+use WebxUi\Inbox\Fields\Conditions;
 use WebxUi\Inbox\Fields\FieldType;
 
 /**
@@ -39,6 +40,14 @@ final class FieldOptions
             FieldType::File => self::file($input),
             FieldType::Hidden => [],
         };
+
+        // When the field is shown (FORM_STEPS §4), whatever its type: a hidden field is filled in
+        // by the site and never shown, so a condition on it would mean nothing.
+        if ($type !== FieldType::Hidden) {
+            foreach (Conditions::KEYS as $key) {
+                $options[$key] = Conditions::clean($input[$key] ?? null) ?? [];
+            }
+        }
 
         return array_filter($options, static fn (mixed $value): bool => $value !== [] && $value !== '');
     }

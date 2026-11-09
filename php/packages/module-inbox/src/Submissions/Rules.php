@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace WebxUi\Inbox\Submissions;
 
 use Closure;
+use Illuminate\Http\Request;
+use WebxUi\Inbox\Fields\Conditions;
 use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\Models\Field;
 use WebxUi\Inbox\Models\Form;
@@ -25,19 +27,42 @@ final class Rules
     public function __construct(private readonly FileStore $files) {}
 
     /**
+     * With what was sent under `fields`, the rules of the fields shown for it (FORM_STEPS §4.4):
+     * a field hidden by its condition has none, and the validator leaves its answer out of what
+     * it returns. Without — the rules of every field, which is what the browser is given: it
+     * needs those of the fields hidden now for when they are shown.
+     *
+     * @param  array<array-key, mixed>|null  $values
      * @return array<string, mixed>
      */
-    public function for(Form $form): array
+    public function for(Form $form, ?array $values = null): array
     {
         $rules = [];
+        $visible = $values === null ? null : Conditions::visible($form->liveFields, $values);
 
         foreach ($form->liveFields as $field) {
+            if ($visible !== null && ! ($visible[$field->key()] ?? true)) {
+                continue;
+            }
+
             foreach ($this->field($field) as $key => $rule) {
                 $rules[$key] = $rule;
             }
         }
 
         return $rules;
+    }
+
+    /**
+     * What a request sent under `fields`, as {@see for()} reads the conditions from it.
+     *
+     * @return array<array-key, mixed>
+     */
+    public static function sent(Request $request): array
+    {
+        $fields = $request->input('fields');
+
+        return is_array($fields) ? $fields : [];
     }
 
     /**

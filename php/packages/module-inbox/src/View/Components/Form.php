@@ -17,6 +17,7 @@ use Illuminate\View\Component;
 use WebxUi\Admin\Shortcodes\Shortcodes;
 use WebxUi\Inbox\Antispam\Captcha;
 use WebxUi\Inbox\Antispam\Guard;
+use WebxUi\Inbox\Fields\Conditions;
 use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\Models\Field;
 // The component and the model are both called a form, and here the component wins the name:
@@ -151,10 +152,12 @@ final class Form extends Component
     private function controls(Collection $fields, string $formId): array
     {
         $controls = [];
+        $byKey = $fields->keyBy(static fn (Field $field): string => $field->key());
 
         foreach ($fields as $field) {
             $key = $field->key();
             $choices = $field->choices();
+            $conditions = Conditions::of($field->options);
 
             if (in_array($field->type, [FieldType::Select, FieldType::Radio], true) && $choices === []) {
                 Log::warning('webx-inbox: a field with nothing to choose from is not printed.', ['form' => $field->form_id, 'field' => $key]);
@@ -184,10 +187,73 @@ final class Form extends Component
                 // The consent's words are a sentence with a link in it, written in the panel:
                 // printed as they are, the same trust as the thank-you, with the site's shortcodes.
                 'consent' => $field->type === FieldType::Consent ? Container::getInstance()->make(Shortcodes::class)->htmlIn((string) $field->optionText('text', $title)) : null,
+                // When it is shown (FORM_STEPS §4.3), by the names the form's fields have on the
+                // page — `fields.purpose` — and the line that says so to a page without JavaScript.
+                'when' => self::named($conditions['when'] ?? null),
+                'unless' => self::named($conditions['unless'] ?? null),
+                'condition' => $this->condition($conditions, $byKey),
             ];
         }
 
         return $controls;
+    }
+
+    /**
+     * A condition by the names the page gives the fields.
+     *
+     * @param  array<string, list<string>>|null  $condition
+     * @return array<string, list<string>>|null
+     */
+    private static function named(?array $condition): ?array
+    {
+        if ($condition === null) {
+            return null;
+        }
+
+        $named = [];
+
+        foreach ($condition as $name => $values) {
+            $named['fields.'.$name] = $values;
+        }
+
+        return $named;
+    }
+
+    /**
+     * «If chosen: Agency meeting» — what a page without JavaScript says under a field it shows
+     * whatever was chosen, in the words of the choices (FORM_STEPS §4.3).
+     *
+     * @param  array<string, array<string, list<string>>>  $conditions
+     * @param  Collection<string, Field>  $fields
+     */
+    private function condition(array $conditions, Collection $fields): ?string
+    {
+        $lines = [];
+
+        foreach ($conditions as $key => $condition) {
+            $groups = [];
+
+            foreach ($condition as $name => $values) {
+                $source = $fields->get($name);
+
+                if (! $source instanceof Field) {
+                    continue;
+                }
+
+                $choices = $source->choices();
+                $groups[] = $source->type === FieldType::Consent
+                    ? trim((string) $source->title)
+                    : implode(', ', array_map(static fn (string $value): string => $choices[$value] ?? $value, $values));
+            }
+
+            $groups = array_filter($groups, static fn (string $group): bool => $group !== '');
+
+            if ($groups !== []) {
+                $lines[] = (string) trans('webx-inbox::form.condition-'.$key, ['choices' => implode('; ', $groups)]);
+            }
+        }
+
+        return $lines === [] ? null : implode(' ', $lines);
     }
 
     /**

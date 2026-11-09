@@ -23,4 +23,9 @@ return [
     'no-such-answer' => 'Diese Einsendung hat keine Antwort unter diesem Namen.',
     'not-correctable' => 'Eine Datei oder eine Einwilligung kann nicht korrigiert werden.',
     'nobody-to-notify' => 'Das Formular „:form“ nennt niemanden, dem geschrieben wird.',
+    'condition-unknown-field' => 'Die Bedingung „:key“ von „:field“ nennt „:name“, ein Feld, das dieses Formular nicht hat (oder das diese Änderung entfernt).',
+    'condition-not-choice' => 'Die Bedingung „:key“ von „:field“ nennt „:name“, das keine Auswahl ist: Bedingung kann nur eine Liste, Optionsfelder, Häkchen oder eine Einwilligung darüber sein.',
+    'condition-not-before' => 'Die Bedingung „:key“ von „:field“ nennt „:name“, das nicht darüber steht. Eine Bedingung nennt nur ein Feld darüber.',
+    'condition-unknown-value' => 'Die Bedingung „:key“ von „:field“ erwartet den Wert „:value“ von „:name“, den dieses Feld nicht anbietet.',
+    'field-has-dependents' => 'Das Feld „:field“ wird in den Bedingungen von :fields genannt. Ändern Sie zuerst diese Bedingungen.',
 ];

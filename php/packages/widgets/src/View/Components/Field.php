@@ -64,7 +64,11 @@ final class Field extends Component
     /** The page came back from another of its forms: what is in the session is not this field's. */
     private bool $foreign = false;
 
-    /** @param  array<array-key, mixed>  $choices  `value => label`, or a list of `['value', 'label', 'disabled']` */
+    /**
+     * @param  array<array-key, mixed>  $choices  `value => label`, or a list of `['value', 'label', 'disabled']`
+     * @param  array<string, list<string>>|null  $when
+     * @param  array<string, list<string>>|null  $unless
+     */
     public function __construct(
         public string $name,
         public string $type = 'text',
@@ -105,6 +109,12 @@ final class Field extends Component
         public ?string $dropLabel = null,
         mixed $rules = null,
         public bool $mask = false,
+        // When the field is shown (FORM_STEPS §4): `{ "<name of a field>": ["<value>", …] }` by the
+        // validator's names of the form's fields; form.js hides it, and the server ignores its answer.
+        public ?array $when = null,
+        public ?array $unless = null,
+        // The line a page without JavaScript shows under it: "If chosen: …".
+        public ?string $condition = null,
     ) {
         if (! in_array($type, self::TYPES, true)) {
             throw new InvalidArgumentException("<x-webx-field type=\"{$type}\">: one of ".implode(', ', self::TYPES).'.');
@@ -281,7 +291,10 @@ final class Field extends Component
         $literal = in_array($this->type, self::LITERAL, true);
 
         $own = [
-            'required' => $this->required && ! ($this->type === 'checkbox' && $this->options !== []),
+            // A field shown only for some answers is not `required` to the browser: without the
+            // script it would stop a form that does not need it. form.js puts it back on show.
+            'required' => $this->required && ! $this->conditional() && ! ($this->type === 'checkbox' && $this->options !== []),
+            'data-webx-required' => $this->required && $this->conditional() && ! ($this->type === 'checkbox' && $this->options !== []) ? 'true' : null,
             'disabled' => $this->disabled,
             'readonly' => $this->readonly && $typed,
             'multiple' => $this->multiple && in_array($this->type, ['select', 'file'], true),
@@ -307,6 +320,26 @@ final class Field extends Component
 
         // The page's own attributes after the field's, and over them where both name one.
         return $this->grouped() ? new ComponentAttributeBag($own) : $attributes->except('class')->merge($own);
+    }
+
+    /** Shown only for some answers of the fields above it. */
+    public function conditional(): bool
+    {
+        return ($this->when !== null && $this->when !== []) || ($this->unless !== null && $this->unless !== []);
+    }
+
+    /** `data-webx-when` / `data-webx-unless` of the field, as JSON; nothing for a field always shown. */
+    public function conditionAttributes(): string
+    {
+        $printed = '';
+
+        foreach (['when' => $this->when, 'unless' => $this->unless] as $key => $condition) {
+            if ($condition !== null && $condition !== []) {
+                $printed .= ' data-webx-'.$key.'="'.e(json_encode($condition, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR)).'"';
+            }
+        }
+
+        return $printed;
     }
 
     /** The hint, then the error: read in the order they stand. */

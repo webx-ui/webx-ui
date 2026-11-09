@@ -23,4 +23,9 @@ return [
     'no-such-answer' => 'To zgłoszenie nie ma odpowiedzi o tej nazwie.',
     'not-correctable' => 'Pliku ani zgody nie można poprawić.',
     'nobody-to-notify' => 'Formularz „:form” nie wskazuje nikogo, do kogo pisać.',
+    'condition-unknown-field' => 'Warunek „:key” pola „:field” wskazuje „:name”, pole, którego ten formularz nie ma (albo które ta zmiana usuwa).',
+    'condition-not-choice' => 'Warunek „:key” pola „:field” wskazuje „:name”, które nie jest polem wyboru: warunkiem może być tylko lista, przyciski opcji, pola wyboru lub zgoda powyżej.',
+    'condition-not-before' => 'Warunek „:key” pola „:field” wskazuje „:name”, które nie stoi wyżej. Warunek wskazuje tylko pole powyżej.',
+    'condition-unknown-value' => 'Warunek „:key” pola „:field” oczekuje wartości „:value” pola „:name”, której to pole nie oferuje.',
+    'field-has-dependents' => 'Pole „:field” jest wskazane w warunkach pól :fields. Najpierw zmień te warunki.',
 ];

@@ -265,6 +265,26 @@ days; taking consent back removes the key. The Inbox writes them into the submis
 `meta.utm`, `meta.utm_first`, `meta.referrer`, `meta.landing`; `WEBX_INBOX_ATTRIBUTION=false` turns
 it off.
 
+### Shown only for some answers
+
+`<x-webx-field :when="['fields.purpose' => ['agency', 'pre-register']]">` is shown only while the
+field `fields.purpose` above it is answered with one of those values; `:unless` hides it when the
+same `when` would hold. Inside a list it is "or", between names "and"; a field of several ticks
+holds it with any one of them, a consent with `"1"`. The names are the validator's names of the
+form's fields — what `data-webx-field` says.
+
+`form.js` reads `data-webx-when` / `data-webx-unless` in one pass in the page's order on every
+`change`: a hidden field is `hidden`, its controls `disabled` — not sent, not checked — and gives no
+answer to the fields below it; shown again, it has what was typed in it. A required field with a
+condition has no `required` attribute in the HTML (without the script it would stop a form that
+does not need it): the mark stays, and the script puts the attribute back on show. `condition="…"`
+is a line under the field (`webx-field__condition`) for the page without the script, which shows
+every field; the script hides it.
+
+The browser only hides: the server decides. The rules of the fields hidden for what was sent are
+left out of the check and their answers out of what is kept — the Inbox does it with `Rules::for($form,
+$sent)` (its guide, «Shown only for some answers»).
+
 ### In a dialog
 
 Any form in `<x-webx-dialog>` — and the Inbox's forms a button opens (`data-webx-form="<slug>"`) — behaves the same: the thank-you takes the place of the

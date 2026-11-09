@@ -23,4 +23,9 @@ return [
     'no-such-answer' => 'This submission has no answer under that name.',
     'not-correctable' => 'A file or a consent cannot be corrected.',
     'nobody-to-notify' => 'The form “:form” names nobody to write to.',
+    'condition-unknown-field' => 'The condition “:key” of “:field” names “:name”, a field this form does not have (or that this change removes).',
+    'condition-not-choice' => 'The condition “:key” of “:field” names “:name”, which is not a choice: only a list, radio buttons, ticks or a consent above it can be a condition.',
+    'condition-not-before' => 'The condition “:key” of “:field” names “:name”, which does not stand above it. A condition names only a field above.',
+    'condition-unknown-value' => 'The condition “:key” of “:field” counts on the value “:value” of “:name”, which that field does not offer.',
+    'field-has-dependents' => 'The field “:field” is named in the conditions of :fields. Change those conditions first.',
 ];

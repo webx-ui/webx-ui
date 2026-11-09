@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
+use WebxUi\Inbox\Fields\Conditions;
 use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Localization\HasTranslations;
 
@@ -101,6 +102,20 @@ class Field extends Model
             if ($form instanceof Form && $form->option('email_field') === $old) {
                 $form->options = [...($form->options ?? []), 'email_field' => $field->key()];
                 $form->save();
+            }
+
+            // The conditions that name it follow it too (FORM_STEPS §4.2): left behind, they would
+            // name a field that is not there, and their fields would never be shown again.
+            $others = self::query()->where('form_id', $field->form_id)->whereKeyNot($field->getKey())->get();
+
+            foreach ($others as $other) {
+                $options = $other->options ?? [];
+                $renamed = Conditions::rename($options, $old, $field->key());
+
+                if ($renamed !== $options) {
+                    $other->options = $renamed;
+                    $other->save();
+                }
             }
         });
     }

@@ -17,6 +17,8 @@
       · the captcha block — `data-webx-field="captcha"` is where the intake's word about it goes,
       · `data-webx-form` on the form — the hook for a site's own script (`webx:form:success`),
       · `:again="$again"` — `<x-webx-inbox::form again>`, the way back to the fields after the thank-you,
+      · `:when`, `:unless`, `:condition` on a field — when it is shown (FORM_STEPS §4.3); a view without
+        them shows every field, and the intake still throws away the answers to the hidden ones,
       · `data-webx-attribution` — the widgets' attribution.js posts the campaign, the referrer and the
         landing page (`webx-inbox.attribution`, FORM_STEPS §8); a view without it sends none of them.
 
@@ -63,6 +65,9 @@
                 :choices="$control['choices']"
                 :multiple="$control['multiple']"
                 :rows="$control['rows']"
+                :when="$control['when'] ?? null"
+                :unless="$control['unless'] ?? null"
+                :condition="$control['condition'] ?? null"
                 :class="'webx-inbox-form__field'.($control['half'] ? ' webx-inbox-form__field--half' : '')"
             >@if ($control['consent'] !== null){!! $control['consent'] !!}@endif</x-webx-field>
         @endforeach

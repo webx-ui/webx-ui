@@ -23,4 +23,9 @@ return [
     'no-such-answer' => 'Bu gönderimde bu adla bir yanıt yok.',
     'not-correctable' => 'Bir dosya ya da onay düzeltilemez.',
     'nobody-to-notify' => '“:form” formu kime yazılacağını belirtmiyor.',
+    'condition-unknown-field' => '“:field” alanının “:key” koşulu “:name” alanını anıyor; bu formda böyle bir alan yok (ya da bu değişiklik onu kaldırıyor).',
+    'condition-not-choice' => '“:field” alanının “:key” koşulu “:name” alanını anıyor, ancak bu bir seçim alanı değil: koşul yalnızca yukarıdaki bir liste, seçenek düğmeleri, onay kutuları ya da onay olabilir.',
+    'condition-not-before' => '“:field” alanının “:key” koşulu “:name” alanını anıyor, ancak o yukarıda değil. Koşul yalnızca yukarıdaki bir alanı anar.',
+    'condition-unknown-value' => '“:field” alanının “:key” koşulu “:name” alanının “:value” değerini bekliyor, ancak bu alan böyle bir seçenek sunmuyor.',
+    'field-has-dependents' => '“:field” alanı :fields alanlarının koşullarında geçiyor. Önce bu koşulları değiştirin.',
 ];

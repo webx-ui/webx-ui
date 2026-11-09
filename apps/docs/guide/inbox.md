@@ -67,6 +67,25 @@ Eleven types: `text` · `email` · `tel` · `textarea` · `select` · `radio` ·
 · `date` · `file` · `hidden`. A multiple answer is written twice — joined by commas in `value`,
 which is what a person reads in the letter and in the export, and as an array in `payload`.
 
+### Shown only for some answers
+
+A field may be shown only for some answers above it: `options.when` / `options.unless`, as
+`{ "purpose": ["agency", "pre-register"] }` — "or" inside a list, "and" between names, the format of
+the configurator. `when` holds when every named field is shown and answered with one of the values
+(a field of ticks — any one of them; a consent — `"1"`), `unless` hides the field when the same
+`when` would hold. A condition names only a `select`, `radio`, `checkbox` or `consent` standing
+earlier, and only values it offers: anything else is refused on save (`condition.unknown_field`,
+`condition.not_choice`, `condition.not_before`, `condition.unknown_value`). A field that others
+name is not deleted, nor dragged below them, nor loses a choice they count on; a rename carries
+their conditions along.
+
+The server decides. The intake reads visibility in one pass over the fields in order from what was
+sent — a hidden field has no value, so its answer reaches no field below — and a hidden field is
+not checked, not kept, not in the hash of duplicates, the letter or the export. On the site the
+widgets' `form.js` hides it as the answers change; without JavaScript every field is shown, a
+required one with a condition without the browser's `required`, and a line under it says when it
+applies («If chosen: Agency meeting»); the server throws away what does not apply.
+
 ### Answers keep a copy of the question
 
 Beside every answer sit the field's name, label and type **as they were when it arrived**:

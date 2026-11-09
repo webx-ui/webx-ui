@@ -13,6 +13,7 @@ use Psr\Log\LoggerInterface;
 use Throwable;
 use WebxUi\Inbox\Events\SubmissionStored;
 use WebxUi\Inbox\Exceptions\NoStatuses;
+use WebxUi\Inbox\Fields\Conditions;
 use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\Models\Field;
 use WebxUi\Inbox\Models\Form;
@@ -46,6 +47,9 @@ final class Intake
      */
     public function receive(Form $form, array $values, Request $request, string $source = Submission::SOURCE_WEB, array $enclosures = []): Submission
     {
+        // An answer to a field its condition hides is thrown away before anything else sees it
+        // (FORM_STEPS §4.4): a form sent without JavaScript carries every field.
+        $values = Conditions::only($form->liveFields, $values);
         $hash = $this->hash($form, $values, $enclosures);
         $submission = $this->find($form, $hash);
         $repeated = $submission !== null;
@@ -110,9 +114,11 @@ final class Intake
     public function hash(Form $form, array $values, array $enclosures = []): string
     {
         $subject = [];
+        // A hidden field is not in it at all, so a form without conditions hashes as it always did.
+        $visible = Conditions::visible($form->liveFields, $values);
 
         foreach ($form->liveFields as $field) {
-            if ($field->type === FieldType::File) {
+            if ($field->type === FieldType::File || ! ($visible[$field->key()] ?? true)) {
                 continue;
             }
 
@@ -192,8 +198,14 @@ final class Intake
      */
     private function write(Submission $submission, Form $form, array $values, Request $request): void
     {
+        $visible = Conditions::visible($form->liveFields, $values);
+
         foreach ($form->liveFields as $field) {
             $key = $field->key();
+
+            if (! ($visible[$key] ?? true)) {
+                continue;
+            }
 
             if ($field->type === FieldType::File) {
                 $this->writeFiles($submission, $form, $field, $request);

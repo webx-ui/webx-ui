@@ -23,4 +23,9 @@ return [
     'no-such-answer' => 'Cet envoi n\'a pas de réponse sous ce nom.',
     'not-correctable' => 'Un fichier ou un consentement ne peut pas être corrigé.',
     'nobody-to-notify' => 'Le formulaire « :form » ne désigne personne à qui écrire.',
+    'condition-unknown-field' => 'La condition « :key » de « :field » nomme « :name », un champ que ce formulaire n’a pas (ou que cette modification supprime).',
+    'condition-not-choice' => 'La condition « :key » de « :field » nomme « :name », qui n’est pas un choix : seule une liste, des boutons radio, des cases ou un consentement au-dessus peuvent servir de condition.',
+    'condition-not-before' => 'La condition « :key » de « :field » nomme « :name », qui n’est pas au-dessus. Une condition ne nomme qu’un champ au-dessus.',
+    'condition-unknown-value' => 'La condition « :key » de « :field » attend la valeur « :value » de « :name », que ce champ ne propose pas.',
+    'field-has-dependents' => 'Le champ « :field » est nommé dans les conditions de :fields. Modifiez d’abord ces conditions.',
 ];

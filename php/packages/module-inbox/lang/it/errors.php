@@ -23,4 +23,9 @@ return [
     'no-such-answer' => 'Questo invio non ha una risposta con quel nome.',
     'not-correctable' => 'Un file o un consenso non si possono correggere.',
     'nobody-to-notify' => 'Il modulo «:form» non indica a chi scrivere.',
+    'condition-unknown-field' => 'La condizione «:key» di «:field» nomina «:name», un campo che questo modulo non ha (o che questa modifica rimuove).',
+    'condition-not-choice' => 'La condizione «:key» di «:field» nomina «:name», che non è una scelta: solo un elenco, pulsanti di opzione, caselle o un consenso sopra possono essere una condizione.',
+    'condition-not-before' => 'La condizione «:key» di «:field» nomina «:name», che non sta sopra. Una condizione nomina solo un campo sopra.',
+    'condition-unknown-value' => 'La condizione «:key» di «:field» si aspetta il valore «:value» di «:name», che quel campo non offre.',
+    'field-has-dependents' => 'Il campo «:field» è nominato nelle condizioni di :fields. Cambia prima quelle condizioni.',
 ];

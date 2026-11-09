@@ -412,4 +412,35 @@ lines</textarea>', "Two\nlines"];
         $this->assertMatchesRegularExpression('~id="field-terms-error" >[^<]+</p>~', $html);
         $this->assertStringNotContainsString('id="field-terms" name="terms" value="1" checked', $html);
     }
+
+    /**
+     * A field shown only for some answers (FORM_STEPS §4.3): the condition on the frame for
+     * form.js, the line that says when for a page without it, and no `required` the browser would
+     * hold against a form that does not need the field — the mark stays, and form.js puts the
+     * attribute back on show.
+     */
+    #[Test]
+    public function a_field_with_a_condition_carries_it_and_leaves_required_to_the_script(): void
+    {
+        $html = Blade::render(<<<'BLADE'
+            <x-webx-field type="text" name="fields.agency" label="Agency" required
+                :when="['fields.purpose' => ['agency']]" :unless="['fields.kind' => ['remote']]" condition="If chosen: Agency meeting" />
+            <x-webx-field type="radio" name="fields.slot" label="Slot" required :choices="['am' => 'Morning']"
+                :when="['fields.purpose' => ['agency']]" />
+            BLADE);
+
+        $this->assertStringContainsString('data-webx-when="{&quot;fields.purpose&quot;:[&quot;agency&quot;]}"', $html);
+        $this->assertStringContainsString('data-webx-unless="{&quot;fields.kind&quot;:[&quot;remote&quot;]}"', $html);
+        $this->assertStringContainsString('<p class="webx-field__condition" data-webx-condition>If chosen: Agency meeting</p>', $html);
+        $this->assertStringContainsString('webx-field__required', $html);
+        $this->assertMatchesRegularExpression('~<input type="text"[^>]*data-webx-required="true"~', $html);
+        $this->assertDoesNotMatchRegularExpression('~<input[^>]*\srequired[\s>=]~', $html);
+        $this->assertMatchesRegularExpression('~<input type="radio"[^>]*data-webx-required="true"~', $html);
+
+        $plain = Blade::render('<x-webx-field type="text" name="fields.name" label="Name" required condition="Never said" />');
+
+        $this->assertStringNotContainsString('data-webx-', str_replace('data-webx-field', '', $plain));
+        $this->assertStringNotContainsString('webx-field__condition', $plain);
+        $this->assertMatchesRegularExpression('~<input[^>]*\srequired~', $plain);
+    }
 }

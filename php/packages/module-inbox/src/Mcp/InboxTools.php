@@ -15,6 +15,8 @@ use WebxUi\Admin\Support\Authors;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Inbox\Exceptions\InboxException;
 use WebxUi\Inbox\Exceptions\NobodyToNotify;
+use WebxUi\Inbox\Fields\ConditionPlan;
+use WebxUi\Inbox\Fields\Conditions;
 use WebxUi\Inbox\Fields\FieldNames;
 use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\Http\Controllers\FormController;
@@ -113,7 +115,8 @@ final class InboxTools
                 .'A field is matched by its id or by its machine name; one that matches nothing is added at the '
                 .'end, and one sent with remove: true is put aside, which leaves the answers already given '
                 .'through it readable. Recipients that are not addresses and a slug that is not an address are '
-                .'refused here exactly as they are in the panel.',
+                .'refused here exactly as they are in the panel. A field may be shown only for some answers above it: '
+                .'options.when / options.unless (see fields.options) — checked on the form as the whole call leaves it.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->formSave($arguments)),
                 ['properties' => [
                     // Spread, not `+`: the left side wins a `+`, and the "omit to create" half
@@ -147,7 +150,13 @@ final class InboxTools
                             'options' => ['type' => 'object', 'description' => 'What this type takes. select · radio · checkbox: choices, required and at least one — '
                                 .'[{ "value": "pro", "label": { "en": "Pro plan" } }], or plain strings ["Pro", "Basic"] where the value is the label; '
                                 .'checkbox also min and max. text · email · textarea: maxlength (textarea also rows). tel: pattern. '
-                                .'date: min and max, YYYY-MM-DD. file: extensions, max_size in KB, multiple. consent: text, the sentence beside the tick.'],
+                                .'date: min and max, YYYY-MM-DD. file: extensions, max_size in KB, multiple. consent: text, the sentence beside the tick. '
+                .'Any type but hidden: `when` and `unless` — when the field is shown, as { "<name of a field>": ["<value>", …] }: '
+                .'"or" inside a list, "and" between names; `when` holds when every named field is shown and answered with one of its values '
+                .'(a checkbox — any one ticked; a consent — "1" when ticked), `unless` hides the field when the same `when` would hold. '
+                .'A condition names only a select, radio, checkbox or consent standing earlier in the form, and only values it offers. '
+                .'A hidden field is neither checked nor kept: its answer is thrown away, with JavaScript or without. '
+                .'A field others name cannot be removed or end up below them; renaming it renames the conditions.'],
                             'remove' => ['type' => 'boolean', 'description' => 'Put the field aside: it leaves the form and stays readable in the submissions that used it.'],
                         ]],
                     ],
@@ -345,6 +354,11 @@ final class InboxTools
         // of the form as it will be after this call, which may be adding it right now.
         $plan = $this->fieldsPlan($form, $sent);
 
+        // The conditions, on the form as the whole call leaves it (FORM_STEPS §4.2): a rename
+        // carries the references along, a field removed or moved below what counts on it is refused.
+        $plan = $this->carryRenames($plan);
+        ConditionPlan::assertAll($this->layoutAfter($form, $plan), 'fields');
+
         $this->validator()->make(
             $input,
             FormInput::rules($form === null ? null : (int) $form->getKey(), $this->emailFieldsAfter($form, $plan)),
@@ -525,6 +539,96 @@ final class InboxTools
             'field' => $field,
             'values' => $values,
         ];
+    }
+
+    /**
+     * The plan with every rename of the call written into the conditions it sends, so a field
+     * renamed and a condition naming it, in one call, agree.
+     *
+     * @param  list<array{would: string, field: Field|null, values: array<string, mixed>}>  $plan
+     * @return list<array{would: string, field: Field|null, values: array<string, mixed>}>
+     */
+    private function carryRenames(array $plan): array
+    {
+        $renames = [];
+
+        foreach ($plan as $one) {
+            $new = $one['values']['name'] ?? null;
+
+            if ($one['would'] === 'update' && $one['field'] instanceof Field && is_string($new) && $new !== $one['field']->key()) {
+                $renames[$one['field']->key()] = $new;
+            }
+        }
+
+        foreach ($plan as $index => $one) {
+            if ($one['would'] === 'remove' || ! is_array($one['values']['options'] ?? null)) {
+                continue;
+            }
+
+            foreach ($renames as $old => $new) {
+                $plan[$index]['values']['options'] = Conditions::rename($plan[$index]['values']['options'], $old, $new);
+            }
+        }
+
+        return $plan;
+    }
+
+    /**
+     * The form's fields as the plan leaves them, in order: the ones it keeps where they stand —
+     * changed, renamed — then the new ones at the end, as `applyField` adds them.
+     *
+     * @param  list<array{would: string, field: Field|null, values: array<string, mixed>}>  $plan
+     * @return list<array{key: string, type: FieldType, options: array<string, mixed>}>
+     */
+    private function layoutAfter(?Form $form, array $plan): array
+    {
+        $changed = [];
+        $removed = [];
+        $added = [];
+
+        foreach ($plan as $one) {
+            if ($one['field'] === null) {
+                $added[] = $one['values'];
+            } elseif ($one['would'] === 'remove') {
+                $removed[(int) $one['field']->getKey()] = true;
+            } else {
+                $changed[(int) $one['field']->getKey()] = $one['values'];
+            }
+        }
+
+        $layout = [];
+        $renames = [];
+
+        foreach ($form === null ? [] : $form->fields as $field) {
+            $id = (int) $field->getKey();
+
+            if (isset($removed[$id])) {
+                continue;
+            }
+
+            $entry = ConditionPlan::with([$field], $id, $changed[$id] ?? [
+                'name' => $field->key(),
+                'type' => $field->type,
+                'options' => $field->options ?? [],
+            ]);
+
+            if ($entry[0]['key'] !== $field->key()) {
+                $renames[$field->key()] = $entry[0]['key'];
+            }
+
+            $layout[] = $entry[0];
+        }
+
+        foreach ($added as $values) {
+            $layout = [...$layout, ...ConditionPlan::with([], null, $values)];
+        }
+
+        // What the model does to the fields the call did not mention once a rename is written.
+        foreach ($renames as $old => $new) {
+            $layout = ConditionPlan::renamed($layout, $old, $new);
+        }
+
+        return $layout;
     }
 
     /**

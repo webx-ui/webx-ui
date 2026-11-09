@@ -10,4 +10,6 @@ return [
     'thank-you' => 'Vielen Dank, Ihre Nachricht wurde gesendet.',
     'failed' => 'Die Nachricht konnte nicht gesendet werden. Bitte versuchen Sie es erneut.',
     'honeypot' => 'Dieses Feld bitte leer lassen',
+    'condition-when' => 'Wenn gewählt: :choices',
+    'condition-unless' => 'Außer wenn gewählt: :choices',
 ];

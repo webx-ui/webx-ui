@@ -405,6 +405,76 @@ const watching = (form, key) =>
     ),
   )
 
+/*
+ * When a field is shown (FORM_STEPS §4.3): `data-webx-when` / `data-webx-unless` on it — `{ name:
+ * [values] }`, "or" inside a list, "and" between names, the names the validator's (`fields.purpose`).
+ * One pass in the page's order: a hidden field has no value, so what was chosen in it reaches no field
+ * below — the server's rule. Hidden is `hidden` and its controls `disabled`: nothing of it is sent or
+ * checked. Shown again, it has what was typed in it; a `required` the server left off for the page
+ * without the script comes back.
+ */
+const conditionOf = (el, name) => {
+  try {
+    return JSON.parse(el.getAttribute(name) || 'null')
+  } catch {
+    return null
+  }
+}
+
+const holds = (condition, answers) =>
+  Object.entries(condition).every(([name, values]) =>
+    (answers.get(name) ?? []).some((value) => [].concat(values).map(String).includes(value)),
+  )
+
+const chosen = (field) =>
+  controlsOf(field).flatMap((control) =>
+    control.tagName === 'SELECT'
+      ? Array.from(control.selectedOptions, (option) => option.value).filter(Boolean)
+      : ['radio', 'checkbox'].includes(control.type) && control.checked
+        ? [control.value]
+        : [],
+  )
+
+const hiddenIn = (el) => el.closest('[data-webx-hidden]')
+
+function show(el, shown) {
+  el.hidden = !shown
+  el.toggleAttribute('data-webx-hidden', !shown)
+  for (const control of el.querySelectorAll('input, select, textarea, button')) {
+    if (shown && control.hasAttribute('data-webx-off')) {
+      control.disabled = false
+      control.removeAttribute('data-webx-off')
+    } else if (!shown && !control.disabled) {
+      control.disabled = true
+      control.setAttribute('data-webx-off', '')
+    }
+    if (control.hasAttribute('data-webx-required')) control.required = shown
+  }
+}
+
+export function conditions(form) {
+  const answers = new Map()
+  for (const el of form.querySelectorAll(
+    '[data-webx-field], [data-webx-when], [data-webx-unless]',
+  )) {
+    if (el.closest('form') !== form) continue
+    const when = conditionOf(el, 'data-webx-when')
+    const unless = conditionOf(el, 'data-webx-unless')
+    if (when || unless) {
+      show(
+        el,
+        !(el.parentElement && hiddenIn(el.parentElement)) &&
+          (!when || holds(when, answers)) &&
+          !(unless && holds(unless, answers)),
+      )
+      // Said for the page without the script: with it, the field is there only when it applies.
+      for (const line of el.querySelectorAll('[data-webx-condition]')) line.hidden = true
+    }
+    const key = el.dataset.webxField
+    if (key && !hiddenIn(el)) answers.set(key, chosen(el))
+  }
+}
+
 export function form(el) {
   if (!(el instanceof HTMLFormElement)) return undefined
   const on = listeners()
@@ -467,6 +537,7 @@ export function form(el) {
     if (again) again.hidden = true
     say(el, null, null)
     el.reset()
+    conditions(el)
     return true
   }
 
@@ -508,6 +579,7 @@ export function form(el) {
       say(el, data.heading, data.message, data.heading_html)
       el.classList.add('is-sent')
       el.reset()
+      conditions(el)
       aside()
       if (!dialog)
         own(el, '.webx-form__message')?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' })
@@ -558,6 +630,8 @@ export function form(el) {
       const all = new FormData(el)
       let wrong = false
       for (const field of fieldsOf(el)) {
+        // Hidden by its condition: not sent, so not checked — as the server does.
+        if (hiddenIn(field)) continue
         const said = check(el, field, all)
         if (said.length) {
           invalid(field, said)
@@ -657,6 +731,7 @@ export function form(el) {
     }
   }
   const changed = (event) => {
+    if (event.type === 'change') conditions(el)
     const field = event.target instanceof Element ? event.target.closest('[data-webx-field]') : null
     if (!field || field.closest('form') !== el) return
     touched.add(field)
@@ -690,6 +765,9 @@ export function form(el) {
       if (touched.has(other)) recheck(other)
     }
   })
+
+  // What is chosen now decides what is shown — the page may have come back with answers.
+  conditions(el)
 
   // The browser's bubbles off: the same errors in every language and browser. Without this
   // script the browser's own checks stay — the only ones before the round trip.

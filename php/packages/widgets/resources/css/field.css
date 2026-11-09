@@ -255,10 +255,17 @@ html:not(.webx-js) .webx-field__file-name {
   cursor: not-allowed;
 }
 
-.webx-field__hint {
+.webx-field__hint,
+.webx-field__condition {
   margin: 0;
   color: var(--site-color-text-muted);
   font-size: calc(var(--site-font-size-base) * 0.875);
+}
+
+/* When a field applies, for a page without the script (form.js hides the line): italic, so it
+   does not read as the field's own hint. */
+.webx-field__condition {
+  font-style: italic;
 }
 
 /* The error in words, in the danger colour, with a bar beside it: not the colour alone. */
