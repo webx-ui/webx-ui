@@ -294,32 +294,37 @@ final class FirstVisitTest extends TestCase
     #[Test]
     public function the_doctor_says_why_it_cannot_work(): void
     {
-        $check = fn (): array => array_map(
-            static fn (Diagnosis $diagnosis): string => $diagnosis->detail,
-            app(FirstVisitCheck::class)->run(),
-        );
-
         // A fake that knows the addresses, a language the site has: nothing to say.
-        $this->assertSame([], $check());
+        $this->assertCount(0, $this->doctor());
 
         config()->set('webx-localization.first_visit.locale', null);
-        $this->assertSame([], $check());
+        $this->assertCount(0, $this->doctor());
 
         config()->set('webx-localization.first_visit.locale', 'de');
         config()->set('webx-localization.strategy', 'header');
         $this->app->instance(PageInLanguage::class, new NoPageInLanguage);
 
-        $found = $check();
+        $found = $this->doctor();
         $this->assertCount(3, $found);
         $this->assertStringContainsString('not `prefix`', $found[0]);
         $this->assertStringContainsString('WEBX_LOCALE_FIRST_VISIT=de', $found[1]);
         $this->assertStringContainsString('webx-ui/widgets', $found[2]);
     }
 
+    /** @return list<string> What `webx:doctor` says about the first visit. */
+    private function doctor(): array
+    {
+        return array_map(
+            static fn (Diagnosis $diagnosis): string => $diagnosis->detail,
+            app(FirstVisitCheck::class)->run(),
+        );
+    }
+
     /**
      * A person's browser asking for a page.
      *
      * @param  array<string, string>  $headers
+     * @return TestResponse<Response>
      */
     private function page(string $uri, array $headers = []): TestResponse
     {
