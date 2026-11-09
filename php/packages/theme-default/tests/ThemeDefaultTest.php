@@ -754,7 +754,7 @@ class ThemeDefaultTest extends TestCase
             $templates['compositions/'.basename(dirname($file)).'/'.basename($file)] = implode("\n", $html);
         }
 
-        $this->assertCount(55, $templates);
+        $this->assertCount(56, $templates);
 
         foreach ($templates as $name => $template) {
             preg_match_all("/__\\(\\s*'([^']*)'/", $template, $calls);
