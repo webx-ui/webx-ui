@@ -129,6 +129,25 @@ final class BlocksTest extends TestCase
     }
 
     #[Test]
+    public function the_gallery_opens_its_pictures_in_the_frame_it_was_given_and_as_they_are_by_default(): void
+    {
+        $pictures = array_map(fn (int $n): array => ['path' => $this->picture("photo-{$n}")->path], [1, 2]);
+
+        // A block saved before the field, and one that left it at "As is": the lightbox as it was.
+        foreach ([['pictures' => $pictures], ['pictures' => $pictures, 'ratio' => 'auto'], ['pictures' => $pictures, 'ratio' => 'auto', 'view' => 'slider']] as $values) {
+            $this->assertStringNotContainsString('data-webx-lightbox-ratio', $this->render('gallery', $values));
+        }
+
+        $this->assertSame(2, substr_count($this->render('gallery', ['pictures' => $pictures, 'ratio' => '4:3']), 'data-webx-lightbox="gallery-k4" data-width="1800" data-height="1200" data-webx-lightbox-ratio="4:3"'));
+        $this->assertSame(2, substr_count($this->render('gallery', ['pictures' => $pictures, 'ratio' => '16:9', 'view' => 'slider']), 'data-webx-lightbox-ratio="16:9"'));
+
+        // The field is offered only where a click opens the picture.
+        $field = collect(json_decode((string) file_get_contents(__DIR__.'/../resources/blocks/gallery.json'), true)['schema'])->firstWhere('id', 'ratio');
+        $this->assertSame(['when' => 'zoom', 'not' => false], $field['visible']);
+        $this->assertSame(['auto', '4:3', '16:9', '1:1'], array_column($field['props']['options'], 'value'));
+    }
+
+    #[Test]
     public function the_slider_is_the_gallery_variant_with_a_thumbnail_and_a_link_per_slide(): void
     {
         $pictures = array_map(fn (int $n): array => ['path' => $this->picture("photo-{$n}")->path], [1, 2, 3, 4]);

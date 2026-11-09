@@ -197,6 +197,14 @@ together. `<x-webx-lightbox :image="$picture">` takes a picture of the media lib
 its size; a link by hand needs `data-width` and `data-height` — without them the picture is
 downloaded first to be measured, and the audit says so.
 
+- **A frame** — `ratio="4:3"` (`data-webx-lightbox-ratio` on a link, "Frame over the page" in the
+  `gallery` block): the picture opens in a frame of that shape, whole and undistorted inside it,
+  on `--webx-lightbox-frame`. Nothing — the picture as it is.
+- **The backdrop** is opaque; `--webx-lightbox-backdrop-opacity` lowers it for a theme or a
+  section, `opacity` (`data-webx-lightbox-opacity`) for one link's group.
+- **Closing leaves the page where it stood**, whichever picture of the group it closed on; the focus
+  goes to that picture's link without scrolling to it.
+
 ## Video and map
 
 ```blade
@@ -474,16 +482,16 @@ On a site with `module-blocks` and `module-media` the package offers eight block
 `php artisan webx:blocks:offered --install --module=widgets` installs them (`webx:setup` prints the
 line, it does not run it). Installed, they belong to the site: an update never overwrites them.
 
-| Block       | Fields                                                                         | Inside                     |
-| ----------- | ------------------------------------------------------------------------------ | -------------------------- |
-| `gallery`   | heading, pictures of the library, grid or slider, columns, zoom, magnify       | slider `gallery`, lightbox |
-| `logos`     | heading, a name, a logo and a link each                                        | slider `logos`             |
-| `video`     | heading, a link or a file (a switch), poster, caption, shape 16:9 4:3 1:1 9:16 | `<x-webx-video>`           |
-| `map`       | heading, the contacts or coordinates with an address, zoom, height             | `<x-webx-map>`             |
-| `counters`  | heading, a number, what stands before and after it, a label each               | `<x-webx-counter>`         |
-| `countdown` | heading, text, a date and a time of the site's zone, at the end a text or hide | `<x-webx-countdown>`       |
-| `compare`   | heading, before, after, their labels, where the divider starts, caption        | `<x-webx-compare>`         |
-| `toc`       | title, the whole page or a text of its own (a switch), side, depth             | `<x-webx-toc>`             |
+| Block       | Fields                                                                          | Inside                     |
+| ----------- | ------------------------------------------------------------------------------- | -------------------------- |
+| `gallery`   | heading, pictures of the library, grid or slider, columns, zoom, frame, magnify | slider `gallery`, lightbox |
+| `logos`     | heading, a name, a logo and a link each                                         | slider `logos`             |
+| `video`     | heading, a link or a file (a switch), poster, caption, shape 16:9 4:3 1:1 9:16  | `<x-webx-video>`           |
+| `map`       | heading, the contacts or coordinates with an address, zoom, height              | `<x-webx-map>`             |
+| `counters`  | heading, a number, what stands before and after it, a label each                | `<x-webx-counter>`         |
+| `countdown` | heading, text, a date and a time of the site's zone, at the end a text or hide  | `<x-webx-countdown>`       |
+| `compare`   | heading, before, after, their labels, where the divider starts, caption         | `<x-webx-compare>`         |
+| `toc`       | title, the whole page or a text of its own (a switch), side, depth              | `<x-webx-toc>`             |
 
 A block with nothing to show — no pictures, an unknown address, a deleted file — prints nothing.
 

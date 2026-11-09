@@ -45,7 +45,8 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
   with `<x-webx-slide thumb>`; per view by its own width (`sm` 0, `md` 640, `lg` 960, `xl` 1280);
   `options` for the rest of Swiper. Without JavaScript a strip that scrolls and snaps.
 - **Lightbox** — any `<a data-webx-lightbox="<group>" data-width data-height>` on the page, or
-  `<x-webx-lightbox :image="$picture" group>`. **Zoom** — `<x-webx-zoom :image mode frame>` (`inner|side`,
+  `<x-webx-lightbox :image="$picture" group ratio="4:3" opacity>`: `ratio` a frame the picture fits into whole (`data-webx-lightbox-ratio`),
+  the backdrop opaque unless `--webx-lightbox-backdrop-opacity` says less; closing keeps the page's scroll. **Zoom** — `<x-webx-zoom :image mode frame>` (`inner|side`,
   `picture|container`) or `data-webx-zoom` on an element with a picture and a link (its way in).
 - **Video** — `<x-webx-video src="<YouTube|Vimeo>" :poster title ratio>`: a poster, the player only
   on a click and after consent to `media`; no poster — its preview fetched once into the library.
@@ -126,8 +127,7 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
 - Do not paste a counter, a pixel, a chat or an embed as it is: wrap it in
   `<x-webx-consent category="…">` or write it `type="text/plain"` / `data-src`. A video is
   `<x-webx-video>`, a map `<x-webx-map>`.
-- Do not make "Accept all" bigger or brighter than "Reject all": they share one class on purpose.
-- Do not put an inbox form in a dialog of your own: link to `#webx-form-<slug>`.
+- Do not make "Accept all" bigger or brighter than "Reject all" (one class on purpose), nor put an inbox form in a dialog of your own: link to `#webx-form-<slug>`.
 - Do not send a form with a `fetch` of your own, nor print a `<form>` without `@csrf` to a route of
   the app: use `<x-webx-form>` and hook its events.
 - Do not write a field's markup of your own, nor validate only in the browser, nor keep a second

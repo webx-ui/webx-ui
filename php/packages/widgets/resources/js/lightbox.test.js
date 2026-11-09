@@ -194,4 +194,106 @@ describe('lightbox', () => {
       globalThis.Image = Image
     }
   })
+
+  it('reads a frame as a width over a height, and anything else as none', async () => {
+    const { ratio } = await start('')
+
+    expect(ratio('4:3')).toBeCloseTo(4 / 3)
+    expect(ratio('16 / 9')).toBeCloseTo(16 / 9)
+    expect(ratio('1.5')).toBe(1.5)
+    for (const none of [undefined, '', 'auto', '0:1', '4:0', 'wide']) expect(ratio(none)).toBeNull()
+  })
+
+  it('fits a picture whole into a frame of the asked shape, and leaves the rest as they are', async () => {
+    const { show } = await start(
+      link(1, 'g', 'data-webx-lightbox-ratio="4:3"') +
+        // A tall picture: the frame grows sideways, not down.
+        '<a href="/tall.jpg" data-webx-lightbox="g" data-width="600" data-height="900" data-webx-lightbox-ratio="1:1"></a>' +
+        link(3),
+    )
+    const pswp = await show(document.querySelector('a'))
+    const [wide, tall, plain] = pswp.options.dataSource
+
+    // 1200×800 is 3:2, wider than 4:3: as wide, taller.
+    expect(wide).toMatchObject({ width: 1200, height: 900 })
+    expect(tall).toMatchObject({ width: 900, height: 900 })
+    expect(plain).toMatchObject({ width: 1200, height: 800, ratio: null })
+    const shown = () =>
+      pswp.currSlide.container.querySelector('img.pswp__img:not(.pswp__img--placeholder)')
+    await vi.waitFor(() => expect(shown()).not.toBeNull())
+    expect(shown().classList.contains('webx-lightbox__framed')).toBe(true)
+    // The picture paged to without a frame has no frame's background.
+    pswp.prev()
+    await vi.waitFor(() => expect(shown()).not.toBeNull())
+    expect(shown().classList.contains('webx-lightbox__framed')).toBe(false)
+  })
+
+  it('frames a picture measured on opening once its sizes are known', async () => {
+    const Image = globalThis.Image
+    globalThis.Image = class {
+      set src(value) {
+        this.naturalWidth = 1000
+        this.naturalHeight = 1000
+        setTimeout(() => this.onload?.())
+      }
+    }
+
+    try {
+      const { show } = await start(
+        '<a href="/bare.jpg" data-webx-lightbox="" data-webx-lightbox-ratio="16:9"></a>',
+      )
+      const pswp = await show(document.querySelector('a'))
+
+      expect(pswp.options.dataSource[0]).toMatchObject({ width: 1778, height: 1000 })
+    } finally {
+      globalThis.Image = Image
+    }
+  })
+
+  it('keeps the backdrop opaque unless the token or the link says otherwise', async () => {
+    const { show } = await start(link(1) + link(2, 'h', 'data-webx-lightbox-opacity="0.85"'))
+    const [plain, own] = document.querySelectorAll('a')
+
+    expect((await show(plain)).options.bgOpacity).toBe(1)
+    expect((await show(own)).options.bgOpacity).toBe(0.85)
+
+    // What a theme sets on a section reaches its links (jsdom inherits nothing, so on the link).
+    plain.style.setProperty('--webx-lightbox-backdrop-opacity', '0.6')
+    expect((await show(plain)).options.bgOpacity).toBe(0.6)
+  })
+
+  it('leaves the page where it stood, whichever picture it closed on', async () => {
+    const { show } = await start(link(1) + link(2) + link(3) + link(4))
+    const links = document.querySelectorAll('a')
+    const focus = vi.spyOn(HTMLElement.prototype, 'focus')
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
+    let y = 500
+    Object.defineProperty(window, 'scrollY', { configurable: true, get: () => y })
+
+    try {
+      const pswp = await show(links[0])
+      pswp.next()
+      pswp.next()
+      pswp.next()
+      // Something moved the page while it was covered.
+      y = 1800
+      pswp.close()
+      await vi.waitFor(() => expect(viewer()).toBeNull())
+
+      expect(document.activeElement).toBe(links[3])
+      expect(focus).toHaveBeenLastCalledWith({ preventScroll: true })
+      expect(scrollTo).toHaveBeenCalledWith({ left: 0, top: 500, behavior: 'instant' })
+
+      // Where nothing moved, nothing is scrolled.
+      scrollTo.mockClear()
+      y = 500
+      ;(await show(links[1])).close()
+      await vi.waitFor(() => expect(viewer()).toBeNull())
+      expect(scrollTo).not.toHaveBeenCalled()
+    } finally {
+      delete window.scrollY
+      focus.mockRestore()
+      scrollTo.mockRestore()
+    }
+  })
 })
