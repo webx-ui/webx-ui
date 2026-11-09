@@ -199,6 +199,15 @@ return [
         'failed' => 'Nie udało się wysłać formularza. Sprawdź połączenie i spróbuj ponownie.',
         'expired' => 'Strona jest otwarta zbyt długo. Odśwież ją i wyślij formularz ponownie.',
         'again' => 'Wyślij kolejny',
+        // A form of several steps (FORM_STEPS §3, §12.2): `:current`/`:total` without plural forms.
+        'steps' => [
+            'label' => 'Kroki',
+            'step' => 'Krok :current z :total',
+            'next' => 'Dalej',
+            'back' => 'Wstecz',
+            'return' => 'Wróć do kroku :number: :title',
+            'fix' => 'Sprawdź krok :number: :message',
+        ],
     ],
     'suggest' => [
         'label' => 'Wyszukiwanie',

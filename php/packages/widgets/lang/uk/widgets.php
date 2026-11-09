@@ -199,6 +199,15 @@ return [
         'failed' => 'Не вдалося надіслати форму. Перевірте з’єднання і спробуйте ще раз.',
         'expired' => 'Сторінка відкрита надто довго. Оновіть її і надішліть форму ще раз.',
         'again' => 'Надіслати ще',
+        // A form of several steps (FORM_STEPS §3, §12.2): `:current`/`:total` without plural forms.
+        'steps' => [
+            'label' => 'Кроки',
+            'step' => 'Крок :current з :total',
+            'next' => 'Далі',
+            'back' => 'Назад',
+            'return' => 'Повернутися до кроку :number: :title',
+            'fix' => 'Перевірте крок :number: :message',
+        ],
     ],
     'suggest' => [
         'label' => 'Пошук',

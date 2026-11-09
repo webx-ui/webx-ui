@@ -199,6 +199,15 @@ return [
         'failed' => 'No se pudo enviar el formulario. Comprueba la conexión e inténtalo de nuevo.',
         'expired' => 'La página lleva demasiado tiempo abierta. Recárgala y vuelve a enviar el formulario.',
         'again' => 'Enviar otro',
+        // A form of several steps (FORM_STEPS §3, §12.2): `:current`/`:total` without plural forms.
+        'steps' => [
+            'label' => 'Pasos',
+            'step' => 'Paso :current de :total',
+            'next' => 'Siguiente',
+            'back' => 'Atrás',
+            'return' => 'Volver al paso :number: :title',
+            'fix' => 'Revise el paso :number: :message',
+        ],
     ],
     'suggest' => [
         'label' => 'Búsqueda',

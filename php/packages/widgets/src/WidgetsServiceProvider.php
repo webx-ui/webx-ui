@@ -59,6 +59,7 @@ use WebxUi\Widgets\View\Components\Dialog;
 use WebxUi\Widgets\View\Components\Dropdown;
 use WebxUi\Widgets\View\Components\Field;
 use WebxUi\Widgets\View\Components\Form;
+use WebxUi\Widgets\View\Components\FormStep;
 use WebxUi\Widgets\View\Components\FormSubmit;
 use WebxUi\Widgets\View\Components\Header;
 use WebxUi\Widgets\View\Components\HeaderNav;
@@ -199,6 +200,7 @@ class WidgetsServiceProvider extends ServiceProvider
         Blade::component('webx-field', Field::class);
         Blade::component('webx-form', Form::class);
         Blade::component('webx-form.submit', FormSubmit::class);
+        Blade::component('webx-form.step', FormStep::class);
         Blade::component('webx-captcha', CaptchaField::class);
 
         // The token a cached page's form asks for again (§17.3), and the door of the showcase.

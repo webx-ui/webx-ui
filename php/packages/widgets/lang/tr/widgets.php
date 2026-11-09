@@ -199,6 +199,15 @@ return [
         'failed' => 'Form gönderilemedi. Bağlantıyı kontrol edip tekrar deneyin.',
         'expired' => 'Sayfa çok uzun süredir açık. Sayfayı yenileyip formu tekrar gönderin.',
         'again' => 'Bir tane daha gönder',
+        // A form of several steps (FORM_STEPS §3, §12.2): `:current`/`:total` without plural forms.
+        'steps' => [
+            'label' => 'Adımlar',
+            'step' => 'Adım :current / :total',
+            'next' => 'İleri',
+            'back' => 'Geri',
+            'return' => ':number. adıma dön: :title',
+            'fix' => 'Lütfen :number. adımı kontrol edin: :message',
+        ],
     ],
     'suggest' => [
         'label' => 'Arama',

@@ -199,6 +199,15 @@ return [
         'failed' => 'The form could not be sent. Check the connection and try again.',
         'expired' => 'The page has been open too long. Reload it and send the form again.',
         'again' => 'Send another',
+        // A form of several steps (FORM_STEPS §3, §12.2): `:current`/`:total` without plural forms.
+        'steps' => [
+            'label' => 'Steps',
+            'step' => 'Step :current of :total',
+            'next' => 'Next',
+            'back' => 'Back',
+            'return' => 'Back to step :number: :title',
+            'fix' => 'Please check step :number: :message',
+        ],
     ],
     'suggest' => [
         'label' => 'Search',

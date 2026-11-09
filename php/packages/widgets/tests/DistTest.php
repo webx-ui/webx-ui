@@ -63,6 +63,11 @@ final class DistTest extends PlainTestCase
     /** Where the visitor came from (FORM_STEPS §8): a listener on the form's submit, loaded with a form that asks. */
     private const int ATTRIBUTION_BUDGET = 1024;
 
+    /** A form of several steps (FORM_STEPS §3.2): 3 KB gzip of script, loaded only by <x-webx-form steps>; its look 2 KB. */
+    private const int STEPS_BUDGET = 3 * 1024;
+
+    private const int STEPS_STYLE_BUDGET = 2 * 1024;
+
     /**
      * The offer of the first visit's language (ROUTING §18.6): a card and a cookie, loaded only where it is made.
      * 2 KB with its stylesheet: the copies of a header printed twice and a folded menu need an observer of size.
@@ -97,6 +102,16 @@ final class DistTest extends PlainTestCase
     }
 
     #[Test]
+    public function the_steps_are_their_own_file_inside_their_budget(): void
+    {
+        $script = self::gzipped('steps.js');
+        $style = self::gzipped('steps.css');
+
+        $this->assertLessThanOrEqual(self::STEPS_BUDGET, $script, sprintf('steps.js is %.1f KB gzip.', $script / 1024));
+        $this->assertLessThanOrEqual(self::STEPS_STYLE_BUDGET, $style, sprintf('steps.css is %.1f KB gzip.', $style / 1024));
+    }
+
+    #[Test]
     public function the_runtime_stays_inside_its_budget(): void
     {
         $size = 0;
@@ -123,7 +138,7 @@ final class DistTest extends PlainTestCase
         ));
         sort($built);
 
-        $this->assertSame(['attribution.js', 'back-to-top.css', 'back-to-top.js', 'captcha.js', 'compare.css', 'compare.js', 'consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'countdown.css', 'countdown.js', 'counter.css', 'counter.js', 'field.css', 'field.js', 'files.css', 'files.js', 'form.css', 'form.js', 'language-offer.css', 'language-offer.js', 'language-switcher.css', 'lightbox.css', 'lightbox.js', 'load-more.css', 'load-more.js', 'map.css', 'map.js', 'mask.js', 'notice-bar.css', 'notice-bar.js', 'pagination.css', 'runtime.css', 'runtime.js', 'select.css', 'select.js', 'share.css', 'share.js', 'slider.css', 'slider.js', 'smooth-scroll.css', 'smooth-scroll.js', 'sources.json', 'suggest.css', 'suggest.js', 'table.css', 'table.js', 'toc.css', 'toc.js', 'video.css', 'video.js', 'zoom.css', 'zoom.js'], $built);
+        $this->assertSame(['attribution.js', 'back-to-top.css', 'back-to-top.js', 'captcha.js', 'compare.css', 'compare.js', 'consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'countdown.css', 'countdown.js', 'counter.css', 'counter.js', 'field.css', 'field.js', 'files.css', 'files.js', 'form.css', 'form.js', 'language-offer.css', 'language-offer.js', 'language-switcher.css', 'lightbox.css', 'lightbox.js', 'load-more.css', 'load-more.js', 'map.css', 'map.js', 'mask.js', 'notice-bar.css', 'notice-bar.js', 'pagination.css', 'runtime.css', 'runtime.js', 'select.css', 'select.js', 'share.css', 'share.js', 'slider.css', 'slider.js', 'smooth-scroll.css', 'smooth-scroll.js', 'sources.json', 'steps.css', 'steps.js', 'suggest.css', 'suggest.js', 'table.css', 'table.js', 'toc.css', 'toc.js', 'video.css', 'video.js', 'zoom.css', 'zoom.js'], $built);
     }
 
     /**

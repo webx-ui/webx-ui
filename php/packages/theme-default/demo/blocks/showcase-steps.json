@@ -1,0 +1,208 @@
+{
+  "slug": "showcase-steps",
+  "title": "Showcase: steps",
+  "description": "A form of three steps — one shown only for a meeting — checked on every «Next» by the server or by the browser alone, on the page or in a dialog, one page without JavaScript — for the kitchen sink of the default theme.",
+  "icon": null,
+  "group": "content",
+  "sort": 99,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "heading",
+      "type": "wx-input",
+      "label": "Heading",
+      "localized": true
+    },
+    {
+      "id": "note",
+      "type": "wx-textarea",
+      "label": "Note",
+      "localized": true,
+      "props": {
+        "rows": 2
+      }
+    },
+    {
+      "id": "mode",
+      "type": "wx-select",
+      "label": "Checked",
+      "props": {
+        "options": [
+          {
+            "label": "By the server on every «Next»",
+            "value": "check"
+          },
+          {
+            "label": "By the browser alone",
+            "value": "browser"
+          },
+          {
+            "label": "In a dialog, by the server",
+            "value": "dialog"
+          }
+        ]
+      }
+    },
+    {
+      "id": "title_purpose",
+      "type": "wx-input",
+      "label": "Step: purpose — title",
+      "localized": true
+    },
+    {
+      "id": "short_purpose",
+      "type": "wx-input",
+      "label": "Step: purpose — in the indicator",
+      "localized": true
+    },
+    {
+      "id": "label_purpose",
+      "type": "wx-input",
+      "label": "Label: purpose",
+      "localized": true
+    },
+    {
+      "id": "choice_question",
+      "type": "wx-input",
+      "label": "Choice: a question",
+      "localized": true
+    },
+    {
+      "id": "choice_question_text",
+      "type": "wx-input",
+      "label": "Choice: a question — description",
+      "localized": true
+    },
+    {
+      "id": "choice_meeting",
+      "type": "wx-input",
+      "label": "Choice: a meeting",
+      "localized": true
+    },
+    {
+      "id": "choice_meeting_text",
+      "type": "wx-input",
+      "label": "Choice: a meeting — description",
+      "localized": true
+    },
+    {
+      "id": "title_meeting",
+      "type": "wx-input",
+      "label": "Step: meeting — title",
+      "localized": true
+    },
+    {
+      "id": "short_meeting",
+      "type": "wx-input",
+      "label": "Step: meeting — in the indicator",
+      "localized": true
+    },
+    {
+      "id": "condition",
+      "type": "wx-input",
+      "label": "The meeting step’s line without JavaScript",
+      "localized": true
+    },
+    {
+      "id": "label_day",
+      "type": "wx-input",
+      "label": "Label: the day",
+      "localized": true
+    },
+    {
+      "id": "hint_day",
+      "type": "wx-input",
+      "label": "Hint: the day",
+      "localized": true
+    },
+    {
+      "id": "weekday",
+      "type": "wx-input",
+      "label": "The server’s word for a day at the weekend",
+      "localized": true
+    },
+    {
+      "id": "label_time",
+      "type": "wx-input",
+      "label": "Label: the time",
+      "localized": true
+    },
+    {
+      "id": "time_morning",
+      "type": "wx-input",
+      "label": "Time: morning",
+      "localized": true
+    },
+    {
+      "id": "time_afternoon",
+      "type": "wx-input",
+      "label": "Time: afternoon",
+      "localized": true
+    },
+    {
+      "id": "title_contacts",
+      "type": "wx-input",
+      "label": "Step: contacts — title",
+      "localized": true
+    },
+    {
+      "id": "short_contacts",
+      "type": "wx-input",
+      "label": "Step: contacts — in the indicator",
+      "localized": true
+    },
+    {
+      "id": "label_name",
+      "type": "wx-input",
+      "label": "Label: name",
+      "localized": true
+    },
+    {
+      "id": "hint_name",
+      "type": "wx-input",
+      "label": "Hint: name",
+      "localized": true
+    },
+    {
+      "id": "label_email",
+      "type": "wx-input",
+      "label": "Label: email",
+      "localized": true
+    },
+    {
+      "id": "button",
+      "type": "wx-input",
+      "label": "Button",
+      "localized": true
+    },
+    {
+      "id": "opener",
+      "type": "wx-input",
+      "label": "The link that opens the dialog",
+      "localized": true
+    },
+    {
+      "id": "thanks_heading",
+      "type": "wx-input",
+      "label": "Thank-you: heading",
+      "localized": true
+    },
+    {
+      "id": "thanks_message",
+      "type": "wx-input",
+      "label": "Thank-you: text, :name for the name",
+      "localized": true
+    }
+  ],
+  "template": "@php\n    // A form of three steps (FORM_STEPS §3) sent to the showcase's doors. `check` asks the server on\n    // every «Next» (POST webx/widgets/showcase/steps/check); `browser` checks in the browser only, so\n    // the server's word about the name comes at the last press and brings its step back; `dialog` is\n    // the first in a dialog, a sheet from the bottom on a phone. The meeting's step is there only for\n    // a meeting. Every word is the page's: the labels are the validator's names here and in the door.\n    $set = \\WebxUi\\Widgets\\Facades\\Widgets::sequence('showcase-steps');\n    $formId = 'showcase-steps-'.$set;\n    $shownMode = in_array($mode ?? null, ['check', 'browser', 'dialog'], true) ? $mode : 'check';\n    $labels = [\n        'purpose' => (string) $label_purpose,\n        'day' => (string) $label_day,\n        'time' => (string) $label_time,\n        'name' => (string) $label_name,\n        'email' => (string) $label_email,\n    ];\n    $names = [];\n    foreach (array_keys(\\WebxUi\\Widgets\\Forms\\ShowcaseController::stepRules()) as $key) {\n        $short = explode('.', $key)[1];\n        if (($labels[$short] ?? '') !== '') {\n            $names[$key] = $labels[$short];\n        }\n    }\n    $rules = \\WebxUi\\Widgets\\Forms\\FormRules::for(\\WebxUi\\Widgets\\Forms\\ShowcaseController::stepRules(), $names);\n    $hidden = ['locale' => app()->getLocale(), 'words[heading]' => (string) $thanks_heading, 'words[message]' => (string) $thanks_message, 'words[weekday]' => (string) $weekday];\n    foreach ($labels as $short => $label) {\n        $hidden[\"labels[{$short}]\"] = $label;\n    }\n    $purposes = [\n        ['value' => 'question', 'label' => (string) $choice_question, 'description' => (string) $choice_question_text],\n        ['value' => 'meeting', 'label' => (string) $choice_meeting, 'description' => (string) $choice_meeting_text],\n    ];\n    $times = ['morning' => (string) $time_morning, 'afternoon' => (string) $time_afternoon];\n    ob_start();\n@endphp\n<x-webx-form :action=\"route('webx-widgets.showcase.steps')\" :id=\"$formId\" steps :check=\"$shownMode === 'browser' ? null : route('webx-widgets.showcase.steps.check')\" :rules=\"$rules\" class=\"b-showcase-steps__form\">\n    @foreach ($hidden as $hiddenName => $hiddenValue)\n        <input type=\"hidden\" name=\"{{ $hiddenName }}\" value=\"{{ $hiddenValue }}\">\n    @endforeach\n    <x-webx-form.step name=\"purpose\" :title=\"(string) $title_purpose\" :label=\"(string) $short_purpose\">\n        <x-webx-field name=\"steps.purpose\" type=\"radio\" :label=\"$labels['purpose']\" :choices=\"$purposes\" view=\"cards\" :columns=\"2\" />\n    </x-webx-form.step>\n    <x-webx-form.step name=\"meeting\" :title=\"(string) $title_meeting\" :label=\"(string) $short_meeting\" :when=\"['steps.purpose' => ['meeting']]\" :condition=\"(string) $condition\">\n        <x-webx-field name=\"steps.day\" type=\"date\" :label=\"$labels['day']\" :hint=\"(string) $hint_day\" />\n        <x-webx-field name=\"steps.time\" type=\"radio\" :label=\"$labels['time']\" :choices=\"$times\" inline />\n    </x-webx-form.step>\n    <x-webx-form.step name=\"contacts\" :title=\"(string) $title_contacts\" :label=\"(string) $short_contacts\">\n        <x-webx-field name=\"steps.name\" :label=\"$labels['name']\" :hint=\"(string) $hint_name\" autocomplete=\"name\" />\n        <x-webx-field name=\"steps.email\" type=\"email\" :label=\"$labels['email']\" autocomplete=\"email\" />\n    </x-webx-form.step>\n    <x-webx-form.submit>{{ $button }}</x-webx-form.submit>\n</x-webx-form>\n@php\n    $printed = ob_get_clean();\n@endphp\n<section class=\"b-showcase-steps\" data-wx-block=\"showcase-steps\">\n    @if ($heading)\n        <h2 class=\"b-showcase-steps__heading\">{{ $heading }}</h2>\n    @endif\n    @if ($note)\n        <p class=\"b-showcase-steps__note\">{{ $note }}</p>\n    @endif\n    @if ($shownMode === 'dialog')\n        <a class=\"b-showcase-steps__open\" href=\"#{{ $formId }}-dialog\" data-webx-dialog=\"{{ $formId }}-dialog\">{{ $opener }}</a>\n        <x-webx-dialog :id=\"$formId.'-dialog'\" :title=\"(string) ($heading ?: $opener)\" sheet>\n            {!! $printed !!}\n        </x-webx-dialog>\n    @else\n        <div class=\"b-showcase-steps__frame\">\n            {!! $printed !!}\n        </div>\n    @endif\n</section>\n",
+  "styles": ".b-showcase-steps {\n    container-type: inline-size;\n    max-width: var(--site-container-width);\n    margin: 0 auto;\n    padding: var(--site-space-6) var(--site-gutter);\n}\n\n.b-showcase-steps__heading {\n    margin: 0 0 var(--site-space-2);\n}\n\n.b-showcase-steps__note {\n    max-width: 42rem;\n    margin: 0 0 var(--site-space-4);\n    color: var(--site-color-text-muted);\n}\n\n.b-showcase-steps__frame {\n    max-width: 40rem;\n}\n\n.b-showcase-steps__open {\n    display: inline-flex;\n    align-items: center;\n    min-height: 44px;\n    padding: var(--site-space-2) var(--site-space-5);\n    border-radius: var(--site-radius-md);\n    background: var(--site-color-accent);\n    color: var(--site-color-accent-contrast);\n    font-weight: 600;\n    text-decoration: none;\n}\n",
+  "script": null,
+  "sample": {
+    "heading": "Steps",
+    "note": "",
+    "mode": "check"
+  }
+}

@@ -199,6 +199,15 @@ return [
         'failed' => 'Das Formular konnte nicht gesendet werden. Prüfen Sie die Verbindung und versuchen Sie es erneut.',
         'expired' => 'Die Seite ist schon zu lange geöffnet. Laden Sie sie neu und senden Sie das Formular noch einmal.',
         'again' => 'Weitere senden',
+        // A form of several steps (FORM_STEPS §3, §12.2): `:current`/`:total` without plural forms.
+        'steps' => [
+            'label' => 'Schritte',
+            'step' => 'Schritt :current von :total',
+            'next' => 'Weiter',
+            'back' => 'Zurück',
+            'return' => 'Zurück zu Schritt :number: :title',
+            'fix' => 'Bitte prüfen Sie Schritt :number: :message',
+        ],
     ],
     'suggest' => [
         'label' => 'Suche',

@@ -199,6 +199,15 @@ return [
         'failed' => 'Le formulaire n’a pas pu être envoyé. Vérifiez la connexion et réessayez.',
         'expired' => 'La page est ouverte depuis trop longtemps. Rechargez-la et renvoyez le formulaire.',
         'again' => 'Faire un nouvel envoi',
+        // A form of several steps (FORM_STEPS §3, §12.2): `:current`/`:total` without plural forms.
+        'steps' => [
+            'label' => 'Étapes',
+            'step' => 'Étape :current sur :total',
+            'next' => 'Suivant',
+            'back' => 'Retour',
+            'return' => 'Revenir à l’étape :number : :title',
+            'fix' => 'Vérifiez l’étape :number : :message',
+        ],
     ],
     'suggest' => [
         'label' => 'Recherche',

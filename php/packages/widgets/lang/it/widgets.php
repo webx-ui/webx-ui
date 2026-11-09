@@ -199,6 +199,15 @@ return [
         'failed' => 'Non è stato possibile inviare il modulo. Controlla la connessione e riprova.',
         'expired' => 'La pagina è aperta da troppo tempo. Ricaricala e invia di nuovo il modulo.',
         'again' => 'Invia un altro',
+        // A form of several steps (FORM_STEPS §3, §12.2): `:current`/`:total` without plural forms.
+        'steps' => [
+            'label' => 'Passaggi',
+            'step' => 'Passaggio :current di :total',
+            'next' => 'Avanti',
+            'back' => 'Indietro',
+            'return' => 'Torna al passaggio :number: :title',
+            'fix' => 'Controlla il passaggio :number: :message',
+        ],
     ],
     'suggest' => [
         'label' => 'Ricerca',

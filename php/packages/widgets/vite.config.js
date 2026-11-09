@@ -123,6 +123,8 @@ export default {
         field: join(root, 'resources/js/field.js'),
         // The shell of a form: sending in place, the errors of a 422 by field, the answer.
         form: join(root, 'resources/js/form.js'),
+        // One step of a form at a time, «Next» and «Back»: only where <x-webx-form steps> stands.
+        steps: join(root, 'resources/js/steps.js'),
         // Where the visitor came from, into the submission: only with a form that asks for it.
         attribution: join(root, 'resources/js/attribution.js'),
         // The site's captcha in a form: the invisible ones run on submit, a checkbox is checked before.

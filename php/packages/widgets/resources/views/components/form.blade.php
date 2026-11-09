@@ -13,7 +13,12 @@
     them back — a link to this page without JavaScript, `fresh()` and the focus on the first field
     with it. Hidden until the form is sent.
 
-    Classes: webx-form, __body, __message, __answer, __heading, __text, __answer-value (a visitor's
+    `steps` (FORM_STEPS §3): the fields stand in <x-webx-form.step>s; __body begins with the
+    indicator steps.js fills (webx-form-steps, hidden until it runs), the form carries the words of
+    the indicator and the door that checks a step (`data-webx-check`). Without JavaScript the steps
+    are fieldsets one under another and the button under them sends them all.
+
+    Classes: webx-form (+ --steps), __body, __message, __answer, __heading, __text, __answer-value (a visitor's
     answer a controller put into the thank-you — Inbox's `{{field.<name>}}`), __error, __refusals,
     __refusal, __progress, __done, __again, __submit;
     states is-sending, is-sent.
@@ -30,13 +35,17 @@
     }
     $enctype = $sending && ! $attributes->has('enctype') && preg_match('/<input[^>]+type="file"/', (string) $slot) === 1 ? 'multipart/form-data' : null;
 @endphp
-<form {{ $attributes->class(['webx-form', 'is-sent' => $answer !== null])->merge([
+<form {{ $attributes->class(['webx-form', 'webx-form--steps' => $steps, 'is-sent' => $answer !== null])->merge([
     'id' => $formId,
     'action' => $action,
     'method' => $verb,
     'enctype' => $enctype,
     'data-webx-send' => $sending ? '' : null,
     'data-webx-csrf' => $sending && $csrf ? route('webx-widgets.csrf') : null,
+    'data-webx-check' => $steps && $sending && $check !== null && $check !== '' ? $check : null,
+    'data-webx-steps-count' => $steps ? $words['step'] : null,
+    'data-webx-steps-return' => $steps ? $words['return'] : null,
+    'data-webx-steps-fix' => $steps ? $words['fix'] : null,
 ]) }}{!! $returned !!}>
     @if ($sending)
         @if ($csrf)
@@ -51,6 +60,9 @@
         @if (($answer['html'] ?? null) !== null)
             {!! $answer['html'] !!}
         @else
+            @if ($steps)
+                <ol class="webx-form-steps" aria-label="{{ $words['steps'] }}" hidden></ol>
+            @endif
             {{ $slot }}
         @endif
     </div>

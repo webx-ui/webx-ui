@@ -199,6 +199,15 @@ return [
         'failed' => 'Не удалось отправить форму. Проверьте соединение и попробуйте ещё раз.',
         'expired' => 'Страница открыта слишком давно. Обновите её и отправьте форму ещё раз.',
         'again' => 'Отправить ещё',
+        // A form of several steps (FORM_STEPS §3, §12.2): `:current`/`:total` without plural forms.
+        'steps' => [
+            'label' => 'Шаги',
+            'step' => 'Шаг :current из :total',
+            'next' => 'Далее',
+            'back' => 'Назад',
+            'return' => 'Вернуться к шагу :number: :title',
+            'fix' => 'Проверьте шаг :number: :message',
+        ],
     ],
     'suggest' => [
         'label' => 'Поиск',

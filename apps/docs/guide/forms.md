@@ -268,6 +268,7 @@ On the `<form>`, bubbling — a module hangs its own on them and never writes a 
 | `webx:form:submit`  | before sending; cancelable   | `data` — the `FormData` (add to it), `submitter`, `wait(promise)` |
 | `webx:form:success` | a 2xx                        | `status`, `response` — the JSON of the answer                     |
 | `webx:form:error`   | 422, 419 twice, 5xx, offline | `status` (0 offline), `errors`, `message`                         |
+| `webx:form:step`    | a change of step; cancelable | `from`, `to`, `name` — see «Steps»                                |
 
 ```js
 document.querySelector('#checkout').addEventListener('webx:form:success', (event) => {
@@ -310,6 +311,60 @@ The browser only hides: the server decides. The rules of the fields hidden for w
 left out of the check and their answers out of what is kept — the Inbox does it with `Rules::for($form,
 $sent)` (its guide, «Shown only for some answers»).
 
+### Steps
+
+`<x-webx-form steps>` with its fields in `<x-webx-form.step>`s is a form of several steps — «what
+brings you» → «when» → «how to reach you» — sent once, at the end:
+
+```blade
+<x-webx-form :action="route('visit')" steps :check="route('visit.check')">
+    <x-webx-form.step name="purpose" :title="__('Purpose of contact')">
+        <x-webx-field type="radio" name="fields.purpose" :label="__('How can we help?')" :choices="$purposes" view="cards" required />
+    </x-webx-form.step>
+    <x-webx-form.step name="meeting" :title="__('Choose a meeting time')" :label="__('Time')"
+        :when="['fields.purpose' => ['agency']]" :condition="__('If chosen: Agency meeting')">
+        <x-webx-field type="date" name="fields.day" :label="__('Day')" required />
+    </x-webx-form.step>
+    <x-webx-form.step name="contacts" :title="__('Your details')">
+        <x-webx-field name="fields.name" :label="__('Name')" required />
+    </x-webx-form.step>
+    <x-webx-form.submit>{{ __('Send') }}</x-webx-form.submit>
+</x-webx-form>
+```
+
+- **With JavaScript** (`steps.js`, claimed only by `steps`) one step is shown, the rest `hidden` —
+  their fields stay in the form and go with it. Over the steps an indicator numbers them: the
+  current one `aria-current="step"`, the ones behind are buttons back to them; «Step 2 of 3» over the
+  title. «Next» checks the step's fields by the form's `:rules`, then asks the server if the form has
+  `:check`; «Back» checks nothing and wipes nothing. Enter in a field off the last step is «Next».
+  The last step shown has the form's own buttons beside «Back».
+- **`:check`** (`data-webx-check` on the form) — a door of the site that checks a step and takes nothing: the same body as the
+  submission without its files (the browser has measured them), plus `webx_step` — the step's
+  `name`. It answers 204, or a 422 the way the submission does; its errors go under the fields and
+  the step stays. Without `check` a step is checked in the browser only — a sign-in needs no server
+  on every step.
+- **An error on a step behind** — the server's, at the last press: the form goes back to that step,
+  the focus on the field, and the alert says «Please check step 1: …».
+- **A step's condition** — `:when` / `:unless`, as a field's: the step is out of the way and out of
+  the count until the answers before it call for it; its fields are `disabled` meanwhile.
+- **The focus** goes to the step's title (`tabindex="-1"`, a heading of `level`, 3 by default) without
+  a jump; the top of the form comes in sight — in a dialog, of the dialog's own scroll.
+- **In a dialog** closed before sending, the step and what was typed stay while the page is open
+  (in its memory only: nothing goes to the browser's storage). The thank-you, or a reset, brings the
+  first step back.
+- **Without JavaScript** every step is a `<fieldset>` with its title in the `<legend>`, one under
+  another; the indicator, «Next» and «Back» are hidden, the one button sends it all, and the page
+  comes back with the errors under the fields of every step.
+
+`webx:form:step` on the form, before the change — cancelable; `detail.from`, `detail.to` (numbers
+among the steps shown), `detail.name` (the step's `name`): a goal of the analytics, a step a site
+holds back. `webx:form:reveal` is the form's ask, on a step's `<fieldset>`, to bring forward the step
+of an error — `steps.js` answers it.
+
+The words are props: `steps-label`, `step-label` («Step :current of :total»), `return-label`
+(«Back to step :number: :title»), `fix-label` («Please check step :number: :message») on the form,
+`next-label` and `back-label` on a step; `label` is a step's short line in the indicator.
+
 ### In a dialog
 
 Any form in `<x-webx-dialog>` — and the Inbox's forms a button opens (`data-webx-form="<slug>"`) — behaves the same: the thank-you takes the place of the
@@ -343,17 +398,20 @@ it is a link to the same page, which comes back without the answer, so the form 
 
 ### The look of the form
 
-| Classes                                          | What                                 |
-| ------------------------------------------------ | ------------------------------------ |
-| `webx-form`, `is-sending`, `is-sent`             | the form                             |
-| `__body`, `__submit`                             | the fields, the button               |
-| `__message` > `__answer` > `__heading`, `__text` | the live region and the answer in it |
-| `__error` > `__refusals` > `__refusal`           | the alert and what it says           |
-| `__progress`, `__done`                           | the upload, «Close» in a dialog      |
-| `__again`                                        | «Send another» (`again`)             |
-| `__answer-value`                                 | a visitor's answer in the thank-you  |
+| Classes                                                                                                                      | What                                 |
+| ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| `webx-form`, `is-sending`, `is-sent`                                                                                         | the form                             |
+| `__body`, `__submit`                                                                                                         | the fields, the button               |
+| `__message` > `__answer` > `__heading`, `__text`                                                                             | the live region and the answer in it |
+| `__error` > `__refusals` > `__refusal`                                                                                       | the alert and what it says           |
+| `__progress`, `__done`                                                                                                       | the upload, «Close» in a dialog      |
+| `__again`                                                                                                                    | «Send another» (`again`)             |
+| `__answer-value`                                                                                                             | a visitor's answer in the thank-you  |
+| `webx-form--steps`, `webx-form-steps` > `__step` > `__button`, `__number`, `__label` (`is-current`, `is-done`, `is-reached`) | a form of steps, its indicator       |
+| `webx-form-step` > `__legend` > `__count`, `__title`; `__hint`, `__condition`, `__fields`, `__nav` > `__back`, `__next`      | a step                               |
 
-Variables on `:root`: `--webx-form-gap`, `--webx-form-button-height`.
+Variables on `:root`: `--webx-form-gap`, `--webx-form-button-height`, `--webx-form-steps-size`,
+`--webx-form-steps-line`.
 
 ## Checks in the browser
 
@@ -932,6 +990,11 @@ JavaScript off and on: the same words in the same places.
 and, with «Ask the server», past it — the same words both ways, in English, Russian and Polish.
 The name `admin` passes the browser and not the server: that rule is the server's alone. The phone
 mask, and photos dropped, listed, refused by type and size and removed before sending.
+
+**Kitchen sink › Forms › Steps**: a form of three steps whose second is there only for a meeting,
+checked by a door of the demo on every «Next» — the name `admin` passes the browser and not the
+server — and the same form checked in the browser only, whose last press brings the first step back
+with the server's word; one more in a dialog, a sheet on a phone. With JavaScript off: one page.
 
 **Kitchen sink › Forms › Inbox**: a form built in the panel, with a field of every kind of the
 Inbox, on the same engine — send it empty with JavaScript on and off: the same words under the same

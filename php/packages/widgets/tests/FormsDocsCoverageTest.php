@@ -87,6 +87,20 @@ final class FormsDocsCoverageTest extends PlainTestCase
         $this->assertSame([], $missing, 'Events of form.js named nowhere in the docs.');
     }
 
+    /** A form of steps (FORM_STEPS §3): the events of steps.js and form.js's ask for a step, the components. */
+    #[Test]
+    public function every_event_of_the_steps_is_named(): void
+    {
+        $docs = self::docs();
+        $scripts = (string) file_get_contents(dirname(__DIR__).'/resources/js/steps.js').(string) file_get_contents(dirname(__DIR__).'/resources/js/form.js');
+        preg_match_all("/'(webx:form:[a-z]+)'/", $scripts, $events);
+
+        $this->assertContains('webx:form:step', $events[1]);
+        $missing = [...array_unique($events[1]), '<x-webx-form.step', 'data-webx-check', 'webx_step'];
+
+        $this->assertSame([], array_values(array_filter($missing, static fn (string $word): bool => ! str_contains($docs, $word))), 'Events and parts of a form of steps named nowhere in the docs.');
+    }
+
     /** The suggestions while typing (W6.5): their events and the marks a site's HTML carries. */
     #[Test]
     public function every_event_and_mark_of_the_suggestions_is_named(): void

@@ -388,10 +388,11 @@ final class Field extends Component
         return $this->grouped() ? new ComponentAttributeBag($own) : $attributes->except('class')->merge($own);
     }
 
-    /** Shown only for some answers of the fields above it. */
+    /** Shown only for some answers of the fields above it — its own condition, or its step's. */
     public function conditional(): bool
     {
-        return ($this->when !== null && $this->when !== []) || ($this->unless !== null && $this->unless !== []);
+        return ($this->when !== null && $this->when !== []) || ($this->unless !== null && $this->unless !== [])
+            || app('view')->getConsumableComponentData(FormStep::CONDITIONAL) === true;
     }
 
     /** `data-webx-when` / `data-webx-unless` of the field, as JSON; nothing for a field always shown. */

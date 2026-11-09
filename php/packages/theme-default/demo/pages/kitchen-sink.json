@@ -6462,6 +6462,475 @@
         },
         {
           "title": {
+            "en": "Steps",
+            "ru": "Шаги",
+            "pl": "Kroki"
+          },
+          "slug": {
+            "en": "steps",
+            "ru": "shagi",
+            "pl": "kroki"
+          },
+          "seo": {
+            "title": {
+              "en": "Steps",
+              "ru": "Шаги",
+              "pl": "Kroki"
+            },
+            "description": {
+              "en": "A form of several steps: one at a time with an indicator, «Next» checking the step in the browser and on the server, «Back» checking nothing, a step only for some answers, a dialog and a sheet, one page without JavaScript.",
+              "ru": "Форма из нескольких шагов: по одному с индикатором, «Далее» проверяет шаг в браузере и на сервере, «Назад» — ничего, шаг только для некоторых ответов, окно и шторка, без JavaScript — одна страница.",
+              "pl": "Formularz z kilku kroków: po jednym ze wskaźnikiem, „Dalej” sprawdza krok w przeglądarce i na serwerze, „Wstecz” niczego, krok tylko dla niektórych odpowiedzi, okno i panel, bez JavaScriptu — jedna strona."
+            }
+          },
+          "blocks": [
+            {
+              "key": "showcase-steps-intro",
+              "type": "text",
+              "values": {
+                "heading": {
+                  "en": "Steps",
+                  "ru": "Шаги",
+                  "pl": "Kroki"
+                },
+                "body": {
+                  "en": "<p>A longer form is easier as a conversation: what brings you, when, how to reach you. &lt;x-webx-form steps&gt; shows one step at a time with an indicator over it; «Next» checks the step, «Back» checks nothing and wipes nothing, and everything is sent once, at the end.</p><p>The meeting step is there only when a meeting is chosen: it leaves the indicator, and the numbers follow. Without JavaScript the steps stand one under another and one button sends them all.</p>",
+                  "ru": "<p>Длинную форму проще пройти как разговор: зачем вы пишете, когда удобно, как с вами связаться. &lt;x-webx-form steps&gt; показывает по одному шагу с индикатором над ним; «Далее» проверяет шаг, «Назад» ничего не проверяет и не стирает, а отправляется всё один раз, в конце.</p><p>Шаг встречи есть, только когда выбрана встреча: он уходит из индикатора, и номера пересчитываются. Без JavaScript шаги стоят друг под другом, и одна кнопка отправляет всё.</p>",
+                  "pl": "<p>Dłuższy formularz łatwiej przejść jak rozmowę: w jakiej sprawie, kiedy, jak się z tobą skontaktować. &lt;x-webx-form steps&gt; pokazuje po jednym kroku ze wskaźnikiem nad nim; „Dalej” sprawdza krok, „Wstecz” niczego nie sprawdza i nie kasuje, a wszystko wysyłane jest raz, na końcu.</p><p>Krok spotkania jest tylko wtedy, gdy wybrano spotkanie: znika ze wskaźnika, a numery się przeliczają. Bez JavaScriptu kroki stoją jeden pod drugim, a jeden przycisk wysyła wszystko.</p>"
+                }
+              }
+            },
+            {
+              "key": "showcase-steps-server",
+              "type": "showcase-steps",
+              "values": {
+                "heading": {
+                  "en": "Checked by the server on every «Next»",
+                  "ru": "Сервер проверяет каждое «Далее»",
+                  "pl": "Serwer sprawdza każde „Dalej”"
+                },
+                "note": {
+                  "en": "Each «Next» asks the server about the step before going on: a Saturday or the name “admin” is refused right on its step.",
+                  "ru": "Каждое «Далее» спрашивает сервер о шаге, прежде чем идти дальше: суббота или имя «admin» отклоняются сразу на своём шаге.",
+                  "pl": "Każde „Dalej” pyta serwer o krok, zanim pójdzie dalej: sobota albo imię „admin” są odrzucane od razu na swoim kroku."
+                },
+                "mode": "check",
+                "title_purpose": {
+                  "en": "What brings you",
+                  "ru": "С чем вы пришли",
+                  "pl": "W jakiej sprawie"
+                },
+                "short_purpose": {
+                  "en": "Purpose",
+                  "ru": "Цель",
+                  "pl": "Cel"
+                },
+                "label_purpose": {
+                  "en": "How can we help?",
+                  "ru": "Чем помочь?",
+                  "pl": "Jak możemy pomóc?"
+                },
+                "choice_question": {
+                  "en": "A question",
+                  "ru": "Вопрос",
+                  "pl": "Pytanie"
+                },
+                "choice_question_text": {
+                  "en": "About homes, prices or terms",
+                  "ru": "О квартирах, ценах или условиях",
+                  "pl": "O mieszkaniach, cenach lub warunkach"
+                },
+                "choice_meeting": {
+                  "en": "A meeting",
+                  "ru": "Встреча",
+                  "pl": "Spotkanie"
+                },
+                "choice_meeting_text": {
+                  "en": "A viewing at the sales office",
+                  "ru": "Показ в офисе продаж",
+                  "pl": "Prezentacja w biurze sprzedaży"
+                },
+                "title_meeting": {
+                  "en": "Choose a meeting time",
+                  "ru": "Выберите время встречи",
+                  "pl": "Wybierz termin spotkania"
+                },
+                "short_meeting": {
+                  "en": "Meeting",
+                  "ru": "Встреча",
+                  "pl": "Spotkanie"
+                },
+                "condition": {
+                  "en": "If chosen: A meeting",
+                  "ru": "Если выбрано: Встреча",
+                  "pl": "Jeśli wybrano: Spotkanie"
+                },
+                "label_day": {
+                  "en": "Day",
+                  "ru": "День",
+                  "pl": "Dzień"
+                },
+                "hint_day": {
+                  "en": "Try a Saturday: the browser lets it through, the server does not.",
+                  "ru": "Попробуйте субботу: браузер пропустит, сервер — нет.",
+                  "pl": "Spróbuj soboty: przeglądarka przepuści, serwer nie."
+                },
+                "weekday": {
+                  "en": "Choose a weekday: the office is closed at the weekend.",
+                  "ru": "Выберите будний день: в выходные офис закрыт.",
+                  "pl": "Wybierz dzień roboczy: w weekend biuro jest zamknięte."
+                },
+                "label_time": {
+                  "en": "Time of day",
+                  "ru": "Время",
+                  "pl": "Pora dnia"
+                },
+                "time_morning": {
+                  "en": "Morning",
+                  "ru": "Утро",
+                  "pl": "Rano"
+                },
+                "time_afternoon": {
+                  "en": "Afternoon",
+                  "ru": "День",
+                  "pl": "Po południu"
+                },
+                "title_contacts": {
+                  "en": "Your details",
+                  "ru": "Ваши данные",
+                  "pl": "Twoje dane"
+                },
+                "short_contacts": {
+                  "en": "Details",
+                  "ru": "Данные",
+                  "pl": "Dane"
+                },
+                "label_name": {
+                  "en": "Name",
+                  "ru": "Имя",
+                  "pl": "Imię"
+                },
+                "hint_name": {
+                  "en": "Try “admin”: the browser lets it through, the server does not.",
+                  "ru": "Попробуйте «admin»: браузер пропустит, сервер — нет.",
+                  "pl": "Spróbuj „admin”: przeglądarka przepuści, serwer nie."
+                },
+                "label_email": {
+                  "en": "E-mail",
+                  "ru": "E-mail",
+                  "pl": "E-mail"
+                },
+                "button": {
+                  "en": "Send",
+                  "ru": "Отправить",
+                  "pl": "Wyślij"
+                },
+                "opener": {
+                  "en": "Book a viewing",
+                  "ru": "Записаться на показ",
+                  "pl": "Umów prezentację"
+                },
+                "thanks_heading": {
+                  "en": "Thank you",
+                  "ru": "Спасибо",
+                  "pl": "Dziękujemy"
+                },
+                "thanks_message": {
+                  "en": "Nothing was sent anywhere, :name: this is the showcase.",
+                  "ru": "Никуда ничего не отправлено, :name: это витрина.",
+                  "pl": "Nic nigdzie nie wysłano, :name: to tylko witryna."
+                }
+              }
+            },
+            {
+              "key": "showcase-steps-browser",
+              "type": "showcase-steps",
+              "values": {
+                "heading": {
+                  "en": "Checked by the browser alone",
+                  "ru": "Проверяет только браузер",
+                  "pl": "Sprawdza tylko przeglądarka"
+                },
+                "note": {
+                  "en": "No server on the way: a Saturday passes, and the last press brings the meeting step back with the server’s word.",
+                  "ru": "Без сервера по пути: суббота проходит, а последнее нажатие возвращает шаг встречи со словом сервера.",
+                  "pl": "Bez serwera po drodze: sobota przechodzi, a ostatnie naciśnięcie wraca do kroku spotkania ze słowem serwera."
+                },
+                "mode": "browser",
+                "title_purpose": {
+                  "en": "What brings you",
+                  "ru": "С чем вы пришли",
+                  "pl": "W jakiej sprawie"
+                },
+                "short_purpose": {
+                  "en": "Purpose",
+                  "ru": "Цель",
+                  "pl": "Cel"
+                },
+                "label_purpose": {
+                  "en": "How can we help?",
+                  "ru": "Чем помочь?",
+                  "pl": "Jak możemy pomóc?"
+                },
+                "choice_question": {
+                  "en": "A question",
+                  "ru": "Вопрос",
+                  "pl": "Pytanie"
+                },
+                "choice_question_text": {
+                  "en": "About homes, prices or terms",
+                  "ru": "О квартирах, ценах или условиях",
+                  "pl": "O mieszkaniach, cenach lub warunkach"
+                },
+                "choice_meeting": {
+                  "en": "A meeting",
+                  "ru": "Встреча",
+                  "pl": "Spotkanie"
+                },
+                "choice_meeting_text": {
+                  "en": "A viewing at the sales office",
+                  "ru": "Показ в офисе продаж",
+                  "pl": "Prezentacja w biurze sprzedaży"
+                },
+                "title_meeting": {
+                  "en": "Choose a meeting time",
+                  "ru": "Выберите время встречи",
+                  "pl": "Wybierz termin spotkania"
+                },
+                "short_meeting": {
+                  "en": "Meeting",
+                  "ru": "Встреча",
+                  "pl": "Spotkanie"
+                },
+                "condition": {
+                  "en": "If chosen: A meeting",
+                  "ru": "Если выбрано: Встреча",
+                  "pl": "Jeśli wybrano: Spotkanie"
+                },
+                "label_day": {
+                  "en": "Day",
+                  "ru": "День",
+                  "pl": "Dzień"
+                },
+                "hint_day": {
+                  "en": "Try a Saturday: the browser lets it through, the server does not.",
+                  "ru": "Попробуйте субботу: браузер пропустит, сервер — нет.",
+                  "pl": "Spróbuj soboty: przeglądarka przepuści, serwer nie."
+                },
+                "weekday": {
+                  "en": "Choose a weekday: the office is closed at the weekend.",
+                  "ru": "Выберите будний день: в выходные офис закрыт.",
+                  "pl": "Wybierz dzień roboczy: w weekend biuro jest zamknięte."
+                },
+                "label_time": {
+                  "en": "Time of day",
+                  "ru": "Время",
+                  "pl": "Pora dnia"
+                },
+                "time_morning": {
+                  "en": "Morning",
+                  "ru": "Утро",
+                  "pl": "Rano"
+                },
+                "time_afternoon": {
+                  "en": "Afternoon",
+                  "ru": "День",
+                  "pl": "Po południu"
+                },
+                "title_contacts": {
+                  "en": "Your details",
+                  "ru": "Ваши данные",
+                  "pl": "Twoje dane"
+                },
+                "short_contacts": {
+                  "en": "Details",
+                  "ru": "Данные",
+                  "pl": "Dane"
+                },
+                "label_name": {
+                  "en": "Name",
+                  "ru": "Имя",
+                  "pl": "Imię"
+                },
+                "hint_name": {
+                  "en": "Try “admin”: the browser lets it through, the server does not.",
+                  "ru": "Попробуйте «admin»: браузер пропустит, сервер — нет.",
+                  "pl": "Spróbuj „admin”: przeglądarka przepuści, serwer nie."
+                },
+                "label_email": {
+                  "en": "E-mail",
+                  "ru": "E-mail",
+                  "pl": "E-mail"
+                },
+                "button": {
+                  "en": "Send",
+                  "ru": "Отправить",
+                  "pl": "Wyślij"
+                },
+                "opener": {
+                  "en": "Book a viewing",
+                  "ru": "Записаться на показ",
+                  "pl": "Umów prezentację"
+                },
+                "thanks_heading": {
+                  "en": "Thank you",
+                  "ru": "Спасибо",
+                  "pl": "Dziękujemy"
+                },
+                "thanks_message": {
+                  "en": "Nothing was sent anywhere, :name: this is the showcase.",
+                  "ru": "Никуда ничего не отправлено, :name: это витрина.",
+                  "pl": "Nic nigdzie nie wysłano, :name: to tylko witryna."
+                }
+              }
+            },
+            {
+              "key": "showcase-steps-dialog",
+              "type": "showcase-steps",
+              "values": {
+                "heading": {
+                  "en": "In a dialog",
+                  "ru": "В окне",
+                  "pl": "W oknie"
+                },
+                "note": {
+                  "en": "A card on a wide screen, a sheet from the bottom on a phone. Close it halfway and open again: the step and what was typed are still there.",
+                  "ru": "Карточка на широком экране, шторка снизу на телефоне. Закройте на полпути и откройте снова: шаг и введённое на месте.",
+                  "pl": "Karta na szerokim ekranie, panel od dołu na telefonie. Zamknij w połowie i otwórz ponownie: krok i wpisane dane zostają."
+                },
+                "mode": "dialog",
+                "title_purpose": {
+                  "en": "What brings you",
+                  "ru": "С чем вы пришли",
+                  "pl": "W jakiej sprawie"
+                },
+                "short_purpose": {
+                  "en": "Purpose",
+                  "ru": "Цель",
+                  "pl": "Cel"
+                },
+                "label_purpose": {
+                  "en": "How can we help?",
+                  "ru": "Чем помочь?",
+                  "pl": "Jak możemy pomóc?"
+                },
+                "choice_question": {
+                  "en": "A question",
+                  "ru": "Вопрос",
+                  "pl": "Pytanie"
+                },
+                "choice_question_text": {
+                  "en": "About homes, prices or terms",
+                  "ru": "О квартирах, ценах или условиях",
+                  "pl": "O mieszkaniach, cenach lub warunkach"
+                },
+                "choice_meeting": {
+                  "en": "A meeting",
+                  "ru": "Встреча",
+                  "pl": "Spotkanie"
+                },
+                "choice_meeting_text": {
+                  "en": "A viewing at the sales office",
+                  "ru": "Показ в офисе продаж",
+                  "pl": "Prezentacja w biurze sprzedaży"
+                },
+                "title_meeting": {
+                  "en": "Choose a meeting time",
+                  "ru": "Выберите время встречи",
+                  "pl": "Wybierz termin spotkania"
+                },
+                "short_meeting": {
+                  "en": "Meeting",
+                  "ru": "Встреча",
+                  "pl": "Spotkanie"
+                },
+                "condition": {
+                  "en": "If chosen: A meeting",
+                  "ru": "Если выбрано: Встреча",
+                  "pl": "Jeśli wybrano: Spotkanie"
+                },
+                "label_day": {
+                  "en": "Day",
+                  "ru": "День",
+                  "pl": "Dzień"
+                },
+                "hint_day": {
+                  "en": "Try a Saturday: the browser lets it through, the server does not.",
+                  "ru": "Попробуйте субботу: браузер пропустит, сервер — нет.",
+                  "pl": "Spróbuj soboty: przeglądarka przepuści, serwer nie."
+                },
+                "weekday": {
+                  "en": "Choose a weekday: the office is closed at the weekend.",
+                  "ru": "Выберите будний день: в выходные офис закрыт.",
+                  "pl": "Wybierz dzień roboczy: w weekend biuro jest zamknięte."
+                },
+                "label_time": {
+                  "en": "Time of day",
+                  "ru": "Время",
+                  "pl": "Pora dnia"
+                },
+                "time_morning": {
+                  "en": "Morning",
+                  "ru": "Утро",
+                  "pl": "Rano"
+                },
+                "time_afternoon": {
+                  "en": "Afternoon",
+                  "ru": "День",
+                  "pl": "Po południu"
+                },
+                "title_contacts": {
+                  "en": "Your details",
+                  "ru": "Ваши данные",
+                  "pl": "Twoje dane"
+                },
+                "short_contacts": {
+                  "en": "Details",
+                  "ru": "Данные",
+                  "pl": "Dane"
+                },
+                "label_name": {
+                  "en": "Name",
+                  "ru": "Имя",
+                  "pl": "Imię"
+                },
+                "hint_name": {
+                  "en": "Try “admin”: the browser lets it through, the server does not.",
+                  "ru": "Попробуйте «admin»: браузер пропустит, сервер — нет.",
+                  "pl": "Spróbuj „admin”: przeglądarka przepuści, serwer nie."
+                },
+                "label_email": {
+                  "en": "E-mail",
+                  "ru": "E-mail",
+                  "pl": "E-mail"
+                },
+                "button": {
+                  "en": "Send",
+                  "ru": "Отправить",
+                  "pl": "Wyślij"
+                },
+                "opener": {
+                  "en": "Book a viewing",
+                  "ru": "Записаться на показ",
+                  "pl": "Umów prezentację"
+                },
+                "thanks_heading": {
+                  "en": "Thank you",
+                  "ru": "Спасибо",
+                  "pl": "Dziękujemy"
+                },
+                "thanks_message": {
+                  "en": "Nothing was sent anywhere, :name: this is the showcase.",
+                  "ru": "Никуда ничего не отправлено, :name: это витрина.",
+                  "pl": "Nic nigdzie nie wysłano, :name: to tylko witryna."
+                }
+              }
+            }
+          ],
+          "children": []
+        },
+        {
+          "title": {
             "en": "Sending",
             "ru": "Отправка",
             "pl": "Wysyłanie"
