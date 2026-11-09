@@ -119,7 +119,7 @@ final class LinkType implements ChecksNewValues, FieldType
             'url' => $this->urls->href($link, $locale),
             'hash' => $link->hash,
             'path' => $link->path,
-            'label' => $candidate?->title ?? $file['name'] ?? null,
+            'label' => $candidate !== null ? $candidate->title : ($file['name'] ?? null),
             // An entity nothing answers for is gone, and so is a file the library no longer has;
             // a hand-written address is always there to try, whatever is at the other end of it.
             'available' => match ($link->target) {
