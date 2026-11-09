@@ -15,9 +15,12 @@ use WebxUi\Localization\Contracts\PageInLanguage;
  * The language of the first visit (ROUTING §18): somebody who comes for the first time to a page
  * in a language other than the chosen one is sent to the same page in it, once.
  *
- * The cookie means "the language is settled", not "this is the language": with it, whatever its
- * value, nobody is sent anywhere again — not from the default language either. It is written in
- * exactly two answers, the redirect and the switcher's choice, never in an ordinary page.
+ * The cookie means "sent once already", not "this is the language": with it, whatever its value,
+ * nobody is sent anywhere again — not from the default language either, so a switcher's plain link
+ * back to it simply works. It is written in one answer only, the redirect.
+ *
+ * Later, with the cookie and on a page of another language, the switcher may offer the target
+ * language instead (`offer()`, ROUTING §18.6): a suggestion, never a redirect, until declined.
  *
  * Called by `SetLocale`, so a site changes no list of middleware. The decision falls after the
  * page was answered, because which entity the page is only becomes known in the controller; the
@@ -42,29 +45,6 @@ final class FirstVisit
     }
 
     /**
-     * The switcher's explicit choice, `?webx_lang=<code>`: the cookie for a language the site has,
-     * and in either case a 302 to the same address without the parameter — a forwarded link
-     * carries no choice. For everybody, robots too: they only lose the parameter.
-     */
-    public function choice(Request $request): ?Response
-    {
-        $parameter = $this->parameter();
-
-        if (! $request->isMethodSafe() || ! $request->query->has($parameter)) {
-            return null;
-        }
-
-        $code = $request->query->get($parameter);
-        $response = $this->redirect($this->withQuery($request, $request->url()));
-
-        if (is_string($code) && $this->locales->has($code)) {
-            $response->headers->setCookie($this->cookie(LocaleCatalogue::normalise($code)));
-        }
-
-        return $response;
-    }
-
-    /**
      * The language to send this request to, or `null` when it is to be left alone — everything
      * that can be told before the page is drawn (§18.4, 1–6).
      */
@@ -74,7 +54,7 @@ final class FirstVisit
             return null;
         }
 
-        $target = $this->targetLocale($request);
+        $target = $this->configured();
 
         return $target === null || $target === $this->locales->current() ? null : $target;
     }
@@ -101,7 +81,7 @@ final class FirstVisit
         return $redirect;
     }
 
-    /** Whether somebody has followed a link of the switcher, or was sent once already. */
+    /** Whether somebody was sent once already: the value of the cookie is not looked at. */
     public function settled(Request $request): bool
     {
         return $request->cookies->has($this->cookieName());
@@ -112,20 +92,39 @@ final class FirstVisit
         return (string) $this->setting('cookie', 'webx_lang');
     }
 
-    public function parameter(): string
+    /** The cookie of a declined offer (§18.6): set by the offer's script, read here. */
+    public function offerCookieName(): string
     {
-        return (string) $this->setting('parameter', 'webx_lang');
+        return (string) $this->setting('offer.cookie', 'webx_lang_offer');
     }
 
-    /**
-     * The language configured, where it is one of the site's — what `webx:doctor` checks; `header`
-     * is not a language and answers `null`.
-     */
+    /** The language configured, where it is one of the site's — what `webx:doctor` checks. */
     public function configured(): ?string
     {
         $wanted = $this->setting('locale');
 
-        return is_string($wanted) && $wanted !== '' && $wanted !== 'header' ? LocaleCatalogue::normalise($wanted) : null;
+        return is_string($wanted) && $wanted !== '' && $this->locales->has($wanted) ? LocaleCatalogue::normalise($wanted) : null;
+    }
+
+    /**
+     * The language the switcher offers on this page (ROUTING §18.6), or `null`: only to somebody
+     * who was sent once already (the cookie) and has not declined, on a page of another language —
+     * never to a robot, never in the panel's preview. Whether the page exists in that language is
+     * the caller's question: it alone knows the address.
+     */
+    public function offer(Request $request): ?string
+    {
+        if (! $this->enabled() || ! (bool) $this->setting('offer.enabled', false)) {
+            return null;
+        }
+
+        if (! $this->settled($request) || $request->cookies->has($this->offerCookieName()) || $this->isRobot($request) || $this->excluded($request)) {
+            return null;
+        }
+
+        $target = $this->configured();
+
+        return $target === null || $target === $this->locales->current() ? null : $target;
     }
 
     public function isRobot(Request $request): bool
@@ -180,31 +179,11 @@ final class FirstVisit
         return $patterns !== [] && $request->is(...$patterns);
     }
 
-    private function targetLocale(Request $request): ?string
-    {
-        $wanted = (string) $this->setting('locale');
-
-        if ($wanted !== 'header') {
-            return $this->locales->has($wanted) ? LocaleCatalogue::normalise($wanted) : null;
-        }
-
-        foreach ($request->getLanguages() as $language) {
-            foreach ([$language, explode('_', $language)[0]] as $code) {
-                if ($this->locales->has($code)) {
-                    return LocaleCatalogue::normalise($code);
-                }
-            }
-        }
-
-        return null;
-    }
 
     /** The query the visitor came with — somebody's `?page=2`, an advert's marks — minus ours. */
     private function withQuery(Request $request, string $url): string
     {
         $query = $request->query->all();
-        unset($query[$this->parameter()]);
-
         foreach ((array) $this->setting('skip', []) as $parameter) {
             unset($query[$parameter]);
         }

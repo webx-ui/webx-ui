@@ -40,8 +40,8 @@ final class FirstVisitCheck implements Check
             $found[] = Diagnosis::warn(self::SUBJECT, 'WEBX_LOCALE_FIRST_VISIT is set, but the strategy is not `prefix`: every language has one address and nobody is sent anywhere.');
         }
 
-        if ($wanted !== 'header' && ! $this->locales->has($wanted)) {
-            $found[] = Diagnosis::warn(self::SUBJECT, "WEBX_LOCALE_FIRST_VISIT={$wanted} is not one of the site's active languages: nobody is sent anywhere. Name one of them, or `header`.");
+        if (! $this->locales->has($wanted)) {
+            $found[] = Diagnosis::warn(self::SUBJECT, "WEBX_LOCALE_FIRST_VISIT={$wanted} is not the code of one of the site's active languages: nobody is sent anywhere. Name one of them.");
         }
 
         if ($this->pages instanceof NoPageInLanguage) {

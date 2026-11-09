@@ -253,34 +253,23 @@ final class LanguageSwitcherTest extends TestCase
     }
 
     #[Test]
-    public function with_the_first_visit_on_the_links_carry_the_choice(): void
+    public function the_first_visit_leaves_the_switcher_s_markup_as_it_was(): void
     {
+        $doc = $this->doc(['en' => 'about-us', 'de' => 'ueber-uns']);
+        $this->serve('/about-us', 'en', $doc);
+
+        $off = Blade::render('<x-webx-language-switcher layout="list" />');
+
         config()->set('webx-localization.first_visit.locale', 'de');
-        $doc = $this->doc(['en' => 'about-us', 'de' => 'ueber-uns']);
-        $this->serve('/about-us', 'en', $doc);
+        config()->set('webx-localization.first_visit.offer.enabled', true);
+        $on = Blade::render('<x-webx-language-switcher layout="list" />');
 
-        $html = Blade::render('<x-webx-language-switcher layout="list" />');
-
-        $this->assertStringContainsString('<a class="webx-language-switcher__link is-current" href="https://example.test/about-us?webx_lang=en" hreflang="en" lang="en" rel="nofollow" aria-current="page">', $html);
-        $this->assertStringContainsString('<a class="webx-language-switcher__link" href="https://example.test/de/ueber-uns?webx_lang=de" hreflang="de" lang="de" rel="nofollow">', $html);
-        $this->assertStringContainsString('<a class="webx-language-switcher__link is-fallback" href="https://example.test/pl?webx_lang=pl" hreflang="pl" lang="pl" rel="nofollow" title=', $html);
-
-        // Where the first visit sends somebody has no choice in it.
-        $this->assertSame('https://example.test/de/ueber-uns', app(PageInLanguage::class)->url(app('request'), 'de'));
+        // Plain links on and off (decision 2 of ROUTING §18): no parameter, no `rel`, no script.
+        $this->assertSame($off, $on);
+        $this->assertStringContainsString('<a class="webx-language-switcher__link" href="https://example.test/de/ueber-uns" hreflang="de" lang="de">', $on);
+        $this->assertStringNotContainsString('webx_lang', $on);
+        $this->assertStringNotContainsString('rel=', $on);
     }
-
-    #[Test]
-    public function with_the_first_visit_off_the_links_are_as_they_were(): void
-    {
-        $doc = $this->doc(['en' => 'about-us', 'de' => 'ueber-uns']);
-        $this->serve('/about-us', 'en', $doc);
-
-        $html = Blade::render('<x-webx-language-switcher layout="list" />');
-
-        $this->assertStringNotContainsString('webx_lang', $html);
-        $this->assertStringNotContainsString('nofollow', $html);
-    }
-
     #[Test]
     public function a_typo_in_the_layout_is_an_error(): void
     {

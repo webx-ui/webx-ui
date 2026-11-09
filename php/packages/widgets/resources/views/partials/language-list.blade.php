@@ -1,7 +1,7 @@
 <ul class="webx-language-switcher__list">
     @foreach ($links as $link)
         <li class="webx-language-switcher__item">
-            <a @class(['webx-language-switcher__link', 'is-current' => $link->current, 'is-fallback' => $link->fallback]) href="{{ $link->url }}" hreflang="{{ $link->tag() }}" lang="{{ $link->tag() }}"{!! $link->choice ? ' rel="nofollow"' : '' !!}{!! $link->current ? ' aria-current="page"' : '' !!}{!! $link->fallback ? ' title="'.e($fallbackTitle($link)).'"' : '' !!}>
+            <a @class(['webx-language-switcher__link', 'is-current' => $link->current, 'is-fallback' => $link->fallback]) href="{{ $link->url }}" hreflang="{{ $link->tag() }}" lang="{{ $link->tag() }}"{!! $link->current ? ' aria-current="page"' : '' !!}{!! $link->fallback ? ' title="'.e($fallbackTitle($link)).'"' : '' !!}>
                 @if ($codes)
                     <span class="webx-language-switcher__code">{{ strtoupper($link->tag()) }}</span>
                 @endif

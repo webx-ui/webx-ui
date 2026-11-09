@@ -115,6 +115,8 @@ export default {
         'load-more': join(root, 'resources/js/load-more.js'),
         // The close button; the head hides a closed bar before this arrives.
         'notice-bar': join(root, 'resources/js/notice-bar.js'),
+        // The offer of the first visit's language: only where the server decided to make it.
+        'language-offer': join(root, 'resources/js/language-offer.js'),
         // A picture magnified under the mouse or two fingers; the keyboard's way in is the lightbox.
         zoom: join(root, 'resources/js/zoom.js'),
         // The fields of a form: Show on a password, the line beside a file — the rest is HTML.

@@ -79,6 +79,13 @@ return [
     'language' => [
         'label' => 'Язык',
         'fallback' => 'Перевода пока нет: главная страница на этом языке',
+        // Asked in this language, which names itself (ROUTING §18.6).
+        'offer' => [
+            'question' => 'Перейти на русский?',
+            'accept' => 'Да',
+            'stay' => 'Остаться',
+            'close' => 'Закрыть',
+        ],
     ],
     'slider' => [
         'carousel' => 'карусель',

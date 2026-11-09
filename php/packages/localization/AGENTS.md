@@ -32,8 +32,10 @@ translation routes belong to `webx-ui/module-admin`, and a translated address is
   (route parameter `webxLocale`): an unknown language is a 404, the default's prefix a 301.
 - **The language of the first visit** (`FirstVisit`, inside `SetLocale`, off by default): a
   person's first visit to another language's page is a 302 to the same page in it plus the cookie
-  `webx_lang`; robots never. The page's address comes from `Contracts\PageInLanguage` —
-  `NoPageInLanguage` (always `null`) unless `webx-ui/widgets` binds the switcher's.
+  `webx_lang` ("sent once"; with it, never again); robots never; the switcher untouched. The
+  page's address comes from `Contracts\PageInLanguage` — `NoPageInLanguage` (always `null`)
+  unless `webx-ui/widgets` binds the switcher's. `offer()` — who gets the later "Switch to …?"
+  (`first_visit.offer`, cookie `webx_lang_offer` once declined).
 - **Commands** `webx:locales:seed`, `webx:locales:clear`.
 - Validation lines in ten languages under the application's own `lang/`: `Translations\ValidationLines`
   wraps `translation.loader` (as `themes` does), so a site's published line still wins.
@@ -46,7 +48,8 @@ translation routes belong to `webx-ui/module-admin`, and a translated address is
 | Add or switch off a language on a live site  | a `Locale` row (`Locale::fromCode('de')->save()`) — not the config, the table wins   |
 | Language from `Accept-Language` / not at all | `'strategy' => 'header'` / `'none'` (default `prefix`, `/uk/about`)                  |
 | A prefix on the default language too         | `'prefix_default' => true`                                                           |
-| Send a first visit to another language       | `WEBX_LOCALE_FIRST_VISIT=uk` (or `header`); robots, paths — `'first_visit'`          |
+| Send a first visit to another language       | `WEBX_LOCALE_FIRST_VISIT=uk` (a code only); robots, paths — `'first_visit'`          |
+| Offer it on later visits                     | `WEBX_LOCALE_FIRST_VISIT_OFFER=true` (`'first_visit.offer'`)                         |
 | Which language fills a missing translation   | `'fallback'` — keep it on a language that is complete                                |
 | The panel offered in another language        | translate the published `lang` files, add the code to `'panel'`                      |
 | Other words in the panel                     | `php artisan vendor:publish --tag=webx-admin-lang` (or the module's own `-lang` tag) |
@@ -86,7 +89,7 @@ translation routes belong to `webx-ui/module-admin`, and a translated address is
   301 to the address without it (unless `prefix_default` is on).
 - `php artisan webx:doctor` — what is misconfigured on the site.
 - First visit on: `curl -sI -H 'Accept: text/html' -A 'Mozilla/5.0' <page>` is a 302 with
-  `Set-Cookie: webx_lang`; with `-A Googlebot/2.1` or `-b webx_lang=ru` — a 200.
+  `Set-Cookie: webx_lang`; with `-A Googlebot/2.1` or `-b webx_lang=uk` — a 200.
 
 ## Read more
 

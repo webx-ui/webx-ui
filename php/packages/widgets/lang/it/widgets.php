@@ -79,6 +79,13 @@ return [
     'language' => [
         'label' => 'Lingua',
         'fallback' => 'Non ancora tradotto: la home page in questa lingua',
+        // Asked in this language, which names itself (ROUTING §18.6).
+        'offer' => [
+            'question' => 'Passare all’italiano?',
+            'accept' => 'Sì',
+            'stay' => 'Resta',
+            'close' => 'Chiudi',
+        ],
     ],
     'slider' => [
         'carousel' => 'carosello',

@@ -16,12 +16,15 @@ use Symfony\Component\HttpFoundation\Response;
 use WebxUi\Admin\Doctor\Diagnosis;
 use WebxUi\Localization\Contracts\PageInLanguage;
 use WebxUi\Localization\Doctor\FirstVisitCheck;
+use WebxUi\Localization\FirstVisit;
+use WebxUi\Localization\Locales;
 use WebxUi\Localization\NoPageInLanguage;
 
 /**
  * ROUTING §18: the first visit of a person to a page in the default language is sent, once, to
- * the same page in the chosen one; the cookie remembers it, the switcher's choice is stronger,
- * robots and everything that is not a page somebody reads are left alone.
+ * the same page in the chosen one; the cookie remembers it was done and nobody is sent again;
+ * robots and everything that is not a page somebody reads are left alone. Who is offered the
+ * language later (§18.6) is `offer()`.
  */
 final class FirstVisitTest extends TestCase
 {
@@ -204,61 +207,69 @@ final class FirstVisitTest extends TestCase
     }
 
     #[Test]
-    public function the_switcher_s_choice_is_kept_and_its_parameter_dropped(): void
+    public function the_person_is_sent_once_and_never_again(): void
     {
-        $response = $this->page('/uk/cameras?webx_lang=ru&page=2');
+        $first = $this->page('/cameras?page=2');
+        $first->assertRedirect('https://shop.test/uk/cameras?page=2');
+        $this->assertSame('uk', $this->cookieOf($first)?->getValue());
 
-        $response->assertRedirect('https://shop.test/uk/cameras?page=2');
-        $response->assertCookie('webx_lang', 'ru', false);
-        $this->assertStringContainsString('no-store', (string) $response->headers->get('Cache-Control'));
-
-        // Back on the default language with the cookie: nothing sends the person away again.
-        $this->withUnencryptedCookie('webx_lang', 'ru')->page('/cameras')->assertOk()->assertSee('<p>ru</p>', false);
+        // Later, back on the default language by a plain link of the switcher: served as it is.
+        $this->withUnencryptedCookie('webx_lang', 'uk')->page('/cameras')->assertOk()->assertSee('<p>ru</p>', false);
     }
 
     #[Test]
-    public function a_choice_of_a_language_the_site_does_not_have_keeps_nothing(): void
+    public function the_offer_is_for_somebody_sent_once_on_a_page_of_another_language(): void
     {
-        $response = $this->page('/cameras?webx_lang=de');
+        config()->set('webx-localization.first_visit.offer.enabled', true);
+        $visit = app(FirstVisit::class);
 
-        $response->assertRedirect('https://shop.test/cameras');
-        $this->assertNull($this->cookieOf($response, required: false));
+        $this->assertSame('uk', $visit->offer($this->request('/cameras', ['webx_lang' => 'uk'])));
+        // Never sent: the redirect's turn, not the offer's.
+        $this->assertNull($visit->offer($this->request('/cameras')));
+        // Declined.
+        $this->assertNull($visit->offer($this->request('/cameras', ['webx_lang' => 'uk', 'webx_lang_offer' => '1'])));
+        // A robot with a cookie somebody gave it.
+        $this->assertNull($visit->offer($this->request('/cameras', ['webx_lang' => 'uk'], 'Googlebot/2.1')));
+        // The panel's preview.
+        $this->assertNull($visit->offer($this->request('/cameras?preview=1', ['webx_lang' => 'uk'])));
+
+        // Already on the language: nothing to offer.
+        $request = $this->request('/uk/cameras', ['webx_lang' => 'uk']);
+        app(Locales::class)->use('uk');
+        $this->assertNull($visit->offer($request));
+        app(Locales::class)->use('ru');
+
+        config()->set('webx-localization.first_visit.offer.enabled', false);
+        $this->assertNull($visit->offer($this->request('/cameras', ['webx_lang' => 'uk'])));
+
+        config()->set('webx-localization.first_visit.offer.enabled', true);
+        config()->set('webx-localization.first_visit.locale', null);
+        $this->assertNull($visit->offer($this->request('/cameras', ['webx_lang' => 'uk'])));
     }
 
     #[Test]
-    public function a_robot_that_followed_the_switcher_only_loses_the_parameter(): void
+    public function the_offer_is_off_by_default(): void
     {
-        $response = $this->withHeaders(['User-Agent' => 'Googlebot/2.1', 'Accept' => 'text/html'])->get('https://shop.test/uk/cameras?webx_lang=ru');
-
-        $response->assertRedirect('https://shop.test/uk/cameras');
+        $this->assertFalse((bool) config('webx-localization.first_visit.offer.enabled'));
+        $this->assertNull(app(FirstVisit::class)->offer($this->request('/cameras', ['webx_lang' => 'uk'])));
     }
 
     #[Test]
-    public function the_language_can_be_the_browser_s(): void
+    public function the_language_is_a_code_and_nothing_else(): void
     {
+        // What once meant Accept-Language is no language of the site: nobody is sent anywhere.
         config()->set('webx-localization.first_visit.locale', 'header');
 
-        $this->page('/cameras', ['Accept-Language' => 'uk-UA,uk;q=0.9,en;q=0.8'])
-            ->assertRedirect('https://shop.test/uk/cameras');
-
-        // A browser in the default language is already where it wants to be.
-        $this->assertLeftAlone($this->page('/cameras', ['Accept-Language' => 'ru-RU,ru;q=0.9']), 'ru');
-
-        // A language the site does not have: served as it is, and nothing remembered.
-        $this->assertLeftAlone($this->page('/cameras', ['Accept-Language' => 'de-DE,de;q=0.9']), 'de');
+        $this->assertLeftAlone($this->page('/cameras', ['Accept-Language' => 'uk-UA,uk;q=0.9']));
+        $this->assertStringContainsString('WEBX_LOCALE_FIRST_VISIT=header', $this->doctor()[0] ?? '');
     }
-
     #[Test]
     public function switched_off_nothing_changes(): void
     {
         config()->set('webx-localization.first_visit.locale', null);
 
         $this->assertLeftAlone($this->page('/cameras'));
-
-        // Not even the parameter: a site that never turned this on has no such links.
-        $response = $this->page('/cameras?webx_lang=uk');
-        $response->assertOk();
-        $this->assertNull($this->cookieOf($response, required: false));
+        $this->assertLeftAlone($this->page('/'));
     }
 
     #[Test]
@@ -286,9 +297,11 @@ final class FirstVisitTest extends TestCase
     }
 
     #[Test]
-    public function the_cookie_is_not_encrypted(): void
+    public function the_cookies_are_not_encrypted(): void
     {
         $this->assertTrue(app(EncryptCookies::class)->isDisabled('webx_lang'));
+        // Written by the offer's script, read by the server.
+        $this->assertTrue(app(EncryptCookies::class)->isDisabled('webx_lang_offer'));
     }
 
     #[Test]
@@ -318,6 +331,12 @@ final class FirstVisitTest extends TestCase
             static fn (Diagnosis $diagnosis): string => $diagnosis->detail,
             app(FirstVisitCheck::class)->run(),
         );
+    }
+
+    /** @param  array<string, string>  $cookies */
+    private function request(string $uri, array $cookies = [], string $agent = self::BROWSER): Request
+    {
+        return Request::create('https://shop.test'.$uri, 'GET', [], $cookies, [], ['HTTP_USER_AGENT' => $agent]);
     }
 
     /**

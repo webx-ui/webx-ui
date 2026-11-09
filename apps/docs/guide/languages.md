@@ -174,19 +174,19 @@ English interface.
 ## The language of the first visit
 
 A shop whose main language has no prefix (`/cameras`) and whose second lives under `/uk/` may
-want a newcomer on the main language's address to land on the same page in Ukrainian — once,
-and remembered. Off by default; turned on in `.env`:
+want a newcomer on the main language's address to land on the same page in Ukrainian — once.
+Off by default; turned on in `.env`:
 
 ```dotenv
-WEBX_LOCALE_FIRST_VISIT=uk      # or `header`: the best match of the browser's Accept-Language
+WEBX_LOCALE_FIRST_VISIT=uk          # a language code of the site; nothing else
+WEBX_LOCALE_FIRST_VISIT_OFFER=true  # optional: the "Switch to …?" offer on later visits
 ```
 
 - The first visit of a person is a **302** to the same page in that language
-  (`Cache-Control: private, no-store`) and the cookie `webx_lang`; with the cookie nobody is sent
-  anywhere again, whatever its value.
-- **The switcher's choice wins.** Its links carry `?webx_lang=<code>` and `rel="nofollow"`;
-  following one keeps the choice in the cookie and lands on the address without the parameter.
-  Somebody who picks the main language stays on it.
+  (`Cache-Control: private, no-store`) and the cookie `webx_lang`. It means "sent once already":
+  with it nobody is sent anywhere again, whatever its value.
+- **The switcher is unchanged.** Its links stay plain; somebody who follows the one to the main
+  language simply stays there, since the cookie is already set.
 - **Robots are never sent.** Search engines, link previews, SEO and AI crawlers and the site's
   own audit are told by the User-Agent (`first_visit.bots`, a substring each), and see every
   language at its own address, linked by `hreflang` as before.
@@ -198,7 +198,27 @@ WEBX_LOCALE_FIRST_VISIT=uk      # or `header`: the best match of the browser's A
   (`webx-ui/widgets` with `webx-ui/routing`). `php artisan webx:doctor` says when either is missing,
   or when the language is not one of the site's.
 
-`webx_lang` is a `necessary` cookie — it keeps a choice the visitor made — and belongs in the list
-of the site's cookie policy. WebX caches data, not pages, so nothing on the server can serve a
-page past the decision; a site that puts a page cache in front of it (nginx, a CDN) must pass a
-request without `webx_lang` through to the application.
+### The offer on later visits
+
+With `WEBX_LOCALE_FIRST_VISIT_OFFER=true`, somebody who was sent once and is back on a page of
+another language sees a small card under the language switcher, over the page: "Перейти на
+українську?" — **Так** (the same page in that language), **Залишитись** and a close button. It is
+asked in the language offered, in its own words for each of the package's ten languages; a theme
+rewords it in `theme::theme.language_offer.{question,accept,stay,close}`.
+
+- Never to a robot, never in the panel's preview, never on a page that has only a home page in
+  that language — and never again once declined: "stay", the cross or Esc keep the cookie
+  `webx_lang_offer`.
+- Nothing moves when it shows: it lies over the page. It does not take the focus; Tab reaches it
+  after the switcher, Esc closes it.
+- One a page, beside the first switcher on screen — on a phone, when the folded menu opens, and
+  above the switcher where there is no room below it. `<x-webx-language-switcher :offer="false" />`
+  keeps it off a switcher. Without JavaScript it is not shown at all.
+
+### Cookies and caches
+
+`webx_lang` and `webx_lang_offer` are `necessary` cookies and belong in the list of the site's
+cookie policy. WebX caches data, not pages, so nothing on the server can serve a page past the
+decision; a site that puts a page cache in front of it (nginx, a CDN) must pass a request without
+`webx_lang` through to the application — and, with the offer on, one with `webx_lang` but
+without `webx_lang_offer` too.

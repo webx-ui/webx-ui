@@ -79,6 +79,13 @@ return [
     'language' => [
         'label' => 'Idioma',
         'fallback' => 'Ainda sem tradução: a página inicial neste idioma',
+        // Asked in this language, which names itself (ROUTING §18.6).
+        'offer' => [
+            'question' => 'Mudar para português?',
+            'accept' => 'Sim',
+            'stay' => 'Ficar',
+            'close' => 'Fechar',
+        ],
     ],
     'slider' => [
         'carousel' => 'carrossel',

@@ -73,9 +73,13 @@ class LocalizationServiceProvider extends ServiceProvider
         $router->aliasMiddleware('webx.panel-locale', SetPanelLocale::class);
 
         // The language of the first visit is read by a proxy in front of the site as well, and its
-        // value is no secret (ROUTING §18.1, 7).
+        // value is no secret (ROUTING §18.1, 7); the declined offer is written by a script (§18.6).
         if (class_exists(EncryptCookies::class)) {
-            EncryptCookies::except((string) $this->app->make('config')->get('webx-localization.first_visit.cookie', 'webx_lang'));
+            $config = $this->app->make('config');
+            EncryptCookies::except([
+                (string) $config->get('webx-localization.first_visit.cookie', 'webx_lang'),
+                (string) $config->get('webx-localization.first_visit.offer.cookie', 'webx_lang_offer'),
+            ]);
         }
 
         // `webx:doctor` is the frame's, which this package does not require.

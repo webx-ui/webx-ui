@@ -63,6 +63,9 @@ final class DistTest extends PlainTestCase
     /** Where the visitor came from (FORM_STEPS §8): a listener on the form's submit, loaded with a form that asks. */
     private const int ATTRIBUTION_BUDGET = 1024;
 
+    /** The offer of the first visit's language (ROUTING §18.6): a card and a cookie, loaded only where it is made. */
+    private const int LANGUAGE_OFFER_BUDGET = 1536;
+
     private const array LOCALES = ['en', 'ru', 'uk', 'de', 'pl', 'fr', 'es', 'it', 'pt', 'tr'];
 
     #[Test]
@@ -72,6 +75,14 @@ final class DistTest extends PlainTestCase
         $this->assertIsArray($built);
 
         $this->assertSame(self::sources(), $built['files'] ?? null, 'resources/ changed since dist/ was built: run `npx vite build` in php/packages/widgets and commit dist/.');
+    }
+
+    #[Test]
+    public function the_language_offer_is_its_own_file_inside_its_budget(): void
+    {
+        $size = self::gzipped('language-offer.js') + self::gzipped('language-offer.css');
+
+        $this->assertLessThanOrEqual(self::LANGUAGE_OFFER_BUDGET, $size, sprintf('language-offer is %.1f KB gzip.', $size / 1024));
     }
 
     #[Test]
@@ -109,7 +120,7 @@ final class DistTest extends PlainTestCase
         ));
         sort($built);
 
-        $this->assertSame(['attribution.js', 'back-to-top.css', 'back-to-top.js', 'captcha.js', 'compare.css', 'compare.js', 'consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'countdown.css', 'countdown.js', 'counter.css', 'counter.js', 'field.css', 'field.js', 'files.css', 'files.js', 'form.css', 'form.js', 'language-switcher.css', 'lightbox.css', 'lightbox.js', 'load-more.css', 'load-more.js', 'map.css', 'map.js', 'mask.js', 'notice-bar.css', 'notice-bar.js', 'pagination.css', 'runtime.css', 'runtime.js', 'select.css', 'select.js', 'share.css', 'share.js', 'slider.css', 'slider.js', 'smooth-scroll.css', 'smooth-scroll.js', 'sources.json', 'suggest.css', 'suggest.js', 'table.css', 'table.js', 'toc.css', 'toc.js', 'video.css', 'video.js', 'zoom.css', 'zoom.js'], $built);
+        $this->assertSame(['attribution.js', 'back-to-top.css', 'back-to-top.js', 'captcha.js', 'compare.css', 'compare.js', 'consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'countdown.css', 'countdown.js', 'counter.css', 'counter.js', 'field.css', 'field.js', 'files.css', 'files.js', 'form.css', 'form.js', 'language-offer.css', 'language-offer.js', 'language-switcher.css', 'lightbox.css', 'lightbox.js', 'load-more.css', 'load-more.js', 'map.css', 'map.js', 'mask.js', 'notice-bar.css', 'notice-bar.js', 'pagination.css', 'runtime.css', 'runtime.js', 'select.css', 'select.js', 'share.css', 'share.js', 'slider.css', 'slider.js', 'smooth-scroll.css', 'smooth-scroll.js', 'sources.json', 'suggest.css', 'suggest.js', 'table.css', 'table.js', 'toc.css', 'toc.js', 'video.css', 'video.js', 'zoom.css', 'zoom.js'], $built);
     }
 
     /**

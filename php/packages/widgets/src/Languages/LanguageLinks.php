@@ -9,7 +9,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route as LaravelRoute;
 use Illuminate\Support\Facades\URL;
-use WebxUi\Localization\FirstVisit;
 use WebxUi\Localization\Locales;
 use WebxUi\Localization\Models\Locale;
 use WebxUi\Routing\Contracts\Visible;
@@ -32,10 +31,6 @@ use WebxUi\Routing\UrlNormaliser;
  * link leads to that language's home page and says so (`fallback`): a visitor who chose Polish
  * should land on a Polish page, not on a 404. Unlike `hreflang`, a page closed to the index still switches: the
  * reader is not a search engine.
- *
- * While the language of the first visit is on (ROUTING §18), every link carries the reader's
- * choice — `?webx_lang=<code>` — which keeps it in a cookie and lands on the address without it;
- * `PageInLanguage` reads the same links without it.
  *
  * Nothing on a site with one language, without `webx-ui/routing` and `webx-ui/localization`
  * (the package requires neither), or where the language is not in the path: with `header` every
@@ -64,31 +59,6 @@ final class LanguageLinks
 
     /** @return list<LanguageLink> */
     public function for(Request $request): array
-    {
-        $links = $this->addresses($request);
-        $parameter = $this->choiceParameter();
-
-        if ($parameter === null) {
-            return $links;
-        }
-
-        return array_map(static fn (LanguageLink $link): LanguageLink => new LanguageLink(
-            code: $link->code,
-            name: $link->name,
-            url: $link->url.(str_contains($link->url, '?') ? '&' : '?').$parameter.'='.rawurlencode($link->code),
-            current: $link->current,
-            fallback: $link->fallback,
-            choice: true,
-        ), $links);
-    }
-
-    /**
-     * The page in each language, without the reader's choice: where the switcher and the
-     * language of the first visit both send somebody.
-     *
-     * @return list<LanguageLink>
-     */
-    public function addresses(Request $request): array
     {
         $codes = $this->locales->codes();
 
@@ -197,19 +167,6 @@ final class LanguageLinks
         }
 
         return $paths;
-    }
-
-    /** The parameter of the choice, while the language of the first visit is on (ROUTING §18). */
-    private function choiceParameter(): ?string
-    {
-        if (! class_exists(FirstVisit::class)) {
-            return null;
-        }
-
-        // Resolved here, not injected: the first visit asks these same links where to send.
-        $visit = app(FirstVisit::class);
-
-        return $visit->enabled() ? $visit->parameter() : null;
     }
 
     /** What the language calls itself: "Deutsch", "Polski" — the name a reader of it looks for. */

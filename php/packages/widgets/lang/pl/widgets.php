@@ -79,6 +79,13 @@ return [
     'language' => [
         'label' => 'Język',
         'fallback' => 'Jeszcze nie przetłumaczono: strona główna w tym języku',
+        // Asked in this language, which names itself (ROUTING §18.6).
+        'offer' => [
+            'question' => 'Przejść na polski?',
+            'accept' => 'Tak',
+            'stay' => 'Zostań',
+            'close' => 'Zamknij',
+        ],
     ],
     'slider' => [
         'carousel' => 'karuzela',

@@ -79,6 +79,13 @@ return [
     'language' => [
         'label' => 'Language',
         'fallback' => 'Not translated yet: the home page in this language',
+        // Asked in the language offered, which names itself; `:language` is its own name.
+        'offer' => [
+            'question' => 'Switch to :language?',
+            'accept' => 'Yes',
+            'stay' => 'Stay',
+            'close' => 'Close',
+        ],
     ],
     'slider' => [
         'carousel' => 'carousel',

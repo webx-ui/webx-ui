@@ -79,6 +79,13 @@ return [
     'language' => [
         'label' => 'Dil',
         'fallback' => 'Henüz çevrilmedi: bu dildeki ana sayfa',
+        // Asked in this language, which names itself (ROUTING §18.6).
+        'offer' => [
+            'question' => 'Türkçeye geçilsin mi?',
+            'accept' => 'Evet',
+            'stay' => 'Kal',
+            'close' => 'Kapat',
+        ],
     ],
     'slider' => [
         'carousel' => 'karusel',

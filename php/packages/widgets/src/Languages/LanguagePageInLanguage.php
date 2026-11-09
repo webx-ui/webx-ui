@@ -19,7 +19,7 @@ final class LanguagePageInLanguage implements PageInLanguage
 
     public function url(Request $request, string $locale): ?string
     {
-        foreach ($this->links->addresses($request) as $link) {
+        foreach ($this->links->for($request) as $link) {
             if ($link->code === $locale) {
                 return $link->current || $link->fallback ? null : $link->url;
             }

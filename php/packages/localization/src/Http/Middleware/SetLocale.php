@@ -48,10 +48,6 @@ class SetLocale
             return $next($request);
         }
 
-        if (($choice = $this->firstVisit->choice($request)) !== null) {
-            return $choice;
-        }
-
         $target = $this->firstVisit->target($request);
         $response = $next($request);
 

@@ -19,8 +19,8 @@ use WebxUi\Widgets\WidgetsServiceProvider;
 
 /**
  * ROUTING §18 end to end, the way a visitor goes through it: the first visit to a page of the
- * default language lands on the same page in the chosen one, the switcher's link back keeps the
- * choice, and from then on nobody is sent anywhere.
+ * default language lands on the same page in the chosen one, once; the switcher's plain link leads
+ * back, and from then on nobody is sent anywhere — at most offered the language (§18.6).
  */
 final class FirstVisitTest extends TestCase
 {
@@ -73,30 +73,40 @@ final class FirstVisitTest extends TestCase
     }
 
     #[Test]
-    public function a_visitor_is_sent_once_and_keeps_the_choice_of_the_switcher(): void
+    public function a_visitor_is_sent_once_and_the_switcher_s_plain_links_do_the_rest(): void
     {
         // The first visit: the same page in Ukrainian, and the cookie.
         $first = $this->visit('https://shop.test/cameras');
         $first->assertStatus(302)->assertRedirect('https://shop.test/uk/cameras');
         $first->assertCookie('webx_lang', 'uk', false);
 
-        // There, the switcher's link to Russian carries the choice and is not for robots.
+        // There, the switcher's link to Russian is the plain address, as with the setting off.
         $ukrainian = $this->visit('https://shop.test/uk/cameras', 'uk');
         $ukrainian->assertOk();
-        $ukrainian->assertSee('href="https://shop.test/cameras?webx_lang=ru" hreflang="ru" lang="ru" rel="nofollow"', false);
+        $ukrainian->assertSee('href="https://shop.test/cameras" hreflang="ru" lang="ru">', false);
 
-        // Following it: the choice is kept, and the address is the clean one.
-        $chosen = $this->visit('https://shop.test/cameras?webx_lang=ru', 'uk');
-        $chosen->assertStatus(302)->assertRedirect('https://shop.test/cameras');
-        $chosen->assertCookie('webx_lang', 'ru', false);
-
-        // Russian it is, from now on.
-        $russian = $this->visit('https://shop.test/cameras', 'ru');
+        // Following it: Russian, and nobody sends the person anywhere again — whatever the cookie says.
+        $russian = $this->visit('https://shop.test/cameras', 'uk');
         $russian->assertOk();
-        $russian->assertSee('is-current" href="https://shop.test/cameras?webx_lang=ru"', false);
+        $russian->assertSee('is-current" href="https://shop.test/cameras" hreflang="ru" lang="ru" aria-current="page">', false);
         $this->assertNull($this->cookieOf($russian));
+        $this->assertDontSee($russian, 'webx-language-offer');
     }
 
+    #[Test]
+    public function with_the_offer_on_a_later_visit_is_offered_the_language_instead(): void
+    {
+        config()->set('webx-localization.first_visit.offer.enabled', true);
+
+        $russian = $this->visit('https://shop.test/cameras', 'uk');
+        $russian->assertOk();
+        $russian->assertSee('<a class="webx-language-offer__accept" href="https://shop.test/uk/cameras" hreflang="uk">Так</a>', false);
+        $russian->assertSee('Перейти на українську?');
+
+        // Declined: never again.
+        $this->withUnencryptedCookie('webx_lang_offer', '1');
+        $this->assertDontSee($this->visit('https://shop.test/cameras', 'uk'), 'webx-language-offer');
+    }
     #[Test]
     public function a_robot_reads_the_page_of_the_default_language_at_its_address(): void
     {
@@ -133,6 +143,12 @@ final class FirstVisitTest extends TestCase
             'User-Agent' => self::BROWSER,
             'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         ])->get($url);
+    }
+
+    /** @param TestResponse<Response> $response */
+    private function assertDontSee(TestResponse $response, string $text): void
+    {
+        $this->assertStringNotContainsString($text, (string) $response->getContent());
     }
 
     /** @param TestResponse<Response> $response */

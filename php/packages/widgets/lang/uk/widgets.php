@@ -79,6 +79,13 @@ return [
     'language' => [
         'label' => 'Мова',
         'fallback' => 'Перекладу поки немає: головна сторінка цією мовою',
+        // Asked in this language, which names itself (ROUTING §18.6).
+        'offer' => [
+            'question' => 'Перейти на українську?',
+            'accept' => 'Так',
+            'stay' => 'Залишитись',
+            'close' => 'Закрити',
+        ],
     ],
     'slider' => [
         'carousel' => 'карусель',
