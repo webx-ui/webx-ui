@@ -222,6 +222,10 @@ describe('lightbox', () => {
       pswp.currSlide.container.querySelector('img.pswp__img:not(.pswp__img--placeholder)')
     await vi.waitFor(() => expect(shown()).not.toBeNull())
     expect(shown().classList.contains('webx-lightbox__framed')).toBe(true)
+    // The thumbnail standing in until the picture loads is framed too (its shape — jsdom has no
+    // aspect-ratio — is measured in a browser).
+    const placeholder = pswp.currSlide.content.placeholder?.element
+    expect(placeholder.classList.contains('webx-lightbox__framed')).toBe(true)
     // The picture paged to without a frame has no frame's background.
     pswp.prev()
     await vi.waitFor(() => expect(shown()).not.toBeNull())

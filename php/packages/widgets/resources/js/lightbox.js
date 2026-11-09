@@ -193,7 +193,11 @@ export async function show(link) {
   pswp.on('contentAppend', ({ content }) => {
     if (!content.data.ratio) return
     content.element?.classList.add('webx-lightbox__framed')
-    content.placeholder?.element?.classList.add('webx-lightbox__framed')
+    // The thumbnail standing in until the picture loads keeps its own shape (PhotoSwipe gives it
+    // `height: auto`) and would stick out of the frame for the second it stays: the frame's shape.
+    const placeholder = content.placeholder?.element
+    placeholder?.classList.add('webx-lightbox__framed')
+    if (placeholder) placeholder.style.aspectRatio = String(content.data.ratio)
   })
 
   pswp.on('close', () => reveal(links[pswp.currIndex] ?? link))
