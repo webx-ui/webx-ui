@@ -150,9 +150,9 @@ A card:
 - `rel` already carries `noopener noreferrer` for a new tab: print it as it is.
 - A button may lead to a file of the media library — «Download the brochure» on a hero. `download` is
   then the name the file was uploaded under, when the editor ticked «Download instead of opening»;
-  else null. A file gone from the library drops the button. Print the `<a>` with
-  `{{ \WebxUi\Admin\Links\LinkAttributes::of($button) }}`: `href`, `target`, `rel` and `download` in
-  one, as `<x-webx-banners>` does. A button layer takes a file the same way.
+  else null. A file gone from the library drops the button. Inside the `<a>` print
+  `\WebxUi\Admin\Links\LinkAttributes::of($button)` in double curly braces: `href`, `target`, `rel`
+  and `download` in one, as `<x-webx-banners>` does. A button layer takes a file the same way.
 - A banner whose picture is no longer in the library is left out, before `take()` counts — a hole in
   a slider is worse than one slide fewer.
 

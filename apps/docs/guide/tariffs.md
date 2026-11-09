@@ -197,10 +197,11 @@ The card:
 because the block's template is written in the subset of Blade the playground's preview also reads,
 and `number_format` is not in it.
 
-The button may lead to a file of the media library — the full price list in PDF. Print its `<a>` with
-`{{ \WebxUi\Admin\Links\LinkAttributes::of($tariff['button']) }}`: `href`, `target`, `rel` and `download`
-in one, as the block does. A site whose copy of the block type was installed earlier keeps its old
-template — the file opens rather than downloads — until it takes the new one:
+The button may lead to a file of the media library — the full price list in PDF. Inside its `<a>`
+print `\WebxUi\Admin\Links\LinkAttributes::of($tariff['button'])` in double curly braces: `href`,
+`target`, `rel` and `download` in one, as the block does. A site whose copy of the block type was
+installed earlier keeps its old template — the file opens rather than downloads — until it takes
+the new one:
 `php artisan webx:blocks:import tariffs --path=vendor/webx-ui/module-tariffs/resources/blocks --replace=tariffs --publish`.
 
 ### Groups as tabs
