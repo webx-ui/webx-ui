@@ -19,6 +19,8 @@ guides when the question is about one of those. An entity's own attachments are 
   (`MediaValues::normalize()`; extra keys dropped); an unknown id is refused by name.
 - **Asset addresses**: binds `WebxUi\Admin\Contracts\AssetUrls` to `LibraryUrls`, which is how
   pictures inside a `wx-rich-text` value find their address.
+  The same class answers `AssetDownloads` — address and `file_name` — for a `wx-link` to a file;
+  the panel half gives the link picker `pickFile` / `describeFile` (under `MEDIA_BROWSE`).
 - **Lookup** `Screens\MediaFiles` (singleton, flushed per response): rows by key in one `whereIn`;
   `prefetch(fn ($files) => …)` names keys every page asks — `module-settings` adds the logo — and the
   response's first look-up takes them along.

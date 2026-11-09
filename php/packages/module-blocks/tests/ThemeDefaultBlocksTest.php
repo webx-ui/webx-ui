@@ -7,6 +7,7 @@ namespace WebxUi\Blocks\Tests;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\File;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Contracts\AssetDownloads;
 use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Blocks\BlockOffers;
 use WebxUi\Blocks\Demo\BlocksDemo;
@@ -67,6 +68,18 @@ final class ThemeDefaultBlocksTest extends TestCase
         $app->resolving(ThemeLocator::class, static function (ThemeLocator $locator): void {
             $locator->register(self::THEME, self::path());
         });
+
+        // The library a file link asks, with one file in it — bound before the field types are
+        // built, the way the media module binds it in `register()`.
+        $app->instance(AssetDownloads::class, new class implements AssetDownloads
+        {
+            public function downloads(array $paths): array
+            {
+                return array_combine($paths, array_map(static fn (string $path): ?array => $path === 'media/ab/cd/f00d.pdf'
+                    ? ['url' => '/storage/media/ab/cd/f00d.pdf', 'name' => 'Price list.pdf']
+                    : null, $paths));
+            }
+        });
     }
 
     #[Test]
@@ -113,6 +126,83 @@ final class ThemeDefaultBlocksTest extends TestCase
 
         // Nothing to say is nothing printed, not an empty frame.
         $this->assertSame('', trim($this->render([$this->node('hero'), $this->node('text'), $this->node('cta')])));
+    }
+
+    /**
+     * The buttons on `wx-link` (webx-ui#132): a new tab with its `rel`, a file of the library that
+     * downloads under the name it was uploaded with, and the old `*_url` read while the link is
+     * empty — a block saved before the field existed prints what it always printed.
+     */
+    #[Test]
+    public function the_buttons_take_a_link_a_new_tab_and_a_download(): void
+    {
+        $this->sync();
+
+        $file = ['target' => 'file', 'path' => 'media/ab/cd/f00d.pdf', 'download' => true];
+        $away = ['target' => 'url', 'url' => 'https://example.com/plan', 'new_tab' => true, 'rel' => ['nofollow']];
+
+        $html = $this->render([
+            $this->node('hero', ['title' => 'Both', 'button_label' => 'Price list', 'button_link' => $file, 'second_label' => 'The plan', 'second_link' => $away]),
+            $this->node('cta', ['heading' => 'Ask', 'button_label' => 'Now', 'button_link' => $away, 'button_url' => '/ignored']),
+            $this->node('media-text', ['heading' => 'Words', 'button_label' => 'Read', 'button_link' => ['target' => 'file', 'path' => 'media/ab/cd/f00d.pdf']]),
+            $this->node('cards', ['cards' => [['title' => 'Card', 'link' => $away]]]),
+        ]);
+
+        $this->assertStringContainsString('<a class="b-hero__button" href="/storage/media/ab/cd/f00d.pdf" download="Price list.pdf">Price list</a>', $html);
+        $this->assertStringContainsString('<a class="b-hero__button b-hero__button--quiet" href="https://example.com/plan" target="_blank" rel="nofollow noopener noreferrer">The plan</a>', $html);
+        // A chosen link wins over the old address beside it.
+        $this->assertStringContainsString('<a class="b-cta__button" href="https://example.com/plan" target="_blank" rel="nofollow noopener noreferrer">Now</a>', $html);
+        $this->assertStringNotContainsString('/ignored', $html);
+        // A file without the switch opens rather than downloads.
+        $this->assertStringContainsString('<a class="b-media-text__button" href="/storage/media/ab/cd/f00d.pdf">Read</a>', $html);
+        $this->assertStringContainsString('<a class="b-cards__link" href="https://example.com/plan" target="_blank" rel="nofollow noopener noreferrer">Card</a>', $html);
+
+        // A file the library no longer has, and a link with nowhere to go: no button, and no old
+        // address put back in its place.
+        $gone = $this->render([$this->node('hero', ['title' => 'Gone', 'button_label' => 'Price list', 'button_link' => ['target' => 'file', 'path' => 'media/no/ne/gone.pdf', 'download' => true], 'button_url' => '/old'])]);
+        $this->assertStringNotContainsString('b-hero__button', $gone);
+
+        // The old shape, as every site saved it: the same anchors as before the link fields.
+        $old = $this->render([
+            $this->node('hero', ['title' => 'Old', 'button_label' => 'Go', 'button_url' => '/go', 'second_label' => 'Chat', 'second_url' => 'viber://chat?number=0000']),
+            $this->node('cta', ['heading' => 'Old', 'button_label' => 'Now', 'button_url' => '/now']),
+            $this->node('media-text', ['heading' => 'Old', 'button_label' => 'Read', 'button_url' => '/read']),
+            $this->node('cards', ['cards' => [['title' => 'Old card', 'link_url' => '/card']]]),
+        ]);
+
+        $this->assertStringContainsString('<a class="b-hero__button" href="/go">Go</a>', $old);
+        $this->assertStringContainsString('<a class="b-hero__button b-hero__button--quiet" href="viber://chat?number=0000">Chat</a>', $old);
+        $this->assertStringContainsString('<a class="b-cta__button" href="/now">Now</a>', $old);
+        $this->assertStringContainsString('<a class="b-media-text__button" href="/read">Read</a>', $old);
+        $this->assertStringContainsString('<a class="b-cards__link" href="/card">Old card</a>', $old);
+    }
+
+    /**
+     * Why the buttons got new fields beside the old ones rather than a new type for the old ids: a
+     * site theme that overrides one of these blocks with its own `button_url` as `wx-input` — the
+     * only shape there was — must stay a compatible override (rule 16), and its template printing
+     * `{{ $button_url }}` must keep being handed a string.
+     */
+    #[Test]
+    public function an_override_written_for_the_old_buttons_stays_compatible(): void
+    {
+        $old = [
+            'hero' => ['button_url', 'second_url'],
+            'cta' => ['button_url', 'second_url'],
+            'media-text' => ['button_url'],
+        ];
+
+        foreach ($old as $slug => $fields) {
+            $override = array_map(static fn (string $id): array => ['id' => $id, 'type' => 'wx-input', 'label' => $id], $fields);
+            $schema = SchemaCompatibility::inherit(self::document($slug)['schema'], $override)['schema'];
+
+            $this->assertSame([], SchemaCompatibility::problems(self::document($slug)['schema'], $schema), $slug);
+        }
+
+        $cards = [['id' => 'cards', 'type' => 'wx-repeater', 'label' => 'Cards', 'children' => [['id' => 'link_url', 'type' => 'wx-input', 'label' => 'Link']]]];
+        $schema = SchemaCompatibility::inherit(self::document('cards')['schema'], $cards)['schema'];
+
+        $this->assertSame([], SchemaCompatibility::problems(self::document('cards')['schema'], $schema));
     }
 
     /** The demo `text` of this package and anything typed through MCP: plain lines, escaped. */

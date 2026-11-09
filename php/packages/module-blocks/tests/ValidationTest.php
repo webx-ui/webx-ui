@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace WebxUi\Blocks\Tests;
 
+use Illuminate\Foundation\Application;
 use Illuminate\Testing\Fluent\AssertableJson;
 use Illuminate\Validation\ValidationException;
 use Laravel\Mcp\Server\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Contracts\AssetDownloads;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Blocks\ContentValues;
 use WebxUi\Blocks\Tests\Fixtures\Page;
@@ -24,6 +26,27 @@ use WebxUi\Mcp\Server\WebxServer;
  */
 final class ValidationTest extends TestCase
 {
+    /**
+     * The library a file link asks, with one file in it — bound before the field types are built,
+     * the way the media module binds it in `register()`.
+     *
+     * @param  Application  $app
+     */
+    protected function defineEnvironment($app): void
+    {
+        parent::defineEnvironment($app);
+
+        $app->instance(AssetDownloads::class, new class implements AssetDownloads
+        {
+            public function downloads(array $paths): array
+            {
+                return array_combine($paths, array_map(static fn (string $path): ?array => $path === 'media/ab/cd/f00d.pdf'
+                    ? ['url' => '/storage/media/ab/cd/f00d.pdf', 'name' => 'Price list.pdf']
+                    : null, $paths));
+            }
+        });
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -40,6 +63,7 @@ final class ValidationTest extends TestCase
                 ['id' => 'when', 'type' => 'wx-date-picker'],
                 ['id' => 'colour', 'type' => 'wx-color-picker'],
                 ['id' => 'link', 'type' => 'wx-link'],
+                ['id' => 'file', 'type' => 'wx-link', 'props' => ['files' => true]],
                 ['id' => 'note', 'type' => 'wx-text', 'props' => ['text' => 'A note, not a field']],
             ],
         ]);
@@ -60,6 +84,8 @@ final class ValidationTest extends TestCase
         yield 'not a colour' => ['colour', 'red"><script>alert(1)</script>'];
         yield 'a javascript: link' => ['link', ['target' => 'url', 'url' => 'javascript:alert(1)']];
         yield 'a link without its target' => ['link', ['url' => '/contacts']];
+        yield 'a file where the field takes none' => ['link', ['target' => 'file', 'path' => 'media/ab/cd/f00d.pdf']];
+        yield 'a download switch that is not one' => ['file', ['target' => 'file', 'path' => 'media/ab/cd/f00d.pdf', 'download' => 'yes']];
     }
 
     #[Test]
@@ -121,6 +147,60 @@ final class ValidationTest extends TestCase
         ])->assertOk();
 
         $this->assertSame(10, $page->refresh()->draft['blocks'][0]['values']['count']);
+    }
+
+    /**
+     * A button that downloads a file of the library (webx-ui#132), through every door: the agent's
+     * whole write, its edit, and the panel's save keep the key and the switch.
+     */
+    #[Test]
+    public function a_file_link_is_written_through_every_door(): void
+    {
+        $page = Page::query()->create(['title' => 'Test']);
+        $file = ['target' => 'file', 'path' => 'media/ab/cd/f00d.pdf', 'download' => true];
+
+        $this->agent('set_content', ['force' => true,
+            'entity' => 'note',
+            'id' => $page->id,
+            'blocks' => [['key' => 'k-one', 'type' => 'every', 'values' => ['file' => $file]]],
+        ])->assertOk();
+
+        $stored = $page->refresh()->draft['blocks'][0]['values']['file'];
+        $this->assertSame('file', $stored['target']);
+        $this->assertSame('media/ab/cd/f00d.pdf', $stored['path']);
+        $this->assertTrue($stored['download']);
+
+        $this->agent('edit_content', ['force' => true,
+            'entity' => 'note',
+            'id' => $page->id,
+            'ops' => [['op' => 'set', 'key' => 'k-one', 'values' => ['file' => [...$file, 'download' => false]]]],
+        ])->assertOk();
+
+        $this->assertFalse($page->refresh()->draft['blocks'][0]['values']['file']['download']);
+
+        $page->storeBlocks([$this->node('every', ['file' => $file], 'k-two')]);
+        $this->assertSame('media/ab/cd/f00d.pdf', $page->refresh()->draft['blocks'][0]['values']['file']['path']);
+    }
+
+    /** What an agent gets wrong about a file link is said in words, naming the block and the field. */
+    #[Test]
+    public function a_wrong_file_link_is_refused_in_words(): void
+    {
+        $page = Page::query()->create(['title' => 'Test']);
+
+        $this->agent('set_content', ['force' => true,
+            'entity' => 'note',
+            'id' => $page->id,
+            'blocks' => [['key' => 'k-one', 'type' => 'every', 'values' => ['file' => ['target' => 'file', 'path' => 'media/no/ne/gone.pdf']]]],
+        ])->assertHasErrors(['every [k-one], field [file]', 'There is no file media/no/ne/gone.pdf in the media library.']);
+
+        $this->agent('set_content', ['force' => true,
+            'entity' => 'note',
+            'id' => $page->id,
+            'blocks' => [['key' => 'k-one', 'type' => 'every', 'values' => ['link' => ['target' => 'file', 'path' => 'media/ab/cd/f00d.pdf']]]],
+        ])->assertHasErrors(['every [k-one], field [link]', 'This field does not link to files.']);
+
+        $this->assertNull($page->refresh()->draft, 'nothing was written');
     }
 
     #[Test]

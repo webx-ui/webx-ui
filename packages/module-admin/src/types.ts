@@ -199,6 +199,17 @@ export interface AdminModule {
    */
   pickImageWith?: string[]
   /**
+   * Opens the same library for a file of any kind — a brochure a button downloads — and answers
+   * with it, or `null` if nobody chose one. The seam {@link pickImage} is, for `wx-link`: a panel
+   * without it offers no file target. Opened under {@link pickImageWith} too.
+   */
+  pickFile?: () => Promise<PickedFile | null>
+  /**
+   * What a library key is called and where it lives now, for a saved file link the picker has to
+   * name again; `null` for a key the library no longer has.
+   */
+  describeFile?: (path: string, admin: AdminContext) => Promise<PickedFile | null>
+  /**
    * Where library keys live now, by key; `null` for a key the library no longer has.
    *
    * The other half of {@link pickImage}. A document keeps the key of every picture beside an
@@ -241,6 +252,13 @@ export interface BlockLabels {
 export interface PickedImage {
   url: string
   path?: string
+}
+
+/** A file of the library as a link names it: its key, its address now, and its own name. */
+export interface PickedFile {
+  path: string
+  url: string
+  name: string
 }
 
 export type AdminStatus = 'loading' | 'ready' | 'unauthenticated' | 'error'

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Admin\Links;
 
+use WebxUi\Admin\Contracts\AssetDownloads;
 use WebxUi\Admin\Contracts\SiteUrls;
 use WebxUi\Localization\Locales;
 
@@ -20,13 +21,30 @@ final readonly class LinkUrls
 {
     /**
      * `$site` is null on a panel with no address registry, and a hand-written path then travels
-     * as it was written.
+     * as it was written. `$files` is null on a panel with no file manager, and a file link then
+     * goes nowhere.
      */
     public function __construct(
         private LinkSources $sources,
         private Locales $locales,
         private ?SiteUrls $site = null,
+        private ?AssetDownloads $files = null,
     ) {}
+
+    /**
+     * The library file behind a `file` link — where it is served from and what it was called on
+     * upload — or null for any other link, and for a file the library no longer has.
+     *
+     * @return array{url: string, name: string}|null
+     */
+    public function file(Link $link): ?array
+    {
+        if ($link->target !== LinkTarget::File || $link->path === null || $this->files === null) {
+            return null;
+        }
+
+        return $this->files->downloads([$link->path])[$link->path] ?? null;
+    }
 
     /**
      * What the entity behind an `entity` link is called and where it lives — null for anything
@@ -111,6 +129,8 @@ final readonly class LinkUrls
             // Checked again on the way out, not only on the way in: a value stored before the
             // check, or written straight into a column, must not print `javascript:` into an href.
             LinkTarget::Url => $link->url === null || ! Link::isAcceptableUrl($link->url) ? null : $this->path($link->url, $locale),
+            // Asked of the library on every read, like a picture: the key is what is kept.
+            LinkTarget::File => $this->file($link)['url'] ?? null,
             LinkTarget::None => null,
         };
 

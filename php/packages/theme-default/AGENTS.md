@@ -44,14 +44,14 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
   block's own colour).
 - **`blocks/`** — the six block types `webx:blocks:import --theme` puts on a site (`webx:setup` only prints it)
   (THEMES §9.1), as `webx:blocks:export` writes them; CSS on the tokens and `@container` only:
+  - buttons are `wx-link` with files (`button_link`, `second_link`, a card’s `link`); the old `*_url` stay `wx-input`, read while the link is empty;
   - `hero` — `title`, `subtitle`, two buttons (`button_*`, `second_*`), `tone`
     `plain|surface|accent|image` (+ `image`), `align` `start|center`, `width` `column|bleed`;
   - `text` — `heading`, `body` (rich text, under `site-prose`; a body of plain lines prints as
     paragraphs), `width` `narrow|wide`;
   - `media-text` — `image`, `heading`, `body`, one button, `side` `start|end`, `tone` `plain|surface`;
   - `cards` — `heading`, `intro`, `columns` `2|3|4` (at most; the container decides), `pictures`
-    `photo|icon`, repeater `cards` (`image`, `title`, `text`, `link_label`, `link_url`: the
-    whole card is the link; `link_label` ends in the `arrow-right` icon, `b-cards__arrow`);
+    `photo|icon`, repeater `cards` (`image`, `title`, `text`, `link_label`, `link`, `link_url`: the whole card is the link; `link_label` ends in the `arrow-right` icon, `b-cards__arrow`);
   - `cta` — `heading`, `text`, two buttons, `tone` `accent|surface|plain`;
   - `contact` — `heading`, `text`, `show_contacts`/`show_hours` (Settings › Contacts through
     `contacts()` and the phones, hours and socials widgets), `form` (an Inbox form's slug),

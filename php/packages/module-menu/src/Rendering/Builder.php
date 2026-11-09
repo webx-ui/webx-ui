@@ -204,7 +204,9 @@ final readonly class Builder
         $address = match ($link->target) {
             LinkTarget::Entity => $candidate?->url,
             LinkTarget::Url => $link->url === null ? null : ($this->site?->to($link->url, $locale) ?? $link->url),
-            LinkTarget::None => null,
+            // A menu item never holds one — its rules call the link type with no `files` — and a
+            // value written around them goes nowhere rather than somewhere wrong.
+            LinkTarget::File, LinkTarget::None => null,
         };
 
         if ($address === null) {

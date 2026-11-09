@@ -292,6 +292,17 @@ The panel's own frame comes with `module-admin` and is in every screen it draws:
 | -------------- | -------------- | -------- | -------------------------------------- |
 | `wx-list`      | `module-admin` | `layout` | the frame a section's list is drawn in |
 | `wx-rich-text` | `module-admin` | `field`  | a document, kept as HTML               |
+| `wx-link`      | `module-admin` | `field`  | somewhere to go, chosen, not typed     |
+
+`wx-link` keeps the target and never its address: a page of the site by its morph pair, a typed
+address, a file of the media library by its key, or nowhere. `props`: `allowNone` (off for a
+button), `attributes` (the new tab and `rel`) and `files` — on, the picker offers a file of the
+library and a switch that makes the browser save it rather than open it. A file is a target only
+where the node says `files: true`, on both sides: the menu and every other caller of the rules with
+no node keep the three targets their columns hold. The site reads the link resolved — `url`,
+`new_tab`, `rel` (with `noopener noreferrer` for a new tab), `available`, and `download`, the name
+the file was uploaded under — and a template prints all of it with
+`WebxUi\Admin\Links\LinkAttributes::of($link)` ([blocks](/guide/blocks#a-link-field)).
 
 `wx-list` is one shape for every list in the panel: the section's name on its own line, the one
 action the section exists for beside it, the views of the list as tabs under that, and a card

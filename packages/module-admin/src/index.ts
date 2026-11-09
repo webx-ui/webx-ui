@@ -200,6 +200,7 @@ export type {
   Manifest,
   ManifestModule,
   NavEntry,
+  PickedFile,
   PickedImage,
   RowAction,
   ScreenAction,

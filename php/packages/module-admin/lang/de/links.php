@@ -34,4 +34,13 @@ return [
     'not-localized' => 'Ein Link ist in jeder Sprache derselbe und kann nicht übersetzt werden.',
     'address-fallback' => 'In dieser Sprache gibt es noch keine Adresse — das ist die Adresse in :locale, der Hauptsprache der Website.',
     'address-fallback-label' => 'Adresse in der Hauptsprache',
+    'target-file' => 'Eine Datei',
+    'file-choose' => 'Datei auswählen',
+    'file-replace' => 'Andere Datei',
+    'file-gone' => 'Diese Datei ist nicht mehr in der Mediathek',
+    'file-download' => 'Herunterladen statt öffnen',
+    'no-file' => 'In der Mediathek gibt es keine Datei :path.',
+    'files-off' => 'Dieses Feld verlinkt keine Dateien.',
+    'download' => 'Herunterladen ist entweder an oder aus.',
+    'path' => 'Wählen Sie eine Datei aus der Mediathek.',
 ];

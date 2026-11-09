@@ -8,6 +8,7 @@ use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use WebxUi\Admin\Contracts\AssetDownloads;
 use WebxUi\Admin\Contracts\AssetUrls;
 use WebxUi\Admin\Events\StoredContentRewritten;
 use WebxUi\Admin\Help\HelpRegistry;
@@ -67,6 +68,8 @@ class MediaServiceProvider extends ServiceProvider
         // pictures in a `wx-rich-text` document above all. Bound here rather than asked for by
         // name, because the panel may not have a file manager at all.
         $this->app->bind(AssetUrls::class, LibraryUrls::class);
+        // The same answer with the name a file was uploaded under, for a link that downloads it.
+        $this->app->bind(AssetDownloads::class, LibraryUrls::class);
 
         // Where a file is in use, asked before it is deleted. A module that keeps files where the
         // schema cannot show them tags a source of its own with the same name.

@@ -230,6 +230,13 @@ template if the block should show it
 
 A field the file describes is the file's: its label and default win over the package's.
 
+The buttons of `hero`, `cta`, `media-text` and `cards` are `wx-link` fields — `button_link`,
+`second_link`, `link` in a card — with a page, an address, a new tab or a file of the library to
+download. The old `button_url`, `second_url` and `link_url` stay beside them with their type, read
+while the link is empty and shown in the panel only while they hold something: an override written
+for the old buttons stays compatible and prints what it printed. A site gets the new fields with
+`webx:blocks:import --theme --replace=hero` (and the other three), when it chooses to.
+
 The 35 rules of a theme — where to work, tokens, where each style lives, blocks, views, languages
 and fonts, accessibility, what to check before saying it is done — are in the engine's
 [`RULES.md`](https://github.com/webx-ui/webx-ui/blob/main/php/packages/themes/RULES.md). The check

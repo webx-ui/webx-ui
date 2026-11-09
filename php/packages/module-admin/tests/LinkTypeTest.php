@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace WebxUi\Admin\Tests;
 
+use Illuminate\Foundation\Application;
 use Illuminate\Validation\ValidationException;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Contracts\AssetDownloads;
 use WebxUi\Admin\Contracts\SiteUrls;
 use WebxUi\Admin\Facades\Screens;
+use WebxUi\Admin\Links\LinkAttributes;
 use WebxUi\Admin\Links\LinkCandidate;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\Links\LinkUrls;
@@ -22,6 +25,27 @@ use WebxUi\Localization\Locales;
  */
 final class LinkTypeTest extends TestCase
 {
+    /**
+     * The library a file link asks, with one file in it — bound before the field types are built,
+     * the way the media module binds it in `register()`.
+     *
+     * @param  Application  $app
+     */
+    protected function defineEnvironment($app): void
+    {
+        parent::defineEnvironment($app);
+
+        $app->instance(AssetDownloads::class, new class implements AssetDownloads
+        {
+            public function downloads(array $paths): array
+            {
+                return array_combine($paths, array_map(static fn (string $path): ?array => $path === 'media/ab/cd/f00d.pdf'
+                    ? ['url' => '/storage/media/ab/cd/f00d.pdf', 'name' => 'Price list.pdf']
+                    : null, $paths));
+            }
+        });
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -34,6 +58,7 @@ final class LinkTypeTest extends TestCase
         Screens::register('blocks.cta', [
             ['id' => 'link', 'type' => 'wx-link', 'name' => 'cta.link'],
             ['id' => 'translated', 'type' => 'wx-link', 'name' => 'cta.translated', 'localized' => true],
+            ['id' => 'file', 'type' => 'wx-link', 'name' => 'cta.file', 'props' => ['files' => true]],
         ]);
     }
 
@@ -211,15 +236,127 @@ final class LinkTypeTest extends TestCase
     }
 
     /**
+     * A file of the library (webx-ui#132): its key and the download switch are kept, and only a
+     * file link carries them — every other link keeps the seven keys a menu item has columns for.
+     */
+    #[Test]
+    public function a_file_link_is_kept_as_its_key_and_the_download_switch(): void
+    {
+        $stored = $this->store(['target' => 'file', 'path' => 'media/ab/cd/f00d.pdf', 'download' => true, 'hash' => 'page=2', 'new_tab' => true], 'cta.file');
+
+        $this->assertSame([
+            'target' => 'file',
+            'entity_type' => null,
+            'entity_id' => null,
+            'url' => null,
+            'hash' => null,
+            'new_tab' => true,
+            'rel' => [],
+            'path' => 'media/ab/cd/f00d.pdf',
+            'download' => true,
+        ], $stored);
+
+        // A path and a download flag sent with an address are not kept with it.
+        $this->assertSame(['target', 'entity_type', 'entity_id', 'url', 'hash', 'new_tab', 'rel'], array_keys((array) $this->store(['target' => 'url', 'url' => '/a', 'path' => 'media/x.pdf', 'download' => true], 'cta.file')));
+        $this->assertNull($this->store(['target' => 'file', 'path' => ''], 'cta.file'), 'an unfinished choice keeps nothing');
+    }
+
+    /** The menu, a redirect after a form — every caller of the rules with no node — has no file target. */
+    #[Test]
+    public function a_file_link_is_refused_where_the_field_did_not_ask_for_files(): void
+    {
+        try {
+            $this->store(['target' => 'file', 'path' => 'media/ab/cd/f00d.pdf']);
+            $this->fail('A field without `files` took a file.');
+        } catch (ValidationException $refused) {
+            $this->assertSame(['This field does not link to files.'], $refused->errors()['cta.link']);
+        }
+
+        $rules = $this->app->make(LinkType::class)->rules([]);
+        $validator = validator(['link' => ['target' => 'file', 'path' => 'media/ab/cd/f00d.pdf']], ['link' => $rules]);
+
+        $this->assertTrue($validator->fails());
+    }
+
+    #[Test]
+    public function a_download_switch_that_is_not_one_is_refused(): void
+    {
+        $this->expectException(ValidationException::class);
+
+        $this->store(['target' => 'file', 'path' => 'media/ab/cd/f00d.pdf', 'download' => 'yes please'], 'cta.file');
+    }
+
+    /** A key typed rather than picked — an agent guessing — is refused when it is new, not when it was held. */
+    #[Test]
+    public function a_new_file_key_the_library_does_not_have_is_refused(): void
+    {
+        $gone = ['target' => 'file', 'path' => 'media/no/ne/gone.pdf'];
+
+        try {
+            $this->values()->validate('blocks.cta', ['cta.file' => $gone], static fn (string $permission): bool => true, []);
+            $this->fail('An unknown key was taken.');
+        } catch (ValidationException $refused) {
+            $this->assertSame(['There is no file media/no/ne/gone.pdf in the media library.'], $refused->errors()['cta.file']);
+        }
+
+        // Held already — a brochure deleted from the library — the block still saves.
+        $kept = $this->values()->validate('blocks.cta', ['cta.file' => $gone], static fn (string $permission): bool => true, ['cta.file' => $gone]);
+
+        $this->assertSame('media/no/ne/gone.pdf', $kept['cta.file']['path'] ?? null);
+    }
+
+    #[Test]
+    public function the_site_reads_a_file_link_with_its_address_and_its_own_name(): void
+    {
+        $resolved = $this->resolve(['target' => 'file', 'path' => 'media/ab/cd/f00d.pdf', 'download' => true], null, 'cta.file');
+
+        $this->assertSame('/storage/media/ab/cd/f00d.pdf', $resolved['url']);
+        $this->assertSame('Price list.pdf', $resolved['download']);
+        $this->assertSame('Price list.pdf', $resolved['label']);
+        $this->assertTrue($resolved['available']);
+
+        $opened = $this->resolve(['target' => 'file', 'path' => 'media/ab/cd/f00d.pdf'], null, 'cta.file');
+        $this->assertNull($opened['download'], 'without the switch the file opens');
+
+        $gone = $this->resolve(['target' => 'file', 'path' => 'media/no/ne/gone.pdf', 'download' => true], null, 'cta.file');
+        $this->assertNull($gone['url']);
+        $this->assertNull($gone['download']);
+        $this->assertFalse($gone['available']);
+    }
+
+    #[Test]
+    public function the_attributes_of_an_anchor_are_worked_out_once(): void
+    {
+        $this->assertSame(
+            'href="https://example.com/a" target="_blank" rel="nofollow noopener noreferrer"',
+            (string) LinkAttributes::of($this->resolve(['target' => 'url', 'url' => 'https://example.com/a', 'new_tab' => true, 'rel' => ['nofollow']])),
+        );
+        $this->assertSame(
+            'href="/storage/media/ab/cd/f00d.pdf" download="Price list.pdf"',
+            (string) LinkAttributes::of($this->resolve(['target' => 'file', 'path' => 'media/ab/cd/f00d.pdf', 'download' => true], null, 'cta.file')),
+        );
+
+        // A draft is not printed, and a chosen link that goes nowhere does not fall back.
+        $this->assertNull(LinkAttributes::of($this->resolve(['target' => 'entity', 'entity_type' => 'page', 'entity_id' => 2]), '/old'));
+
+        // The old field, while the link is empty: as it was, whatever the scheme — but never script.
+        $this->assertSame('href="viber://chat?number=0000"', (string) LinkAttributes::of(null, ' viber://chat?number=0000 '));
+        $this->assertSame('href="/a?x=1&amp;y=&quot;2&quot;"', (string) LinkAttributes::of(null, '/a?x=1&y="2"'));
+        $this->assertNull(LinkAttributes::of(null, 'javascript:alert(1)'));
+        $this->assertNull(LinkAttributes::of(null, ''));
+        $this->assertNull(LinkAttributes::of(null, null));
+    }
+
+    /**
      * @param  array<string, mixed>|null  $value
      * @return array<string, mixed>|null
      */
-    private function store(?array $value): ?array
+    private function store(?array $value, string $field = 'cta.link'): ?array
     {
         /** @var array<string, mixed>|null $stored */
         $stored = $this->values()->validate('blocks.cta', [
-            'cta.link' => $value,
-        ], static fn (string $permission): bool => true)['cta.link'] ?? null;
+            $field => $value,
+        ], static fn (string $permission): bool => true)[$field] ?? null;
 
         return $stored;
     }
@@ -228,10 +365,10 @@ final class LinkTypeTest extends TestCase
      * @param  array<string, mixed>  $stored
      * @return array<string, mixed>
      */
-    private function resolve(array $stored, ?string $locale = null): array
+    private function resolve(array $stored, ?string $locale = null, string $field = 'cta.link'): array
     {
         /** @var array<string, mixed> $resolved */
-        $resolved = $this->values()->resolveAll('blocks.cta', ['cta.link' => $stored], $locale)['cta.link'];
+        $resolved = $this->values()->resolveAll('blocks.cta', [$field => $stored], $locale)[$field];
 
         return $resolved;
     }

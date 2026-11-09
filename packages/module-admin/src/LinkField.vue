@@ -19,9 +19,14 @@ const props = withDefaults(
     allowNone?: boolean
     /** Off where the two attributes belong to whatever holds the link rather than to the field. */
     attributes?: boolean
+    /**
+     * A file of the library as a target — what a button that downloads a brochure needs. On only
+     * where the node asks (`props.files`), as on the server, which refuses a file link otherwise.
+     */
+    files?: boolean
     disabled?: boolean
   }>(),
-  { allowNone: true, attributes: true, disabled: false },
+  { allowNone: true, attributes: true, files: false, disabled: false },
 )
 
 const value = defineModel<LinkValue | null>({ default: null })
@@ -33,6 +38,7 @@ const value = defineModel<LinkValue | null>({ default: null })
     v-bind="$attrs"
     :allow-none="props.allowNone"
     :attributes="props.attributes"
+    :files="props.files"
     :disabled="props.disabled"
   />
 </template>

@@ -32,11 +32,33 @@
       "localized": true
     },
     {
+      "id": "button_link",
+      "type": "wx-link",
+      "label": "Button link",
+      "props": {
+        "files": true,
+        "allowNone": false
+      }
+    },
+    {
       "id": "button_url",
       "type": "wx-input",
-      "label": "Button address",
+      "label": "Button address (old)",
       "props": {
         "placeholder": "/contacts"
+      },
+      "help": "What this button had before it took a link. Used only while the link above is empty: choose the link, then clear this.",
+      "visible": {
+        "all": [
+          {
+            "when": "button_url",
+            "not": null
+          },
+          {
+            "when": "button_url",
+            "not": ""
+          }
+        ]
       }
     },
     {
@@ -46,11 +68,33 @@
       "localized": true
     },
     {
+      "id": "second_link",
+      "type": "wx-link",
+      "label": "Second button link",
+      "props": {
+        "files": true,
+        "allowNone": false
+      }
+    },
+    {
       "id": "second_url",
       "type": "wx-input",
-      "label": "Second button address",
+      "label": "Second button address (old)",
       "props": {
         "placeholder": "/contacts"
+      },
+      "help": "What this button had before it took a link. Used only while the link above is empty: choose the link, then clear this.",
+      "visible": {
+        "all": [
+          {
+            "when": "second_url",
+            "not": null
+          },
+          {
+            "when": "second_url",
+            "not": ""
+          }
+        ]
       }
     },
     {
@@ -76,15 +120,25 @@
       }
     }
   ],
-  "template": "@php\n    $look = in_array($tone, ['surface', 'plain'], true) ? $tone : 'accent';\n@endphp\n@if ($heading || ($button_label && $button_url))\n<section class=\"b-cta b-cta--{{ $look }}\" data-wx-block=\"cta\">\n    <div class=\"b-cta__inner\">\n        <div class=\"b-cta__words\">\n            @if ($heading)\n                <h2 class=\"b-cta__heading\">{{ $heading }}</h2>\n            @endif\n            @if ($text)\n                <p class=\"b-cta__text\">{{ $text }}</p>\n            @endif\n        </div>\n        @if (($button_label && $button_url) || ($second_label && $second_url))\n            <div class=\"b-cta__actions\">\n                @if ($button_label && $button_url)\n                    <a class=\"b-cta__button\" href=\"{{ $button_url }}\">{{ $button_label }}</a>\n                @endif\n                @if ($second_label && $second_url)\n                    <a class=\"b-cta__button b-cta__button--quiet\" href=\"{{ $second_url }}\">{{ $second_label }}</a>\n                @endif\n            </div>\n        @endif\n    </div>\n</section>\n@endif\n",
+  "template": "@php\n    $first = \\WebxUi\\Admin\\Links\\LinkAttributes::of($button_link, $button_url);\n    $second = \\WebxUi\\Admin\\Links\\LinkAttributes::of($second_link, $second_url);\n    $look = in_array($tone, ['surface', 'plain'], true) ? $tone : 'accent';\n@endphp\n@if ($heading || ($button_label && $first))\n<section class=\"b-cta b-cta--{{ $look }}\" data-wx-block=\"cta\">\n    <div class=\"b-cta__inner\">\n        <div class=\"b-cta__words\">\n            @if ($heading)\n                <h2 class=\"b-cta__heading\">{{ $heading }}</h2>\n            @endif\n            @if ($text)\n                <p class=\"b-cta__text\">{{ $text }}</p>\n            @endif\n        </div>\n        @if (($button_label && $first) || ($second_label && $second))\n            <div class=\"b-cta__actions\">\n                @if ($button_label && $first)\n                    <a class=\"b-cta__button\" {{ $first }}>{{ $button_label }}</a>\n                @endif\n                @if ($second_label && $second)\n                    <a class=\"b-cta__button b-cta__button--quiet\" {{ $second }}>{{ $second_label }}</a>\n                @endif\n            </div>\n        @endif\n    </div>\n</section>\n@endif\n",
   "styles": ".b-cta {\n    --cta-ring: var(--site-color-accent);\n    container-type: inline-size;\n    padding-block: var(--site-space-5);\n}\n\n.b-cta__inner {\n    display: flex;\n    flex-direction: column;\n    align-items: flex-start;\n    gap: var(--site-space-5);\n    padding: var(--site-space-6) var(--site-space-5);\n    border-radius: var(--site-radius-lg);\n}\n\n.b-cta--accent {\n    --cta-ring: var(--site-color-accent-contrast);\n}\n\n.b-cta--accent .b-cta__inner {\n    background: var(--site-color-accent);\n    color: var(--site-color-accent-contrast);\n}\n\n.b-cta--surface .b-cta__inner {\n    background: var(--site-color-surface-muted);\n    color: var(--site-color-text);\n}\n\n.b-cta--plain .b-cta__inner {\n    border: 1px solid var(--site-color-border);\n    background: var(--site-color-bg);\n    color: var(--site-color-text);\n}\n\n.b-cta__words {\n    min-width: 0;\n}\n\n.b-cta__heading {\n    margin: 0;\n    color: inherit;\n    font-size: var(--site-font-size-3);\n    hyphens: auto;\n}\n\n.b-cta__text {\n    max-width: 40em;\n    margin: var(--site-space-2) 0 0;\n}\n\n.b-cta--surface .b-cta__text,\n.b-cta--plain .b-cta__text {\n    color: var(--site-color-text-muted);\n}\n\n.b-cta__actions {\n    display: flex;\n    flex-wrap: wrap;\n    gap: var(--site-space-3);\n}\n\n.b-cta--accent .b-cta__button:not(.b-cta__button--quiet) {\n    background: var(--site-color-accent-contrast);\n    color: var(--site-color-accent);\n}\n\n.b-cta__button {\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n    min-height: 44px;\n    padding: 0 var(--site-space-5);\n    border: 1px solid transparent;\n    border-radius: var(--site-radius-md);\n    background: var(--site-color-accent);\n    color: var(--site-color-accent-contrast);\n    font-weight: 600;\n    line-height: 1.2;\n    text-align: center;\n    text-decoration: none;\n    transition: background-color var(--site-duration) var(--site-easing), color var(--site-duration) var(--site-easing);\n}\n\n.b-cta__button:hover {\n    background: color-mix(in srgb, var(--site-color-accent) 85%, var(--site-color-text));\n}\n\n.b-cta__button:focus-visible {\n    outline: 2px solid var(--cta-ring);\n    outline-offset: 2px;\n}\n\n.b-cta__button--quiet,\n.b-cta__button--quiet:hover {\n    border-color: currentColor;\n    background: transparent;\n    color: inherit;\n}\n\n@container (min-width: 44rem) {\n    .b-cta__inner {\n        flex-direction: row;\n        align-items: center;\n        justify-content: space-between;\n        padding: var(--site-space-6) var(--site-space-7);\n    }\n\n    .b-cta__actions {\n        flex-shrink: 0;\n    }\n}\n",
   "script": null,
   "sample": {
     "heading": "Ready when you are",
     "text": "One line on what happens after the click.",
     "button_label": "Get in touch",
-    "button_url": "/contacts",
+    "button_link": {
+      "target": "url",
+      "entity_type": null,
+      "entity_id": null,
+      "url": "/contacts",
+      "hash": null,
+      "new_tab": false,
+      "rel": []
+    },
+    "button_url": "",
     "second_label": "",
+    "second_link": null,
     "second_url": "",
     "tone": "accent"
   }

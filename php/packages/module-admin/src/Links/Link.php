@@ -21,12 +21,17 @@ final readonly class Link
     /** The whole of `rel` an editor may choose from. */
     public const REL = ['nofollow', 'sponsored', 'ugc'];
 
-    /** What the panel, a form and a stored JSON value all call these six things. */
-    public const SHAPE = 'array:target,entity_type,entity_id,url,hash,new_tab,rel';
+    /**
+     * What the panel, a form and a stored JSON value all call these things. `path` and `download`
+     * belong to a file link alone, and only a file link carries them (`toArray()`).
+     */
+    public const SHAPE = 'array:target,entity_type,entity_id,url,hash,new_tab,rel,path,download';
 
     /**
      * @param  string|null  $hash  The fragment, without its `#`.
      * @param  list<string>  $rel
+     * @param  string|null  $path  The library key of a `file` link.
+     * @param  bool  $download  A `file` link the browser saves rather than opens.
      */
     public function __construct(
         public LinkTarget $target = LinkTarget::None,
@@ -36,6 +41,8 @@ final readonly class Link
         public ?string $hash = null,
         public bool $newTab = false,
         public array $rel = [],
+        public ?string $path = null,
+        public bool $download = false,
     ) {}
 
     /**
@@ -53,7 +60,8 @@ final readonly class Link
         $target = LinkTarget::tryFrom((string) ($value['target'] ?? '')) ?? LinkTarget::None;
         $id = $value['entity_id'] ?? null;
         $url = $target === LinkTarget::Url ? self::text($value['url'] ?? null) : null;
-        $hash = self::hash($value['hash'] ?? null);
+        // A file has no places in it to point at: a fragment on a download is noise.
+        $hash = $target === LinkTarget::File ? null : self::hash($value['hash'] ?? null);
 
         // An address typed with its anchor in it: the fragment is lifted out, so that there is
         // one place a fragment lives whichever kind of target this is. Otherwise `/about#team`
@@ -73,15 +81,21 @@ final readonly class Link
             hash: $hash,
             newTab: (bool) ($value['new_tab'] ?? false),
             rel: self::rel($value['rel'] ?? null),
+            path: $target === LinkTarget::File ? self::text($value['path'] ?? null) : null,
+            download: $target === LinkTarget::File && (bool) ($value['download'] ?? false),
         );
     }
 
     /**
-     * @return array{target: string, entity_type: string|null, entity_id: int|null, url: string|null, hash: string|null, new_tab: bool, rel: list<string>}
+     * The value as it is kept. A file link adds its key and the download flag; every other link
+     * keeps the seven keys it always had, so a menu item — whose columns are these seven — is
+     * written by the same call, and a value saved before files existed compares equal to itself.
+     *
+     * @return array{target: string, entity_type: string|null, entity_id: int|null, url: string|null, hash: string|null, new_tab: bool, rel: list<string>, path?: string|null, download?: bool}
      */
     public function toArray(): array
     {
-        return [
+        $kept = [
             'target' => $this->target->value,
             'entity_type' => $this->entityType,
             'entity_id' => $this->entityId,
@@ -90,6 +104,13 @@ final readonly class Link
             'new_tab' => $this->newTab,
             'rel' => $this->rel,
         ];
+
+        if ($this->target === LinkTarget::File) {
+            $kept['path'] = $this->path;
+            $kept['download'] = $this->download;
+        }
+
+        return $kept;
     }
 
     /**
@@ -105,6 +126,7 @@ final readonly class Link
             // An anchor with no address is a link to a place on the page it is printed on,
             // which is an ordinary thing for a button in a block to be.
             LinkTarget::Url => $this->url === null && $this->hash === null,
+            LinkTarget::File => $this->path === null,
             LinkTarget::None => true,
         };
     }

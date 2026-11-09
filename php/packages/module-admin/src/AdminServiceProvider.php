@@ -48,6 +48,7 @@ use WebxUi\Admin\Console\PruneVersionsCommand;
 use WebxUi\Admin\Console\SetupCommand;
 use WebxUi\Admin\Console\SnapshotCommand;
 use WebxUi\Admin\Console\SnapshotRestoreCommand;
+use WebxUi\Admin\Contracts\AssetDownloads;
 use WebxUi\Admin\Contracts\AssetUrls;
 use WebxUi\Admin\Contracts\BrandingSource;
 use WebxUi\Admin\Contracts\HasPermissions;
@@ -206,6 +207,7 @@ class AdminServiceProvider extends ServiceProvider
             $app->make(LinkSources::class),
             $app->make(Locales::class),
             $app->bound(SiteUrls::class) ? $app->make(SiteUrls::class) : null,
+            $app->bound(AssetDownloads::class) ? $app->make(AssetDownloads::class) : null,
         ));
 
         $this->app->singleton(FieldTypes::class, static function ($app): FieldTypes {
