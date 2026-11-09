@@ -23,7 +23,9 @@ use WebxUi\Blocks\BlockOffers;
 use WebxUi\Blocks\Events\BlockDrawn;
 use WebxUi\Compositions\Compositions;
 use WebxUi\Compositions\CompositionsServiceProvider;
+use WebxUi\Localization\Contracts\PageInLanguage;
 use WebxUi\Media\MediaServiceProvider;
+use WebxUi\Routing\SiteUrl;
 use WebxUi\Themes\BottomLayers;
 use WebxUi\Themes\Contracts\HeadPart;
 use WebxUi\Widgets\Audit\BannerOff;
@@ -41,6 +43,7 @@ use WebxUi\Widgets\Audit\VideoPause;
 use WebxUi\Widgets\Audit\WaitForConsent;
 use WebxUi\Widgets\Audit\WidgetsPageReader;
 use WebxUi\Widgets\Audit\ZoomLink;
+use WebxUi\Widgets\Languages\LanguagePageInLanguage;
 use WebxUi\Widgets\Video\Posters;
 use WebxUi\Widgets\Video\VideoProviders;
 use WebxUi\Widgets\View\Components\BackToTop;
@@ -124,6 +127,12 @@ class WidgetsServiceProvider extends ServiceProvider
         $this->app->scoped(Captcha::class);
         $this->app->singleton(VideoProviders::class);
         $this->app->tag([Widgets::class], HeadPart::TAG);
+
+        // The language of the first visit sends somebody where the switcher would (ROUTING §18):
+        // over the default of `webx-ui/localization`, which knows no addresses.
+        if (interface_exists(PageInLanguage::class) && class_exists(SiteUrl::class)) {
+            $this->app->bind(PageInLanguage::class, LanguagePageInLanguage::class);
+        }
 
         $this->mergeConfigFrom(Widgets::path().'/config/webx-widgets.php', 'webx-widgets');
     }

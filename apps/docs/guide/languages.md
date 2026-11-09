@@ -170,3 +170,35 @@ download the Cyrillic file.
 which languages a page is published in, and an editor routinely writes Ukrainian copy in an
 English interface.
 :::
+
+## The language of the first visit
+
+A shop whose main language has no prefix (`/cameras`) and whose second lives under `/uk/` may
+want a newcomer on the main language's address to land on the same page in Ukrainian — once,
+and remembered. Off by default; turned on in `.env`:
+
+```dotenv
+WEBX_LOCALE_FIRST_VISIT=uk      # or `header`: the best match of the browser's Accept-Language
+```
+
+- The first visit of a person is a **302** to the same page in that language
+  (`Cache-Control: private, no-store`) and the cookie `webx_lang`; with the cookie nobody is sent
+  anywhere again, whatever its value.
+- **The switcher's choice wins.** Its links carry `?webx_lang=<code>` and `rel="nofollow"`;
+  following one keeps the choice in the cookie and lands on the address without the parameter.
+  Somebody who picks the main language stays on it.
+- **Robots are never sent.** Search engines, link previews, SEO and AI crawlers and the site's
+  own audit are told by the User-Agent (`first_visit.bots`, a substring each), and see every
+  language at its own address, linked by `hreflang` as before.
+- Left alone too: anything but `GET`, JSON and XHR, prefetch, the panel, `api/*`, sitemaps,
+  `robots.txt`, feeds (`first_visit.except`), `?no_redirect`, `?preview`, signed links
+  (`first_visit.skip`), a page with nothing in that language but its home page, and any answer
+  that is not a 200 page.
+- Only with `strategy: prefix`, and only where the switcher knows the site's addresses
+  (`webx-ui/widgets` with `webx-ui/routing`). `php artisan webx:doctor` says when either is missing,
+  or when the language is not one of the site's.
+
+`webx_lang` is a `necessary` cookie — it keeps a choice the visitor made — and belongs in the list
+of the site's cookie policy. WebX caches data, not pages, so nothing on the server can serve a
+page past the decision; a site that puts a page cache in front of it (nginx, a CDN) must pass a
+request without `webx_lang` through to the application.

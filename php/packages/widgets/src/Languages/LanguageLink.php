@@ -9,6 +9,9 @@ namespace WebxUi\Widgets\Languages;
  *
  * `fallback` — the page has no translation there, and the link leads to that language's home
  * page instead (spec §13): a theme may show it differently, a reader is told so.
+ *
+ * `choice` — the link carries the reader's choice of language (`?webx_lang=<code>`, ROUTING §18)
+ * and is drawn `rel="nofollow"`: a robot has the same page at the address `hreflang` gives it.
  */
 final readonly class LanguageLink
 {
@@ -18,6 +21,7 @@ final readonly class LanguageLink
         public string $url,
         public bool $current = false,
         public bool $fallback = false,
+        public bool $choice = false,
     ) {}
 
     /** `pt_BR` as `hreflang` and `lang` want it: the same spelling module-seo prints in `<head>`. */
