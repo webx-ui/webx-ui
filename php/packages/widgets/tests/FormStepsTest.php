@@ -10,6 +10,7 @@ use Illuminate\Support\MessageBag;
 use Illuminate\Support\ViewErrorBag;
 use Illuminate\View\ViewException;
 use PHPUnit\Framework\Attributes\Test;
+use Throwable;
 use WebxUi\Widgets\Facades\Widgets;
 
 /**
@@ -113,7 +114,8 @@ final class FormStepsTest extends TestCase
         try {
             Blade::render('<x-webx-form action="/a" steps><x-webx-form.step name="a step">x</x-webx-form.step></x-webx-form>');
             $this->fail('A name with a space was printed.');
-        } catch (ViewException $exception) {
+        } catch (Throwable $exception) {
+            $this->assertInstanceOf(ViewException::class, $exception);
             $this->assertStringContainsString('<x-webx-form.step name="a step">', $exception->getMessage());
         }
     }

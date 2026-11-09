@@ -33,6 +33,10 @@ final class FormStep extends Component
 
     public bool $webxStepConditional = false;
 
+    /**
+     * @param  array<string, list<string>>|null  $when
+     * @param  array<string, list<string>>|null  $unless
+     */
     public function __construct(
         public string $name,
         public ?string $title = null,
