@@ -114,6 +114,17 @@ final class FormTest extends TestCase
         });
     }
 
+    #[Test]
+    public function a_form_that_asks_for_attribution_claims_its_script_and_one_that_does_not_does_not(): void
+    {
+        self::form('action="/callback"');
+        $this->assertNotContains('attribution', Widgets::claimed());
+
+        $html = self::form('action="/callback" data-webx-attribution');
+        $this->assertStringContainsString('data-webx-attribution', $html);
+        $this->assertContains('attribution', Widgets::claimed());
+    }
+
     private static function form(string $props, string $slot = ''): string
     {
         return Blade::render("<x-webx-form {$props}>{$slot}</x-webx-form>");

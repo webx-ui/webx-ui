@@ -251,6 +251,20 @@ document.querySelector('#checkout').addEventListener('webx:form:success', (event
 })
 ```
 
+### Where the visitor came from
+
+`<x-webx-form data-webx-attribution>` — the Inbox's forms have it — also loads `attribution.js`. On
+`webx:form:submit` it adds to `data` whatever the form does not have already: the `utm_*` of the
+last touch, `webx_referrer` (the outside page the visitor came from), `webx_landing` (the page they
+came in on) and `webx_utm_first[utm_*]` — the campaign of the first touch. No `gclid` or `fbclid`.
+
+Without consent to `statistics` nothing is stored: the last touch is the page with the form — its
+`utm_*` and its referrer when it is from outside, which is the landing page of an advert. With it,
+`localStorage` `webx_attribution` keeps the first touch (never written over) and the last for 90
+days; taking consent back removes the key. The Inbox writes them into the submission as
+`meta.utm`, `meta.utm_first`, `meta.referrer`, `meta.landing`; `WEBX_INBOX_ATTRIBUTION=false` turns
+it off.
+
 ### In a dialog
 
 Any form in `<x-webx-dialog>` — and the Inbox's forms a button opens (`data-webx-form="<slug>"`) — behaves the same: the thank-you takes the place of the

@@ -181,7 +181,10 @@ final class InboxTools
             Tool::read(
                 'get',
                 'One submission in full: every answer with the label and the type it was asked under, the files '
-                .'with them, what was around it when it arrived — the page, the language, the address — the notes '
+                .'with them, what was around it when it arrived — the page, the language, the address, and in '
+                .'`meta` where the visitor came from: `utm` (the campaign of the last touch), `utm_first` (of the '
+                .'first, kept only with consent to statistics), `referrer` (the outside page), `landing` (the page '
+                .'they came in on) — the notes '
                 .'administrators have left on it, and the log of everything that has happened to it. '
                 .'`notification` says whether the letter about it left: none, queued (handed to the queue and '
                 .'not yet sent — long in this state means no queue worker runs), delivered, or failed with the '

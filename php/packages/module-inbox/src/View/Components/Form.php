@@ -130,6 +130,8 @@ final class Form extends Component
             'message' => $this->message($form),
             'values' => $this->prefill($fields, $mine),
             'again' => $this->again,
+            // Whether the form asks the widgets to post the campaign and the referrer (FORM_STEPS §8).
+            'attribution' => (bool) config('webx-inbox.attribution', true),
         ]);
     }
 

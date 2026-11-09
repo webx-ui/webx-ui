@@ -414,6 +414,54 @@ final class IntakeTest extends TestCase
     }
 
     #[Test]
+    public function it_keeps_the_campaign_of_both_touches_the_referrer_and_the_landing_page_and_nothing_else(): void
+    {
+        $this->form();
+
+        $this->postJson($this->intake(), [
+            'fields' => ['name' => 'Ada', 'email' => 'ada@example.test'],
+            'utm_source' => 'test',
+            'utm_'.str_repeat('k', 40) => str_repeat('v', 300),
+            'utm_empty' => '',
+            'gclid' => 'abc',
+            'webx_referrer' => 'https://search.example/'.str_repeat('q', 300),
+            'webx_landing' => 'https://example.test/offer?utm_source=test',
+            'webx_utm_first' => ['utm_source' => 'newsletter', 'fbclid' => 'xyz', 'utm_medium' => ['nested']],
+        ])->assertOk();
+
+        $meta = Submission::query()->sole()->meta;
+
+        // Only `utm_*`, a key of 32 and a value of 255 at most: the body is anybody's to write.
+        $this->assertSame(['utm_source' => 'test', mb_substr('utm_'.str_repeat('k', 40), 0, 32) => str_repeat('v', 255)], $meta['utm']);
+        $this->assertSame(['utm_source' => 'newsletter'], $meta['utm_first']);
+        $this->assertSame(255, mb_strlen($meta['referrer']));
+        $this->assertSame('https://example.test/offer?utm_source=test', $meta['landing']);
+        $this->assertArrayNotHasKey('gclid', $meta);
+    }
+
+    #[Test]
+    public function a_site_that_turned_attribution_off_writes_none_of_it(): void
+    {
+        config()->set('webx-inbox.attribution', false);
+        $this->form();
+
+        $this->postJson($this->intake().'?utm_source=newsletter', [
+            'fields' => ['name' => 'Ada', 'email' => 'ada@example.test'],
+            'webx_page' => 'https://example.test/contacts',
+            'webx_referrer' => 'https://search.example/',
+            'webx_landing' => 'https://example.test/',
+            'webx_utm_first' => ['utm_source' => 'newsletter'],
+        ])->assertOk();
+
+        $meta = Submission::query()->sole()->meta;
+
+        $this->assertSame('https://example.test/contacts', $meta['page']);
+        foreach (['utm', 'utm_first', 'referrer', 'landing'] as $key) {
+            $this->assertArrayNotHasKey($key, $meta);
+        }
+    }
+
+    #[Test]
     public function it_remembers_where_on_the_site_the_form_stood(): void
     {
         $this->form();

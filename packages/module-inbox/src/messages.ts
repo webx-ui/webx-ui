@@ -179,6 +179,8 @@ export const inboxMessages: Record<string, Messages> = {
     'any-placement': 'Any placement',
     'placement-none': 'Not specified',
     'meta-referrer': 'Came from',
+    'meta-landing': 'Landing page',
+    'meta-utm-first': 'First visit',
     'meta-ip': 'Address',
     'meta-agent': 'Browser',
     'meta-locale': 'Language',

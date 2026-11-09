@@ -416,7 +416,12 @@ export interface SubmissionMeta {
   user_agent?: string
   page?: string
   referrer?: string
+  /** The page of the site the visitor came in on (FORM_STEPS §8). */
+  landing?: string
+  /** The campaign of the last touch. */
   utm?: Record<string, string>
+  /** The campaign of the first touch, kept in the browser only with consent to statistics. */
+  utm_first?: Record<string, string>
   locale?: string
   [key: string]: unknown
 }

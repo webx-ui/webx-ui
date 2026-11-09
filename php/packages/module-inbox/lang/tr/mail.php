@@ -10,6 +10,8 @@ return [
     'meta' => 'Ayrıntılar',
     'meta-page' => 'Sayfa',
     'meta-referrer' => 'Geldiği yer',
+    'meta-landing' => 'Giriş sayfası',
+    'meta-utm-first' => 'İlk ziyaret',
     'meta-locale' => 'Dil',
     'meta-ip' => 'IP adresi',
     'open' => 'Panelde aç',

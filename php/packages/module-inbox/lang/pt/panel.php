@@ -146,6 +146,8 @@ return [
     'any-placement' => 'Qualquer local',
     'placement-none' => 'Não indicado',
     'meta-referrer' => 'Veio de',
+    'meta-landing' => 'Página de entrada',
+    'meta-utm-first' => 'Primeira visita',
     'meta-ip' => 'Endereço',
     'meta-agent' => 'Navegador',
     'meta-locale' => 'Idioma',

@@ -71,7 +71,7 @@
             <td style="padding:16px 24px 0 24px;">
                 <p style="margin:0 0 8px 0;font-weight:600;">{{ __('webx-inbox::mail.meta') }}</p>
                 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="font-size:13px;color:{{ $muted }};">
-                    @foreach (['page', 'referrer', 'locale', 'ip'] as $key)
+                    @foreach (['page', 'referrer', 'landing', 'locale', 'ip'] as $key)
                         @if (! empty($meta[$key]))
                             <tr>
                                 <td style="padding:2px 12px 2px 0;vertical-align:top;width:38%;">{{ __('webx-inbox::mail.meta-'.$key) }}</td>
@@ -82,6 +82,12 @@
                     @foreach ($meta['utm'] ?? [] as $key => $value)
                         <tr>
                             <td style="padding:2px 12px 2px 0;vertical-align:top;">{{ $key }}</td>
+                            <td style="padding:2px 0;vertical-align:top;word-break:break-all;">{{ $value }}</td>
+                        </tr>
+                    @endforeach
+                    @foreach ($meta['utm_first'] ?? [] as $key => $value)
+                        <tr>
+                            <td style="padding:2px 12px 2px 0;vertical-align:top;">{{ __('webx-inbox::mail.meta-utm-first') }} · {{ $key }}</td>
                             <td style="padding:2px 0;vertical-align:top;word-break:break-all;">{{ $value }}</td>
                         </tr>
                     @endforeach

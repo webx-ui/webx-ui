@@ -16,7 +16,9 @@
       · the honeypot and the timestamp — the antispam that costs the visitor nothing,
       · the captcha block — `data-webx-field="captcha"` is where the intake's word about it goes,
       · `data-webx-form` on the form — the hook for a site's own script (`webx:form:success`),
-      · `:again="$again"` — `<x-webx-inbox::form again>`, the way back to the fields after the thank-you.
+      · `:again="$again"` — `<x-webx-inbox::form again>`, the way back to the fields after the thank-you,
+      · `data-webx-attribution` — the widgets' attribution.js posts the campaign, the referrer and the
+        landing page (`webx-inbox.attribution`, FORM_STEPS §8); a view without it sends none of them.
 
     `$description` — the line under the form's title (§5), HTML with its shortcodes; null without
     one, and in a dialog, which prints it under its own title.
@@ -31,6 +33,7 @@
     :rules="$rules"
     :again="$again"
     data-webx-form="{{ $form->slug }}"
+    :data-webx-attribution="($attribution ?? false) ? '' : null"
     {{ $attributes->class(['webx-inbox-form', 'webx-inbox-form--'.$placement => $placement !== null]) }}
 >
     <input type="hidden" name="webx_form" value="{{ $form->slug }}">

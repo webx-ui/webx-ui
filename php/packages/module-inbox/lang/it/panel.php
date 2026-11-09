@@ -146,6 +146,8 @@ return [
     'any-placement' => 'Qualsiasi posizione',
     'placement-none' => 'Non indicata',
     'meta-referrer' => 'Arrivato da',
+    'meta-landing' => 'Pagina di ingresso',
+    'meta-utm-first' => 'Prima visita',
     'meta-ip' => 'Indirizzo',
     'meta-agent' => 'Browser',
     'meta-locale' => 'Lingua',

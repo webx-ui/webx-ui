@@ -10,6 +10,8 @@ return [
     'meta' => 'Подробности',
     'meta-page' => 'Страница',
     'meta-referrer' => 'Источник перехода',
+    'meta-landing' => 'Страница входа',
+    'meta-utm-first' => 'Первый визит',
     'meta-locale' => 'Язык',
     'meta-ip' => 'IP-адрес',
     'open' => 'Открыть в панели',

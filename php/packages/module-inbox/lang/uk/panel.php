@@ -146,6 +146,8 @@ return [
     'any-placement' => 'Будь-яке місце',
     'placement-none' => 'Не вказано',
     'meta-referrer' => 'Прийшов з',
+    'meta-landing' => 'Сторінка входу',
+    'meta-utm-first' => 'Перший візит',
     'meta-ip' => 'Адреса',
     'meta-agent' => 'Браузер',
     'meta-locale' => 'Мова',

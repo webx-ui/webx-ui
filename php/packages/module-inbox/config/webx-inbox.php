@@ -185,6 +185,12 @@ return [
     | submission's metadata. The antispam does not read it from there, so
     | nothing is lost but the ability to say which flat sent a thing.
     |
+    | `attribution` — the form asks the widgets' attribution.js to post where
+    | the visitor came from: the campaign (`utm_*`) and the outside referrer of
+    | the last touch, the page they came in on, and the campaign of the first
+    | touch, kept in the browser only with consent to statistics. Off, the
+    | form does not ask and none of it is written into the metadata.
+    |
     */
 
     'prune' => [
@@ -193,6 +199,8 @@ return [
     ],
 
     'anonymise_ip' => (bool) env('WEBX_INBOX_ANONYMISE_IP', false),
+
+    'attribution' => (bool) env('WEBX_INBOX_ATTRIBUTION', true),
 
     /*
     |---------------------------------------------------------------------------

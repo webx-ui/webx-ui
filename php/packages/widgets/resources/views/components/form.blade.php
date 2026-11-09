@@ -23,6 +23,11 @@
     $refusals = $unplaced((string) $slot);
     $said = ($answer['heading'] ?? null) !== null || ($answer['heading_html'] ?? null) !== null || ($answer['message'] ?? null) !== null;
     $aside = $again && $said && ($answer['html'] ?? null) === null;
+    // The campaign and the referrer into what is sent (FORM_STEPS §8): attribution.js, only for a
+    // form that asks. Claimed here, not in the class: its attributes reach the view, not render().
+    if (! in_array($attributes->get('data-webx-attribution'), [null, false], true)) {
+        \WebxUi\Widgets\Facades\Widgets::need('attribution');
+    }
     $enctype = $sending && ! $attributes->has('enctype') && preg_match('/<input[^>]+type="file"/', (string) $slot) === 1 ? 'multipart/form-data' : null;
 @endphp
 <form {{ $attributes->class(['webx-form', 'is-sent' => $answer !== null])->merge([

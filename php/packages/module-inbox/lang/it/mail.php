@@ -10,6 +10,8 @@ return [
     'meta' => 'Dettagli',
     'meta-page' => 'Pagina',
     'meta-referrer' => 'Provenienza',
+    'meta-landing' => 'Pagina di ingresso',
+    'meta-utm-first' => 'Prima visita',
     'meta-locale' => 'Lingua',
     'meta-ip' => 'Indirizzo IP',
     'open' => 'Apri nel pannello',

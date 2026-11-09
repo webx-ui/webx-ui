@@ -415,8 +415,18 @@ const details = computed(() => {
     rows.push({ label: t('panel.meta-referrer'), value: meta.referrer, link: true })
   }
 
+  // The page of the site the visitor came in on, which is not always the one with the form.
+  if (typeof meta.landing === 'string' && meta.landing !== '') {
+    rows.push({ label: t('panel.meta-landing'), value: meta.landing, link: true })
+  }
+
   for (const [key, value] of Object.entries(meta.utm ?? {})) {
     rows.push({ label: key, value: String(value) })
+  }
+
+  // The campaign that brought them the first time, kept by the site only with their consent.
+  for (const [key, value] of Object.entries(meta.utm_first ?? {})) {
+    rows.push({ label: `${t('panel.meta-utm-first')} · ${key}`, value: String(value) })
   }
 
   if (typeof meta.locale === 'string' && meta.locale !== '') {

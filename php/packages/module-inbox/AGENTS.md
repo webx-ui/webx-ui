@@ -81,7 +81,7 @@ submissions, `cms.can:inbox.update` to change them, `cms.can:inbox.manage` for f
 | A captcha                                   | the site's: tab "Captcha", secrets `WEBX_CAPTCHA_RECAPTCHA_SECRET` / `WEBX_CAPTCHA_TURNSTILE_SECRET` (`WEBX_INBOX_*` still read); then on in the form |
 | Another intake path or disk, larger uploads | `WEBX_INBOX_PATH`, `WEBX_INBOX_DISK`; `WEBX_INBOX_MAX_SIZE` (KB), `upload.extensions`, `upload.max_files`                                             |
 | Other origins, rate limit, duplicates       | `antispam.origins`, `antispam.throttle` (accepted), `antispam.attempts` (all), `duplicate_window` (`--tag=webx-inbox-config`)                         |
-| Visitors' IPs not kept whole                | `WEBX_INBOX_ANONYMISE_IP=true`                                                                                                                        |
+| Visitors' IPs not kept whole, no campaign   | `WEBX_INBOX_ANONYMISE_IP=true`; `WEBX_INBOX_ATTRIBUTION=false` — no `meta.utm`, `utm_first`, `referrer`, `landing` (the widgets' `attribution.js`)    |
 | Forget old submissions                      | `prune.days`, `prune.spam_days`, and schedule `webx:inbox:prune` in the site                                                                          |
 | A different letter                          | `theme/views/vendor/webx-inbox/mail/submission.blade.php`; colours via `$look('…')`                                                                   |
 | Somebody told about a form                  | `inbox_form_save` with `options.recipients`, or the editor's Notifications tab                                                                        |

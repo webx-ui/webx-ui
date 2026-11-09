@@ -10,6 +10,8 @@ return [
     'meta' => 'Details',
     'meta-page' => 'Seite',
     'meta-referrer' => 'Kam von',
+    'meta-landing' => 'Einstiegsseite',
+    'meta-utm-first' => 'Erster Besuch',
     'meta-locale' => 'Sprache',
     'meta-ip' => 'IP-Adresse',
     'open' => 'Im Panel öffnen',
