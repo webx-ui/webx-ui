@@ -74,7 +74,10 @@ final class CollectionTools
             .'only_purchasable, limit, view (grid, carousel), link, link_text, is_enabled. set, category, on_sale and sort are read by a filter only. '
             .'set: facet code → a list of value slugs, or { "min": …, "max": … } for a range with at least one end, from '
             .'catalog_collections_facets; a facet named with nothing in it is refused. '
-            .'title and link_text: a string in the call\'s language, or { "en": "…" }.', 'properties' => [
+            .'title and link_text: a string in the call\'s language, or { "en": "…" }. '
+            .'link, the "All products" link: { "target": "url", "url": "/sale" }, an entity { "target": "entity", "entity_type": "page", "entity_id": 3 }, '
+            .'or a file of the media library { "target": "file", "path": "media/ab/cd/name.pdf", "download": true } — the key from media_get_file; '
+            .'also new_tab and rel; null takes it away.', 'properties' => [
                 'title' => $words,
                 'link_text' => $words,
                 'category' => $category,

@@ -2987,6 +2987,21 @@ function resolveLinkValue(link: Record<string, unknown>): Record<string, unknown
       ? null
       : (linkRows(type, 'ru').find((row) => row.id === Number(link.entity_id)) ?? null)
 
+  /* A file of the library, as `LinkUrls::file()`: its address now, and the name it was uploaded
+     under for `download` — a file the library no longer has goes nowhere. */
+  const file =
+    link.target === 'file' && typeof link.path === 'string' ? mediaByPath(link.path) : null
+
+  if (link.target === 'file') {
+    return {
+      ...link,
+      url: file?.url ?? null,
+      label: file?.file_name ?? null,
+      available: file !== null,
+      download: file !== null && link.download === true ? file.file_name : null,
+    }
+  }
+
   const address = found?.url ?? (link.target === 'url' ? link.url : null)
 
   /* The anchor is appended rather than stored in the address, as `LinkUrls::href()` does it: an

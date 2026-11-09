@@ -88,7 +88,10 @@
                   "type": "wx-link",
                   "name": "link",
                   "label": "trans::webx-catalog-collections::collection.link",
-                  "help": "trans::webx-catalog-collections::collection.link-help"
+                  "help": "trans::webx-catalog-collections::collection.link-help",
+                  "props": {
+                    "files": true
+                  }
                 },
                 {
                   "id": "link-text",

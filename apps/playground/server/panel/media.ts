@@ -272,6 +272,8 @@ for (const [path, name, width, height] of [
 }
 video(9, 'banners/showreel.mp4', 'Шоурил студии', '2026-09-28T09:05:00+00:00')
 video(9, 'banners/showreel-phone.mp4', 'Шоурил студии, телефон', '2026-09-28T09:06:00+00:00')
+// What the spring banner's third button downloads, under its own name (`file_name`).
+pdf(9, 'banners/studio-brochure.pdf', 'Брошюра студии', '2026-09-28T09:07:00+00:00')
 
 recount()
 

@@ -58,6 +58,9 @@ line, and buyers scroll through it.
 Lead it to the page where buyers can see more: a category or a landing. Without a link the block
 simply ends after the last product.
 
+It can also be «A file» of the media library — the catalogue in PDF; tick «Download instead of
+opening» to have it saved under the name it was uploaded with.
+
 ## link-text
 
 Say where the link goes when the block is about something specific: «All winter tyres» works better

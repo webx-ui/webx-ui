@@ -30,7 +30,9 @@ use WebxUi\Media\Screens\MediaValues;
  *                              `video` there only where the place says `video_on_mobile`
  *     poster                   a picture, as `image` — what is seen before the video's first
  *                              frame and where it does not play; null — the picture is the poster
- *     buttons                  label, url, new_tab, rel, variant — in the editor's order
+ *     buttons                  label, url, new_tab, rel, download, variant — in the editor's order;
+ *                              `download` the name of a library file the browser saves, else null.
+ *                              Printed with LinkAttributes::of($button)
  *     fields                   the project's own fields (a patch on `banners.form`), by name
  *     layers                   in a place with layers, the layers ({@see Layers}); else []
  *     ratio, ratio_mobile      width / height of image and of image_mobile (else image) — the
@@ -172,7 +174,7 @@ final class Cards
 
     /**
      * @param  array<string, array<int, LinkCandidate>>  $candidates
-     * @return list<array{label: string, url: string, new_tab: bool, rel: string|null, variant: string|null}>
+     * @return list<array{label: string, url: string, new_tab: bool, rel: string|null, download: string|null, variant: string|null}>
      */
     private function buttons(Banner $banner, string $locale, array $candidates): array
     {
@@ -206,6 +208,7 @@ final class Cards
                 'url' => $url,
                 'new_tab' => $link->newTab,
                 'rel' => $link->relAttribute(),
+                'download' => $this->download($link),
                 'variant' => $this->variant($row['variant'] ?? null),
             ];
         }
@@ -227,6 +230,16 @@ final class Cards
         return is_numeric($width) && is_numeric($height) && (float) $height > 0
             ? round((float) $width / (float) $height, 4)
             : null;
+    }
+
+    /**
+     * The name a file of the library is saved under, for a file link that asks to be downloaded —
+     * the key it is kept under is a hash. The library was asked for every file of the list at once
+     * ({@see LinkUrls::candidates()}).
+     */
+    private function download(Link $link): ?string
+    {
+        return $link->download ? ($this->urls->file($link)['name'] ?? null) : null;
     }
 
     /** A variant the site still has, else its first one (decision 11): a button outranks its look. */

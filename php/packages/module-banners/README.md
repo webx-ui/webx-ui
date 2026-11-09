@@ -105,14 +105,18 @@ A card:
     'video_mobile' => ['url' => …, 'mime' => 'video/mp4'] | null,
     'poster' => [ … ] | null,
     'buttons' => [
-        ['label' => 'Book now', 'url' => '/booking', 'new_tab' => false, 'rel' => null, 'variant' => 'primary'],
+        ['label' => 'Book now', 'url' => '/booking', 'new_tab' => false, 'rel' => null, 'download' => null, 'variant' => 'primary'],
     ],
     'fields' => ['badge' => 'New'],       // the project's own fields, by name
 ]
 ```
 
-`rel` already carries `noopener noreferrer` for a new tab. A variant that was taken out of the
-config comes back as the first one of the config: a button outranks its look.
+`rel` already carries `noopener noreferrer` for a new tab. A button may lead to a file of the media
+library — a brochure: `download` is then the name it was uploaded under when the editor ticked
+«Download instead of opening», else null; a file gone from the library drops the button. Print the
+`<a>` with `{{ \WebxUi\Admin\Links\LinkAttributes::of($button) }}` — `href`, `target`, `rel` and
+`download` in one. A variant that was taken out of the config comes back as the first one of the
+config: a button outranks its look.
 
 `banners_layout()` merges the package's options, `webx-banners.options`, the place's `options`
 and the argument, in that order, and adds `layout` (`single`, `random` or `slider`). Every key is
@@ -167,9 +171,7 @@ The package draws nothing; this is what a site copies and changes.
         @endif
 
         @foreach ($banner['buttons'] as $button)
-          <a class="button button--{{ $button['variant'] }}" href="{{ $button['url'] }}"
-             @if ($button['new_tab']) target="_blank" @endif
-             @if ($button['rel']) rel="{{ $button['rel'] }}" @endif>{{ $button['label'] }}</a>
+          <a class="button button--{{ $button['variant'] }}" {{ \WebxUi\Admin\Links\LinkAttributes::of($button) }}>{{ $button['label'] }}</a>
         @endforeach
       </article>
     @endforeach
@@ -244,7 +246,9 @@ Nine tools through the same doors as the panel, behind `banners:read` and `banne
 `banners_places`, `banners_place_create`, `banners_place_delete`, `banners_list`, `banners_get`,
 `banners_create`, `banners_update`, `banners_delete`, `banners_reorder`. A place is its key, a
 banner its id, a picture or a video a library key (an unknown one is refused). A button is
-`{ label, link, variant }` — `link` an address or an entity as `menu_add_link` takes it, a look the
+`{ label, link, variant }` — `link` an address, an entity as `menu_add_link` takes it, or a file of
+the library `{ "target": "file", "path": "media/…", "download": true }` (a key the library does not
+have is refused, `dry_run` included), a look the
 config does not have refused with the list of those it has. `banners://catalog` is what an agent
 reads first: the looks, the layouts, every place with its banners in order, `written_in` and
 `has_video` on each — and the reminder that a template, not a block, puts a place on the site.

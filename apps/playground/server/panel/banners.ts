@@ -111,6 +111,18 @@ const address = (url: string, newTab = false) => ({
   rel: newTab ? ['nofollow'] : [],
 })
 
+const file = (path: string, download = false) => ({
+  target: 'file',
+  entity_type: null,
+  entity_id: null,
+  url: null,
+  hash: null,
+  new_tab: false,
+  rel: [],
+  path,
+  download,
+})
+
 export const banners: Banner[] = [
   banner(1, 1, {
     image: { path: 'banners/spring-sale.svg' },
@@ -126,6 +138,12 @@ export const banners: Banner[] = [
         label: { ru: 'Условия', en: 'Terms' },
         link: address('https://example.com/terms', true),
         variant: 'link',
+      },
+      /* A file of the library the browser saves under its own name (`props.files` of the node). */
+      {
+        label: { ru: 'Скачать брошюру', en: 'Download the brochure' },
+        link: file('banners/studio-brochure.pdf', true),
+        variant: 'secondary',
       },
     ],
     enabled: true,
@@ -582,6 +600,7 @@ function linked(link: Record<string, unknown>): boolean {
   if (link.target === 'entity')
     return typeof link.entity_type === 'string' && Number(link.entity_id) > 0
   if (link.target === 'url') return typeof link.url === 'string' && link.url.trim() !== ''
+  if (link.target === 'file') return typeof link.path === 'string' && link.path !== ''
 
   return false
 }

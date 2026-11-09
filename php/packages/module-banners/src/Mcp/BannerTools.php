@@ -90,6 +90,8 @@ final class BannerTools
                             'type' => ['string', 'object'],
                             'description' => 'Where it goes: an address ("/booking", or a full one elsewhere — a path without its language prefix), '
                                 .'or an entity of this site in the form menu_add_link takes: { "target": "entity", "entity_type": "page", "entity_id": 3 }. '
+                                .'Or a file of the media library: { "target": "file", "path": "media/ab/cd/name.pdf", "download": true } — the key from media_list_files or media_get_file; '
+                                .'download: true has the browser save it under the name it was uploaded with. '
                                 .'The object also takes url, hash, new_tab and rel.',
                         ],
                         'variant' => ['type' => 'string', 'description' => "How it looks — one of: {$variants}. The first one when omitted."],
@@ -363,6 +365,9 @@ final class BannerTools
         $values = $this->prepare($values);
 
         if ($this->dryRun($arguments)) {
+            // Refused for what a write would be refused for: a link, a layer, a picture.
+            $this->form()->check(new Banner, $values, $key);
+
             return [
                 'dry_run' => true,
                 'would_create' => [
@@ -409,6 +414,8 @@ final class BannerTools
         $values = $this->container->make(ScreenValues::class)->patch(Banner::SCREEN, $this->form()->values($banner), $values);
 
         if ($this->dryRun($arguments)) {
+            $this->form()->check($banner, $values, $key);
+
             return array_filter([
                 'dry_run' => true,
                 'fields' => array_keys($values),
@@ -633,7 +640,11 @@ final class BannerTools
             throw new ToolFailure("Button {$number} needs a link: an address, or { \"target\": \"entity\", \"entity_type\": \"page\", \"entity_id\": 3 }.");
         }
 
-        $value['target'] ??= isset($value['entity_type']) || isset($value['entity_id']) ? 'entity' : 'url';
+        $value['target'] ??= match (true) {
+            isset($value['entity_type']) || isset($value['entity_id']) => 'entity',
+            isset($value['path']) => 'file',
+            default => 'url',
+        };
 
         return $value;
     }

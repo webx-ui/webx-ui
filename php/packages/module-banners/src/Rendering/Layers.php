@@ -24,7 +24,7 @@ use WebxUi\Media\Screens\MediaValues;
  *     text                     the words, shortcodes resolved — a string or a ShortcodeText;
  *                              a template prints them through nl2br(e())
  *     image                    a picture as the library resolves it
- *     button                   label, url, new_tab, rel, variant — as a button of the banner
+ *     button                   label, url, new_tab, rel, download, variant — as a button of the banner
  *     buttons                  the banner's buttons, as the card has them
  *     z                        its place in the stack: the top of the editor's list is in front
  *     style, class             the custom properties and the classes of its element
@@ -260,6 +260,7 @@ final class Layers
             'url' => $url,
             'new_tab' => $link->newTab,
             'rel' => $link->relAttribute(),
+            'download' => $link->download ? ($this->urls->file($link)['name'] ?? null) : null,
             'variant' => is_string($variant) && $this->variants->has($variant) ? $variant : $this->variants->first(),
         ];
     }

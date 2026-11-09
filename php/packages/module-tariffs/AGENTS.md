@@ -18,6 +18,11 @@ tariff has no page and no address — it reaches the site in a block (a slider, 
 - **No public route.** The collection source `tariffs` and the offered block type `tariffs`
   (`resources/blocks/tariffs.json`) are how a tariff reaches a page.
 - **Helper** `tariffs()` — declared only when the site has no function of that name.
+- **The button** links to a page, an address or a file of the media library (`props.files` on
+  `button-link`); the card's `button` has `download` — the file's own name, or null. A template
+  prints it with `{{ \WebxUi\Admin\Links\LinkAttributes::of($tariff['button']) }}`, as the block does.
+  A site's copy of the block type keeps its old template until `webx:blocks:import tariffs
+--path=vendor/webx-ui/module-tariffs/resources/blocks --replace=tariffs --publish`.
 - **Config** `webx-tariffs.currencies` (ISO code → symbol; the first is a new tariff's) and
   `webx-tariffs.variants` (button look key → panel label).
 - **Panel screens** `tariffs.form` (nodes `tariff`, `name`, `badge`, `featured`, `pricing`,

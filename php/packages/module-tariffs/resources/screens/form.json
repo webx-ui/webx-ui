@@ -205,7 +205,8 @@
                   "label": "trans::webx-tariffs::screen.button-link",
                   "help": "trans::webx-tariffs::screen.button-link-help",
                   "props": {
-                    "allowNone": false
+                    "allowNone": false,
+                    "files": true
                   }
                 }
               ]

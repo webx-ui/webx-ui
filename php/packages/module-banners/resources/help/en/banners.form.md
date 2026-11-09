@@ -104,6 +104,10 @@ with neither a label nor a link is dropped on saving.
 Where the button leads. Without it the button is not saved, and a link to a page lets the address
 of that page change without breaking the button.
 
+A brochure or a price list is «A file»: pick it from the media library, and tick «Download instead of
+opening» to have the browser save it under the name it was uploaded with. «Open in a new tab» keeps
+the banner's page open behind it. The same choice is in a «Button» layer.
+
 ## button-variant
 
 The list comes from the site, and the template turns the choice into a look of its own. Left empty,

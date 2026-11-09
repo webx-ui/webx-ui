@@ -43,7 +43,8 @@ The model refuses what it cannot keep with a `ValidationException` under the fie
   a collection in the bin until that one is deleted for good, and cannot be changed after creation.
 - `limit` is from 1 to `webx-catalog-collections.max_limit` (48 by default).
 - `link` is a `wx-link` value, read as a block's is: `javascript:` and other schemes that do not open
-  a page are refused.
+  a page are refused. It may be a file of the media library (`{ target: file, path, download }`); a key
+  the library does not have is refused when it is written, and one deleted since prints no link.
 - `source` is `manual` or `filter`, and `view` is `grid` or `carousel`.
 
 The hand-picked list is `$collection->products()`, in the order of its `position`. A product in the

@@ -30,6 +30,10 @@ for those.
   saved data. `video_mobile` plays below `breakpoint`; `poster` stands for the picture where a
   video plays.
 - **Button variants** `config('webx-banners.variants')` — `primary`, `secondary`, `link`.
+- **Button links** — a page, an address or a file of the media library (`props.files` on
+  `button-link` and in the button layer). A card's button carries `label`, `url`, `new_tab`, `rel`,
+  `download` (the file's own name, or null) and `variant`; print the `<a>` with
+  `{{ \WebxUi\Admin\Links\LinkAttributes::of($button) }}`. A file gone from the library drops the button.
 - **Cache group** `banners` (WEBX_UI_CACHE.md): moved by every `Banner` and `Place` save; a mass write says `CacheGroups::bump('banners')` itself.
 - **Panel screen** `banners.form`; API under `/api/cms/banners`.
 - **MCP** tools `banners_places`, `banners_place_create`, `banners_place_delete`, `banners_list`,
@@ -77,6 +81,8 @@ A screen patch addresses nodes by `id`: `media`, `image`, `image-mobile`, `video
   then gets an empty list and the banners sit in a place nobody prints. Change the template too.
 - Do not take a variant out of `variants` expecting old buttons to change: they keep their key
   and are printed with the first variant. Edit the buttons, or keep the key.
+- Do not print `href`, `target` and `rel` of a button by hand in a site's copy of the views: a
+  file link then opens instead of downloading. `LinkAttributes::of($button)` carries all four.
 - Do not write a picture or a video as a URL: they are library keys, and an unknown one is
   refused. Upload into the library first; `image` is the one required field.
 - Do not create a banner and forget `enabled`: a new one is off, so it is not on the site. Turn

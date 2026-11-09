@@ -513,11 +513,12 @@ function lex(source: string): Token[] {
       continue
     }
 
-    // A static call reads as one name: `WebxUi\Recipes\Rendering\Duration::format`.
-    const name = /^[A-Za-z_][\w\\]*(?:::\w+)?/.exec(rest)
+    // A static call reads as one name: `WebxUi\Recipes\Rendering\Duration::format`, the leading
+    // `\` of a fully qualified one (`\WebxUi\Admin\Links\LinkAttributes::of`) left off.
+    const name = /^\\?([A-Za-z_][\w\\]*(?:::\w+)?)/.exec(rest)
 
     if (name !== null) {
-      tokens.push({ type: 'name', value: name[0] })
+      tokens.push({ type: 'name', value: name[1]! })
       at += name[0].length
       continue
     }

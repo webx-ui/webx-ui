@@ -107,7 +107,10 @@ final class Collection extends Component
      * printed (§5.3). The entity is looked up once here: `LinkType::resolve()` asks for it twice,
      * and on every page that prints the collection.
      *
-     * @return array{url: string, text: string, new_tab: bool, rel: string|null}|null
+     * `download` is the name a file of the library is saved under, for a file link that asks to be
+     * downloaded — the key it is kept under is a hash; else null.
+     *
+     * @return array{url: string, text: string, new_tab: bool, rel: string|null, download: string|null}|null
      */
     private function link(ProductCollection $collection): ?array
     {
@@ -131,6 +134,7 @@ final class Collection extends Component
             'text' => $text !== '' ? $text : (string) __('webx-catalog-collections::storefront.all'),
             'new_tab' => $link->newTab,
             'rel' => $link->relAttribute(),
+            'download' => $link->download ? ($this->links->file($link)['name'] ?? null) : null,
         ];
     }
 }

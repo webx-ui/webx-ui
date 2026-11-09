@@ -58,7 +58,7 @@ the price on a card.
 | `features`       | the lines of «what is included», each translatable, in the editor's order           |
 | `description`    | translatable plain text; the block prints it with its line breaks; takes shortcodes |
 | `button_label`   | translatable                                                                        |
-| `button_link`    | a `wx-link` value — a page of the site or an address                                |
+| `button_link`    | a `wx-link` value — a page of the site, an address or a file of the media library   |
 | `button_variant` | the look of the button, from the site's list (below)                                |
 | `featured`       | «Recommended»: the card stands out, with the label the block gives it               |
 | `categories`     | the groups it is in — several, or none                                              |
@@ -184,6 +184,7 @@ The card:
         'url' => '/contacts',
         'new_tab' => false,
         'rel' => null,                 // with a new tab — "noopener noreferrer"
+        'download' => null,            // a file of the library to save: the name it was uploaded under
         'variant' => 'primary',        // a look taken out of the config — the first one instead
     ],
     'featured' => true,
@@ -195,6 +196,12 @@ The card:
 `amount` is formatted by the package — «750», «12.50», «1,380» or «1 380» by the language —
 because the block's template is written in the subset of Blade the playground's preview also reads,
 and `number_format` is not in it.
+
+The button may lead to a file of the media library — the full price list in PDF. Print its `<a>` with
+`{{ \WebxUi\Admin\Links\LinkAttributes::of($tariff['button']) }}`: `href`, `target`, `rel` and `download`
+in one, as the block does. A site whose copy of the block type was installed earlier keeps its old
+template — the file opens rather than downloads — until it takes the new one:
+`php artisan webx:blocks:import tariffs --path=vendor/webx-ui/module-tariffs/resources/blocks --replace=tariffs --publish`.
 
 ### Groups as tabs
 
@@ -402,7 +409,9 @@ translated field is the default language; `{ "en": "…", "ru": "…" }` is ever
 `price` is a number or `null`; `currency` is a code, and one the site does not have is refused with
 the list of those it has. `features` is a list of lines — each a string or a map of languages; an
 agent never needs to know about `{ text }`. `button` is `{ label, link, variant }` — `link` an
-address or an entity as `menu_add_link` takes it, `variant` a key of the site's looks — and `null`
+address, an entity as `menu_add_link` takes it or a file of the library
+(`{ "target": "file", "path": "media/…", "download": true }`, an unknown key refused), `variant` a key
+of the site's looks — and `null`
 takes the button away. `services` takes ids or addresses (`"/services/seo"`), and exists only on a
 site with services. The currency and the look are checked **before** the form, so the refusal
 names the keys an agent can send back. Every tool that changes something takes `dry_run: true`;

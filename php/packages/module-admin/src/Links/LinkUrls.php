@@ -72,19 +72,34 @@ final readonly class LinkUrls
      * otherwise be forty queries to draw, and the screens that read links in bulk are exactly
      * the ones drawn most often.
      *
+     * The files behind `file` links are asked of the library here too, all at once: the library
+     * remembers what it was asked for the rest of the response, so {@see file()} on each button of
+     * a list of banners is no further query.
+     *
      * @param  list<Link>  $links
      * @return array<string, array<int, LinkCandidate>> Keyed by morph alias, then by id.
      */
     public function candidates(array $links, ?string $locale = null): array
     {
         $wanted = [];
+        $paths = [];
 
         foreach ($links as $link) {
+            if ($link->target === LinkTarget::File && $link->path !== null) {
+                $paths[$link->path] = $link->path;
+
+                continue;
+            }
+
             if ($link->target !== LinkTarget::Entity || $link->entityType === null || $link->entityId === null) {
                 continue;
             }
 
             $wanted[$link->entityType][$link->entityId] = $link->entityId;
+        }
+
+        if ($paths !== [] && $this->files !== null) {
+            $this->files->downloads(array_values($paths));
         }
 
         $candidates = [];

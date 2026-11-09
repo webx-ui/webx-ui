@@ -139,7 +139,7 @@ A card:
     'video_mobile' => ['url' => …, 'mime' => 'video/mp4'] | null,  // below the breakpoint
     'poster' => [ … ] | null,              // a picture, as image; null — image is the poster
     'buttons' => [
-        ['label' => 'Book now', 'url' => '/booking', 'new_tab' => false, 'rel' => null, 'variant' => 'primary'],
+        ['label' => 'Book now', 'url' => '/booking', 'new_tab' => false, 'rel' => null, 'download' => null, 'variant' => 'primary'],
     ],
     'fields' => ['badge' => 'New'],        // the project's own fields, by name
 ]
@@ -148,6 +148,11 @@ A card:
 - A button is left out when its link leads nowhere any more — the page is in the bin or unpublished:
   a button to a 404 is worse than no button. Its `url` already has the language prefix.
 - `rel` already carries `noopener noreferrer` for a new tab: print it as it is.
+- A button may lead to a file of the media library — «Download the brochure» on a hero. `download` is
+  then the name the file was uploaded under, when the editor ticked «Download instead of opening»;
+  else null. A file gone from the library drops the button. Print the `<a>` with
+  `{{ \WebxUi\Admin\Links\LinkAttributes::of($button) }}`: `href`, `target`, `rel` and `download` in
+  one, as `<x-webx-banners>` does. A button layer takes a file the same way.
 - A banner whose picture is no longer in the library is left out, before `take()` counts — a hole in
   a slider is worse than one slide fewer.
 
@@ -407,8 +412,10 @@ With the panel's MCP server on (see [AI agents](/guide/agents)), the section is 
 A place is named by its key, a banner by its id. Media are library keys (`"media/ab/cd/spring.jpg"`),
 and a key the library does not have is refused. A plain string in `title`, `text` or a button's
 `label` is the default language; `{ "en": "…", "ru": "…" }` is every language at once. A button is
-`{ label, link, variant }`: `link` is an address (`"/booking"`) or an entity in the form
-`menu_add_link` takes (`{ "target": "entity", "entity_type": "page", "entity_id": 3 }`), and a look
+`{ label, link, variant }`: `link` is an address (`"/booking"`), an entity in the form
+`menu_add_link` takes (`{ "target": "entity", "entity_type": "page", "entity_id": 3 }`) or a file of
+the library (`{ "target": "file", "path": "media/ab/cd/brochure.pdf", "download": true }` — a key the
+library does not have is refused, `dry_run` included), and a look
 the site does not have is refused with the list of those it has. Every tool that changes something
 takes `dry_run: true`. The values go through the same form as the panel's, in one transaction: a
 refused create leaves neither a banner nor the row of a declared place.

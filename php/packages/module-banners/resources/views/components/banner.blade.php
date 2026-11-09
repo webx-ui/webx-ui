@@ -7,6 +7,9 @@
     and the videos — the widgets' backdrops — fade in over it (the component says which plays at
     which width).
 
+    A button's <a> is LinkAttributes::of(): href, the new tab and its rel, and `download` with the
+    name a file of the library was uploaded under.
+
     Classes: see resources/css/layers.css.
 --}}
 @php
@@ -57,10 +60,10 @@
                         <div class="webx-banner__layer webx-banner__layer--image {{ $layer['class'] }}" style="{{ $layer['style'] }}"><img class="webx-banner__inner" src="{{ $layer['image']['url'] }}" alt="{{ $layer['image']['alt'] ?? '' }}" @if ($layer['image']['width'] ?? null) width="{{ $layer['image']['width'] }}" height="{{ $layer['image']['height'] }}" @endif></div>
                         @break
                     @case('button')
-                        <div class="webx-banner__layer webx-banner__layer--button {{ $layer['class'] }}" style="{{ $layer['style'] }}"><span class="webx-banner__inner webx-banner__buttons"><a class="webx-banner__button webx-banner__button--{{ $layer['button']['variant'] }}" href="{{ $layer['button']['url'] }}" @if ($layer['button']['new_tab']) target="_blank" @endif @if ($layer['button']['rel']) rel="{{ $layer['button']['rel'] }}" @endif>{{ $layer['button']['label'] }}</a></span></div>
+                        <div class="webx-banner__layer webx-banner__layer--button {{ $layer['class'] }}" style="{{ $layer['style'] }}"><span class="webx-banner__inner webx-banner__buttons"><a class="webx-banner__button webx-banner__button--{{ $layer['button']['variant'] }}" {{ \WebxUi\Admin\Links\LinkAttributes::of($layer['button']) }}>{{ $layer['button']['label'] }}</a></span></div>
                         @break
                     @case('buttons')
-                        <div class="webx-banner__layer webx-banner__layer--buttons {{ $layer['class'] }}" style="{{ $layer['style'] }}"><span class="webx-banner__inner webx-banner__buttons">@foreach ($layer['buttons'] as $button)<a class="webx-banner__button webx-banner__button--{{ $button['variant'] }}" href="{{ $button['url'] }}" @if ($button['new_tab']) target="_blank" @endif @if ($button['rel']) rel="{{ $button['rel'] }}" @endif>{{ $button['label'] }}</a>@endforeach</span></div>
+                        <div class="webx-banner__layer webx-banner__layer--buttons {{ $layer['class'] }}" style="{{ $layer['style'] }}"><span class="webx-banner__inner webx-banner__buttons">@foreach ($layer['buttons'] as $button)<a class="webx-banner__button webx-banner__button--{{ $button['variant'] }}" {{ \WebxUi\Admin\Links\LinkAttributes::of($button) }}>{{ $button['label'] }}</a>@endforeach</span></div>
                         @break
                 @endswitch
             @endforeach
@@ -76,7 +79,7 @@
             @if (($banner['buttons'] ?? []) !== [])
                 <div class="webx-banner__buttons">
                     @foreach ($banner['buttons'] as $button)
-                        <a class="webx-banner__button webx-banner__button--{{ $button['variant'] }}" href="{{ $button['url'] }}" @if ($button['new_tab']) target="_blank" @endif @if ($button['rel']) rel="{{ $button['rel'] }}" @endif>{{ $button['label'] }}</a>
+                        <a class="webx-banner__button webx-banner__button--{{ $button['variant'] }}" {{ \WebxUi\Admin\Links\LinkAttributes::of($button) }}>{{ $button['label'] }}</a>
                     @endforeach
                 </div>
             @endif

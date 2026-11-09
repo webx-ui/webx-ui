@@ -166,7 +166,8 @@
                       "name": "link",
                       "label": "trans::webx-banners::screen.link",
                       "props": {
-                        "allowNone": false
+                        "allowNone": false,
+                        "files": true
                       }
                     }
                   ]
