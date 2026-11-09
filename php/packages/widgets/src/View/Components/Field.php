@@ -76,6 +76,7 @@ final class Field extends Component
      *                                            — the last two drawn by `view="cards"` only; `image` an address or `['src', 'srcset', 'width', 'height']`
      * @param  array<string, list<string>>|null  $when
      * @param  array<string, list<string>>|null  $unless
+     * @param  list<int|string>|null  $weekdays
      */
     public function __construct(
         public string $name,
