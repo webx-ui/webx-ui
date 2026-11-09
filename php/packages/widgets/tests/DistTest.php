@@ -63,8 +63,11 @@ final class DistTest extends PlainTestCase
     /** Where the visitor came from (FORM_STEPS §8): a listener on the form's submit, loaded with a form that asks. */
     private const int ATTRIBUTION_BUDGET = 1024;
 
-    /** The offer of the first visit's language (ROUTING §18.6): a card and a cookie, loaded only where it is made. */
-    private const int LANGUAGE_OFFER_BUDGET = 1536;
+    /**
+     * The offer of the first visit's language (ROUTING §18.6): a card and a cookie, loaded only where it is made.
+     * 2 KB with its stylesheet: the copies of a header printed twice and a folded menu need an observer of size.
+     */
+    private const int LANGUAGE_OFFER_BUDGET = 2048;
 
     private const array LOCALES = ['en', 'ru', 'uk', 'de', 'pl', 'fr', 'es', 'it', 'pt', 'tr'];
 
