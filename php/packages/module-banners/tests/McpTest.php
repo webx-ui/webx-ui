@@ -117,6 +117,42 @@ final class McpTest extends TestCase
     }
 
     #[Test]
+    public function an_agent_gives_a_banner_a_phone_video_and_a_poster(): void
+    {
+        $this->picture('media/ab/cd/wide.jpg');
+        $this->picture('media/ab/cd/still.jpg');
+        $this->picture('media/ab/cd/upright.mp4', 'video/mp4');
+
+        $arguments = [
+            'place' => 'hero',
+            'image' => 'media/ab/cd/wide.jpg',
+            'video_mobile' => 'media/ab/cd/upright.mp4',
+            'poster' => 'media/ab/cd/still.jpg',
+        ];
+
+        $dry = $this->content($this->agent('banners_create', [...$arguments, 'dry_run' => true]));
+        $this->assertSame('media/ab/cd/upright.mp4', $dry['would_create']['video_mobile']);
+        $this->assertSame('media/ab/cd/still.jpg', $dry['would_create']['poster']);
+        $this->assertNull($dry['would_create']['video']);
+        $this->assertSame(0, Banner::query()->count(), 'a dry run writes nothing');
+
+        $created = $this->content($this->agent('banners_create', $arguments));
+        $this->assertSame(['path' => 'media/ab/cd/upright.mp4'], $created['values']['video_mobile']);
+        $this->assertSame(['path' => 'media/ab/cd/still.jpg'], $created['values']['poster']);
+        $this->assertTrue($created['banner']['has_video'], 'a phone video is a video');
+
+        $id = $created['banner']['id'];
+        $this->agent('banners_update', ['banner' => $id, 'values' => ['poster' => 'media/ab/cd/upright.mp4']])->assertHasErrors(['poster']);
+        $this->agent('banners_update', ['banner' => $id, 'values' => ['video_mobile' => 'media/no/such.mp4']])->assertHasErrors(['no file [media/no/such.mp4]']);
+
+        $this->agent('banners_update', ['banner' => $id, 'values' => ['poster' => null], 'dry_run' => true])->assertOk();
+        $this->assertNotNull(Banner::query()->findOrFail($id)->poster);
+
+        $this->agent('banners_update', ['banner' => $id, 'values' => ['poster' => null]])->assertOk();
+        $this->assertNull(Banner::query()->findOrFail($id)->poster);
+    }
+
+    #[Test]
     public function an_agent_lays_out_layers_with_library_keys_and_plain_words(): void
     {
         $this->picture('media/ab/cd/wide.jpg');

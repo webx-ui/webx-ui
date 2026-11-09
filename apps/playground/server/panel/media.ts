@@ -257,9 +257,9 @@ for (const [path, name] of [
 }
 pdf(8, 'press/health-style-2025-03.pdf', 'Здоровье и стиль, март 2025', '2026-09-27T09:05:00+00:00')
 
-/* The banners' pictures — wide ones, one narrower crop for a phone — and one video, which the
-   library lists and a banner plays over its picture. There are no bytes behind the video: the
-   panel shows its name, and a playground has no business carrying a binary. */
+/* The banners' pictures — wide ones, one narrower crop for a phone — and a video with its upright
+   cut for phones, which the library lists and a banner plays over its picture. There are no bytes
+   behind a video: the panel shows its name, and a playground has no business carrying a binary. */
 for (const [path, name, width, height] of [
   ['banners/spring-sale.svg', 'Весенняя распродажа', 1920, 720],
   ['banners/spring-sale-mobile.svg', 'Весенняя распродажа, телефон', 800, 1000],
@@ -271,6 +271,7 @@ for (const [path, name, width, height] of [
   image(9, path, name, width, height, '2026-09-28T09:00:00+00:00')
 }
 video(9, 'banners/showreel.mp4', 'Шоурил студии', '2026-09-28T09:05:00+00:00')
+video(9, 'banners/showreel-phone.mp4', 'Шоурил студии, телефон', '2026-09-28T09:06:00+00:00')
 
 recount()
 

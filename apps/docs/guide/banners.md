@@ -71,13 +71,34 @@ use; an administrator can add places of their own in the panel for a template th
 | `image`        | a picture from the library, kept as its key — **required**, the one field that is                                         |
 | `image_mobile` | a narrower crop for phones, shown below the breakpoint instead of `image`                                                 |
 | `video`        | a video from the library, played silently over the picture; the picture is its poster                                     |
+| `video_mobile` | a video of its own for phones, played below the breakpoint instead of `video`                                             |
+| `poster`       | a picture: what is seen before the video's first frame and where it does not play; empty — `image`                        |
 | `title`        | translatable                                                                                                              |
 | `text`         | translatable plain text; the template prints it with its line breaks; takes shortcodes                                    |
 | `buttons`      | up to three: a translatable label, a [link](/guide/menu#an-item-points-at-one-of-three-things) and a look from the config |
 | `enabled`      | the whole of «on the site»: no draft, no schedule; a new banner starts **off**                                            |
 
 The picture is required because every layout stands on it: the frame's proportions, the poster of
-the video and what is seen without JavaScript. A video without a picture is refused under `image`.
+the video and what is seen without JavaScript. A video without a picture is refused under `image`,
+and so is a phone's video.
+
+**The video** is the widgets' background video, `<x-webx-video variant="background">`: muted, in a
+loop, `playsinline`, with a pause button in its corner (WCAG 2.2.2) whose choice the next page
+remembers. It plays only while the banner is on screen — and in a slider only while its slide is
+the one shown — and never by itself under `prefers-reduced-motion` or on a connection saving data:
+then the poster is all there is, as it is without JavaScript. `preload="none"`: a video that does
+not play is never fetched.
+
+- **Which video, at which width.** Above the breakpoint `video`. Below it `video_mobile`; without
+  one, `video` where the place says `video_on_mobile`, else none — the phone sees its picture.
+  The two are two backdrops, and the breakpoint's CSS hides the one that is not for this width:
+  hidden, it is never on screen, so it is neither played nor loaded.
+- **The poster** is the banner's `<picture>`, not an attribute of the video: one image in the frame,
+  with its `width` and `height`, eager and `fetchpriority="high"` on the first banner — the page's
+  LCP — and the video fades in over it with its first frame, so nothing moves. Where a video plays
+  the picture is `poster` (else `image`); below the breakpoint `image_mobile` still wins. Give
+  the poster the picture's proportions: the layers stand on the picture's.
+- A banner without `video_mobile` and `poster` looks and plays as it did before they were there.
 
 **A banner with words is seen only in their languages.** A banner whose title or text is written in
 Russian is on the Russian pages; one written only in English is not, and there is no fallback
@@ -115,6 +136,8 @@ A card:
     'image' => ['url' => …, 'thumb' => …, 'width' => 1920, 'height' => 720, 'alt' => …, 'mime' => …],
     'image_mobile' => [ … ] | null,        // null — take image
     'video' => ['url' => …, 'mime' => 'video/mp4'] | null,
+    'video_mobile' => ['url' => …, 'mime' => 'video/mp4'] | null,  // below the breakpoint
+    'poster' => [ … ] | null,              // a picture, as image; null — image is the poster
     'buttons' => [
         ['label' => 'Book now', 'url' => '/booking', 'new_tab' => false, 'rel' => null, 'variant' => 'primary'],
     ],
@@ -134,17 +157,17 @@ is the place's). Every key is read against the package's default, so a published
 option keeps the others. A key the package does not know is handed to the template as it is — a
 site can add its own.
 
-| Option            | Default | Meaning                                                   |
-| ----------------- | ------- | --------------------------------------------------------- |
-| `interval`        | `6000`  | ms between slides                                         |
-| `autoplay`        | `true`  | off under `prefers-reduced-motion` regardless             |
-| `loop`            | `true`  | after the last slide, the first                           |
-| `arrows`, `dots`  | `true`  |                                                           |
-| `pause_on_hover`  | `true`  | and on focus inside the slider                            |
-| `ratio`           | `16/6`  | `aspect-ratio` of the frame on wide screens               |
-| `ratio_mobile`    | `4/5`   | below the breakpoint                                      |
-| `breakpoint`      | `768`   | px: below it `image_mobile`, `ratio_mobile`, and no video |
-| `video_on_mobile` | `false` | below the breakpoint the poster rather than the video     |
+| Option            | Default | Meaning                                                     |
+| ----------------- | ------- | ----------------------------------------------------------- |
+| `interval`        | `6000`  | ms between slides                                           |
+| `autoplay`        | `true`  | off under `prefers-reduced-motion` regardless               |
+| `loop`            | `true`  | after the last slide, the first                             |
+| `arrows`, `dots`  | `true`  |                                                             |
+| `pause_on_hover`  | `true`  | and on focus inside the slider                              |
+| `ratio`           | `16/6`  | `aspect-ratio` of the frame on wide screens                 |
+| `ratio_mobile`    | `4/5`   | below the breakpoint                                        |
+| `breakpoint`      | `768`   | px: below it `image_mobile`, `ratio_mobile`, `video_mobile` |
+| `video_on_mobile` | `false` | without `video_mobile`, `video` on phones too               |
 
 ## A template
 
@@ -164,7 +187,10 @@ the site's own should do too, if it draws a place itself from `banners()` and `b
            width="{{ $banner['image']['width'] }}" height="{{ $banner['image']['height'] }}"
            loading="{{ $loop->first ? 'eager' : 'lazy' }}">
     </picture>
-    {{-- the video, the title, nl2br(e($banner['text'])), the buttons with their `rel` as it is --}}
+    @if ($banner['video'])
+      <x-webx-video variant="background" :file="$banner['video']" />
+    @endif
+    {{-- the phone's video, the title, nl2br(e($banner['text'])), the buttons with their `rel` as it is --}}
   </article>
 @endforeach
 ```
@@ -181,9 +207,10 @@ the site's own should do too, if it draws a place itself from `banners()` and `b
   script adds the arrows and the dots (none for a single banner — a slider of one is a picture),
   autoplay with the interval, pause on hover and on focus, and the loop. No autoplay under
   `prefers-reduced-motion`.
-- **The video** has no `src` in the markup (`data-src`): the script gives it one on a wide screen
-  (or when `video_on_mobile`) and not under `prefers-reduced-motion`. Everywhere else, and without
-  JavaScript, the picture is what is seen, and the video's bytes are never fetched.
+- **The video** is `<x-webx-video variant="background" :file="…">` of the widgets over the picture,
+  without a `poster` of its own — the picture is the poster ([A banner](#a-banner)). It plays
+  where it is seen and asks for nothing where it is not; `video_mobile` is a second one for the
+  narrow width, the other hidden by a media query at the breakpoint.
 
 ## Layers
 
@@ -193,7 +220,8 @@ the right, a round picture with a ring of words. `hero` is declared so.
 
 ```php
 'places' => [
-    'hero' => ['layout' => 'slider', 'layers' => true],
+    // The hero of a page carries its main heading: a text layer may be an h1 here.
+    'hero' => ['layout' => 'slider', 'layers' => true, 'tags' => ['h1' => 'Heading 1']],
     // A layer may step out of the frame — below the banner, over the next block.
     'promo' => ['layout' => 'single', 'layers' => true, 'overflow' => true],
 ],
@@ -214,12 +242,12 @@ computer and the phone; the look is shared. A layer without a phone layout uses 
 The site switches at the place's `breakpoint`, by the window — the width `<picture>` switches its
 source at.
 
-| Layer     | What it is                                                                      |
-| --------- | ------------------------------------------------------------------------------- |
-| `text`    | words in a tag (`p`, `h2`, `h3`, `span`; a place may add `h1` under its `tags`) |
-| `image`   | a picture from the library — a decoration with an empty `alt` takes no clicks   |
-| `button`  | a link with its label and look, as a button of the banner has                   |
-| `buttons` | the banner's own buttons, in a row — one such layer at most                     |
+| Layer     | What it is                                                                                   |
+| --------- | -------------------------------------------------------------------------------------------- |
+| `text`    | words in a tag (`p`, `h2`, `h3`, `span`; a place may add `h1` under its `tags`, `hero` does) |
+| `image`   | a picture from the library — a decoration with an empty `alt` takes no clicks                |
+| `button`  | a link with its label and look, as a button of the banner has                                |
+| `buttons` | the banner's own buttons, in a row — one such layer at most                                  |
 
 **The banner's fields are put in.** `{title}` and `{text}` in a layer's words become the
 banner's title and text in the language of the page — so the words stay where they always were
@@ -408,6 +436,5 @@ banner leaves the demo alone.
 
 - A block for banners inside a page's content, with its source for `wx-collection`.
 - A link on the whole banner rather than on a button.
-- A separate video for phones.
 - A schedule, together with an answer to the cached page.
 - Click and view statistics, A/B.

@@ -41,7 +41,7 @@ use WebxUi\Media\Screens\MediaValues;
 final class BannerTools
 {
     /** The media fields of a banner: a library key each. */
-    private const MEDIA = ['image', 'image_mobile', 'video'];
+    private const MEDIA = ['image', 'image_mobile', 'video', 'video_mobile', 'poster'];
 
     /** The words of a banner: one language as a string or every language as a map. */
     private const WORDS = ['title', 'text'];
@@ -72,9 +72,11 @@ final class BannerTools
                 .'or { "path": "…", "alt": "…" }. Null takes it away.',
         ];
         $fields = [
-            'image' => $media('The picture — required, the one field a banner cannot do without: the layouts stand on it, and it is the poster of the video. A picture'),
+            'image' => $media('The picture — required, the one field a banner cannot do without: the layouts stand on it, and it is the poster of the video unless `poster` is given. A picture'),
             'image_mobile' => $media('A narrower crop for phones, shown below the breakpoint instead of the picture. A picture'),
-            'video' => $media('A silent video played over the picture on wide screens. A video'),
+            'video' => $media('A silent looping video played over the picture on wide screens (and on phones where the place plays it there), with a pause button; never under reduced motion or on a connection saving data. A short light file. A video'),
+            'video_mobile' => $media('A video of its own for phones, played below the breakpoint instead of `video` — upright, short and light. Without it phones see the picture unless the place plays `video` on phones too. A video'),
+            'poster' => $media('What is seen before the video\'s first frame and where it does not play — a frame of the video, with the proportions of the picture (the layers stand on those). Without it the picture is the poster. A picture'),
             'title' => ['description' => $text['description'].' The title. A banner with words is shown only in the languages its title or text is written in; one without words everywhere. There is no fallback language.'] + $text,
             'text' => ['description' => $text['description'].' A line or two under the title: plain text, line breaks kept, no HTML.'] + $text,
             'buttons' => [
@@ -177,7 +179,7 @@ final class BannerTools
 
             Tool::mutating(
                 'update',
-                'Change a banner — any of image, image_mobile, video, title, text, buttons, layers, enabled and the fields the '
+                'Change a banner — any of image, image_mobile, video, video_mobile, poster, title, text, buttons, layers, enabled and the fields the '
                 .'project added — or move it to another place, where it stands last. A field left out keeps what it '
                 .'had, and so does a language left out of title or text: send "" for a language to take it away. It is '
                 .'on the site at once: banners have no draft.',
@@ -366,6 +368,9 @@ final class BannerTools
                 'would_create' => [
                     'place' => $key,
                     'image' => $values['image']['path'] ?? null,
+                    'video' => $values['video']['path'] ?? null,
+                    'video_mobile' => $values['video_mobile']['path'] ?? null,
+                    'poster' => $values['poster']['path'] ?? null,
                     'title' => $values['title'] ?? [],
                     'buttons' => count($values['buttons'] ?? []),
                     'enabled' => $values['enabled'],
@@ -648,7 +653,7 @@ final class BannerTools
             'enabled' => $banner->enabled,
             'written_in' => $banner->wordLanguages(),
             'image' => $banner->mediaPath('image'),
-            'has_video' => $banner->mediaPath('video') !== null,
+            'has_video' => $banner->mediaPath('video') !== null || $banner->mediaPath('video_mobile') !== null,
             'buttons' => count($banner->buttonRows()),
             'layers' => count($banner->layerRows()),
             'position' => (int) $banner->position,

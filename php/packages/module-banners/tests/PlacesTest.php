@@ -30,7 +30,7 @@ final class PlacesTest extends TestCase
         $hero = (array) $response->json('data.0');
         $this->assertSame(['id', 'key', 'title', 'declared', 'layout', 'count', 'layers'], array_keys($hero));
         $this->assertSame(['ratio' => '16/6', 'ratio_mobile' => '4/5', 'breakpoint' => 768, 'overflow' => false], array_diff_key($hero['layers'], ['tags' => true, 'variants' => true]), 'hero has layers');
-        $this->assertSame(['p', 'h2', 'h3', 'span'], array_column($hero['layers']['tags'], 'value'));
+        $this->assertSame(['p', 'h2', 'h3', 'span', 'h1'], array_column($hero['layers']['tags'], 'value'), 'the hero of a page takes its main heading');
         $this->assertIsInt($hero['id']);
         $this->assertSame('Home page slider', $hero['title']);
         $this->assertTrue($hero['declared']);

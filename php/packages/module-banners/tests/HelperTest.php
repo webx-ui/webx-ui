@@ -45,7 +45,7 @@ final class HelperTest extends TestCase
 
         $this->assertIsArray($card);
         $this->assertSame(
-            ['id', 'anchor', 'place', 'title', 'text', 'image', 'image_mobile', 'video', 'buttons', 'fields', 'layers', 'ratio', 'ratio_mobile'],
+            ['id', 'anchor', 'place', 'title', 'text', 'image', 'image_mobile', 'video', 'video_mobile', 'poster', 'buttons', 'fields', 'layers', 'ratio', 'ratio_mobile'],
             array_keys($card),
         );
         $this->assertSame($banner->id, $card['id']);

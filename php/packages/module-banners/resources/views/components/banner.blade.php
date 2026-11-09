@@ -3,12 +3,15 @@
     stage with the picture's proportions — or, without layers, the banner's words and buttons in a
     corner. Every length of a layer is a percent of the picture's width; layers.css says how.
 
+    The picture is the poster too: `$still` is the poster where a video plays, else the picture,
+    and the videos — the widgets' backdrops — fade in over it (the component says which plays at
+    which width).
+
     Classes: see resources/css/layers.css.
 --}}
 @php
-    $image = $banner['image'] ?? null;
-    $mobile = $banner['image_mobile'] ?? null;
-    $video = $banner['video'] ?? null;
+    $image = $still;
+    $mobile = $stillMobile;
     $layers = $banner['layers'] ?? [];
     $loading = $eager === null ? [] : ['loading' => $eager ? 'eager' : 'lazy', 'fetchpriority' => $eager ? 'high' : null];
     $phone = $breakpoint > 1 ? '(max-width: '.($breakpoint - 1).'px)' : null;
@@ -30,17 +33,16 @@
                 <img {{ (new \Illuminate\View\ComponentAttributeBag(array_filter([
                     'class' => 'webx-banner__image',
                     'src' => $image['url'],
-                    'alt' => (string) ($image['alt'] ?? ''),
+                    // A poster with no words of its own stands for the picture: it says the picture's.
+                    'alt' => (string) (($image['alt'] ?? '') !== '' ? $image['alt'] : ($banner['image']['alt'] ?? '')),
                     'width' => $image['width'] ?? null,
                     'height' => $image['height'] ?? null,
                     ...$loading,
                 ], static fn ($value) => $value !== null))) }}>
             </picture>
-            @if (is_array($video))
-                <video class="webx-banner__video" muted playsinline loop preload="none" aria-hidden="true"
-                       poster="{{ $image['url'] }}" data-src="{{ $video['url'] }}"
-                       data-breakpoint="{{ $breakpoint }}" data-on-mobile="{{ ($options['video_on_mobile'] ?? false) ? 'true' : 'false' }}"></video>
-            @endif
+            @foreach ($videos as $video)
+                <x-webx-video variant="background" :file="$video['file']" :class="trim('webx-banner__video '.$video['class'])" />
+            @endforeach
         </div>
     @endif
 
@@ -81,6 +83,3 @@
         </div>
     @endif
 </div>
-@if ($scripts !== '')
-    <script>{!! $scripts !!}</script>
-@endif

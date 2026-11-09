@@ -16,6 +16,15 @@ use WebxUi\Banners\Rendering\Stylesheet;
  * `layout` is what `banners_layout()` answered for its place; without it the component asks.
  * `eager` loads the picture at once — the first banner of a page; null leaves the choice to
  * whatever it stands in (a slide of `<x-webx-slider>` makes the ones out of view lazy).
+ *
+ * The video is the widgets' backdrop, `<x-webx-video variant="background">` (§10 of the widgets
+ * spec): muted, looping, with its pause button, played only on screen and never under reduced
+ * motion or on a connection saving data. It has no poster of its own: the banner's `<picture>`
+ * is the poster — the one image of the frame, sized and as eager as the first slide asks — and
+ * the video fades in over it with its first frame. A phone has its own video (`video_mobile`),
+ * else the main one where the place says `video_on_mobile`, else none: the two are two
+ * backdrops, and the breakpoint's CSS hides the one that is not for this width — hidden, it is
+ * never on screen, so the widget neither plays nor loads it.
  */
 final class Banner extends Component
 {
@@ -25,6 +34,28 @@ final class Banner extends Component
     public int $breakpoint;
 
     public string $frameStyle;
+
+    /**
+     * What the frame shows before a video and where none plays: the poster on a banner whose
+     * video plays here, else the picture.
+     *
+     * @var array<string, mixed>|null
+     */
+    public ?array $still = null;
+
+    /**
+     * The same below the breakpoint, when it is another file than above it; null — one for both.
+     *
+     * @var array<string, mixed>|null
+     */
+    public ?array $stillMobile = null;
+
+    /**
+     * The backdrops to print: the file, and the class that says the width it is for.
+     *
+     * @var list<array{file: array<string, mixed>, class: string}>
+     */
+    public array $videos = [];
 
     /**
      * @param  array<string, mixed>  $banner
@@ -49,6 +80,8 @@ final class Banner extends Component
         $vars[] = '--img-m:'.(self::number($banner['ratio_mobile'] ?? null) ?? "calc({$ratioMobile})");
 
         $this->frameStyle = implode(';', $vars);
+
+        $this->media($banner);
     }
 
     public function shouldRender(): bool
@@ -62,8 +95,60 @@ final class Banner extends Component
         // mark the page's stylesheet as printed.
         return view('webx-banners::components.banner', [
             'css' => $this->stylesheet->base().$this->stylesheet->breakpoint($this->breakpoint),
-            'scripts' => is_array($this->banner['video'] ?? null) ? $this->stylesheet->scripts() : '',
         ]);
+    }
+
+    /**
+     * Which video plays above the breakpoint and which below it, and what stands in the frame
+     * before them. A banner without a video of its own for phones and without a poster gets
+     * exactly what it got before both were there.
+     *
+     * @param  array<string, mixed>  $banner
+     */
+    private function media(array $banner): void
+    {
+        $image = self::file($banner['image'] ?? null);
+        $poster = self::file($banner['poster'] ?? null);
+        $wide = self::file($banner['video'] ?? null);
+        $narrow = null;
+
+        if ($this->breakpoint > 1) {
+            $narrow = self::file($banner['video_mobile'] ?? null)
+                ?? (($this->options['video_on_mobile'] ?? false) ? $wide : null);
+        }
+
+        $this->still = ($wide !== null ? $poster : null) ?? $image;
+
+        if ($this->breakpoint > 1) {
+            $mobile = self::file($banner['image_mobile'] ?? null)
+                ?? (($narrow !== null ? $poster : null) ?? $image);
+
+            $this->stillMobile = $mobile !== null && ($mobile['url'] ?? null) !== ($this->still['url'] ?? null) ? $mobile : null;
+        }
+
+        if ($wide !== null && $narrow !== null && $wide['url'] === $narrow['url']) {
+            $this->videos[] = ['file' => $wide, 'class' => ''];
+
+            return;
+        }
+
+        if ($wide !== null) {
+            $this->videos[] = ['file' => $wide, 'class' => 'webx-banner__video--wide'];
+        }
+
+        if ($narrow !== null) {
+            $this->videos[] = ['file' => $narrow, 'class' => 'webx-banner__video--narrow'];
+        }
+    }
+
+    /**
+     * A file of the card — a picture or a video — or null when there is none to print.
+     *
+     * @return array<string, mixed>|null
+     */
+    private static function file(mixed $value): ?array
+    {
+        return is_array($value) && is_string($value['url'] ?? null) && $value['url'] !== '' ? $value : null;
     }
 
     /** `16/6`, `16 / 6` or `2.4` — anything else is not a ratio and is not printed into CSS. */

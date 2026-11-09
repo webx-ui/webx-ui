@@ -13,7 +13,7 @@ use WebxUi\Admin\Screens\HasExtra;
 use WebxUi\Localization\HasTranslations;
 
 /**
- * A banner (§3, §5.1 of the banners spec): a picture, one for phones, a video, a title, a text and
+ * A banner (§3, §5.1 of the banners spec): a picture, one for phones, a video (one for phones, a poster), a title, a text and
  * up to three buttons, in one place.
  *
  * No page, no draft, no schedule (decisions 5 and 13): `enabled` is the whole of "not on the site",
@@ -28,6 +28,8 @@ use WebxUi\Localization\HasTranslations;
  * @property array<string, mixed>|null $image
  * @property array<string, mixed>|null $image_mobile
  * @property array<string, mixed>|null $video
+ * @property array<string, mixed>|null $video_mobile
+ * @property array<string, mixed>|null $poster
  * @property array<string, string>|string|null $title
  * @property array<string, string>|string|null $text
  * @property list<array<string, mixed>>|null $buttons
@@ -53,7 +55,7 @@ class Banner extends Model
     public const WORDS = ['title', 'text'];
 
     /** @var list<string> */
-    protected $fillable = ['place_id', 'image', 'image_mobile', 'video', 'title', 'text', 'buttons', 'layers', 'enabled', 'position'];
+    protected $fillable = ['place_id', 'image', 'image_mobile', 'video', 'video_mobile', 'poster', 'title', 'text', 'buttons', 'layers', 'enabled', 'position'];
 
     /** @var array<string, string> */
     protected $casts = [
@@ -63,6 +65,8 @@ class Banner extends Model
         'image' => 'array',
         'image_mobile' => 'array',
         'video' => 'array',
+        'video_mobile' => 'array',
+        'poster' => 'array',
         'buttons' => 'array',
         'layers' => 'array',
     ];

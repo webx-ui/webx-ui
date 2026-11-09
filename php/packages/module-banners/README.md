@@ -64,6 +64,8 @@ list, not an exception: a header without a banner is better than a white page.
 | `image`        | the value of a `wx-media` field (images) — required, the one required field     |
 | `image_mobile` | the same, shown below the breakpoint instead of `image`                         |
 | `video`        | the value of a `wx-media` field (video); `image` is its poster and its fallback |
+| `video_mobile` | the same, played below the breakpoint instead of `video`                        |
+| `poster`       | the value of a `wx-media` field (images): the video's poster instead of `image` |
 | `title`        | translatable                                                                    |
 | `text`         | translatable, plain text                                                        |
 | `buttons`      | up to three: `label` (translatable), `link` (a `wx-link` value), `variant`      |
@@ -100,6 +102,8 @@ A card:
     'image' => ['url' => …, 'thumb' => …, 'width' => 1920, 'height' => 720, 'alt' => …, 'mime' => …],
     'image_mobile' => [ … ] | null,       // null — take image
     'video' => ['url' => …, 'mime' => 'video/mp4'] | null,
+    'video_mobile' => ['url' => …, 'mime' => 'video/mp4'] | null,
+    'poster' => [ … ] | null,
     'buttons' => [
         ['label' => 'Book now', 'url' => '/booking', 'new_tab' => false, 'rel' => null, 'variant' => 'primary'],
     ],
@@ -115,17 +119,17 @@ and the argument, in that order, and adds `layout` (`single`, `random` or `slide
 read against the package's default, so a published config with one option keeps the others. A
 key the package does not know is handed to the template as it is.
 
-| Option            | Default | Meaning                                                   |
-| ----------------- | ------- | --------------------------------------------------------- |
-| `interval`        | `6000`  | ms between slides                                         |
-| `autoplay`        | `true`  | off under `prefers-reduced-motion` regardless             |
-| `loop`            | `true`  | after the last slide, the first                           |
-| `arrows`, `dots`  | `true`  |                                                           |
-| `pause_on_hover`  | `true`  | and on focus inside the slider                            |
-| `ratio`           | `16/6`  | `aspect-ratio` of the frame on wide screens               |
-| `ratio_mobile`    | `4/5`   | below the breakpoint                                      |
-| `breakpoint`      | `768`   | px: below it `image_mobile`, `ratio_mobile`, and no video |
-| `video_on_mobile` | `false` | below the breakpoint the poster rather than the video     |
+| Option            | Default | Meaning                                                     |
+| ----------------- | ------- | ----------------------------------------------------------- |
+| `interval`        | `6000`  | ms between slides                                           |
+| `autoplay`        | `true`  | off under `prefers-reduced-motion` regardless               |
+| `loop`            | `true`  | after the last slide, the first                             |
+| `arrows`, `dots`  | `true`  |                                                             |
+| `pause_on_hover`  | `true`  | and on focus inside the slider                              |
+| `ratio`           | `16/6`  | `aspect-ratio` of the frame on wide screens                 |
+| `ratio_mobile`    | `4/5`   | below the breakpoint                                        |
+| `breakpoint`      | `768`   | px: below it `image_mobile`, `ratio_mobile`, `video_mobile` |
+| `video_on_mobile` | `false` | without `video_mobile`, `video` on phones too               |
 
 ## A template
 
@@ -152,8 +156,7 @@ The package draws nothing; this is what a site copies and changes.
         </picture>
 
         @if ($banner['video'])
-          <video muted playsinline loop preload="none" poster="{{ $banner['image']['url'] }}"
-                 data-src="{{ $banner['video']['url'] }}"></video>
+          <x-webx-video variant="background" :file="$banner['video']" />
         @endif
 
         @if ($banner['title'] !== '')
@@ -181,9 +184,11 @@ The package draws nothing; this is what a site copies and changes.
 - **slider** — a strip with `scroll-snap`, arrows, dots and autoplay read from `data-banners`,
   paused on hover and focus, no autoplay under `prefers-reduced-motion`; one banner — no arrows
   and no dots.
-- **video** — the script sets `src` from `data-src` on wide screens (or when `video_on_mobile`)
-  and not under `prefers-reduced-motion`. Without it, on a phone and with reduced motion, the
-  picture is what is seen.
+- **video** — the background video of `webx-ui/widgets` over the picture, which stays its
+  poster: muted, looping, a pause button, played only on screen and never under
+  `prefers-reduced-motion` or on a connection saving data. `video_mobile` is a second one below
+  the breakpoint, the other hidden there by a media query; `<x-webx-banner>` prints both and puts
+  `poster` in the `<picture>` where a video plays.
 
 ## Button variants
 

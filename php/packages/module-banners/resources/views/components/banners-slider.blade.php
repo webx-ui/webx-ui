@@ -14,7 +14,9 @@
 >
     @foreach ($banners as $banner)
         <x-webx-slide>
-            <x-webx-banner :banner="$banner" :layout="$options" />
+            {{-- The first picture is the page's largest at once: eager, and first in the queue. The
+                 slider makes the others lazy itself. --}}
+            <x-webx-banner :banner="$banner" :layout="$options" :eager="$loop->first ? true : null" />
         </x-webx-slide>
     @endforeach
 </x-webx-slider>

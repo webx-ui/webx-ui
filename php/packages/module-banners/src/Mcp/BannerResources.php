@@ -124,7 +124,7 @@ final class BannerResources
                         'title' => BannerNames::of($banner, $locales),
                         'enabled' => $banner->enabled,
                         'written_in' => $banner->wordLanguages(),
-                        'has_video' => $banner->mediaPath('video') !== null,
+                        'has_video' => $banner->mediaPath('video') !== null || $banner->mediaPath('video_mobile') !== null,
                         'layers' => count($banner->layerRows()),
                     ])
                     ->values()

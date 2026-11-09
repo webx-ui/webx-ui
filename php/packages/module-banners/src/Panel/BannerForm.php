@@ -38,7 +38,7 @@ final class BannerForm
      *
      * @var list<string>
      */
-    private const OWN = ['image', 'image_mobile', 'video', 'title', 'text', 'buttons', 'layers', 'enabled'];
+    private const OWN = ['image', 'image_mobile', 'video', 'video_mobile', 'poster', 'title', 'text', 'buttons', 'layers', 'enabled'];
 
     /** The most buttons a banner has. */
     public const MAX_BUTTONS = 3;
@@ -86,6 +86,8 @@ final class BannerForm
             'image' => $banner->image,
             'image_mobile' => $banner->image_mobile,
             'video' => $banner->video,
+            'video_mobile' => $banner->video_mobile,
+            'poster' => $banner->poster,
             'title' => $banner->getTranslations('title'),
             'text' => $banner->getTranslations('text'),
             'buttons' => $banner->buttonRows(),
@@ -181,6 +183,8 @@ final class BannerForm
             case 'image':
             case 'image_mobile':
             case 'video':
+            case 'video_mobile':
+            case 'poster':
             case 'buttons':
                 $banner->setAttribute($field, is_array($value) && $value !== [] ? $value : null);
                 break;
@@ -207,7 +211,11 @@ final class BannerForm
             return [];
         }
 
-        $video = array_key_exists('video', $input) ? $this->media->store($input['video']) : $banner->video;
+        $video = null;
+
+        foreach (['video', 'video_mobile'] as $field) {
+            $video ??= array_key_exists($field, $input) ? $this->media->store($input[$field]) : $banner->getAttribute($field);
+        }
 
         if ($video === null && ! $this->places->needsPicture($place)) {
             return [];

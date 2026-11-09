@@ -1,6 +1,6 @@
 {
     "name": "webx-ui/module-banners",
-    "description": "Banners for the WebX UI admin panel: a picture (and one for phones), a video, a title, a text and up to three buttons, kept in named places and printed by the site's own templates through banners().",
+    "description": "Banners for the WebX UI admin panel: a picture (and one for phones), a video (and one for phones, and a poster), a title, a text and up to three buttons, kept in named places and printed by the site's own templates through banners().",
     "license": "MIT",
     "type": "library",
     "keywords": [
@@ -33,7 +33,8 @@
         "webx-ui/localization": "^0.94.0",
         "webx-ui/mcp": "^0.94.0",
         "webx-ui/module-admin": "^0.94.0",
-        "webx-ui/module-media": "^0.94.0"
+        "webx-ui/module-media": "^0.94.0",
+        "webx-ui/widgets": "^0.94.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",

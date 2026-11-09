@@ -154,6 +154,8 @@ function blank(): ScreenModel {
     image: null,
     image_mobile: null,
     video: null,
+    video_mobile: null,
+    poster: null,
     title: {},
     text: {},
     buttons: [],

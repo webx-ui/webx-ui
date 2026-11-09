@@ -27,6 +27,8 @@ export interface Banner {
   image: Media | null
   image_mobile: Media | null
   video: Media | null
+  video_mobile: Media | null
+  poster: Media | null
   title: Localized
   text: Localized
   buttons: Button[]
@@ -131,6 +133,7 @@ export const banners: Banner[] = [
   banner(2, 1, {
     image: { path: 'banners/studio.svg' },
     video: { path: 'banners/showreel.mp4' },
+    video_mobile: { path: 'banners/showreel-phone.mp4' },
     title: { ru: 'Студия за работой', en: 'The studio at work' },
     text: { ru: 'Две минуты о том, как мы делаем сайты.', en: 'Two minutes on how we make sites.' },
     // A look this site dropped from its config since: it goes back as it came (decision 11).
@@ -183,6 +186,8 @@ function banner(
     image: null,
     image_mobile: null,
     video: null,
+    video_mobile: null,
+    poster: null,
     title: {},
     text: {},
     buttons: [],
@@ -355,7 +360,7 @@ export function bannerRow(record: Banner, locale: string): Record<string, unknow
     title: pick(record.title, locale) || `#${record.id}`,
     thumb: picture?.thumb ?? null,
     image: picture?.url ?? null,
-    video: record.video !== null,
+    video: record.video !== null || record.video_mobile !== null,
     enabled: record.enabled,
     position: record.position,
     updated_at: record.updated_at,
@@ -399,6 +404,8 @@ export function bannerDetail(record: Banner, locale: string): Record<string, unk
       image: record.image === null ? null : { ...record.image },
       image_mobile: record.image_mobile === null ? null : { ...record.image_mobile },
       video: record.video === null ? null : { ...record.video },
+      video_mobile: record.video_mobile === null ? null : { ...record.video_mobile },
+      poster: record.poster === null ? null : { ...record.poster },
       title: { ...record.title },
       text: { ...record.text },
       buttons: record.buttons.map((one) => ({
@@ -435,11 +442,13 @@ export function writeBanner(
   const image = media(merged('image', record?.image ?? null))
   const imageMobile = media(merged('image_mobile', record?.image_mobile ?? null))
   const video = media(merged('video', record?.video ?? null))
+  const videoMobile = media(merged('video_mobile', record?.video_mobile ?? null))
+  const poster = media(merged('poster', record?.poster ?? null))
 
   // The one required field (decision 8), and the reason a video alone is refused under it too.
   if (image === null) {
     errors.image = [
-      video === null
+      video === null && videoMobile === null
         ? 'Нужна картинка.'
         : 'Нужна картинка: без неё видео не показать — она его постер и замена.',
     ]
@@ -449,6 +458,8 @@ export function writeBanner(
     ['image', image, 'image'],
     ['image_mobile', imageMobile, 'image'],
     ['video', video, 'video'],
+    ['video_mobile', videoMobile, 'video'],
+    ['poster', poster, 'image'],
   ] as const) {
     if (value === null || errors[name]) continue
 
@@ -504,12 +515,16 @@ export function writeBanner(
   target.image = image
   target.image_mobile = imageMobile
   target.video = video
+  target.video_mobile = videoMobile
+  target.poster = poster
 
   for (const [name, value] of Object.entries(values)) {
     if (name === 'title') target.title = asMap(value)
     else if (name === 'text') target.text = asMap(value)
     else if (name === 'enabled') target.enabled = value === true
-    else if (!['image', 'image_mobile', 'video', 'buttons'].includes(name))
+    else if (
+      !['image', 'image_mobile', 'video', 'video_mobile', 'poster', 'buttons'].includes(name)
+    )
       target.extra[name] = value
   }
 

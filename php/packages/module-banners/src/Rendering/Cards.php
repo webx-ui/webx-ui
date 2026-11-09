@@ -26,6 +26,10 @@ use WebxUi\Media\Screens\MediaValues;
  *                              null only in a place of words only (`'image' => false`)
  *     image_mobile             the same, or null — the template then takes `image`
  *     video                    url and mime, or null — the picture stays as the poster
+ *     video_mobile             the same, played below the breakpoint instead of `video`; null —
+ *                              `video` there only where the place says `video_on_mobile`
+ *     poster                   a picture, as `image` — what is seen before the video's first
+ *                              frame and where it does not play; null — the picture is the poster
  *     buttons                  label, url, new_tab, rel, variant — in the editor's order
  *     fields                   the project's own fields (a patch on `banners.form`), by name
  *     layers                   in a place with layers, the layers ({@see Layers}); else []
@@ -62,7 +66,7 @@ final class Cards
         $links = [];
 
         foreach ($banners as $banner) {
-            foreach (['image', 'image_mobile', 'video'] as $field) {
+            foreach (['image', 'image_mobile', 'video', 'video_mobile', 'poster'] as $field) {
                 $path = $banner->mediaPath($field);
 
                 if ($path !== null) {
@@ -128,6 +132,8 @@ final class Cards
             'image' => $image,
             'image_mobile' => $mobile,
             'video' => $this->video($banner->video),
+            'video_mobile' => $this->video($banner->video_mobile),
+            'poster' => $this->picture($banner->poster, $locale),
             'buttons' => $buttons,
             'fields' => $fields,
             'layers' => $layers,
@@ -149,7 +155,7 @@ final class Cards
     }
 
     /**
-     * Only what a `<video>` needs; the picture is its poster.
+     * Only what a `<video>` needs; its poster is `poster`, else the picture.
      *
      * @return array{url: string, mime: string|null}|null
      */
