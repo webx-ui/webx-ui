@@ -178,7 +178,10 @@ final class TypeDiff
         $keys = [];
 
         foreach (array_unique([...array_keys($before), ...array_keys($after)]) as $key) {
-            if (($before[$key] ?? null) != ($after[$key] ?? null)) {
+            // Loose, so that `1` and `"1"` written by two exporters are one setting — but a key on one
+            // side only is a change even when it is empty: `null == ''`, and a `default: ""` added to
+            // a field would otherwise never reach a site that imports the type.
+            if (array_key_exists($key, $before) !== array_key_exists($key, $after) || $before[$key] != $after[$key]) {
                 $keys[] = (string) $key;
             }
         }

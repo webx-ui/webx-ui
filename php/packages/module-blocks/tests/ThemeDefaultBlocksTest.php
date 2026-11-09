@@ -203,6 +203,26 @@ final class ThemeDefaultBlocksTest extends TestCase
         $schema = SchemaCompatibility::inherit(self::document('cards')['schema'], $cards)['schema'];
 
         $this->assertSame([], SchemaCompatibility::problems(self::document('cards')['schema'], $schema));
+
+        // In the panel an old address shows only while it holds one. The `default` is what makes a
+        // block saved after the change — no key at all — read as empty: the form fills defaults in
+        // before it asks a `visible` condition, and the condition cannot name a missing key.
+        $old = [
+            ['hero', self::document('hero')['schema'], ['button_url', 'second_url']],
+            ['cta', self::document('cta')['schema'], ['button_url', 'second_url']],
+            ['media-text', self::document('media-text')['schema'], ['button_url']],
+            ['cards', collect(self::document('cards')['schema'])->firstWhere('id', 'cards')['children'], ['link_url']],
+        ];
+
+        foreach ($old as [$slug, $fields, $ids]) {
+            foreach ($ids as $id) {
+                $field = collect($fields)->firstWhere('id', $id);
+
+                $this->assertSame('wx-input', $field['type'] ?? null, "{$slug}.{$id}");
+                $this->assertSame('', $field['default'] ?? null, "{$slug}.{$id}");
+                $this->assertSame(['all' => [['when' => $id, 'not' => null], ['when' => $id, 'not' => '']]], $field['visible'] ?? null, "{$slug}.{$id}");
+            }
+        }
     }
 
     /** The demo `text` of this package and anything typed through MCP: plain lines, escaped. */

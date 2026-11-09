@@ -49,6 +49,19 @@ final class TypeDiffTest extends TestCase
         );
     }
 
+    /** An empty `default` added to a field is a change: `null == ''` must not hide it from an import. */
+    #[Test]
+    public function a_setting_added_empty_is_a_change(): void
+    {
+        $diff = TypeDiff::of($this->document(['schema' => [
+            ['id' => 'title', 'type' => 'wx-input', 'label' => 'Title', 'default' => ''],
+            ['id' => 'badge', 'type' => 'wx-input'],
+            ['id' => 'items', 'type' => 'wx-repeater', 'children' => [['id' => 'name', 'type' => 'wx-input']]],
+        ]]), $this->site());
+
+        $this->assertContains(['key' => 'title', 'what' => 'default'], $diff['fields']['changed'] ?? []);
+    }
+
     #[Test]
     public function texts_count_the_lines_the_file_adds_and_removes_and_the_row_names_its_keys(): void
     {

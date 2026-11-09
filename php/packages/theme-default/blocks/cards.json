@@ -119,6 +119,7 @@
           "id": "link_url",
           "type": "wx-input",
           "label": "Link address (old)",
+          "default": "",
           "props": {
             "placeholder": "/contacts"
           },

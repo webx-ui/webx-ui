@@ -49,6 +49,7 @@
       "id": "button_url",
       "type": "wx-input",
       "label": "Button address (old)",
+      "default": "",
       "props": {
         "placeholder": "/contacts"
       },

@@ -44,6 +44,7 @@
       "id": "button_url",
       "type": "wx-input",
       "label": "Button address (old)",
+      "default": "",
       "props": {
         "placeholder": "/contacts"
       },
@@ -80,6 +81,7 @@
       "id": "second_url",
       "type": "wx-input",
       "label": "Second button address (old)",
+      "default": "",
       "props": {
         "placeholder": "/contacts"
       },
