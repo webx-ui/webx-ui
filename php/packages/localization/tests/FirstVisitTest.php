@@ -263,6 +263,7 @@ final class FirstVisitTest extends TestCase
         $this->assertLeftAlone($this->page('/cameras', ['Accept-Language' => 'uk-UA,uk;q=0.9']));
         $this->assertStringContainsString('WEBX_LOCALE_FIRST_VISIT=header', $this->doctor()[0] ?? '');
     }
+
     #[Test]
     public function switched_off_nothing_changes(): void
     {

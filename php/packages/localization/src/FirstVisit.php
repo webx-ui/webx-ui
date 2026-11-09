@@ -179,7 +179,6 @@ final class FirstVisit
         return $patterns !== [] && $request->is(...$patterns);
     }
 
-
     /** The query the visitor came with — somebody's `?page=2`, an advert's marks — minus ours. */
     private function withQuery(Request $request, string $url): string
     {

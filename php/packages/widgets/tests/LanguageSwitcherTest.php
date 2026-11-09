@@ -270,6 +270,7 @@ final class LanguageSwitcherTest extends TestCase
         $this->assertStringNotContainsString('webx_lang', $on);
         $this->assertStringNotContainsString('rel=', $on);
     }
+
     #[Test]
     public function a_typo_in_the_layout_is_an_error(): void
     {

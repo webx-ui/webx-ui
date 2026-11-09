@@ -107,6 +107,7 @@ final class FirstVisitTest extends TestCase
         $this->withUnencryptedCookie('webx_lang_offer', '1');
         $this->assertDontSee($this->visit('https://shop.test/cameras', 'uk'), 'webx-language-offer');
     }
+
     #[Test]
     public function a_robot_reads_the_page_of_the_default_language_at_its_address(): void
     {
