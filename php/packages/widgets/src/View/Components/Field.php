@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace WebxUi\Widgets\View\Components;
 
+use DateTimeZone;
 use Illuminate\Contracts\Support\MessageBag;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\ViewErrorBag;
 use Illuminate\View\Component;
 use Illuminate\View\ComponentAttributeBag;
@@ -29,7 +31,7 @@ use WebxUi\Widgets\Forms\FormRules;
  */
 final class Field extends Component
 {
-    public const array TYPES = ['text', 'email', 'tel', 'url', 'password', 'number', 'textarea', 'select', 'radio', 'checkbox', 'consent', 'date', 'file', 'hidden'];
+    public const array TYPES = ['text', 'email', 'tel', 'url', 'password', 'number', 'textarea', 'select', 'radio', 'checkbox', 'consent', 'date', 'datetime', 'file', 'hidden'];
 
     /**
      * What a password manager, an address book and a phone's keyboard go by. Only the type is
@@ -126,6 +128,22 @@ final class Field extends Component
         // form has the room; on a narrow one they stand one under another anyway.
         public string $view = 'list',
         public ?int $columns = null,
+        // A day and a time (FORM_STEPS §6.4), `type="datetime"`: `step` is minutes of the list of
+        // times, `from`–`to` the day's hours (the last time a step before `to`), `weekdays` the ISO
+        // days offered (none — all), `timezone` the one the times are in — the site's, never the
+        // visitor's. Two parts are sent: `<name>[date]` and `<name>[time]`.
+        public ?string $from = null,
+        public ?string $to = null,
+        public ?array $weekdays = null,
+        public ?string $timezone = null,
+        public ?string $timezoneLabel = null,
+        public ?string $dateLabel = null,
+        public ?string $timeLabel = null,
+        public ?string $previousMonthLabel = null,
+        public ?string $nextMonthLabel = null,
+        public ?string $noTimesLabel = null,
+        public ?string $unavailableLabel = null,
+        public ?string $timesLabel = null,
     ) {
         if (! in_array($type, self::TYPES, true)) {
             throw new InvalidArgumentException("<x-webx-field type=\"{$type}\">: one of ".implode(', ', self::TYPES).'.');
@@ -243,10 +261,76 @@ final class Field extends Component
         return array_shift($parts).implode('', array_map(static fn (string $part): string => "[{$part}]", $parts));
     }
 
-    /** A group of radios or ticks: a `<fieldset>`, its label the `<legend>`. */
+    /** A group of radios or ticks, a day and a time: a `<fieldset>`, its label the `<legend>`. */
     public function grouped(): bool
     {
-        return $this->type === 'radio' || ($this->type === 'checkbox' && $this->options !== []);
+        return $this->type === 'radio' || $this->type === 'datetime' || ($this->type === 'checkbox' && $this->options !== []);
+    }
+
+    /**
+     * What `type="datetime"` draws and its script reads (FORM_STEPS §6.4): the grid of a day as
+     * minutes, the days of the week, the zone, the times as the list shows them, what was chosen,
+     * and «today» in the zone as the page was printed — the `min` of the date without the script.
+     * The script counts «today» again: a page cached whole would keep yesterday's.
+     *
+     * @return array{step: int, from: int, to: int, weekdays: list<int>, zone: string, zoneLabel: string, times: list<array{value: string, label: string}>, date: string, time: string, today: string}
+     */
+    public function moment(): array
+    {
+        $clock = static function (?string $value, string $default): int {
+            $value = is_string($value) && preg_match('/^(\d{1,2}):(\d{2})$/', trim($value), $match) === 1 ? $match : null;
+
+            return $value === null ? (int) substr($default, 0, 2) * 60 + (int) substr($default, 3) : (int) $value[1] * 60 + (int) $value[2];
+        };
+        $step = is_numeric($this->step) && (int) $this->step > 0 ? (int) $this->step : 30;
+        $from = $clock($this->from, '09:00');
+        $to = $clock($this->to, '17:00');
+        $weekdays = array_values(array_unique(array_filter(array_map('intval', $this->weekdays ?? []), static fn (int $day): bool => $day >= 1 && $day <= 7)));
+        sort($weekdays);
+        $zone = $this->zone();
+        $times = [];
+
+        for ($at = $from; $at + $step <= $to; $at += $step) {
+            $value = sprintf('%02d:%02d', intdiv($at, 60), $at % 60);
+            $times[] = ['value' => $value, 'label' => Carbon::createFromTime(intdiv($at, 60), $at % 60)->locale(app()->getLocale())->isoFormat('LT')];
+        }
+
+        $chosen = $this->returned() ? $this->old(null) : $this->value;
+        // A page's own value may be one line, `2027-03-15 10:30`, as well as the two parts the form sends.
+        if (is_string($chosen) && preg_match('/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})/', $chosen, $parts) === 1) {
+            $chosen = ['date' => $parts[1], 'time' => $parts[2]];
+        }
+
+        $chosen = is_array($chosen) ? $chosen : [];
+        $now = Carbon::now($zone);
+        $offset = preg_replace('/^([+-])0?(\d+):00$/', '$1$2', $now->format('P')) ?? $now->format('P');
+
+        return [
+            'step' => $step,
+            'from' => $from,
+            'to' => $to,
+            'weekdays' => $weekdays === [] ? [1, 2, 3, 4, 5, 6, 7] : $weekdays,
+            'zone' => $zone,
+            'zoneLabel' => $this->timezoneLabel !== null && trim($this->timezoneLabel) !== ''
+                ? trim($this->timezoneLabel)
+                : (string) __('webx-widgets::widgets.datetime.zone', ['zone' => $zone === 'UTC' ? 'UTC' : $zone.' (UTC'.($offset === '+0' ? '' : $offset).')']),
+            'times' => $times,
+            'date' => is_string($chosen['date'] ?? null) ? $chosen['date'] : '',
+            'time' => is_string($chosen['time'] ?? null) ? $chosen['time'] : '',
+            'today' => $now->format('Y-m-d'),
+        ];
+    }
+
+    /** The zone a day and a time are in: the page's word for it, else the application's. */
+    private function zone(): string
+    {
+        foreach ([$this->timezone, config('app.timezone')] as $zone) {
+            if (is_string($zone) && ($zone === 'UTC' || in_array($zone, DateTimeZone::listIdentifiers(), true))) {
+                return $zone;
+            }
+        }
+
+        return 'UTC';
     }
 
     /** Drawn as cards: `view="cards"` on a group of radios or ticks; anything else keeps its own look. */
@@ -322,6 +406,11 @@ final class Field extends Component
             Widgets::need('mask');
         }
 
+        if ($this->type === 'datetime') {
+            // The calendar and the times; without it, the date and the list it writes into.
+            Widgets::need('datetime');
+        }
+
         return view('webx-widgets::components.field', [
             'invalid' => $this->message !== null && $this->message !== '',
             'hintId' => $this->fieldId.'-hint',
@@ -339,6 +428,13 @@ final class Field extends Component
                 'files' => $this->filesLabel ?? __('webx-widgets::widgets.field.files'),
                 'remove' => $this->removeLabel ?? __('webx-widgets::widgets.field.remove'),
                 'drop' => $this->dropLabel ?? __($this->multiple ? 'webx-widgets::widgets.field.drop_files' : 'webx-widgets::widgets.field.drop_file'),
+                'date' => $this->dateLabel ?? __('webx-widgets::widgets.datetime.date'),
+                'time' => $this->timeLabel ?? __('webx-widgets::widgets.datetime.time'),
+                'previous_month' => $this->previousMonthLabel ?? __('webx-widgets::widgets.datetime.previous'),
+                'next_month' => $this->nextMonthLabel ?? __('webx-widgets::widgets.datetime.next'),
+                'no_times' => $this->noTimesLabel ?? __('webx-widgets::widgets.datetime.none'),
+                'unavailable' => $this->unavailableLabel ?? __('webx-widgets::widgets.datetime.unavailable'),
+                'times' => $this->timesLabel ?? __('webx-widgets::widgets.datetime.times'),
             ],
             'control' => fn (ComponentAttributeBag $attributes): ComponentAttributeBag => $this->control($attributes),
         ]);

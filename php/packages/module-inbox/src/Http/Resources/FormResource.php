@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use WebxUi\Admin\Mail\MailRoutes;
 use WebxUi\Inbox\Antispam\Captcha;
+use WebxUi\Inbox\Fields\DateTimeField;
 use WebxUi\Inbox\Mail\Recipients;
 use WebxUi\Inbox\Models\Form;
 use WebxUi\Inbox\Notifications\Channels;
@@ -78,6 +79,9 @@ final class FormResource extends JsonResource
             'unread_count' => $this->count($form, 'unread_count'),
             'fields' => FieldResource::collection($this->whenLoaded('fields')),
             'captcha' => self::captcha(),
+            // The zone a «Date and time» field shows its times in (FORM_STEPS §6.5): the site's, one
+            // for every form — the field's dialog names it and where it is changed.
+            'timezone' => DateTimeField::zone(),
             'created_at' => $form->created_at?->toAtomString(),
             'updated_at' => $form->updated_at?->toAtomString(),
         ];

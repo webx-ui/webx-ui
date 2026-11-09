@@ -190,6 +190,17 @@ return [
         'drop_file' => 'or drop a file here',
         'drop_files' => 'or drop files here',
     ],
+    // A day and a time (FORM_STEPS §6.4, §12.2): month and day names are the browser's Intl and Carbon.
+    'datetime' => [
+        'date' => 'Date',
+        'time' => 'Time',
+        'previous' => 'Previous month',
+        'next' => 'Next month',
+        'zone' => 'Times are in :zone',
+        'none' => 'No times left today',
+        'unavailable' => 'unavailable',
+        'times' => 'Times on :date',
+    ],
     'captcha' => [
         'missing' => 'Please confirm you are not a robot and send the form again.',
         'script' => 'This form checks that you are not a robot with JavaScript. Please turn it on and send the form again.',

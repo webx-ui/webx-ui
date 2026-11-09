@@ -345,6 +345,22 @@ export const inboxMessages: Record<string, Messages> = {
     'summary-flat':
       'The form has no steps: the site shows a summary only in a form of steps, where the answers are out of sight.',
     'summary-all': 'Every field above it',
+    'type-datetime': 'Date and time',
+    'datetime-help':
+      'The visitor picks a day in a calendar and a time from a list, in the time zone of the site. A time already gone can never be chosen. Two visitors may choose the same time: whoever reads the submission settles it.',
+    'time-step': 'Step of the times',
+    'time-step-minutes': ':minutes min',
+    'time-from': 'From',
+    'time-to': 'To',
+    'time-help': 'The last time is a step before «To»: 09:00–17:00 by 30 minutes ends at 16:30.',
+    weekdays: 'Days of the week',
+    'weekdays-help': 'None chosen — every day.',
+    'weekdays-workdays': 'Weekdays',
+    'timezone-label': 'Words about the time zone',
+    'timezone-label-help':
+      'Empty — the site says it itself in the visitor’s language, by the name of the zone: :label.',
+    'timezone-site': 'Time zone of the site: :zone — changed in Settings › Contacts.',
+    'times-preview': 'Times of a day: :times',
   },
 
   relations: {

@@ -7,6 +7,7 @@ namespace WebxUi\Inbox\Submissions;
 use Closure;
 use Illuminate\Http\Request;
 use WebxUi\Inbox\Fields\Conditions;
+use WebxUi\Inbox\Fields\DateTimeField;
 use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\Fields\Steps;
 use WebxUi\Inbox\Models\Field;
@@ -126,7 +127,34 @@ final class Rules
             // and a required consent has to fail on that rather than on its shape.
             FieldType::Consent => [$key => $field->is_required ? ['accepted'] : ['nullable']],
             FieldType::File => $this->file($field, $key),
+            FieldType::DateTime => [$key => [$presence, 'array', $this->moment($field)]],
             default => [$key => [$presence, 'string', 'max:'.$this->maxLength($field)]],
+        };
+    }
+
+    /**
+     * A day and a time of the field's grid, not earlier than now in the site's zone (FORM_STEPS
+     * §6.3). One error, under the field itself: the visitor chose one thing in two controls.
+     *
+     * `required` passes an array of two empty parts, so «nothing chosen» is said here too — in the
+     * words `required` would have used.
+     */
+    private function moment(Field $field): Closure
+    {
+        return static function (string $attribute, mixed $value, Closure $fail) use ($field): void {
+            if (DateTimeField::isEmpty($value)) {
+                if ($field->is_required) {
+                    $fail('validation.required')->translate();
+                }
+
+                return;
+            }
+
+            $refusal = DateTimeField::refusal($field->options, $value, DateTimeField::zone());
+
+            if ($refusal !== null) {
+                $fail($refusal[0])->translate($refusal[1]);
+            }
         };
     }
 

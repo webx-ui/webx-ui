@@ -17,6 +17,7 @@ use WebxUi\Inbox\Exceptions\InboxException;
 use WebxUi\Inbox\Exceptions\NobodyToNotify;
 use WebxUi\Inbox\Fields\ConditionPlan;
 use WebxUi\Inbox\Fields\Conditions;
+use WebxUi\Inbox\Fields\DateTimeField;
 use WebxUi\Inbox\Fields\FieldNames;
 use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\Fields\Steps;
@@ -126,8 +127,13 @@ final class InboxTools
                 .'A field of type "summary" asks nothing: it shows the visitor the answers given above it, each with «Edit», '
                 .'and is never part of a submission; options.fields names the fields it shows (none — every one above it but consent, file and hidden). '
                 .'It is printed only in a form of steps — a form on one page has every answer in sight. '
+                .'A field of type "datetime" asks for a day of a calendar and a time of a list, in the site\'s time zone (contacts.timezone '
+                .'of the settings, else the application\'s): the visitor sends fields[<name>][date] and [time]; a time already gone, '
+                .'a day of the week not offered or a time off the grid is refused. The answer reads «12.12.2026, 10:30 (Europe/…)» '
+                .'and inbox_get gives its payload { date, time, timezone, at } — at is the moment in UTC, what the list sorts by. '
+                .'Nobody\'s time is taken by another\'s: two visitors may choose the same one. '
                 .'New fields go to the end in the order sent; `order` puts the form\'s fields in another one. '
-                .'dry_run answers with the plan and the steps the form would have.',
+                .'dry_run answers with the plan, the steps the form would have and the times of a day of each datetime field.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->formSave($arguments)),
                 ['properties' => [
                     // Spread, not `+`: the left side wins a `+`, and the "omit to create" half
@@ -160,7 +166,7 @@ final class InboxTools
                         'items' => ['type' => 'object', 'properties' => [
                             'id' => ['type' => 'integer', 'description' => 'The field to change; omit for a new one.'],
                             'name' => ['type' => 'string', 'description' => 'The machine name: what the HTML calls it, what CSV and the intake key it by, and {{field.<name>}} in the templates of notification channels. Letters, digits, - and _. Omitted on a new field, it is made from the title: "Your phone" → your_phone, with _2 after a name the form has. Renaming a field breaks {{field.<old name>}} in channel templates; answers already received stay with the field.'],
-                            'type' => ['type' => 'string', 'description' => 'text · email · tel · textarea · select · radio · checkbox · consent · date · file · hidden · step (not a question: the start of a step) · summary (not a question: the answers so far).'],
+                            'type' => ['type' => 'string', 'description' => 'text · email · tel · textarea · select · radio · checkbox · consent · date · datetime (a day and a time) · file · hidden · step (not a question: the start of a step) · summary (not a question: the answers so far).'],
                             'title' => ['type' => ['string', 'object'], 'description' => 'The label, in one language or in all of them.'],
                             'placeholder' => ['type' => ['string', 'object'], 'description' => 'The hint inside an empty field; of a step — the short label of the indicator.'],
                             'help' => ['type' => ['string', 'object'], 'description' => 'The line under the field; of a step — under its title.'],
@@ -181,7 +187,11 @@ final class InboxTools
                 .'A hidden field is neither checked nor kept: its answer is thrown away, with JavaScript or without. '
                 .'A field others name cannot be removed or end up below them; renaming it renames the conditions. '
                 .'step: next-text — the words of its «Next» (one language or all), and when / unless as above. '
-                .'summary: fields — the names of the fields it shows, e.g. ["purpose", "meeting"]; renaming a field renames it here too.'],
+                .'summary: fields — the names of the fields it shows, e.g. ["purpose", "meeting"]; renaming a field renames it here too. '
+                .'datetime: time-step — minutes of the list, one of '.implode(', ', DateTimeField::STEPS).' (30 when omitted); '
+                .'time-from and time-to — HH:MM, the first time of a day and its end, the last time a step before it (09:00 and 17:00); '
+                .'weekdays — the ISO days offered, 1 Monday … 7 Sunday, each once (none — every day); timezone-label — words about the zone '
+                .'instead of the site\'s own (one language or all). No zone of its own: the site has one.'],
                             'remove' => ['type' => 'boolean', 'description' => 'Put the field aside: it leaves the form and stays readable in the submissions that used it.'],
                         ]],
                     ],
@@ -408,6 +418,8 @@ final class InboxTools
                     'would' => $one['would'],
                 ], $plan),
                 ...($steps = self::stepsOfLayout($layout)) === [] ? [] : ['steps' => $steps],
+                // The grid of each «Date and time» (FORM_STEPS §10): «09:00, 09:30 … 16:30, Mon–Fri».
+                ...($times = self::timesOfLayout($layout)) === [] ? [] : ['times' => $times],
             ];
         }
 
@@ -1170,6 +1182,25 @@ final class InboxTools
         $submission->unsetRelation('assignee')->load('assignee');
 
         $submission->log(SubmissionEvent::ASSIGNEE, $was, $submission->assignee?->name, $admin);
+    }
+
+    /**
+     * The times of a day of each «Date and time» field of a layout, in words, by its name.
+     *
+     * @param  list<array{key: string, type: FieldType, options: array<string, mixed>}>  $layout
+     * @return array<string, string>
+     */
+    private static function timesOfLayout(array $layout): array
+    {
+        $times = [];
+
+        foreach ($layout as $one) {
+            if ($one['type'] === FieldType::DateTime) {
+                $times[$one['key']] = DateTimeField::describe($one['options']).' ('.DateTimeField::zone().')';
+            }
+        }
+
+        return $times;
     }
 
     /**

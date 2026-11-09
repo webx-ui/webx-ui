@@ -31,4 +31,7 @@ return [
     'step-empty' => 'El paso :field no tiene ningún campo después. Ponga un campo debajo o elimínelo.',
     'step-too-many' => 'Un formulario tiene como máximo :max pasos.',
     'step-unknown' => 'El formulario ha cambiado desde que se abrió la página. Recargue la página.',
+    'datetime-range' => 'El día no tiene lugar para ninguna hora: «Desde» y «Hasta» como HH:MM, y «Desde» al menos un paso antes que «Hasta».',
+    'datetime-step' => 'El paso de las horas es de 15, 20, 30, 60, 90 o 120 minutos.',
+    'datetime-weekdays' => 'Cada día de la semana una vez, del 1 (lunes) al 7 (domingo).',
 ];

@@ -69,6 +69,9 @@ const fieldsOf = (form) =>
 const controlsOf = (field) =>
   Array.from(field.querySelectorAll('input, select, textarea')).filter((el) => el.type !== 'hidden')
 
+/** Where the focus goes in a field: what a script drew over its controls asks for it (`data-webx-focus`). */
+const focusOf = (field) => field.querySelector('[data-webx-focus]') ?? controlsOf(field)[0] ?? null
+
 const buttonsOf = (form) =>
   Array.from(
     form.querySelectorAll('button:not([type]), button[type=submit], input[type=submit]'),
@@ -572,7 +575,7 @@ export function form(el) {
 
   const first = () => {
     const field = fieldsOf(el)[0]
-    const control = field ? controlsOf(field)[0] : null
+    const control = field ? focusOf(field) : null
     control?.focus({ preventScroll: true })
     control?.scrollIntoView?.({ block: 'center', behavior: 'smooth' })
   }
@@ -584,7 +587,7 @@ export function form(el) {
     const first = fieldsOf(el).find(
       (field) => field.classList.contains('is-invalid') && !hiddenIn(field),
     )
-    const control = first ? controlsOf(first)[0] : null
+    const control = first ? focusOf(first) : null
     if (!control) return
     // On a step not shown: steps.js brings it before the focus goes.
     const step = first.closest('[data-webx-step]')

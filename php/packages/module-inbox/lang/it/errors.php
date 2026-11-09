@@ -31,4 +31,7 @@ return [
     'step-empty' => 'Il passo :field non ha alcun campo dopo di sé. Metti un campo sotto o eliminalo.',
     'step-too-many' => 'Un modulo ha al massimo :max passi.',
     'step-unknown' => 'Il modulo è cambiato da quando la pagina è stata aperta. Ricarica la pagina.',
+    'datetime-range' => 'Il giorno non ha posto per alcun orario: «Dalle» e «Alle» come HH:MM, e «Dalle» almeno un passo prima di «Alle».',
+    'datetime-step' => 'Il passo degli orari è di 15, 20, 30, 60, 90 o 120 minuti.',
+    'datetime-weekdays' => 'Ogni giorno della settimana una volta, da 1 (lunedì) a 7 (domenica).',
 ];

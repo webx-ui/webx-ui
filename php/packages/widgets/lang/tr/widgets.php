@@ -190,6 +190,17 @@ return [
         'drop_file' => 'ya da dosyayı buraya bırakın',
         'drop_files' => 'ya da dosyaları buraya bırakın',
     ],
+    // A day and a time (FORM_STEPS §6.4, §12.2): month and day names are the browser's Intl and Carbon.
+    'datetime' => [
+        'date' => 'Tarih',
+        'time' => 'Saat',
+        'previous' => 'Önceki ay',
+        'next' => 'Sonraki ay',
+        'zone' => 'Saatler :zone saat dilimindedir',
+        'none' => 'Bugün için saat kalmadı',
+        'unavailable' => 'uygun değil',
+        'times' => ':date için saatler',
+    ],
     'captcha' => [
         'missing' => 'Lütfen robot olmadığınızı doğrulayın ve formu yeniden gönderin.',
         'script' => 'Bu form robot olmadığınızı JavaScript ile denetler. Lütfen JavaScript’i açın ve formu yeniden gönderin.',

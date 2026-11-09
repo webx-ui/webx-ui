@@ -12,6 +12,7 @@ export const FIELD_TYPES = [
   'checkbox',
   'consent',
   'date',
+  'datetime',
   'file',
   'hidden',
 ] as const
@@ -56,6 +57,12 @@ export interface FieldOptions {
   view?: ChoiceView
   columns?: number
   text?: LocalizedValue | string
+  /** «Date and time» (FORM_STEPS §6.2): minutes of the list, the day's hours, the ISO days offered. */
+  'time-step'?: number
+  'time-from'?: string
+  'time-to'?: string
+  weekdays?: number[]
+  'timezone-label'?: LocalizedValue | string
   max_size?: number
   extensions?: string[]
   multiple?: boolean
@@ -168,6 +175,8 @@ export interface InboxForm {
    * long the queue holds one. Optional because an older server does not send it.
    */
   mail?: FormMail
+  /** The site's time zone, which a «Date and time» field shows its times in (FORM_STEPS §6.5). */
+  timezone?: string
   position: number
   /** Only where the query counted them — null on a form loaded on its own. */
   submissions_count: number | null

@@ -5853,6 +5853,31 @@
                     "autocomplete": ""
                   },
                   {
+                    "type": "datetime",
+                    "name": "visit.at",
+                    "label": {
+                      "en": "Viewing",
+                      "ru": "Просмотр",
+                      "pl": "Oglądanie"
+                    },
+                    "hint": {
+                      "en": "Weekdays, 9:00 to 17:00.",
+                      "ru": "По будням, с 9:00 до 17:00.",
+                      "pl": "W dni robocze, od 9:00 do 17:00."
+                    },
+                    "error": {
+                      "en": "Choose a weekday: Mon–Fri.",
+                      "ru": "Выберите день недели: пн–пт.",
+                      "pl": "Wybierz dzień tygodnia: pon.–pt."
+                    },
+                    "choices": "",
+                    "value": "2027-03-15 10:30",
+                    "required": true,
+                    "multiple": false,
+                    "inline": false,
+                    "autocomplete": ""
+                  },
+                  {
                     "type": "file",
                     "name": "contact.attachment",
                     "label": {

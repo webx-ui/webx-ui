@@ -31,4 +31,7 @@ return [
     'step-empty' => 'L’étape :field n’a aucun champ après elle. Placez un champ dessous ou supprimez-la.',
     'step-too-many' => 'Un formulaire a au plus :max étapes.',
     'step-unknown' => 'Le formulaire a changé depuis l’ouverture de la page. Rechargez la page.',
+    'datetime-range' => 'La journée n’a la place pour aucun horaire : « De » et « À » au format HH:MM, et « De » au moins un pas avant « À ».',
+    'datetime-step' => 'Le pas des horaires est de 15, 20, 30, 60, 90 ou 120 minutes.',
+    'datetime-weekdays' => 'Chaque jour de la semaine une seule fois, de 1 (lundi) à 7 (dimanche).',
 ];

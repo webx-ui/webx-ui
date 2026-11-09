@@ -8,6 +8,7 @@ use Closure;
 use Illuminate\Contracts\Validation\DataAwareRule;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Validation\Rule;
+use WebxUi\Inbox\Fields\DateTimeField;
 use WebxUi\Inbox\Fields\FieldType;
 
 /**
@@ -52,6 +53,11 @@ final class FieldInput
             'help' => ['nullable'],
             'options' => ['nullable', 'array'],
             'options.choices' => [self::choicesRequired()],
+            // The grid of a «Date and time» (FORM_STEPS §6.2), each problem under the key it is about.
+            'options.time-step' => [self::datetime('time-step')],
+            'options.time-from' => [self::datetime('time-from')],
+            'options.time-to' => [self::datetime('time-to')],
+            'options.weekdays' => [self::datetime('weekdays')],
             'is_enabled' => ['nullable', 'boolean'],
             'is_required' => ['nullable', 'boolean'],
             'is_fullsize' => ['nullable', 'boolean'],
@@ -137,6 +143,48 @@ final class FieldInput
 
                 if ((FieldOptions::clean($type, $options)['choices'] ?? []) === []) {
                     $fail((string) trans('webx-inbox::errors.choices-required'));
+                }
+            }
+        };
+    }
+
+    /**
+     * What is wrong with the grid of a «Date and time» field under `$key` — a step not of the list,
+     * a day with no room for a time, a day of the week twice. Implicit, like the choices: a field
+     * saved with no options at all has the defaults, and those are checked as well.
+     */
+    private static function datetime(string $key): ValidationRule
+    {
+        return new class($key) implements DataAwareRule, ValidationRule
+        {
+            public bool $implicit = true;
+
+            /** @var array<string, mixed> */
+            private array $data = [];
+
+            public function __construct(private readonly string $key) {}
+
+            /**
+             * @param  array<string, mixed>  $data
+             */
+            public function setData(array $data): static
+            {
+                $this->data = $data;
+
+                return $this;
+            }
+
+            public function validate(string $attribute, mixed $value, Closure $fail): void
+            {
+                if (FieldType::tryFrom(is_string($this->data['type'] ?? null) ? $this->data['type'] : '') !== FieldType::DateTime) {
+                    return;
+                }
+
+                $options = is_array($this->data['options'] ?? null) ? $this->data['options'] : [];
+                $problem = DateTimeField::problems($options)[$this->key] ?? null;
+
+                if ($problem !== null) {
+                    $fail(DateTimeField::message($problem));
                 }
             }
         };

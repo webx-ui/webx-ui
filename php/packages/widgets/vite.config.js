@@ -127,6 +127,8 @@ export default {
         steps: join(root, 'resources/js/steps.js'),
         // The answers so far with «Edit» beside each: only where <x-webx-form.summary> stands.
         summary: join(root, 'resources/js/summary.js'),
+        // A calendar and the times of a day, in the site's zone: only where a field of type datetime stands.
+        datetime: join(root, 'resources/js/datetime.js'),
         // Where the visitor came from, into the submission: only with a form that asks for it.
         attribution: join(root, 'resources/js/attribution.js'),
         // The site's captcha in a form: the invisible ones run on submit, a checkbox is checked before.

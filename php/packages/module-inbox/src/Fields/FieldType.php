@@ -27,6 +27,9 @@ enum FieldType: string
     case Date = 'date';
     case File = 'file';
     case Hidden = 'hidden';
+    // A day of a calendar and a time of a list, in the site's zone (FORM_STEPS §6): its answer is
+    // two parts, `date` and `time`, and its snapshot keeps the zone and the moment in UTC.
+    case DateTime = 'datetime';
     // Not a question: the line that starts a step of the form (FORM_STEPS §3.1). The fields after
     // it, up to the next one, are its step; it is never answered and never a column.
     case Step = 'step';

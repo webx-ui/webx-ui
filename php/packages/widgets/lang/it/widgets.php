@@ -190,6 +190,17 @@ return [
         'drop_file' => 'oppure trascina qui un file',
         'drop_files' => 'oppure trascina qui i file',
     ],
+    // A day and a time (FORM_STEPS §6.4, §12.2): month and day names are the browser's Intl and Carbon.
+    'datetime' => [
+        'date' => 'Data',
+        'time' => 'Ora',
+        'previous' => 'Mese precedente',
+        'next' => 'Mese successivo',
+        'zone' => 'Gli orari sono in :zone',
+        'none' => 'Per oggi non restano orari',
+        'unavailable' => 'non disponibile',
+        'times' => 'Orari del :date',
+    ],
     'captcha' => [
         'missing' => 'Conferma di non essere un robot e invia di nuovo il modulo.',
         'script' => 'Questo modulo verifica con JavaScript che tu non sia un robot. Attivalo e invia di nuovo il modulo.',

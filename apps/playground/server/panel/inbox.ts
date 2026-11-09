@@ -305,6 +305,21 @@ fields.splice(
     options: { when: { purpose: ['agency'] } },
     is_required: true,
   }),
+  // A day and a time (FORM_STEPS §6): on weekdays, every half an hour, in the site's zone.
+  field(1, {
+    key: 'meeting',
+    type: 'datetime',
+    title: { ru: 'Время встречи', en: 'Meeting time' },
+    options: {
+      when: { purpose: ['viewing', 'agency'] },
+      'time-step': 30,
+      'time-from': '09:00',
+      'time-to': '17:00',
+      weekdays: [1, 2, 3, 4, 5],
+    },
+    is_required: true,
+    in_table: true,
+  }),
 )
 
 /*

@@ -19,6 +19,7 @@ use WebxUi\Inbox\Antispam\Captcha;
 use WebxUi\Inbox\Antispam\Guard;
 use WebxUi\Inbox\Fields\ChoiceImages;
 use WebxUi\Inbox\Fields\Conditions;
+use WebxUi\Inbox\Fields\DateTimeField;
 use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\Fields\Steps;
 use WebxUi\Inbox\Fields\Summary;
@@ -165,6 +166,8 @@ final class Form extends Component
     private function controls(Collection $fields, string $formId): array
     {
         $controls = [];
+        // One zone for every «Date and time» of the form: the site's (FORM_STEPS §6.5).
+        $zone = null;
         $byKey = $fields->keyBy(static fn (Field $field): string => $field->key());
         // The pictures of every card of the form, in one query of the library (FORM_STEPS §5.1).
         $images = ChoiceImages::resolve($fields->filter(static fn (Field $field): bool => $field->isCards())
@@ -215,10 +218,34 @@ final class Form extends Component
                 'when' => self::named($conditions['when'] ?? null),
                 'unless' => self::named($conditions['unless'] ?? null),
                 'condition' => $this->condition($conditions, $byKey),
+                // A day and a time (FORM_STEPS §6.4): the grid, the days of the week and the zone the
+                // page shows them in; the times of today that are gone the script drops itself.
+                'datetime' => $field->type === FieldType::DateTime ? self::moment($field, $zone ??= DateTimeField::zone()) : null,
             ];
         }
 
         return $controls;
+    }
+
+    /**
+     * What `<x-webx-field type="datetime">` takes of a field: the grid, the days of the week, the zone.
+     *
+     * @return array{step: int, from: string, to: string, weekdays: list<int>, timezone: string, timezone_label: ?string}
+     */
+    private static function moment(Field $field, string $zone): array
+    {
+        $grid = DateTimeField::grid($field->options);
+        $clock = static fn (int $minutes): string => sprintf('%02d:%02d', intdiv($minutes, 60), $minutes % 60);
+        $label = trim($field->optionText('timezone-label'));
+
+        return [
+            'step' => $grid['step'],
+            'from' => $clock($grid['from']),
+            'to' => $clock($grid['to']),
+            'weekdays' => $grid['weekdays'],
+            'timezone' => $zone,
+            'timezone_label' => $label !== '' ? $label : null,
+        ];
     }
 
     /**

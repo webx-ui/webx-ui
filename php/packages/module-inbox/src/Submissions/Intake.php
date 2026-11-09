@@ -14,6 +14,7 @@ use Throwable;
 use WebxUi\Inbox\Events\SubmissionStored;
 use WebxUi\Inbox\Exceptions\NoStatuses;
 use WebxUi\Inbox\Fields\Conditions;
+use WebxUi\Inbox\Fields\DateTimeField;
 use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\Models\Field;
 use WebxUi\Inbox\Models\Form;
@@ -213,7 +214,8 @@ final class Intake
                 continue;
             }
 
-            if (! array_key_exists($key, $values) || $this->isEmpty($values[$key])) {
+            if (! array_key_exists($key, $values) || $this->isEmpty($values[$key])
+                || ($field->type === FieldType::DateTime && DateTimeField::isEmpty($values[$key]))) {
                 continue;
             }
 
@@ -303,10 +305,16 @@ final class Intake
      * belongs in the mail is "Plan B"; the raw values stay in the payload for anything that
      * has to match them later.
      *
-     * @return array{0: string, 1: list<mixed>|null}
+     * @return array{0: string, 1: array<int|string, mixed>|null}
      */
     private function readable(Field $field, mixed $value): array
     {
+        // A day and a time (FORM_STEPS §6.3): the line with the zone, and what the visitor saw beside
+        // the same moment in UTC — the zone kept, so that a site changing its own later changes nothing.
+        if ($field->type === FieldType::DateTime && is_array($value)) {
+            return DateTimeField::snapshot($value, DateTimeField::zone());
+        }
+
         $choices = $field->choices();
 
         if (is_array($value)) {

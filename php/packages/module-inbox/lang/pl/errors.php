@@ -31,4 +31,7 @@ return [
     'step-empty' => 'Po kroku :field nie ma żadnego pola. Dodaj pod nim pole albo usuń krok.',
     'step-too-many' => 'Formularz ma najwyżej :max kroków.',
     'step-unknown' => 'Formularz zmienił się, odkąd otwarto stronę. Odśwież stronę.',
+    'datetime-range' => 'W dniu nie ma miejsca na żadną godzinę: «Od» i «Do» w postaci GG:MM, a «Od» co najmniej jeden krok przed «Do».',
+    'datetime-step' => 'Krok godzin to 15, 20, 30, 60, 90 lub 120 minut.',
+    'datetime-weekdays' => 'Każdy dzień tygodnia raz, od 1 (poniedziałek) do 7 (niedziela).',
 ];

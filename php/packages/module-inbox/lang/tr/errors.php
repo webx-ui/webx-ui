@@ -31,4 +31,7 @@ return [
     'step-empty' => ':field adımından sonra hiç alan yok. Altına bir alan koyun ya da adımı kaldırın.',
     'step-too-many' => 'Bir formda en fazla :max adım olur.',
     'step-unknown' => 'Sayfa açıldığından beri form değişti. Sayfayı yeniden yükleyin.',
+    'datetime-range' => 'Günde hiçbir saate yer yok: «Başlangıç» ve «Bitiş» SS:DD biçiminde olmalı ve «Başlangıç», «Bitiş»ten en az bir adım önce gelmeli.',
+    'datetime-step' => 'Saatlerin adımı 15, 20, 30, 60, 90 veya 120 dakikadır.',
+    'datetime-weekdays' => 'Haftanın her günü bir kez, 1 (pazartesi) ile 7 (pazar) arasında.',
 ];

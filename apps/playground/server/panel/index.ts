@@ -2184,6 +2184,9 @@ function next(type: BlockType): number {
 
 /* ------------------------------------------------------------------------------ inbox ----- */
 
+/** The site's zone: what a «Date and time» field shows its times in. */
+const SITE_TIMEZONE = 'Europe/Kyiv'
+
 /*
  * Who a form would write to, as the server says it beside the stored list: the playground has
  * no deleted or switched-off accounts, so an id it does not know stands for a deleted one.
@@ -2229,7 +2232,24 @@ function withRecipients(item: InboxForm): InboxForm {
     notify_via: via,
     channels: chosen,
     mail: SITE_MAIL,
+    // The zone of the site, which a «Date and time» field shows its times in (FORM_STEPS §6.5).
+    timezone: SITE_TIMEZONE,
   }
+}
+
+/** A day and a time typed in by hand, as the intake keeps its line: «2026-12-14, 10:30 (Europe/Kyiv)». */
+function answersOf(sent: Record<string, unknown>): Record<string, string | null> {
+  return Object.fromEntries(
+    Object.entries(sent).map(([key, value]) => {
+      if (value !== null && typeof value === 'object' && !Array.isArray(value) && 'date' in value) {
+        const moment = value as { date?: string; time?: string }
+
+        return [key, moment.date ? `${moment.date}, ${moment.time ?? ''} (${SITE_TIMEZONE})` : null]
+      }
+
+      return [key, value as string | null]
+    }),
+  )
 }
 
 on('GET', '/inbox/forms', () => {
@@ -2647,7 +2667,7 @@ on('POST', '/inbox/forms/(\\d+)/submissions', ({ params, body }) => {
     assignee_id: null,
     is_read: true,
     source: 'panel',
-    values: (body.fields ?? {}) as Record<string, string | null>,
+    values: answersOf((body.fields ?? {}) as Record<string, unknown>),
     files: [],
     meta: { locale: 'ru' },
     events: [],

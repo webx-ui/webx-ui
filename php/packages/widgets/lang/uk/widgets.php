@@ -190,6 +190,17 @@ return [
         'drop_file' => 'або перетягніть файл сюди',
         'drop_files' => 'або перетягніть файли сюди',
     ],
+    // A day and a time (FORM_STEPS §6.4, §12.2): month and day names are the browser's Intl and Carbon.
+    'datetime' => [
+        'date' => 'Дата',
+        'time' => 'Час',
+        'previous' => 'Попередній місяць',
+        'next' => 'Наступний місяць',
+        'zone' => 'Час указано за поясом :zone',
+        'none' => 'На сьогодні часу не залишилося',
+        'unavailable' => 'недоступно',
+        'times' => 'Час на :date',
+    ],
     'captcha' => [
         'missing' => 'Підтвердьте, що ви не робот, і надішліть форму ще раз.',
         'script' => 'Ця форма перевіряє, що ви не робот, за допомогою JavaScript. Увімкніть його й надішліть форму ще раз.',

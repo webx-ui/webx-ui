@@ -31,4 +31,7 @@ return [
     'step-empty' => 'The step :field has no field after it. Put a field under it or remove it.',
     'step-too-many' => 'A form has at most :max steps.',
     'step-unknown' => 'The form has changed since the page was opened. Reload the page.',
+    'datetime-range' => 'The day has no room for a time: «From» and «To» are HH:MM, and «From» is at least one step earlier than «To».',
+    'datetime-step' => 'The step of the times is 15, 20, 30, 60, 90 or 120 minutes.',
+    'datetime-weekdays' => 'Each day of the week once, from 1 (Monday) to 7 (Sunday).',
 ];

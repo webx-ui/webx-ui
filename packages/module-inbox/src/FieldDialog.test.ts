@@ -625,4 +625,63 @@ describe('WxInboxFieldDialog', () => {
       expect(document.body.textContent).toContain('The form has no steps')
     })
   })
+
+  describe('a day and a time (FORM_STEPS §6, §9.2)', () => {
+    const meeting: InboxField = {
+      ...phone,
+      id: 10,
+      key: 'meeting',
+      name: 'meeting',
+      type: 'datetime',
+      title: { en: 'Meeting' },
+      options: { 'time-step': 30, 'time-from': '09:00', 'time-to': '17:00' },
+    }
+
+    it('sets the grid and the days of the week, and names the zone and the times of a day', async () => {
+      const { wrapper, put, labels } = dialog(
+        meeting,
+        [],
+        [meeting],
+        {},
+        {
+          form: { ...form, timezone: 'Europe/Kyiv' },
+        },
+      )
+      await flushPromises()
+
+      expect(labels()).toEqual(
+        expect.arrayContaining(['Step of the times', 'From', 'To', 'Days of the week']),
+      )
+      expect(labels()).not.toContain('Placeholder')
+      expect(document.body.textContent).toContain('Time zone of the site: Europe/Kyiv')
+      expect(document.body.textContent).toContain('Times of a day: 09:00, 09:30 … 16:30')
+
+      const step = wrapper
+        .findAllComponents({ name: 'WxFormItem' })
+        .find((one) => one.props('label') === 'Step of the times')!
+        .findComponent({ name: 'WxSelect' })
+      expect(step.props('options')).toHaveLength(6)
+      step.vm.$emit('update:modelValue', 60)
+      await wrapper
+        .findAllComponents({ name: 'WxButton' })
+        .find((one) => one.text() === 'Weekdays')!
+        .trigger('click')
+      await flushPromises()
+      expect(document.body.textContent).toContain('Times of a day: 09:00, 10:00 … 16:00')
+
+      await wrapper
+        .findAllComponents({ name: 'WxButton' })
+        .find((one) => one.text() === 'Save')!
+        .trigger('click')
+      await flushPromises()
+
+      expect(put).toHaveBeenCalledWith(
+        '/api/cms/inbox/fields/10',
+        expect.objectContaining({
+          type: 'datetime',
+          options: expect.objectContaining({ 'time-step': 60, weekdays: [1, 2, 3, 4, 5] }),
+        }),
+      )
+    })
+  })
 })

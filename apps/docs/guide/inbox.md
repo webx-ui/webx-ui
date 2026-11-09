@@ -63,8 +63,8 @@ agent's or an API's field without one gets the same. Renaming a field warns that
 the field — they point at it by id, and the export keeps them in its column.
 :::
 
-Eleven types: `text` · `email` · `tel` · `textarea` · `select` · `radio` · `checkbox` · `consent`
-· `date` · `file` · `hidden`. A multiple answer is written twice — joined by commas in `value`,
+Twelve types: `text` · `email` · `tel` · `textarea` · `select` · `radio` · `checkbox` · `consent`
+· `date` · `datetime` · `file` · `hidden`. A multiple answer is written twice — joined by commas in `value`,
 which is what a person reads in the letter and in the export, and as an array in `payload`.
 
 ### Shown only for some answers
@@ -152,6 +152,27 @@ shows, none — every one above it but consents, files and hidden fields. A rena
 field deleted later drops out. It is never answered — nothing of it in a submission, no column, no
 condition — and is printed only in a form of steps: on one page every answer is in sight. In the panel
 it is the type «Summary» of the field dialog, with «What to show».
+
+### Date and time
+
+A field of type `datetime` (FORM_STEPS §6) asks for a day of a calendar and a time of a list —
+the widgets' `<x-webx-field type="datetime">` ([Forms](./forms#date-and-time)). `options`:
+`time-step` (15, 20, 30, 60, 90 or 120 minutes; 30), `time-from` and `time-to` (`HH:MM`; 09:00 and
+17:00, the last time a step before the end), `weekdays` (ISO, none — every day), `timezone-label`
+(words of the form's own about the zone). Saving refuses `datetime.range` (no room for a time),
+`datetime.step` and `datetime.weekdays` — in the panel under the option, in `inbox_form_save` with
+the plan, whose dry run says the times of a day: «09:00, 09:30 … 16:30, Mon–Fri (Europe/…)».
+
+- **The zone** is the site's: `contacts.timezone` of `module-settings`, else `app.timezone`. A field
+  has none of its own; the panel names it in the field's dialog.
+- **The intake** wants both parts, a day of the week offered, a time on the grid and a moment not
+  earlier than now in that zone — with the script and without it, the same words under the field.
+- **The snapshot**: `value` «12/14/2026, 10:30 AM (Europe/Kyiv)» in the language of the submission, and
+  `payload` `{ date, time, timezone, at }` — what the visitor saw, and the moment in UTC. A site that
+  changes its zone later changes nothing of what was written. The letter, the CSV and the channels read
+  `value` like any answer; a column of the list sorts by `payload.at`.
+- **Nothing is reserved**: two visitors may choose the same time; a manager settles it with the statuses
+  and notes of the submission.
 
 ### Answers keep a copy of the question
 

@@ -51,6 +51,7 @@ each one is a label, the control, a hint and the place of its error.
 | `checkbox` | with `:choices` — a group, the name gets `[]`; without — one tick with its words beside it, `:checked` |
 | `consent`  | one tick whose words are the slot (a link allowed) or the label                                        |
 | `date`     | the browser's picker, ISO in the value, `min` and `max`                                                |
+| `datetime` | a day of a calendar and a time of a list in the site's zone — [Date and time](#date-and-time)          |
 | `file`     | a button and a line in the page's words, the name chosen or how many; `multiple`, `accept`             |
 | `hidden`   | the input alone — what the page fills in                                                               |
 
@@ -83,6 +84,45 @@ move through a group of radios as in any radio group, the label is read with its
 no ARIA role is laid over it. The name, `required` and the error are those of the list; an answer is
 the same. Without CSS it is a list of radios with their descriptions. A picture is decorative
 (`alt=""`): the label says what the choice is. `view="cards"` on a select or on one tick changes nothing.
+
+### Date and time
+
+`type="datetime"` asks for a day and a time (FORM_STEPS §6): a meeting, a call back, a viewing. Two
+parts are sent, `<name>[date]` (`YYYY-MM-DD`) and `<name>[time]` (`HH:MM`), with the script and
+without it:
+
+```blade
+<x-webx-field type="datetime" name="fields.meeting" label="Meeting time" :step="30" from="09:00" to="17:00"
+    :weekdays="[1, 2, 3, 4, 5]" timezone="Europe/Kyiv" required />
+```
+
+- **The grid** — `step` minutes apart (30 by default) from `from` (09:00); the last time is a step
+  before `to` (17:00): 9:00–17:00 by 30 minutes ends at 16:30. `weekdays` — the ISO days offered,
+  1 Monday … 7 Sunday; none — every day.
+- **The zone** — `timezone`, the site's (the Inbox gives `contacts.timezone` of the settings), else
+  the application's. Times are shown and chosen in it, never in the visitor's: «Times are in
+  Europe/Kyiv (UTC+2)» under the field, or `timezone-label` instead.
+- **Without JavaScript** — the browser's date (`min` — today in that zone as the page was printed) and
+  a `select` of the day's times. A day of the week not offered and a time of today already gone are the
+  server's to refuse.
+- **With it** — `datetime.js` (claimed only by such a field, ≤ 3 KB) hides both and draws the calendar
+  of a month and the times of the chosen day, writing every choice back into them with a `change`, so
+  the checks, the 422 and the summary are those of any field. «Today» and «now» are counted in the
+  browser in the site's zone (`Intl`): a page cached whole would keep yesterday's. Days gone, days not
+  offered and a today with no time left are `aria-disabled` — the focus goes over them and they say
+  why; times of today already gone are not shown. On a form of 40rem and up the calendar and the times
+  stand in a row, the times under it on a narrower one.
+- **The keyboard** — the grid of the APG date picker without the dialog: the arrows move a day and a
+  week, PageUp/PageDown a month, Home/End the ends of the week, Enter or Space chooses; the month's
+  name is a live region; the times are a group of radios with a `legend` («Times on 12 December»),
+  described by the zone. The focus of an error goes to the day of the grid.
+- **The summary** reads `data-webx-answer` of the field — «Monday, 14 December 2026, 10:30 (Europe/Kyiv)».
+- **The words** are props: `date-label`, `time-label`, `previous-month-label`, `next-month-label`,
+  `no-times-label`, `unavailable-label`, `times-label` («Times on :date»), `timezone-label`. Names of
+  months and days are the browser's `Intl` and Carbon, not a dictionary.
+
+Nobody's time is taken by anybody else's: the field knows nothing of other answers. The checks of the
+grid, the day of the week and the past are the server's — in the Inbox, `Rules` (FORM_STEPS §6.3).
 
 ### Values and errors come from Laravel
 
@@ -971,9 +1011,9 @@ What it prints, in short:
 </x-webx-form>
 ```
 
-- **The fields** are `<x-webx-field>` named `fields.<machine name>` — the eleven types of the panel
+- **The fields** are `<x-webx-field>` named `fields.<machine name>` — the twelve types of the panel
   are the widgets' own (`text`, `email`, `tel`, `textarea`, `select`, `radio`, `checkbox`,
-  `consent`, `date`, `file`, `hidden`); «half width» in the panel is
+  `consent`, `date`, `datetime`, `file`, `hidden`); «half width» in the panel is
   `webx-inbox-form__field--half`, two to a row from 24rem of the form.
 - **No token:** `:csrf="false"` — the intake guards itself (the origin, the honeypot, the
   timestamp, the limit per address), so a page cached whole for a day still sends.

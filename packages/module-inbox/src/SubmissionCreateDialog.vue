@@ -18,6 +18,7 @@ import {
   WxSelect,
   WxSkeleton,
   WxSpace,
+  WxText,
   WxTextarea,
 } from '@webx-ui/core'
 import { createInboxApi } from './api'
@@ -81,6 +82,33 @@ function choices(field: InboxField): { value: string; label: string }[] {
   }))
 }
 
+/*
+ * A day and a time (FORM_STEPS §6.3): the two parts the site sends, the times of the field's grid —
+ * the intake checks the rest, the past included, in the site's zone.
+ */
+function moment(field: InboxField): { date: string; time: string } {
+  return values.value[field.key] as { date: string; time: string }
+}
+
+function timesOf(field: InboxField): { value: string; label: string }[] {
+  const [fromH, fromM] = String(field.options['time-from'] ?? '09:00')
+    .split(':')
+    .map(Number)
+  const [toH, toM] = String(field.options['time-to'] ?? '17:00')
+    .split(':')
+    .map(Number)
+  const step = Number(field.options['time-step'] ?? 30)
+  const to = (toH ?? 17) * 60 + (toM ?? 0)
+  const times: { value: string; label: string }[] = []
+
+  for (let at = (fromH ?? 9) * 60 + (fromM ?? 0); step > 0 && at + step <= to; at += step) {
+    const clock = `${String(Math.floor(at / 60)).padStart(2, '0')}:${String(at % 60).padStart(2, '0')}`
+    times.push({ value: clock, label: clock })
+  }
+
+  return times
+}
+
 async function load(): Promise<void> {
   try {
     const form = await api.form(props.form.id)
@@ -89,7 +117,13 @@ async function load(): Promise<void> {
 
     for (const field of fields.value) {
       values.value[field.key] =
-        field.type === 'checkbox' ? [] : field.type === 'consent' ? false : ''
+        field.type === 'checkbox'
+          ? []
+          : field.type === 'consent'
+            ? false
+            : field.type === 'datetime'
+              ? { date: '', time: '' }
+              : ''
     }
   } catch (error) {
     toast.danger(message(error))
@@ -172,6 +206,21 @@ async function save(): Promise<void> {
             v-model="values[field.key] as string"
             :placeholder="text(field.placeholder)"
           />
+          <div v-else-if="field.type === 'datetime'" class="wx-inbox-by-hand__moment">
+            <wx-date-picker
+              :model-value="moment(field).date || null"
+              :aria-label="label(field)"
+              @update:model-value="(value) => (moment(field).date = String(value ?? ''))"
+            />
+            <wx-select
+              :model-value="moment(field).time || null"
+              :options="timesOf(field)"
+              :aria-label="label(field)"
+              clearable
+              @update:model-value="(value) => (moment(field).time = String(value ?? ''))"
+            />
+            <wx-text v-if="form.timezone" size="sm" tone="muted">{{ form.timezone }}</wx-text>
+          </div>
           <wx-input
             v-else
             v-model="values[field.key] as string"
@@ -201,6 +250,13 @@ async function save(): Promise<void> {
 </template>
 
 <style scoped>
+.wx-inbox-by-hand__moment {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wx-space-8);
+}
+
 .wx-inbox-by-hand {
   display: flex;
   flex-direction: column;

@@ -190,6 +190,17 @@ return [
         'drop_file' => 'ou arraste um arquivo para cá',
         'drop_files' => 'ou arraste arquivos para cá',
     ],
+    // A day and a time (FORM_STEPS §6.4, §12.2): month and day names are the browser's Intl and Carbon.
+    'datetime' => [
+        'date' => 'Data',
+        'time' => 'Hora',
+        'previous' => 'Mês anterior',
+        'next' => 'Próximo mês',
+        'zone' => 'Os horários estão em :zone',
+        'none' => 'Não restam horários hoje',
+        'unavailable' => 'indisponível',
+        'times' => 'Horários de :date',
+    ],
     'captcha' => [
         'missing' => 'Confirme que não é um robô e envie o formulário de novo.',
         'script' => 'Este formulário verifica com JavaScript que não é um robô. Ative-o e envie o formulário de novo.',

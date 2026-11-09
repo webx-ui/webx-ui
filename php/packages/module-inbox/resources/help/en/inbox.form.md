@@ -62,6 +62,19 @@ and so does the order of the questions. Everything on the other tabs waits for �
    visitor back to the question. Nothing of it goes into the submission. A form on one page, and a page
    without JavaScript, show no summary: every answer is in sight there.
 
+## How to ask for a day and a time
+
+1. Press «New field» and choose the type «Date and time».
+2. Set the step of the times, the hours of a day («From» and «To») and the days of the week. The last
+   time is a step before «To»: 09:00–17:00 by 30 minutes ends at 16:30. The window shows the times of
+   a day as the site will offer them.
+3. Press «Save». On the site the visitor picks a day in a calendar and a time from the list. Times are
+   in the time zone of the site — «Settings › Contacts» — and the form says which. A day or a time
+   already gone cannot be chosen; without JavaScript the browser's date and a list of times stand in.
+4. The submission keeps the day and the time with the zone: «12.12.2026, 10:30 (Europe/…)». As a column
+   of the list, it sorts by the moment. Two visitors may choose the same time: whoever reads the
+   submission settles it with the statuses and the notes.
+
 ## How to choose what the list of submissions shows
 
 1. On the «Fields» tab, press «Edit» in the «···» menu of the field.
@@ -195,6 +208,21 @@ word is used. The last step has no «Next»: it is sent with the button of the f
 The questions the summary repeats, in the order of the form. Empty — every question above it that the
 visitor was shown and answered, but consents, files and hidden fields. A question deleted later simply
 drops out.
+
+## Step of the times
+
+How far apart the times of the list are: 15, 20, 30, 60, 90 or 120 minutes. With «From» and «To» it
+makes the times of a day; a day with no room for one time is refused.
+
+## Days of the week
+
+The days the calendar offers. None chosen — every day. «Weekdays» chooses Monday to Friday. A day not
+offered is grey in the calendar, and the site refuses it even from a page without JavaScript.
+
+## Words about the time zone
+
+What the form says under the calendar about the time, instead of the site's own words with the name of
+the zone. The zone itself is the site's, one for every form: it is changed in «Settings › Contacts».
 
 ## Required
 

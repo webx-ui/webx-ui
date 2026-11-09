@@ -28,6 +28,9 @@
         audit's `inbox.steps_in_old_view` says so,
       · `type` `summary` among the controls of a step — <x-webx-form.summary> (FORM_STEPS §7): the answers
         so far with «Edit»; `$controls` never has one, a view without it simply shows no summary,
+      · `$control['datetime']` on a field of type `datetime` — `:step`, `:from`, `:to`, `:weekdays`, `:timezone`,
+        `:timezone-label` (FORM_STEPS §6.4): the grid of the day in the site's zone; a view without them
+        shows the widgets' defaults, and the intake still checks the field's own grid,
       · `data-webx-attribution` — the widgets' attribution.js posts the campaign, the referrer and the
         landing page (`webx-inbox.attribution`, FORM_STEPS §8); a view without it sends none of them.
 
@@ -101,6 +104,18 @@
                         :when="$control['when'] ?? null"
                         :unless="$control['unless'] ?? null"
                         :condition="$control['condition'] ?? null"
+                :step="$control['datetime']['step'] ?? null"
+                :from="$control['datetime']['from'] ?? null"
+                :to="$control['datetime']['to'] ?? null"
+                :weekdays="$control['datetime']['weekdays'] ?? null"
+                :timezone="$control['datetime']['timezone'] ?? null"
+                :timezone-label="$control['datetime']['timezone_label'] ?? null"
+                        :step="$control['datetime']['step'] ?? null"
+                        :from="$control['datetime']['from'] ?? null"
+                        :to="$control['datetime']['to'] ?? null"
+                        :weekdays="$control['datetime']['weekdays'] ?? null"
+                        :timezone="$control['datetime']['timezone'] ?? null"
+                        :timezone-label="$control['datetime']['timezone_label'] ?? null"
                         :class="'webx-inbox-form__field'.($control['half'] ? ' webx-inbox-form__field--half' : '')"
                     >@if ($control['consent'] !== null){!! $control['consent'] !!}@endif</x-webx-field>
                     @endif
@@ -131,6 +146,12 @@
                 :when="$control['when'] ?? null"
                 :unless="$control['unless'] ?? null"
                 :condition="$control['condition'] ?? null"
+                :step="$control['datetime']['step'] ?? null"
+                :from="$control['datetime']['from'] ?? null"
+                :to="$control['datetime']['to'] ?? null"
+                :weekdays="$control['datetime']['weekdays'] ?? null"
+                :timezone="$control['datetime']['timezone'] ?? null"
+                :timezone-label="$control['datetime']['timezone_label'] ?? null"
                 :class="'webx-inbox-form__field'.($control['half'] ? ' webx-inbox-form__field--half' : '')"
             >@if ($control['consent'] !== null){!! $control['consent'] !!}@endif</x-webx-field>
         @endforeach

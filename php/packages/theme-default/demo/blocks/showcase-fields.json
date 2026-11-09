@@ -152,6 +152,10 @@
                 "value": "date"
               },
               {
+                "label": "datetime",
+                "value": "datetime"
+              },
+              {
                 "label": "file",
                 "value": "file"
               },

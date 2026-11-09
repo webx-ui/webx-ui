@@ -26,6 +26,7 @@ import {
   WxDatePicker,
   WxTagsInput,
   WxText,
+  WxTimePicker,
   useLocales,
   type LocalizedValue,
 } from '@webx-ui/core'
@@ -202,6 +203,75 @@ const dialogTitle = computed(() => {
 })
 
 const hasChoices = computed(() => ['select', 'radio', 'checkbox'].includes(type.value))
+
+/*
+ * «Date and time» (FORM_STEPS §6.2, §9.2): the step of the list, the day's hours, the days of the
+ * week, the words about the zone. The defaults are the server's — 30 minutes, 09:00–17:00, every
+ * day — and the preview is the grid the site will offer, counted the same way.
+ */
+const isDateTime = computed(() => type.value === 'datetime')
+const STEPS = [15, 20, 30, 60, 90, 120]
+const stepOptions = computed(() =>
+  STEPS.map((minutes) => ({ value: minutes, label: t('fields.time-step-minutes', { minutes }) })),
+)
+const timeStep = computed(() => Number(options.value['time-step'] ?? 30))
+const timeFrom = computed(() => String(options.value['time-from'] ?? '09:00'))
+const timeTo = computed(() => String(options.value['time-to'] ?? '17:00'))
+const weekdays = computed<number[]>(() =>
+  Array.isArray(options.value.weekdays) ? options.value.weekdays.map(Number) : [],
+)
+
+/** The days of the week from a Monday (2024-01-01), in the language of the panel. */
+const dayNames = computed(() =>
+  [1, 2, 3, 4, 5, 6, 7].map((day) => ({
+    value: day,
+    label: new Intl.DateTimeFormat(locales.active.value, {
+      weekday: 'short',
+      timeZone: 'UTC',
+    }).format(Date.UTC(2024, 0, day)),
+  })),
+)
+
+function toggleDay(day: number, on: boolean): void {
+  const next = new Set(weekdays.value)
+  if (on) next.add(day)
+  else next.delete(day)
+  set(
+    'weekdays',
+    [...next].sort((a, b) => a - b),
+  )
+}
+
+const minutesOf = (clock: string): number => {
+  const [hours, minutes] = clock.split(':').map(Number)
+
+  return (hours ?? 0) * 60 + (minutes ?? 0)
+}
+
+const clockOf = (minutes: number): string =>
+  `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`
+
+/** «09:00, 09:30 … 16:30»: the first two and the last time of a day, or all of a short one. */
+const timesPreview = computed(() => {
+  const times: string[] = []
+  const to = minutesOf(timeTo.value)
+
+  for (
+    let at = minutesOf(timeFrom.value);
+    at + timeStep.value <= to && times.length < 200;
+    at += timeStep.value
+  )
+    times.push(clockOf(at))
+
+  if (times.length === 0) return '—'
+
+  return times.length > 3
+    ? `${times[0]}, ${times[1]} … ${times[times.length - 1]}`
+    : times.join(', ')
+})
+
+/** The zone the site names when the field has no words of its own. */
+const zoneWords = computed(() => props.form.timezone ?? 'UTC')
 
 const choices = computed<FieldChoice[]>(() =>
   Array.isArray(options.value.choices) ? options.value.choices : [],
@@ -386,6 +456,82 @@ async function save(): Promise<void> {
         </wx-form-item>
 
         <wx-alert v-if="flat" type="info" variant="soft" :description="t('fields.summary-flat')" />
+      </template>
+
+      <!-- A day and a time: the hint, no placeholder — the calendar has nothing to hold one. -->
+      <template v-else-if="isDateTime">
+        <wx-text size="sm" tone="muted">{{ t('fields.datetime-help') }}</wx-text>
+
+        <wx-form-item :label="t('fields.help')">
+          <wx-input v-model="help" localized />
+        </wx-form-item>
+
+        <div class="wx-inbox-field-form__row">
+          <wx-form-item :label="t('fields.time-step')" :error="errorOf('options.time-step')">
+            <wx-select
+              :model-value="timeStep"
+              :options="stepOptions"
+              @update:model-value="(value) => set('time-step', Number(value))"
+            />
+          </wx-form-item>
+          <wx-form-item :label="t('fields.time-from')" :error="errorOf('options.time-from')">
+            <wx-time-picker
+              :model-value="timeFrom"
+              :minutes-increment="5"
+              :aria-label="t('fields.time-from')"
+              @update:model-value="(value) => set('time-from', value ?? '09:00')"
+            />
+          </wx-form-item>
+          <wx-form-item :label="t('fields.time-to')" :error="errorOf('options.time-to')">
+            <wx-time-picker
+              :model-value="timeTo"
+              :minutes-increment="5"
+              :aria-label="t('fields.time-to')"
+              @update:model-value="(value) => set('time-to', value ?? '17:00')"
+            />
+          </wx-form-item>
+        </div>
+        <wx-text size="sm" tone="muted">{{ t('fields.time-help') }}</wx-text>
+
+        <wx-form-item
+          :label="t('fields.weekdays')"
+          :help="t('fields.weekdays-help')"
+          :error="errorOf('options.weekdays')"
+        >
+          <div class="wx-inbox-field-form__days">
+            <wx-checkbox
+              v-for="day in dayNames"
+              :key="day.value"
+              :model-value="weekdays.includes(day.value)"
+              :label="day.label"
+              @update:model-value="(on) => toggleDay(day.value, Boolean(on))"
+            />
+            <wx-button variant="outline" size="sm" @click="set('weekdays', [1, 2, 3, 4, 5])">
+              {{ t('fields.weekdays-workdays') }}
+            </wx-button>
+          </div>
+        </wx-form-item>
+
+        <wx-form-item
+          :label="t('fields.timezone-label')"
+          :help="t('fields.timezone-label-help', { label: zoneWords })"
+        >
+          <wx-input
+            :model-value="(options['timezone-label'] as LocalizedValue) ?? {}"
+            localized
+            @update:model-value="(value) => set('timezone-label', value)"
+          />
+        </wx-form-item>
+
+        <wx-alert
+          type="info"
+          variant="soft"
+          :description="
+            t('fields.timezone-site', { zone: form.timezone ?? 'UTC' }) +
+            ' ' +
+            t('fields.times-preview', { times: timesPreview })
+          "
+        />
       </template>
 
       <!-- A hidden field has neither: nobody reads a placeholder they cannot see. -->
@@ -687,6 +833,13 @@ async function save(): Promise<void> {
   gap: var(--wx-space-8);
   padding-block-start: var(--wx-space-12);
   border-block-start: 1px solid var(--wx-border-muted);
+}
+
+.wx-inbox-field-form__days {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wx-space-12);
 }
 
 .wx-inbox-field-form__checks {

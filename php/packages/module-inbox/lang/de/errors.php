@@ -31,4 +31,7 @@ return [
     'step-empty' => 'Nach dem Schritt :field steht kein Feld. Setzen Sie ein Feld darunter oder entfernen Sie ihn.',
     'step-too-many' => 'Ein Formular hat höchstens :max Schritte.',
     'step-unknown' => 'Das Formular hat sich geändert, seit die Seite geöffnet wurde. Laden Sie die Seite neu.',
+    'datetime-range' => 'Der Tag hat keinen Platz für eine Uhrzeit: «Von» und «Bis» als HH:MM, und «Von» mindestens einen Schritt vor «Bis».',
+    'datetime-step' => 'Der Schritt der Uhrzeiten ist 15, 20, 30, 60, 90 oder 120 Minuten.',
+    'datetime-weekdays' => 'Jeder Wochentag einmal, von 1 (Montag) bis 7 (Sonntag).',
 ];

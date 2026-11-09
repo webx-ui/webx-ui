@@ -12,4 +12,10 @@ return [
     'honeypot' => 'Оставьте это поле пустым',
     'condition-when' => 'Если выбрано: :choices',
     'condition-unless' => 'Если не выбрано: :choices',
+    'datetime-date' => 'Выберите день.',
+    'datetime-time' => 'Выберите время.',
+    'datetime-shape' => 'Выберите день и время в календаре.',
+    'datetime-weekday' => 'Выберите день недели: :days.',
+    'datetime-grid' => 'Выберите одно из предложенных времён.',
+    'datetime-past' => 'Это время уже прошло. Выберите более позднее.',
 ];

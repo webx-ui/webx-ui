@@ -33,6 +33,8 @@ const words = (el) => {
 
 /** What a field holds, as the visitor reads it: the words of the choices, the text typed. */
 function answerOf(field) {
+  // A field a script draws over its controls says its answer itself: a day and a time (datetime.js).
+  if (field.dataset.webxAnswer) return field.dataset.webxAnswer
   const said = []
   for (const control of field.querySelectorAll('input, select, textarea')) {
     if (control.disabled || control.type === 'hidden' || control.type === 'password') continue
@@ -93,9 +95,11 @@ export function summary(el) {
       step.dispatchEvent(
         new CustomEvent('webx:form:reveal', { bubbles: true, detail: { field, edit: true } }),
       )
-    const control = Array.from(field.querySelectorAll('input, select, textarea')).find(
-      (one) => one.type !== 'hidden' && !one.disabled,
-    )
+    const control =
+      field.querySelector('[data-webx-focus]') ??
+      Array.from(field.querySelectorAll('input, select, textarea')).find(
+        (one) => one.type !== 'hidden' && !one.disabled,
+      )
     control?.focus({ preventScroll: true })
     control?.scrollIntoView?.({ block: 'center' })
   }

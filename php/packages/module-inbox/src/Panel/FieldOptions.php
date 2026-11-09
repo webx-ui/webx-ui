@@ -6,6 +6,7 @@ namespace WebxUi\Inbox\Panel;
 
 use WebxUi\Inbox\Fields\ChoiceImages;
 use WebxUi\Inbox\Fields\Conditions;
+use WebxUi\Inbox\Fields\DateTimeField;
 use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\Fields\Summary;
 
@@ -43,6 +44,8 @@ final class FieldOptions
             FieldType::Consent => self::consent($input),
             FieldType::File => self::file($input),
             FieldType::Hidden => [],
+            // The grid of a day and the days of the week (FORM_STEPS §6.2); the zone is the site's.
+            FieldType::DateTime => DateTimeField::clean($input),
             // A step (FORM_STEPS §3.1): the words of its «Next», when they are not the site's own.
             FieldType::Step => ['next-text' => self::words($input['next-text'] ?? null) ?? ''],
             // The summary (FORM_STEPS §7): the names of the fields it shows, none — every one above.
