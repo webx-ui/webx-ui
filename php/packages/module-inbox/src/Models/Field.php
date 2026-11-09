@@ -152,6 +152,43 @@ class Field extends Model
         return $choices;
     }
 
+    /**
+     * Drawn as cards (FORM_STEPS §5): a group of radios or ticks with `view: cards`.
+     */
+    public function isCards(): bool
+    {
+        return in_array($this->type, [FieldType::Radio, FieldType::Checkbox], true) && $this->option('view') === 'cards';
+    }
+
+    /**
+     * The choices as a card shows them: the label and the description in the language being read,
+     * the key of the picture. Only the look of the field — an answer keeps the label alone.
+     *
+     * @return list<array{value: string, label: string, description: ?string, image: ?string}>
+     */
+    public function cardChoices(): array
+    {
+        $cards = [];
+
+        foreach ((array) $this->option('choices', []) as $choice) {
+            if (! is_array($choice) || ! isset($choice['value'])) {
+                continue;
+            }
+
+            $description = $this->pick($choice['description'] ?? null);
+            $image = $choice['image']['path'] ?? null;
+
+            $cards[] = [
+                'value' => (string) $choice['value'],
+                'label' => $this->label($choice),
+                'description' => trim($description) !== '' ? $description : null,
+                'image' => is_string($image) && $image !== '' ? $image : null,
+            ];
+        }
+
+        return $cards;
+    }
+
     /** Whether one answer to this field may be several things. */
     public function isMultiple(): bool
     {

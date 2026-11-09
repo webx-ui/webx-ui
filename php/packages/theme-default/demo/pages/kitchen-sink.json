@@ -6197,6 +6197,271 @@
         },
         {
           "title": {
+            "en": "Cards",
+            "ru": "Карточки",
+            "pl": "Karty"
+          },
+          "slug": {
+            "en": "cards",
+            "ru": "kartochki",
+            "pl": "karty"
+          },
+          "seo": {
+            "title": {
+              "en": "Cards",
+              "ru": "Карточки",
+              "pl": "Karty"
+            },
+            "description": {
+              "en": "One of several and several of several as cards with a description and a picture: the same radios and ticks inside, in every state, one column on a phone.",
+              "ru": "Один из нескольких и несколько из нескольких — карточками с описанием и картинкой: внутри те же радиокнопки и галочки, во всех состояниях, на телефоне — в один столбец.",
+              "pl": "Jedno z kilku i kilka z kilku jako karty z opisem i obrazkiem: w środku te same pola wyboru, w każdym stanie, na telefonie w jednej kolumnie."
+            }
+          },
+          "blocks": [
+            {
+              "key": "showcase-choice-cards-intro",
+              "type": "text",
+              "values": {
+                "heading": {
+                  "en": "Cards",
+                  "ru": "Карточки",
+                  "pl": "Karty"
+                },
+                "body": {
+                  "en": "A choice that needs a few words or a picture to be understood is drawn as a card: view=\"cards\" on a group of radios or ticks. Inside each card is the same input as in a list, and the whole card is its label — a click anywhere chooses it, the arrows move through a group of radios, a screen reader reads the label with the description.\nThe chosen card has the accent border and a tint; the focused one, a ring. Without styles it is a list of radios with their descriptions. The columns are a wish: on a narrow form the cards stand one under another.",
+                  "ru": "Выбор, которому нужны пара слов или картинка, рисуется карточками: view=\"cards\" у группы радиокнопок или галочек. Внутри каждой карточки — тот же элемент, что в списке, а вся карточка — его подпись: щелчок в любом месте выбирает её, стрелки ходят по группе радиокнопок, экранный диктор читает подпись вместе с описанием.\nУ выбранной карточки — рамка цвета акцента и подложка, у карточки в фокусе — обводка. Без стилей это список радиокнопок с описаниями. Колонки — пожелание: на узкой форме карточки встают одна под другой.",
+                  "pl": "Wybór, który potrzebuje kilku słów lub obrazka, jest rysowany jako karty: view=\"cards\" przy grupie pól wyboru. W każdej karcie jest ten sam element co na liście, a cała karta jest jego etykietą – kliknięcie w dowolnym miejscu ją wybiera, strzałki przechodzą po grupie, czytnik ekranu czyta etykietę razem z opisem.\nWybrana karta ma ramkę w kolorze akcentu i tło, karta z fokusem – obwódkę. Bez stylów to lista pól wyboru z opisami. Kolumny to życzenie: w wąskim formularzu karty stają jedna pod drugą."
+                }
+              }
+            },
+            {
+              "key": "showcase-choice-cards-every",
+              "type": "showcase-fields",
+              "values": {
+                "heading": {
+                  "en": "One of several, several of several",
+                  "ru": "Один из нескольких, несколько из нескольких",
+                  "pl": "Jedno z kilku, kilka z kilku"
+                },
+                "note": {
+                  "en": "Three cards to a row with pictures of the media library, two to a row without; the last tick has a long word that has to break.",
+                  "ru": "Три карточки в ряд с картинками медиатеки, две в ряд без них; у последней галочки длинное слово, которое должно переноситься.",
+                  "pl": "Trzy karty w rzędzie z obrazkami z biblioteki mediów, dwie bez nich; ostatnie pole ma długie słowo, które musi się łamać."
+                },
+                "width": "page",
+                "states": [
+                  {
+                    "state": "empty",
+                    "title": {
+                      "en": "Empty",
+                      "ru": "Пустые",
+                      "pl": "Puste"
+                    }
+                  },
+                  {
+                    "state": "filled",
+                    "title": {
+                      "en": "Chosen",
+                      "ru": "Выбранные",
+                      "pl": "Wybrane"
+                    }
+                  },
+                  {
+                    "state": "invalid",
+                    "title": {
+                      "en": "With the server’s errors",
+                      "ru": "С ошибками сервера",
+                      "pl": "Z błędami serwera"
+                    }
+                  },
+                  {
+                    "state": "disabled",
+                    "title": {
+                      "en": "Disabled",
+                      "ru": "Недоступные",
+                      "pl": "Wyłączone"
+                    }
+                  }
+                ],
+                "fields": [
+                  {
+                    "type": "radio",
+                    "name": "request.purpose",
+                    "label": {
+                      "en": "What brings you to the property?",
+                      "ru": "С чем вы к нам?",
+                      "pl": "W jakiej sprawie?"
+                    },
+                    "hint": {
+                      "en": "Each card is one radio: the arrows move between them.",
+                      "ru": "Каждая карточка — одна радиокнопка: стрелки ходят между ними.",
+                      "pl": "Każda karta to jedno pole wyboru: strzałki przechodzą między nimi."
+                    },
+                    "error": {
+                      "en": "Choose what you came for.",
+                      "ru": "Выберите, с чем вы пришли.",
+                      "pl": "Wybierz, w jakiej sprawie."
+                    },
+                    "choices": {
+                      "en": "Book a viewing | We show the flat when it suits you\nAgency meeting | For agents who bring a client\nJust a question | We answer by e-mail within a day",
+                      "ru": "Записаться на просмотр | Покажем квартиру в удобное время\nВстреча агентства | Для агентов, которые приводят клиента\nПросто вопрос | Ответим письмом в течение дня",
+                      "pl": "Umów oglądanie | Pokażemy mieszkanie, kiedy Ci pasuje\nSpotkanie agencji | Dla agentów, którzy przyprowadzają klienta\nTylko pytanie | Odpowiemy e-mailem w ciągu dnia"
+                    },
+                    "value": "1",
+                    "required": true,
+                    "multiple": false,
+                    "inline": false,
+                    "view": "cards",
+                    "columns": "3",
+                    "autocomplete": ""
+                  },
+                  {
+                    "type": "checkbox",
+                    "name": "request.extras",
+                    "label": {
+                      "en": "What else should we prepare?",
+                      "ru": "Что ещё подготовить?",
+                      "pl": "Co jeszcze przygotować?"
+                    },
+                    "hint": "",
+                    "error": {
+                      "en": "Choose at most two.",
+                      "ru": "Выберите не больше двух.",
+                      "pl": "Wybierz najwyżej dwa."
+                    },
+                    "choices": {
+                      "en": "A parking space | Underground, by the lift\nA storage room | On the same floor\nThe floor plan | As a PDF before the viewing\nA long-word check: Wohnungsbesichtigungstermin",
+                      "ru": "Место на парковке | Подземной, у лифта\nКладовую | На том же этаже\nПланировку | В PDF до просмотра\nПроверка длинного слова: Wohnungsbesichtigungstermin",
+                      "pl": "Miejsce parkingowe | Podziemne, przy windzie\nKomórkę lokatorską | Na tym samym piętrze\nRzut mieszkania | Jako PDF przed oglądaniem\nTest długiego słowa: Wohnungsbesichtigungstermin"
+                    },
+                    "value": "1,3",
+                    "required": false,
+                    "multiple": false,
+                    "inline": false,
+                    "view": "cards",
+                    "columns": "2",
+                    "autocomplete": ""
+                  }
+                ],
+                "pictures": [
+                  {
+                    "path": "demo:showcase-photo-1",
+                    "alt": {
+                      "en": "A viewing",
+                      "ru": "Просмотр",
+                      "pl": "Oglądanie"
+                    }
+                  },
+                  {
+                    "path": "demo:showcase-photo-2",
+                    "alt": {
+                      "en": "A meeting",
+                      "ru": "Встреча",
+                      "pl": "Spotkanie"
+                    }
+                  },
+                  {
+                    "path": "demo:showcase-photo-3",
+                    "alt": {
+                      "en": "A question",
+                      "ru": "Вопрос",
+                      "pl": "Pytanie"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "key": "showcase-choice-cards-narrow",
+              "type": "showcase-fields",
+              "values": {
+                "heading": {
+                  "en": "In a narrow column",
+                  "ru": "В узкой колонке",
+                  "pl": "W wąskiej kolumnie"
+                },
+                "note": {
+                  "en": "The same cards in a column as narrow as a sidebar: one under another, whatever the columns say.",
+                  "ru": "Те же карточки в колонке шириной с боковую: одна под другой, сколько бы колонок ни просили.",
+                  "pl": "Te same karty w kolumnie wąskiej jak pasek boczny: jedna pod drugą, niezależnie od liczby kolumn."
+                },
+                "width": "narrow",
+                "states": [
+                  {
+                    "state": "empty",
+                    "title": {
+                      "en": "Empty",
+                      "ru": "Пустые",
+                      "pl": "Puste"
+                    }
+                  }
+                ],
+                "fields": [
+                  {
+                    "type": "radio",
+                    "name": "request.purpose",
+                    "label": {
+                      "en": "What brings you to the property?",
+                      "ru": "С чем вы к нам?",
+                      "pl": "W jakiej sprawie?"
+                    },
+                    "hint": {
+                      "en": "Each card is one radio: the arrows move between them.",
+                      "ru": "Каждая карточка — одна радиокнопка: стрелки ходят между ними.",
+                      "pl": "Każda karta to jedno pole wyboru: strzałki przechodzą między nimi."
+                    },
+                    "error": {
+                      "en": "Choose what you came for.",
+                      "ru": "Выберите, с чем вы пришли.",
+                      "pl": "Wybierz, w jakiej sprawie."
+                    },
+                    "choices": {
+                      "en": "Book a viewing | We show the flat when it suits you\nAgency meeting | For agents who bring a client\nJust a question | We answer by e-mail within a day",
+                      "ru": "Записаться на просмотр | Покажем квартиру в удобное время\nВстреча агентства | Для агентов, которые приводят клиента\nПросто вопрос | Ответим письмом в течение дня",
+                      "pl": "Umów oglądanie | Pokażemy mieszkanie, kiedy Ci pasuje\nSpotkanie agencji | Dla agentów, którzy przyprowadzają klienta\nTylko pytanie | Odpowiemy e-mailem w ciągu dnia"
+                    },
+                    "value": "1",
+                    "required": true,
+                    "multiple": false,
+                    "inline": false,
+                    "view": "cards",
+                    "columns": "3",
+                    "autocomplete": ""
+                  }
+                ],
+                "pictures": [
+                  {
+                    "path": "demo:showcase-photo-1",
+                    "alt": {
+                      "en": "A viewing",
+                      "ru": "Просмотр",
+                      "pl": "Oglądanie"
+                    }
+                  },
+                  {
+                    "path": "demo:showcase-photo-2",
+                    "alt": {
+                      "en": "A meeting",
+                      "ru": "Встреча",
+                      "pl": "Spotkanie"
+                    }
+                  },
+                  {
+                    "path": "demo:showcase-photo-3",
+                    "alt": {
+                      "en": "A question",
+                      "ru": "Вопрос",
+                      "pl": "Pytanie"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "title": {
             "en": "Sending",
             "ru": "Отправка",
             "pl": "Wysyłanie"

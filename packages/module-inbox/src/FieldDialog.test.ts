@@ -1,6 +1,6 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { ref } from 'vue'
+import { defineComponent, h, ref } from 'vue'
 import { localesKey, WebxUI } from '@webx-ui/core'
 import { adminKey, createI18n, i18nKey, type AdminContext } from '@webx-ui/module-admin'
 import FieldDialog from './FieldDialog.vue'
@@ -25,7 +25,12 @@ const phone: InboxField = {
   position: 0,
 }
 
-function dialog(field: InboxField | null, taken: string[] = [], fields: InboxField[] = []) {
+function dialog(
+  field: InboxField | null,
+  taken: string[] = [],
+  fields: InboxField[] = [],
+  extra: Partial<AdminContext> = {},
+) {
   const post = vi
     .fn()
     .mockImplementation((_url: string, body: object) =>
@@ -40,6 +45,7 @@ function dialog(field: InboxField | null, taken: string[] = [], fields: InboxFie
     i18n,
     state: { manifest: null, user: null, status: 'ready', error: null },
     can: () => true,
+    ...extra,
   } as unknown as AdminContext
 
   const wrapper = mount(FieldDialog, {
@@ -321,6 +327,142 @@ describe('WxInboxFieldDialog', () => {
       wrapper.findComponent({ name: 'WxSelect' }).vm.$emit('update:modelValue', 'hidden')
       await flushPromises()
       expect(section()).toBeNull()
+    })
+  })
+
+  describe('cards (FORM_STEPS §5, §9.2)', () => {
+    const purpose: InboxField = {
+      ...phone,
+      id: 7,
+      name: 'purpose',
+      key: 'purpose',
+      type: 'radio',
+      title: { en: 'Purpose' },
+      options: {
+        choices: [
+          { value: 'viewing', label: { en: 'Viewing' } },
+          { value: 'question', label: { en: 'Question' } },
+        ],
+      },
+    }
+
+    /** What the media module registers as `wx-media`: a stand-in that says what it was given. */
+    const Picker = defineComponent({
+      name: 'FakeMediaField',
+      props: { modelValue: { type: Object, default: null }, aspect: String, captions: Boolean },
+      emits: ['update:modelValue'],
+      setup: (props) => () => h('div', { class: 'fake-media' }, props.modelValue?.path ?? 'empty'),
+    })
+    const withLibrary = {
+      types: { 'wx-media': { component: Picker } },
+    } as unknown as Partial<AdminContext>
+
+    const view = (wrapper: ReturnType<typeof dialog>['wrapper']) =>
+      wrapper
+        .findAllComponents({ name: 'WxSegmented' })
+        .find((one) => one.props('ariaLabel') === 'Show the choices as')
+    const save = async (wrapper: ReturnType<typeof dialog>['wrapper']) => {
+      await wrapper
+        .findAllComponents({ name: 'WxButton' })
+        .find((one) => one.text() === 'Save')!
+        .trigger('click')
+      await flushPromises()
+    }
+
+    it('switches a radio to cards with columns, a description and a picture per choice', async () => {
+      const { wrapper, put, labels } = dialog(purpose, [], [], withLibrary)
+      await flushPromises()
+
+      expect(view(wrapper)!.props('modelValue')).toBe('list')
+      expect(labels()).not.toContain('Cards in a row')
+      expect(document.querySelectorAll('.fake-media')).toHaveLength(0)
+
+      view(wrapper)!.vm.$emit('update:modelValue', 'cards')
+      await flushPromises()
+
+      expect(labels()).toContain('Cards in a row')
+      expect(document.querySelectorAll('.fake-media')).toHaveLength(2)
+
+      const columns = wrapper
+        .findAllComponents({ name: 'WxFormItem' })
+        .find((one) => one.props('label') === 'Cards in a row')!
+        .findComponent({ name: 'WxInputNumber' })
+      columns.vm.$emit('update:modelValue', 2)
+
+      const descriptions = wrapper
+        .findAllComponents({ name: 'WxInput' })
+        .filter(
+          (one) =>
+            one.attributes('aria-label') === 'Description' ||
+            one.props('placeholder') === 'Description',
+        )
+      expect(descriptions).toHaveLength(2)
+      descriptions[0]!.vm.$emit('update:modelValue', { en: 'See the flat with an agent' })
+      wrapper
+        .findAllComponents(Picker)[0]!
+        .vm.$emit('update:modelValue', {
+          path: 'media/ab/viewing.svg',
+          url: '/storage/media/ab/viewing.svg',
+        })
+      await flushPromises()
+      await save(wrapper)
+
+      expect(put).toHaveBeenCalledWith(
+        '/api/cms/inbox/fields/7',
+        expect.objectContaining({
+          options: {
+            view: 'cards',
+            columns: 2,
+            choices: [
+              {
+                value: 'viewing',
+                label: { en: 'Viewing' },
+                description: { en: 'See the flat with an agent' },
+                image: { path: 'media/ab/viewing.svg', url: '/storage/media/ab/viewing.svg' },
+              },
+              { value: 'question', label: { en: 'Question' } },
+            ],
+          },
+        }),
+      )
+    })
+
+    it('back to a list drops the columns and keeps what the choices carry', async () => {
+      const { wrapper, put } = dialog({
+        ...purpose,
+        options: {
+          view: 'cards',
+          columns: 3,
+          choices: [{ value: 'viewing', label: 'Viewing', description: 'Kept' }],
+        },
+      })
+      await flushPromises()
+
+      view(wrapper)!.vm.$emit('update:modelValue', 'list')
+      await flushPromises()
+      await save(wrapper)
+
+      expect(put).toHaveBeenCalledWith(
+        '/api/cms/inbox/fields/7',
+        expect.objectContaining({
+          options: { choices: [{ value: 'viewing', label: 'Viewing', description: 'Kept' }] },
+        }),
+      )
+    })
+
+    it('has no picture without the library, and no cards for a select', async () => {
+      const { wrapper } = dialog({ ...purpose, options: { ...purpose.options, view: 'cards' } })
+      await flushPromises()
+
+      // Cards still work — the description is there — but there is nothing to pick a picture with.
+      expect(document.querySelectorAll('.wx-inbox-choices__description')).toHaveLength(2)
+      expect(document.querySelectorAll('.fake-media')).toHaveLength(0)
+
+      wrapper.findComponent({ name: 'WxSelect' }).vm.$emit('update:modelValue', 'select')
+      await flushPromises()
+
+      expect(view(wrapper)).toBeUndefined()
+      expect(document.querySelectorAll('.wx-inbox-choices__description')).toHaveLength(0)
     })
   })
 })

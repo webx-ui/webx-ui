@@ -52,7 +52,12 @@ final class Field extends Component
 
     public ?string $message;
 
-    /** @var list<array{value: string, label: string, disabled: bool}> */
+    /** How a group of radios or ticks is drawn (FORM_STEPS §5): a list, or cards with words and a picture. */
+    public const array VIEWS = ['list', 'cards'];
+
+    /**
+     * @var list<array{value: string, label: string, disabled: bool, description: ?string, image: ?array{src: string, srcset: ?string, width: ?int, height: ?int}}>
+     */
     public array $options = [];
 
     /**
@@ -65,7 +70,8 @@ final class Field extends Component
     private bool $foreign = false;
 
     /**
-     * @param  array<array-key, mixed>  $choices  `value => label`, or a list of `['value', 'label', 'disabled']`
+     * @param  array<array-key, mixed>  $choices  `value => label`, or a list of `['value', 'label', 'disabled', 'description', 'image']`
+     *                                            — the last two drawn by `view="cards"` only; `image` an address or `['src', 'srcset', 'width', 'height']`
      * @param  array<string, list<string>>|null  $when
      * @param  array<string, list<string>>|null  $unless
      */
@@ -115,6 +121,11 @@ final class Field extends Component
         public ?array $unless = null,
         // The line a page without JavaScript shows under it: "If chosen: …".
         public ?string $condition = null,
+        // A group of radios or ticks as cards (FORM_STEPS §5.2): the same inputs inside, a choice's
+        // description and picture beside its label. `columns` (1–4) is how many to a row where the
+        // form has the room; on a narrow one they stand one under another anyway.
+        public string $view = 'list',
+        public ?int $columns = null,
     ) {
         if (! in_array($type, self::TYPES, true)) {
             throw new InvalidArgumentException("<x-webx-field type=\"{$type}\">: one of ".implode(', ', self::TYPES).'.');
@@ -126,11 +137,23 @@ final class Field extends Component
             throw new InvalidArgumentException('<x-webx-field>: a name is required — it is what the value and the error are found by.');
         }
 
+        if (! in_array($view, self::VIEWS, true)) {
+            throw new InvalidArgumentException("<x-webx-field view=\"{$view}\">: one of ".implode(', ', self::VIEWS).'.');
+        }
+
         foreach ($choices as $choice => $text) {
             $this->options[] = is_array($text)
-                ? ['value' => (string) ($text['value'] ?? ''), 'label' => (string) ($text['label'] ?? $text['value'] ?? ''), 'disabled' => (bool) ($text['disabled'] ?? false)]
-                : ['value' => (string) $choice, 'label' => (string) $text, 'disabled' => false];
+                ? [
+                    'value' => (string) ($text['value'] ?? ''),
+                    'label' => (string) ($text['label'] ?? $text['value'] ?? ''),
+                    'disabled' => (bool) ($text['disabled'] ?? false),
+                    'description' => is_scalar($text['description'] ?? null) && trim((string) $text['description']) !== '' ? (string) $text['description'] : null,
+                    'image' => self::imageOf($text['image'] ?? null),
+                ]
+                : ['value' => (string) $choice, 'label' => (string) $text, 'disabled' => false, 'description' => null, 'image' => null];
         }
+
+        $this->columns = $columns === null ? null : max(1, min(4, $columns));
 
         if (in_array($type, ['select', 'radio'], true) && $this->options === []) {
             throw new InvalidArgumentException("<x-webx-field type=\"{$type}\" name=\"{$name}\">: :choices — there is nothing to choose from.");
@@ -224,6 +247,49 @@ final class Field extends Component
     public function grouped(): bool
     {
         return $this->type === 'radio' || ($this->type === 'checkbox' && $this->options !== []);
+    }
+
+    /** Drawn as cards: `view="cards"` on a group of radios or ticks; anything else keeps its own look. */
+    public function cards(): bool
+    {
+        return $this->view === 'cards' && $this->grouped();
+    }
+
+    /** The view of the control: components/field/<type>, or <type>-cards for a group drawn as cards. */
+    public function controlView(): string
+    {
+        return 'webx-widgets::components.field.'.$this->type.($this->cards() ? '-cards' : '');
+    }
+
+    /**
+     * A choice's picture as a page prints it: an address alone, or what the media library tells
+     * about the file. Anything else — a key nobody resolved, a file gone from the library — is no
+     * picture rather than a broken one.
+     *
+     * @return array{src: string, srcset: ?string, width: ?int, height: ?int}|null
+     */
+    private static function imageOf(mixed $image): ?array
+    {
+        if (is_string($image)) {
+            $image = ['src' => $image];
+        }
+
+        if (! is_array($image)) {
+            return null;
+        }
+
+        $src = $image['src'] ?? $image['url'] ?? null;
+
+        if (! is_string($src) || trim($src) === '') {
+            return null;
+        }
+
+        return [
+            'src' => trim($src),
+            'srcset' => is_string($image['srcset'] ?? null) && $image['srcset'] !== '' ? $image['srcset'] : null,
+            'width' => is_int($image['width'] ?? null) && $image['width'] > 0 ? $image['width'] : null,
+            'height' => is_int($image['height'] ?? null) && $image['height'] > 0 ? $image['height'] : null,
+        ];
     }
 
     /** One tick whose words stand beside it rather than above. */

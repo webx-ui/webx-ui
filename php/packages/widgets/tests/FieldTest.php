@@ -443,4 +443,69 @@ lines</textarea>', "Two\nlines"];
         $this->assertStringNotContainsString('webx-field__condition', $plain);
         $this->assertMatchesRegularExpression('~<input[^>]*\srequired~', $plain);
     }
+
+    /**
+     * Choices as cards (FORM_STEPS §5.2): the same fieldset and the same radios inside labels, so
+     * the arrows, the label and the error work as in a list; the description and the picture of a
+     * choice sit in its label.
+     */
+    #[Test]
+    public function radios_drawn_as_cards_are_still_a_group_of_real_radios_inside_their_labels(): void
+    {
+        $this->returned([], ['fields.purpose' => ['Choose one.']]);
+
+        $html = Blade::render(<<<'BLADE'
+            <x-webx-field type="radio" name="fields.purpose" label="Purpose" view="cards" :columns="2" required :choices="[
+                ['value' => 'viewing', 'label' => 'Viewing', 'description' => 'See the flat with an agent', 'image' => ['src' => '/media/viewing.svg', 'width' => 320, 'height' => 240]],
+                ['value' => 'question', 'label' => 'Question', 'image' => '/media/question.svg'],
+                ['value' => 'call', 'label' => 'Call back', 'description' => '  ', 'disabled' => true],
+            ]" />
+            BLADE);
+
+        $this->assertStringContainsString('<fieldset aria-describedby="field-fields-purpose-error" class="webx-field webx-field--radio webx-field--cards is-invalid is-required" data-webx-field="fields.purpose">', $html);
+        $this->assertStringContainsString('<legend class="webx-field__label webx-field__label--legend">Purpose', $html);
+        $this->assertStringContainsString('<div class="webx-field__cards webx-field__cards--cols-2">', $html);
+        $this->assertSame(3, substr_count($html, '<label class="webx-field__card" for="field-fields-purpose-'));
+        $this->assertSame(3, preg_match_all('~<label class="webx-field__card" for="(field-fields-purpose-\d)">\s*<input type="radio" class="webx-field__check webx-field__card-check" id="\1" name="fields\[purpose\]"[^>]* required[^>]*aria-invalid="true"~', $html));
+        $this->assertSame(1, substr_count($html, ' disabled '));
+        $this->assertStringContainsString('<img class="webx-field__card-image" src="/media/viewing.svg" alt="" loading="lazy" decoding="async" width="320" height="240">', $html);
+        $this->assertStringContainsString('<img class="webx-field__card-image" src="/media/question.svg" alt=""', $html);
+        $this->assertStringContainsString('<span class="webx-field__card-title">Viewing</span>', $html);
+        $this->assertStringContainsString('<span class="webx-field__card-text">See the flat with an agent</span>', $html);
+        // A blank description is none, and a choice with no picture prints no empty <img>.
+        $this->assertSame(1, substr_count($html, 'webx-field__card-text'));
+        $this->assertSame(2, substr_count($html, '<img '));
+        $this->assertStringContainsString('Choose one.', $html);
+    }
+
+    #[Test]
+    public function ticks_as_cards_keep_the_list_s_names_and_no_required_on_a_box(): void
+    {
+        $this->returned(['extras' => ['parking']], []);
+
+        $html = Blade::render('<x-webx-field type="checkbox" name="extras" label="Extras" view="cards" :columns="9" required :choices="[\'parking\' => \'Parking\', \'storage\' => \'Storage\']" />');
+
+        $this->assertStringContainsString('webx-field--checkbox webx-field--cards', $html);
+        $this->assertStringContainsString('webx-field__cards--cols-4', $html);
+        $this->assertSame(2, substr_count($html, 'name="extras[]"'));
+        $this->assertMatchesRegularExpression('~value="parking" checked~', $html);
+        $this->assertDoesNotMatchRegularExpression('~<input[^>]*\srequired[\s>=]~', $html);
+    }
+
+    #[Test]
+    public function cards_change_nothing_where_there_is_no_group_and_a_list_is_as_it_was(): void
+    {
+        $list = Blade::render('<x-webx-field type="radio" name="plan" label="Plan" :choices="[\'s\' => \'Small\']" />');
+        $named = Blade::render('<x-webx-field type="radio" name="plan" label="Plan" view="list" :choices="[\'s\' => \'Small\']" />');
+
+        $this->assertSame($list, str_replace('field-plan-2', 'field-plan', $named));
+        $this->assertStringNotContainsString('webx-field__card', $list);
+
+        // One tick and a select have no cards to be: the view is the type's own.
+        $this->assertStringNotContainsString('webx-field--cards', Blade::render('<x-webx-field type="checkbox" name="agree" label="I agree" view="cards" />'));
+        $this->assertStringNotContainsString('webx-field__card', Blade::render('<x-webx-field type="select" name="size" label="Size" view="cards" :choices="[\'s\' => \'Small\']" />'));
+
+        $this->expectException(Throwable::class);
+        Blade::render('<x-webx-field type="radio" name="plan" view="tiles" :choices="[\'s\' => \'Small\']" />');
+    }
 }

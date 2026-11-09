@@ -63,6 +63,27 @@ each one is a label, the control, a hint and the place of its error.
 </x-webx-field>
 ```
 
+### Cards
+
+A group of radios or ticks may be drawn as cards — `view="cards"` (FORM_STEPS §5): a choice that
+needs a few words or a picture to be understood. A choice then carries `description` and `image` —
+an address, or `['src', 'srcset', 'width', 'height']`; `:columns` (1–4) is how many to a row once the
+form is wide enough, a narrow form has them one under another whatever it says.
+
+```blade
+<x-webx-field type="radio" name="fields.purpose" label="Purpose of contact" view="cards" :columns="3" required :choices="[
+    ['value' => 'viewing', 'label' => 'Book a viewing', 'description' => 'We show the flat when it suits you', 'image' => $viewing],
+    ['value' => 'question', 'label' => 'Just a question', 'description' => 'We answer by e-mail'],
+]" />
+```
+
+Nothing changes but the look. The markup is the same `<fieldset>` and `<legend>`, a real
+`input[type=radio]` (or a tick) inside each `<label>`, so the whole card is the target, the arrows
+move through a group of radios as in any radio group, the label is read with its description, and
+no ARIA role is laid over it. The name, `required` and the error are those of the list; an answer is
+the same. Without CSS it is a list of radios with their descriptions. A picture is decorative
+(`alt=""`): the label says what the choice is. `view="cards"` on a select or on one tick changes nothing.
+
 ### Values and errors come from Laravel
 
 The value is `old($name)` and the error `$errors->first($name)`: a form posted without JavaScript
@@ -126,13 +147,16 @@ never the colour alone.
 | `__label` (`--legend` on a group), `__required`, `__optional`, `__hint`, `__error`                                                   | around the control      |
 | `__control` (`--textarea`, `--select`, `--password`, `--file`), `__select`, `__password`, `__show`                                   | the control             |
 | `__file`, `__file-button`, `__file-name`; `__choices`, `__choice` (`--inline`, `--single`, `--consent`), `__check`, `__choice-label` | files, groups and ticks |
+| `webx-field--cards`; `__cards` (`--cols-2…4`), `__card`, `__card-check`, `__card-image`, `__card-title`, `__card-text`               | cards                   |
 
 Repaint it the way every widget is repainted — [Where the styles live](./styles):
 
 - **tokens** — the field follows `color-border`, `color-danger`, `color-accent`, `radius-md`;
 - **its own variables** on `:root` — `--webx-field-height`, `--webx-field-radius`,
   `--webx-field-border`, `--webx-field-bg`, `--webx-field-focus`, `--webx-field-gap`,
-  `--webx-field-check`;
+  `--webx-field-check`; cards — `--webx-field-card-gap`, `--webx-field-card-padding`,
+  `--webx-field-card-bg`, `--webx-field-card-checked-bg`, `--webx-field-card-image-ratio`. The chosen
+  card is `.webx-field__card:has(:checked)`, the focused one `:has(:focus-visible)`;
 - **the same classes** in `theme/src/css` — they come later in the cascade;
 
 <!-- v-pre: the mustaches below are Blade. -->
@@ -141,7 +165,8 @@ Repaint it the way every widget is repainted — [Where the styles live](./style
 
 - **another control of a type** — `theme/views/vendor/webx-widgets/components/field/<type>.blade.php`.
   Keep `{{ $control($attributes) }}` on the control: it carries `required`, the ARIA and the
-  hints. The frame is `components/field.blade.php`.
+  hints. The frame is `components/field.blade.php`; cards are `components/field/radio-cards` and
+  `checkbox-cards`, what a card says beside its input — `components/field/partials/card`.
 
 :::
 

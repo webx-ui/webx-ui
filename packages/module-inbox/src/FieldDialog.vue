@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, type Component } from 'vue'
 import {
   slugify,
   useAdmin,
@@ -19,6 +19,7 @@ import {
   WxFormItem,
   WxInput,
   WxInputNumber,
+  WxSegmented,
   WxSelect,
   WxSpace,
   WxDatePicker,
@@ -176,6 +177,36 @@ const extensions = computed({
     ),
 })
 
+/** Radios and ticks can be cards; a select and the rest are drawn the one way they have. */
+const canCards = computed(() => type.value === 'radio' || type.value === 'checkbox')
+const cards = computed(() => canCards.value && options.value.view === 'cards')
+
+const views = computed(() => [
+  { value: 'list', label: t('fields.view-list') },
+  { value: 'cards', label: t('fields.view-cards') },
+])
+
+function setView(view: string): void {
+  const next = { ...options.value }
+
+  if (view === 'cards') {
+    next.view = 'cards'
+  } else {
+    // A list is the default and has no columns; what a choice carries stays for the way back.
+    delete next.view
+    delete next.columns
+  }
+
+  options.value = next
+}
+
+/*
+ * The picture is picked with whatever the panel registered as `wx-media` — the media module's
+ * field. This package does not depend on the library: a panel without it shows no picture
+ * column, and a picture saved earlier stays as it is.
+ */
+const picker = computed<Component | undefined>(() => context.types?.['wx-media']?.component)
+
 function set(key: string, value: unknown): void {
   options.value = { ...options.value, [key]: value }
 }
@@ -300,6 +331,27 @@ async function save(): Promise<void> {
         />
       </wx-form-item>
 
+      <!-- Cards (FORM_STEPS §5): the same radios or ticks, each with a description and a picture. -->
+      <div v-if="canCards" class="wx-inbox-field-form__row">
+        <wx-form-item :label="t('fields.view')" :help="cards ? t('fields.view-help') : undefined">
+          <wx-segmented
+            :model-value="cards ? 'cards' : 'list'"
+            :options="views"
+            size="sm"
+            :aria-label="t('fields.view')"
+            @update:model-value="(value) => setView(String(value))"
+          />
+        </wx-form-item>
+        <wx-form-item v-if="cards" :label="t('fields.columns')">
+          <wx-input-number
+            :model-value="(options.columns as number) ?? 1"
+            :min="1"
+            :max="4"
+            @update:model-value="(value) => set('columns', value)"
+          />
+        </wx-form-item>
+      </div>
+
       <div v-if="hasChoices" class="wx-inbox-choices">
         <wx-text size="sm" weight="medium">{{ t('fields.choices') }}</wx-text>
 
@@ -307,25 +359,56 @@ async function save(): Promise<void> {
           {{ t('fields.no-choices') }}
         </wx-text>
 
-        <div v-for="(choice, index) in choices" :key="index" class="wx-inbox-choices__row">
-          <wx-input
-            :model-value="choice.value"
-            :placeholder="t('fields.choice-value')"
-            @update:model-value="(value) => setChoice(index, { value: String(value) })"
-          />
-          <wx-input
-            :model-value="choice.label"
-            localized
-            :placeholder="t('fields.choice-label')"
-            @update:model-value="(label) => setChoice(index, { label: label as LocalizedValue })"
-          />
-          <wx-action
-            icon="trash"
-            tone="danger"
-            :title="t('fields.delete')"
-            v-bind="askRemove"
-            @click="removeChoice(index)"
-          />
+        <div
+          v-for="(choice, index) in choices"
+          :key="index"
+          :class="['wx-inbox-choices__item', { 'is-card': cards }]"
+        >
+          <div class="wx-inbox-choices__row">
+            <wx-input
+              :model-value="choice.value"
+              :placeholder="t('fields.choice-value')"
+              @update:model-value="(value) => setChoice(index, { value: String(value) })"
+            />
+            <wx-input
+              :model-value="choice.label"
+              localized
+              :placeholder="t('fields.choice-label')"
+              @update:model-value="(label) => setChoice(index, { label: label as LocalizedValue })"
+            />
+            <wx-action
+              icon="trash"
+              tone="danger"
+              :title="t('fields.delete')"
+              v-bind="askRemove"
+              @click="removeChoice(index)"
+            />
+          </div>
+
+          <div v-if="cards" class="wx-inbox-choices__card">
+            <component
+              :is="picker"
+              v-if="picker"
+              class="wx-inbox-choices__image"
+              :model-value="choice.image ?? null"
+              :label="t('fields.choice-image')"
+              accept="image"
+              aspect="4/3"
+              :width="160"
+              :captions="false"
+              @update:model-value="(image: FieldChoice['image']) => setChoice(index, { image })"
+            />
+            <wx-input
+              class="wx-inbox-choices__description"
+              :model-value="choice.description ?? {}"
+              localized
+              :placeholder="t('fields.choice-description')"
+              :aria-label="t('fields.choice-description')"
+              @update:model-value="
+                (description) => setChoice(index, { description: description as LocalizedValue })
+              "
+            />
+          </div>
         </div>
 
         <wx-button variant="outline" size="sm" @click="addChoice">
@@ -527,11 +610,43 @@ async function save(): Promise<void> {
   align-items: flex-start;
 }
 
+.wx-inbox-choices__item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-8);
+  width: 100%;
+}
+
+/* A card's choice is a block of its own: the picture and the words belong to the row above. */
+.wx-inbox-choices__item.is-card {
+  box-sizing: border-box;
+  padding: var(--wx-space-8);
+  border: 1px solid var(--wx-border-muted);
+  border-radius: var(--wx-radius-md);
+}
+
 .wx-inbox-choices__row {
   display: flex;
   align-items: center;
   gap: var(--wx-space-8);
   width: 100%;
+}
+
+.wx-inbox-choices__card {
+  container-type: inline-size;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--wx-space-8);
+}
+
+.wx-inbox-choices__image {
+  flex: 0 0 160px;
+}
+
+.wx-inbox-choices__description {
+  flex: 1 1 200px;
+  min-width: 0;
 }
 
 .wx-inbox-choices__row > :first-child {

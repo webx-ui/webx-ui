@@ -268,11 +268,31 @@ fields.splice(
     key: 'purpose',
     type: 'radio',
     title: { ru: 'Цель обращения', en: 'Purpose of contact' },
+    // Drawn as cards (FORM_STEPS §5): two with a picture of the library, one with words only.
     options: {
+      view: 'cards',
+      columns: 3,
       choices: [
-        { value: 'viewing', label: { ru: 'Просмотр квартиры', en: 'Book a viewing' } },
-        { value: 'agency', label: { ru: 'Встреча агентства', en: 'Agency meeting' } },
-        { value: 'question', label: { ru: 'Просто вопрос', en: 'Just a question' } },
+        {
+          value: 'viewing',
+          label: { ru: 'Просмотр квартиры', en: 'Book a viewing' },
+          description: {
+            ru: 'Покажем квартиру в удобное время',
+            en: 'We show the flat when it suits you',
+          },
+          image: { path: 'pages/office.svg' },
+        },
+        {
+          value: 'agency',
+          label: { ru: 'Встреча агентства', en: 'Agency meeting' },
+          description: { ru: 'Для агентов с клиентом', en: 'For agents with a client' },
+          image: { path: 'pages/services.svg' },
+        },
+        {
+          value: 'question',
+          label: { ru: 'Просто вопрос', en: 'Just a question' },
+          description: { ru: 'Ответим письмом', en: 'We answer by e-mail' },
+        },
       ],
     },
     is_required: true,

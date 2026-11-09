@@ -27,6 +27,13 @@ and so does the order of the questions. Everything on the other tabs waits for �
 3. Under «Choices», press «Add a choice» for each answer and fill in «Value» and «Label».
 4. Press «Save». A field like this cannot be saved without a choice.
 
+## How to show the answers as cards with a picture
+
+1. Open a «One of several» or «Several of several» field.
+2. In «Show the choices as», choose «Cards», and set «Cards in a row».
+3. Under each choice, write a description and pick a picture from the media library.
+4. Press «Save». The answer in a submission stays the label of the choice.
+
 ## How to ask a question only for some answers
 
 1. Put a question with ready answers above it: «Drop-down», «One of several», «Several of several»
@@ -136,6 +143,22 @@ Only a question with ready answers above this one can be a condition, so drag it
 offered. Several answers in one row mean any of them, several rows mean all of them. A visitor does not
 see a hidden question, and an answer to it is not kept. A question others depend on cannot be deleted,
 dragged below them or lose an answer they count on: change their «Show» first.
+
+## Show the choices as
+
+Cards suit answers that need a few words or a picture to be told apart. Each card is still a real
+choice: it is picked with a click anywhere on it or with the keyboard, like a list. The description and
+the picture are only how the field looks — the submission keeps the label of the choice.
+
+## Cards in a row
+
+How many cards stand side by side on a wide form. On a narrow screen, and in a narrow column, the cards
+stand one under another whatever is set here.
+
+## Picture
+
+A file of the media library, shown above the label of the card. The field appears only when the site
+has the media library. If the file is deleted later, the card stays, without a picture.
 
 ## Required
 

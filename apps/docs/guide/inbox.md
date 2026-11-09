@@ -93,6 +93,22 @@ until it is closed, so a save never drops it quietly. The list of fields says un
 asked («if Purpose = Agency meeting») and marks a row whose condition would be refused — one edited
 through `inbox_form_save` or older than the check; a drag the server refuses puts the order back.
 
+### Cards
+
+A `radio` or a `checkbox` may be drawn as cards (FORM_STEPS §5): `options.view: "cards"` and
+`options.columns` (1–4), and a choice takes a `description` (in every language, like the label) and
+an `image` — a file of the media library, kept by its key `{ "path": "media/…" }` and given as
+`{ "id": 62 }` or `{ "path": … }` through `inbox_form_save`. The page asks the library for every
+picture of the form at once; a file gone from it is a card without a picture. Without
+`webx-ui/module-media` the dialog has no picture column and a key already written shows nothing. A
+list is the default and is not written down; back to a list, the columns go and what the choices
+carry stays. It is the look of the field only: the answer is the label and the value, as from a list.
+
+In the panel it is «Show the choices as: List | Cards» in the field dialog, «Cards in a row», and
+under each choice a description and the picture (`wx-media` of the media module, when the panel has
+it). A view of the form published before cards (`vendor/webx-inbox/form.blade.php`) keeps drawing
+them as a list: the cards come with `:view`, `:columns` and `$control['cards']`.
+
 ### Answers keep a copy of the question
 
 Beside every answer sit the field's name, label and type **as they were when it arrived**:

@@ -17,6 +17,7 @@ use Illuminate\View\Component;
 use WebxUi\Admin\Shortcodes\Shortcodes;
 use WebxUi\Inbox\Antispam\Captcha;
 use WebxUi\Inbox\Antispam\Guard;
+use WebxUi\Inbox\Fields\ChoiceImages;
 use WebxUi\Inbox\Fields\Conditions;
 use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\Models\Field;
@@ -153,6 +154,10 @@ final class Form extends Component
     {
         $controls = [];
         $byKey = $fields->keyBy(static fn (Field $field): string => $field->key());
+        // The pictures of every card of the form, in one query of the library (FORM_STEPS §5.1).
+        $images = ChoiceImages::resolve($fields->filter(static fn (Field $field): bool => $field->isCards())
+            ->flatMap(static fn (Field $field): array => array_filter(array_column($field->cardChoices(), 'image'), is_string(...)))
+            ->values()->all());
 
         foreach ($fields as $field) {
             $key = $field->key();
@@ -179,6 +184,12 @@ final class Form extends Component
                 'placeholder' => $placeholder !== '' ? $placeholder : null,
                 'value' => $this->values[$key] ?? $this->values[(string) $field->name] ?? null,
                 'choices' => $choices,
+                // Cards (FORM_STEPS §5.2): the same radios or ticks, each with its description and
+                // picture. Beside `choices` rather than in it: a site's own view reads those as
+                // `value => label`, and keeps working — as a list.
+                'cards' => $field->isCards() ? self::cards($field, $images) : null,
+                'view' => $field->isCards() ? 'cards' : 'list',
+                'columns' => $field->isCards() && is_numeric($field->option('columns')) ? (int) $field->option('columns') : null,
                 'multiple' => $field->type === FieldType::File && $field->isMultiple(),
                 'rows' => $field->type === FieldType::Textarea ? (is_numeric($rows) && (int) $rows > 0 ? (int) $rows : 5) : null,
                 // The panel offers "full width" per field; on the site it is a class, and the base
@@ -196,6 +207,23 @@ final class Form extends Component
         }
 
         return $controls;
+    }
+
+    /**
+     * The choices of a field drawn as cards, as `<x-webx-field>` takes them: with the words and the
+     * address of the picture. A picture the library no longer has is none.
+     *
+     * @param  array<string, array{src: string, srcset: ?string, width: ?int, height: ?int}>  $images
+     * @return list<array<string, mixed>>
+     */
+    private static function cards(Field $field, array $images): array
+    {
+        return array_map(static fn (array $choice): array => [
+            'value' => $choice['value'],
+            'label' => $choice['label'],
+            'description' => $choice['description'],
+            'image' => $choice['image'] !== null ? ($images[$choice['image']] ?? null) : null,
+        ], $field->cardChoices());
     }
 
     /**

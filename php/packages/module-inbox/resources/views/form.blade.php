@@ -19,6 +19,9 @@
       · `:again="$again"` — `<x-webx-inbox::form again>`, the way back to the fields after the thank-you,
       · `:when`, `:unless`, `:condition` on a field — when it is shown (FORM_STEPS §4.3); a view without
         them shows every field, and the intake still throws away the answers to the hidden ones,
+      · `:view`, `:columns` and `$control['cards']` as the choices — a group of radios or ticks drawn
+        as cards (FORM_STEPS §5); a view without them draws the same choices as a list, the answer
+        is the same,
       · `data-webx-attribution` — the widgets' attribution.js posts the campaign, the referrer and the
         landing page (`webx-inbox.attribution`, FORM_STEPS §8); a view without it sends none of them.
 
@@ -62,9 +65,11 @@
                 :hint="$control['hint']"
                 :placeholder="$control['placeholder']"
                 :value="$control['value']"
-                :choices="$control['choices']"
+                :choices="$control['cards'] ?? $control['choices']"
                 :multiple="$control['multiple']"
                 :rows="$control['rows']"
+                :view="$control['view'] ?? 'list'"
+                :columns="$control['columns'] ?? null"
                 :when="$control['when'] ?? null"
                 :unless="$control['unless'] ?? null"
                 :condition="$control['condition'] ?? null"

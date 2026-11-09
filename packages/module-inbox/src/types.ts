@@ -27,7 +27,14 @@ export type StatusColor = (typeof STATUS_COLORS)[number]
 export interface FieldChoice {
   value: string
   label: LocalizedValue | string
+  /** Under the label of a card (FORM_STEPS §5): the look of the field, never part of an answer. */
+  description?: LocalizedValue | string
+  /** A file of the media library, kept by its key; `url` only while it is being picked. */
+  image?: { path: string; url?: string } | null
 }
+
+/** How a group of radios or ticks is drawn on the site. */
+export type ChoiceView = 'list' | 'cards'
 
 /**
  * What a field may be configured with. Which keys mean anything depends on the type (§4), and
@@ -40,6 +47,9 @@ export interface FieldOptions {
   min?: number | string
   max?: number | string
   choices?: FieldChoice[]
+  /** Radio and checkbox: cards instead of a list, so many to a row (1–4) on a wide form. */
+  view?: ChoiceView
+  columns?: number
   text?: LocalizedValue | string
   max_size?: number
   extensions?: string[]
