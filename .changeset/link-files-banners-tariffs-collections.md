@@ -8,3 +8,5 @@ Banners, tariffs and product collections: the button of a banner (and its «Butt
 Links: `LinkUrls::candidates()` asks the library for the files of a whole set of links at once.
 
 Tariffs: a site's own copy of the `tariffs` block type keeps its old template — a file opens rather than downloads — until `webx:blocks:import tariffs --path=vendor/webx-ui/module-tariffs/resources/blocks --replace=tariffs --publish`.
+
+Banners: in a slider that fades, the layers of a slide faded out no longer take the click meant for a button of the slide shown — the slide's `pointer-events: none` did not reach a layer that says `auto`.

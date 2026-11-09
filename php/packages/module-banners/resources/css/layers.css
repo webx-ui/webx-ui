@@ -179,6 +179,13 @@
   pointer-events: auto;
 }
 
+/* A faded-out slide of the slider is still there, stacked over the shown one, and the slide's own
+   `pointer-events: none` does not reach a layer that says `auto`: its words would take the click
+   meant for the button underneath. */
+.webx-slider__slide--fade:not(.is-active) .webx-banner__layer {
+  pointer-events: none;
+}
+
 .webx-banner__layer--image {
   padding: 0;
 }
