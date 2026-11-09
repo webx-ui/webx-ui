@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace WebxUi\Banners\Rendering;
 
+use WebxUi\Banners\View\Components\Banner;
+
 /**
  * The CSS and the small script a place of banners needs, printed once a page however many
  * banners it has (§4.2 of the layers spec).
@@ -57,7 +59,7 @@ final class Stylesheet
     /**
      * What turns a `slider` place's strip and opens a random banner of a `random` place — once a
      * page. Without it, the first banner of a place is seen. A banner's video is not here: it is
-     * the widgets' backdrop, played by their script ({@see \WebxUi\Banners\View\Components\Banner}).
+     * the widgets' backdrop, played by their script ({@see Banner}).
      */
     public function scripts(): string
     {
