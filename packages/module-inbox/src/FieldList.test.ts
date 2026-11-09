@@ -102,3 +102,55 @@ describe('WxInboxFieldList and conditions', () => {
     expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([[purpose, agency]])
   })
 })
+
+describe('WxInboxFieldList and steps (FORM_STEPS §9.1)', () => {
+  afterEach(() => {
+    document.body.innerHTML = ''
+  })
+
+  const step = (id: number, key: string, options = {}): InboxField => ({
+    ...field(id, key, 'step', options),
+    title: { en: key === 'meeting' ? 'Choose a time' : 'Your details' },
+  })
+
+  it('draws a step row as a numbered heading, says when it is shown and when it is empty', async () => {
+    list([
+      purpose,
+      step(4, 'meeting', { when: { purpose: ['agency'] } }),
+      agency,
+      step(5, 'details'),
+    ])
+    await flushPromises()
+
+    const steps = [...document.querySelectorAll('.wx-inbox-field.is-step')]
+    expect(steps).toHaveLength(2)
+    // The purpose above the first row is step 1, so the rows are 2 and 3.
+    expect(steps[0]!.textContent).toContain('Step 2 · Choose a time')
+    expect(steps[0]!.textContent).toContain('if Purpose = Agency meeting')
+    expect(steps[0]!.textContent).not.toContain('Empty')
+    expect(steps[1]!.textContent).toContain('Step 3 · Your details')
+    expect(steps[1]!.textContent).toContain('drag a field below it')
+    // A step row says nothing of what a question is: no type, no «Required».
+    expect(steps[0]!.textContent).not.toContain('Step ·')
+
+    // The field under a row stands in from it; the one above the first row does not.
+    const rows = [...document.querySelectorAll('.wx-inbox-field:not(.is-step)')]
+    expect(rows[0]!.classList.contains('is-inside')).toBe(false)
+    expect(rows[1]!.classList.contains('is-inside')).toBe(true)
+  })
+
+  it('offers «+ Step» only to a form that has a field, and not past ten steps', async () => {
+    const { wrapper } = list([])
+    await flushPromises()
+
+    const add = () => wrapper.findAll('button').find((one) => one.text() === 'Step')!
+    expect(add().attributes('disabled')).toBeDefined()
+
+    await wrapper.setProps({ modelValue: [purpose] })
+    expect(add().attributes('disabled')).toBeUndefined()
+
+    const nine = Array.from({ length: 9 }, (_, at) => step(10 + at, `s${at}`))
+    await wrapper.setProps({ modelValue: [purpose, ...nine] })
+    expect(add().attributes('disabled')).toBeDefined()
+  })
+})

@@ -28,4 +28,7 @@ return [
     'condition-not-before' => 'Warunek „:key” pola „:field” wskazuje „:name”, które nie stoi wyżej. Warunek wskazuje tylko pole powyżej.',
     'condition-unknown-value' => 'Warunek „:key” pola „:field” oczekuje wartości „:value” pola „:name”, której to pole nie oferuje.',
     'field-has-dependents' => 'Pole „:field” jest wskazane w warunkach pól :fields. Najpierw zmień te warunki.',
+    'step-empty' => 'Po kroku :field nie ma żadnego pola. Dodaj pod nim pole albo usuń krok.',
+    'step-too-many' => 'Formularz ma najwyżej :max kroków.',
+    'step-unknown' => 'Formularz zmienił się, odkąd otwarto stronę. Odśwież stronę.',
 ];

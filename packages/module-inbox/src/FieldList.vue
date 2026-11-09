@@ -24,6 +24,7 @@ import {
 import FieldDialog from './FieldDialog.vue'
 import { conditionOf, describeCondition, problemsOf, type ConditionProblem } from './conditions'
 import { createInboxApi } from './api'
+import { emptySteps, insideStep, isStep, MAX_STEPS, stepCount, stepNumbers } from './steps'
 import { useInboxMessages } from './i18n'
 import type { InboxField, InboxForm } from './types'
 
@@ -49,7 +50,13 @@ const message = useErrorText()
 
 const edit = createModal<
   InboxField,
-  { field: InboxField | null; form: InboxForm; taken: string[]; fields: InboxField[] }
+  {
+    field: InboxField | null
+    form: InboxForm
+    taken: string[]
+    fields: InboxField[]
+    step?: boolean
+  }
 >(FieldDialog)
 
 function name(field: InboxField): string {
@@ -58,6 +65,8 @@ function name(field: InboxField): string {
 
 /** What the row says about itself, under its name: the type, then what is true of it. */
 function marks(field: InboxField): string[] {
+  if (isStep(field)) return []
+
   return [
     t(`fields.type-${field.type}`),
     ...(field.is_required ? [t('fields.is-required')] : []),
@@ -107,10 +116,27 @@ const problems = computed(
 
 const empty = computed(() => fields.value.length === 0)
 
-async function open(field: InboxField | null): Promise<void> {
+/*
+ * The steps (FORM_STEPS §9.1): a step row is a heading of the list, dragged like a field — it moves
+ * the border between two steps, not the fields under it. Numbered as the site counts them, the
+ * fields above the first row being step 1; one with no field under it says so, the site skips it.
+ */
+const numbers = computed(() => stepNumbers(fields.value))
+const emptyRows = computed(() => emptySteps(fields.value))
+const hasSteps = computed(() => numbers.value.size > 0)
+/* «+ Step» on an empty form would be a step of nothing; past ten the indicator does not fit. */
+const canAddStep = computed(
+  () => !empty.value && stepCount(fields.value) + (hasSteps.value ? 1 : 2) <= MAX_STEPS,
+)
+
+function stepHeading(field: InboxField): string {
+  return t('fields.step-numbered', { number: numbers.value.get(field.id) ?? 1, title: name(field) })
+}
+
+async function open(field: InboxField | null, step = false): Promise<void> {
   // The names the other fields answer to: a new one made out of its label must not be one of them.
   const taken = fields.value.filter((one) => one.id !== field?.id).map((one) => one.key)
-  const saved = await edit({ field, form: props.form, taken, fields: fields.value })
+  const saved = await edit({ field, form: props.form, taken, fields: fields.value, step })
 
   if (!saved) return
 
@@ -123,7 +149,7 @@ async function open(field: InboxField | null): Promise<void> {
 async function remove(field: InboxField): Promise<void> {
   const agreed = await confirm({
     title: t('fields.delete-title', { field: name(field) }),
-    message: t('fields.delete-text'),
+    message: isStep(field) ? t('fields.delete-step-text') : t('fields.delete-text'),
     confirmText: t('fields.delete'),
     cancelText: t('fields.cancel'),
     tone: 'danger',
@@ -173,10 +199,16 @@ async function reorder(): Promise<void> {
 <template>
   <wx-card :title="t('panel.tab-fields')">
     <template v-if="canManage" #extra>
-      <wx-button type="primary" size="sm" @click="open(null)">
-        <template #icon><wx-icon name="plus" /></template>
-        {{ t('fields.new-field') }}
-      </wx-button>
+      <div class="wx-inbox-fields__add">
+        <wx-button variant="outline" size="sm" :disabled="!canAddStep" @click="open(null, true)">
+          <template #icon><wx-icon name="plus" /></template>
+          {{ t('fields.add-step') }}
+        </wx-button>
+        <wx-button type="primary" size="sm" @click="open(null)">
+          <template #icon><wx-icon name="plus" /></template>
+          {{ t('fields.new-field') }}
+        </wx-button>
+      </div>
     </template>
 
     <wx-empty
@@ -197,7 +229,35 @@ async function reorder(): Promise<void> {
       @move="reorder"
     >
       <template #default="{ item }">
-        <div class="wx-inbox-field">
+        <div v-if="isStep(item)" class="wx-inbox-field is-step">
+          <div class="wx-inbox-field__name">
+            <wx-icon name="list" size="sm" aria-hidden="true" />
+            <wx-text weight="semibold" truncate>{{ stepHeading(item) }}</wx-text>
+            <wx-badge v-if="!item.is_enabled" type="default">{{ t('panel.off') }}</wx-badge>
+            <wx-badge v-if="emptyRows.has(item.id)" type="warning">
+              {{ t('fields.step-empty-badge') }}
+            </wx-badge>
+            <wx-badge v-if="problems.get(item.id)?.length" type="danger">
+              {{ t('fields.condition-broken') }}
+            </wx-badge>
+          </div>
+          <wx-text v-if="emptyRows.has(item.id)" size="sm" tone="warning">
+            {{ t('fields.step-empty') }}
+          </wx-text>
+          <wx-text v-if="shownBy(item)" size="sm" tone="muted" class="wx-inbox-field__condition">
+            <wx-icon name="eye" size="sm" aria-hidden="true" />
+            <span>{{ shownBy(item) }}</span>
+          </wx-text>
+          <wx-text
+            v-for="problem in problems.get(item.id) ?? []"
+            :key="problem"
+            size="sm"
+            tone="danger"
+          >
+            {{ problem }}
+          </wx-text>
+        </div>
+        <div v-else :class="['wx-inbox-field', { 'is-inside': insideStep(fields, item) }]">
           <div class="wx-inbox-field__name">
             <wx-text weight="medium" truncate>{{ name(item) }}</wx-text>
             <wx-badge v-if="!item.is_enabled" type="default">{{ t('panel.off') }}</wx-badge>
@@ -235,6 +295,21 @@ async function reorder(): Promise<void> {
 </template>
 
 <style scoped>
+.wx-inbox-fields__add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wx-space-8);
+}
+
+/* A step row is a heading of the list; the fields under it stand a little in from it. */
+.wx-inbox-field.is-step {
+  padding-block: var(--wx-space-4);
+}
+
+.wx-inbox-field.is-inside {
+  padding-inline-start: var(--wx-space-16);
+}
+
 .wx-inbox-field {
   display: flex;
   flex-direction: column;

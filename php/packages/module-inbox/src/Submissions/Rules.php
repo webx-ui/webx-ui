@@ -8,6 +8,7 @@ use Closure;
 use Illuminate\Http\Request;
 use WebxUi\Inbox\Fields\Conditions;
 use WebxUi\Inbox\Fields\FieldType;
+use WebxUi\Inbox\Fields\Steps;
 use WebxUi\Inbox\Models\Field;
 use WebxUi\Inbox\Models\Form;
 use WebxUi\Inbox\Storage\FileStore;
@@ -32,16 +33,26 @@ final class Rules
      * it returns. Without — the rules of every field, which is what the browser is given: it
      * needs those of the fields hidden now for when they are shown.
      *
+     * `$upTo` — the name of a step (FORM_STEPS §3.4): only the fields of the steps up to it, itself
+     * included, which is what the door that checks a step asks for. A step row has no rules: it is
+     * never answered.
+     *
      * @param  array<array-key, mixed>|null  $values
+     * @param  list<string>|null  $upTo  the keys of {@see Steps::upTo()}
      * @return array<string, mixed>
      */
-    public function for(Form $form, ?array $values = null): array
+    public function for(Form $form, ?array $values = null, ?array $upTo = null): array
     {
         $rules = [];
         $visible = $values === null ? null : Conditions::visible($form->liveFields, $values);
+        $within = $upTo === null ? null : array_flip($upTo);
 
-        foreach ($form->liveFields as $field) {
+        foreach ($form->questions() as $field) {
             if ($visible !== null && ! ($visible[$field->key()] ?? true)) {
+                continue;
+            }
+
+            if ($within !== null && ! isset($within[$field->key()])) {
                 continue;
             }
 
@@ -75,7 +86,7 @@ final class Rules
     {
         $attributes = [];
 
-        foreach ($form->liveFields as $field) {
+        foreach ($form->questions() as $field) {
             $label = (string) $field->title;
 
             if ($label !== '') {

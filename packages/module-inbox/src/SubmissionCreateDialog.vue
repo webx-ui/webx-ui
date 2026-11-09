@@ -22,6 +22,7 @@ import {
 } from '@webx-ui/core'
 import { createInboxApi } from './api'
 import { useInboxMessages } from './i18n'
+import { questionsOf } from './steps'
 import type { InboxField, InboxForm, InboxSubmission } from './types'
 
 /**
@@ -84,7 +85,7 @@ async function load(): Promise<void> {
   try {
     const form = await api.form(props.form.id)
 
-    fields.value = (form.fields ?? []).filter((field) => field.is_enabled)
+    fields.value = questionsOf(form.fields ?? [])
 
     for (const field of fields.value) {
       values.value[field.key] =

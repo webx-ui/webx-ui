@@ -37,7 +37,8 @@ final class SubmissionExportController
     public function __invoke(Request $request, Form $form): StreamedResponse
     {
         /** @var list<Field> $fields */
-        $fields = $form->fields()->get()->all();
+        // A row that starts a step (FORM_STEPS §3.1) is never answered and is no column.
+        $fields = $form->fields()->get()->filter(static fn (Field $field): bool => $field->type->isQuestion())->values()->all();
 
         $list = ListQuery::for($form);
         $request->validate($list->rules());

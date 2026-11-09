@@ -28,4 +28,7 @@ return [
     'condition-not-before' => 'La condizione «:key» di «:field» nomina «:name», che non sta sopra. Una condizione nomina solo un campo sopra.',
     'condition-unknown-value' => 'La condizione «:key» di «:field» si aspetta il valore «:value» di «:name», che quel campo non offre.',
     'field-has-dependents' => 'Il campo «:field» è nominato nelle condizioni di :fields. Cambia prima quelle condizioni.',
+    'step-empty' => 'Il passo :field non ha alcun campo dopo di sé. Metti un campo sotto o eliminalo.',
+    'step-too-many' => 'Un modulo ha al massimo :max passi.',
+    'step-unknown' => 'Il modulo è cambiato da quando la pagina è stata aperta. Ricarica la pagina.',
 ];

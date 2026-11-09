@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use WebxUi\Admin\Links\SiteRoutes;
 use WebxUi\Inbox\Http\Controllers\ScriptController;
+use WebxUi\Inbox\Http\Controllers\StepCheckController;
 use WebxUi\Inbox\Http\Controllers\SubmitController;
 use WebxUi\Inbox\Http\Middleware\SpeakTheLanguageOfThePage;
 
@@ -43,15 +44,19 @@ Route::group([SiteRoutes::SERVICE => true], static function () use ($prefix): vo
      * the language is the one piece of that the answer depends on — hence
      * {@see SpeakTheLanguageOfThePage}, which takes it from the form rather than guessing.
      */
-    Route::post("{$prefix}/{slug}", SubmitController::class)
-        ->middleware([
-            EncryptCookies::class,
-            AddQueuedCookiesToResponse::class,
-            StartSession::class,
-            ShareErrorsFromSession::class,
-            SubstituteBindings::class,
-            SpeakTheLanguageOfThePage::class,
-            ThrottleRequests::class.':webx-inbox',
-        ])
-        ->name('webx.inbox.submit');
+    $stack = [
+        EncryptCookies::class,
+        AddQueuedCookiesToResponse::class,
+        StartSession::class,
+        ShareErrorsFromSession::class,
+        SubstituteBindings::class,
+        SpeakTheLanguageOfThePage::class,
+        ThrottleRequests::class.':webx-inbox',
+    ];
+
+    Route::post("{$prefix}/{slug}", SubmitController::class)->middleware($stack)->name('webx.inbox.submit');
+
+    // «Next» of a form of steps (FORM_STEPS §3.4): the same stack and the same limit of attempts,
+    // and nothing is taken — 204 or the errors of the step.
+    Route::post("{$prefix}/{slug}/check", StepCheckController::class)->middleware($stack)->name('webx.inbox.check');
 });

@@ -26,6 +26,7 @@ use WebxUi\Inbox\Audit\LegacyViews;
 use WebxUi\Inbox\Audit\NoRecipients;
 use WebxUi\Inbox\Audit\NotificationTrouble;
 use WebxUi\Inbox\Audit\SpamWithoutCaptcha;
+use WebxUi\Inbox\Audit\StepsInOldView;
 use WebxUi\Inbox\Console\PruneSubmissionsCommand;
 use WebxUi\Inbox\Doctor\StrandedForms;
 use WebxUi\Inbox\Events\SubmissionStored;
@@ -133,6 +134,9 @@ class InboxServiceProvider extends ServiceProvider
             // A form view the site published before the widgets' engine: it works for an alias
             // period, and this names it before the period ends (WIDGETS §20, W6.4).
             $this->app->make(AuditChecks::class)->register($this->app->make(LegacyViews::class));
+
+            // A form of steps and a view of the site that prints it on one page (FORM_STEPS §12.5).
+            $this->app->make(AuditChecks::class)->register($this->app->make(StepsInOldView::class));
         }
 
         // Notes on a submission are the panel's own feature, not this module's (§2.17): the

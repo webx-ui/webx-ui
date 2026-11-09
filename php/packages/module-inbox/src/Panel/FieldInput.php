@@ -77,6 +77,9 @@ final class FieldInput
         $name = trim((string) ($input['name'] ?? ''));
         $options = $input['options'] ?? null;
 
+        // A step row is never answered: required, half width and a column mean nothing to it.
+        $question = $type->isQuestion();
+
         return [
             'name' => $name === '' ? null : $name,
             'type' => $type,
@@ -85,11 +88,11 @@ final class FieldInput
             'help' => self::words($input, 'help'),
             'options' => FieldOptions::clean($type, is_array($options) ? $options : []),
             'is_enabled' => self::boolean($input, 'is_enabled', true),
-            'is_required' => self::boolean($input, 'is_required'),
+            'is_required' => $question && self::boolean($input, 'is_required'),
             // Most fields take the whole line, and a form of half-width fields is the rarer
             // thing to ask for; the default matches the column of the migration.
-            'is_fullsize' => self::boolean($input, 'is_fullsize', true),
-            'in_table' => self::boolean($input, 'in_table'),
+            'is_fullsize' => ! $question || self::boolean($input, 'is_fullsize', true),
+            'in_table' => $question && self::boolean($input, 'in_table'),
         ];
     }
 

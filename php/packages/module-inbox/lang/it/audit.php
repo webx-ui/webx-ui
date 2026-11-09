@@ -11,4 +11,5 @@ return [
     'captcha-unused' => 'Il modulo :form (:slug) non ha captcha e il sito ha le chiavi per :providers',
     'spam-without-captcha' => 'Il modulo :form (:slug) non ha captcha e riceve spam. In :days giorni, segnati come spam: :spam, rifiutati: :refused',
     'legacy-views' => 'Il modulo delle richieste è sostituito da una vista precedente al motore dei moduli: :path',
+    'steps-in-old-view' => 'Il modulo :form (:slug) ha dei passi, e la vista del sito :path lo mostra su una sola pagina',
 ];

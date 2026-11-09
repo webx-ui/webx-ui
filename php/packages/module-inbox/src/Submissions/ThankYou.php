@@ -98,7 +98,7 @@ final class ThankYou
     {
         $answers = [];
 
-        foreach ($form->liveFields as $field) {
+        foreach ($form->questions() as $field) {
             $value = $request->input('fields.'.$field->key());
 
             if ($field->type !== FieldType::File && is_scalar($value)) {

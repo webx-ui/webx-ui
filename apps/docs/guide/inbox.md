@@ -109,6 +109,40 @@ under each choice a description and the picture (`wx-media` of the media module,
 it). A view of the form published before cards (`vendor/webx-inbox/form.blade.php`) keeps drawing
 them as a list: the cards come with `:view`, `:columns` and `$control['cards']`.
 
+### Steps
+
+A row of type `step` in the list of fields starts a step (FORM_STEPS §3): the fields after it, down
+to the next such row, are asked on one screen. No table and no migration — the order is the fields'
+`position`, dragged as they are. The fields above the first row are step 1, named by the form's
+title; a form without such a row is a flat form, printed byte for byte as before.
+
+A step row uses the columns it has: `title` is its heading, `help` the line under it, `placeholder`
+the short label of the indicator, `options.next-text` the words of its «Next», and
+`options.when` / `unless` the condition of the whole step, as a field's. A step switched off takes its
+fields with it; required, half width and a column mean nothing to it and are never written. It is
+never answered: no value in a submission, no column in the list or the CSV, nothing in the letter.
+
+On the site the form is the widgets' `<x-webx-form steps :check>` with an `<x-webx-form.step>` per
+step ([Forms](./forms#steps)): one step at a time, «Next» checking it in the browser and then at
+
+```
+POST /webx/forms/{slug}/check     webx_step=<the step>, no files — 204, or a 422 under the fields
+```
+
+— the rules of the fields of the steps up to it, with the conditions read from what was sent. Nothing
+is written and the limit of accepted submissions is not touched; the origin check and the route's
+limit of attempts are the intake's. Without JavaScript every step is a fieldset on one page, and the
+intake checks it all at once. A step hidden by its condition is hidden whole: its answers are not
+checked and not kept.
+
+In the panel «Step» puts a row at the end of the list; it is a heading of the list, numbered as the
+site counts, and dragged like a field. A step with nothing under it is marked «Empty» and skipped by
+the site; `inbox_form_save` refuses one (`step.empty`). More than ten steps are refused everywhere.
+
+**A view of the site.** `is beside`, which is still every field in one flat list.
+A `form.blade.php` published before the steps prints the whole form on one page; the audit's
+`inbox.steps_in_old_view` names it.
+
 ### Answers keep a copy of the question
 
 Beside every answer sit the field's name, label and type **as they were when it arrived**:
@@ -626,6 +660,11 @@ matched by id or machine name is updated, one sent with `remove: true` is put as
 given through it stay readable. Everything that changes something takes `dry_run: true` and then
 reports what it would have done. The form's description is `options.description`, per language,
 like the thank-you.
+
+**Steps.** A step is a field of type `step` (see [Steps](#steps)); `inbox_form_get` of a form of steps
+adds `steps: [{ name, title, fields }]`, and the `dry_run` of `inbox_form_save` says the steps the
+form would have. New fields go to the end in the order sent; `order` — the machine names in the order
+they go — puts a step row where it belongs in a form that already has fields.
 
 **Two things are deliberately missing.** Receiving a submission is not a tool: the intake is a
 public door with the antispam in front of it, and a second way in that skipped both would be the

@@ -132,6 +132,35 @@ final class ConditionPlan
     }
 
     /**
+     * Refuse what is wrong with the steps of a whole layout (FORM_STEPS §3.1): a step with no field
+     * after it, more steps than fit — what `inbox_form_save` checks on the form as the call leaves it.
+     *
+     * @param  list<array{key: string, type: FieldType, options: array<string, mixed>}>  $layout
+     */
+    public static function assertSteps(array $layout, string $at = 'fields'): void
+    {
+        $messages = array_map(Steps::message(...), Steps::problems($layout));
+
+        if ($messages !== []) {
+            throw ValidationException::withMessages([$at => array_values(array_unique($messages))]);
+        }
+    }
+
+    /**
+     * Refuse a step more than fit (FORM_STEPS §3.1). The panel checks only this: «+ Step» puts the
+     * row at the end, where it is empty until a field is dragged under it — the list marks it so,
+     * and the site does not print a step with nothing in it.
+     *
+     * @param  list<array{key: string, type: FieldType, options: array<string, mixed>}>  $layout
+     */
+    public static function assertStepRoom(array $layout, string $at = 'type'): void
+    {
+        if (Steps::count($layout) > Steps::MAX) {
+            throw ValidationException::withMessages([$at => [Steps::message(['field' => '', 'code' => Steps::TOO_MANY])]]);
+        }
+    }
+
+    /**
      * A field that others' conditions name is not deleted: they would be left counting on an
      * answer nobody can give (FORM_STEPS §4.2).
      *

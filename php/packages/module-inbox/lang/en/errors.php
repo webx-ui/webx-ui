@@ -28,4 +28,7 @@ return [
     'condition-not-before' => 'The condition “:key” of “:field” names “:name”, which does not stand above it. A condition names only a field above.',
     'condition-unknown-value' => 'The condition “:key” of “:field” counts on the value “:value” of “:name”, which that field does not offer.',
     'field-has-dependents' => 'The field “:field” is named in the conditions of :fields. Change those conditions first.',
+    'step-empty' => 'The step :field has no field after it. Put a field under it or remove it.',
+    'step-too-many' => 'A form has at most :max steps.',
+    'step-unknown' => 'The form has changed since the page was opened. Reload the page.',
 ];

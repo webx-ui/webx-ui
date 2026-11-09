@@ -107,6 +107,9 @@ final class Conditions
      * no value — the configurator's rule — so a choice made in a field that disappeared does not
      * reach a field after it.
      *
+     * A step row (FORM_STEPS §3.1) is shown by its own condition, and a field of a hidden step —
+     * or of one switched off — is hidden whatever its own says: the step is hidden whole.
+     *
      * @param  iterable<Field>  $fields  the live fields, in their order
      * @param  array<array-key, mixed>  $values  what arrived under `fields`
      * @return array<string, bool>
@@ -116,10 +119,19 @@ final class Conditions
         $visible = [];
         /** @var array<string, list<string>> $answers */
         $answers = [];
+        $step = true;
 
         foreach ($fields as $field) {
             $key = $field->key();
-            $shown = self::shows(self::of($field->options), $answers);
+
+            if ($field->type === FieldType::Step) {
+                $step = $field->is_enabled !== false && self::shows(self::of($field->options), $answers);
+                $visible[$key] = $step;
+
+                continue;
+            }
+
+            $shown = $step && self::shows(self::of($field->options), $answers);
             $visible[$key] = $shown;
 
             if ($shown && in_array($field->type, self::SOURCES, true)) {

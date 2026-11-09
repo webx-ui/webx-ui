@@ -30,6 +30,7 @@ function dialog(
   taken: string[] = [],
   fields: InboxField[] = [],
   extra: Partial<AdminContext> = {},
+  more: Record<string, unknown> = {},
 ) {
   const post = vi
     .fn()
@@ -49,7 +50,7 @@ function dialog(
   } as unknown as AdminContext
 
   const wrapper = mount(FieldDialog, {
-    props: { field, form, taken, fields },
+    props: { field, form, taken, fields, ...more },
     attachTo: document.body,
     global: {
       plugins: [WebxUI],
@@ -465,6 +466,68 @@ describe('WxInboxFieldDialog', () => {
 
       expect(view(wrapper)).toBeUndefined()
       expect(document.querySelectorAll('.wx-inbox-choices__description')).toHaveLength(0)
+    })
+  })
+
+  describe('a step (FORM_STEPS §9.1)', () => {
+    it('asks for what a step has — no type, no «Required» — and saves a row of type step', async () => {
+      const { wrapper, post, control, labels } = dialog(null, [], [phone], {}, { step: true })
+      await flushPromises()
+
+      expect(document.body.textContent).toContain('New step')
+      expect(labels()).not.toContain('Type')
+      expect(labels()).toEqual(
+        expect.arrayContaining([
+          'Title of the step',
+          'Short label in the indicator',
+          'Line under the title',
+          'Words of the «Next» button',
+        ]),
+      )
+      const ticks = wrapper
+        .findAllComponents({ name: 'WxCheckbox' })
+        .map((one) => one.props('label'))
+      expect(ticks).toEqual(['Shown'])
+
+      control('Title of the step').vm.$emit('update:modelValue', { en: 'Your details' })
+      control('Words of the «Next» button').vm.$emit('update:modelValue', { en: 'Continue' })
+      await flushPromises()
+
+      // Named as a step, so a list of names tells it from a field.
+      expect(control('Name').props('modelValue')).toBe('step_your_details')
+
+      await wrapper
+        .findAllComponents({ name: 'WxButton' })
+        .find((one) => one.text() === 'Save')!
+        .trigger('click')
+      await flushPromises()
+
+      expect(post).toHaveBeenCalledWith(
+        '/api/cms/inbox/forms/1/fields',
+        expect.objectContaining({
+          type: 'step',
+          name: 'step_your_details',
+          title: { en: 'Your details' },
+          options: { 'next-text': { en: 'Continue' } },
+          is_required: false,
+          in_table: false,
+        }),
+      )
+    })
+
+    it('says that a step switched off takes its fields with it', async () => {
+      const row: InboxField = {
+        ...phone,
+        id: 9,
+        type: 'step',
+        key: 'step_x',
+        name: 'step_x',
+        is_enabled: false,
+      }
+      dialog(row, [], [phone, row])
+      await flushPromises()
+
+      expect(document.body.textContent).toContain('A step that is off takes its fields with it')
     })
   })
 })

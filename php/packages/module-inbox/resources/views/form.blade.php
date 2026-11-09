@@ -22,6 +22,10 @@
       · `:view`, `:columns` and `$control['cards']` as the choices — a group of radios or ticks drawn
         as cards (FORM_STEPS §5); a view without them draws the same choices as a list, the answer
         is the same,
+      · `$steps` — the steps of the form (FORM_STEPS §3), each an <x-webx-form.step> around its controls
+        (the same entries as `$controls`), `steps` and `:check` on the form; a view that prints only
+        `$controls` draws the whole form on one page, as a page without JavaScript sees it, and the
+        audit's `inbox.steps_in_old_view` says so,
       · `data-webx-attribution` — the widgets' attribution.js posts the campaign, the referrer and the
         landing page (`webx-inbox.attribution`, FORM_STEPS §8); a view without it sends none of them.
 
@@ -37,6 +41,8 @@
     :id="$formId"
     :rules="$rules"
     :again="$again"
+    :steps="($steps ?? []) !== []"
+    :check="$check ?? null"
     data-webx-form="{{ $form->slug }}"
     :data-webx-attribution="($attribution ?? false) ? '' : null"
     {{ $attributes->class(['webx-inbox-form', 'webx-inbox-form--'.$placement => $placement !== null]) }}
@@ -55,6 +61,47 @@
         <p class="webx-inbox-form__description">{{ $description }}</p>
     @endif
 
+@if (($steps ?? []) !== [])
+        @foreach ($steps as $step)
+            <x-webx-form.step
+                :name="$step['name']"
+                :title="$step['title']"
+                :hint="$step['hint']"
+                :label="$step['label']"
+                :next-label="$step['next']"
+                :when="$step['when']"
+                :unless="$step['unless']"
+                :condition="$step['condition']"
+            >
+                <div class="webx-inbox-form__fields">
+                    @foreach ($step['controls'] as $control)
+                    <x-webx-field
+                        :type="$control['type']"
+                        :name="$control['name']"
+                        :id="$control['id']"
+                        :label="$control['label']"
+                        :hint="$control['hint']"
+                        :placeholder="$control['placeholder']"
+                        :value="$control['value']"
+                        :choices="$control['cards'] ?? $control['choices']"
+                        :multiple="$control['multiple']"
+                        :rows="$control['rows']"
+                        :view="$control['view'] ?? 'list'"
+                        :columns="$control['columns'] ?? null"
+                        :when="$control['when'] ?? null"
+                        :unless="$control['unless'] ?? null"
+                        :condition="$control['condition'] ?? null"
+                        :class="'webx-inbox-form__field'.($control['half'] ? ' webx-inbox-form__field--half' : '')"
+                    >@if ($control['consent'] !== null){!! $control['consent'] !!}@endif</x-webx-field>
+                    @endforeach
+                </div>
+                {{-- On the last step, which the form's own button sends from. --}}
+                @if ($loop->last)
+                    @includeWhen($captcha !== null, 'webx-inbox::form.captcha', ['captcha' => $captcha])
+                @endif
+            </x-webx-form.step>
+        @endforeach
+@else
     <div class="webx-inbox-form__fields">
         @foreach ($controls as $control)
             <x-webx-field
@@ -79,6 +126,7 @@
     </div>
 
     @includeWhen($captcha !== null, 'webx-inbox::form.captcha', ['captcha' => $captcha])
+@endif
 
     <div class="webx-inbox-form__actions">
         <x-webx-form.submit>{{ $submitText }}</x-webx-form.submit>

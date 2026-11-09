@@ -52,8 +52,10 @@ const props = withDefaults(
     taken?: string[]
     /** The form's fields in their order: a condition names one of those above this field. */
     fields?: InboxField[]
+    /** A new row that starts a step (FORM_STEPS §3.1), not a question. */
+    step?: boolean
   }>(),
-  { taken: () => [], fields: () => [] },
+  { taken: () => [], fields: () => [], step: false },
 )
 
 const { resolve, dismiss, open } = useModal<InboxField>()
@@ -92,7 +94,7 @@ watch(
   () => props.field,
   (field) => {
     name.value = field?.name ?? ''
-    type.value = field?.type ?? 'text'
+    type.value = field?.type ?? (props.step ? 'step' : 'text')
     title.value = { ...(field?.title ?? {}) }
     placeholder.value = { ...(field?.placeholder ?? {}) }
     help.value = { ...(field?.help ?? {}) }
@@ -126,6 +128,8 @@ function nameOf([words, locale]: [string, string]): string {
   let base = slugify(words, '_', locale).slice(0, 60).replace(/_+$/, '')
 
   if (base === '') return ''
+  // A step is named as one, so the list of names — and an agent reading it — tells it from a field.
+  if (isStep.value) base = `step_${base}`.slice(0, 60)
   if (!/^[a-z]/.test(base)) base = `field_${base}`
 
   let candidate = base
@@ -160,6 +164,15 @@ const renamedFrom = computed(() => {
 const types = computed(() =>
   FIELD_TYPES.map((one) => ({ value: one, label: t(`fields.type-${one}`) })),
 )
+
+/** The row that starts a step: a title, its words, its condition — nothing a question has. */
+const isStep = computed(() => type.value === 'step')
+
+const dialogTitle = computed(() => {
+  if (isStep.value) return props.field ? t('fields.edit-step') : t('fields.new-step')
+
+  return props.field ? t('fields.edit-field') : t('fields.new-field')
+})
 
 const hasChoices = computed(() => ['select', 'radio', 'checkbox'].includes(type.value))
 
@@ -286,13 +299,11 @@ async function save(): Promise<void> {
 </script>
 
 <template>
-  <wx-dialog
-    v-model:open="open"
-    :title="field ? t('fields.edit-field') : t('fields.new-field')"
-    :width="720"
-  >
+  <wx-dialog v-model:open="open" :title="dialogTitle" :width="720">
     <div class="wx-inbox-field-form">
-      <wx-form-item :label="t('fields.type')">
+      <wx-text v-if="isStep" size="sm" tone="muted">{{ t('fields.step-help') }}</wx-text>
+
+      <wx-form-item v-if="!isStep" :label="t('fields.type')">
         <wx-select
           v-model="type"
           :options="types"
@@ -302,12 +313,36 @@ async function save(): Promise<void> {
         <wx-text v-if="errorOf('type')" size="sm" tone="danger">{{ errorOf('type') }}</wx-text>
       </wx-form-item>
 
-      <wx-form-item :label="t('fields.title')" :error="errorOf('title')" required>
+      <wx-form-item
+        :label="isStep ? t('fields.step-title') : t('fields.title')"
+        :error="errorOf('title')"
+        required
+      >
         <wx-input v-model="title" localized />
       </wx-form-item>
 
+      <!-- A step keeps the same columns: the placeholder is its short label in the indicator, the
+           hint the line under its title (FORM_STEPS §3.1). -->
+      <template v-if="isStep">
+        <wx-form-item :label="t('fields.step-label')" :help="t('fields.step-label-help')">
+          <wx-input v-model="placeholder" localized />
+        </wx-form-item>
+
+        <wx-form-item :label="t('fields.step-hint')">
+          <wx-input v-model="help" localized />
+        </wx-form-item>
+
+        <wx-form-item :label="t('fields.step-next')" :help="t('fields.step-next-help')">
+          <wx-input
+            :model-value="(options['next-text'] as LocalizedValue) ?? {}"
+            localized
+            @update:model-value="(value) => set('next-text', value)"
+          />
+        </wx-form-item>
+      </template>
+
       <!-- A hidden field has neither: nobody reads a placeholder they cannot see. -->
-      <template v-if="type !== 'hidden'">
+      <template v-else-if="type !== 'hidden'">
         <wx-form-item v-if="type !== 'consent'" :label="t('fields.placeholder')">
           <wx-input v-model="placeholder" localized />
         </wx-form-item>
@@ -522,14 +557,20 @@ async function save(): Promise<void> {
 
       <div class="wx-inbox-field-form__checks">
         <wx-checkbox v-model="isEnabled" :label="t('fields.is-enabled')" />
-        <wx-checkbox v-model="isRequired" :label="t('fields.is-required')" />
-        <wx-checkbox
-          v-if="type !== 'hidden'"
-          v-model="isFullsize"
-          :label="t('fields.is-fullsize')"
-        />
-        <wx-checkbox v-model="inTable" :label="t('fields.in-table')" />
+        <!-- A step is never answered: required, half width and a column mean nothing to it. -->
+        <template v-if="!isStep">
+          <wx-checkbox v-model="isRequired" :label="t('fields.is-required')" />
+          <wx-checkbox
+            v-if="type !== 'hidden'"
+            v-model="isFullsize"
+            :label="t('fields.is-fullsize')"
+          />
+          <wx-checkbox v-model="inTable" :label="t('fields.in-table')" />
+        </template>
       </div>
+      <wx-text v-if="isStep && !isEnabled" size="sm" tone="muted">
+        {{ t('fields.step-off-help') }}
+      </wx-text>
 
       <!-- Last and apart: the name is for templates and integrations, and the label above is
            where it comes from. -->

@@ -117,7 +117,7 @@ final class Intake
         // A hidden field is not in it at all, so a form without conditions hashes as it always did.
         $visible = Conditions::visible($form->liveFields, $values);
 
-        foreach ($form->liveFields as $field) {
+        foreach ($form->questions() as $field) {
             if ($field->type === FieldType::File || ! ($visible[$field->key()] ?? true)) {
                 continue;
             }
@@ -200,7 +200,7 @@ final class Intake
     {
         $visible = Conditions::visible($form->liveFields, $values);
 
-        foreach ($form->liveFields as $field) {
+        foreach ($form->questions() as $field) {
             $key = $field->key();
 
             if (! ($visible[$key] ?? true)) {

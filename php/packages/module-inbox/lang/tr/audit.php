@@ -11,4 +11,5 @@ return [
     'captcha-unused' => ':form (:slug) formunda captcha yok ve sitenin :providers için anahtarı var',
     'spam-without-captcha' => ':form (:slug) formunda captcha yok ve spam alıyor. :days günde spam olarak işaretlenen: :spam, reddedilen: :refused',
     'legacy-views' => 'Başvuru formu, form motorundan önceki bir görünümle değiştirilmiş: :path',
+    'steps-in-old-view' => ':form (:slug) formunun adımları var, sitenin :path görünümü onu tek sayfada gösteriyor',
 ];

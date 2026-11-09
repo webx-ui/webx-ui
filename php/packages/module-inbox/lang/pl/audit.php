@@ -11,4 +11,5 @@ return [
     'captcha-unused' => 'Formularz :form (:slug) nie ma captchy, a witryna ma klucze do :providers',
     'spam-without-captcha' => 'Formularz :form (:slug) nie ma captchy i dostaje spam. W ciągu :days dni oznaczone jako spam: :spam, odrzucone: :refused',
     'legacy-views' => 'Formularz zgłoszeń zastępuje widok sprzed silnika formularzy: :path',
+    'steps-in-old-view' => 'Formularz :form (:slug) ma kroki, a widok strony :path pokazuje go na jednej stronie',
 ];

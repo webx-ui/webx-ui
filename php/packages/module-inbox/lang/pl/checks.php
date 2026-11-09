@@ -46,5 +46,11 @@ return [
             'why' => 'Na razie działa: moduł przekazuje mu dawne dane i serwuje stary skrypt. Któreś z kolejnych wydań to usunie, a formularze z tego widoku przestaną się wysyłać bez przeładowania i stracą captchę.',
             'fix' => 'Usuń kopię strony, aby dostać formularz pakietu, albo przepisz ją wokół <x-webx-form> i <x-webx-field>; pola przemaluj klasami webx-field-* i webx-form-* zamiast wx-form-* (tabela klas jest w przewodniku po zgłoszeniach).',
         ],
+        'steps_in_old_view' => [
+            'title' => 'Formularz z krokami pokazany na jednej stronie',
+            'found' => 'Formularz ma kroki, a strona zastępuje formularz inbox własnym form.blade.php, który drukuje tylko $controls, bez kroków.',
+            'why' => 'Formularz działa — jako jedna długa strona, tak jak widzi go strona bez JavaScriptu — a serwer sprawdza i zapisuje to, co zawsze. Ale odwiedzający nie widzi kroków, które ustawił redaktor.',
+            'fix' => 'Usuń kopię strony, aby dostać formularz pakietu, albo drukuj w niej $steps: <x-webx-form.step> wokół pól każdego kroku, steps i :check na <x-webx-form> (przewodnik inbox pokazuje jak).',
+        ],
     ],
 ];

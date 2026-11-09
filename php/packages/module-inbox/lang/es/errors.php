@@ -28,4 +28,7 @@ return [
     'condition-not-before' => 'La condición «:key» de «:field» nombra «:name», que no está por encima. Una condición nombra solo un campo de arriba.',
     'condition-unknown-value' => 'La condición «:key» de «:field» espera el valor «:value» de «:name», que ese campo no ofrece.',
     'field-has-dependents' => 'El campo «:field» se nombra en las condiciones de :fields. Cambie primero esas condiciones.',
+    'step-empty' => 'El paso :field no tiene ningún campo después. Ponga un campo debajo o elimínelo.',
+    'step-too-many' => 'Un formulario tiene como máximo :max pasos.',
+    'step-unknown' => 'El formulario ha cambiado desde que se abrió la página. Recargue la página.',
 ];

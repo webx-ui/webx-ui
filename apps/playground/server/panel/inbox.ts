@@ -307,6 +307,36 @@ fields.splice(
   }),
 )
 
+/*
+ * Steps (FORM_STEPS §3.1): two rows that cut the feedback form into three screens — the contacts
+ * and the purpose, the agency (only for an agency meeting), the request. Made last, like the
+ * conditions, so the ids above stay; put in place by the order of the list.
+ */
+fields.splice(
+  fields.findIndex((one) => one.form_id === 1 && one.key === 'agency'),
+  0,
+  field(1, {
+    key: 'step_agency',
+    type: 'step',
+    title: { ru: 'Об агентстве', en: 'About the agency' },
+    placeholder: { ru: 'Агентство', en: 'Agency' },
+    help: { ru: 'Чтобы подготовить встречу', en: 'So we can prepare the meeting' },
+    options: { when: { purpose: ['agency'] } },
+    is_fullsize: true,
+  }),
+)
+fields.splice(
+  fields.findIndex((one) => one.form_id === 1 && one.key === 'budget'),
+  0,
+  field(1, {
+    key: 'step_request',
+    type: 'step',
+    title: { ru: 'Ваш запрос', en: 'Your request' },
+    options: { 'next-text': { ru: 'К отправке', en: 'To sending' } },
+    is_fullsize: true,
+  }),
+)
+
 /** The fields of a form whose conditions name `key`. */
 export function dependentsOf(formId: number, key: string): InboxField[] {
   return fields.filter(

@@ -46,5 +46,11 @@ return [
             'why' => 'De momento funciona: el módulo le entrega lo de antes y sirve su script antiguo. Una versión posterior lo retira, y los formularios de esa vista dejan de enviarse sin recargar y pierden su captcha.',
             'fix' => 'Elimine la copia del sitio para obtener el formulario del paquete, o reescríbala en torno a <x-webx-form> y <x-webx-field>; cambie el estilo de los campos con webx-field-* y webx-form-* en lugar de wx-form-* (la tabla de clases está en la guía de solicitudes).',
         ],
+        'steps_in_old_view' => [
+            'title' => 'Un formulario de pasos mostrado en una sola página',
+            'found' => 'Un formulario tiene pasos, y el sitio sustituye el formulario de inbox por su propio form.blade.php, que solo imprime $controls, sin los pasos.',
+            'why' => 'El formulario funciona, como una página larga — tal como lo ve una página sin JavaScript — y el servidor revisa y guarda lo de siempre. Pero el visitante nunca ve los pasos que puso el editor.',
+            'fix' => 'Borre la copia del sitio para tener el formulario del paquete, o imprima $steps en ella: un <x-webx-form.step> alrededor de los campos de cada paso, steps y :check en <x-webx-form> (la guía de inbox muestra cómo).',
+        ],
     ],
 ];

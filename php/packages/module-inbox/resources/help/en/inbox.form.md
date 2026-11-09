@@ -42,6 +42,16 @@ and so does the order of the questions. Everything on the other tabs waits for �
 3. Choose the question above, then the answers it is asked for.
 4. Press «Save». In the list, the question now says when it is asked.
 
+## How to split a form into steps
+
+1. On the «Fields» tab, press «Step»: a step row goes to the end of the list.
+2. Write its title, and drag the row above the first field of the step. The fields under a row, down
+   to the next one, are asked on one screen; the fields above the first row are step 1, called by the
+   title of the form.
+3. To ask a step only for some answers, set «Show» in its window, the way a question has it.
+4. Press «Save». On the site the visitor sees one step at a time, with «Back» and «Next»; «Next»
+   checks the step before going on. Without JavaScript all the steps stand on one page.
+
 ## How to choose what the list of submissions shows
 
 1. On the «Fields» tab, press «Edit» in the «···» menu of the field.
@@ -159,6 +169,16 @@ stand one under another whatever is set here.
 
 A file of the media library, shown above the label of the card. The field appears only when the site
 has the media library. If the file is deleted later, the card stays, without a picture.
+
+## Short label in the indicator
+
+The line over the steps names each step by its title. When a title is long, a word or two here takes
+its place there; the title stays over the fields of the step.
+
+## Words of the «Next» button
+
+What the button that leaves this step says — «Choose the time» instead of «Next». Empty, the site's own
+word is used. The last step has no «Next»: it is sent with the button of the form.
 
 ## Required
 

@@ -40,7 +40,9 @@ final class FieldController
         }
 
         // At the end, so it may name any field above it (FORM_STEPS §4.2).
-        ConditionPlan::assert(ConditionPlan::with($form->fields, null, $values), (string) $values['name']);
+        $layout = ConditionPlan::with($form->fields, null, $values);
+        ConditionPlan::assert($layout, (string) $values['name']);
+        ConditionPlan::assertStepRoom($layout);
 
         $field = new Field($values);
         $field->form_id = (int) $form->getKey();
@@ -61,10 +63,9 @@ final class FieldController
 
         // As the form would be after it: a choice others count on taken away, a type that stops
         // being a choice, a condition naming a field below — refused before anything is written.
-        ConditionPlan::assert(
-            ConditionPlan::with($field->form->fields, (int) $field->getKey(), $values),
-            self::keyOf($values, $field),
-        );
+        $layout = ConditionPlan::with($field->form->fields, (int) $field->getKey(), $values);
+        ConditionPlan::assert($layout, self::keyOf($values, $field));
+        ConditionPlan::assertStepRoom($layout);
 
         $field->update($values);
 

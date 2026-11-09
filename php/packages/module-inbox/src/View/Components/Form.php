@@ -20,6 +20,7 @@ use WebxUi\Inbox\Antispam\Guard;
 use WebxUi\Inbox\Fields\ChoiceImages;
 use WebxUi\Inbox\Fields\Conditions;
 use WebxUi\Inbox\Fields\FieldType;
+use WebxUi\Inbox\Fields\Steps;
 use WebxUi\Inbox\Models\Field;
 // The component and the model are both called a form, and here the component wins the name:
 // `componentNamespace` looks up the class by what is written after `::`, so `<x-webx-inbox::form>`
@@ -100,16 +101,26 @@ final class Form extends Component
 
         $view = $this->view ?? 'webx-inbox::form';
         $legacy = $this->legacy($view);
-        $fields = $form->liveFields;
+        // What is answered — a flat list, which is what a view written before the steps reads; the
+        // steps are beside it (FORM_STEPS §12.5).
+        $fields = new Collection($form->questions());
         $formId = $this->formId($form, $legacy ? 'wx-form-' : 'webx-inbox-');
         $placement = $this->placement($form);
         $mine = $this->isMine($form);
+        $controls = $this->controls($fields, $formId);
+        // A view of before W6.4 draws its own fields and knows no steps: the whole form on one page.
+        $steps = $legacy ? [] : $this->steps($form, $controls, $fields);
 
         return $this->views->make($view, [
             'form' => $form,
             'formId' => $formId,
             'fields' => $fields,
-            'controls' => $this->controls($fields, $formId),
+            'controls' => $controls,
+            // The steps (FORM_STEPS §3): each with its words, its condition and its controls — the
+            // same entries as `controls`. Empty for a flat form, which is printed as it always was.
+            'steps' => $steps,
+            // Where «Next» asks the server about a step (§3.4).
+            'check' => $steps === [] ? null : url(trim((string) config('webx-inbox.path', 'webx/forms'), '/').'/'.$form->slug.'/check'),
             'rules' => FormRules::for($this->rules->for($form), $this->rules->attributes($form)),
             'action' => $this->action($form),
             'page' => $this->request->fullUrl(),
@@ -207,6 +218,69 @@ final class Form extends Component
         }
 
         return $controls;
+    }
+
+    /**
+     * The steps of the form as `<x-webx-form.step>` takes them, each with the controls of its fields.
+     *
+     * The first step without a row of its own is called by the form's title; a step whose fields
+     * all fell out (a half-written select) is not printed.
+     *
+     * @param  list<array<string, mixed>>  $controls
+     * @param  Collection<int, Field>  $fields
+     * @return list<array<string, mixed>>
+     */
+    private function steps(FormModel $form, array $controls, Collection $fields): array
+    {
+        $groups = Steps::groups($form->liveFields);
+
+        if ($groups === []) {
+            return [];
+        }
+
+        $byName = [];
+
+        foreach ($controls as $control) {
+            $byName[(string) $control['name']] = $control;
+        }
+
+        $byKey = $fields->keyBy(static fn (Field $field): string => $field->key());
+        $steps = [];
+
+        foreach ($groups as $group) {
+            $mine = [];
+
+            foreach ($group['fields'] as $field) {
+                if (isset($byName['fields.'.$field->key()])) {
+                    $mine[] = $byName['fields.'.$field->key()];
+                }
+            }
+
+            if ($mine === []) {
+                continue;
+            }
+
+            $step = $group['step'];
+            $conditions = $step === null ? [] : Conditions::of($step->options);
+            $title = $step === null ? trim((string) $form->title) : trim((string) $step->title);
+            $hint = $step === null ? '' : trim((string) $step->help);
+            $label = $step === null ? '' : trim((string) $step->placeholder);
+            $next = $step === null ? '' : $step->optionText('next-text');
+
+            $steps[] = [
+                'name' => $group['key'],
+                'title' => $title !== '' ? $title : null,
+                'hint' => $hint !== '' ? $hint : null,
+                'label' => $label !== '' ? $label : null,
+                'next' => trim($next) !== '' ? trim($next) : null,
+                'when' => self::named($conditions['when'] ?? null),
+                'unless' => self::named($conditions['unless'] ?? null),
+                'condition' => $this->condition($conditions, $byKey),
+                'controls' => $mine,
+            ];
+        }
+
+        return $steps;
     }
 
     /**

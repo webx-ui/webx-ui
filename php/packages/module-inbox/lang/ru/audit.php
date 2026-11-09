@@ -11,4 +11,5 @@ return [
     'captcha-unused' => 'У формы :form (:slug) нет капчи, а у сайта есть ключи для :providers',
     'spam-without-captcha' => 'Форма :form (:slug) без капчи получает спам. За :days дн. отмечено спамом: :spam, отклонено: :refused',
     'legacy-views' => 'Форма заявки перекрыта видом, написанным до движка форм: :path',
+    'steps-in-old-view' => 'У формы :form (:slug) есть шаги, а вьюха сайта :path печатает её одной страницей',
 ];

@@ -19,6 +19,7 @@ use WebxUi\Inbox\Fields\ConditionPlan;
 use WebxUi\Inbox\Fields\Conditions;
 use WebxUi\Inbox\Fields\FieldNames;
 use WebxUi\Inbox\Fields\FieldType;
+use WebxUi\Inbox\Fields\Steps;
 use WebxUi\Inbox\Http\Controllers\FormController;
 use WebxUi\Inbox\Http\Resources\FieldResource;
 use WebxUi\Inbox\Http\Resources\FormResource;
@@ -116,7 +117,13 @@ final class InboxTools
                 .'end, and one sent with remove: true is put aside, which leaves the answers already given '
                 .'through it readable. Recipients that are not addresses and a slug that is not an address are '
                 .'refused here exactly as they are in the panel. A field may be shown only for some answers above it: '
-                .'options.when / options.unless (see fields.options) — checked on the form as the whole call leaves it.',
+                .'options.when / options.unless (see fields.options) — checked on the form as the whole call leaves it. '
+                .'A form of steps: a field of type "step" starts one, and the fields after it, up to the next step, are its step; '
+                .'the fields before the first step are a first step called by the form\'s title. A step has a title, help (the line under it), '
+                .'placeholder (a short label for the indicator), options.next-text (the words of its «Next») and options.when / unless like a field; '
+                .'a step switched off (is_enabled false) takes its fields with it. A step with no field after it and more than '.Steps::MAX.' steps are refused. '
+                .'New fields go to the end in the order sent; `order` puts the form\'s fields in another one. '
+                .'dry_run answers with the plan and the steps the form would have.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->formSave($arguments)),
                 ['properties' => [
                     // Spread, not `+`: the left side wins a `+`, and the "omit to create" half
@@ -137,14 +144,23 @@ final class InboxTools
                         .'{ "target": "entity", "entity_type": "page", "entity_id": 12 } — a record of the site (the kinds of record a menu link takes: page, article …), opened in the language the form was sent in, or in the main one when it has no translation; '
                         .'{ "target": "url", "url": "/thank-you" } — an address, a path of this site gets the visitor\'s language prefix; '
                         .'null or { "target": "none" } — the thank-you in place of the form.'],
+                    'order' => [
+                        'type' => 'array',
+                        'items' => ['type' => 'string'],
+                        'description' => 'The machine names of the form\'s fields — steps included — in the order they go, as the call leaves them: '
+                            .'the ones named first, in this order, the rest after them as they stand. Omit to keep the order (new fields at the end).',
+                    ],
                     'fields' => [
                         'type' => 'array',
                         'description' => 'The questions to add or change.',
                         'items' => ['type' => 'object', 'properties' => [
                             'id' => ['type' => 'integer', 'description' => 'The field to change; omit for a new one.'],
                             'name' => ['type' => 'string', 'description' => 'The machine name: what the HTML calls it, what CSV and the intake key it by, and {{field.<name>}} in the templates of notification channels. Letters, digits, - and _. Omitted on a new field, it is made from the title: "Your phone" → your_phone, with _2 after a name the form has. Renaming a field breaks {{field.<old name>}} in channel templates; answers already received stay with the field.'],
-                            'type' => ['type' => 'string', 'description' => 'text · email · tel · textarea · select · radio · checkbox · consent · date · file · hidden.'],
+                            'type' => ['type' => 'string', 'description' => 'text · email · tel · textarea · select · radio · checkbox · consent · date · file · hidden · step (not a question: the start of a step).'],
                             'title' => ['type' => ['string', 'object'], 'description' => 'The label, in one language or in all of them.'],
+                            'placeholder' => ['type' => ['string', 'object'], 'description' => 'The hint inside an empty field; of a step — the short label of the indicator.'],
+                            'help' => ['type' => ['string', 'object'], 'description' => 'The line under the field; of a step — under its title.'],
+                            'is_enabled' => ['type' => 'boolean', 'description' => 'False takes the field off the site; a step switched off takes its fields with it.'],
                             'is_required' => ['type' => 'boolean'],
                             'in_table' => ['type' => 'boolean', 'description' => 'Show this answer as a column of the submission list.'],
                             'options' => ['type' => 'object', 'description' => 'What this type takes. select · radio · checkbox: choices, required and at least one — '
@@ -159,7 +175,8 @@ final class InboxTools
                 .'(a checkbox — any one ticked; a consent — "1" when ticked), `unless` hides the field when the same `when` would hold. '
                 .'A condition names only a select, radio, checkbox or consent standing earlier in the form, and only values it offers. '
                 .'A hidden field is neither checked nor kept: its answer is thrown away, with JavaScript or without. '
-                .'A field others name cannot be removed or end up below them; renaming it renames the conditions.'],
+                .'A field others name cannot be removed or end up below them; renaming it renames the conditions. '
+                .'step: next-text — the words of its «Next» (one language or all), and when / unless as above.'],
                             'remove' => ['type' => 'boolean', 'description' => 'Put the field aside: it leaves the form and stays readable in the submissions that used it.'],
                         ]],
                     ],
@@ -333,6 +350,8 @@ final class InboxTools
             // usually looking at it to explain the form to somebody building a page.
             'intake' => $this->intake($form->slug),
             'fields' => $fields,
+            // The steps as the site prints them (FORM_STEPS §10): only for a form of steps.
+            ...($steps = $this->stepsOf($form)) === [] ? [] : ['steps' => $steps],
             // By key, in the language of the answer: the panel's resource carried every
             // language of every title and a count that is never loaded here.
             'statuses' => $this->statusNames(),
@@ -360,7 +379,11 @@ final class InboxTools
         // The conditions, on the form as the whole call leaves it (FORM_STEPS §4.2): a rename
         // carries the references along, a field removed or moved below what counts on it is refused.
         $plan = $this->carryRenames($plan);
-        ConditionPlan::assertAll($this->layoutAfter($form, $plan), 'fields');
+        $order = $this->orderSent($arguments);
+        $layout = self::reordered($this->layoutAfter($form, $plan), $order);
+        ConditionPlan::assertAll($layout, 'fields');
+        // And the steps (FORM_STEPS §3.1): none without a field, no more than fit.
+        ConditionPlan::assertSteps($layout, 'fields');
 
         $this->validator()->make(
             $input,
@@ -379,6 +402,7 @@ final class InboxTools
                     'name' => $one['values']['name'],
                     'would' => $one['would'],
                 ], $plan),
+                ...($steps = self::stepsOfLayout($layout)) === [] ? [] : ['steps' => $steps],
             ];
         }
 
@@ -393,6 +417,10 @@ final class InboxTools
 
         foreach ($plan as $one) {
             $this->applyField($form, $one);
+        }
+
+        if ($order !== null) {
+            $this->applyOrder($form, array_column($layout, 'key'));
         }
 
         return $this->formGet(['form' => (int) $form->refresh()->getKey()]);
@@ -632,6 +660,131 @@ final class InboxTools
         }
 
         return $layout;
+    }
+
+    /**
+     * `order` of the call: machine names, or null when it says nothing about the order.
+     *
+     * @param  array<string, mixed>  $arguments
+     * @return list<string>|null
+     */
+    private function orderSent(array $arguments): ?array
+    {
+        if (! array_key_exists('order', $arguments) || $arguments['order'] === null) {
+            return null;
+        }
+
+        if (! is_array($arguments['order'])) {
+            throw new ToolFailure('`order` is a list of the machine names of the form\'s fields.');
+        }
+
+        $order = [];
+
+        foreach ($arguments['order'] as $name) {
+            if (! is_string($name) || trim($name) === '') {
+                throw new ToolFailure('`order` is a list of the machine names of the form\'s fields.');
+            }
+
+            $order[] = trim($name);
+        }
+
+        return array_values(array_unique($order));
+    }
+
+    /**
+     * The layout in the order the call asks for: the named fields first, in that order, the rest
+     * after them as they stand.
+     *
+     * @param  list<array{key: string, type: FieldType, options: array<string, mixed>}>  $layout
+     * @param  list<string>|null  $order
+     * @return list<array{key: string, type: FieldType, options: array<string, mixed>}>
+     */
+    private static function reordered(array $layout, ?array $order): array
+    {
+        if ($order === null) {
+            return $layout;
+        }
+
+        $byKey = [];
+
+        foreach ($layout as $one) {
+            $byKey[$one['key']] = $one;
+        }
+
+        $unknown = array_values(array_diff($order, array_keys($byKey)));
+
+        if ($unknown !== []) {
+            throw new ToolFailure('`order` names fields the form would not have: '.implode(', ', $unknown).'.');
+        }
+
+        $first = array_map(static fn (string $key): array => $byKey[$key], $order);
+        $rest = array_values(array_filter($layout, static fn (array $one): bool => ! in_array($one['key'], $order, true)));
+
+        return [...$first, ...$rest];
+    }
+
+    /**
+     * Number the fields in the order of the layout, once they are written.
+     *
+     * @param  list<string>  $keys
+     */
+    private function applyOrder(Form $form, array $keys): void
+    {
+        $byKey = $form->fields()->get()->keyBy(static fn (Field $field): string => $field->key());
+
+        foreach ($keys as $position => $key) {
+            $field = $byKey->get($key);
+
+            if ($field instanceof Field && $field->position !== $position) {
+                // Straight to the row: a new place is not an edit of the field, nothing to carry along.
+                Field::query()->whereKey($field->getKey())->update(['position' => $position]);
+            }
+        }
+    }
+
+    /**
+     * The steps of a form as `inbox_form_get` reads them: name, title and the names of the fields.
+     *
+     * @return list<array{name: string, title: string, fields: list<string>}>
+     */
+    private function stepsOf(Form $form): array
+    {
+        return array_map(static fn (array $group): array => [
+            'name' => $group['key'],
+            'title' => trim((string) ($group['step'] ?? $form)->title),
+            'fields' => array_map(static fn (Field $field): string => $field->key(), $group['fields']),
+        ], Steps::groups($form->fields));
+    }
+
+    /**
+     * The steps a layout would make — what `dry_run` shows: each step by name with its fields.
+     *
+     * @param  list<array{key: string, type: FieldType, options: array<string, mixed>}>  $layout
+     * @return list<array{name: string, fields: list<string>}>
+     */
+    private static function stepsOfLayout(array $layout): array
+    {
+        if (Steps::count($layout) === 0) {
+            return [];
+        }
+
+        $steps = [];
+        $current = ['name' => Steps::FIRST, 'fields' => []];
+
+        foreach ($layout as $one) {
+            if ($one['type'] === FieldType::Step) {
+                $steps[] = $current;
+                $current = ['name' => $one['key'], 'fields' => []];
+
+                continue;
+            }
+
+            $current['fields'][] = $one['key'];
+        }
+
+        $steps[] = $current;
+
+        return array_values(array_filter($steps, static fn (array $step): bool => $step['fields'] !== [] || $step['name'] !== Steps::FIRST));
     }
 
     /**

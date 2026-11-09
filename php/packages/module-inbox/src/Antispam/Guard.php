@@ -46,6 +46,16 @@ final class Guard
         return $this->captcha->check($form, $request) ?? Inspection::pass();
     }
 
+    /**
+     * The one layer the door that checks a step keeps (FORM_STEPS §3.4): nothing is taken there, so
+     * the honeypot, the timestamp and the captcha have nothing to guard — but somebody else's page
+     * has no business asking this site's rules either.
+     */
+    public function fromHere(Request $request): bool
+    {
+        return $this->originAllowed($request);
+    }
+
     /** The name of the field a person never sees, so the form on the site can draw it. */
     public function honeypotField(Form $form): ?string
     {

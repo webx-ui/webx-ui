@@ -16,7 +16,11 @@ export const FIELD_TYPES = [
   'hidden',
 ] as const
 
-export type FieldType = (typeof FIELD_TYPES)[number]
+/**
+ * A kind of row of the list of fields: a question, or `step` — the row that starts a step of the
+ * form (FORM_STEPS §3.1), never answered. Not among `FIELD_TYPES`: a question does not turn into one.
+ */
+export type FieldType = (typeof FIELD_TYPES)[number] | 'step'
 
 /** Tones of `WxBadge`, which is what a status is coloured with — never a hex value. */
 export const STATUS_COLORS = ['default', 'primary', 'success', 'warning', 'info', 'danger'] as const

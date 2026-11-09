@@ -27,6 +27,9 @@ enum FieldType: string
     case Date = 'date';
     case File = 'file';
     case Hidden = 'hidden';
+    // Not a question: the line that starts a step of the form (FORM_STEPS §3.1). The fields after
+    // it, up to the next one, are its step; it is never answered and never a column.
+    case Step = 'step';
 
     /**
      * @return list<string>
@@ -40,6 +43,12 @@ enum FieldType: string
     public function hasChoices(): bool
     {
         return in_array($this, [self::Select, self::Radio, self::Checkbox], true);
+    }
+
+    /** Whether a visitor answers it: everything but the line that starts a step. */
+    public function isQuestion(): bool
+    {
+        return $this !== self::Step;
     }
 
     /** Types whose answer may be more than one thing. */

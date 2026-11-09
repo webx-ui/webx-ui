@@ -42,6 +42,8 @@ final class FieldOptions
             FieldType::Consent => self::consent($input),
             FieldType::File => self::file($input),
             FieldType::Hidden => [],
+            // A step (FORM_STEPS §3.1): the words of its «Next», when they are not the site's own.
+            FieldType::Step => ['next-text' => self::words($input['next-text'] ?? null) ?? ''],
         };
 
         // When the field is shown (FORM_STEPS §4), whatever its type: a hidden field is filled in

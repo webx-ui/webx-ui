@@ -2327,6 +2327,19 @@ on('GET', '/inbox/forms/(\\d+)/fields', ({ params }) => ({
 
 on('POST', '/inbox/forms/(\\d+)/fields', ({ params, body }) => {
   const formId = Number(params[0])
+  // A step row (FORM_STEPS §3.1) is never answered; past ten steps the indicator does not fit.
+  const step = body.type === 'step'
+  const own = fields.filter((item) => item.form_id === formId)
+
+  if (
+    step &&
+    own.filter((item) => item.type === 'step').length + (own[0]?.type === 'step' ? 1 : 2) > 10
+  ) {
+    throw new HttpFailure(422, 'A form has at most 10 steps.', undefined, {
+      type: ['A form has at most 10 steps.'],
+    })
+  }
+
   const field: InboxField = {
     id: nextFieldId(),
     form_id: formId,
@@ -2338,9 +2351,9 @@ on('POST', '/inbox/forms/(\\d+)/fields', ({ params, body }) => {
     help: (body.help ?? {}) as InboxField['help'],
     options: (body.options ?? {}) as InboxField['options'],
     is_enabled: body.is_enabled !== false,
-    is_required: body.is_required === true,
-    is_fullsize: body.is_fullsize === true,
-    in_table: body.in_table === true,
+    is_required: !step && body.is_required === true,
+    is_fullsize: step || body.is_fullsize === true,
+    in_table: !step && body.in_table === true,
     position: fields.filter((item) => item.form_id === formId).length + 1,
   }
 

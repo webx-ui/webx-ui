@@ -68,7 +68,7 @@ final class ListQuery
 
     public static function for(Form $form): self
     {
-        $fields = $form->liveFields()->get();
+        $fields = collect($form->questions());
         $columns = $fields->where('in_table', true);
 
         // A form that marks no field as a column — every form an agent writes without saying

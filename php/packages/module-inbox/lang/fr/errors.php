@@ -28,4 +28,7 @@ return [
     'condition-not-before' => 'La condition « :key » de « :field » nomme « :name », qui n’est pas au-dessus. Une condition ne nomme qu’un champ au-dessus.',
     'condition-unknown-value' => 'La condition « :key » de « :field » attend la valeur « :value » de « :name », que ce champ ne propose pas.',
     'field-has-dependents' => 'Le champ « :field » est nommé dans les conditions de :fields. Modifiez d’abord ces conditions.',
+    'step-empty' => 'L’étape :field n’a aucun champ après elle. Placez un champ dessous ou supprimez-la.',
+    'step-too-many' => 'Un formulaire a au plus :max étapes.',
+    'step-unknown' => 'Le formulaire a changé depuis l’ouverture de la page. Rechargez la page.',
 ];

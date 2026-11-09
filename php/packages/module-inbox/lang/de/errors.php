@@ -28,4 +28,7 @@ return [
     'condition-not-before' => 'Die Bedingung „:key“ von „:field“ nennt „:name“, das nicht darüber steht. Eine Bedingung nennt nur ein Feld darüber.',
     'condition-unknown-value' => 'Die Bedingung „:key“ von „:field“ erwartet den Wert „:value“ von „:name“, den dieses Feld nicht anbietet.',
     'field-has-dependents' => 'Das Feld „:field“ wird in den Bedingungen von :fields genannt. Ändern Sie zuerst diese Bedingungen.',
+    'step-empty' => 'Nach dem Schritt :field steht kein Feld. Setzen Sie ein Feld darunter oder entfernen Sie ihn.',
+    'step-too-many' => 'Ein Formular hat höchstens :max Schritte.',
+    'step-unknown' => 'Das Formular hat sich geändert, seit die Seite geöffnet wurde. Laden Sie die Seite neu.',
 ];
