@@ -102,4 +102,5 @@ return [
     'step-empty' => 'Nothing under this step yet: drag a field below it. The site does not show an empty step.',
     'step-empty-badge' => 'Empty',
     'delete-step-text' => 'Its fields join the step above. Answers already given keep them.',
+    'step-name-help' => 'The step is called by it in MCP, and «Next» names it to the server when it checks the step.',
 ];

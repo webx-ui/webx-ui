@@ -102,4 +102,5 @@ return [
     'step-empty' => 'Bu adımın altında henüz bir şey yok: altına bir alan sürükleyin. Site boş bir adımı göstermez.',
     'step-empty-badge' => 'Boş',
     'delete-step-text' => 'Alanları üstteki adıma geçer. Alınmış yanıtlar onları korur.',
+    'step-name-help' => 'Adım MCP\'de bu adla anılır; «İleri» de adımı denetlerken sunucuya bu adı verir.',
 ];

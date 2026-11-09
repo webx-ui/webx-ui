@@ -102,4 +102,5 @@ return [
     'step-empty' => 'Ainda não há nada sob esta etapa: arraste um campo para baixo dela. O site não mostra uma etapa vazia.',
     'step-empty-badge' => 'Vazia',
     'delete-step-text' => 'Os seus campos passam para a etapa acima. As respostas já recebidas mantêm-nos.',
+    'step-name-help' => 'É o nome da etapa no MCP, e o que «Seguinte» dá ao servidor quando a verifica.',
 ];

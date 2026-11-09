@@ -579,7 +579,11 @@ async function save(): Promise<void> {
 
         <wx-form-item
           :label="t('fields.name')"
-          :help="t('fields.name-help', { name: name.trim() || 'name' })"
+          :help="
+            isStep
+              ? t('fields.step-name-help')
+              : t('fields.name-help', { name: name.trim() || 'name' })
+          "
           :error="errorOf('name')"
         >
           <wx-input

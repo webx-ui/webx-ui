@@ -102,4 +102,5 @@ return [
     'step-empty' => 'Unter diesem Schritt steht noch nichts: Ziehen Sie ein Feld darunter. Einen leeren Schritt zeigt die Website nicht.',
     'step-empty-badge' => 'Leer',
     'delete-step-text' => 'Seine Felder kommen zum Schritt darüber. Bereits erhaltene Antworten behalten sie.',
+    'step-name-help' => 'So heißt der Schritt in MCP, und so nennt «Weiter» ihn dem Server, wenn es ihn prüft.',
 ];

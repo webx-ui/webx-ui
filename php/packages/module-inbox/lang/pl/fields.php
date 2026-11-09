@@ -102,4 +102,5 @@ return [
     'step-empty' => 'Pod tym krokiem jeszcze nic nie ma: przeciągnij pole pod niego. Pustego kroku strona nie pokazuje.',
     'step-empty-badge' => 'Pusty',
     'delete-step-text' => 'Jego pola przejdą do kroku powyżej. Otrzymane już odpowiedzi je zachowają.',
+    'step-name-help' => 'Tak nazywa się krok w MCP i tak «Dalej» przedstawia go serwerowi, gdy go sprawdza.',
 ];

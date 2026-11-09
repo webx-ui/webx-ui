@@ -102,4 +102,5 @@ return [
     'step-empty' => 'Rien sous cette étape pour l’instant : faites glisser un champ en dessous. Le site n’affiche pas une étape vide.',
     'step-empty-badge' => 'Vide',
     'delete-step-text' => 'Ses champs rejoignent l’étape du dessus. Les réponses déjà reçues les gardent.',
+    'step-name-help' => 'C’est le nom de l’étape dans MCP, et celui que « Suivant » donne au serveur quand il la vérifie.',
 ];

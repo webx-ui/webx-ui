@@ -102,4 +102,5 @@ return [
     'step-empty' => 'Aún no hay nada bajo este paso: arrastre un campo debajo. El sitio no muestra un paso vacío.',
     'step-empty-badge' => 'Vacío',
     'delete-step-text' => 'Sus campos pasan al paso de arriba. Las respuestas ya recibidas los conservan.',
+    'step-name-help' => 'Así se llama el paso en MCP, y así lo nombra «Siguiente» al servidor cuando lo revisa.',
 ];
