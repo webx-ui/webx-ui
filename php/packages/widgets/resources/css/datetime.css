@@ -50,15 +50,13 @@
   align-items: start;
 }
 
-@container (min-width: 40rem) {
-  .webx-datetime__picker {
-    grid-template-columns: auto minmax(0, 1fr);
-  }
-}
-
+/*
+ * Seven days of 44px and the frame — and no wider than the field: on a form narrower than that the
+ * days shrink with it rather than push the form out of the page.
+ */
 .webx-datetime__calendar {
   justify-self: start;
-  max-width: 100%;
+  width: min(100%, calc(7 * var(--webx-datetime-day) + 2 * var(--site-space-3) + 2px));
   padding: var(--site-space-3);
   box-sizing: border-box;
   border: 1px solid var(--webx-field-border);
@@ -87,6 +85,7 @@
 .webx-datetime__nav,
 .webx-datetime__day {
   display: inline-flex;
+  box-sizing: border-box;
   align-items: center;
   justify-content: center;
   width: var(--webx-datetime-day);
@@ -123,13 +122,25 @@
   outline-offset: 2px;
 }
 
+/* A table of the page's prose gets borders, stripes and a scroll of its own; this one is a calendar. */
 .webx-datetime__grid {
+  display: table;
+  width: 100%;
+  max-width: none;
+  table-layout: fixed;
+  border: 0;
   border-collapse: collapse;
+  background: none;
   margin-block-start: var(--site-space-2);
 }
 
 .webx-datetime__weekday {
   padding: 0 0 var(--site-space-1);
+  border: 0;
+  background: none;
+  font-size: 0.875em;
+  overflow: hidden;
+  text-overflow: clip;
   color: var(--site-color-text-muted);
   font-weight: 400;
   text-align: center;
@@ -137,6 +148,8 @@
 
 .webx-datetime__cell {
   padding: 0;
+  border: 0;
+  background: none;
   text-align: center;
 }
 
@@ -146,6 +159,14 @@
   cursor: default;
   opacity: 0.5;
   text-decoration: line-through;
+}
+
+/* As wide as its column, never wider than a finger needs: square either way. */
+.webx-datetime__day {
+  width: 100%;
+  max-width: var(--webx-datetime-day);
+  height: auto;
+  aspect-ratio: 1;
 }
 
 .webx-datetime__day.is-today {
@@ -178,7 +199,7 @@
 
 .webx-datetime__list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));
   gap: var(--site-space-2);
 }
 
@@ -195,6 +216,7 @@
   border-radius: var(--webx-field-radius);
   background: var(--webx-field-bg);
   color: var(--site-color-text);
+  white-space: nowrap;
   cursor: pointer;
 }
 
@@ -205,6 +227,18 @@
 
 .webx-datetime__radio {
   margin: 0;
+}
+
+/* After the rules it overrides: same weight, the later one wins. */
+@container (min-width: 40rem) {
+  .webx-datetime__picker {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  /* Its own width beside the times: a share of an auto column would take the whole row. */
+  .webx-datetime__calendar {
+    width: calc(7 * var(--webx-datetime-day) + 2 * var(--site-space-3) + 2px);
+  }
 }
 
 @media (prefers-reduced-motion: no-preference) {
