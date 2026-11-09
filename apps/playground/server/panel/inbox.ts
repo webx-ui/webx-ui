@@ -178,6 +178,7 @@ export const fields: InboxField[] = [
     type: 'select',
     title: { ru: 'Бюджет', en: 'Budget' },
     options: {
+      unless: { purpose: ['question'] },
       choices: [
         { value: 'small', label: { ru: 'до 100 000 ₴', en: 'up to 100k' } },
         { value: 'medium', label: { ru: '100 000 — 300 000 ₴', en: '100k — 300k' } },
@@ -199,7 +200,12 @@ export const fields: InboxField[] = [
     key: 'file',
     type: 'file',
     title: { ru: 'Файл', en: 'File' },
-    options: { max_size: 8, extensions: ['pdf', 'png', 'jpg', 'docx'] },
+    // Counts on a choice `purpose` no longer has: the list and the dialog show it in red.
+    options: {
+      max_size: 8,
+      extensions: ['pdf', 'png', 'jpg', 'docx'],
+      when: { purpose: ['tender'] },
+    },
   }),
   field(1, {
     key: 'consent',
@@ -249,6 +255,51 @@ export const fields: InboxField[] = [
   }),
   field(3, { key: 'cv', type: 'file', title: { ru: 'Резюме', en: 'CV' }, is_required: true }),
 ]
+
+/*
+ * Conditions (FORM_STEPS §4): the question that decides what else is asked, and the fields that
+ * count on it. Made last so the ids above — which submissions point at — stay as they were, and
+ * put in place after `phone`: a condition names only a field above it.
+ */
+fields.splice(
+  3,
+  0,
+  field(1, {
+    key: 'purpose',
+    type: 'radio',
+    title: { ru: 'Цель обращения', en: 'Purpose of contact' },
+    options: {
+      choices: [
+        { value: 'viewing', label: { ru: 'Просмотр квартиры', en: 'Book a viewing' } },
+        { value: 'agency', label: { ru: 'Встреча агентства', en: 'Agency meeting' } },
+        { value: 'question', label: { ru: 'Просто вопрос', en: 'Just a question' } },
+      ],
+    },
+    is_required: true,
+    in_table: true,
+  }),
+  field(1, {
+    key: 'agency',
+    type: 'text',
+    title: { ru: 'Агентство', en: 'Agency' },
+    options: { when: { purpose: ['agency'] } },
+    is_required: true,
+  }),
+)
+
+/** The fields of a form whose conditions name `key`. */
+export function dependentsOf(formId: number, key: string): InboxField[] {
+  return fields.filter(
+    (one) =>
+      one.form_id === formId &&
+      one.key !== key &&
+      (['when', 'unless'] as const).some((at) => {
+        const condition = one.options[at]
+
+        return typeof condition === 'object' && condition !== null && key in condition
+      }),
+  )
+}
 
 /** What one submission holds, before it is dressed up as a row or as a page. */
 export interface SubmissionRecord {

@@ -22,6 +22,7 @@ import {
   WxText,
 } from '@webx-ui/core'
 import FieldDialog from './FieldDialog.vue'
+import { conditionOf, describeCondition, problemsOf, type ConditionProblem } from './conditions'
 import { createInboxApi } from './api'
 import { useInboxMessages } from './i18n'
 import type { InboxField, InboxForm } from './types'
@@ -48,7 +49,7 @@ const message = useErrorText()
 
 const edit = createModal<
   InboxField,
-  { field: InboxField | null; form: InboxForm; taken: string[] }
+  { field: InboxField | null; form: InboxForm; taken: string[]; fields: InboxField[] }
 >(FieldDialog)
 
 function name(field: InboxField): string {
@@ -65,12 +66,51 @@ function marks(field: InboxField): string[] {
   ]
 }
 
+/** «if Purpose = Agency, Pre-register»: a field not always asked says when it is. */
+function shownBy(field: InboxField): string | null {
+  const ticked = t('fields.condition-ticked')
+  const parts = (['when', 'unless'] as const).flatMap((key) => {
+    const condition = conditionOf(field.options, key)
+
+    return condition === null
+      ? []
+      : [
+          t(`fields.shown-${key}`, {
+            condition: describeCondition(condition, fields.value, locales.active.value, ticked),
+          }),
+        ]
+  })
+
+  return parts.length === 0 ? null : parts.join('; ')
+}
+
+/*
+ * What the server would refuse about a row's conditions, said on the row itself: a field that
+ * was moved, renamed past or lost a choice before this check existed — or edited through an
+ * agent — would otherwise only show up as a dialog that will not save.
+ */
+function problemText(problem: ConditionProblem): string {
+  const source = fields.value.find((one) => one.key === problem.name)
+
+  return t(`fields.problem-${problem.code.replace('_', '-')}`, {
+    field: source ? name(source) : problem.name,
+    value: problem.value ?? '',
+  })
+}
+
+const problems = computed(
+  () =>
+    new Map(
+      fields.value.map((field) => [field.id, problemsOf(field, fields.value).map(problemText)]),
+    ),
+)
+
 const empty = computed(() => fields.value.length === 0)
 
 async function open(field: InboxField | null): Promise<void> {
   // The names the other fields answer to: a new one made out of its label must not be one of them.
   const taken = fields.value.filter((one) => one.id !== field?.id).map((one) => one.key)
-  const saved = await edit({ field, form: props.form, taken })
+  const saved = await edit({ field, form: props.form, taken, fields: fields.value })
 
   if (!saved) return
 
@@ -123,7 +163,9 @@ async function reorder(): Promise<void> {
       fields.value.map((field) => field.id),
     )
   } catch (error) {
+    // Refused — a field put above the one it counts on: the list goes back to what is saved.
     toast.danger(message(error, t('panel.reorder-failed')))
+    fields.value = await api.fields(props.form.id).catch(() => fields.value)
   }
 }
 </script>
@@ -159,6 +201,9 @@ async function reorder(): Promise<void> {
           <div class="wx-inbox-field__name">
             <wx-text weight="medium" truncate>{{ name(item) }}</wx-text>
             <wx-badge v-if="!item.is_enabled" type="default">{{ t('panel.off') }}</wx-badge>
+            <wx-badge v-if="problems.get(item.id)?.length" type="danger">
+              {{ t('fields.condition-broken') }}
+            </wx-badge>
           </div>
           <wx-text size="sm" tone="muted" truncate>
             <!-- A field nobody named answers to its row number, which means nothing to anybody
@@ -166,6 +211,18 @@ async function reorder(): Promise<void> {
             <template v-if="item.name"
               ><code>{{ item.name }}</code> · </template
             >{{ marks(item).join(' · ') }}
+          </wx-text>
+          <wx-text v-if="shownBy(item)" size="sm" tone="muted" class="wx-inbox-field__condition">
+            <wx-icon name="eye" size="sm" aria-hidden="true" />
+            <span>{{ shownBy(item) }}</span>
+          </wx-text>
+          <wx-text
+            v-for="problem in problems.get(item.id) ?? []"
+            :key="problem"
+            size="sm"
+            tone="danger"
+          >
+            {{ problem }}
           </wx-text>
         </div>
       </template>
@@ -184,6 +241,18 @@ async function reorder(): Promise<void> {
   gap: var(--wx-space-2);
   flex: 1 1 auto;
   min-width: 0;
+}
+
+.wx-inbox-field__condition {
+  display: flex;
+  align-items: center;
+  gap: var(--wx-space-4);
+  min-width: 0;
+}
+
+.wx-inbox-field__condition > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .wx-inbox-field__name {

@@ -27,6 +27,14 @@ and so does the order of the questions. Everything on the other tabs waits for �
 3. Under «Choices», press «Add a choice» for each answer and fill in «Value» and «Label».
 4. Press «Save». A field like this cannot be saved without a choice.
 
+## How to ask a question only for some answers
+
+1. Put a question with ready answers above it: «Drop-down», «One of several», «Several of several»
+   or «Consent».
+2. Open the question that depends on it, and under «Show» choose «If».
+3. Choose the question above, then the answers it is asked for.
+4. Press «Save». In the list, the question now says when it is asked.
+
 ## How to choose what the list of submissions shows
 
 1. On the «Fields» tab, press «Edit» in the «···» menu of the field.
@@ -121,6 +129,13 @@ one connection, in one office for example, are one address: raise the number if 
 Visitors prove they are not robots, so turn it on when robots get past the other checks. The keys are
 the site's: without them a warning appears here, and the form refuses every submission until they are
 added.
+
+## Show
+
+Only a question with ready answers above this one can be a condition, so drag it higher if it is not
+offered. Several answers in one row mean any of them, several rows mean all of them. A visitor does not
+see a hidden question, and an answer to it is not kept. A question others depend on cannot be deleted,
+dragged below them or lose an answer they count on: change their «Show» first.
 
 ## Required
 

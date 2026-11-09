@@ -27,6 +27,7 @@ import {
   useLocales,
   type LocalizedValue,
 } from '@webx-ui/core'
+import FieldCondition from './FieldCondition.vue'
 import LocalizedRichText from './LocalizedRichText.vue'
 import { createInboxApi } from './api'
 import { useInboxMessages } from './i18n'
@@ -48,8 +49,10 @@ const props = withDefaults(
     form: InboxForm
     /** The names the form's other fields answer to. */
     taken?: string[]
+    /** The form's fields in their order: a condition names one of those above this field. */
+    fields?: InboxField[]
   }>(),
-  { taken: () => [] },
+  { taken: () => [], fields: () => [] },
 )
 
 const { resolve, dismiss, open } = useModal<InboxField>()
@@ -195,6 +198,20 @@ function setChoice(index: number, patch: Partial<FieldChoice>): void {
   )
 }
 
+/** Every field before this one; a new field goes to the end, so it is all of them. */
+const above = computed(() => {
+  const at = props.field === null ? -1 : props.fields.findIndex((one) => one.id === props.field?.id)
+
+  return at < 0
+    ? props.fields.filter((one) => one.id !== props.field?.id)
+    : props.fields.slice(0, at)
+})
+
+const conditionErrors = computed(() => [
+  ...(errors.value['options.when'] ?? []),
+  ...(errors.value['options.unless'] ?? []),
+])
+
 function errorOf(field: string): string | undefined {
   return errors.value[field]?.[0]
 }
@@ -245,7 +262,13 @@ async function save(): Promise<void> {
   >
     <div class="wx-inbox-field-form">
       <wx-form-item :label="t('fields.type')">
-        <wx-select v-model="type" :options="types" />
+        <wx-select
+          v-model="type"
+          :options="types"
+          :status="errorOf('type') ? 'error' : undefined"
+        />
+        <!-- Others count on this field's answers: it cannot stop being a choice under them. -->
+        <wx-text v-if="errorOf('type')" size="sm" tone="danger">{{ errorOf('type') }}</wx-text>
       </wx-form-item>
 
       <wx-form-item :label="t('fields.title')" :error="errorOf('title')" required>
@@ -403,6 +426,16 @@ async function save(): Promise<void> {
           @update:model-value="(value) => set('multiple', value)"
         />
       </template>
+
+      <!-- A hidden field is filled in by the page and never seen, so it has nothing to show by. -->
+      <field-condition
+        v-if="type !== 'hidden'"
+        :options="options"
+        :above="above"
+        :fields="fields"
+        :errors="conditionErrors"
+        @update:options="(value) => (options = value)"
+      />
 
       <div class="wx-inbox-field-form__checks">
         <wx-checkbox v-model="isEnabled" :label="t('fields.is-enabled')" />

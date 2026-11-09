@@ -86,6 +86,13 @@ widgets' `form.js` hides it as the answers change; without JavaScript every fiel
 required one with a condition without the browser's `required`, and a line under it says when it
 applies («If chosen: Agency meeting»); the server throws away what does not apply.
 
+In the panel it is the «Show» section of the field dialog: «Always | If | Unless», then rows of «a
+choice field above — any of these answers», joined by «and». Only choice fields standing above are
+offered, a consent counts on its tick. An answer the field above no longer has stays in the row in red
+until it is closed, so a save never drops it quietly. The list of fields says under a field when it is
+asked («if Purpose = Agency meeting») and marks a row whose condition would be refused — one edited
+through `inbox_form_save` or older than the check; a drag the server refuses puts the order back.
+
 ### Answers keep a copy of the question
 
 Beside every answer sit the field's name, label and type **as they were when it arrived**:

@@ -77,6 +77,7 @@ import {
 import {
   admins,
   countForms,
+  dependentsOf,
   eventsFor,
   fields,
   forms,
@@ -2348,8 +2349,26 @@ on('POST', '/inbox/forms/(\\d+)/fields', ({ params, body }) => {
   return { data: field }
 })
 
-on('POST', '/inbox/forms/(\\d+)/fields/sorting', ({ body }) => {
-  order(fields, body.ids as number[])
+on('POST', '/inbox/forms/(\\d+)/fields/sorting', ({ params, body }) => {
+  const ids = body.ids as number[]
+
+  // As the server does: a field may not go above the field its condition counts on.
+  for (const one of fields.filter((each) => each.form_id === Number(params[0]))) {
+    for (const dependent of dependentsOf(one.form_id, one.key)) {
+      if (ids.indexOf(dependent.id) < ids.indexOf(one.id)) {
+        throw new HttpFailure(
+          422,
+          `“${dependent.key}” counts on “${one.key}”, which would stand below it.`,
+          undefined,
+          {
+            ids: [`“${dependent.key}” counts on “${one.key}”, which would stand below it.`],
+          },
+        )
+      }
+    }
+  }
+
+  order(fields, ids)
 
   return { data: null }
 })
@@ -2368,6 +2387,20 @@ on('PUT', '/inbox/fields/(\\d+)', ({ params, body }) => {
 
 on('DELETE', '/inbox/fields/(\\d+)', ({ params }) => {
   const index = fields.findIndex((item) => item.id === Number(params[0]))
+  const dependents = index >= 0 ? dependentsOf(fields[index]!.form_id, fields[index]!.key) : []
+
+  if (dependents.length > 0) {
+    const names = dependents.map((one) => `“${one.key}”`).join(', ')
+
+    throw new HttpFailure(
+      422,
+      `Fields ${names} count on this one: change their conditions first.`,
+      undefined,
+      {
+        field: [`Fields ${names} count on this one: change their conditions first.`],
+      },
+    )
+  }
 
   if (index >= 0) {
     fields.splice(index, 1)

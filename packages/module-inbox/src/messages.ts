@@ -284,6 +284,31 @@ export const inboxMessages: Record<string, Messages> = {
     'type-date': 'Date',
     'type-file': 'File',
     'type-hidden': 'Hidden',
+    show: 'Show',
+    'show-always': 'Always',
+    'show-when': 'If',
+    'show-unless': 'Unless',
+    'condition-field': 'Field above',
+    'condition-values': 'Any of these answers',
+    'condition-and': 'and',
+    'condition-add': 'One more condition',
+    'condition-remove': 'Remove',
+    'condition-help':
+      'Several answers in a row: any of them will do. Several rows: all of them must hold.',
+    'condition-none': 'A condition counts on a choice field above this one, and there is none yet.',
+    'condition-ticked': 'Ticked',
+    'condition-stranger':
+      'This field is no longer a choice field above this one. Pick another or remove the row.',
+    'condition-removed': 'No such answer: :value',
+    'condition-kept': 'Also hidden if :condition. That stays as it is.',
+    'shown-when': 'if :condition',
+    'shown-unless': 'unless :condition',
+    'condition-broken': 'Check the condition',
+    'problem-unknown-field': 'The condition names “:field”, and the form has no such field.',
+    'problem-not-choice': 'The condition names “:field”, which is not a choice field.',
+    'problem-not-before':
+      'The condition names “:field”, which is not above this field. Drag it higher.',
+    'problem-unknown-value': '“:field” no longer has the answer “:value”.',
   },
 
   relations: {
