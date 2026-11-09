@@ -26,6 +26,7 @@ return [
     'is-enabled' => 'Visível',
     'is-required' => 'Obrigatório',
     'is-fullsize' => 'Toda a largura',
+    'is-halfsize' => 'Meia largura',
     'in-table' => 'Como coluna na lista',
     'choices' => 'Opções',
     'choice-value' => 'Valor',

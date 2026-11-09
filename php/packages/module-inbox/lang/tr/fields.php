@@ -26,6 +26,7 @@ return [
     'is-enabled' => 'Görünür',
     'is-required' => 'Zorunlu',
     'is-fullsize' => 'Tam genişlik',
+    'is-halfsize' => 'Yarım genişlik',
     'in-table' => 'Listede sütun olarak',
     'choices' => 'Seçenekler',
     'choice-value' => 'Değer',

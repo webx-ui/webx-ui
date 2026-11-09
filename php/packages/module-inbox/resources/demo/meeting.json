@@ -34,7 +34,11 @@
     {
       "type": "step",
       "name": "step-purpose",
-      "title": { "en": "Purpose of contact", "ru": "Цель обращения", "pl": "Cel kontaktu" }
+      "title": {
+        "en": "Purpose of contact",
+        "ru": "Цель обращения",
+        "pl": "Cel kontaktu"
+      }
     },
     {
       "type": "radio",
@@ -89,7 +93,14 @@
               "pl": "Agent rejestruje klienta przed wizytą"
             }
           },
-          { "value": "other", "label": { "en": "Other", "ru": "Другое", "pl": "Inne" } }
+          {
+            "value": "other",
+            "label": {
+              "en": "Other",
+              "ru": "Другое",
+              "pl": "Inne"
+            }
+          }
         ]
       }
     },
@@ -101,41 +112,58 @@
         "ru": "Выберите время встречи",
         "pl": "Wybierz termin spotkania"
       },
-      "options": { "when": { "purpose": ["agency", "pre-register"] } }
+      "options": {
+        "when": {
+          "purpose": ["agency", "pre-register"]
+        }
+      }
     },
     {
       "type": "datetime",
       "name": "meeting",
-      "title": { "en": "Date and time", "ru": "Дата и время", "pl": "Data i godzina" },
+      "title": {
+        "en": "Date and time",
+        "ru": "Дата и время",
+        "pl": "Data i godzina"
+      },
       "is_required": true,
       "in_table": true,
       "options": {
         "time-step": 30,
         "time-from": "09:00",
         "time-to": "17:00",
-        "weekdays": [1, 2, 3, 4, 5],
-        "timezone-label": {
-          "en": "time of the sales office",
-          "ru": "время офиса продаж",
-          "pl": "czas biura sprzedaży"
-        }
+        "weekdays": [1, 2, 3, 4, 5]
       }
     },
     {
       "type": "step",
       "name": "step-contacts",
-      "title": { "en": "Your details", "ru": "Ваши данные", "pl": "Twoje dane" }
+      "title": {
+        "en": "Your details",
+        "ru": "Ваши данные",
+        "pl": "Twoje dane"
+      }
     },
     {
       "type": "summary",
       "name": "summary",
-      "title": { "en": "Your request", "ru": "Ваша заявка", "pl": "Twoje zgłoszenie" },
-      "options": { "fields": ["purpose", "meeting"] }
+      "title": {
+        "en": "Your request",
+        "ru": "Ваша заявка",
+        "pl": "Twoje zgłoszenie"
+      },
+      "options": {
+        "fields": ["purpose", "meeting"]
+      }
     },
     {
       "type": "text",
       "name": "first_name",
-      "title": { "en": "First name", "ru": "Имя", "pl": "Imię" },
+      "title": {
+        "en": "First name",
+        "ru": "Имя",
+        "pl": "Imię"
+      },
       "is_required": true,
       "is_fullsize": false,
       "in_table": true
@@ -143,7 +171,11 @@
     {
       "type": "text",
       "name": "last_name",
-      "title": { "en": "Last name", "ru": "Фамилия", "pl": "Nazwisko" },
+      "title": {
+        "en": "Last name",
+        "ru": "Фамилия",
+        "pl": "Nazwisko"
+      },
       "is_required": true,
       "is_fullsize": false,
       "in_table": true
@@ -151,31 +183,56 @@
     {
       "type": "email",
       "name": "email",
-      "title": { "en": "E-mail", "ru": "E-mail", "pl": "E-mail" },
+      "title": {
+        "en": "E-mail",
+        "ru": "E-mail",
+        "pl": "E-mail"
+      },
       "is_required": true,
       "is_fullsize": false
     },
     {
       "type": "tel",
       "name": "phone",
-      "title": { "en": "Phone", "ru": "Телефон", "pl": "Telefon" },
+      "title": {
+        "en": "Phone",
+        "ru": "Телефон",
+        "pl": "Telefon"
+      },
       "is_required": true,
       "is_fullsize": false
     },
     {
       "type": "text",
       "name": "agency",
-      "title": { "en": "Agency", "ru": "Агентство", "pl": "Agencja" },
-      "options": { "when": { "purpose": ["agency", "pre-register"] } }
+      "title": {
+        "en": "Agency",
+        "ru": "Агентство",
+        "pl": "Agencja"
+      },
+      "options": {
+        "when": {
+          "purpose": ["agency", "pre-register"]
+        }
+      }
     },
     {
       "type": "textarea",
       "name": "message",
-      "title": { "en": "Message", "ru": "Сообщение", "pl": "Wiadomość" }
+      "title": {
+        "en": "Message",
+        "ru": "Сообщение",
+        "pl": "Wiadomość"
+      }
     },
     {
       "type": "consent",
       "name": "consent",
+      "title": {
+        "en": "Consent",
+        "ru": "Согласие",
+        "pl": "Zgoda"
+      },
       "is_required": true,
       "options": {
         "text": {

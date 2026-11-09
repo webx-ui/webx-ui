@@ -26,6 +26,7 @@ return [
     'is-enabled' => 'Показывать',
     'is-required' => 'Обязательное',
     'is-fullsize' => 'Во всю ширину',
+    'is-halfsize' => 'В половину ширины',
     'in-table' => 'Колонкой в списке',
     'choices' => 'Варианты',
     'choice-value' => 'Значение',

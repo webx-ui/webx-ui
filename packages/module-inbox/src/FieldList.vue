@@ -71,7 +71,8 @@ function marks(field: InboxField): string[] {
     t(`fields.type-${field.type}`),
     ...(field.is_required ? [t('fields.is-required')] : []),
     ...(field.in_table ? [t('fields.in-table')] : []),
-    ...(field.is_fullsize ? [] : [t('fields.is-fullsize')]),
+    // Full width is the rule; only the exception is worth a word.
+    ...(field.is_fullsize ? [] : [t('fields.is-halfsize')]),
   ]
 }
 

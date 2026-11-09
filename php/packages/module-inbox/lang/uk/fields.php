@@ -26,6 +26,7 @@ return [
     'is-enabled' => 'Показувати',
     'is-required' => 'Обов’язкове',
     'is-fullsize' => 'На всю ширину',
+    'is-halfsize' => 'На половину ширини',
     'in-table' => 'Колонкою у списку',
     'choices' => 'Варіанти',
     'choice-value' => 'Значення',

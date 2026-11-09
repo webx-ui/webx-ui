@@ -66,6 +66,16 @@ describe('WxInboxFieldList and conditions', () => {
     document.body.innerHTML = ''
   })
 
+  it('marks a field of half the width, and says nothing of one of the whole', async () => {
+    list([purpose, { ...agency, is_fullsize: false }])
+    await flushPromises()
+
+    const rows = [...document.querySelectorAll('.wx-inbox-field')].map((row) => row.textContent)
+    expect(rows[0]).not.toContain('width')
+    expect(rows[1]).toContain('Half width')
+    expect(rows[1]).not.toContain('Full width')
+  })
+
   it('says under a field when it is asked, in the labels of the answers', async () => {
     list([purpose, agency])
     await flushPromises()

@@ -34,6 +34,11 @@ says `inbox({ landing: false })`.
 The migration creates the `inbox_*` tables and seeds five statuses — New · In progress · Done ·
 Rejected · Spam — in every language the package ships words in.
 
+`php artisan webx:demo` adds two forms, with nobody to notify: `contact` — name, e-mail, message —
+and `meeting`, a form of steps with every part of this guide: the purpose as cards, a step with a
+date and time and an «Agency» field asked only for some purposes, a summary over the contacts
+(the example of FORM_STEPS §11). A theme's form by the same slug takes the place of either.
+
 Three permissions rather than the usual two, because reading and answering is not the same job as
 building the form:
 

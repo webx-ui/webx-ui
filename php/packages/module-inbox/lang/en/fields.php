@@ -26,6 +26,7 @@ return [
     'is-enabled' => 'Shown',
     'is-required' => 'Required',
     'is-fullsize' => 'Full width',
+    'is-halfsize' => 'Half width',
     'in-table' => 'A column in the list',
     'choices' => 'Choices',
     'choice-value' => 'Value',

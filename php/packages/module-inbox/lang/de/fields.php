@@ -26,6 +26,7 @@ return [
     'is-enabled' => 'Sichtbar',
     'is-required' => 'Pflichtfeld',
     'is-fullsize' => 'Volle Breite',
+    'is-halfsize' => 'Halbe Breite',
     'in-table' => 'Als Spalte in der Liste',
     'choices' => 'Auswahl',
     'choice-value' => 'Wert',
