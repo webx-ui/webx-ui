@@ -60,6 +60,9 @@ final class DistTest extends PlainTestCase
     /** The list with a search (decision 36 of the delivery spec): 4 KB gzip, the script and its look, as the suggestions. */
     private const int SELECT_BUDGET = 4 * 1024;
 
+    /** Where the visitor came from (FORM_STEPS §8): a listener on the form's submit, loaded with a form that asks. */
+    private const int ATTRIBUTION_BUDGET = 1024;
+
     private const array LOCALES = ['en', 'ru', 'uk', 'de', 'pl', 'fr', 'es', 'it', 'pt', 'tr'];
 
     #[Test]
@@ -69,6 +72,14 @@ final class DistTest extends PlainTestCase
         $this->assertIsArray($built);
 
         $this->assertSame(self::sources(), $built['files'] ?? null, 'resources/ changed since dist/ was built: run `npx vite build` in php/packages/widgets and commit dist/.');
+    }
+
+    #[Test]
+    public function the_attribution_is_its_own_file_inside_its_budget(): void
+    {
+        $size = self::gzipped('attribution.js');
+
+        $this->assertLessThanOrEqual(self::ATTRIBUTION_BUDGET, $size, sprintf('attribution.js is %.1f KB gzip.', $size / 1024));
     }
 
     #[Test]
@@ -98,7 +109,7 @@ final class DistTest extends PlainTestCase
         ));
         sort($built);
 
-        $this->assertSame(['back-to-top.css', 'back-to-top.js', 'captcha.js', 'compare.css', 'compare.js', 'consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'countdown.css', 'countdown.js', 'counter.css', 'counter.js', 'field.css', 'field.js', 'files.css', 'files.js', 'form.css', 'form.js', 'language-switcher.css', 'lightbox.css', 'lightbox.js', 'load-more.css', 'load-more.js', 'map.css', 'map.js', 'mask.js', 'notice-bar.css', 'notice-bar.js', 'pagination.css', 'runtime.css', 'runtime.js', 'select.css', 'select.js', 'share.css', 'share.js', 'slider.css', 'slider.js', 'smooth-scroll.css', 'smooth-scroll.js', 'sources.json', 'suggest.css', 'suggest.js', 'table.css', 'table.js', 'toc.css', 'toc.js', 'video.css', 'video.js', 'zoom.css', 'zoom.js'], $built);
+        $this->assertSame(['attribution.js', 'back-to-top.css', 'back-to-top.js', 'captcha.js', 'compare.css', 'compare.js', 'consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'countdown.css', 'countdown.js', 'counter.css', 'counter.js', 'field.css', 'field.js', 'files.css', 'files.js', 'form.css', 'form.js', 'language-switcher.css', 'lightbox.css', 'lightbox.js', 'load-more.css', 'load-more.js', 'map.css', 'map.js', 'mask.js', 'notice-bar.css', 'notice-bar.js', 'pagination.css', 'runtime.css', 'runtime.js', 'select.css', 'select.js', 'share.css', 'share.js', 'slider.css', 'slider.js', 'smooth-scroll.css', 'smooth-scroll.js', 'sources.json', 'suggest.css', 'suggest.js', 'table.css', 'table.js', 'toc.css', 'toc.js', 'video.css', 'video.js', 'zoom.css', 'zoom.js'], $built);
     }
 
     /**
