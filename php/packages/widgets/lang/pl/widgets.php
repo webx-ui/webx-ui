@@ -207,6 +207,8 @@ return [
             'back' => 'Wstecz',
             'return' => 'Wróć do kroku :number: :title',
             'fix' => 'Sprawdź krok :number: :message',
+            'edit' => 'Zmień',
+            'edit-field' => 'Zmień: :field',
         ],
     ],
     'suggest' => [

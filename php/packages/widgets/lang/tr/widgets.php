@@ -207,6 +207,8 @@ return [
             'back' => 'Geri',
             'return' => ':number. adıma dön: :title',
             'fix' => 'Lütfen :number. adımı kontrol edin: :message',
+            'edit' => 'Değiştir',
+            'edit-field' => 'Değiştir: :field',
         ],
     ],
     'suggest' => [

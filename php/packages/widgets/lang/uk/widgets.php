@@ -207,6 +207,8 @@ return [
             'back' => 'Назад',
             'return' => 'Повернутися до кроку :number: :title',
             'fix' => 'Перевірте крок :number: :message',
+            'edit' => 'Змінити',
+            'edit-field' => 'Змінити: :field',
         ],
     ],
     'suggest' => [

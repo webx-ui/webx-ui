@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use WebxUi\Inbox\Fields\Conditions;
 use WebxUi\Inbox\Fields\FieldType;
+use WebxUi\Inbox\Fields\Summary;
 use WebxUi\Localization\HasTranslations;
 
 /**
@@ -105,12 +106,13 @@ class Field extends Model
             }
 
             // The conditions that name it follow it too (FORM_STEPS §4.2): left behind, they would
-            // name a field that is not there, and their fields would never be shown again.
+            // name a field that is not there, and their fields would never be shown again. So does a
+            // summary that names it (§7).
             $others = self::query()->where('form_id', $field->form_id)->whereKeyNot($field->getKey())->get();
 
             foreach ($others as $other) {
                 $options = $other->options ?? [];
-                $renamed = Conditions::rename($options, $old, $field->key());
+                $renamed = Summary::rename(Conditions::rename($options, $old, $field->key()), $old, $field->key());
 
                 if ($renamed !== $options) {
                     $other->options = $renamed;

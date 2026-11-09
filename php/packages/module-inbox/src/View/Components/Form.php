@@ -21,6 +21,7 @@ use WebxUi\Inbox\Fields\ChoiceImages;
 use WebxUi\Inbox\Fields\Conditions;
 use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\Fields\Steps;
+use WebxUi\Inbox\Fields\Summary;
 use WebxUi\Inbox\Models\Field;
 // The component and the model are both called a form, and here the component wins the name:
 // `componentNamespace` looks up the class by what is written after `::`, so `<x-webx-inbox::form>`
@@ -251,7 +252,13 @@ final class Form extends Component
             $mine = [];
 
             foreach ($group['fields'] as $field) {
-                if (isset($byName['fields.'.$field->key()])) {
+                if ($field->type === FieldType::Summary) {
+                    $summary = $this->summary($field, $fields);
+
+                    if ($summary !== null) {
+                        $mine[] = $summary;
+                    }
+                } elseif (isset($byName['fields.'.$field->key()])) {
                     $mine[] = $byName['fields.'.$field->key()];
                 }
             }
@@ -281,6 +288,35 @@ final class Form extends Component
         }
 
         return $steps;
+    }
+
+    /**
+     * A summary (FORM_STEPS §7) as `<x-webx-form.summary>` takes it, among the controls of its step:
+     * its title, its line, the page's names of the fields it shows — null for every field above it.
+     * Null when it names fields of which none is left.
+     *
+     * @param  Collection<int, Field>  $questions
+     * @return array<string, mixed>|null
+     */
+    private function summary(Field $field, Collection $questions): ?array
+    {
+        $shown = Summary::fieldsOf($field, $questions);
+
+        if ($shown === []) {
+            return null;
+        }
+
+        $title = trim((string) $field->title);
+        $help = trim((string) $field->help);
+
+        return [
+            'type' => FieldType::Summary->value,
+            'name' => 'fields.'.$field->key(),
+            'id' => null,
+            'label' => $title !== '' ? $title : null,
+            'hint' => $help !== '' ? $help : null,
+            'fields' => $shown === null ? null : array_map(static fn (string $key): string => 'fields.'.$key, $shown),
+        ];
     }
 
     /**

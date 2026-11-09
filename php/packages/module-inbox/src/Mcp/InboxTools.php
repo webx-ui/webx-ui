@@ -20,6 +20,7 @@ use WebxUi\Inbox\Fields\Conditions;
 use WebxUi\Inbox\Fields\FieldNames;
 use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\Fields\Steps;
+use WebxUi\Inbox\Fields\Summary;
 use WebxUi\Inbox\Http\Controllers\FormController;
 use WebxUi\Inbox\Http\Resources\FieldResource;
 use WebxUi\Inbox\Http\Resources\FormResource;
@@ -122,6 +123,9 @@ final class InboxTools
                 .'the fields before the first step are a first step called by the form\'s title. A step has a title, help (the line under it), '
                 .'placeholder (a short label for the indicator), options.next-text (the words of its «Next») and options.when / unless like a field; '
                 .'a step switched off (is_enabled false) takes its fields with it. A step with no field after it and more than '.Steps::MAX.' steps are refused. '
+                .'A field of type "summary" asks nothing: it shows the visitor the answers given above it, each with «Edit», '
+                .'and is never part of a submission; options.fields names the fields it shows (none — every one above it but consent, file and hidden). '
+                .'It is printed only in a form of steps — a form on one page has every answer in sight. '
                 .'New fields go to the end in the order sent; `order` puts the form\'s fields in another one. '
                 .'dry_run answers with the plan and the steps the form would have.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->formSave($arguments)),
@@ -156,7 +160,7 @@ final class InboxTools
                         'items' => ['type' => 'object', 'properties' => [
                             'id' => ['type' => 'integer', 'description' => 'The field to change; omit for a new one.'],
                             'name' => ['type' => 'string', 'description' => 'The machine name: what the HTML calls it, what CSV and the intake key it by, and {{field.<name>}} in the templates of notification channels. Letters, digits, - and _. Omitted on a new field, it is made from the title: "Your phone" → your_phone, with _2 after a name the form has. Renaming a field breaks {{field.<old name>}} in channel templates; answers already received stay with the field.'],
-                            'type' => ['type' => 'string', 'description' => 'text · email · tel · textarea · select · radio · checkbox · consent · date · file · hidden · step (not a question: the start of a step).'],
+                            'type' => ['type' => 'string', 'description' => 'text · email · tel · textarea · select · radio · checkbox · consent · date · file · hidden · step (not a question: the start of a step) · summary (not a question: the answers so far).'],
                             'title' => ['type' => ['string', 'object'], 'description' => 'The label, in one language or in all of them.'],
                             'placeholder' => ['type' => ['string', 'object'], 'description' => 'The hint inside an empty field; of a step — the short label of the indicator.'],
                             'help' => ['type' => ['string', 'object'], 'description' => 'The line under the field; of a step — under its title.'],
@@ -170,13 +174,14 @@ final class InboxTools
                                 .'radio · checkbox: view "cards" draws the choices as cards (a list when omitted), columns 1–4 how many to a row on a wide form; '
                                 .'a choice of cards also takes description (one language or all) and image — a file of the media library as { "id": 62 } or { "path": "media/…" }, kept by its key. '
                                 .'They are the look of the field: an answer is still the label and the value. '
-                .'Any type but hidden: `when` and `unless` — when the field is shown, as { "<name of a field>": ["<value>", …] }: '
+                .'Any type but hidden and summary: `when` and `unless` — when the field is shown, as { "<name of a field>": ["<value>", …] }: '
                 .'"or" inside a list, "and" between names; `when` holds when every named field is shown and answered with one of its values '
                 .'(a checkbox — any one ticked; a consent — "1" when ticked), `unless` hides the field when the same `when` would hold. '
                 .'A condition names only a select, radio, checkbox or consent standing earlier in the form, and only values it offers. '
                 .'A hidden field is neither checked nor kept: its answer is thrown away, with JavaScript or without. '
                 .'A field others name cannot be removed or end up below them; renaming it renames the conditions. '
-                .'step: next-text — the words of its «Next» (one language or all), and when / unless as above.'],
+                .'step: next-text — the words of its «Next» (one language or all), and when / unless as above. '
+                .'summary: fields — the names of the fields it shows, e.g. ["purpose", "meeting"]; renaming a field renames it here too.'],
                             'remove' => ['type' => 'boolean', 'description' => 'Put the field aside: it leaves the form and stays readable in the submissions that used it.'],
                         ]],
                     ],
@@ -597,7 +602,7 @@ final class InboxTools
             }
 
             foreach ($renames as $old => $new) {
-                $plan[$index]['values']['options'] = Conditions::rename($plan[$index]['values']['options'], $old, $new);
+                $plan[$index]['values']['options'] = Summary::rename(Conditions::rename($plan[$index]['values']['options'], $old, $new), $old, $new);
             }
         }
 

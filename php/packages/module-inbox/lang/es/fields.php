@@ -103,4 +103,10 @@ return [
     'step-empty-badge' => 'Vacío',
     'delete-step-text' => 'Sus campos pasan al paso de arriba. Las respuestas ya recibidas los conservan.',
     'step-name-help' => 'Así se llama el paso en MCP, y así lo nombra «Siguiente» al servidor cuando lo revisa.',
+    'type-summary' => 'Resumen',
+    'summary-help' => 'Muestra al visitante las respuestas de arriba, cada una con «Cambiar», antes de enviar el formulario. Nada de él llega a la solicitud.',
+    'summary-fields' => 'Qué mostrar',
+    'summary-fields-help' => 'Vacío: todos los campos de arriba, salvo consentimientos, archivos y campos ocultos.',
+    'summary-flat' => 'El formulario no tiene pasos: el sitio muestra un resumen solo en un formulario por pasos, donde las respuestas no están a la vista.',
+    'summary-all' => 'Todos los campos de arriba',
 ];

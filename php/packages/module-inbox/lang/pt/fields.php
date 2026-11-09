@@ -103,4 +103,10 @@ return [
     'step-empty-badge' => 'Vazia',
     'delete-step-text' => 'Os seus campos passam para a etapa acima. As respostas já recebidas mantêm-nos.',
     'step-name-help' => 'É o nome da etapa no MCP, e o que «Seguinte» dá ao servidor quando a verifica.',
+    'type-summary' => 'Resumo',
+    'summary-help' => 'Mostra ao visitante as respostas dadas acima, cada uma com «Alterar», antes de enviar o formulário. Nada dele entra no pedido.',
+    'summary-fields' => 'O que mostrar',
+    'summary-fields-help' => 'Vazio — todos os campos acima, exceto consentimentos, arquivos e campos ocultos.',
+    'summary-flat' => 'O formulário não tem etapas: o site mostra um resumo só num formulário por etapas, onde as respostas não estão à vista.',
+    'summary-all' => 'Todos os campos acima',
 ];

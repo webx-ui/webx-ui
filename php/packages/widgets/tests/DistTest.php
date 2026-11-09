@@ -68,6 +68,9 @@ final class DistTest extends PlainTestCase
 
     private const int STEPS_STYLE_BUDGET = 2 * 1024;
 
+    /** The summary of a form (FORM_STEPS §7): a list built from the form, «Edit» on each row. */
+    private const int SUMMARY_BUDGET = 2 * 1024;
+
     /**
      * The offer of the first visit's language (ROUTING §18.6): a card and a cookie, loaded only where it is made.
      * 2 KB with its stylesheet: the copies of a header printed twice and a folded menu need an observer of size.
@@ -112,6 +115,14 @@ final class DistTest extends PlainTestCase
     }
 
     #[Test]
+    public function the_summary_is_its_own_file_inside_its_budget(): void
+    {
+        $size = self::gzipped('summary.js') + self::gzipped('summary.css');
+
+        $this->assertLessThanOrEqual(self::SUMMARY_BUDGET, $size, sprintf('summary is %.1f KB gzip.', $size / 1024));
+    }
+
+    #[Test]
     public function the_runtime_stays_inside_its_budget(): void
     {
         $size = 0;
@@ -138,7 +149,7 @@ final class DistTest extends PlainTestCase
         ));
         sort($built);
 
-        $this->assertSame(['attribution.js', 'back-to-top.css', 'back-to-top.js', 'captcha.js', 'compare.css', 'compare.js', 'consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'countdown.css', 'countdown.js', 'counter.css', 'counter.js', 'field.css', 'field.js', 'files.css', 'files.js', 'form.css', 'form.js', 'language-offer.css', 'language-offer.js', 'language-switcher.css', 'lightbox.css', 'lightbox.js', 'load-more.css', 'load-more.js', 'map.css', 'map.js', 'mask.js', 'notice-bar.css', 'notice-bar.js', 'pagination.css', 'runtime.css', 'runtime.js', 'select.css', 'select.js', 'share.css', 'share.js', 'slider.css', 'slider.js', 'smooth-scroll.css', 'smooth-scroll.js', 'sources.json', 'steps.css', 'steps.js', 'suggest.css', 'suggest.js', 'table.css', 'table.js', 'toc.css', 'toc.js', 'video.css', 'video.js', 'zoom.css', 'zoom.js'], $built);
+        $this->assertSame(['attribution.js', 'back-to-top.css', 'back-to-top.js', 'captcha.js', 'compare.css', 'compare.js', 'consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'countdown.css', 'countdown.js', 'counter.css', 'counter.js', 'field.css', 'field.js', 'files.css', 'files.js', 'form.css', 'form.js', 'language-offer.css', 'language-offer.js', 'language-switcher.css', 'lightbox.css', 'lightbox.js', 'load-more.css', 'load-more.js', 'map.css', 'map.js', 'mask.js', 'notice-bar.css', 'notice-bar.js', 'pagination.css', 'runtime.css', 'runtime.js', 'select.css', 'select.js', 'share.css', 'share.js', 'slider.css', 'slider.js', 'smooth-scroll.css', 'smooth-scroll.js', 'sources.json', 'steps.css', 'steps.js', 'suggest.css', 'suggest.js', 'summary.css', 'summary.js', 'table.css', 'table.js', 'toc.css', 'toc.js', 'video.css', 'video.js', 'zoom.css', 'zoom.js'], $built);
     }
 
     /**

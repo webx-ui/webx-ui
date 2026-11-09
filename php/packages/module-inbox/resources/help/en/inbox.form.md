@@ -52,6 +52,16 @@ and so does the order of the questions. Everything on the other tabs waits for �
 4. Press «Save». On the site the visitor sees one step at a time, with «Back» and «Next»; «Next»
    checks the step before going on. Without JavaScript all the steps stand on one page.
 
+## How to show the visitor what they chose
+
+1. In a form of steps, press «New field» and choose the type «Summary».
+2. Write its title — «Your request» — and, under «What to show», the questions to repeat. Empty — every
+   question above it but consents, files and hidden fields.
+3. Drag it to where the visitor should check the answers: usually the last step, above the contacts.
+4. Press «Save». On the site the summary lists the answers with «Edit» beside each, which takes the
+   visitor back to the question. Nothing of it goes into the submission. A form on one page, and a page
+   without JavaScript, show no summary: every answer is in sight there.
+
 ## How to choose what the list of submissions shows
 
 1. On the «Fields» tab, press «Edit» in the «···» menu of the field.
@@ -179,6 +189,12 @@ its place there; the title stays over the fields of the step.
 
 What the button that leaves this step says — «Choose the time» instead of «Next». Empty, the site's own
 word is used. The last step has no «Next»: it is sent with the button of the form.
+
+## What to show
+
+The questions the summary repeats, in the order of the form. Empty — every question above it that the
+visitor was shown and answered, but consents, files and hidden fields. A question deleted later simply
+drops out.
 
 ## Required
 

@@ -26,13 +26,15 @@
         (the same entries as `$controls`), `steps` and `:check` on the form; a view that prints only
         `$controls` draws the whole form on one page, as a page without JavaScript sees it, and the
         audit's `inbox.steps_in_old_view` says so,
+      · `type` `summary` among the controls of a step — <x-webx-form.summary> (FORM_STEPS §7): the answers
+        so far with «Edit»; `$controls` never has one, a view without it simply shows no summary,
       · `data-webx-attribution` — the widgets' attribution.js posts the campaign, the referrer and the
         landing page (`webx-inbox.attribution`, FORM_STEPS §8); a view without it sends none of them.
 
     `$description` — the line under the form's title (§5), HTML with its shortcodes; null without
     one, and in a dialog, which prints it under its own title.
 
-    Classes: webx-inbox-form (+ --<placement>), __description, __fields, __field, __field--half, __captcha,
+    Classes: webx-inbox-form (+ --<placement>), __description, __fields, __field, __field--half, __summary, __captcha,
     __actions, __honeypot; the rest are the widgets' webx-form-* and webx-field-*.
 --}}
 <x-webx-form
@@ -75,6 +77,14 @@
             >
                 <div class="webx-inbox-form__fields">
                     @foreach ($step['controls'] as $control)
+                    @if ($control['type'] === 'summary')
+                    <x-webx-form.summary
+                        :title="$control['label']"
+                        :hint="$control['hint']"
+                        :fields="$control['fields']"
+                        class="webx-inbox-form__summary"
+                    />
+                    @else
                     <x-webx-field
                         :type="$control['type']"
                         :name="$control['name']"
@@ -93,6 +103,7 @@
                         :condition="$control['condition'] ?? null"
                         :class="'webx-inbox-form__field'.($control['half'] ? ' webx-inbox-form__field--half' : '')"
                     >@if ($control['consent'] !== null){!! $control['consent'] !!}@endif</x-webx-field>
+                    @endif
                     @endforeach
                 </div>
                 {{-- On the last step, which the form's own button sends from. --}}

@@ -207,6 +207,8 @@ return [
             'back' => 'Back',
             'return' => 'Back to step :number: :title',
             'fix' => 'Please check step :number: :message',
+            'edit' => 'Edit',
+            'edit-field' => 'Edit: :field',
         ],
     ],
     'suggest' => [

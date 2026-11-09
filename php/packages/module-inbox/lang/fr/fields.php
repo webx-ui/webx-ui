@@ -103,4 +103,10 @@ return [
     'step-empty-badge' => 'Vide',
     'delete-step-text' => 'Ses champs rejoignent l’étape du dessus. Les réponses déjà reçues les gardent.',
     'step-name-help' => 'C’est le nom de l’étape dans MCP, et celui que « Suivant » donne au serveur quand il la vérifie.',
+    'type-summary' => 'Récapitulatif',
+    'summary-help' => 'Montre au visiteur les réponses données au-dessus, chacune avec « Modifier », avant qu’il envoie le formulaire. Rien n’en passe dans la demande.',
+    'summary-fields' => 'Quoi afficher',
+    'summary-fields-help' => 'Vide — tous les champs au-dessus, sauf les consentements, les fichiers et les champs cachés.',
+    'summary-flat' => 'Le formulaire n’a pas d’étapes : le site n’affiche un récapitulatif que dans un formulaire par étapes, où les réponses ne sont pas sous les yeux.',
+    'summary-all' => 'Tous les champs au-dessus',
 ];

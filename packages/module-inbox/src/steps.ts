@@ -13,7 +13,12 @@ export function isStep(field: InboxField): boolean {
   return field.type === 'step'
 }
 
-/** The fields a visitor answers: no step rows, nothing switched off, nothing of a step switched off. */
+/** Whether a visitor answers it: not a step row, not a summary (FORM_STEPS §7). */
+export function isQuestion(field: InboxField): boolean {
+  return field.type !== 'step' && field.type !== 'summary'
+}
+
+/** The fields a visitor answers: no step rows, no summary, nothing switched off or of a step switched off. */
 export function questionsOf(fields: InboxField[]): InboxField[] {
   let on = true
 
@@ -24,7 +29,7 @@ export function questionsOf(fields: InboxField[]): InboxField[] {
       return false
     }
 
-    return on && field.is_enabled
+    return on && field.is_enabled && isQuestion(field)
   })
 }
 

@@ -71,7 +71,7 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
   POST, each error back under its field. With it: sent in place, `X-XSRF-TOKEN`, one retry on 419,
   a 422 by field, no second submission, files with progress. `:csrf="false"` only for a door
   guarded otherwise (inbox's intake). `again` (off by default) — «Send another» (`webx-form__again`)
-  in place of the fields after the thank-you: them back empty, focus on the first; no JS — a link. `steps` + `<x-webx-form.step name title :when>` — one step at a time (`steps.js`): an indicator, «Next» checks the step (`:check` — the site's door, `webx_step`; 204 or 422), «Back» nothing; an error behind brings its step back; event `webx:form:step`; no JS — fieldsets on one page.
+  in place of the fields after the thank-you: them back empty, focus on the first; no JS — a link. `steps` + `<x-webx-form.step name title :when>` — one step at a time (`steps.js`): an indicator, «Next» checks the step (`:check` — the site's door, `webx_step`; 204 or 422), «Back» nothing; an error behind brings its step back; event `webx:form:step`; no JS — fieldsets on one page. `<x-webx-form.summary :fields>` — the answers so far with «Edit» (`summary.js`); hidden without JS.
 - **The answer** — `WebxUi\Widgets\Forms\FormResponse`: `FormResponse::message($heading, $html)`,
   `FormResponse::redirect($url)`, `FormResponse::html($view)` (a next step in place of the fields),
   `FormResponse::ok()` (only the event); JSON to the script, a redirect with flash to a plain POST;

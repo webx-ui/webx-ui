@@ -103,4 +103,10 @@ return [
     'step-empty-badge' => 'Boş',
     'delete-step-text' => 'Alanları üstteki adıma geçer. Alınmış yanıtlar onları korur.',
     'step-name-help' => 'Adım MCP\'de bu adla anılır; «İleri» de adımı denetlerken sunucuya bu adı verir.',
+    'type-summary' => 'Özet',
+    'summary-help' => 'Ziyaretçiye formu göndermeden önce yukarıdaki yanıtları, her birinin yanında «Değiştir» ile gösterir. Hiçbir şeyi başvuruya girmez.',
+    'summary-fields' => 'Ne gösterilsin',
+    'summary-fields-help' => 'Boş — onay, dosya ve gizli alanlar dışında yukarıdaki tüm alanlar.',
+    'summary-flat' => 'Formda adım yok: site özeti yalnızca adımlı bir formda, yanıtların göz önünde olmadığı yerde gösterir.',
+    'summary-all' => 'Yukarıdaki tüm alanlar',
 ];

@@ -335,6 +335,15 @@ fields.splice(
     options: { 'next-text': { ru: 'К отправке', en: 'To sending' } },
     is_fullsize: true,
   }),
+  // The summary (FORM_STEPS §7): on the last screen, what was chosen on the first two.
+  field(1, {
+    key: 'summary',
+    type: 'summary',
+    title: { ru: 'Вы выбрали', en: 'You chose' },
+    help: { ru: 'Проверьте перед отправкой', en: 'Check it before sending' },
+    options: { fields: ['purpose', 'agency'] },
+    is_fullsize: true,
+  }),
 )
 
 /** The fields of a form whose conditions name `key`. */

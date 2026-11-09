@@ -365,6 +365,32 @@ The words are props: `steps-label`, `step-label` («Step :current of :total»), 
 («Back to step :number: :title»), `fix-label` («Please check step :number: :message») on the form,
 `next-label` and `back-label` on a step; `label` is a step's short line in the indicator.
 
+### Summary
+
+`<x-webx-form.summary>` repeats the answers given so far — usually on the last step, over the contacts —
+each with «Edit» that brings its field back (FORM_STEPS §7). It asks nothing and sends nothing:
+
+```blade
+<x-webx-form.step name="contacts" :title="__('Your details')">
+    <x-webx-form.summary :title="__('Your request')" :fields="['fields.purpose', 'fields.day']" />
+    <x-webx-field name="fields.name" :label="__('Name')" required />
+</x-webx-form.step>
+```
+
+- **What it shows** — the fields `:fields` names, by their names on the page, in the order of the
+  form; without it, every field above the summary. Only a field that is shown (a condition, a step
+  out of the way) and answered; never a consent, a file, a hidden field, a password or a single tick.
+- **How** — a `<dl>` of the field's label and its answer: the words of a choice, not its value; the
+  text typed. Built from the form as it stands, on every change and when its step comes
+  (`summary.js`, claimed only by the summary).
+- **«Edit»** — the field's step comes back (`webx:form:reveal` with `detail.edit`, without a word in
+  the alert), the focus on the field. Its name for a screen reader is «Edit: Purpose».
+- **Without JavaScript** it is hidden: every answer stands on the page above it. With nothing to show,
+  it is hidden too.
+
+The words are props: `edit-label` («Edit»), `edit-field-label` («Edit: :field»); `level` — the heading
+level of its title, 4 by default.
+
 ### In a dialog
 
 Any form in `<x-webx-dialog>` — and the Inbox's forms a button opens (`data-webx-form="<slug>"`) — behaves the same: the thank-you takes the place of the
@@ -409,6 +435,7 @@ it is a link to the same page, which comes back without the answer, so the form 
 | `__answer-value`                                                                                                             | a visitor's answer in the thank-you  |
 | `webx-form--steps`, `webx-form-steps` > `__step` > `__button`, `__number`, `__label` (`is-current`, `is-done`, `is-reached`) | a form of steps, its indicator       |
 | `webx-form-step` > `__legend` > `__count`, `__title`; `__hint`, `__condition`, `__fields`, `__nav` > `__back`, `__next`      | a step                               |
+| `webx-form-summary` > `__title`, `__hint`, `__list` > `__row` > `__term`, `__value`, `__actions` > `__edit`                  | the summary                          |
 
 Variables on `:root`: `--webx-form-gap`, `--webx-form-button-height`, `--webx-form-steps-size`,
 `--webx-form-steps-line`.

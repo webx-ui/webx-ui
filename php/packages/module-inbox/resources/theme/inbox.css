@@ -34,6 +34,12 @@
   min-width: 0;
 }
 
+/* The summary of a form of steps (FORM_STEPS §7): a whole row, over the fields that follow it. */
+.webx-inbox-form__summary {
+  min-width: 0;
+  grid-column: 1 / -1;
+}
+
 .webx-inbox-form__captcha {
   margin-block-end: var(--site-space-4);
 }

@@ -103,4 +103,10 @@ return [
     'step-empty-badge' => 'Pusty',
     'delete-step-text' => 'Jego pola przejdą do kroku powyżej. Otrzymane już odpowiedzi je zachowają.',
     'step-name-help' => 'Tak nazywa się krok w MCP i tak «Dalej» przedstawia go serwerowi, gdy go sprawdza.',
+    'type-summary' => 'Podsumowanie',
+    'summary-help' => 'Pokazuje odwiedzającemu odpowiedzi powyżej, każdą z «Zmień», zanim wyśle formularz. Nic z niego nie trafia do zgłoszenia.',
+    'summary-fields' => 'Co pokazać',
+    'summary-fields-help' => 'Puste — wszystkie pola powyżej, poza zgodami, plikami i polami ukrytymi.',
+    'summary-flat' => 'Formularz nie ma kroków: strona pokazuje podsumowanie tylko w formularzu z krokami, gdzie odpowiedzi nie są na widoku.',
+    'summary-all' => 'Wszystkie pola powyżej',
 ];

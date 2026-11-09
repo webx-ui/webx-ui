@@ -49,8 +49,8 @@ final class Steps
     }
 
     /**
-     * The fields a visitor answers, in their order: no step rows, nothing of a step switched off,
-     * no field switched off.
+     * The fields a visitor answers, in their order: no step rows, no summary, nothing of a step
+     * switched off, no field switched off.
      *
      * @param  iterable<Field>  $fields
      * @return list<Field>
@@ -67,7 +67,7 @@ final class Steps
                 continue;
             }
 
-            if ($on && $field->is_enabled !== false) {
+            if ($on && $field->is_enabled !== false && $field->type->isQuestion()) {
                 $questions[] = $field;
             }
         }

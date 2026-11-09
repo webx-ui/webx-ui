@@ -103,4 +103,10 @@ return [
     'step-empty-badge' => 'Vuoto',
     'delete-step-text' => 'I suoi campi passano al passo sopra. Le risposte già ricevute li conservano.',
     'step-name-help' => 'È il nome del passo in MCP, e quello che «Avanti» dà al server quando lo controlla.',
+    'type-summary' => 'Riepilogo',
+    'summary-help' => 'Mostra al visitatore le risposte date sopra, ciascuna con «Modifica», prima che invii il modulo. Niente finisce nella richiesta.',
+    'summary-fields' => 'Cosa mostrare',
+    'summary-fields-help' => 'Vuoto — tutti i campi sopra, tranne consensi, file e campi nascosti.',
+    'summary-flat' => 'Il modulo non ha passaggi: il sito mostra un riepilogo solo in un modulo a passaggi, dove le risposte non sono in vista.',
+    'summary-all' => 'Tutti i campi sopra',
 ];

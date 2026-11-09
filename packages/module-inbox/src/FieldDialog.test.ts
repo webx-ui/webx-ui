@@ -530,4 +530,99 @@ describe('WxInboxFieldDialog', () => {
       expect(document.body.textContent).toContain('A step that is off takes its fields with it')
     })
   })
+  describe('a summary (FORM_STEPS §7)', () => {
+    const purpose: InboxField = {
+      ...phone,
+      id: 6,
+      key: 'purpose',
+      name: 'purpose',
+      type: 'radio',
+      title: { en: 'Purpose' },
+    }
+    const terms: InboxField = {
+      ...phone,
+      id: 7,
+      key: 'terms',
+      name: 'terms',
+      type: 'consent',
+      title: { en: 'Terms' },
+    }
+    const step: InboxField = {
+      ...phone,
+      id: 8,
+      key: 'step_contacts',
+      name: 'step_contacts',
+      type: 'step',
+      title: { en: 'Contacts' },
+    }
+
+    it('is chosen among the types and asks for the fields it shows, of the ones a summary may show', async () => {
+      const { wrapper, post, control, labels } = dialog(null, [], [purpose, terms, step, phone])
+      await flushPromises()
+
+      const type = wrapper.findComponent({ name: 'WxSelect' })
+      expect(type.props('options')).toContainEqual({ value: 'summary', label: 'Summary' })
+      type.vm.$emit('update:modelValue', 'summary')
+      await flushPromises()
+
+      expect(document.body.textContent).toContain('Nothing of it goes into the submission')
+      expect(labels()).toEqual(
+        expect.arrayContaining(['Label', 'Hint under the field', 'What to show']),
+      )
+      expect(labels()).not.toContain('Placeholder')
+      // Nothing a question has: no «Required», no column, no condition.
+      const ticks = wrapper
+        .findAllComponents({ name: 'WxCheckbox' })
+        .map((one) => one.props('label'))
+      expect(ticks).toEqual(['Shown'])
+      expect(wrapper.findComponent({ name: 'WxSegmented' }).exists()).toBe(false)
+      // The form has steps: no word of a summary the site would not show.
+      expect(document.body.textContent).not.toContain('The form has no steps')
+
+      const shown = wrapper
+        .findAllComponents({ name: 'WxFormItem' })
+        .find((one) => one.props('label') === 'What to show')!
+        .findComponent({ name: 'WxSelect' })
+      expect(shown.props('multiple')).toBe(true)
+      expect(shown.props('options')).toEqual([
+        { value: 'purpose', label: 'Purpose' },
+        { value: 'phone', label: 'Phone' },
+      ])
+      shown.vm.$emit('update:modelValue', ['purpose'])
+      control('Label').vm.$emit('update:modelValue', { en: 'Your request' })
+      await flushPromises()
+
+      await wrapper
+        .findAllComponents({ name: 'WxButton' })
+        .find((one) => one.text() === 'Save')!
+        .trigger('click')
+      await flushPromises()
+
+      expect(post).toHaveBeenCalledWith(
+        '/api/cms/inbox/forms/1/fields',
+        expect.objectContaining({
+          type: 'summary',
+          title: { en: 'Your request' },
+          options: { fields: ['purpose'] },
+          is_required: false,
+          in_table: false,
+        }),
+      )
+    })
+
+    it('says that a form without steps does not show it', async () => {
+      const row: InboxField = {
+        ...phone,
+        id: 9,
+        key: 'summary',
+        name: 'summary',
+        type: 'summary',
+        title: { en: 'Summary' },
+      }
+      dialog(row, [], [purpose, row])
+      await flushPromises()
+
+      expect(document.body.textContent).toContain('The form has no steps')
+    })
+  })
 })

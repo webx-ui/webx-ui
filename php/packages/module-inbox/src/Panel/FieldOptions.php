@@ -7,6 +7,7 @@ namespace WebxUi\Inbox\Panel;
 use WebxUi\Inbox\Fields\ChoiceImages;
 use WebxUi\Inbox\Fields\Conditions;
 use WebxUi\Inbox\Fields\FieldType;
+use WebxUi\Inbox\Fields\Summary;
 
 /**
  * What each kind of field may be configured with (§4), and nothing else.
@@ -44,11 +45,14 @@ final class FieldOptions
             FieldType::Hidden => [],
             // A step (FORM_STEPS §3.1): the words of its «Next», when they are not the site's own.
             FieldType::Step => ['next-text' => self::words($input['next-text'] ?? null) ?? ''],
+            // The summary (FORM_STEPS §7): the names of the fields it shows, none — every one above.
+            FieldType::Summary => [Summary::KEY => Summary::clean($input[Summary::KEY] ?? null)],
         };
 
         // When the field is shown (FORM_STEPS §4), whatever its type: a hidden field is filled in
-        // by the site and never shown, so a condition on it would mean nothing.
-        if ($type !== FieldType::Hidden) {
+        // by the site and never shown, so a condition on it would mean nothing; a summary shows
+        // what is shown above it, so it has its condition already.
+        if ($type !== FieldType::Hidden && $type !== FieldType::Summary) {
             foreach (Conditions::KEYS as $key) {
                 $options[$key] = Conditions::clean($input[$key] ?? null) ?? [];
             }

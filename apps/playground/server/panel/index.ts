@@ -2329,6 +2329,8 @@ on('POST', '/inbox/forms/(\\d+)/fields', ({ params, body }) => {
   const formId = Number(params[0])
   // A step row (FORM_STEPS §3.1) is never answered; past ten steps the indicator does not fit.
   const step = body.type === 'step'
+  // Nor is a summary (§7): it shows the answers above it.
+  const answered = !step && body.type !== 'summary'
   const own = fields.filter((item) => item.form_id === formId)
 
   if (
@@ -2351,9 +2353,9 @@ on('POST', '/inbox/forms/(\\d+)/fields', ({ params, body }) => {
     help: (body.help ?? {}) as InboxField['help'],
     options: (body.options ?? {}) as InboxField['options'],
     is_enabled: body.is_enabled !== false,
-    is_required: !step && body.is_required === true,
-    is_fullsize: step || body.is_fullsize === true,
-    in_table: !step && body.in_table === true,
+    is_required: answered && body.is_required === true,
+    is_fullsize: !answered || body.is_fullsize === true,
+    in_table: answered && body.in_table === true,
     position: fields.filter((item) => item.form_id === formId).length + 1,
   }
 

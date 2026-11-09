@@ -14,7 +14,8 @@
  *    is «Next» too, but on the last step;
  *  - the last step shown has the form's own buttons in place of «Next»;
  *  - an error on a step not shown (the server's, on the last press) brings that step back, the
- *    focus on the field, and says in the form's alert which step it is;
+ *    focus on the field, and says in the form's alert which step it is; «Edit» of a summary
+ *    (summary.js, `detail.edit`) brings it back the same way, without a word in the alert;
  *  - a change of step: `webx:form:step` (cancelable; `detail.from`, `detail.to` — numbers among
  *    the steps shown, `detail.name`), the focus on the step's title without a jump, the top of the
  *    form in sight — in a dialog, of the dialog's own scroll;
@@ -273,7 +274,8 @@ export function steps(el) {
     if (!step || !all.includes(step) || step === current) return
     const message = event.detail?.field?.querySelector('.webx-form__error, .webx-field__error')
     go(step, true)
-    if (alert) {
+    // «Edit» of a summary (summary.js) brings the step back to change an answer: nothing is wrong.
+    if (alert && !event.detail?.edit) {
       const line = document.createElement('p')
       line.className = 'webx-form__refusal'
       line.textContent = text(words.fix, {

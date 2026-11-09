@@ -8,6 +8,7 @@ import {
   useTranslate,
 } from '@webx-ui/module-admin'
 import {
+  localizedValue,
   toast,
   useModal,
   WxAction,
@@ -161,12 +162,38 @@ const renamedFrom = computed(() => {
   return was !== '' && now !== '' && now !== was ? was : null
 })
 
-const types = computed(() =>
-  FIELD_TYPES.map((one) => ({ value: one, label: t(`fields.type-${one}`) })),
-)
+// The questions, then the summary (FORM_STEPS §7): not a question, but chosen in the same list.
+const types = computed(() => [
+  ...FIELD_TYPES.map((one) => ({ value: one, label: t(`fields.type-${one}`) })),
+  { value: 'summary', label: t('fields.type-summary') },
+])
 
 /** The row that starts a step: a title, its words, its condition — nothing a question has. */
 const isStep = computed(() => type.value === 'step')
+
+/** The answers so far with «Edit» (FORM_STEPS §7): a title, a line, the fields it shows. */
+const isSummary = computed(() => type.value === 'summary')
+
+/** Neither a step nor a summary is answered: required, half width and a column mean nothing. */
+const isQuestion = computed(() => !isStep.value && !isSummary.value)
+
+/** What a summary may show: the questions above it, but a consent, a file and a hidden field. */
+const summarized = computed(() =>
+  above.value
+    .filter((one) => !['step', 'summary', 'consent', 'file', 'hidden'].includes(one.type))
+    .map((one) => ({
+      value: one.key,
+      label: localizedValue(one.title, locales.active.value, one.key),
+    })),
+)
+
+const summaryFields = computed({
+  get: () => (Array.isArray(options.value.fields) ? (options.value.fields as string[]) : []),
+  set: (value: string[]) => set('fields', value),
+})
+
+/** The site draws a summary only in a form of steps: on one page every answer is in sight. */
+const flat = computed(() => !props.fields.some((one) => one.type === 'step'))
 
 const dialogTitle = computed(() => {
   if (isStep.value) return props.field ? t('fields.edit-step') : t('fields.new-step')
@@ -272,9 +299,9 @@ async function save(): Promise<void> {
     help: help.value,
     options: options.value,
     is_enabled: isEnabled.value,
-    is_required: isRequired.value,
-    is_fullsize: isFullsize.value,
-    in_table: inTable.value,
+    is_required: isQuestion.value && isRequired.value,
+    is_fullsize: !isQuestion.value || isFullsize.value,
+    in_table: isQuestion.value && inTable.value,
   }
 
   try {
@@ -339,6 +366,26 @@ async function save(): Promise<void> {
             @update:model-value="(value) => set('next-text', value)"
           />
         </wx-form-item>
+      </template>
+
+      <!-- A summary: the line under its title, the fields it shows (FORM_STEPS §7). -->
+      <template v-else-if="isSummary">
+        <wx-text size="sm" tone="muted">{{ t('fields.summary-help') }}</wx-text>
+
+        <wx-form-item :label="t('fields.help')">
+          <wx-input v-model="help" localized />
+        </wx-form-item>
+
+        <wx-form-item :label="t('fields.summary-fields')" :help="t('fields.summary-fields-help')">
+          <wx-select
+            v-model="summaryFields"
+            :options="summarized"
+            :placeholder="t('fields.summary-all')"
+            multiple
+          />
+        </wx-form-item>
+
+        <wx-alert v-if="flat" type="info" variant="soft" :description="t('fields.summary-flat')" />
       </template>
 
       <!-- A hidden field has neither: nobody reads a placeholder they cannot see. -->
@@ -547,7 +594,7 @@ async function save(): Promise<void> {
 
       <!-- A hidden field is filled in by the page and never seen, so it has nothing to show by. -->
       <field-condition
-        v-if="type !== 'hidden'"
+        v-if="type !== 'hidden' && !isSummary"
         :options="options"
         :above="above"
         :fields="fields"
@@ -557,8 +604,8 @@ async function save(): Promise<void> {
 
       <div class="wx-inbox-field-form__checks">
         <wx-checkbox v-model="isEnabled" :label="t('fields.is-enabled')" />
-        <!-- A step is never answered: required, half width and a column mean nothing to it. -->
-        <template v-if="!isStep">
+        <!-- A step and a summary are never answered: required, half width and a column mean nothing. -->
+        <template v-if="isQuestion">
           <wx-checkbox v-model="isRequired" :label="t('fields.is-required')" />
           <wx-checkbox
             v-if="type !== 'hidden'"

@@ -103,4 +103,10 @@ return [
     'step-empty-badge' => 'Leer',
     'delete-step-text' => 'Seine Felder kommen zum Schritt darüber. Bereits erhaltene Antworten behalten sie.',
     'step-name-help' => 'So heißt der Schritt in MCP, und so nennt «Weiter» ihn dem Server, wenn es ihn prüft.',
+    'type-summary' => 'Zusammenfassung',
+    'summary-help' => 'Zeigt dem Besucher die Antworten darüber, jede mit «Ändern», bevor er das Formular sendet. Nichts davon gelangt in die Anfrage.',
+    'summary-fields' => 'Was angezeigt wird',
+    'summary-fields-help' => 'Leer — alle Felder darüber, außer Einwilligungen, Dateien und versteckten Feldern.',
+    'summary-flat' => 'Das Formular hat keine Schritte: Die Website zeigt eine Zusammenfassung nur in einem Formular mit Schritten, wo die Antworten nicht zu sehen sind.',
+    'summary-all' => 'Alle Felder darüber',
 ];

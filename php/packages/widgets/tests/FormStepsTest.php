@@ -109,6 +109,39 @@ final class FormStepsTest extends TestCase
     }
 
     #[Test]
+    public function the_summary_is_printed_hidden_with_its_words_and_claims_its_script(): void
+    {
+        $html = Blade::render(<<<'BLADE'
+            <x-webx-form action="/visit" id="visit" steps>
+                <x-webx-form.step name="purpose" title="Purpose">
+                    <x-webx-field name="fields.purpose" type="radio" label="Purpose" :choices="['agency' => 'Agency meeting']" />
+                </x-webx-form.step>
+                <x-webx-form.step name="contacts" title="Your details">
+                    <x-webx-form.summary title="Your request" hint="Check it before sending." :fields="['fields.purpose']" />
+                    <x-webx-field name="fields.name" label="Name" />
+                </x-webx-form.step>
+            </x-webx-form>
+            BLADE);
+
+        $this->assertContains('summary', Widgets::claimed());
+        // Hidden: without JavaScript every answer is on the page above it; summary.js fills the list.
+        $this->assertStringContainsString('<section id="visit-summary-1" class="webx-form-summary" data-webx-summary data-webx-summary-edit="Edit" data-webx-summary-field="Edit: :field" data-webx-summary-fields="[&quot;fields.purpose&quot;]" aria-labelledby="visit-summary-1-title" hidden>', $html);
+        $this->assertStringContainsString('<p class="webx-form-summary__title" id="visit-summary-1-title" role="heading" aria-level="4">Your request</p>', $html);
+        $this->assertStringContainsString('<p class="webx-form-summary__hint">Check it before sending.</p>', $html);
+        $this->assertStringContainsString('<dl class="webx-form-summary__list"></dl>', $html);
+
+        // No names: every field above it; the words in the page's language, or the props.
+        $this->app->setLocale('ru');
+        $plain = Blade::render('<x-webx-form action="/a"><x-webx-form.summary /></x-webx-form>');
+        $this->assertStringNotContainsString('data-webx-summary-fields', $plain);
+        $this->assertStringNotContainsString('aria-labelledby', $plain);
+        $this->assertStringContainsString('data-webx-summary-edit="Изменить" data-webx-summary-field="Изменить: :field"', $plain);
+        $own = Blade::render('<x-webx-form action="/a"><x-webx-form.summary edit-label="Change" edit-field-label="Change :field" :level="3" title="T" /></x-webx-form>');
+        $this->assertStringContainsString('data-webx-summary-edit="Change" data-webx-summary-field="Change :field"', $own);
+        $this->assertStringContainsString('aria-level="3"', $own);
+    }
+
+    #[Test]
     public function a_step_name_the_form_cannot_send_is_a_mistake_said_at_once(): void
     {
         try {

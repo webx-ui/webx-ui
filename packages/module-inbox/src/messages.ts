@@ -337,6 +337,14 @@ export const inboxMessages: Record<string, Messages> = {
     'step-name-help':
       'The step is called by it in MCP, and «Next» names it to the server when it checks the step.',
     'delete-step-text': 'Its fields join the step above. Answers already given keep them.',
+    'type-summary': 'Summary',
+    'summary-help':
+      'Shows the visitor the answers given above it, each with «Edit», before they send the form. Nothing of it goes into the submission.',
+    'summary-fields': 'What to show',
+    'summary-fields-help': 'Empty — every field above it, but consents, files and hidden fields.',
+    'summary-flat':
+      'The form has no steps: the site shows a summary only in a form of steps, where the answers are out of sight.',
+    'summary-all': 'Every field above it',
   },
 
   relations: {

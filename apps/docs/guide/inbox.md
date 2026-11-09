@@ -143,6 +143,16 @@ the site; `inbox_form_save` refuses one (`step.empty`). More than ten steps are 
 A `form.blade.php` published before the steps prints the whole form on one page; the audit's
 `inbox.steps_in_old_view` names it.
 
+### Summary
+
+A row of type `summary` (FORM_STEPS §7) asks nothing: on the site it is the widgets'
+`<x-webx-form.summary>` ([Forms](./forms#summary)) — the answers given above it, each with «Edit». Its
+`title` and `help` are its heading and the line under it; `options.fields` names the fields it
+shows, none — every one above it but consents, files and hidden fields. A rename carries into it; a
+field deleted later drops out. It is never answered — nothing of it in a submission, no column, no
+condition — and is printed only in a form of steps: on one page every answer is in sight. In the panel
+it is the type «Summary» of the field dialog, with «What to show».
+
 ### Answers keep a copy of the question
 
 Beside every answer sit the field's name, label and type **as they were when it arrived**:

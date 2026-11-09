@@ -125,6 +125,8 @@ export default {
         form: join(root, 'resources/js/form.js'),
         // One step of a form at a time, «Next» and «Back»: only where <x-webx-form steps> stands.
         steps: join(root, 'resources/js/steps.js'),
+        // The answers so far with «Edit» beside each: only where <x-webx-form.summary> stands.
+        summary: join(root, 'resources/js/summary.js'),
         // Where the visitor came from, into the submission: only with a form that asks for it.
         attribution: join(root, 'resources/js/attribution.js'),
         // The site's captcha in a form: the invisible ones run on submit, a checkbox is checked before.
