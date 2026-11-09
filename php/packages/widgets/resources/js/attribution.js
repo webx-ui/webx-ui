@@ -103,6 +103,7 @@ document.addEventListener('webx:form:submit', (event) => {
 
 document.addEventListener('webx:consent', remember)
 
-// After every module of the page: consent.js, claimed later, has said by then what was agreed to.
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', remember)
-else remember()
+// On `load`, not now: a module runs while the page is already `interactive`, before consent.js —
+// claimed later — has said what was agreed to. A submit before then still sends this page.
+if (document.readyState === 'complete') remember()
+else window.addEventListener('load', remember, { once: true })

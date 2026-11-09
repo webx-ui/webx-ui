@@ -111,4 +111,17 @@ describe('attribution', () => {
 
     expect(localStorage.getItem(KEY)).toBeNull()
   })
+
+  it('waits for the page to load before it asks about consent: consent.js comes after it', async () => {
+    Object.defineProperty(document, 'readyState', { value: 'interactive', configurable: true })
+    try {
+      await visit({ url: '/?utm_source=first', statistics: true })
+      expect(localStorage.getItem(KEY)).toBeNull()
+
+      window.dispatchEvent(new Event('load'))
+      expect(kept().first.utm).toEqual({ utm_source: 'first' })
+    } finally {
+      delete document.readyState
+    }
+  })
 })
