@@ -142,7 +142,10 @@ final class BlocksTest extends TestCase
         $this->assertSame(2, substr_count($this->render('gallery', ['pictures' => $pictures, 'ratio' => '16:9', 'view' => 'slider']), 'data-webx-lightbox-ratio="16:9"'));
 
         // The field is offered only where a click opens the picture.
-        $field = collect(json_decode((string) file_get_contents(__DIR__.'/../resources/blocks/gallery.json'), true)['schema'])->firstWhere('id', 'ratio');
+        /** @var array{schema: list<array<string, mixed>>} $type */
+        $type = json_decode((string) file_get_contents(__DIR__.'/../resources/blocks/gallery.json'), true);
+        /** @var array{visible: mixed, props: array{options: list<array{value: string}>}} $field */
+        $field = array_values(array_filter($type['schema'], static fn (array $node): bool => ($node['id'] ?? null) === 'ratio'))[0];
         $this->assertSame(['when' => 'zoom', 'not' => false], $field['visible']);
         $this->assertSame(['auto', '4:3', '16:9', '1:1'], array_column($field['props']['options'], 'value'));
     }
