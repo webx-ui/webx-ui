@@ -183,7 +183,12 @@ async function save(): Promise<void> {
       </div>
     </div>
 
-    <wx-descriptions v-else :columns="1" size="sm">
+    <!--
+      A label is the administrator's own sentence ("Do not call back if everything is in stock — just
+      send it"): sized to its content, it took the whole of a narrow card and left the value none.
+      Half the card at most, and it wraps.
+    -->
+    <wx-descriptions v-else :columns="1" size="sm" label-width="fit-content(50%)">
       <wx-descriptions-item v-for="row in rows" :key="row.key" :label="row.label">
         <!-- Typed by the buyer, not authored: the line breaks are kept, nothing renders as markup. -->
         <span v-if="shown(row) !== null" class="wx-orders-fields__value">{{ shown(row) }}</span>

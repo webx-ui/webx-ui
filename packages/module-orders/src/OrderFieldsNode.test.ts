@@ -99,6 +99,9 @@ describe('WxOrdersFields', () => {
     expect(text).toContain('No longer asked at the checkout')
     expect(text).toContain('Delivery time')
     expect(text).toContain('Not filled')
+    // A label is a sentence: capped at half the card, or a narrow card has no room for the value.
+    const list = wrapper.find('.wx-descriptions').element as HTMLElement
+    expect(list.style.getPropertyValue('--wx-descriptions-label')).toBe('fit-content(50%)')
     wrapper.unmount()
   })
 
