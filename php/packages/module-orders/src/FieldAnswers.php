@@ -223,7 +223,11 @@ final readonly class FieldAnswers
         };
     }
 
-    /** Whether the answer is what the row holds: then the row, its label too, stays a snapshot. */
+    /**
+     * Whether the answer is what the row holds: then the row, its label too, stays a snapshot.
+     *
+     * @param  array{key: string, type: string, label: string, value: bool|string, text: string}  $row
+     */
     private static function same(array $row, mixed $raw): bool
     {
         if ($row['value'] === true) {
