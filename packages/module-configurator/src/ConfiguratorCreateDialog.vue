@@ -42,8 +42,9 @@ watch(title, (name) => {
   if (!typed.value) key.value = codify(name, { max: 64, locale: locale.value })
 })
 
-function onKey(value: string): void {
-  key.value = value
+// The field is not `localized` here, so what it hands back is always one string.
+function onKey(value: unknown): void {
+  key.value = typeof value === 'string' ? value : ''
   typed.value = key.value !== ''
 }
 
