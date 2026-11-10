@@ -103,7 +103,13 @@ final readonly class ModuleName
      */
     public function replacements(): array
     {
+        $model = Str::lower(Str::headline($this->model));
+        // "an office", "a team": by the first letter, which is right for the names a section gets.
+        $article = in_array($model[0] ?? '', ['a', 'e', 'i', 'o', 'u'], true) ? 'an' : 'a';
+
         return [
+            '{{ a model }}' => "{$article} {$model}",
+            '{{ A model }}' => Str::ucfirst($article)." {$model}",
             '{{ id }}' => $this->id,
             '{{ Studly }}' => $this->studly,
             '{{ Model }}' => $this->model,

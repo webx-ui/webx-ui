@@ -26,7 +26,7 @@ abstract class TestCase extends SiteTestCase
         return dirname(__DIR__);
     }
 
-    /** A {{ model }} with a title in the default language. */
+    /** {{ A model }} with a title in the default language. */
     protected function record(string $title): {{ Model }}
     {
         return {{ Model }}::query()->create(['title' => [$this->defaultLocale() => $title]])->refresh();

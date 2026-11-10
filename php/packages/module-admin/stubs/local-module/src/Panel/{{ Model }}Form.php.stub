@@ -15,7 +15,7 @@ use WebxUi\Localization\Locales;
  * The form on the server side: what its fields hold, and what a save writes — the panel's door
  * and an agent's alike.
  *
- * The screen is `{{ id }}.form`, keyed by field name, so what a {{ model }} is made of is decided by
+ * The screen is `{{ id }}.form`, keyed by field name, so what {{ a model }} is made of is decided by
  * the description: a project's field arrives as a patch and is saved into `extra` by being on the
  * screen at all. What this class knows is which names are the record's own.
  */
@@ -38,7 +38,7 @@ final class {{ Model }}Form
     ) {}
 
     /**
-     * A {{ model }} and the values of its screen.
+     * {{ A model }} and the values of its screen.
      *
      * @return array<string, mixed>
      */

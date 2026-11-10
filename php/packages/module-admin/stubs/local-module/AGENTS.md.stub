@@ -32,7 +32,7 @@ renaming three things: the vendor `site`, the namespace `Site\` and the npm scop
 
 | You want                         | Do this                                                                                  |
 | -------------------------------- | ---------------------------------------------------------------------------------------- |
-| A new field of a {{ model }}     | a column (migration + model), a node in `resources/screens/form.json`, its line of help in every language, the name in `OWN` of `{{ Model }}Form` |
+| A new field of {{ a model }}     | a column (migration + model), a node in `resources/screens/form.json`, its line of help in every language, the name in `OWN` of `{{ Model }}Form` |
 | A field only for this site       | a patch onto `{{ id }}.form`; it is saved in `extra` without a column                   |
 | Another word in the panel        | the same key in `lang/en` and every other language, and in `js/src/messages.ts`          |
 | A new dependency or provider     | edit `composer.json` here, then `composer update site/module-{{ id }}`                   |

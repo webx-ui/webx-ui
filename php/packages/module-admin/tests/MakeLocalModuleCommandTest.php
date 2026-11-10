@@ -132,6 +132,21 @@ final class MakeLocalModuleCommandTest extends TestCase
     }
 
     #[Test]
+    public function the_article_before_the_name_is_the_one_english_needs(): void
+    {
+        $this->make('offices')->assertSuccessful();
+        $this->make('teams')->assertSuccessful();
+
+        $offices = (string) file_get_contents($this->site.'/modules/offices/resources/help/en/offices.index.md');
+        $this->assertStringContainsString('## How to add an office', $offices);
+        $this->assertStringNotContainsString('a office', $offices);
+
+        $teams = (string) file_get_contents($this->site.'/modules/teams/resources/help/en/teams.index.md');
+        $this->assertStringContainsString('## How to add a team', $teams);
+        $this->assertStringContainsString("'Add a team at the end", (string) file_get_contents($this->site.'/modules/teams/src/Mcp/TeamsTools.php'));
+    }
+
+    #[Test]
     public function a_name_of_two_words_is_named_like_a_package_of_the_monorepo(): void
     {
         $this->make('OfficeHours')->assertSuccessful();

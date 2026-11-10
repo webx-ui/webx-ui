@@ -10,7 +10,7 @@ use WebxUi\Localization\Locales;
 use WebxUi\Mcp\McpResource;
 
 /**
- * What an agent reads before it writes a {{ model }}: the whole list in one message, in its order,
+ * What an agent reads before it writes {{ a model }}: the whole list in one message, in its order,
  * one title per row in the language the agent works in. `{{ tool }}_get` has every language of the
  * one it picks.
  */

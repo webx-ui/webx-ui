@@ -55,7 +55,7 @@ final class AgentDocs
                 local: $local,
                 // A site module is linked where it is written, not through its symlink in `vendor`:
                 // that is the file an agent edits.
-                directory: $local ? $this->fromRoot($package) : null,
+                directory: $local ? $this->fromRoot($path, $package) : null,
             );
         }
 
@@ -81,12 +81,15 @@ final class AgentDocs
     }
 
     /**
-     * The package's directory from the site root, read from `install-path` without touching the
-     * disk: `vendor/composer/../../modules/offices` is `modules/offices`.
+     * The package's directory from the site root. Composer names the folder in `vendor` it
+     * installed into (`../site/module-offices`), and a path repository with `symlink: true` makes
+     * that folder a link to `modules/offices`: the link is followed, and a target inside the site
+     * root is the answer. An `install-path` outside `vendor` (`../../modules/offices`) is read as
+     * written, without the disk.
      *
      * @param  array<array-key, mixed>  $package
      */
-    private function fromRoot(array $package): ?string
+    private function fromRoot(string $installed, array $package): ?string
     {
         $relative = is_string($package['install-path'] ?? null) ? $package['install-path'] : null;
 
@@ -94,9 +97,38 @@ final class AgentDocs
             return null;
         }
 
+        $lexical = self::normalise('vendor/composer/'.str_replace('\\', '/', $relative));
+
+        if ($lexical === null || ! str_starts_with($lexical.'/', 'vendor/')) {
+            return $lexical;
+        }
+
+        $root = realpath(dirname($installed, 3));
+        $target = realpath($this->directory($installed, $package));
+
+        if ($root === false || $target === false) {
+            return null;
+        }
+
+        $root = str_replace('\\', '/', $root).'/';
+        $target = str_replace('\\', '/', $target);
+
+        // A mirrored copy is still in vendor, and a link outside the site is not this site's folder.
+        if (! str_starts_with($target, $root) || str_starts_with($target, $root.'vendor/')) {
+            return null;
+        }
+
+        return substr($target, strlen($root));
+    }
+
+    /**
+     * `vendor/composer/../../modules/offices` is `modules/offices`; null above the site root.
+     */
+    private static function normalise(string $path): ?string
+    {
         $parts = [];
 
-        foreach (explode('/', 'vendor/composer/'.str_replace('\\', '/', $relative)) as $part) {
+        foreach (explode('/', $path) as $part) {
             if ($part === '' || $part === '.') {
                 continue;
             }
@@ -104,7 +136,6 @@ final class AgentDocs
             if ($part !== '..') {
                 $parts[] = $part;
             } elseif (array_pop($parts) === null) {
-                // Above the site root: not a folder of this site.
                 return null;
             }
         }

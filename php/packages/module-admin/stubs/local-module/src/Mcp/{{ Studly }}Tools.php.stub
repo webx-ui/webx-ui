@@ -71,7 +71,7 @@ final class {{ Studly }}Tools
 
             Tool::mutating(
                 'create',
-                'Add a {{ model }} at the end of the list. The title in the default language is required.',
+                'Add {{ a model }} at the end of the list. The title in the default language is required.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->create($arguments, $user)),
                 ['properties' => [
                     'title' => $text,
@@ -82,7 +82,7 @@ final class {{ Studly }}Tools
 
             Tool::mutating(
                 'update',
-                'Change the values of a {{ model }}. A field left out keeps what it had, and so does a language left out of '
+                'Change the values of {{ a model }}. A field left out keeps what it had, and so does a language left out of '
                 .'a translated field: send "" for a language to take it away.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->update($arguments, $user)),
                 ['properties' => [
@@ -94,7 +94,7 @@ final class {{ Studly }}Tools
 
             Tool::mutating(
                 'delete',
-                'Delete a {{ model }} for good. Cannot be undone — there is no bin.',
+                'Delete {{ a model }} for good. Cannot be undone — there is no bin.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->delete($arguments)),
                 ['properties' => ['id' => $record], 'required' => ['id']],
                 permission: '{{ id }}.manage',
@@ -282,7 +282,7 @@ final class {{ Studly }}Tools
     private function record(mixed $id): {{ Model }}
     {
         if (! is_int($id) && ! (is_string($id) && ctype_digit($id))) {
-            throw new ToolFailure('A {{ model }} is named by its id, a number.');
+            throw new ToolFailure('{{ A model }} is named by its id, a number.');
         }
 
         $record = {{ Model }}::query()->find((int) $id);

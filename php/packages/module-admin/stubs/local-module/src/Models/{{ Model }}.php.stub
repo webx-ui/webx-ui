@@ -12,7 +12,7 @@ use WebxUi\Localization\HasTranslations;
 /**
  * One {{ model }}: a title in every language of the site, and its place in the list.
  *
- * What else a {{ model }} is made of is the module's to add: a column here and in a migration,
+ * What else {{ a model }} is made of is the module's to add: a column here and in a migration,
  * a field on `resources/screens/form.json`, a line of its help. A field only one site needs can
  * also be a patch onto the screen, stored in `extra` without a column.
  *
@@ -28,7 +28,7 @@ class {{ Model }} extends Model
     use HasExtra;
     use HasTranslations;
 
-    /** The screen a {{ model }} is edited on, and the one a project patches its own fields onto. */
+    /** The screen {{ a model }} is edited on, and the one a project patches its own fields onto. */
     public const SCREEN = '{{ id }}.form';
 
     protected $table = '{{ table }}';
