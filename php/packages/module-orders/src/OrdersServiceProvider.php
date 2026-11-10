@@ -21,6 +21,7 @@ use WebxUi\Orders\Checkout\Console\PruneDraftsCommand;
 use WebxUi\Orders\Doctor\OrdersCancelStatusCheck;
 use WebxUi\Orders\Doctor\OrdersNotificationsCheck;
 use WebxUi\Orders\Models\Order;
+use WebxUi\Orders\Models\OrderField;
 use WebxUi\Orders\Models\OrderStatus;
 use WebxUi\Orders\Models\PublicStatus;
 use WebxUi\Orders\Notifications\OrderEvents;
@@ -85,6 +86,9 @@ class OrdersServiceProvider extends ServiceProvider
         $groups = $this->app->make(CacheGroups::class);
         $groups->declare(OrderPage::GROUP, 'webx-orders::module.statuses-cache');
         $groups->bumpOn(OrderPage::GROUP, PublicStatus::class, OrderStatus::class);
+        // The extra fields of the checkout, read whole on each of its requests (ORDER_FIELDS §2.1).
+        $groups->declare(OrderFields::GROUP, 'webx-orders::module.order-field.cache');
+        $groups->bumpOn(OrderFields::GROUP, OrderField::class);
 
         // An account that goes leaves its orders to nobody (§13.2): the event is the panel's, so
         // it is heard whichever visitors module deletes the account.
@@ -162,6 +166,22 @@ class OrdersServiceProvider extends ServiceProvider
             permission: [OrdersModule::VIEW, OrdersModule::MANAGE, OrdersModule::REFUND, OrdersModule::STATUSES],
             module: 'orders',
             label: 'webx-orders::module.order',
+        );
+
+        // Who changed an extra field of the checkout (ORDER_FIELDS §7.3): read by whoever may change them.
+        $fields = [];
+
+        foreach (['key', 'type', 'place', 'label', 'hint', 'options', 'required', 'active', 'parent_id'] as $field) {
+            $fields[$field] = 'webx-orders::module.order-field.'.$field;
+        }
+
+        $this->app->make(HistoryTypes::class)->register(
+            OrderField::TYPE,
+            OrderField::class,
+            fields: $fields,
+            permission: OrdersModule::CHECKOUT_SETTINGS,
+            module: 'orders',
+            label: 'webx-orders::module.order-field.title',
         );
     }
 }

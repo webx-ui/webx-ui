@@ -13,6 +13,11 @@ return [
         'shopping' => 'Back to the shop',
         'open-cart' => 'Open the cart',
     ],
+    'places' => [
+        'contacts' => 'Contacts',
+        'extra-before-comment' => 'Additional, before the comment',
+        'extra-after-comment' => 'Additional, after the comment',
+    ],
     'steps' => [
         'contacts' => 'Contacts',
         'delivery' => 'Delivery',

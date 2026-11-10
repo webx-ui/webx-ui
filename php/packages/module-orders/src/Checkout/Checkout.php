@@ -66,6 +66,16 @@ final class Checkout
 
             return $steps;
         });
+        // Where the extra fields stand (WEBX_UI_ORDER_FIELDS.md §4.2): the places of the first
+        // version; a module adds its own with callAfterResolving, without a migration.
+        $app->singleton(FieldPlaces::class, static function (): FieldPlaces {
+            $places = new FieldPlaces;
+            $places->register(FieldPlaces::CONTACTS, ContactsStep::KEY, 'webx-orders::checkout.places.contacts');
+            $places->register(FieldPlaces::BEFORE_COMMENT, CommentStep::KEY, 'webx-orders::checkout.places.extra-before-comment');
+            $places->register(FieldPlaces::AFTER_COMMENT, CommentStep::KEY, 'webx-orders::checkout.places.extra-after-comment');
+
+            return $places;
+        });
         // One count of the cart a request (§34).
         $app->scoped(CheckoutContexts::class);
         // The draft of the order the confirmation is placing, from the controller to the listener.

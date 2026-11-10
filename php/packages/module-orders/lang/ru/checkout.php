@@ -13,6 +13,11 @@ return [
         'shopping' => 'Вернуться в магазин',
         'open-cart' => 'Открыть корзину',
     ],
+    'places' => [
+        'contacts' => 'Контакты',
+        'extra-before-comment' => 'Дополнительно, перед комментарием',
+        'extra-after-comment' => 'Дополнительно, после комментария',
+    ],
     'steps' => [
         'contacts' => 'Контакты',
         'delivery' => 'Доставка',

@@ -13,6 +13,11 @@ return [
         'shopping' => 'Mağazaya dön',
         'open-cart' => 'Sepeti aç',
     ],
+    'places' => [
+        'contacts' => 'İletişim',
+        'extra-before-comment' => 'Ek bilgiler, yorumdan önce',
+        'extra-after-comment' => 'Ek bilgiler, yorumdan sonra',
+    ],
     'steps' => [
         'contacts' => 'İletişim bilgileri',
         'delivery' => 'Teslimat',

@@ -33,6 +33,8 @@ final class MigrationTest extends TestCase
         'order_revisions',
         // The checkout's draft (§21.1), made whether the checkout is on or not.
         'order_checkout_drafts',
+        // The extra fields of the checkout (WEBX_UI_ORDER_FIELDS.md §2.1).
+        'order_fields',
     ];
 
     #[Test]

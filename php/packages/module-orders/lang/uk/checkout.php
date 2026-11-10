@@ -13,6 +13,11 @@ return [
         'shopping' => 'Повернутися до магазину',
         'open-cart' => 'Відкрити кошик',
     ],
+    'places' => [
+        'contacts' => 'Контакти',
+        'extra-before-comment' => 'Додатково, перед коментарем',
+        'extra-after-comment' => 'Додатково, після коментаря',
+    ],
     'steps' => [
         'contacts' => 'Контакти',
         'delivery' => 'Доставка',

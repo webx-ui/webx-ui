@@ -88,8 +88,8 @@ grouped into public ones. Dictionary `webx-orders` (`module`, `statuses`, `panel
 - **Draft** `order_checkout_drafts` (`CheckoutDraft`, key `cart_id`), only by a `POST`; `CartsMerging` moves the guest's to an account's cart without one. `webx:orders:checkout-prune [--days=] [--dry-run]`, daily — older than `draft_days` (30). `last_step` `confirm` — it placed an order.
 - **Tab «Checkout»** of `orders.settings` (`OrderSettings::CHECKOUT` — defaults): `orders.checkout.fields.*` (`required`, `optional`, `hidden`; phone or e-mail stays `required`), `recipient`, `comment`, `terms`, `terms_page`, `privacy_page`, `captcha` (`off`; `on` — the site's captcha, refused while the site has none), `quick.enabled` (`off`), `quick.message` (a language each).
 - **Page** `/checkout` (route `checkout` — the cart's button; also behind `{locale}/`), `Checkout\Http\CheckoutController`:
-  `POST steps/{key}` keeps a step in the draft, `GET summary` — the column; `CheckoutSteps`: `contacts` 100, `comment` 900,
-  a project's `Step` by position; `CheckoutContext` — the cart counted once. A `GET` never makes a draft.
+  `POST steps/{key}` keeps a step in the draft, `GET summary` — the column; `CheckoutSteps`: `contacts` 100, `comment` 900, a project's `Step` by position; `CheckoutContext` — the cart counted once. A `GET` never makes a draft.
+- **Extra fields** (`WEBX_UI_ORDER_FIELDS.md`): `order_fields` (`OrderField`) only through `OrderFields::write|remove|arrange` (dry runs, `FieldRefused` codes), cache group `order-fields`; places — `Checkout\FieldPlaces` (`contacts`, `extra-before-comment`, `extra-after-comment`), a module adds its own with `callAfterResolving`, no migration.
 - **Slots** (§22) `Checkout\Slots\CheckoutSlots`, registered by their modules: `delivery` 200 (`ShippingSlot`: `totalsLine()`
   — «Delivery cost», `choice()` → `CheckoutContext::shippingChoice()`), `payment` 300 (`PaymentSlot`: `awaitsPayment()`,
   `next()` — a gateway after the commit, `payAgainUrl()` — «Pay»). `SlotStep` wraps one: a throw — «could not load», no order.
@@ -140,10 +140,10 @@ Routes ask with `cms.can`, tools with `permission:`: reading — any of the firs
 - `Panel/*Test` — `BoundariesTest`: the panel never writes an order itself; `PerformanceTest`: the list's budget; `AccessCoverageTest`; `NewOrderTest` (search, live totals, `panel`); `ListGlanceTest` (the default tab, an opened row, the pinned note). `CancelByStatusTest`.
 - `Mcp/McpTest` (parity with the panel, dry runs write nothing), `Mcp/SummaryTest` (the list's figures = `orders_summary`), `Mcp/SummaryDaysTest` (midnight of the site), `Mcp/CheckoutToolsTest` (preview = `place`, masks), `Mcp/PerformanceTest`, `Mcp/AccessCoverageTest`, `Mcp/LinkVisitorTest`, `Mcp/CreateOrderTest`, `Mcp/ItemsEditToolTest` (editor = `orders_items_edit`, `stale`); 32 tools (33 with users, 26 with the checkout off).
 - `Site/OrderPageTest` (the signed page, its budget, an edit's mark and balance, nothing without users), `Site/VisitorOrdersTest`. `Notifications/*Test` — with and without it, `EditNotificationsTest` — the edits' letters; `ResendTest` — by hand, the second press.
-- `PlaceTest`, `BalanceTest` (the column = the formula after each method), `MilestonesTest`, `StatusMoveTest`, `DetailsTest`, `RefundTest`, `RefundReversalTest`, `ManagerOrderTest`, `ItemsEditTest` (variant A, refusals, rollback, dry run), `PerformanceTest` (the budgets of `place()` and `editItems()`), and
+- `PlaceTest`, `BalanceTest` (the column = the formula after each method), `MilestonesTest`, `StatusMoveTest`, `DetailsTest`, `RefundTest`, `RefundReversalTest`, `ManagerOrderTest`, `ItemsEditTest` (variant A, refusals, rollback, dry run), `PerformanceTest` (the budgets of `place()` and `editItems()`), `OrderFieldsTest` (each refusal, the cache after `arrange`), and
   `CartLockTest`, `MilestoneRaceTest` against a real server: `WEBX_TEST_MYSQL_URL=mariadb://user:password@host:3306/db`; `migrate` / `migrate:rollback`.
 - `Checkout/*Test`: `CheckoutWithoutNeighboursTest`, `PlaceIdempotencyTest`, `PayableChangedTest`, `PerformanceTest` (`GET /checkout`),
-  `PlacePerformanceTest`, `StepOrderTest`, `CheckoutSlotsTest`, `CheckoutViewTest`, `CheckoutSignInTest`, `CheckoutDisabledTest`, `QuickOrderTest`; a slot extends `SlotContractTestCase`.
+  `PlacePerformanceTest`, `StepOrderTest`, `CheckoutSlotsTest`, `CheckoutViewTest`, `CheckoutSignInTest`, `CheckoutDisabledTest`, `QuickOrderTest`, `FieldPlacesTest`; a slot extends `SlotContractTestCase`.
 
 ## Read more
 
