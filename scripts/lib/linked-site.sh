@@ -87,7 +87,9 @@ create_skeleton() {
 
 # What `scripts/packages.mjs local` does on the other demo sites: the registry for everything but
 # webx-ui/*, and the packages of this checkout under the version the monorepo gives them.
-# Rewrites the repositories only; installing is the caller's.
+# The site's own relative path repositories (`modules/*`, SITE_MODULES §6) stay, first, so that a
+# `site/*` package is never looked up on the registry. Rewrites the repositories only; installing
+# is the caller's.
 point_composer() {
     node -e '
         const { readFileSync, writeFileSync } = require("node:fs")
@@ -97,7 +99,14 @@ point_composer() {
         delete versions["//"]
         const file = site + "/composer.json"
         const composer = JSON.parse(readFileSync(file, "utf8"))
+        // An absolute path is one this script wrote (the monorepo, on the last run) or one of a
+        // machine; a relative one is in the tree of the site and goes wherever the site goes.
+        const relative = (url) => typeof url === "string" && !/^([a-zA-Z]:)?[\\/]/.test(url) && !url.includes("://")
+        const kept = Object.values(composer.repositories ?? {}).filter(
+            (repository) => repository && repository.type === "path" && relative(repository.url),
+        )
         composer.repositories = [
+            ...kept,
             { name: "packagist.org", type: "composer", url: "https://repo.packagist.org", exclude: ["webx-ui/*"] },
             { type: "path", url: monorepo + "/php/packages/*", options: { versions } },
         ]

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace WebxUi\Admin\Console;
 
 use Illuminate\Console\Command;
+use WebxUi\Admin\Panel\PackageRegistry;
+use WebxUi\Admin\Panel\Vendors;
 use WebxUi\Admin\Setup\Catalogue;
 use WebxUi\Admin\Setup\Processes;
 use WebxUi\Admin\Setup\SetupFailed;
@@ -30,6 +32,10 @@ use WebxUi\Admin\Setup\SetupFailed;
  *
  * Running it again is not an error. An installed package skips Composer and still gets the
  * rest, which is also how a run that stopped at npm is finished.
+ *
+ * A package that goes by the id of one of the site's own modules (`modules/<name>`) is refused:
+ * before Composer when the id is known — the catalogue's, or an installed package's — and right
+ * after it otherwise, since only the installed package says what it calls itself.
  */
 final class ModuleAddCommand extends Command
 {
@@ -44,14 +50,18 @@ final class ModuleAddCommand extends Command
 
     private string $given = '';
 
-    public function handle(Catalogue $catalogue, Processes $processes): int
+    private PackageRegistry $registry;
+
+    public function handle(Catalogue $catalogue, Processes $processes, PackageRegistry $registry): int
     {
         $this->processes = $processes;
+        $this->registry = $registry;
         $this->given = trim((string) $this->argument('package'));
         $package = $this->given;
 
         try {
             [$package, $constraint] = $this->resolve($catalogue, $this->given);
+            $this->refuseTakenId($package, $catalogue->idFor($package) ?? $this->idOf($package), $catalogue->has($package));
 
             if ($catalogue->has($package)) {
                 $this->components->twoColumnDetail($package, 'already installed');
@@ -124,9 +134,26 @@ final class ModuleAddCommand extends Command
         // The packages of this repository ship on one version, so one of them is asked for at
         // the range of the frame already installed — the same rule `webx:setup` follows.
         $constraint ??= str_starts_with($package, 'webx-ui/') ? $catalogue->constraint() : null;
-        $named = $this->option('composer');
 
         $this->components->info("composer require {$package}");
+
+        try {
+            $this->require($package, $constraint);
+        } finally {
+            // Composer's own scripts boot the site, and with two modules on one id that boot is
+            // what fails: the clear answer is wanted whichever way `composer require` ended.
+            $catalogue->refresh();
+            $this->refuseTakenId($package, $this->idOf($package), $catalogue->has($package));
+        }
+
+        if (! $catalogue->has($package)) {
+            throw SetupFailed::notInstalled($package);
+        }
+    }
+
+    private function require(string $package, ?string $constraint): void
+    {
+        $named = $this->option('composer');
 
         $this->step(
             [
@@ -138,11 +165,42 @@ final class ModuleAddCommand extends Command
             ],
             'composer require',
         );
+    }
 
-        $catalogue->refresh();
+    /** The id an installed package gives itself in `extra.webx.module`, null before it is installed. */
+    private function idOf(string $package): ?string
+    {
+        foreach ($this->registry->packages() as $installed) {
+            if ($installed->name === $package) {
+                return $installed->module;
+            }
+        }
 
-        if (! $catalogue->has($package)) {
-            throw SetupFailed::notInstalled($package);
+        return null;
+    }
+
+    /** Refuse a package whose id one of the site's own modules already goes by. */
+    private function refuseTakenId(string $package, ?string $id, bool $installed): void
+    {
+        if ($id === null) {
+            return;
+        }
+
+        foreach ($this->registry->packages() as $module) {
+            if ($module->module !== $id || $module->name === $package || ! Vendors::local($module->name)) {
+                continue;
+            }
+
+            $folder = $this->registry->directory($module->name);
+            $base = rtrim($this->laravel->basePath(), '/').'/';
+
+            throw SetupFailed::idTaken(
+                $package,
+                $id,
+                $module->name,
+                $folder === null ? null : (str_starts_with($folder, $base) ? substr($folder, strlen($base)) : $folder),
+                $installed,
+            );
         }
     }
 

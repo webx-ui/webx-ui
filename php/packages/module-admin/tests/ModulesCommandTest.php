@@ -32,6 +32,9 @@ final class ModulesCommandTest extends TestCase
     /** @var array<string, int> What the first command starting with the key exits with. */
     private array $exits = [];
 
+    /** @var array<string, string> The id the stand-in Composer writes into a package it installs. */
+    private array $provides = [];
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -126,7 +129,7 @@ final class ModulesCommandTest extends TestCase
         if (preg_match('{^composer require ([^: ]+)}', $command, $match) === 1) {
             $decoded = json_decode((string) $this->files->get($this->installed), true);
             $packages = is_array($decoded) && is_array($decoded['packages'] ?? null) ? $decoded['packages'] : [];
-            $packages[] = ['name' => $match[1], 'version' => '0.28.0'];
+            $packages[] = ['name' => $match[1], 'version' => '0.28.0', ...(isset($this->provides[$match[1]]) ? ['extra' => ['webx' => ['module' => $this->provides[$match[1]]]]] : [])];
             $this->install(array_values($packages));
         }
 
@@ -484,5 +487,70 @@ final class ModulesCommandTest extends TestCase
         $this->artisan('webx:module:add', ['package' => 'widgets'])->assertFailed();
 
         $this->assertSame([], $this->ran);
+    }
+
+    /** SITE_MODULES §5: the id of a site module is the site's; a package going by it is refused. */
+    #[Test]
+    public function a_package_of_the_catalogue_whose_id_a_site_module_has_is_refused_before_composer(): void
+    {
+        $this->withSiteModule('faq');
+
+        try {
+            $this->artisan('webx:module:add', ['package' => 'faq'])
+                ->expectsOutputToContain('webx-ui/module-faq goes by `faq`, which the site\'s own module site/module-faq (modules/faq) already has')
+                ->assertFailed();
+        } finally {
+            $this->files->deleteDirectory($this->app->basePath('modules/faq'));
+        }
+
+        $this->assertSame([], $this->ran);
+    }
+
+    #[Test]
+    public function a_package_that_turns_out_to_go_by_the_id_of_a_site_module_is_refused_with_the_way_back(): void
+    {
+        // Only the installed package says what it calls itself: the refusal comes after Composer.
+        $this->withSiteModule('offices');
+        $this->provides = ['acme/office-directory' => 'offices'];
+
+        try {
+            $this->artisan('webx:module:add', ['package' => 'acme/office-directory'])
+                ->expectsOutputToContain('composer remove acme/office-directory')
+                ->assertFailed();
+        } finally {
+            $this->files->deleteDirectory($this->app->basePath('modules/offices'));
+        }
+
+        $this->assertSame(['composer require acme/office-directory --no-interaction --no-progress'], $this->ran);
+    }
+
+    #[Test]
+    public function the_site_module_itself_and_other_ids_are_not_refused(): void
+    {
+        $this->withSiteModule('offices');
+        $this->provides = ['acme/module-gallery' => 'gallery'];
+
+        try {
+            $this->artisan('webx:module:add', ['package' => 'site/module-offices', '--no-build' => true])->assertSuccessful();
+            $this->artisan('webx:module:add', ['package' => 'acme/module-gallery', '--no-build' => true])->assertSuccessful();
+        } finally {
+            $this->files->deleteDirectory($this->app->basePath('modules/offices'));
+        }
+    }
+
+    /** A site module installed the way the path repository installs it: from `modules/<id>`. */
+    private function withSiteModule(string $id): void
+    {
+        $this->files->ensureDirectoryExists($this->app->basePath("modules/{$id}"));
+
+        $decoded = json_decode((string) $this->files->get($this->installed), true);
+        $packages = is_array($decoded) && is_array($decoded['packages'] ?? null) ? $decoded['packages'] : [];
+        $packages[] = [
+            'name' => "site/module-{$id}",
+            'version' => '0.1.0',
+            'install-path' => "modules/{$id}",
+            'extra' => ['webx' => ['module' => $id]],
+        ];
+        $this->install(array_values($packages));
     }
 }
