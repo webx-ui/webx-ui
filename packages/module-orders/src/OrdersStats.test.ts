@@ -165,6 +165,7 @@ const glance: OrderGlance = {
   customer: { name: 'Alex Doe', phone: '+800 1234 5678', email: 'alex@example.com' },
   recipient: { name: 'Sam Roe', phone: null },
   comment: 'Ring twice.',
+  fields: [],
   manager_note: 'Regular buyer.',
   last_note: {
     id: 3,
