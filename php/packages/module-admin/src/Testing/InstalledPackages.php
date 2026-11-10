@@ -52,7 +52,8 @@ trait InstalledPackages
     #[After]
     protected function forgetInstalledPackages(): void
     {
-        // Null makes Composer read its own `installed.php` again on the next question.
-        InstalledVersions::reload(null);
+        // Null makes Composer read its own `installed.php` again on the next question; its
+        // runtime takes it, its docblock does not say so.
+        InstalledVersions::reload(null); // @phpstan-ignore argument.type (null is Composer's own «not loaded yet»)
     }
 }
