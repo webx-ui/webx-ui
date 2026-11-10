@@ -10,7 +10,7 @@ return [
     'new' => 'New place',
     'title' => 'Name',
     'key' => 'Key',
-    'key-help' => 'What the site’s template asks for: lowercase Latin letters, digits and dashes, starting with a letter. It cannot be changed later.',
+    'key-help' => 'What the site’s template asks for, like “sidebar”: whatever is typed is made into one. It cannot be changed later.',
     'declared' => 'Declared in the configuration',
     'in-template' => 'In a template: banners(\':key\')',
     'count' => 'Banners',

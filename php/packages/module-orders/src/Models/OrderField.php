@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use WebxUi\Admin\History\RecordsHistory;
+use WebxUi\Localization\HasCodes;
 use WebxUi\Localization\HasTranslations;
 use WebxUi\Orders\OrderFields;
 
@@ -37,6 +38,7 @@ use WebxUi\Orders\OrderFields;
  */
 class OrderField extends Model
 {
+    use HasCodes;
     use HasTranslations;
     use RecordsHistory;
 
@@ -70,6 +72,12 @@ class OrderField extends Model
     protected $table = 'order_fields';
 
     protected $guarded = [];
+
+    /** Typed by the administrator: «Время доставки» is kept as `vremya_dostavki`, not refused (#125). */
+    protected static function codes(): array
+    {
+        return ['key' => ['max' => 32, 'separator' => '_', 'lead' => 'field']];
+    }
 
     /**
      * @return list<string>

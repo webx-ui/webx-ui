@@ -7,6 +7,7 @@ namespace WebxUi\Inbox\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use WebxUi\Inbox\Exceptions\StatusInUse;
+use WebxUi\Localization\HasCodes;
 use WebxUi\Localization\HasTranslations;
 
 /**
@@ -27,11 +28,23 @@ use WebxUi\Localization\HasTranslations;
  */
 class Status extends Model
 {
+    use HasCodes;
     use HasTranslations;
 
     protected $table = 'inbox_statuses';
 
     protected $guarded = [];
+
+    /**
+     * The key, as `SaveStatusRequest` has it: lower case, words joined by `-`, brought rather than
+     * refused (#125).
+     *
+     * @return array<string, array{max: int, separator?: string, lead?: string}>
+     */
+    protected static function codes(): array
+    {
+        return ['key' => ['max' => 32]];
+    }
 
     /**
      * @return list<string>

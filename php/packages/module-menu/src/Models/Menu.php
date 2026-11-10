@@ -8,7 +8,9 @@ use Illuminate\Container\Container;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use WebxUi\Localization\HasCodes;
 use WebxUi\Localization\HasTranslations;
+use WebxUi\Localization\Slug;
 use WebxUi\Menu\Exceptions\MenuException;
 use WebxUi\Menu\Menus;
 
@@ -29,12 +31,24 @@ use WebxUi\Menu\Menus;
  */
 class Menu extends Model
 {
+    use HasCodes;
     use HasTranslations;
 
     protected $table = 'menus';
 
     /** @var list<string> */
     protected $fillable = ['key', 'title'];
+
+    /**
+     * The spelling a template writes inside `menu('…')`. Either separator, so a `main_menu` that
+     * is already somebody's stays as it is, and «Подвал сайта» is kept as `podval-saita`.
+     *
+     * @return array<string, array{max: int, separator?: string, lead?: string}>
+     */
+    protected static function codes(): array
+    {
+        return ['key' => ['max' => 64, 'separator' => Slug::BOTH]];
+    }
 
     /**
      * @return list<string>

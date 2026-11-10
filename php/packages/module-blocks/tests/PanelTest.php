@@ -101,7 +101,7 @@ final class PanelTest extends TestCase
             ->assertJsonValidationErrors('slug');
 
         $this->actingAs($editor, 'cms')
-            ->postJson($this->api(''), ['slug' => 'Hero Block', 'title' => 'Again'])
+            ->postJson($this->api(''), ['slug' => 'Hero', 'title' => 'Again'])
             ->assertStatus(422)
             ->assertJsonValidationErrors('slug');
 

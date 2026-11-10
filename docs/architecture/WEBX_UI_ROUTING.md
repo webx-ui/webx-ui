@@ -179,47 +179,60 @@ index  (target_id)
 
 Механизм — один на все поля:
 
-- **сервер** — `Slug::code($text, $locale, $max, $separator)` (пакет `localization`, рядом с
-  `Slug::latin()`); модель зовёт его на `saving` до своей проверки, чтобы MCP, импорт и прямой
-  `save()` получали тот же код, что панель. Пример — `Dictionary::codeOf()` каталога (метки и
+- **сервер** — `Slug::code($text, $locale, $max, $separator, $lead)` (пакет `localization`,
+  рядом с `Slug::latin()`; `Slug::BOTH` / `Slug::BOTH_UNDERSCORED` — шаблон с `-` и `_`, `$lead` —
+  код, который начинается с буквы). Трейт `HasCodes` зовёт его на `saving` до проверки модели,
+  `Model::codeFor()` — запрос до своей проверки, чтобы MCP, импорт и прямой `save()` получали тот
+  же код, что панель. Пример — `Dictionary::codeOf()` каталога (метки и
   статусы наличия): `тормозные колодки` → `tormoznye-kolodki`, `!!!` → код из названия.
-- **тип поля экрана** `wx-code` (`CodeType` в `module-admin`): `props.separator` (`-` или `_`),
-  `props.maxlength` — длина кода; длинный текст обрезается, а не отклоняется.
+- **тип поля экрана** `wx-code` (`CodeType` в `module-admin`): `props.separator` (`-`, `_`, `-_`, `_-`),
+  `props.lead`, `props.maxlength` — длина кода; длинный текст обрезается, а не отклоняется.
 - **панель** — `WxCodeField` (`wx-code`) и `codify()` из `@webx-ui/module-admin`: приводит при
   вводе (разделитель на конце живёт, пока печатается следующее слово) и при выходе из поля.
   Таблица транслитерации — серверная (`transliteration.json`), поэтому код в поле совпадает с тем,
   что сохранит сервер. Диалоги вне экранов зовут `codify()` сами.
 
-Инвентаризация (этап 1). «Ввод»: П — панель, M — MCP, И — импорт. «Сейчас» — до перевода.
+Инвентаризация и итог. «Ввод»: П — панель, M — MCP, И — импорт. Везде, где не сказано иное,
+код приводится моделью (`HasCodes` или свой `Slug::code()`), запросом до проверки (`codeFor()`) и
+полем панели (`wx-code` / `<wx-code-field>`); отказ — только «пусто» и «занято».
 
-| Модуль                       | Поле                                | Ввод    | Шаблон                                   | Уникальность        | Сейчас                                             |
-| ---------------------------- | ----------------------------------- | ------- | ---------------------------------------- | ------------------- | -------------------------------------------------- |
-| `module-catalog-stock`       | `StockStatus.code`                  | П, M, И | `[a-z0-9]+(-[a-z0-9]+)*`, 32             | среди статусов      | **приводится** (`wx-code`, `Dictionary`)           |
-| `module-catalog-labels`      | `Label.code`                        | П, M, И | `[a-z0-9]+(-[a-z0-9]+)*`, 32             | среди меток         | сервер приводит (`Dictionary`); экран — `wx-input` |
-| `module-catalog-properties`  | `Property.code` (по языкам)         | П, M, И | `Property::CODE`, 48                     | среди свойств языка | отказ формы                                        |
-| `module-catalog-properties`  | `Property.toggle_slug` (по языкам)  | П, M    | `Property::CODE`, 48                     | —                   | отказ формы                                        |
-| `module-catalog-collections` | `ProductCollection.key`             | П, M    | `[a-z0-9-]{1,64}`                        | среди подборок      | отказ; тип `wx-catalog-collection-key`             |
-| `module-blocks`              | `Block.slug`                        | П, M    | `[a-z][a-z0-9-]*`, 64                    | среди блоков        | отказ; диалог создания слагифицирует название      |
-| `module-auth`                | `Role.slug`                         | П, M    | `[a-z0-9][a-z0-9-]*`                     | среди ролей         | отказ; из названия, если пусто                     |
-| `module-tasks`               | `Project.slug`                      | П, M    | `[a-z0-9][a-z0-9-]*`, 64                 | среди проектов      | отказ                                              |
-| `module-menu`                | `Menu.key`                          | П       | `[a-z0-9]+([-_][a-z0-9]+)*`              | среди меню          | отказ                                              |
-| `module-banners`             | `Place.key`                         | П, M    | `[a-z][a-z0-9-]{0,63}`                   | среди мест          | отказ                                              |
-| `module-inbox`               | `Form.slug`                         | П, M    | `[a-z0-9]+(-[a-z0-9]+)*`                 | среди форм          | отказ; диалог создания слагифицирует название      |
-| `module-inbox`               | `FormField.name`                    | П, M    | `[a-z][a-z0-9_-]*` (регистр любой)       | среди полей формы   | отказ; диалог поля слагифицирует подпись           |
-| `module-inbox`               | `Status.key`                        | П       | `[a-z0-9]+(-[a-z0-9]+)*`                 | среди статусов      | отказ                                              |
-| `module-orders`              | код статуса (`OrderStatuses::CODE`) | П, M    | `[a-z][a-z0-9_]*`, 48                    | среди статусов      | отказ                                              |
-| `module-users`               | `Group.code`                        | П, M    | `[a-z0-9]+(-[a-z0-9]+)*`, 64             | среди групп         | отказ                                              |
-| `module-delivery`            | `DeliveryMethod.key`                | П, M    | `[a-z0-9-]+`                             | среди способов      | отказ — проверить в этапе 2, вводится ли руками    |
-| `module-payments`            | `PaymentGroup.key`                  | П, M    | —                                        | среди групп         | проверить в этапе 2                                |
-| `module-configurator`        | ключ конфигуратора / пресета        | П, M    | `[a-z0-9-]`, 64 / `[a-z][a-z0-9_]{0,63}` | среди своих         | отказ                                              |
+| Модуль                       | Поле                               | Ввод    | Шаблон (вид кода)                     | Как приводится                                                          |
+| ---------------------------- | ---------------------------------- | ------- | ------------------------------------- | ----------------------------------------------------------------------- |
+| `module-catalog-stock`       | `StockStatus.code`                 | П, M, И | `-`, 32                               | `Dictionary::codeOf()`; пусто — из названия                             |
+| `module-catalog-labels`      | `Label.code`                       | П, M, И | `-`, 32                               | `Dictionary::codeOf()`; импорт ищет метку по приведённому коду          |
+| `module-catalog-properties`  | `Property.code`, `toggle_slug`     | П, M    | `-`, 48, по языкам                    | каждый язык — своим языком; пусто — из названия                         |
+| `module-catalog-collections` | `ProductCollection.key`            | П, M    | `-`, 64                               | `HasCodes`; поле — `WxCodeField`, после создания только чтение          |
+| `module-blocks`              | `Block.slug`                       | П, M    | `-`, 64, `lead` `block`               | `HasCodes`, `BlockInput::bring()`; импорт блоков по-прежнему отказывает |
+| `module-auth`                | `Role.slug`                        | П, M    | `-`, 64                               | `HasCodes`; пусто — из названия                                         |
+| `module-tasks`               | `Project.slug`                     | П, M    | `-`, 64                               | `HasCodes`, `Tasks::bringSlug()`                                        |
+| `module-menu`                | `Menu.key`                         | П       | `Slug::BOTH`, 64                      | `HasCodes`; набранный `_` остаётся (`main_menu`)                        |
+| `module-banners`             | `Place.key`                        | П, M    | `-`, 64, `lead` `place`               | `HasCodes`, `PlaceEditor`                                               |
+| `module-inbox`               | `Form.slug`                        | П, M    | `-`, 96                               | `HasCodes`, `FormInput::bring()`                                        |
+| `module-inbox`               | `Field.name`                       | П, M    | `Slug::BOTH_UNDERSCORED`, 64, `field` | `HasCodes`; прежнее имя не трогается; пусто у нового — из подписи       |
+| `module-inbox`               | `Status.key`                       | П       | `-`, 32                               | `HasCodes`                                                              |
+| `module-orders`              | `PublicStatus.code`                | П, M    | `_`, 48, `lead` `status`              | `HasCodes`, `OrderStatuses::writePublic()`                              |
+| `module-orders`              | `OrderField.key`, значения выбора  | —       | `_`, 32, `lead` `field` / `option`    | `HasCodes`, `OrderFields::write()` (экрана и MCP пока нет)              |
+| `module-users`               | `Group.code`                       | П, M    | `-`, 64                               | `HasCodes`, `Groups`; MCP ищет группу по приведённому коду              |
+| `module-delivery`            | вид пунктов выдачи                 | П       | `-`, 32                               | `PointKinds::define()`                                                  |
+| `module-configurator`        | `Configurator.key`                 | П, M    | `-`, 64                               | `HasCodes`, `ConfiguratorWriter`                                        |
+| `module-configurator`        | ключи шагов, полей, значения опций | П, M    | `_` + `lead` / `Slug::BOTH`, 64       | `Schema\Keys::bring()`: только новые имена, ссылки в документе следуют  |
 
-Не коды человека, а ключи реестров, которые пишет разработчик в коде (`Facets`, `Sorts`,
-`BulkActions`, `ExchangeColumns`, `CacheGroups`, `Shortcodes::NAME`, `Regions::NAME`, `Places::KEY`
-сниппетов, форматы фидов, события уведомлений), — приведения не требуют: ошибка там — ошибка
-разработчика при регистрации.
+Не приводятся, с причиной (списки исключений `CodeCoverageTest` и `codeCoverage.test.ts`):
+`DeliveryMethod.key`, `PaymentMethod.key` — делаются из типа (`MethodForm::key()`), MCP ими только
+ищет; `PaymentGroup.key` — объявлен в конфиге; `OrderBenefit.key` — даёт цепочка цен; код региона
+доставки — ISO 3166-2; пресет конфигуратора — выбирается из ключей схемы; импорт блоков — слаг в
+файле экспорта есть личность типа, на него ссылаются шаблоны из того же файла.
 
-Перевод полей таблицы на `wx-code` / `Slug::code()` и тест-покрытие по образцу
-`LatinSlugCoverageTest` — этап 2.
+Ключи реестров, которые пишет разработчик в коде (`Facets`, `Sorts`, `BulkActions`,
+`ExchangeColumns`, `CacheGroups`, `Shortcodes::NAME`, `Regions::NAME`, `Places::KEY` сниппетов,
+форматы фидов, события уведомлений), приведения не требуют: ошибка там — ошибка разработчика при
+регистрации.
+
+**Покрытие.** `CodeCoverageTest` (`localization`) падает на модели с колонкой-кодом без
+`HasCodes`/`Slug::code()`, на правиле `regex:/^[a-z…` или `regex:'.X::CODE` в файле без
+`codeFor()`/`Slug::code()` и на поле экрана `code`/`key`/`slug`, которое не `wx-code`;
+`codeCoverage.test.ts` (`@webx-ui/module-admin`) — на `<wx-input v-model="…code|key|slug">` в
+диалогах модулей. Исключение — только с причиной в списке теста.
 
 ## 6. Регистрация типа
 

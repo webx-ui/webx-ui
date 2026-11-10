@@ -102,19 +102,31 @@ final class PanelFormsTest extends TestCase
     }
 
     #[Test]
-    public function it_refuses_an_address_that_is_taken_or_misshapen(): void
+    public function it_brings_an_address_to_its_shape_and_refuses_one_taken_or_empty(): void
     {
-        $this->form('contact');
+        $form = $this->form('contact');
 
         $editor = $this->editor();
 
         $this->actingAs($editor, 'cms')
-            ->postJson($this->api('forms'), ['slug' => 'contact', 'title' => 'Contact'])
+            ->postJson($this->api('forms'), ['slug' => 'Contact', 'title' => 'Contact'])
             ->assertJsonValidationErrors('slug');
 
+        // Brought, not refused (#125): what is typed becomes the address it will be kept as.
         $this->actingAs($editor, 'cms')
-            ->postJson($this->api('forms'), ['slug' => 'Contact Us', 'title' => 'Contact'])
-            ->assertJsonValidationErrors('slug');
+            ->postJson($this->api('forms'), ['slug' => 'Тормозные колодки', 'title' => 'Pads'])
+            ->assertCreated()
+            ->assertJsonPath('data.slug', 'tormoznye-kolodki');
+
+        $this->actingAs($editor, 'cms')
+            ->putJson($this->api("forms/{$form->getKey()}"), ['slug' => 'Contact Us!', 'title' => ['en' => 'Contact']])
+            ->assertOk()
+            ->assertJsonPath('data.slug', 'contact-us');
+
+        $this->actingAs($editor, 'cms')
+            ->postJson($this->api('forms'), ['slug' => '!!!', 'title' => 'Nothing'])
+            ->assertUnprocessable()
+            ->assertJsonPath('errors.slug.0', 'An address needs letters or digits, like “contact-us”.');
     }
 
     #[Test]

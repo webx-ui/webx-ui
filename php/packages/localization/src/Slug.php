@@ -19,6 +19,12 @@ final class Slug
     /** The longest slug a form takes. */
     public const int LENGTH = 190;
 
+    /** The separator of a code whose shape takes both `-` and `_`: {@see code()}. */
+    public const string BOTH = '-_';
+
+    /** Both `_` and `-`, words joined by `_`: {@see code()}. */
+    public const string BOTH_UNDERSCORED = '_-';
+
     /**
      * @param  string|null  $prefix  put before a result with no letter in it, or used alone for an empty one
      * @param  string  $separator  between words: `-` in an address, `_` in a machine name
@@ -93,21 +99,38 @@ final class Slug
     /**
      * A code someone typed, brought to the shape of its field — what a code field does with any
      * input instead of refusing it. The panel does the same as it is typed (`codify()` of
-     * `@webx-ui/module-admin`), the model before its check, so the form, an agent and an import
-     * end up with one code.
+     * `@webx-ui/module-admin`), the model before its check ({@see HasCodes}), so the form, an
+     * agent and an import end up with one code.
      *
      * Transliterated by `$locale`, lower-cased, every run of what is not a Latin letter or a digit
      * made one `$separator`, cut to `$max` with no separator left at either end: «тормозные
-     * колодки» is `tormoznye-kolodki`, `Brake_Pads` is `brake-pads` (`brake_pads` with `_`). The
-     * answer always fits `[a-z0-9]` words joined by `$separator`; `''` means nothing was left,
-     * for the caller to fall back or refuse.
+     * колодки» is `tormoznye-kolodki`, `Brake_Pads` is `brake-pads` (`brake_pads` with `_`).
+     *
+     * `$separator` {@see BOTH} is for a field whose shape takes either: a typed `_` stays, every
+     * other gap is a `-` — `main_menu` is kept, «Main menu» is `main-menu`; {@see BOTH_UNDERSCORED}
+     * the other way round — a typed `-` stays, a gap is `_`: «Ваш телефон» is `vash_telefon`, and
+     * `step-meeting` is kept. `$lead` is for a field that must start with a letter: a code that
+     * starts with a digit is put after it, `2 columns` → `block-2-columns`. The answer always fits `[a-z0-9]` words joined by the
+     * separator; `''` means nothing was left, for the caller to fall back or refuse.
      */
-    public static function code(string $text, string $locale, int $max, string $separator = '-'): string
+    public static function code(string $text, string $locale, int $max, string $separator = '-', ?string $lead = null): string
     {
-        // `Str::slug()` keeps a letter of a script it has no table for, and an `_` next to a `-`.
-        $code = (string) preg_replace('/[^a-z0-9]+/', $separator, Str::slug($text, $separator, $locale));
+        if ($separator === self::BOTH || $separator === self::BOTH_UNDERSCORED) {
+            // The gap between words is the first, the one that was typed and stays — the second.
+            [$gap, $kept] = [$separator[0], $separator[1]];
+            $words = array_map(static fn (string $part): string => self::code($part, $locale, $max, $gap), explode($kept, $text));
+            $code = implode($kept, array_filter($words, static fn (string $word): bool => $word !== ''));
+            $separator = $gap;
+        } else {
+            // `Str::slug()` keeps a letter of a script it has no table for, and an `_` next to a `-`.
+            $code = trim((string) preg_replace('/[^a-z0-9]+/', $separator, Str::slug($text, $separator, $locale)), $separator);
+        }
 
-        return trim(substr(trim($code, $separator), 0, $max), $separator);
+        if ($lead !== null && $code !== '' && preg_match('/^[a-z]/', $code) !== 1) {
+            $code = $lead.($separator === '_' ? '_' : '-').$code;
+        }
+
+        return rtrim(substr($code, 0, $max), '-_');
     }
 
     /** Nothing in it but ASCII: what an address may hold without being percent-encoded. */

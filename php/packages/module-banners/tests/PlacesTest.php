@@ -148,19 +148,35 @@ final class PlacesTest extends TestCase
     }
 
     #[Test]
-    public function a_key_is_checked_and_a_taken_one_refused(): void
+    public function a_key_is_brought_to_its_shape_and_a_taken_or_empty_one_refused(): void
     {
         $editor = $this->editor();
         Place::query()->create(['key' => 'mine', 'title' => ['en' => 'Mine']]);
 
-        foreach (['', 'Upper', '1st', 'with space', str_repeat('a', 65)] as $key) {
+        // Brought, not refused (#125): the key is what a template will be asked to write.
+        $brought = [
+            'Тормозные Колодки' => 'tormoznye-kolodki',
+            'Upper' => 'upper',
+            '1st' => 'place-1st',
+            'with  space' => 'with-space',
+            str_repeat('a', 65) => str_repeat('a', 64),
+        ];
+
+        foreach ($brought as $typed => $kept) {
             $this->actingAs($editor, 'cms')
-                ->postJson($this->api('places'), ['key' => $key, 'title' => 'Name'])
-                ->assertUnprocessable()
-                ->assertJsonValidationErrors(['key']);
+                ->postJson($this->api('places'), ['key' => $typed, 'title' => 'Name'])
+                ->assertCreated()
+                ->assertJsonPath('data.key', $kept);
         }
 
-        foreach (['hero', 'mine'] as $taken) {
+        foreach (['', '!!!'] as $empty) {
+            $this->actingAs($editor, 'cms')
+                ->postJson($this->api('places'), ['key' => $empty, 'title' => 'Name'])
+                ->assertUnprocessable()
+                ->assertJsonPath('errors.key.0', 'A key needs letters or digits, like “sidebar”.');
+        }
+
+        foreach (['hero', 'mine', 'Tormoznye kolodki'] as $taken) {
             $this->actingAs($editor, 'cms')
                 ->postJson($this->api('places'), ['key' => $taken, 'title' => 'Name'])
                 ->assertUnprocessable()

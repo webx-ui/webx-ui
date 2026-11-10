@@ -8,7 +8,7 @@ return [
     'button-link' => 'Düğmenin nereye gideceğini seçin.',
     'variant' => 'Bu görünüm sitenin listesinde yok: :variants.',
     'buttons-max' => 'Bir bannerda en fazla :max düğme olur.',
-    'place-key' => 'Anahtar küçük Latin harfleri, rakamlar ve tirelerden oluşur, harfle başlar ve en fazla 64 karakterdir.',
+    'place-key' => 'Anahtarda harf ya da rakam olmalı, örneğin “sidebar”.',
     'place-taken' => 'Bu anahtar kullanımda.',
     'place-title' => 'Varsayılan dilde bir ad gereklidir.',
     'place-title-length' => 'Ad en fazla :max karakterdir.',

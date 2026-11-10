@@ -38,6 +38,8 @@ arrivals», «For winter».
 Blocks, texts and templates find the collection by this word, which is why it stays the same.
 Buyers do not see it.
 
+Type it any way you like: «Summer tyres» becomes `summer-tyres`.
+
 ## source
 
 «By hand» gives you a fixed list in your order, which needs care when products sell out. «By a filter»

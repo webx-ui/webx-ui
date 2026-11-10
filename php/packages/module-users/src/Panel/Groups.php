@@ -83,7 +83,8 @@ final readonly class Groups
         $name = $input['name'] ?? null;
 
         $input = [
-            'code' => is_string($code) ? strtolower(trim($code)) : $code,
+            // Brought before the check, so only an empty or a taken code is refused (#125).
+            'code' => Group::codeFor('code', $code),
             'name' => is_string($name) ? trim($name) : $name,
         ];
 

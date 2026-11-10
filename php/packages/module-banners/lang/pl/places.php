@@ -10,7 +10,7 @@ return [
     'new' => 'Nowe miejsce',
     'title' => 'Nazwa',
     'key' => 'Klucz',
-    'key-help' => 'To, o co prosi szablon strony: małe litery łacińskie, cyfry i myślniki, na początku litera. Później nie da się go zmienić.',
+    'key-help' => 'To, o co prosi szablon strony, np. „sidebar”: to, co wpiszesz, samo staje się kluczem. Później nie da się go zmienić.',
     'declared' => 'Zadeklarowane w konfiguracji',
     'in-template' => 'W szablonie: banners(\':key\')',
     'count' => 'Banery',

@@ -17,11 +17,23 @@ use WebxUi\Inbox\Models\Status;
  * Nothing here enforces "exactly one default" — the model does, by clearing the flag on the
  * others when one is saved with it. A rule here would instead refuse the save, which is the
  * wrong answer to somebody moving the default from one status to another.
+ *
+ * The key is brought to its shape before it is checked (#125): «В работе» is kept as `v-rabote`,
+ * and what is refused is a key with nothing left of it, or one that is taken.
  */
 final class SaveStatusRequest extends FormRequest
 {
     /** The tones `WxBadge` draws. */
     public const COLORS = ['default', 'primary', 'success', 'warning', 'info', 'danger'];
+
+    protected function prepareForValidation(): void
+    {
+        $key = $this->input('key');
+
+        if (is_string($key)) {
+            $this->merge(['key' => Status::codeFor('key', $key)]);
+        }
+    }
 
     /**
      * @return array<string, mixed>
@@ -49,7 +61,8 @@ final class SaveStatusRequest extends FormRequest
      */
     public function messages(): array
     {
-        return ['key.regex' => (string) trans('webx-inbox::errors.slug-shape')];
+        // `!!!` arrives here as nothing at all: that, and a key never written, read the same.
+        return ['key.required' => (string) trans('webx-inbox::errors.status-key-empty')];
     }
 
     /**

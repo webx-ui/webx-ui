@@ -7,6 +7,7 @@ namespace WebxUi\Auth\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use WebxUi\Admin\History\RecordsHistory;
+use WebxUi\Localization\HasCodes;
 use WebxUi\Localization\Slug;
 
 /**
@@ -23,6 +24,7 @@ use WebxUi\Localization\Slug;
  */
 class Role extends Model
 {
+    use HasCodes;
     use RecordsHistory;
 
     public const TYPE = 'admins.role';
@@ -30,6 +32,12 @@ class Role extends Model
     protected $table = 'cms_roles';
 
     protected $guarded = [];
+
+    /** The code MCP and the filters name a role by: what is typed is brought to it, not refused. */
+    protected static function codes(): array
+    {
+        return ['slug' => ['max' => 64]];
+    }
 
     /**
      * @return array<string, string>

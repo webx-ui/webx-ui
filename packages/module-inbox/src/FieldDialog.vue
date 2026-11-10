@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed, ref, watch, type Component } from 'vue'
 import {
-  slugify,
+  codify,
   useAdmin,
   useErrorText,
   useRemoveConfirm,
   useTranslate,
+  WxCodeField,
 } from '@webx-ui/module-admin'
 import {
   localizedValue,
@@ -127,7 +128,7 @@ function label(value: LocalizedValue): [string, string] {
 
 /** A machine name out of a label: Latin, `_` between words, a letter first, `_2` when taken. */
 function nameOf([words, locale]: [string, string]): string {
-  let base = slugify(words, '_', locale).slice(0, 60).replace(/_+$/, '')
+  let base = codify(words, { separator: '_', max: 60, locale })
 
   if (base === '') return ''
   // A step is named as one, so the list of names — and an agent reading it — tells it from a field.
@@ -779,8 +780,13 @@ async function save(): Promise<void> {
           "
           :error="errorOf('name')"
         >
-          <wx-input
+          <!-- A name typed by hand is made one as it is typed (#125), in the server's shape: a
+               typed `_` or `-` stays, any other gap is `-`, a letter first. -->
+          <wx-code-field
             :model-value="name"
+            separator="_-"
+            lead="field"
+            :maxlength="64"
             placeholder="phone"
             @update:model-value="(value) => writeName(String(value ?? ''))"
           />

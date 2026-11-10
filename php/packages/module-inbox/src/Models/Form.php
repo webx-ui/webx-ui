@@ -11,6 +11,7 @@ use Illuminate\Support\Carbon;
 use WebxUi\Inbox\Exceptions\FormHasSubmissions;
 use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\Fields\Steps;
+use WebxUi\Localization\HasCodes;
 use WebxUi\Localization\HasTranslations;
 
 /**
@@ -27,6 +28,7 @@ use WebxUi\Localization\HasTranslations;
  */
 class Form extends Model
 {
+    use HasCodes;
     use HasTranslations;
 
     /** The option that says how a submission is told about: {@see notifyVia()}. */
@@ -39,6 +41,18 @@ class Form extends Model
     protected $table = 'inbox_forms';
 
     protected $guarded = [];
+
+    /**
+     * The slug is where the form answers, `webx/forms/<slug>`: lower case, words joined by `-`.
+     * Brought to that, never refused for it (#125): «Тормозные колодки» is kept as
+     * `tormoznye-kolodki`.
+     *
+     * @return array<string, array{max: int, separator?: string, lead?: string}>
+     */
+    protected static function codes(): array
+    {
+        return ['slug' => ['max' => 96]];
+    }
 
     /**
      * @return list<string>

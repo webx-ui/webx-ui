@@ -45,6 +45,26 @@ final class SlugTest extends TestCase
     }
 
     #[Test]
+    public function a_code_of_both_separators_keeps_a_typed_underscore_and_one_that_needs_a_letter_gets_its_lead(): void
+    {
+        // A key that takes `-` and `_` keeps the one that was typed: `main_menu` is no other key.
+        $this->assertSame('main_menu', Slug::code('main_menu', 'en', 64, Slug::BOTH));
+        $this->assertSame('main-menu_footer', Slug::code('Main menu__Footer', 'en', 64, Slug::BOTH));
+        $this->assertSame('glavnoe-menyu', Slug::code('Главное меню', 'ru', 64, Slug::BOTH));
+        $this->assertSame('', Slug::code('_ _', 'en', 64, Slug::BOTH));
+        // The other way round: words joined by `_`, a typed `-` kept.
+        $this->assertSame('vash_telefon', Slug::code('Ваш телефон', 'ru', 64, Slug::BOTH_UNDERSCORED));
+        $this->assertSame('step-meeting', Slug::code('step-meeting', 'en', 64, Slug::BOTH_UNDERSCORED));
+        $this->assertSame('field_2nd-phone', Slug::code('2nd-Phone', 'en', 64, Slug::BOTH_UNDERSCORED, 'field'));
+        // A code that must start with a letter: a digit first is put after the lead.
+        $this->assertSame('block-2-kolonki', Slug::code('2 колонки', 'ru', 64, '-', 'block'));
+        $this->assertSame('status_1', Slug::code('1', 'en', 48, '_', 'status'));
+        $this->assertSame('hero', Slug::code('Hero', 'en', 64, '-', 'block'));
+        $this->assertSame('', Slug::code('!!!', 'en', 64, '-', 'block'));
+        $this->assertSame('block', Slug::code('2', 'en', 6, '-', 'block'));
+    }
+
+    #[Test]
     public function a_name_that_leaves_nothing_is_handed_on_for_the_model_to_settle(): void
     {
         $this->assertSame('khit', Slug::address('Хіт', 'uk'));

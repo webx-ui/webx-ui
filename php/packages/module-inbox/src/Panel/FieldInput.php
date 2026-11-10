@@ -10,6 +10,7 @@ use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Validation\Rule;
 use WebxUi\Inbox\Fields\DateTimeField;
 use WebxUi\Inbox\Fields\FieldType;
+use WebxUi\Inbox\Models\Field;
 
 /**
  * One question of a form, apart from the request that carried it — the pair of
@@ -23,9 +24,44 @@ use WebxUi\Inbox\Fields\FieldType;
  * It also has to be unique — among the live fields of this form only. A deleted field keeps
  * its name in the table so that the answers pointing at it still read (§2.3), and a name
  * reserved for ever by a field nobody can see is a name whose owner cannot be found.
+ *
+ * A name is brought to its shape rather than refused for it (#125) — {@see bring()}, called by the
+ * panel and the agent before the rules.
  */
 final class FieldInput
 {
+    /**
+     * What arrived, with the name as it will be kept: «Ваш телефон» is `vash-telefon`, `2nd` is
+     * `field-2nd`.
+     *
+     * The name a field has already is left as it is, even when it is not the shape a new one is
+     * brought to: a `Phone` saved before #125 is `{{field.Phone}}` in somebody's template, and
+     * saving the label must not rename it. With nothing left of a name, a new field is named after
+     * its label, as one sent without a name is; a field that has one keeps the refusal, rather
+     * than losing the name its templates read.
+     *
+     * @param  array<string, mixed>  $input
+     * @return array<string, mixed>
+     */
+    public static function bring(array $input, ?Field $field = null): array
+    {
+        $name = $input['name'] ?? null;
+
+        if (! is_string($name) || trim($name) === '' || trim($name) === $field?->name) {
+            return $input;
+        }
+
+        $brought = (string) Field::codeFor('name', $name);
+
+        if ($brought === '' && $field !== null) {
+            return $input;
+        }
+
+        $input['name'] = $brought;
+
+        return $input;
+    }
+
     /**
      * @param  bool  $unique  false for a caller that checks the name against more than the
      *                        table — `inbox_form_save` writes several fields in one call, and a
@@ -70,7 +106,8 @@ final class FieldInput
      */
     public static function messages(): array
     {
-        return ['name.regex' => (string) trans('webx-inbox::errors.field-name-shape')];
+        // Reached by a name with nothing left of it, kept by {@see bring()} for a field that has one.
+        return ['name.regex' => (string) trans('webx-inbox::errors.field-name-empty')];
     }
 
     /**

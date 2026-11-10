@@ -53,13 +53,13 @@ final class FieldRefused extends Refusal
         $reason = (string) $plan->refusal;
 
         parent::__construct($reason, match ($reason) {
-            self::KEY_INVALID => 'The key is a lowercase letter, then letters, digits or `_`, at most 32.',
+            self::KEY_INVALID => 'Nothing is left of the key to make one of: give it letters or digits.',
             self::KEY_TAKEN => 'Another field has this key.',
             self::LOCKED => 'The key and the type of a field never change: delete it and add another.',
             self::PLACE_INVALID => 'No such place of the checkout.',
             self::NO_LABEL => 'The field needs a label in the main language of the site.',
             self::NO_OPTIONS => 'A list needs its options, and only a list has them.',
-            self::OPTION_INVALID => 'Each option needs a key of its own by the rule of a field key and a label in the main language.',
+            self::OPTION_INVALID => 'Each option needs a key of its own, with letters or digits in it, and a label in the main language.',
             self::PARENT_INVALID => 'A field is shown behind a checkbox of the same place that is not shown behind another one itself.',
             self::HAS_DEPENDENTS => 'Fields are shown behind this checkbox: '.implode(', ', $plan->dependents).'.',
             self::TOO_MANY => sprintf('At most %d fields, and %d options a list.', OrderField::MAX_FIELDS, OrderField::MAX_OPTIONS),

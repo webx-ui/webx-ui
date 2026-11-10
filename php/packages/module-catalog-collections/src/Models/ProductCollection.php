@@ -21,6 +21,7 @@ use WebxUi\Catalog\Filter\FacetSet;
 use WebxUi\Catalog\Filter\FilterState;
 use WebxUi\Catalog\Models\Category;
 use WebxUi\Catalog\Models\Product;
+use WebxUi\Localization\HasCodes;
 use WebxUi\Localization\HasTranslations;
 use WebxUi\Localization\Locales;
 use WebxUi\Localization\Slug;
@@ -57,6 +58,7 @@ use WebxUi\Localization\Slug;
  */
 class ProductCollection extends Model
 {
+    use HasCodes;
     use HasTranslations;
     use RecordsHistory;
     use SoftDeletes;
@@ -136,6 +138,17 @@ class ProductCollection extends Model
             'link' => 'array',
             'is_enabled' => 'boolean',
         ];
+    }
+
+    /**
+     * The key is brought to its shape rather than refused (#125): «Летние шины» is kept as
+     * `letnie-shiny` before {@see settleKey()} looks at it, whatever door it came in by.
+     *
+     * @return array<string, array{max: int}>
+     */
+    protected static function codes(): array
+    {
+        return ['key' => ['max' => self::KEY_LENGTH]];
     }
 
     protected static function booted(): void
@@ -246,8 +259,10 @@ class ProductCollection extends Model
     }
 
     /**
-     * Made from the title when none is given, and fixed from then on: it lives in templates and
-     * texts, where nobody would change it (§2.2). A key in the bin is as taken as any other; only
+     * Made from the title when none is given — or when what was typed left nothing, `!!!` — and
+     * fixed from then on: it lives in templates and texts, where nobody would change it (§2.2).
+     * A key sent again as it was typed (`Popular` for `popular`) is brought to itself and is
+     * no change. A key in the bin is as taken as any other; only
      * deleting the collection for good frees it.
      */
     private function settleKey(): void

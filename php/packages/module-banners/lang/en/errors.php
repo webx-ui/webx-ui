@@ -8,7 +8,7 @@ return [
     'button-link' => 'Choose where the button leads.',
     'variant' => 'This look is not on the site’s list: :variants.',
     'buttons-max' => 'A banner has at most :max buttons.',
-    'place-key' => 'A key is lowercase Latin letters, digits and dashes, starting with a letter, at most 64 characters.',
+    'place-key' => 'A key needs letters or digits, like “sidebar”.',
     'place-taken' => 'This key is taken.',
     'place-title' => 'A name in the default language is required.',
     'place-title-length' => 'A name is at most :max characters.',

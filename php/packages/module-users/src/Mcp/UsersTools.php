@@ -177,7 +177,7 @@ final class UsersTools
             Tool::mutating(
                 'groups_save',
                 'Create a group, or change the one with this code. The code is what other modules and users_update '
-                .'name it by: lowercase Latin letters and digits, words joined by «-».',
+                .'name it by: lowercase Latin letters and digits, words joined by «-»; any other text is made one.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->saveGroup($arguments)),
                 ['properties' => [
                     'code' => ['type' => 'string', 'description' => 'The group to change, or the code of a new one.'],
@@ -428,7 +428,8 @@ final class UsersTools
             throw new ToolFailure('`code` is the code of the group: wholesale, club-gold.');
         }
 
-        $group = Group::query()->where('code', strtolower(trim($code)))->first();
+        // The code a new group is kept as finds it again: «Оптовики» twice is one group.
+        $group = Group::query()->where('code', Group::codeFor('code', $code))->first();
         $newCode = $arguments['new_code'] ?? null;
 
         if ($newCode !== null && $group === null) {
@@ -667,7 +668,7 @@ final class UsersTools
      */
     private function group(mixed $code): Group
     {
-        $group = is_string($code) ? Group::query()->where('code', strtolower(trim($code)))->first() : null;
+        $group = is_string($code) ? Group::query()->where('code', Group::codeFor('code', $code))->first() : null;
 
         return $group ?? throw new ToolFailure((string) trans('webx-users::errors.group-unknown', [
             'code' => is_scalar($code) ? (string) $code : '(none given)',

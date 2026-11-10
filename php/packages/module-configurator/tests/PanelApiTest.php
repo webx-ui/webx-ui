@@ -46,10 +46,21 @@ final class PanelApiTest extends TestCase
             ->assertUnprocessable()
             ->assertJsonValidationErrors('key');
 
+        // A key is brought to its shape, not refused for it (#125): only an empty or a taken one is.
         $this->actingAs($editor, 'cms')
-            ->postJson(self::API, ['title' => 'Двері', 'key' => 'Doors and more'])
+            ->postJson(self::API, ['title' => 'Двері', 'key' => 'Shower'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors('key');
+
+        $this->actingAs($editor, 'cms')
+            ->postJson(self::API, ['title' => 'Двері', 'key' => '!!!'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('key');
+
+        $this->actingAs($editor, 'cms')
+            ->postJson(self::API, ['title' => 'Гальма', 'key' => 'Гальмівні колодки'])
+            ->assertCreated()
+            ->assertJsonPath('data.configurator.key', 'halmivni-kolodky');
 
         $this->actingAs($editor, 'cms')
             ->postJson(self::API, ['title' => '', 'key' => 'doors'])

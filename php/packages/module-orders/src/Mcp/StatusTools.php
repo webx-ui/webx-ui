@@ -124,7 +124,7 @@ final readonly class StatusTools
                 .'(notifications_channels_list, event orders.public_status); the list replaces the one kept.',
                 fn (array $arguments): array => $this->savePublic($arguments),
                 ['properties' => [
-                    'code' => ['type' => 'string', 'description' => 'Lowercase Latin letters, digits and `_`, starting with a letter: what templates say.'],
+                    'code' => ['type' => 'string', 'description' => 'Lowercase Latin letters, digits and `_`, starting with a letter: what templates say. Other text is made one: «В работе» → `v_rabote`.'],
                     'name' => $words('The name the buyer sees'),
                     'description' => $words('A line under it'),
                     'notify_channels' => ['type' => 'array', 'items' => ['type' => 'integer'], 'description' => 'Ids of channels; [] tells nobody.'],
@@ -272,7 +272,8 @@ final readonly class StatusTools
      */
     private function savePublic(array $arguments): array
     {
-        $code = strtolower(trim((string) ($arguments['code'] ?? '')));
+        // The code a new status is kept as finds it again: «В работе» twice is one status.
+        $code = (string) PublicStatus::codeFor('code', (string) ($arguments['code'] ?? ''));
         $status = PublicStatus::withTrashed()->where('code', $code)->first();
 
         if ($status?->trashed()) {
@@ -482,7 +483,7 @@ final readonly class StatusTools
 
     private function group(mixed $code): PublicStatus
     {
-        $code = strtolower(trim(is_scalar($code) ? (string) $code : ''));
+        $code = (string) PublicStatus::codeFor('code', is_scalar($code) ? (string) $code : '');
 
         return PublicStatus::withTrashed()->where('code', $code)->first()
             ?? throw new ToolFailure("There is no public status [{$code}]. orders_statuses_list lists them by code.");

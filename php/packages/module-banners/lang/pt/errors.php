@@ -8,7 +8,7 @@ return [
     'button-link' => 'Escolha para onde leva o botão.',
     'variant' => 'Este aspeto não está na lista do site: :variants.',
     'buttons-max' => 'Um banner tem no máximo :max botões.',
-    'place-key' => 'Uma chave tem letras latinas minúsculas, algarismos e hífens, começa por uma letra e tem no máximo 64 caracteres.',
+    'place-key' => 'Uma chave precisa de letras ou dígitos, por exemplo «sidebar».',
     'place-taken' => 'Esta chave já está em uso.',
     'place-title' => 'É necessário um nome na língua predefinida.',
     'place-title-length' => 'Um nome tem no máximo :max caracteres.',

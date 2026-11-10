@@ -293,6 +293,16 @@ The panel's own frame comes with `module-admin` and is in every screen it draws:
 | `wx-list`      | `module-admin` | `layout` | the frame a section's list is drawn in |
 | `wx-rich-text` | `module-admin` | `field`  | a document, kept as HTML               |
 | `wx-link`      | `module-admin` | `field`  | somewhere to go, chosen, not typed     |
+| `wx-code`      | `module-admin` | `field`  | a machine name, made of what is typed  |
+
+`wx-code` is a code, a key or a machine name somebody types: whatever is typed becomes one as it is
+typed, rather than a refusal on save — «тормозные колодки» is `tormoznye-kolodki`, transliterated by
+the site's main language. `props`: `maxlength` (the code is cut to it, a longer text is not refused),
+`separator` — `-` (the default), `_`, or `-_` for a key that takes either (a typed `_` stays), and
+`lead` for a code that must start with a letter (`2 columns` → `block-2-columns`). The server brings
+the value to the same shape (`Slug::code()`), and so does the model on every other door (`HasCodes`
+of `webx-ui/localization`). A dialog of a module that is not a screen uses `<wx-code-field>` and
+`codify()` of `@webx-ui/module-admin` with the same props.
 
 `wx-link` keeps the target and never its address: a page of the site by its morph pair, a typed
 address, a file of the media library by its key, or nowhere. `props`: `allowNone` (off for a

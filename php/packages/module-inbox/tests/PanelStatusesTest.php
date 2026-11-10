@@ -87,6 +87,30 @@ final class PanelStatusesTest extends TestCase
     }
 
     #[Test]
+    public function a_key_is_brought_to_its_shape_and_refused_only_when_taken_or_empty(): void
+    {
+        $editor = $this->editor();
+
+        // Brought, not refused (#125): what is typed becomes the key it will be kept as.
+        $this->actingAs($editor, 'cms')
+            ->postJson($this->api('statuses'), ['key' => 'Тормозные Колодки', 'title' => 'Pads'])
+            ->assertCreated()
+            ->assertJsonPath('data.key', 'tormoznye-kolodki');
+
+        $this->actingAs($editor, 'cms')
+            ->postJson($this->api('statuses'), ['key' => 'In Progress', 'title' => 'Again'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('key');
+
+        $this->actingAs($editor, 'cms')
+            ->postJson($this->api('statuses'), ['key' => '!!!', 'title' => 'Nothing'])
+            ->assertUnprocessable()
+            ->assertJsonPath('errors.key.0', 'A key needs letters or digits, like “in-progress”.');
+
+        $this->assertSame(1, Status::query()->where('key', 'tormoznye-kolodki')->count());
+    }
+
+    #[Test]
     public function a_colour_outside_the_badge_tones_is_refused(): void
     {
         // A hex value picked in the light theme is unreadable in the dark one.

@@ -89,6 +89,44 @@ class PanelTest extends TestCase
         $this->assertSame(0, MenuItem::query()->count(), 'The items go with the menu.');
     }
 
+    public function test_a_key_is_brought_to_its_shape_and_refused_only_when_taken_or_empty(): void
+    {
+        $editor = $this->editor();
+
+        $this->actingAs($editor, 'cms')
+            ->postJson($this->api(), ['key' => 'Тормозные Колодки', 'title' => 'Brake pads'])
+            ->assertCreated()
+            ->assertJsonPath('data.key', 'tormoznye-kolodki');
+
+        // A typed underscore is the template's own spelling and stays.
+        $this->actingAs($editor, 'cms')
+            ->postJson($this->api(), ['key' => 'Main_Menu', 'title' => 'Main'])
+            ->assertCreated()
+            ->assertJsonPath('data.key', 'main_menu');
+
+        $this->actingAs($editor, 'cms')
+            ->postJson($this->api(), ['key' => 'tormoznye kolodki', 'title' => 'Again'])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('key');
+
+        $this->actingAs($editor, 'cms')
+            ->postJson($this->api(), ['key' => '!!!', 'title' => 'Nothing'])
+            ->assertStatus(422)
+            ->assertJsonPath('errors.key.0', 'A key needs letters or digits, like “main-menu”.');
+
+        $this->actingAs($editor, 'cms')
+            ->patchJson($this->api('main_menu'), ['key' => 'Подвал сайта', 'title' => 'Aside'])
+            ->assertOk()
+            ->assertJsonPath('data.key', 'podval-saita');
+
+        $this->actingAs($editor, 'cms')
+            ->patchJson($this->api('podval-saita'), ['key' => '!!!', 'title' => 'Aside'])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('key');
+
+        $this->assertSame(1, Menu::query()->where('key', 'podval-saita')->count());
+    }
+
     public function test_a_declared_menu_cannot_be_deleted_and_its_row_appears_on_the_first_save(): void
     {
         $editor = $this->editor();

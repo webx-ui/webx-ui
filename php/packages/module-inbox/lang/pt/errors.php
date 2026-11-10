@@ -14,8 +14,9 @@ return [
     'no-statuses' => 'Não há nenhum estado para dar a um envio novo. Execute as migrações.',
     'file-missing' => 'Este ficheiro já não está aqui.',
 
-    'slug-shape' => 'Um endereço leva minúsculas, algarismos e hífenes: «contact-us».',
-    'field-name-shape' => 'Um nome começa por uma letra; depois letras, algarismos, hífenes e sublinhados.',
+    'slug-empty' => 'Um endereço precisa de letras ou algarismos, por exemplo «contact-us».',
+    'field-name-empty' => 'Um nome precisa de letras ou algarismos, por exemplo «phone».',
+    'status-key-empty' => 'Uma chave precisa de letras ou algarismos, por exemplo «in-progress».',
     'recipient-shape' => 'O destinatário :entry não é um administrador nem um endereço de e-mail.',
     'recipient-unknown' => 'O destinatário :entry indica um administrador que não existe.',
     'choices-required' => 'Um campo de lista precisa de pelo menos uma opção com um valor.',

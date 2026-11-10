@@ -23,6 +23,26 @@ use WebxUi\Blocks\Models\BlockVersion;
 final class BlockInput
 {
     /**
+     * The input with its slug brought to the slug's shape (#125), before the rules see it: «Hero
+     * Block» is kept as `hero-block`, and only a slug nothing is left of or one already taken is
+     * refused. `rename_to` is a slug too. The types named in `allow` are not: they point at types
+     * that exist, and a name that is none of them is refused rather than guessed.
+     *
+     * @param  array<string, mixed>  $input
+     * @return array<string, mixed>
+     */
+    public static function bring(array $input): array
+    {
+        foreach (['slug', 'rename_to'] as $field) {
+            if (is_string($input[$field] ?? null)) {
+                $input[$field] = Block::codeFor('slug', $input[$field]);
+            }
+        }
+
+        return $input;
+    }
+
+    /**
      * The rules of the row's own fields.
      *
      * @return array<string, list<mixed>>
@@ -33,7 +53,7 @@ final class BlockInput
         $slug = ['string', 'max:64', 'regex:/^[a-z][a-z0-9-]*$/'];
 
         return [
-            'slug' => [$creating ? 'required' : 'sometimes', ...$slug, Rule::unique('blocks', 'slug')->ignore($ignoreId)],
+            'slug' => [...($creating ? ['required'] : ['sometimes', 'filled']), ...$slug, Rule::unique('blocks', 'slug')->ignore($ignoreId)],
             'kind' => ['sometimes', 'string', Rule::in(Block::KINDS)],
             'title' => [$creating ? 'required' : 'sometimes', 'string', 'max:120'],
             'description' => ['nullable', 'string', 'max:255'],

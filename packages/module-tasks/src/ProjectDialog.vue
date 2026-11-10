@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { reactive, ref, useId } from 'vue'
-import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
+import { useAdmin, useErrorText, useTranslate, WxCodeField } from '@webx-ui/module-admin'
 import {
   toast,
   useModal,
@@ -96,7 +96,7 @@ async function submit(): Promise<void> {
         :error="errors.slug"
         required
       >
-        <wx-input v-model="values.slug" :maxlength="64" />
+        <wx-code-field v-model="values.slug" :maxlength="64" />
       </wx-form-item>
 
       <wx-form-item

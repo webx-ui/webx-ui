@@ -139,7 +139,7 @@ final class BlockTools
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->update($arguments, $user),
                 ['properties' => [
                     'slug' => $slug,
-                    'rename_to' => ['type' => 'string', 'description' => 'A new slug for the type: kebab-case, unique. Pages keep their blocks; the template\'s data-wx-block and the .b-{slug} prefix are rewritten too.'],
+                    'rename_to' => ['type' => 'string', 'description' => 'A new slug for the type, unique; any name is brought to kebab-case (Hero Block → hero-block). Pages keep their blocks; the template\'s data-wx-block and the .b-{slug} prefix are rewritten too.'],
                     'full' => ['type' => 'boolean', 'description' => 'Answer with the whole type, as blocks_get does, instead of a summary.'],
                 ] + $this->typeProperties(), 'required' => ['slug']],
             ),
@@ -626,6 +626,7 @@ final class BlockTools
     {
         $this->ensureEditing();
 
+        $arguments = BlockInput::bring($arguments);
         $customiser = $this->container->make(Customiser::class);
         $declaredSlug = is_string($arguments['slug'] ?? null) ? $arguments['slug'] : '';
 
@@ -703,9 +704,15 @@ final class BlockTools
         }
 
         $merged = array_merge($current, $content);
-        $renameTo = is_string($arguments['rename_to'] ?? null) && $arguments['rename_to'] !== '' && $arguments['rename_to'] !== $block->slug
-            ? $arguments['rename_to']
-            : null;
+        // Brought like a new slug is (#125); `slug` stays as sent — it names the type to find.
+        $asked = is_string($arguments['rename_to'] ?? null) ? trim($arguments['rename_to']) : '';
+        $brought = (string) BlockInput::bring(['rename_to' => $asked])['rename_to'];
+
+        if ($asked !== '' && $brought === '') {
+            throw new ToolFailure("Not renamed: nothing is left of [{$asked}] as a slug. Use Latin letters or digits.");
+        }
+
+        $renameTo = $brought !== '' && $brought !== $block->slug ? $brought : null;
         $renamer = $this->container->make(Renamer::class);
 
         if ($renameTo !== null) {
@@ -1542,7 +1549,7 @@ final class BlockTools
         $slugList = ['type' => ['array', 'null'], 'items' => ['type' => 'string']];
 
         return [
-            'slug' => ['type' => 'string', 'description' => 'kebab-case, unique; also the CSS prefix .b-{slug}.'],
+            'slug' => ['type' => 'string', 'description' => 'Unique; any name is brought to kebab-case starting with a letter (Hero Block → hero-block). Also the CSS prefix .b-{slug}.'],
             'kind' => ['type' => 'string', 'enum' => Block::KINDS, 'description' => 'block (default): editors add it to pages. component: templates call it with <x-webx-block type="{slug}">, and the picker leaves it out.'],
             'title' => ['type' => 'string', 'description' => 'What editors see in the picker. Required unless customising a declared place.'],
             'description' => ['type' => ['string', 'null'], 'description' => 'One line under the title in the picker.'],

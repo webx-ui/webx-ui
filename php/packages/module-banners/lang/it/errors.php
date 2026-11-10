@@ -8,7 +8,7 @@ return [
     'button-link' => 'Scegli dove porta il pulsante.',
     'variant' => 'Questo aspetto non è nell’elenco del sito: :variants.',
     'buttons-max' => 'Un banner ha al massimo :max pulsanti.',
-    'place-key' => 'Una chiave è fatta di lettere latine minuscole, cifre e trattini, inizia con una lettera e ha al massimo 64 caratteri.',
+    'place-key' => 'Una chiave ha bisogno di lettere o cifre, ad esempio «sidebar».',
     'place-taken' => 'Questa chiave è già in uso.',
     'place-title' => 'Serve un nome nella lingua predefinita.',
     'place-title-length' => 'Un nome ha al massimo :max caratteri.',

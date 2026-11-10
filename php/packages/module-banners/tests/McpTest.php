@@ -61,7 +61,17 @@ final class McpTest extends TestCase
         $this->assertFalse($created['place']['declared']);
 
         $this->agent('banners_place_create', ['key' => 'hero', 'title' => 'Again'])->assertHasErrors(['key:']);
-        $this->agent('banners_place_create', ['key' => '9lives', 'title' => 'Bad'])->assertHasErrors(['key:']);
+        $this->agent('banners_place_create', ['key' => '!!!', 'title' => 'Bad'])->assertHasErrors(['key:']);
+        $this->agent('banners_place_create', ['key' => '!!!', 'title' => 'Bad', 'dry_run' => true])->assertHasErrors(['key:']);
+
+        // Brought, not refused (#125), and a dry run answers with the key a real run keeps.
+        $dry = $this->content($this->agent('banners_place_create', ['key' => 'Тормозные колодки', 'title' => 'Pads', 'dry_run' => true]));
+        $this->assertSame('tormoznye-kolodki', $dry['would_create']['key']);
+
+        $brought = $this->content($this->agent('banners_place_create', ['key' => '9 Lives', 'title' => 'Lives']));
+        $this->assertSame('place-9-lives', $brought['place']['key']);
+        $this->agent('banners_place_create', ['key' => 'Place 9 lives', 'title' => 'Again'])->assertHasErrors(['key:']);
+        Place::query()->where('key', 'place-9-lives')->delete();
 
         $this->agent('banners_place_delete', ['place' => 'hero'])->assertHasErrors(['declared']);
         $this->agent('banners_place_delete', ['place' => 'nowhere'])->assertHasErrors(['no place [nowhere]', 'hero, promo, notice, sidebar']);

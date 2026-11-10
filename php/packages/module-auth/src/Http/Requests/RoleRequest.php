@@ -20,6 +20,17 @@ use WebxUi\Auth\Models\Role;
 final class RoleRequest extends FormRequest
 {
     /**
+     * The code is brought to its shape before the rules see it (#125): «Контент-менеджер» is kept
+     * as `kontent-menedzher`. One that nothing is left of is empty, and the name makes it.
+     */
+    protected function prepareForValidation(): void
+    {
+        if (is_string($this->input('slug'))) {
+            $this->merge(['slug' => Role::codeFor('slug', $this->input('slug'))]);
+        }
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function rules(): array

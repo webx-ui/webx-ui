@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use WebxUi\Localization\HasCodes;
 
 /**
  * Where work is done: the folder and repository an agent is started in, and the rules it is
@@ -26,10 +27,18 @@ use Illuminate\Support\Carbon;
  */
 class Project extends Model
 {
+    use HasCodes;
+
     protected $table = 'tasks_projects';
 
     /** @var list<string> */
     protected $fillable = ['slug', 'title', 'workdir', 'repo_url', 'default_branch', 'rules', 'archived_at'];
+
+    /** The slug tasks are referred to by (`shop#12`): what is typed is brought to it, not refused. */
+    protected static function codes(): array
+    {
+        return ['slug' => ['max' => 64]];
+    }
 
     /**
      * @return array<string, string>

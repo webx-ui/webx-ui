@@ -82,4 +82,26 @@ describe('codify', () => {
     // Not past the length: a code that is full takes no separator.
     expect(codify('brake ', { typing: true, max: 5 })).toBe('brake')
   })
+
+  it('keeps a typed underscore in a key that takes either separator', () => {
+    expect(codify('main_menu', { separator: '-_' })).toBe('main_menu')
+    expect(codify('Main menu__Footer', { separator: '-_' })).toBe('main-menu_footer')
+    expect(codify('Главное меню', { separator: '-_', locale: 'ru' })).toBe('glavnoe-menyu')
+    expect(codify('_ _', { separator: '-_' })).toBe('')
+    expect(codify('main_', { separator: '-_', typing: true })).toBe('main_')
+    expect(codify('main ', { separator: '-_', typing: true })).toBe('main-')
+    // The other way round: words joined by `_`, a typed `-` kept.
+    expect(codify('Ваш телефон', { separator: '_-', locale: 'ru' })).toBe('vash_telefon')
+    expect(codify('step-meeting', { separator: '_-' })).toBe('step-meeting')
+    expect(codify('2nd-Phone', { separator: '_-', lead: 'field' })).toBe('field_2nd-phone')
+    expect(codify('step-', { separator: '_-', typing: true })).toBe('step-')
+  })
+
+  it('puts a code that must start with a letter after its lead', () => {
+    expect(codify('2 колонки', { locale: 'ru', lead: 'block' })).toBe('block-2-kolonki')
+    expect(codify('1', { separator: '_', lead: 'status' })).toBe('status_1')
+    expect(codify('Hero', { lead: 'block' })).toBe('hero')
+    expect(codify('!!!', { lead: 'block' })).toBe('')
+    expect(codify('2', { lead: 'block', max: 6 })).toBe('block')
+  })
 })

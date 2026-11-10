@@ -239,8 +239,9 @@ final class StatusesTest extends PanelTestCase
     {
         $this->signIn(['orders.statuses']);
 
-        $this->postJson($this->statuses('/public'), ['code' => 'Bad Code', 'name' => ['en' => 'On hold']])->assertUnprocessable()->assertJsonValidationErrors('code');
-        $this->postJson($this->statuses('/public'), ['code' => 'in_progress', 'name' => ['en' => 'On hold']])->assertUnprocessable()->assertJsonValidationErrors('code');
+        // A code is brought to its shape, not refused for it (#125): only an empty or a taken one is.
+        $this->postJson($this->statuses('/public'), ['code' => '!!!', 'name' => ['en' => 'On hold']])->assertUnprocessable()->assertJsonValidationErrors('code');
+        $this->postJson($this->statuses('/public'), ['code' => 'In Progress', 'name' => ['en' => 'On hold']])->assertUnprocessable()->assertJsonValidationErrors('code');
         $this->postJson($this->statuses('/public'), ['code' => 'on_hold', 'name' => ['ru' => 'Отложен']])->assertUnprocessable()->assertJsonValidationErrors('name.en');
 
         $board = $this->postJson($this->statuses('/public'), [
@@ -249,6 +250,9 @@ final class StatusesTest extends PanelTestCase
         $hold = self::pick($board['groups'], 'code', 'on_hold');
         $this->assertSame(['en' => 'On hold', 'ru' => 'Отложен'], $hold['name']);
         $this->assertSame('on_hold', end($board['groups'])['code']);
+
+        $board = $this->postJson($this->statuses('/public'), ['code' => '2 Тормозные колодки', 'name' => ['en' => 'Brakes']])->assertCreated()->json('data');
+        $this->assertSame('status_2_tormoznye_kolodki', end($board['groups'])['code']);
 
         $this->postJson($this->statuses('/internal'), [
             'public_status_id' => $hold['id'], 'name' => ['en' => 'Waiting for stock'], 'color' => 'pink',

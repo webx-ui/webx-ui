@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useTranslate } from '@webx-ui/module-admin'
+import { codify, useDefaultLocale, useTranslate, WxCodeField } from '@webx-ui/module-admin'
 import {
   WxButton,
   WxColorPicker,
@@ -60,8 +60,12 @@ watch(
   (next) => (value.value = next),
 )
 
+const siteLocale = useDefaultLocale()
+
+/* Made a value here as well as in the field: the field's own blur may come after this one (#125). */
 function commitValue(): void {
-  const next = value.value.trim()
+  const next = codify(value.value, { separator: '-_', max: 64, locale: siteLocale.value })
+  value.value = next
   const before = option.value.value
 
   if (next === before) return
@@ -242,8 +246,10 @@ const opened = ref(
         :error="errors('value')"
         required
       >
-        <wx-input
+        <wx-code-field
           v-model="value"
+          separator="-_"
+          :maxlength="64"
           size="sm"
           :disabled="disabled"
           @change="commitValue"

@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace WebxUi\Delivery;
 
+use Illuminate\Container\Container;
 use InvalidArgumentException;
 use WebxUi\Delivery\Models\DeliveryCarrier;
 use WebxUi\Geography\Names;
+use WebxUi\Localization\Locales;
+use WebxUi\Localization\Slug;
 
 /**
  * Kinds of points (§3): the built-in ones with words of the dictionary, and the kinds the shop
@@ -54,14 +57,20 @@ final class PointKinds
     }
 
     /**
-     * Names a kind of the shop's own points, or renames it.
+     * Names a kind of the shop's own points, or renames it. The key is typed by a person, so it is
+     * brought to its shape rather than refused for it (#125): «Шоурум» is kept as `shourum`.
      *
      * @param  array<string, string>  $names  by language
+     * @return string the key the kind is kept by
      */
-    public function define(string $kind, array $names): void
+    public function define(string $kind, array $names): string
     {
-        if (preg_match(self::KEY, $kind) !== 1 || strlen($kind) > 32) {
-            throw new InvalidArgumentException("[{$kind}] is not a kind of points: lowercase letters, digits and dashes, at most 32 characters.");
+        $locale = Slug::isLatin($kind) ? 'en' : Container::getInstance()->make(Locales::class)->defaultCode();
+        $typed = $kind;
+        $kind = Slug::code($kind, $locale, 32);
+
+        if (preg_match(self::KEY, $kind) !== 1) {
+            throw new InvalidArgumentException("Nothing is left of [{$typed}] to make a code of a kind of points: give it Latin letters or digits.");
         }
 
         if (in_array($kind, self::BUILT_IN, true)) {
@@ -81,6 +90,8 @@ final class PointKinds
         $settings['point_kinds'] = $own;
         $store->settings = $settings;
         $store->save();
+
+        return $kind;
     }
 
     /** @return array<string, array<string, string>> */

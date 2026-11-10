@@ -12,6 +12,7 @@ use WebxUi\Delivery\Contracts\LabelledMethodType;
 use WebxUi\Delivery\MethodTypes;
 use WebxUi\Delivery\Models\DeliveryMethod;
 use WebxUi\Delivery\Models\DeliveryPoint;
+use WebxUi\Delivery\PointKinds;
 use WebxUi\Delivery\Testing\FakeCarrier;
 use WebxUi\Delivery\Types\StoreCourier;
 use WebxUi\Delivery\Types\StorePickup;
@@ -224,5 +225,25 @@ final class MethodsPanelTest extends PanelTestCase
             ->assertJsonPath('data.*.title', ['Store C', 'Store B', 'Store A']);
         $this->getJson($this->api('points?sort=locality'))->assertOk()
             ->assertJsonPath('data.2.title', 'Store A');
+    }
+
+    #[Test]
+    public function a_kind_of_points_named_by_hand_gets_its_code_brought_not_refused(): void
+    {
+        $this->signIn();
+
+        // #125: what is typed becomes a code; only nothing left of it, or a built-in kind, is refused.
+        $options = $this->postJson($this->api('methods/point-kinds'), ['kind' => 'Тормозные Колодки', 'names' => ['en' => 'Brakes']])
+            ->assertCreated()
+            ->json('data');
+        $this->assertContains('tormoznye-kolodki', array_column($options, 'value'));
+        $this->assertTrue($this->app->make(PointKinds::class)->has('tormoznye-kolodki'));
+
+        $this->postJson($this->api('methods/point-kinds'), ['kind' => '!!!', 'names' => ['en' => 'Nothing']])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('kind');
+        $this->postJson($this->api('methods/point-kinds'), ['kind' => 'Store', 'names' => ['en' => 'Shop']])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('kind');
     }
 }

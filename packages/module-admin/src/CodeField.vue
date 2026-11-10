@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { WxInput } from '@webx-ui/core'
+import { computed, ref, useAttrs } from 'vue'
+import { WxInput, useLocales, type LocalizedValue } from '@webx-ui/core'
 import { codify, useDefaultLocale, type CodeShape } from './slug'
 
 /**
@@ -14,30 +14,51 @@ import { codify, useDefaultLocale, type CodeShape } from './slug'
  *
  * `maxlength` cuts the code and is not handed to the input: the browser would cut a pasted name
  * before it was ever made a code. The rest of the node's props travel to `WxInput` as they were
- * written.
+ * written — `localized` among them: a code kept per language (`{ uk: '…', ru: '…' }`) is made a
+ * code language by language, each in its own, since «Гальмівні» is `halmivni` in Ukrainian and
+ * would be `galmivni` read the Russian way.
  */
 defineOptions({ name: 'WxCodeField', inheritAttrs: false })
 
 const props = defineProps<{
-  modelValue?: string | null
-  /** Between words: `-` (the default) or `_`. */
-  separator?: string
+  modelValue?: string | LocalizedValue | null
+  /** Between words: `-` (the default), `_`, or `-_` for a key that takes either. */
+  separator?: '-' | '_' | '-_' | '_-'
+  /** For a code that must start with a letter: what one that starts with a digit goes after. */
+  lead?: string
   /** How long the code may be. */
   maxlength?: number | string
 }>()
 
-const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
+const emit = defineEmits<{ 'update:modelValue': [value: string | LocalizedValue] }>()
 
+const attrs = useAttrs()
 const locale = useDefaultLocale()
+const locales = useLocales()
 const field = ref<{ input: HTMLInputElement | null } | null>(null)
 
-function shape(typing: boolean): CodeShape {
+/** The way `WxInput` decides it: `localized` asked for, and languages to edit. */
+const perLanguage = computed(
+  () => (attrs.localized === true || attrs.localized === '') && locales.list.value.length > 0,
+)
+
+/** The language a localized input shows — the one being typed in. */
+function onScreen(): string {
+  const chosen = locales.active.value
+
+  return locales.list.value.some((one) => one.code === chosen)
+    ? chosen
+    : (locales.list.value[0]?.code ?? '')
+}
+
+function shape(typing: boolean, language = locale.value): CodeShape {
   const max = Number(props.maxlength)
 
   return {
-    separator: props.separator === '_' ? '_' : '-',
+    separator: props.separator ?? '-',
+    lead: props.lead || undefined,
     max: Number.isFinite(max) && max > 0 ? max : undefined,
-    locale: locale.value,
+    locale: language,
     typing,
   }
 }
@@ -46,10 +67,29 @@ function shape(typing: boolean): CodeShape {
  * The code goes to the model and straight into the input as well: a sign that is dropped leaves
  * the model as it was, and the input would keep showing what was typed.
  */
-function write(text: string, typing: boolean): void {
-  const code = codify(text, shape(typing))
+function write(value: string | LocalizedValue, typing: boolean): void {
+  let code: string
+  let next: string | LocalizedValue
 
-  if (code !== (props.modelValue ?? '')) emit('update:modelValue', code)
+  if (typeof value === 'string') {
+    code = codify(value, shape(typing))
+    next = code
+  } else {
+    const shown = onScreen()
+
+    // Only the language being typed in keeps an open separator: the rest are not being typed.
+    next = Object.fromEntries(
+      Object.entries(value).map(([language, text]) => [
+        language,
+        codify(String(text ?? ''), shape(typing && language === shown, language)),
+      ]),
+    )
+    code = next[shown] ?? ''
+  }
+
+  if (JSON.stringify(next) !== JSON.stringify(props.modelValue ?? '')) {
+    emit('update:modelValue', next)
+  }
 
   const input = field.value?.input
   if (!input || input.value === code) return
@@ -67,11 +107,32 @@ function write(text: string, typing: boolean): void {
 }
 
 function onInput(value: unknown): void {
-  write(typeof value === 'string' ? value : '', true)
+  if (typeof value === 'object' && value !== null) {
+    write(value as LocalizedValue, true)
+  } else {
+    write(typeof value === 'string' ? value : '', true)
+  }
 }
 
 function onLeave(): void {
-  write(field.value?.input?.value ?? props.modelValue ?? '', false)
+  const typed = field.value?.input?.value
+
+  if (!perLanguage.value) {
+    write(typed ?? (typeof props.modelValue === 'string' ? props.modelValue : ''), false)
+
+    return
+  }
+
+  // A plain string under `localized` belongs to the first language, as `WxInput` reads it.
+  const held = props.modelValue
+  const base: LocalizedValue =
+    typeof held === 'object' && held !== null
+      ? { ...held }
+      : typeof held === 'string' && held !== ''
+        ? { [locales.list.value[0]?.code ?? onScreen()]: held }
+        : {}
+
+  write(typed === undefined ? base : { ...base, [onScreen()]: typed }, false)
 }
 </script>
 

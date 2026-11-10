@@ -135,6 +135,34 @@ describe('WxInboxFieldDialog', () => {
     )
   })
 
+  it('makes a name of what is typed into it, in the shape the server keeps', async () => {
+    const { control, post, wrapper } = dialog(null)
+    await flushPromises()
+
+    control('Label').vm.$emit('update:modelValue', { en: 'Phone' })
+    control('Name').vm.$emit('update:modelValue', '2nd Phone')
+    await flushPromises()
+
+    // A letter first, and a gap is a hyphen: what `Slug::code()` makes of it on the server.
+    expect(control('Name').props('modelValue')).toBe('field_2nd_phone')
+
+    control('Name').vm.$emit('update:modelValue', 'Work_Phone')
+    await flushPromises()
+
+    expect(control('Name').props('modelValue')).toBe('work_phone')
+
+    await wrapper
+      .findAllComponents({ name: 'WxButton' })
+      .find((one) => one.text() === 'Save')!
+      .trigger('click')
+    await flushPromises()
+
+    expect(post).toHaveBeenCalledWith(
+      '/api/cms/inbox/forms/1/fields',
+      expect.objectContaining({ name: 'work_phone' }),
+    )
+  })
+
   it('leaves the name of a field that has one, and warns before it is changed', async () => {
     const { control } = dialog(phone)
     await flushPromises()

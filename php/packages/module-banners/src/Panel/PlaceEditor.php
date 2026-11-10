@@ -61,11 +61,14 @@ final class PlaceEditor
      * A place of somebody's own: made straight away, unlike a declared one — nobody asked for this
      * key in a template, so the row is the only thing that says it exists at all.
      *
+     * The key is brought to its shape first (#125): what is refused is a key with nothing left of
+     * it, or one that is taken.
+     *
      * @throws ValidationException
      */
     public function create(mixed $key, mixed $title): Place
     {
-        $key = is_string($key) ? trim($key) : '';
+        $key = is_string($key) ? (string) Place::codeFor('key', $key) : '';
 
         if (preg_match(Place::KEY, $key) !== 1) {
             throw ValidationException::withMessages(['key' => (string) __('webx-banners::errors.place-key')]);

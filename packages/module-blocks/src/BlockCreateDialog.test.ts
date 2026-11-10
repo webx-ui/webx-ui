@@ -3,9 +3,16 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { adminKey, createI18n, i18nKey, type AdminContext } from '@webx-ui/module-admin'
 import BlockCreateDialog from './BlockCreateDialog.vue'
 
-function dialog() {
+function dialog(locales: string[] = []) {
   const post = vi.fn().mockResolvedValue({ data: { id: 3 } })
   const i18n = createI18n()
+  i18n.state.contentLocales = locales.map((code, index) => ({
+    code,
+    name: code,
+    nativeName: code,
+    direction: 'ltr',
+    default: index === 0,
+  }))
 
   const admin = {
     apiPath: '/api/cms',
@@ -74,5 +81,41 @@ describe('WxBlockCreateDialog', () => {
       title: 'Price tag',
       slug: 'price-tag',
     })
+  })
+
+  /* The slug is the server's shape as it is typed (#125): transliterated by the site's language. */
+  it('makes the slug of the name in the site language, a letter first', async () => {
+    const { post } = dialog(['ru'])
+    await flushPromises()
+
+    const [name, slug] = [
+      ...document.body.querySelectorAll<HTMLInputElement>('.wx-block-create input[type=text]'),
+    ]
+    name!.value = '2 колонки'
+    name!.dispatchEvent(new Event('input'))
+    await flushPromises()
+
+    expect(slug!.value).toBe('block-2-kolonki')
+
+    // Typed by hand, it is brought the same way, and the name no longer drives it.
+    slug!.value = 'Тормозные Колодки'
+    slug!.dispatchEvent(new Event('input'))
+    slug!.dispatchEvent(new Event('blur'))
+    name!.value = 'Something else'
+    name!.dispatchEvent(new Event('input'))
+    await flushPromises()
+
+    expect(slug!.value).toBe('tormoznye-kolodki')
+
+    const create = [...document.body.querySelectorAll('button')].find(
+      (button) => button.textContent?.trim() === 'Create',
+    )!
+    create.click()
+    await flushPromises()
+
+    expect(post).toHaveBeenCalledWith(
+      '/api/cms/blocks',
+      expect.objectContaining({ slug: 'tormoznye-kolodki' }),
+    )
   })
 })

@@ -10,7 +10,7 @@ return [
     'new' => 'Neuer Platz',
     'title' => 'Name',
     'key' => 'Schlüssel',
-    'key-help' => 'Das, wonach die Vorlage der Website fragt: Kleinbuchstaben, Ziffern und Bindestriche, am Anfang ein Buchstabe. Später nicht mehr änderbar.',
+    'key-help' => 'Das, wonach die Vorlage der Website fragt, etwa „sidebar“: Was Sie eingeben, wird von selbst zum Schlüssel. Später nicht mehr änderbar.',
     'declared' => 'In der Konfiguration festgelegt',
     'in-template' => 'In einer Vorlage: banners(\':key\')',
     'count' => 'Banner',

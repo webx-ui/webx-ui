@@ -20,6 +20,10 @@ translation routes belong to `webx-ui/module-admin`, and a translated address is
 - **Trait** `HasLatinSlug` — a slug being written is transliterated on the model, one that leaves
   nothing becomes `<type>-<id>`. A model with a slug and no address uses it by name and registers in
   `SlugModels`; `LatinSlugCoverageTest` holds every model to it.
+- **Trait** `HasCodes` with `static codes()` (`column => [max, separator, lead]`) — a machine name somebody types
+  (a key, a code) is brought to its shape on `saving` by `Slug::code()`; `Model::codeFor($column, $value)` is the
+  same for a request that checks the code first. `CodeCoverageTest` holds every model with a code, every
+  code-shaped `regex:` rule and every code field of a screen to it.
 - **Generator** `WebxUi\Localization\Slug` — `make($text, $locale, $max, $prefix, $separator)` and
   `first($texts, $default, …)`: every code and address part a module makes of a name. Transliterates
   by the name's language (`Хіт` is `khit` in uk, `hit` in ru — never `xit`); `$prefix` names a
@@ -62,8 +66,9 @@ translation routes belong to `webx-ui/module-admin`, and a translated address is
 - Do not call `Str::slug()` without a language for a code or an address: it reads Cyrillic the
   English way. Use `Slug::make()`. `SlugCoverageTest` fails on such a call in any package's `src`.
 - Do not refuse a code someone typed (a status code, a key) for its shape: bring it to the shape
-  with `Slug::code($text, $locale, $max, $separator)` on `saving`, and give the screen field
-  `wx-code`. Refuse only a code that is taken or that leaves nothing with no fallback.
+  with `HasCodes` (`Slug::code($text, $locale, $max, $separator, $lead)`; `Slug::BOTH` for a key that takes
+  `-` and `_`), bring it with `codeFor()` before a request's own check, and give the field `wx-code` /
+  `<wx-code-field>`. Refuse only a code that is taken or that leaves nothing with no fallback.
 
 - Do not add the validation lines with `FileLoader::addPath()` or replace `translation.loader`:
   another package wraps it (`themes`), and an added path is read after the site's `lang/`.

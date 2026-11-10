@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
+import { useAdmin, useErrorText, useTranslate, WxCodeField } from '@webx-ui/module-admin'
 import {
   toast,
   useModal,
@@ -25,7 +25,8 @@ import type { InboxForm } from './types'
  *
  * The address is typed rather than made out of the title. A page's address is a sentence
  * transliterated; a form's is a short word somebody chooses once and then writes into a
- * template by hand, and guessing `svyazhites-s-nami` for them helps nobody.
+ * template by hand, and guessing `svyazhites-s-nami` for them helps nobody. What is typed is made
+ * an address as it is typed (#125), rather than refused on save.
  */
 const { resolve, dismiss, open } = useModal<InboxForm>()
 
@@ -82,7 +83,7 @@ async function save(): Promise<void> {
       </wx-form-item>
 
       <wx-form-item :label="t('panel.slug')" :help="t('panel.slug-help')" :error="errorOf('slug')">
-        <wx-input v-model="slug" placeholder="contact" />
+        <wx-code-field v-model="slug" :maxlength="96" placeholder="contact" />
       </wx-form-item>
     </div>
 

@@ -10,6 +10,7 @@ use Illuminate\Support\Carbon;
 use WebxUi\Admin\Versions\HasDraft;
 use WebxUi\Admin\Versions\HasVersions;
 use WebxUi\Configurator\Panel\ConfiguratorWriter;
+use WebxUi\Localization\HasCodes;
 use WebxUi\Localization\HasTranslations;
 
 /**
@@ -34,6 +35,7 @@ use WebxUi\Localization\HasTranslations;
  */
 class Configurator extends Model
 {
+    use HasCodes;
     use HasDraft;
     use HasTranslations;
     use HasVersions {
@@ -61,6 +63,12 @@ class Configurator extends Model
 
     /** @var list<string> */
     protected $fillable = ['key', 'title', 'schema', 'form', 'page'];
+
+    /** Typed by a person or an agent: «Душевые кабины» is kept as `dushevye-kabiny`, not refused (#125). */
+    protected static function codes(): array
+    {
+        return ['key' => ['max' => 64]];
+    }
 
     /**
      * @return array<string, string>

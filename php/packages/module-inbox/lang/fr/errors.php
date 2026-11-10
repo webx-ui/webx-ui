@@ -14,8 +14,9 @@ return [
     'no-statuses' => 'Aucun statut à donner à une nouvelle soumission. Lancez les migrations.',
     'file-missing' => 'Ce fichier n\'est plus là.',
 
-    'slug-shape' => 'Une adresse s’écrit en minuscules, chiffres et traits d’union : « contact-us ».',
-    'field-name-shape' => 'Un nom commence par une lettre, puis lettres, chiffres, tirets et tirets bas.',
+    'slug-empty' => 'Une adresse a besoin de lettres ou de chiffres, par exemple « contact-us ».',
+    'field-name-empty' => 'Un nom a besoin de lettres ou de chiffres, par exemple « phone ».',
+    'status-key-empty' => 'Une clé a besoin de lettres ou de chiffres, par exemple « in-progress ».',
     'recipient-shape' => 'Le destinataire :entry n\'est ni un administrateur ni une adresse e-mail.',
     'recipient-unknown' => 'Le destinataire :entry désigne un administrateur qui n\'existe pas.',
     'choices-required' => 'Un champ de liste a besoin d\'au moins un choix avec une valeur.',

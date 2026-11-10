@@ -14,8 +14,9 @@ return [
     'no-statuses' => 'There is no status to give a new submission. Run the migrations.',
     'file-missing' => 'This file is no longer here.',
 
-    'slug-shape' => 'An address is made of lower-case letters, digits and hyphens: “contact-us”.',
-    'field-name-shape' => 'A name starts with a letter and may hold letters, digits, hyphens and underscores.',
+    'slug-empty' => 'An address needs letters or digits, like “contact-us”.',
+    'field-name-empty' => 'A name needs letters or digits, like “phone”.',
+    'status-key-empty' => 'A key needs letters or digits, like “in-progress”.',
     'recipient-shape' => 'Recipient :entry is neither an administrator nor an e-mail address.',
     'recipient-unknown' => 'Recipient :entry names an administrator who does not exist.',
     'choices-required' => 'A list field needs at least one choice, each with a value.',

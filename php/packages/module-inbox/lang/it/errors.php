@@ -14,8 +14,9 @@ return [
     'no-statuses' => 'Non c’è nessuno stato da dare a una nuova richiesta. Esegui le migrazioni.',
     'file-missing' => 'Questo file non c’è più.',
 
-    'slug-shape' => 'Un indirizzo si scrive con minuscole, cifre e trattini: «contact-us».',
-    'field-name-shape' => 'Un nome inizia con una lettera; poi lettere, cifre, trattini e trattini bassi.',
+    'slug-empty' => 'Un indirizzo ha bisogno di lettere o cifre, ad esempio «contact-us».',
+    'field-name-empty' => 'Un nome ha bisogno di lettere o cifre, ad esempio «phone».',
+    'status-key-empty' => 'Una chiave ha bisogno di lettere o cifre, ad esempio «in-progress».',
     'recipient-shape' => 'Il destinatario :entry non è né un amministratore né un indirizzo e-mail.',
     'recipient-unknown' => 'Il destinatario :entry indica un amministratore che non esiste.',
     'choices-required' => 'Un campo elenco ha bisogno di almeno una scelta con un valore.',

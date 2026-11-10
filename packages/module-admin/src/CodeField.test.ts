@@ -1,5 +1,7 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
+import { ref } from 'vue'
+import { localesKey } from '@webx-ui/core'
 import CodeField from './CodeField.vue'
 
 /**
@@ -47,6 +49,35 @@ describe('WxCodeField', () => {
 
     expect(wrapper.emitted('update:modelValue')).toBeUndefined()
     expect((input.element as HTMLInputElement).value).toBe('brake')
+    wrapper.unmount()
+  })
+
+  it('makes a code per language, each in its own', async () => {
+    const active = ref('uk')
+    const wrapper = mount(CodeField, {
+      props: { modelValue: { ru: 'tormoza' }, localized: true, maxlength: 48 },
+      attachTo: document.body,
+      global: {
+        provide: {
+          [localesKey as symbol]: { list: ref([{ code: 'ru' }, { code: 'uk' }]), active },
+        },
+      },
+    })
+    const input = wrapper.find('input')
+
+    // Ukrainian reads «г» as `h`; the Russian code next to it is left as it was.
+    await input.setValue('Гальмівні колодки ')
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([
+      { ru: 'tormoza', uk: 'halmivni-kolodky-' },
+    ])
+
+    await wrapper.setProps({ modelValue: { ru: 'tormoza', uk: 'halmivni-kolodky-' } })
+    await input.trigger('blur')
+
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([
+      { ru: 'tormoza', uk: 'halmivni-kolodky' },
+    ])
+    expect((input.element as HTMLInputElement).value).toBe('halmivni-kolodky')
     wrapper.unmount()
   })
 })

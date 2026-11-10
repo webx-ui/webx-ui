@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed, inject, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import {
-  i18nKey,
-  slugify as transliterate,
+  codify,
   useAdmin,
+  useDefaultLocale,
   useErrorText,
   useTranslate,
+  WxCodeField,
 } from '@webx-ui/module-admin'
 import {
   toast,
@@ -61,25 +62,17 @@ const groupOptions = computed(() =>
   groups.value.map((id) => ({ value: id, label: groupLabel(id, t) })),
 )
 
-/** The name is typed in the panel's language, so it is transliterated by that one. */
-const panelLocale = inject(i18nKey, null)?.state.locale ?? 'en'
+/** A new type is named in the site's main language, the one the server transliterates by. */
+const locale = useDefaultLocale()
 
-/**
- * A slug from the name, until the person types one of their own. Latin only, and a letter first:
- * the identifier is code.
- */
-function slugify(text: string): string {
-  return transliterate(text, '-', panelLocale)
-    .replace(/[^a-z0-9-]+/g, '')
-    .replace(/^[^a-z]+/, '')
-    .slice(0, 64)
-    .replace(/-+$/, '')
-}
+/** The shape of the slug — the server's `Block::codes()`: a letter first, the identifier is code. */
+const SLUG = { separator: '-', max: 64, lead: 'block' } as const
 
+/** A slug from the name, until the person types one of their own. */
 watch(
   () => form.value.title,
   (title) => {
-    if (!slugTouched.value) form.value.slug = slugify(title)
+    if (!slugTouched.value) form.value.slug = codify(title, { ...SLUG, locale: locale.value })
   },
 )
 
@@ -137,7 +130,14 @@ async function save(): Promise<void> {
         :help="t('page.identifier-help')"
         :error="errorOf('slug')"
       >
-        <wx-input v-model="form.slug" placeholder="hero" @input="slugTouched = true" />
+        <wx-code-field
+          v-model="form.slug"
+          :separator="SLUG.separator"
+          :lead="SLUG.lead"
+          :maxlength="SLUG.max"
+          placeholder="hero"
+          @input="slugTouched = true"
+        />
       </wx-form-item>
 
       <wx-form-item

@@ -16,9 +16,16 @@ use WebxUi\Localization\Slug;
  * not come through it, and the model a code lives on does it once more before its own check, so
  * an agent and an import that skip the screen end up with the same code (`Slug::code()`).
  *
- * The shape is the node's: `props.separator` — `-` (the default) or `_` — and `props.maxlength`,
+ * The shape is the node's: `props.separator` — `-` (the default), `_`, or `-_` / `_-` (either kept,
+ * {@see Slug::BOTH}), `props.lead` for a code that must start with a letter, and `props.maxlength`,
  * which cuts the code rather than refusing a longer text, since what is typed is not what is kept.
  * Whether the code is free is the model's to say: only it knows among what.
+ *
+ * A `localized` code is kept per language and is made a code in each language's own way — «Гальмівні»
+ * is `halmivni` in Ukrainian, `galmivni` read the Russian way. A value reaches {@see store()} one
+ * language at a time without saying which, so only what reads the same in every language — plain
+ * Latin — is brought here; the rest is left as typed for the model, which knows the language of each
+ * (`Slug::code()` per language on its `saving`). The panel brings each language as it is typed.
  */
 final class CodeType implements FieldType
 {
@@ -49,10 +56,16 @@ final class CodeType implements FieldType
         }
 
         $typed = (string) $value;
-        // The language is asked for only when it matters: it is a read of the `locales` table.
-        $locale = Slug::isLatin($typed) ? 'en' : $this->locales->defaultCode();
+        $latin = Slug::isLatin($typed);
 
-        return Slug::code($typed, $locale, self::length($node), self::separator($node));
+        if (! $latin && ($node['localized'] ?? false) === true) {
+            return $typed;
+        }
+
+        // The language is asked for only when it matters: it is a read of the `locales` table.
+        $locale = $latin ? 'en' : $this->locales->defaultCode();
+
+        return Slug::code($typed, $locale, self::length($node), self::separator($node), self::lead($node));
     }
 
     /**
@@ -68,7 +81,19 @@ final class CodeType implements FieldType
      */
     public static function separator(array $node): string
     {
-        return ($node['props']['separator'] ?? '-') === '_' ? '_' : '-';
+        $separator = $node['props']['separator'] ?? '-';
+
+        return in_array($separator, ['_', Slug::BOTH, Slug::BOTH_UNDERSCORED], true) ? $separator : '-';
+    }
+
+    /**
+     * @param  array<string, mixed>  $node
+     */
+    public static function lead(array $node): ?string
+    {
+        $lead = $node['props']['lead'] ?? null;
+
+        return is_string($lead) && $lead !== '' ? $lead : null;
     }
 
     /**

@@ -48,22 +48,32 @@ final class OrderFieldsTest extends TestCase
         $this->assertSame([FieldPlan::CREATED], $plan->effects);
         $this->assertSame(0, OrderField::query()->count());
 
-        $refused = $this->fields()->write(['key' => 'Bad key', 'type' => 'text', 'label' => ['en' => 'Bad']], dryRun: true);
+        $refused = $this->fields()->write(['key' => '!!!', 'type' => 'text', 'label' => ['en' => 'Bad']], dryRun: true);
         $this->assertSame(FieldRefused::KEY_INVALID, $refused->refusal);
         $this->assertSame('key', $refused->field);
         $this->assertSame(0, OrderField::query()->count());
     }
 
     #[Test]
-    public function the_key_follows_the_rule_of_a_variable(): void
+    public function the_key_is_brought_to_the_rule_of_a_variable(): void
     {
-        foreach (['1st', 'with-dash', 'Ünïcode', str_repeat('a', 33)] as $key) {
-            $this->assertRefused(FieldRefused::KEY_INVALID, ['key' => $key, 'type' => 'text', 'label' => ['en' => 'Field']]);
+        // A key is brought to its shape rather than refused for it (#125); only nothing left is refused.
+        $this->assertRefused(FieldRefused::KEY_INVALID, ['key' => '!!!', 'type' => 'text', 'label' => ['en' => 'Field']]);
+
+        foreach ([
+            'Delivery_Time' => 'delivery_time',
+            '1st' => 'field_1st',
+            'with-dash' => 'with_dash',
+            'Ünïcode' => 'unicode',
+            str_repeat('a', 33) => str_repeat('a', 32),
+            'Тормозные колодки' => 'tormoznye_kolodki',
+        ] as $typed => $key) {
+            $this->assertSame($key, $this->fields()->write(['key' => $typed, 'type' => 'text', 'label' => ['en' => 'Field']])->key);
+            $this->assertTrue(OrderField::query()->where('key', $key)->exists(), $typed);
         }
 
-        // Upper case is brought down rather than refused, as `Slug::code()` brings codes down.
-        $this->fields()->write(['key' => 'Delivery_Time', 'type' => 'text', 'label' => ['en' => 'Time']]);
-        $this->assertTrue(OrderField::query()->where('key', 'delivery_time')->exists());
+        // The same key typed again is taken, however it is typed.
+        $this->assertRefused(FieldRefused::KEY_TAKEN, ['key' => 'Tormoznye Kolodki', 'type' => 'text', 'label' => ['en' => 'Field']]);
     }
 
     #[Test]
@@ -131,16 +141,16 @@ final class OrderFieldsTest extends TestCase
         $base = ['key' => 'delivery_time', 'type' => 'select', 'label' => ['en' => 'Time']];
 
         foreach ([
-            [['value' => 'Evening!', 'label' => ['en' => 'Evening']]],
+            [['value' => '!!!', 'label' => ['en' => 'Evening']]],
             [['value' => 'evening', 'label' => ['ru' => 'Вечер']]],
-            [['value' => 'evening', 'label' => ['en' => 'Evening']], ['value' => 'evening', 'label' => ['en' => 'Late']]],
+            [['value' => 'evening', 'label' => ['en' => 'Evening']], ['value' => 'Evening!', 'label' => ['en' => 'Late']]],
         ] as $options) {
             $this->assertRefused(FieldRefused::OPTION_INVALID, $base + ['options' => $options], about: 'options');
         }
 
-        $this->fields()->write($base + ['options' => [['value' => ' Morning ', 'label' => ['en' => '9:00–12:00']], ['value' => 'evening', 'label' => ['en' => '18:00–21:00', 'ru' => '']]]]);
+        $this->fields()->write($base + ['options' => [['value' => ' Morning ', 'label' => ['en' => '9:00–12:00']], ['value' => 'поздно', 'label' => ['en' => '18:00–21:00', 'ru' => '']], ['value' => '2 hours', 'label' => ['en' => 'Two hours']]]]);
         $this->assertSame(
-            [['value' => 'morning', 'label' => ['en' => '9:00–12:00']], ['value' => 'evening', 'label' => ['en' => '18:00–21:00']]],
+            [['value' => 'morning', 'label' => ['en' => '9:00–12:00']], ['value' => 'pozdno', 'label' => ['en' => '18:00–21:00']], ['value' => 'option_2_hours', 'label' => ['en' => 'Two hours']]],
             OrderField::query()->sole()->options,
         );
     }

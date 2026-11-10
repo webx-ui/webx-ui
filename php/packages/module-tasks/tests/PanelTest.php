@@ -140,7 +140,7 @@ final class PanelTest extends TestCase
         $planner = $this->member(['tasks.view', 'tasks.manage']);
 
         $this->actingAs($planner, 'cms')->postJson('/api/cms/tasks/projects', ['slug' => 'blog', 'title' => 'Blog'])->assertCreated();
-        $this->actingAs($planner, 'cms')->postJson('/api/cms/tasks/projects', ['slug' => 'Not A Slug', 'title' => 'X'])
+        $this->actingAs($planner, 'cms')->postJson('/api/cms/tasks/projects', ['slug' => '!!!', 'title' => 'X'])
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['slug']);
 

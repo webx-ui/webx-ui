@@ -14,8 +14,9 @@ return [
     'no-statuses' => 'No hay ningún estado que dar a un envío nuevo. Ejecute las migraciones.',
     'file-missing' => 'Este archivo ya no está aquí.',
 
-    'slug-shape' => 'Una dirección se escribe con minúsculas, cifras y guiones: «contact-us».',
-    'field-name-shape' => 'Un nombre empieza por una letra; después, letras, cifras, guiones y guiones bajos.',
+    'slug-empty' => 'Una dirección necesita letras o cifras, por ejemplo «contact-us».',
+    'field-name-empty' => 'Un nombre necesita letras o cifras, por ejemplo «phone».',
+    'status-key-empty' => 'Una clave necesita letras o cifras, por ejemplo «in-progress».',
     'recipient-shape' => 'El destinatario :entry no es ni un administrador ni una dirección de correo.',
     'recipient-unknown' => 'El destinatario :entry nombra a un administrador que no existe.',
     'choices-required' => 'Un campo de lista necesita al menos una opción con un valor.',

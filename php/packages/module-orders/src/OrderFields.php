@@ -11,6 +11,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use WebxUi\Cache\CacheGroups;
 use WebxUi\Localization\Locales;
+use WebxUi\Localization\Slug;
 use WebxUi\Orders\Checkout\FieldPlaces;
 use WebxUi\Orders\Models\OrderField;
 
@@ -69,11 +70,12 @@ final readonly class OrderFields
     {
         $valid = $this->valid($input, $field === null);
         $fallback = $this->locales->fallback();
-        $key = array_key_exists('key', $valid) ? strtolower(trim((string) $valid['key'])) : (string) $field?->key;
+        // Brought before the rules, so only an empty or a taken key is refused (#125).
+        $key = array_key_exists('key', $valid) ? (string) OrderField::codeFor('key', (string) $valid['key']) : (string) $field?->key;
         $type = array_key_exists('type', $valid) ? (string) $valid['type'] : (string) ($field->type ?? '');
         $label = array_key_exists('label', $valid) ? self::words($valid['label']) : self::words($field?->getTranslations('label'));
         $hint = array_key_exists('hint', $valid) ? self::words($valid['hint']) : self::words($field?->getTranslations('hint'));
-        $options = array_key_exists('options', $valid) ? self::options($valid['options']) : ($field->options ?? []);
+        $options = array_key_exists('options', $valid) ? $this->options($valid['options']) : ($field->options ?? []);
         $required = array_key_exists('required', $valid) ? (bool) $valid['required'] : (bool) $field?->required;
         $active = array_key_exists('active', $valid) ? (bool) $valid['active'] : ($field === null || $field->active);
 
@@ -382,17 +384,22 @@ final readonly class OrderFields
     /**
      * @return list<array{value: string, label: array<string, string>}>
      */
-    private static function options(mixed $options): array
+    private function options(mixed $options): array
     {
         $kept = [];
+        $locale = null;
 
         foreach (is_array($options) ? $options : [] as $option) {
             if (! is_array($option)) {
                 continue;
             }
 
+            // The key of an option is typed as a field's is, and brought to the same shape (#125).
+            $value = is_string($option['value'] ?? null) ? $option['value'] : '';
+            $language = Slug::isLatin($value) ? 'en' : ($locale ??= $this->locales->defaultCode());
+
             $kept[] = [
-                'value' => strtolower(trim(is_string($option['value'] ?? null) ? $option['value'] : '')),
+                'value' => Slug::code($value, $language, 32, '_', 'option'),
                 'label' => self::words(is_array($option['label'] ?? null) ? $option['label'] : null),
             ];
         }

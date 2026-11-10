@@ -10,7 +10,7 @@ import {
   WxSpace,
   type LocalizedValue,
 } from '@webx-ui/core'
-import { useAdmin, useTranslate } from '@webx-ui/module-admin'
+import { useAdmin, useTranslate, WxCodeField } from '@webx-ui/module-admin'
 import { createBannersApi } from './api'
 import { useBannersMessages } from './i18n'
 import type { PlaceRow } from './types'
@@ -20,7 +20,9 @@ import type { PlaceRow } from './types'
  *
  * The key does not follow the name the way a page's address follows its title: it is typed into
  * `banners('…')` by hand, and a key that quietly became `promo-2` would be a template asking for
- * a place that is not there. For the same reason a rename never touches it.
+ * a place that is not there. For the same reason a rename never touches it. What is typed is made
+ * a key as it is typed (#125), in the shape of `Place::KEY`: a letter first, so `2 columns` goes
+ * after `place`.
  *
  * The name is translated, and required in the default language — which is what the list falls
  * back on in a panel open in a language nobody named the place in.
@@ -88,8 +90,8 @@ async function submit(): Promise<void> {
         : await api.createPlace({ key: key.value.trim(), title: title.value }),
     )
   } catch (error) {
-    // Refused under its own field: a key that is taken or spelled in a way no template could
-    // write, a name missing in the default language.
+    // Refused under its own field: a key that is taken or has nothing left of it, a name missing
+    // in the default language.
     errors.value = (error as { body?: { errors?: Record<string, string[]> } }).body?.errors ?? {}
   } finally {
     saving.value = false
@@ -120,8 +122,10 @@ async function submit(): Promise<void> {
       :help="editing ? undefined : t('places.key-help')"
       required
     >
-      <wx-input
+      <wx-code-field
         v-model="key"
+        lead="place"
+        :maxlength="64"
         :disabled="editing"
         :aria-label="t('places.field-key')"
         autocomplete="off"

@@ -139,7 +139,7 @@ final class InboxTools
                     // Spread, not `+`: the left side wins a `+`, and the "omit to create" half
                     // of the description never reached the listing.
                     'form' => [...$form, 'description' => 'The form to change, by its id or its slug; omit to create one.'],
-                    'slug' => ['type' => 'string', 'description' => 'Where it answers: lower case, words joined by hyphens.'],
+                    'slug' => ['type' => 'string', 'description' => 'Where it answers: lower case, words joined by hyphens. Any text is made one ("Call Back" is kept as "call-back"), so read it back from the answer.'],
                     'title' => ['type' => ['string', 'object'], 'description' => 'One language as a string, or every language as { "en": "…" }.'],
                     'is_enabled' => ['type' => 'boolean', 'description' => 'A form that is off is a 404 to the site and keeps everything it has received.'],
                     'options' => ['type' => 'object', 'description' => 'The settings, as inbox_form_get returns them: recipients, the thank-you, the antispam. Unknown keys are dropped. '
@@ -165,7 +165,7 @@ final class InboxTools
                         'description' => 'The questions to add or change.',
                         'items' => ['type' => 'object', 'properties' => [
                             'id' => ['type' => 'integer', 'description' => 'The field to change; omit for a new one.'],
-                            'name' => ['type' => 'string', 'description' => 'The machine name: what the HTML calls it, what CSV and the intake key it by, and {{field.<name>}} in the templates of notification channels. Letters, digits, - and _. Omitted on a new field, it is made from the title: "Your phone" → your_phone, with _2 after a name the form has. Renaming a field breaks {{field.<old name>}} in channel templates; answers already received stay with the field.'],
+                            'name' => ['type' => 'string', 'description' => 'The machine name: what the HTML calls it, what CSV and the intake key it by, and {{field.<name>}} in the templates of notification channels. Letters, digits, - and _, a letter first; any other text is made one ("2nd Phone" is kept as "field-2nd-phone"; use _ between words for a name the thank-you prints). Omitted on a new field, it is made from the title: "Your phone" → your_phone, with _2 after a name the form has. Renaming a field breaks {{field.<old name>}} in channel templates; answers already received stay with the field.'],
                             'type' => ['type' => 'string', 'description' => 'text · email · tel · textarea · select · radio · checkbox · consent · date · datetime (a day and a time) · file · hidden · step (not a question: the start of a step) · summary (not a question: the answers so far).'],
                             'title' => ['type' => ['string', 'object'], 'description' => 'The label, in one language or in all of them.'],
                             'placeholder' => ['type' => ['string', 'object'], 'description' => 'The hint inside an empty field; of a step — the short label of the indicator.'],
@@ -385,7 +385,7 @@ final class InboxTools
         // What the form would be: what it is now, with what arrived written over it. A save
         // that named only `is_enabled` would otherwise arrive at the rules with no title and
         // be refused for something nobody was changing.
-        $input = [...$this->formAsInput($form), ...array_intersect_key($arguments, array_flip(['slug', 'title', 'is_enabled', 'options']))];
+        $input = FormInput::bring([...$this->formAsInput($form), ...array_intersect_key($arguments, array_flip(['slug', 'title', 'is_enabled', 'options']))]);
 
         // The questions first: the Reply-To field the settings name has to be an e-mail field
         // of the form as it will be after this call, which may be adding it right now.
@@ -544,7 +544,7 @@ final class InboxTools
             return ['would' => 'remove', 'field' => $field, 'values' => ['name' => $field->key()]];
         }
 
-        $input = [...$this->fieldAsInput($field), ...array_diff_key($sent, array_flip(['id', 'remove']))];
+        $input = FieldInput::bring([...$this->fieldAsInput($field), ...array_diff_key($sent, array_flip(['id', 'remove']))], $field);
 
         // The name is checked against `$names` below rather than against the table: the table
         // does not know what the entries before this one freed or took.

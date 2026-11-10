@@ -14,8 +14,9 @@ return [
     'no-statuses' => 'Yeni bir gönderime verilecek durum yok. Geçişleri çalıştırın.',
     'file-missing' => 'Bu dosya artık burada değil.',
 
-    'slug-shape' => 'Adres küçük harfler, rakamlar ve kısa çizgilerden oluşur: “contact-us”.',
-    'field-name-shape' => 'Ad bir harfle başlar; sonrasında harf, rakam, kısa çizgi ve alt çizgi gelebilir.',
+    'slug-empty' => 'Adreste harf ya da rakam olmalı, örneğin “contact-us”.',
+    'field-name-empty' => 'Adda harf ya da rakam olmalı, örneğin “phone”.',
+    'status-key-empty' => 'Anahtarda harf ya da rakam olmalı, örneğin “in-progress”.',
     'recipient-shape' => ':entry alıcısı ne bir yönetici ne de bir e-posta adresi.',
     'recipient-unknown' => ':entry alıcısı var olmayan bir yöneticiyi gösteriyor.',
     'choices-required' => 'Bir liste alanının değeri olan en az bir seçeneği olmalı.',

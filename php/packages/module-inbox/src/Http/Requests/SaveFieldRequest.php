@@ -18,6 +18,11 @@ use WebxUi\Inbox\Panel\FieldInput;
  */
 final class SaveFieldRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        $this->replace(FieldInput::bring($this->all(), $this->field()));
+    }
+
     /**
      * @return array<string, mixed>
      */

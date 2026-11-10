@@ -11,7 +11,9 @@ use Illuminate\Support\Carbon;
 use WebxUi\Inbox\Fields\Conditions;
 use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\Fields\Summary;
+use WebxUi\Localization\HasCodes;
 use WebxUi\Localization\HasTranslations;
+use WebxUi\Localization\Slug;
 
 /**
  * One question of a form.
@@ -33,12 +35,27 @@ use WebxUi\Localization\HasTranslations;
  */
 class Field extends Model
 {
+    use HasCodes;
     use HasTranslations;
     use SoftDeletes;
 
     protected $table = 'inbox_form_fields';
 
     protected $guarded = [];
+
+    /**
+     * The machine name (§2.6), brought rather than refused (#125): a typed `_` stays and so does a
+     * `-` — `vash_telefon` made out of a label and `step-contacts` written by hand are both kept —
+     * any other gap is a `_`, the one the thank-you page reads (`{{field.vash_telefon}}`), and a
+     * name that starts with a digit goes after `field`. A null name is left alone: it is the field
+     * nobody named, `f17`.
+     *
+     * @return array<string, array{max: int, separator?: string, lead?: string}>
+     */
+    protected static function codes(): array
+    {
+        return ['name' => ['max' => 64, 'separator' => Slug::BOTH_UNDERSCORED, 'lead' => 'field']];
+    }
 
     /**
      * @return list<string>

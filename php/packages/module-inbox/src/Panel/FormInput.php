@@ -22,9 +22,27 @@ use WebxUi\Inbox\Models\Form;
  * not an address, a recipient nobody can be written to. Rules that lived in the form request
  * would be rules the agent's door does not have, which is the way a second door becomes a
  * second set of rules.
+ *
+ * The same goes for bringing the slug to its shape (#125): both doors call {@see bring()} before
+ * the rules, so what is refused is a slug with nothing left of it, or one that is taken.
  */
 final class FormInput
 {
+    /**
+     * What arrived, with the slug as it will be kept: «Тормозные колодки» is `tormoznye-kolodki`.
+     *
+     * @param  array<string, mixed>  $input
+     * @return array<string, mixed>
+     */
+    public static function bring(array $input): array
+    {
+        if (is_string($input['slug'] ?? null)) {
+            $input['slug'] = Form::codeFor('slug', $input['slug']);
+        }
+
+        return $input;
+    }
+
     /**
      * @param  int|null  $formId  the form being edited, so its own slug is not "taken"
      * @param  list<string>|null  $emailFields  the machine names of the form's e-mail fields
@@ -48,7 +66,7 @@ final class FormInput
         return [
             // Lower case, because it is an address: `webx/forms/Contact` and
             // `webx/forms/contact` would be two doors to one form on a case-sensitive server
-            // and one door on the other kind.
+            // and one door on the other kind. Brought by {@see bring()}, so the pattern is a net.
             'slug' => [
                 'required',
                 'string',
@@ -97,7 +115,8 @@ final class FormInput
      */
     public static function messages(): array
     {
-        return ['slug.regex' => (string) trans('webx-inbox::errors.slug-shape')];
+        // `!!!` arrives here as nothing at all: that, and a slug never written, read the same.
+        return ['slug.required' => (string) trans('webx-inbox::errors.slug-empty')];
     }
 
     /**

@@ -71,8 +71,8 @@ final class FacetsTest extends TestCase
             $this->assertSame(['This code is taken in this language by: Colour.'], $refused->errors()['code.en']);
         }
 
-        $this->expectException(ValidationException::class);
-        $this->property('Size', attributes: ['code' => ['en' => 'size_eu']]);
+        // A shape is brought, not refused (#125).
+        $this->assertSame('size-eu', $this->property('Size', attributes: ['code' => ['en' => 'size_eu']])->getTranslation('code', 'en'));
     }
 
     #[Test]

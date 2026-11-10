@@ -128,7 +128,7 @@ final class BannerTools
                 .'this is for a site whose templates already do — the declared places need no making.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->placeCreate($arguments)),
                 ['properties' => [
-                    'key' => ['type' => 'string', 'description' => 'Lowercase Latin letters, digits and hyphens, starting with a letter; up to 64. Cannot be changed later.'],
+                    'key' => ['type' => 'string', 'description' => 'What a template asks for, like "sidebar". Any text is made one ("Side Promo" is kept as "side-promo"), so read the key back from the answer. Cannot be changed later.'],
                     'title' => ['description' => $text['description'].' Its name in the panel. Needed in the default language.'] + $text,
                 ], 'required' => ['key', 'title']],
                 permission: 'banners.manage',
@@ -237,10 +237,15 @@ final class BannerTools
      */
     private function placeCreate(array $arguments): array
     {
-        $key = is_string($arguments['key'] ?? null) ? trim($arguments['key']) : '';
+        // Brought here as well as in the editor, so a dry run answers with the key a real run keeps.
+        $key = is_string($arguments['key'] ?? null) ? (string) Place::codeFor('key', $arguments['key']) : '';
         $title = $this->text($arguments['title'] ?? null, 'title');
 
         if ($this->dryRun($arguments)) {
+            if (preg_match(Place::KEY, $key) !== 1) {
+                throw new ToolFailure('Not accepted — key: '.__('webx-banners::errors.place-key'));
+            }
+
             if ($this->placesService()->exists($key)) {
                 throw new ToolFailure("The place [{$key}] is already there.");
             }

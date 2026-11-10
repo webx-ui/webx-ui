@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
+import { useAdmin, useErrorText, useTranslate, WxCodeField } from '@webx-ui/module-admin'
 import {
   toast,
   useModal,
@@ -175,7 +175,13 @@ async function save(): Promise<void> {
           :error="errorOf('slug')"
           :help="locked ? undefined : t('roles.slug-hint')"
         >
-          <wx-input v-model="slug" name="slug" autocomplete="off" :disabled="locked" />
+          <wx-code-field
+            v-model="slug"
+            name="slug"
+            autocomplete="off"
+            :maxlength="64"
+            :disabled="locked"
+          />
         </wx-form-item>
       </div>
 

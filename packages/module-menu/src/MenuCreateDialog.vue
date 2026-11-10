@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { nextTick, onMounted, ref, useTemplateRef } from 'vue'
 import { useModal, WxButton, WxDialog, WxFormItem, WxInput, WxSpace } from '@webx-ui/core'
-import { useAdmin, useTranslate } from '@webx-ui/module-admin'
+import { useAdmin, useTranslate, WxCodeField } from '@webx-ui/module-admin'
 import { createMenusApi } from './api'
 import { useMenuMessages } from './i18n'
 import type { MenuRow } from './types'
@@ -15,7 +15,8 @@ import type { MenuRow } from './types'
  *
  * The key does not follow the name the way a page's address follows its title: this one is typed
  * into `menu('…')` by hand, and a key that quietly became `main-menu-2` would be a template
- * asking for a menu that is not there.
+ * asking for a menu that is not there. What is typed is made a key as it is typed, rather than
+ * refused on save (#125); a `main_menu` keeps its underscore.
  */
 defineOptions({ name: 'WxMenuCreateDialog' })
 
@@ -88,8 +89,10 @@ async function submit(): Promise<void> {
       :help="t('menu.key-help')"
       required
     >
-      <wx-input
+      <wx-code-field
         v-model="key"
+        separator="-_"
+        :maxlength="64"
         :disabled="editing && !props.menu?.can.rename"
         :aria-label="t('menu.field-key')"
         @keyup.enter="submit"

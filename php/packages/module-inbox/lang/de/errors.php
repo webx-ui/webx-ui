@@ -14,8 +14,9 @@ return [
     'no-statuses' => 'Es gibt keinen Status für eine neue Einsendung. Führen Sie die Migrationen aus.',
     'file-missing' => 'Diese Datei ist nicht mehr da.',
 
-    'slug-shape' => 'Eine Adresse besteht aus Kleinbuchstaben, Ziffern und Bindestrichen: „contact-us“.',
-    'field-name-shape' => 'Ein Name beginnt mit einem Buchstaben; danach Buchstaben, Ziffern, Bindestrich und Unterstrich.',
+    'slug-empty' => 'Eine Adresse braucht Buchstaben oder Ziffern, etwa „contact-us“.',
+    'field-name-empty' => 'Ein Name braucht Buchstaben oder Ziffern, etwa „phone“.',
+    'status-key-empty' => 'Ein Schlüssel braucht Buchstaben oder Ziffern, etwa „in-progress“.',
     'recipient-shape' => 'Empfänger :entry ist weder ein Administrator noch eine E-Mail-Adresse.',
     'recipient-unknown' => 'Empfänger :entry nennt einen Administrator, den es nicht gibt.',
     'choices-required' => 'Ein Listenfeld braucht mindestens eine Auswahl mit einem Wert.',

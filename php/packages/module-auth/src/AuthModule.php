@@ -152,7 +152,7 @@ final class AuthModule extends AbstractModule implements HasNavSection, Provides
                 [
                     'properties' => [
                         'name' => ['type' => 'string', 'description' => 'What the panel calls the role'],
-                        'slug' => ['type' => 'string', 'description' => 'Its code: lowercase letters, digits and dashes; made from the name when left out'],
+                        'slug' => ['type' => 'string', 'description' => 'Its code, unique: any text is brought to lowercase letters, digits and dashes (Content Manager → content-manager); made from the name when left out'],
                         'permissions' => ['type' => 'array', 'items' => ['type' => 'string'], 'description' => 'Permissions it grants, e.g. pages.manage'],
                     ],
                     'required' => ['name', 'permissions'],
@@ -402,6 +402,11 @@ final class AuthModule extends AbstractModule implements HasNavSection, Provides
             if (array_key_exists($field, $arguments) && ($creating || $field === 'name')) {
                 $input[$field] = $arguments[$field];
             }
+        }
+
+        // Brought as the form brings it: a code nothing is left of is made from the name.
+        if (array_key_exists('slug', $input)) {
+            $input['slug'] = Role::codeFor('slug', $input['slug']);
         }
 
         Validator::make($input, RoleRequest::rulesFor($role), [], RoleRequest::names())->validate();

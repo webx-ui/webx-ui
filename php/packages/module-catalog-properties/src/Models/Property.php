@@ -13,7 +13,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Number;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use WebxUi\Admin\History\RecordsHistory;
 use WebxUi\Admin\Screens\HasExtra;
@@ -31,8 +30,8 @@ use WebxUi\Localization\Slug;
  *
  * The flags a type has no use for are put out on save rather than refused: the form sends
  * everything it saw, and switching the type of a new property back and forth must not be a 422.
- * What is refused is what cannot be made sense of: a code that is not `[a-z0-9-]`, or that another
- * facet holds in the same language (§3.4) — checked here, at save, because a property lives in the
+ * A code typed in any shape is brought to `[a-z0-9-]` (#125); what is refused is what cannot be
+ * made sense of: a code another facet holds in the same language (§3.4) — checked here, at save, because a property lives in the
  * database and a refusal while the catalogue reads would be a catalogue that does not open.
  *
  * A code renamed in any language leaves the old one as an alias of the filter (§4.2 of the spec,
@@ -456,12 +455,22 @@ class Property extends Model
     }
 
     /**
-     * A language with a name and no code gets one made of the name (§3.4): transliterated by the
-     * language, `-` instead of anything else; a name of no letters (`%`) is `property-…`, a code
-     * saying nothing otherwise.
+     * A code typed in any shape is brought to {@see CODE} rather than refused (#125), each language
+     * by its own — «Гальмівні» is `halmivni` in Ukrainian — and so is the word of «yes». Here, not
+     * in a request: the panel, an agent and a plain `save()` all pass through it.
+     *
+     * A language with a name and no code — or a code that left nothing, `!!!` — gets one made of
+     * the name (§3.4): transliterated by the language, `-` instead of anything else; a name of no
+     * letters (`%`) is `property-…`, a code saying nothing otherwise.
      */
     private function fillCodes(): void
     {
+        foreach (['code', 'toggle_slug'] as $field) {
+            if ($this->isDirty($field)) {
+                $this->bringCodes($field);
+            }
+        }
+
         $codes = $this->getTranslations('code');
         $titles = $this->getTranslations('title');
         $changed = false;
@@ -475,15 +484,23 @@ class Property extends Model
             }
         }
 
-        foreach ($codes as $locale => $code) {
-            if (is_string($code) && $code !== Str::lower(trim($code))) {
-                $codes[$locale] = Str::lower(trim($code));
-                $changed = true;
-            }
-        }
-
         if ($changed) {
             $this->setAttribute('code', $codes);
+        }
+    }
+
+    /** Every language of a code column in {@see CODE}'s shape, transliterated by that language. */
+    private function bringCodes(string $field): void
+    {
+        $codes = $this->getTranslations($field);
+        $brought = [];
+
+        foreach ($codes as $locale => $code) {
+            $brought[$locale] = is_string($code) ? Slug::code($code, (string) $locale, self::CODE_LENGTH) : $code;
+        }
+
+        if ($brought !== $codes) {
+            $this->setTranslations($field, $brought);
         }
     }
 
