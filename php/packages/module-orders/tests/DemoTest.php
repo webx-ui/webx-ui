@@ -10,9 +10,11 @@ use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Cart\Models\Cart;
 use WebxUi\Orders\Models\Order;
+use WebxUi\Orders\Models\OrderField;
 use WebxUi\Orders\Models\OrderRefund;
 use WebxUi\Orders\Models\OrderTender;
 use WebxUi\Orders\Models\StatusChange;
+use WebxUi\Orders\OrderFields;
 use WebxUi\Orders\OrdersServiceProvider;
 use WebxUi\Users\Models\User;
 use WebxUi\Users\UsersServiceProvider;
@@ -112,12 +114,48 @@ final class DemoTest extends TestCase
     }
 
     #[Test]
+    public function the_extra_fields_stand_in_all_three_places_and_three_orders_answer_them(): void
+    {
+        $this->artisan('webx:demo', ['--module' => 'orders'])->assertSuccessful();
+
+        $fields = OrderField::query()->orderBy('position')->get()->keyBy('key');
+        $this->assertSame(['for_company', 'company_name', 'company_code', 'installation', 'delivery_time', 'no_callback'], $fields->keys()->all());
+        $this->assertSame(['contacts', 'contacts', 'contacts', 'extra-before-comment', 'extra-before-comment', 'extra-after-comment'], $fields->pluck('place')->values()->all());
+        $this->assertSame($fields['for_company']->id, $fields['company_name']->parent_id);
+        $this->assertTrue($fields['company_name']->required);
+        $this->assertSame(['morning', 'afternoon', 'evening'], $fields['delivery_time']->optionValues());
+        $this->assertNotNull($fields['installation']->getTranslation('hint', 'en'));
+
+        $answered = Order::query()->whereNotNull('fields')->orderBy('placed_at')->get();
+        $this->assertCount(3, $answered);
+        $company = $answered->first();
+        $this->assertSame(
+            ['for_company' => 'Yes', 'company_name' => 'Spare Parts Trading Ltd', 'company_code' => 'WX-9042', 'delivery_time' => 'Morning, 9–12'],
+            array_column((array) $company?->fields, 'text', 'key'),
+        );
+        $this->assertSame('Company name', $company->fields[1]['label'] ?? null);
+    }
+
+    #[Test]
+    public function a_site_with_fields_of_its_own_gets_none_and_no_answers(): void
+    {
+        $this->app->make(OrderFields::class)->write(['key' => 'delivery_time', 'type' => 'text', 'label' => ['en' => 'When']]);
+
+        $this->artisan('webx:demo', ['--module' => 'orders'])->assertSuccessful();
+
+        $this->assertSame(['delivery_time'], OrderField::query()->pluck('key')->all());
+        $this->assertSame(12, Order::query()->count());
+        $this->assertSame(0, Order::query()->whereNotNull('fields')->count());
+    }
+
+    #[Test]
     public function the_removal_leaves_nothing_behind(): void
     {
         $this->artisan('webx:demo', ['--module' => 'orders'])->assertSuccessful();
         $this->artisan('webx:demo', ['--remove' => true])->assertSuccessful();
 
         $this->assertSame(0, Order::query()->count());
+        $this->assertSame(0, OrderField::query()->count());
 
         foreach (['order_items', 'order_adjustments', 'order_tenders', 'order_benefits', 'order_milestones', 'order_refunds', 'order_status_changes'] as $table) {
             $this->assertSame(0, $this->app['db']->table($table)->count(), $table);

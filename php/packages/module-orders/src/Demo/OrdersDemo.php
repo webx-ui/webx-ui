@@ -21,6 +21,7 @@ use WebxUi\Cart\Totals\Tender;
 use WebxUi\Cart\Totals\TenderSources;
 use WebxUi\Localization\Locales;
 use WebxUi\Orders\Contact;
+use WebxUi\Orders\FieldAnswers;
 use WebxUi\Orders\Milestone;
 use WebxUi\Orders\Models\Order;
 use WebxUi\Orders\Models\OrderStatus;
@@ -70,7 +71,8 @@ final class OrdersDemo
         return VisitorOrders::installed() ? ['users'] : [];
     }
 
-    public function seed(DemoLedger $ledger): void
+    /** @param  bool  $answers  the demo's extra fields are on the site: some orders answer them */
+    public function seed(DemoLedger $ledger, bool $answers = false): void
     {
         // Orders already there are somebody's: no made-up ones among them, and no numbers taken.
         if (Order::query()->exists()) {
@@ -106,12 +108,12 @@ final class OrdersDemo
         }
 
         try {
-            SendOrderNotifications::quietly(function () use ($ledger, $sources, $visitor): void {
+            SendOrderNotifications::quietly(function () use ($ledger, $sources, $visitor, $answers): void {
                 // Read once: from the first order on, the clock is the one the demo set back.
                 $now = CarbonImmutable::now();
 
                 foreach ($this->scenarios() as $index => $scenario) {
-                    $this->order($ledger, $sources, $now, $index, $scenario, $visitor);
+                    $this->order($ledger, $sources, $now, $index, $scenario, $visitor, $answers);
                 }
             });
         } finally {
@@ -124,7 +126,7 @@ final class OrdersDemo
     /**
      * @param  array<string, mixed>  $scenario
      */
-    private function order(DemoLedger $ledger, DemoSources $sources, CarbonImmutable $now, int $index, array $scenario, ?User $visitor): void
+    private function order(DemoLedger $ledger, DemoSources $sources, CarbonImmutable $now, int $index, array $scenario, ?User $visitor, bool $answers): void
     {
         $placed = $now->subDays((int) $scenario['days'])->setTime(9 + $index % 9, 15 + $index * 3);
         // Today's order is never placed later than now.
@@ -149,6 +151,7 @@ final class OrdersDemo
                 awaitPayment: (bool) ($scenario['await'] ?? false),
                 userId: $forVisitor && $scenario['visitor'] === 'account' ? $visitor->getKey() : null,
                 source: 'checkout',
+                fields: $answers ? $this->fields($index, $locale) : [],
             ));
         } finally {
             $sources->forget();
@@ -259,6 +262,20 @@ final class OrdersDemo
         }
 
         return User::query()->where('email', self::VISITOR)->first() ?? User::query()->orderBy('id')->first();
+    }
+
+    /**
+     * The extra fields this order answered (OrderFieldsDemo::answers()), made into rows as the
+     * manager's answers are: the label and the option's words of the definition, in the order's
+     * language.
+     *
+     * @return list<array{key: string, type: string, label: string, value: bool|string, text: string}>
+     */
+    private function fields(int $index, string $locale): array
+    {
+        $answers = OrderFieldsDemo::answers()[$index] ?? [];
+
+        return $answers === [] ? [] : ($this->container->make(FieldAnswers::class)->edit(null, $answers, $locale) ?? []);
     }
 
     private function at(CarbonImmutable $moment): void
