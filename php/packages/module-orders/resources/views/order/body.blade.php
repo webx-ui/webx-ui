@@ -4,7 +4,8 @@
     way to pay of the payment's owner —, the marks, the scale of the public statuses, under it what
     the payment's owner offers an order that does not wait for payment,
     the lines — a name leads to the product while it has a page —, the money, the delivery and the
-    payment as one line each — with what their owner adds under it, such as the bank details of a transfer — the contacts. After an edit
+    payment as one line each — with what their owner adds under it, such as the bank details of a transfer — the extra
+    fields the buyer filled after them, as the order keeps them, the contacts. After an edit
     (§40.1) — «Items changed» with its date and the balance under the money. Never the internal
     status, never the manager's note, never the reason of an edit.
 
@@ -14,7 +15,7 @@
     Classes: webx-order, __head, __date, __status (--<code>), __description, __marks, __mark (--<key>),
     __scale, __step (is-done, is-current), __prompt, __notice, __section, __heading, __items, __item, __image,
     __changed, __name, __link, __options, __parts, __qty, __total, __sums, __sum (is-strong),
-    __balance (--due, --over), __facts, __fact, __details (--<block>).
+    __balance (--due, --over), __facts, __fact (--<block>, --field, --field-<key>), __details (--<block>).
 --}}
 <div class="webx-order">
     <div class="webx-order__head">
@@ -106,13 +107,19 @@
         @endif
     </section>
 
-    @if ($order['blocks'] !== [])
+    @if ($order['blocks'] !== [] || $order['fields'] !== [])
         <section class="webx-order__section">
             <dl class="webx-order__facts">
                 @foreach ($order['blocks'] as $block)
                     <div class="webx-order__fact webx-order__fact--{{ $block['key'] }}">
                         <dt>{{ $block['label'] }}</dt>
                         <dd>{{ $block['line'] }}</dd>
+                    </div>
+                @endforeach
+                @foreach ($order['fields'] as $field)
+                    <div class="webx-order__fact webx-order__fact--field webx-order__fact--field-{{ $field['key'] }}">
+                        <dt>{{ $field['label'] }}</dt>
+                        <dd>{{ $field['text'] }}</dd>
                     </div>
                 @endforeach
             </dl>

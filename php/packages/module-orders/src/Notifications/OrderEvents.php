@@ -158,6 +158,16 @@ final class OrderEvents
             $one('delivery', 'Branch 12, Town D'),
             $one('payment', 'Online by card'),
             $one('comment', 'Call before coming, please.'),
+            // The extra fields of checkout (WEBX_UI_ORDER_FIELDS.md §5.3): the rows, and one by key.
+            new Variable('fields', $vars.'fields', example: [
+                ['key' => 'company_name', 'label' => 'Company name', 'value' => 'Company A'],
+                ['key' => 'delivery_time', 'label' => 'Convenient delivery time', 'value' => '18:00–21:00'],
+            ], fields: [
+                'key' => $vars.'field_key',
+                'label' => $vars.'field_label',
+                'value' => $vars.'field_value',
+            ]),
+            new Variable('field.*', $vars.'field'),
             $one('public_status', 'In progress'),
             $one('public_status_code', 'in_progress'),
             $one('public_status_description', 'We are putting your order together.'),

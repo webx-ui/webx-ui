@@ -21,6 +21,7 @@ use WebxUi\Notifications\Channels\ChannelForm;
 use WebxUi\Notifications\Models\Channel;
 use WebxUi\Notifications\Models\Delivery;
 use WebxUi\Notifications\NotificationEvents;
+use WebxUi\Notifications\Notifications;
 use WebxUi\Notifications\NotificationsServiceProvider;
 use WebxUi\Orders\Data\OrderData;
 use WebxUi\Orders\Doctor\OrdersNotificationsCheck;
@@ -319,6 +320,74 @@ final class NotificationsTest extends PlaceTestCase
         $this->assertStringStartsWith('http://localhost/ru/order/'.$order->number.'?signature=', $values['public_url']);
         $this->assertSame('', $values['discount']);
         $this->assertIsString($values['payable']);
+    }
+
+    #[Test]
+    public function the_extra_fields_are_a_list_and_one_value_a_key(): void
+    {
+        $definition = $this->app->make(NotificationEvents::class)->find(OrderEvents::PLACED) ?? $this->fail();
+        $this->assertTrue($definition->variable('fields')?->isList());
+        $this->assertNotNull($definition->variable('field.*'));
+
+        $order = $this->place($this->cart(), ['fields' => [
+            ['key' => 'company_name', 'type' => 'text', 'label' => 'Company name', 'value' => 'Company A', 'text' => 'Company A'],
+            ['key' => 'installation', 'type' => 'checkbox', 'label' => 'Installation needed', 'value' => true, 'text' => 'Yes'],
+        ]]);
+        $values = $this->app->make(OrderValues::class)->of(OrderData::of($order));
+
+        $this->assertSame([
+            ['key' => 'company_name', 'label' => 'Company name', 'value' => 'Company A'],
+            ['key' => 'installation', 'label' => 'Installation needed', 'value' => 'Yes'],
+        ], $values['fields']);
+        $this->assertSame('Company A', $values['field.company_name']);
+        $this->assertSame('Yes', $values['field.installation']);
+        $this->assertArrayNotHasKey('fields.company_name', $values);
+
+        $empty = $this->app->make(OrderValues::class)->of(OrderData::of($this->place($this->cart())));
+        $this->assertSame([], $empty['fields']);
+        $this->assertSame([], array_filter(array_keys($empty), static fn (string $key): bool => str_starts_with($key, 'field.')));
+    }
+
+    #[Test]
+    public function the_default_letters_print_the_fields_escaped_once_and_nothing_without_them(): void
+    {
+        $order = $this->place($this->cart(), ['fields' => [
+            ['key' => 'company_name', 'type' => 'text', 'label' => 'Company <i>name</i>', 'value' => '<b>Co</b> {{number}}', 'text' => '<b>Co</b> {{number}}'],
+            ['key' => 'delivery_time', 'type' => 'select', 'label' => 'Convenient delivery time', 'value' => 'evening', 'text' => '18:00–21:00'],
+        ]]);
+        $notifications = $this->app->make(Notifications::class);
+        $values = $this->app->make(OrderValues::class)->of(OrderData::of($order));
+
+        foreach (['email', 'telegram'] as $provider) {
+            $channel = $this->app->make(ChannelForm::class)->save(new Channel, [
+                'name' => "Placed {$provider}",
+                'provider' => $provider,
+                'event' => OrderEvents::PLACED,
+                'recipients' => [],
+            ])['channel'];
+            $body = $notifications->render($channel, $values, 'en')['body'];
+
+            $this->assertStringContainsString('Company &lt;i&gt;name&lt;/i&gt;', $body, $provider);
+            $this->assertStringContainsString('&lt;b&gt;Co&lt;/b&gt; {{number}}', $body, $provider);
+            $this->assertStringNotContainsString('<b>Co</b>', $body, $provider);
+            $this->assertStringNotContainsString('Co&lt;/b&gt; '.$order->number, $body, $provider);
+            $this->assertStringContainsString('18:00–21:00', $body, $provider);
+
+            $plain = $notifications->render($channel, $this->app->make(OrderValues::class)->of(OrderData::of($this->place($this->cart()))), 'en')['body'];
+            $this->assertStringNotContainsString('18:00–21:00', $plain, $provider);
+            $this->assertStringNotContainsString('{{', $plain, $provider);
+        }
+
+        // One field by its key, in a template a shop wrote itself.
+        $own = $this->app->make(ChannelForm::class)->save(new Channel, [
+            'name' => 'Own',
+            'provider' => 'email',
+            'event' => OrderEvents::PLACED,
+            'recipients' => [],
+            'subject' => ['en' => 'Order {{number}}'],
+            'template' => ['en' => '<p>{{#field.delivery_time}}Time: {{field.delivery_time}}{{/field.delivery_time}}{{#field.missing}}never{{/field.missing}}</p>'],
+        ])['channel'];
+        $this->assertStringContainsString('<p>Time: 18:00–21:00</p>', $notifications->render($own, $values, 'en')['body']);
     }
 
     #[Test]

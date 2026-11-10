@@ -94,6 +94,17 @@ final class CheckoutExtraFieldsTest extends CheckoutTestCase
         ], $order->fields);
         $this->assertSame('Ring twice', $order->comment);
         $this->assertSame($order->fields, OrderData::of($order)->fields);
+
+        // «Thank you» prints the snapshot as the page of the order does (§5.1).
+        $this->visit($cart, '/checkout/thanks/'.$order->number)->assertOk()
+            ->assertSeeInOrder([
+                '<div class="webx-order__fact webx-order__fact--field webx-order__fact--field-for_company">',
+                '<dt>Buying for a company</dt>', '<dd>Yes</dd>',
+                'webx-order__fact--field-company_name', '<dd>Company A</dd>',
+                'webx-order__fact--field-installation',
+                'webx-order__fact--field-delivery_time', '<dd>18:00–21:00</dd>',
+                'webx-order__fact--field-no_callback',
+            ], false);
     }
 
     #[Test]

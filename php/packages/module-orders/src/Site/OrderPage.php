@@ -23,8 +23,8 @@ use WebxUi\Orders\Models\PublicStatus;
  * What the buyer reads of an order (spec §13.1) — on the signed page and in «My orders» alike:
  * the number and the date, the public status with its description and the scale of the public
  * statuses in their order, the marks «Paid», «Received», «Cancelled», «Refunded», the lines, the
- * money, the delivery and the payment as their owners' one line, the contacts. The internal status
- * and the manager's note never. An order the buyer can pay now says so over the status, with the
+ * money, the delivery and the payment as their owners' one line, the extra fields the buyer
+ * filled, the contacts. The internal status and the manager's note never. An order the buyer can pay now says so over the status, with the
  * way to pay — its payment block's owner brings both.
  *
  * After an edit (§40.1): «Items changed» with the date over the lines, the lines as they are — one
@@ -116,6 +116,9 @@ final readonly class OrderPage
                     'details' => $this->blocks->details($key, $value, $order, $locale),
                 ] : null;
             }, OrderBlocks::KEYS))),
+            // The extra fields as the order keeps them (WEBX_UI_ORDER_FIELDS.md §5.1): the definitions
+            // are not read — a field renamed or deleted since stays as the buyer saw it.
+            'fields' => self::fields($order),
             'customer' => [
                 'name' => $order->customerName(),
                 'phone' => $order->customer_phone,
@@ -127,6 +130,18 @@ final readonly class OrderPage
             ],
             'comment' => $order->comment,
         ];
+    }
+
+    /**
+     * @return list<array{key: string, label: string, text: string}>
+     */
+    private static function fields(Order $order): array
+    {
+        return array_values(array_map(static fn (array $row): array => [
+            'key' => (string) $row['key'],
+            'label' => (string) $row['label'],
+            'text' => (string) $row['text'],
+        ], $order->fields ?? []));
     }
 
     /**

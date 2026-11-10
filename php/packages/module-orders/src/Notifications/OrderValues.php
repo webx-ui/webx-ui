@@ -77,12 +77,34 @@ final readonly class OrderValues
             'delivery' => (string) $list->summary('delivery', $order->delivery, $locale),
             'payment' => (string) $list->summary('payment', $order->payment, $locale),
             'comment' => (string) $order->comment,
+            ...self::fields($order),
             'public_status' => $order->publicStatus->name,
             'public_status_code' => $order->publicStatus->code,
             'public_status_description' => (string) $public?->getTranslation('description', $locale),
             'status' => $order->status->name,
             ...$extra,
         ];
+    }
+
+    /**
+     * The extra fields of the order (WEBX_UI_ORDER_FIELDS.md §5.3): `fields` — the rows of the
+     * snapshot for `{{#fields}}`, its `value` the text the buyer reads («Yes», the option's label);
+     * and each one alone as `field.<key>`, flat — the provider nests it before rendering. Never
+     * `fields.<key>`: the map would land on the name the list holds.
+     *
+     * @return array<string, string|list<array<string, string>>>
+     */
+    private static function fields(OrderData $order): array
+    {
+        $rows = [];
+        $one = [];
+
+        foreach ($order->fields as $field) {
+            $rows[] = ['key' => $field['key'], 'label' => $field['label'], 'value' => $field['text']];
+            $one['field.'.$field['key']] = $field['text'];
+        }
+
+        return ['fields' => $rows, ...$one];
     }
 
     /**

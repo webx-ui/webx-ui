@@ -1445,6 +1445,8 @@ Orders::reverseRefund(Order $order, int $refundId, ?string $reason, string $sour
 | `delivery`                                                         | строка блока доставки (`summary` владельца) или пусто                                 | `Branch 12, Town D`                        |
 | `payment`                                                          | строка блока оплаты или пусто                                                         | `Online by card`                           |
 | `comment`                                                          | комментарий покупателя                                                                |                                            |
+| `fields`                                                           | дополнительные поля оформления, список: `key`, `label`, `value` (текст снимка)        | `[{"label": "Company name", …}]`           |
+| `field.<key>`                                                      | одно дополнительное поле текстом; поля нет — пусто                                    | `Company A`                                |
 | `public_status`, `public_status_code`, `public_status_description` | публичный статус                                                                      | `In progress`, `in_progress`               |
 | `status`                                                           | внутренний статус — **только для менеджерских каналов**, см. ниже                     | `Picker is looking`                        |
 
@@ -1458,7 +1460,9 @@ Orders::reverseRefund(Order $order, int $refundId, ?string $reason, string $sour
   менеджерский и покупательский канал устроены одинаково.
 - Шаблоны по умолчанию (`sample`, §5.1 спеки уведомлений): e-mail и Telegram для каждого события,
   на языках словаря; письмо покупателю — номер, статус, состав таблицей `{{#items}}`, суммы, ссылка
-  на страницу заказа; менеджеру — то же плюс телефон и ссылка в панель.
+  на страницу заказа; менеджеру — то же плюс телефон и ссылка в панель. Строки `{{#fields}}` — после
+  доставки и оплаты, перед комментарием; уже сохранённые шаблоны каналов не меняются
+  (`WEBX_UI_ORDER_FIELDS.md` §5.3).
 
 ### 10.3. Повторная отправка вручную
 
