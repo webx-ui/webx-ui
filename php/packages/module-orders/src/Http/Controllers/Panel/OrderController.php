@@ -249,7 +249,9 @@ final readonly class OrderController
 
     /**
      * The contacts, the recipient, the comment and the manager note — the part of the card the
-     * screen edits; the errors come under the screen's own names (`customer.phone`).
+     * screen edits; the errors come under the screen's own names (`customer.phone`). The extra
+     * fields come apart, as `fields: {key: value | null}` (WEBX_UI_ORDER_FIELDS.md §6.1), and their
+     * errors under `fields.<key>`.
      */
     public function details(Request $request, int $order): JsonResponse
     {
@@ -280,6 +282,13 @@ final readonly class OrderController
             if (array_key_exists($key, $values)) {
                 $patch = $patch->{$method}($text($key));
             }
+        }
+
+        $fields = $request->input('fields');
+
+        if (is_array($fields) && $fields !== []) {
+            // As sent: an answer of another shape is refused under its field, not dropped.
+            $patch = $patch->fields(array_combine(array_map(strval(...), array_keys($fields)), array_values($fields)));
         }
 
         $this->orders->updateDetails($found, $patch, 'panel');

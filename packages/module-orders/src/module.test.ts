@@ -25,6 +25,7 @@ describe('orders()', () => {
     expect(Object.keys(orders().types ?? {}).sort()).toEqual([
       'wx-orders-checkout-fields',
       'wx-orders-count',
+      'wx-orders-fields',
       'wx-orders-items',
       'wx-orders-layout',
       'wx-orders-list',

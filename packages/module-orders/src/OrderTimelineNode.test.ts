@@ -98,6 +98,7 @@ function card(node: object, data: OrderCardData) {
         resend,
         note: () => Promise.resolve(true),
         pin: () => Promise.resolve(true),
+        saveFields: () => Promise.resolve(true as const),
         linkVisitor: () => Promise.resolve(),
         unlinkVisitor: () => Promise.resolve(),
       })

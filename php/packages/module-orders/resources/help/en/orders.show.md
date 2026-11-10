@@ -92,6 +92,18 @@ own «Send again».
 
 The buyer gets no letter about it, and «History» shows who changed what.
 
+## How to fill in the extra fields of an order
+
+1. Open the tab «Buyer» and find the card «Additional».
+2. Press the pencil beside its title.
+3. Tick, type or choose what the buyer told you. Empty a field to take its answer away.
+4. Press «Save».
+
+Nothing here is required: the card shows every field the checkout asks, filled or not, also on a
+one-click order. A field marked «No longer asked at the checkout» keeps the words the buyer saw; a
+line or a text in it still changes, a checkbox and a list can only be cleared. The buyer gets no
+letter, and «History» shows who changed what.
+
 # fields
 
 ## buyer-first-name

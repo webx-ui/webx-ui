@@ -31,6 +31,7 @@ return [
         'comment' => 'Komentarz kupującego',
         'manager_note' => 'Notatka menedżera',
         'user_id' => 'Odwiedzający',
+        'fields' => 'Dodatkowe pola',
     ],
     'milestones' => [
         'placed' => 'Złożone',

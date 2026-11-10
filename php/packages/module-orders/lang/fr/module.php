@@ -31,6 +31,7 @@ return [
         'comment' => 'Commentaire de l\'acheteur',
         'manager_note' => 'Note du gestionnaire',
         'user_id' => 'Visiteur',
+        'fields' => 'Champs supplémentaires',
     ],
     'milestones' => [
         'placed' => 'Passée',

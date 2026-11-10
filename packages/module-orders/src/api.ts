@@ -122,6 +122,8 @@ export interface OrdersApi {
   previewCancel(id: number): Promise<CancelConsequences>
   cancel(id: number, reason: string): Promise<OrderDetail>
   saveDetails(id: number, values: ScreenModel): Promise<OrderDetail>
+  /** The extra fields named, `key => value | null` — null, '' or false clears a row (§6.1). */
+  saveFields(id: number, fields: Record<string, boolean | string | null>): Promise<OrderDetail>
   previewRefund(id: number, input: RefundInput): Promise<RefundPreview>
   refund(id: number, input: RefundInput): Promise<OrderDetail>
   /** What reversing a refund record does (decision 98) — nothing is written. */
@@ -244,6 +246,8 @@ export function createOrdersApi(admin: AdminContext): OrdersApi {
       admin.http.post<{ data: OrderDetail }>(`${base}/${id}/cancel`, { reason }).then(data),
     saveDetails: (id, values) =>
       admin.http.put<{ data: OrderDetail }>(`${base}/${id}/details`, { values }).then(data),
+    saveFields: (id, fields) =>
+      admin.http.put<{ data: OrderDetail }>(`${base}/${id}/details`, { fields }).then(data),
     previewRefund: (id, input) =>
       admin.http
         .post<{ data: RefundPreview }>(`${base}/${id}/refunds`, refundBody(input, true))

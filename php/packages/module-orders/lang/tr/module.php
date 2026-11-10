@@ -31,6 +31,7 @@ return [
         'comment' => 'Müşteri yorumu',
         'manager_note' => 'Yönetici notu',
         'user_id' => 'Ziyaretçi',
+        'fields' => 'Ek alanlar',
     ],
     'milestones' => [
         'placed' => 'Verildi',

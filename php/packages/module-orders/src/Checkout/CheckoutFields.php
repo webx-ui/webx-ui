@@ -7,10 +7,10 @@ namespace WebxUi\Orders\Checkout;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Validation\ValidationException;
 use WebxUi\Cart\Totals\Purpose;
-use WebxUi\Localization\Locales;
 use WebxUi\Orders\Checkout\Models\CheckoutDraft;
 use WebxUi\Orders\Checkout\Steps\Step;
 use WebxUi\Orders\Checkout\Steps\StepError;
+use WebxUi\Orders\FieldAnswers;
 use WebxUi\Orders\Models\OrderField;
 use WebxUi\Orders\OrderFields;
 
@@ -36,7 +36,7 @@ final readonly class CheckoutFields
     public function __construct(
         private FieldPlaces $places,
         private OrderFields $fields,
-        private Locales $locales,
+        private FieldAnswers $answers,
     ) {}
 
     /** Whether any field may be asked in the places of this step — the block «Additional» stands on it (§4.2). */
@@ -78,11 +78,11 @@ final readonly class CheckoutFields
             }
 
             foreach ($this->shown($place->key, $all, $sent) as $field) {
-                [$value, $problem] = $this->answer($field, $sent[$field->key] ?? null);
+                [$value, $problem] = $this->answers->answer($field, $sent[$field->key] ?? null);
                 $problem ??= $value === null && $field->required ? 'required' : null;
 
                 if ($problem !== null) {
-                    $errors[self::NAME.$field->key] = [$this->message($field, $problem, $context->locale)];
+                    $errors[self::NAME.$field->key] = [$this->answers->message($field, $problem, $context->locale)];
                 } elseif ($value !== null) {
                     $answers[$field->key] = $value;
                 }
@@ -127,11 +127,11 @@ final readonly class CheckoutFields
 
         foreach ($this->places->of($step->key()) as $place) {
             foreach ($this->shown($place->key, $all, $answers) as $field) {
-                [$value, $problem] = $this->answer($field, $answers[$field->key] ?? null);
+                [$value, $problem] = $this->answers->answer($field, $answers[$field->key] ?? null);
                 $problem ??= $value === null && $field->required ? 'required' : null;
 
                 if ($problem !== null) {
-                    $errors[] = new StepError($step->key(), self::NAME.$field->key, $this->message($field, $problem, $context->locale), match ($problem) {
+                    $errors[] = new StepError($step->key(), self::NAME.$field->key, $this->answers->message($field, $problem, $context->locale), match ($problem) {
                         'required' => 'fields.required',
                         'option-gone' => 'fields.option_gone',
                         default => 'fields.invalid',
@@ -157,15 +157,15 @@ final readonly class CheckoutFields
 
         foreach ($this->places->of($step->key()) as $place) {
             foreach ($this->shown($place->key, $all, $answers) as $field) {
-                [$value, $problem] = $this->answer($field, $answers[$field->key] ?? null);
+                [$value, $problem] = $this->answers->answer($field, $answers[$field->key] ?? null);
 
                 if ($value !== null && $problem === null) {
                     $rows[] = [
                         'key' => $field->key,
                         'type' => $field->type,
-                        'label' => $this->label($field, $context->locale),
+                        'label' => $this->answers->label($field, $context->locale),
                         'value' => $value,
-                        'text' => $this->text($field, $value, $context->locale),
+                        'text' => $this->answers->text($field, $value, $context->locale),
                     ];
                 }
             }
@@ -185,8 +185,8 @@ final readonly class CheckoutFields
         $labels = [];
 
         foreach ($this->shown($place, $this->fields->all(), $answers) as $field) {
-            if ($this->answer($field, $answers[$field->key] ?? null)[0] !== null) {
-                $labels[] = $this->label($field, $context->locale);
+            if ($this->answers->answer($field, $answers[$field->key] ?? null)[0] !== null) {
+                $labels[] = $this->answers->label($field, $context->locale);
             }
         }
 
@@ -235,18 +235,18 @@ final readonly class CheckoutFields
      */
     private function control(OrderField $field, array $answers, string $locale, bool $behind): array
     {
-        $value = $this->answer($field, $answers[$field->key] ?? null)[0];
+        $value = $this->answers->answer($field, $answers[$field->key] ?? null)[0];
         $hint = $field->getTranslation('hint', $locale);
 
         return [
             'key' => $field->key,
             'name' => self::NAME.$field->key,
             'type' => $field->type,
-            'label' => $this->label($field, $locale),
+            'label' => $this->answers->label($field, $locale),
             'hint' => is_string($hint) && $hint !== '' ? $hint : null,
             'value' => is_string($value) ? $value : null,
             'checked' => $value === true,
-            'choices' => $field->type === OrderField::SELECT ? $this->choices($field, $locale) : [],
+            'choices' => $field->type === OrderField::SELECT ? $this->answers->choices($field, $locale) : [],
             // Behind a checkbox — never the browser's `required`, nor its star: hidden, it would
             // keep the form from going; the server says it under the field (decision 3 of 06.11).
             'required' => $field->required && ! $behind,
@@ -305,104 +305,11 @@ final readonly class CheckoutFields
         foreach ($this->groups($place, $all) as [$field, $dependents]) {
             $shown[] = $field;
 
-            if ($dependents !== [] && $this->answer($field, $answers[$field->key] ?? null)[0] === true) {
+            if ($dependents !== [] && $this->answers->answer($field, $answers[$field->key] ?? null)[0] === true) {
                 array_push($shown, ...$dependents);
             }
         }
 
         return $shown;
-    }
-
-    /**
-     * An answer as the draft and the order keep it, and what is wrong with it: null — not given
-     * (an empty line, no choice, a checkbox not ticked).
-     *
-     * @return array{0: string|true|null, 1: 'invalid'|'too-long'|'option-gone'|null}
-     */
-    private function answer(OrderField $field, mixed $raw): array
-    {
-        if ($raw === null) {
-            return [null, null];
-        }
-
-        if (! is_scalar($raw)) {
-            return [null, 'invalid'];
-        }
-
-        if ($field->type === OrderField::CHECKBOX) {
-            return [filter_var($raw, FILTER_VALIDATE_BOOLEAN) ? true : null, null];
-        }
-
-        $value = trim(str_replace("\r\n", "\n", (string) $raw));
-
-        if ($value === '') {
-            return [null, null];
-        }
-
-        return match ($field->type) {
-            OrderField::SELECT => in_array($value, $field->optionValues(), true) ? [$value, null] : [null, 'option-gone'],
-            OrderField::TEXTAREA => mb_strlen($value) > OrderField::MAX_TEXTAREA ? [null, 'too-long'] : [$value, null],
-            default => match (true) {
-                // A line is one line: a newline in it came from no field of the page.
-                str_contains($value, "\n") => [null, 'invalid'],
-                mb_strlen($value) > OrderField::MAX_TEXT => [null, 'too-long'],
-                default => [$value, null],
-            },
-        };
-    }
-
-    private function message(OrderField $field, string $problem, string $locale): string
-    {
-        $label = $this->label($field, $locale);
-
-        return (string) match ($problem) {
-            'required' => __('webx-orders::checkout.errors.required', ['field' => $label], $locale),
-            'too-long' => __('webx-orders::checkout.errors.too-long', [
-                'field' => $label,
-                'max' => $field->type === OrderField::TEXTAREA ? OrderField::MAX_TEXTAREA : OrderField::MAX_TEXT,
-            ], $locale),
-            'option-gone' => __('webx-orders::checkout.errors.option-gone', ['field' => $label], $locale),
-            default => __('webx-orders::checkout.errors.invalid', ['field' => $label], $locale),
-        };
-    }
-
-    /** The label in this language, else the site's main one, else the key. */
-    private function label(OrderField $field, string $locale): string
-    {
-        $labels = $field->getTranslations('label');
-        $label = $labels[$locale] ?? $labels[$this->locales->fallback()] ?? null;
-
-        return is_string($label) && $label !== '' ? $label : $field->key;
-    }
-
-    /** What the snapshot prints (§3.1): «Yes», the option's words, the text itself. */
-    private function text(OrderField $field, string|true $value, string $locale): string
-    {
-        if ($value === true) {
-            return (string) __('webx-orders::checkout.fields.yes', [], $locale);
-        }
-
-        if ($field->type === OrderField::SELECT) {
-            return $this->choices($field, $locale)[$value] ?? $value;
-        }
-
-        return $value;
-    }
-
-    /**
-     * The options of a list in this language: `value => label`.
-     *
-     * @return array<string, string>
-     */
-    private function choices(OrderField $field, string $locale): array
-    {
-        $choices = [];
-
-        foreach ($field->options ?? [] as $option) {
-            $label = $option['label'][$locale] ?? $option['label'][$this->locales->fallback()] ?? null;
-            $choices[(string) $option['value']] = is_string($label) && $label !== '' ? $label : (string) $option['value'];
-        }
-
-        return $choices;
     }
 }

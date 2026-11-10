@@ -223,6 +223,10 @@
                   ]
                 },
                 {
+                  "id": "buyer-fields",
+                  "type": "wx-orders-fields"
+                },
+                {
                   "id": "notes",
                   "type": "wx-card",
                   "label": "trans::webx-orders::screen.notes",

@@ -997,9 +997,10 @@ final class Orders
     }
 
     /**
-     * The contacts, the recipient, the comment, the manager note (§8) — the lines, the money and
-     * the milestones never. What changed goes to the panel's journal and to the order's timeline,
-     * and `OrderDetailsChanged` carries the old values; a patch that changes nothing is silence.
+     * The contacts, the recipient, the comment, the manager note, the extra fields (§8) — the lines,
+     * the money and the milestones never. What changed goes to the panel's journal and to the
+     * order's timeline, and `OrderDetailsChanged` carries the old values; a patch that changes
+     * nothing is silence. The buyer gets no letter about it.
      *
      * @throws ValidationException
      */
@@ -1044,6 +1045,13 @@ final class Orders
                 }
             }
 
+            if ($patch->has('fields')) {
+                /** @var array<string, mixed> $answers */
+                $answers = $patch->get('fields');
+                // Made here, under the lock: the rows of the order as they are now, the definitions too.
+                $after['fields'] = Container::getInstance()->make(FieldAnswers::class)->edit($locked->fields, $answers, $locked->locale);
+            }
+
             $customer = new Contact((string) $after['customer_first_name'], $after['customer_last_name'], $after['customer_phone'], $after['customer_email']);
             /** @var array{first_name: string, last_name: string|null, phone: string|null}|null $recipient */
             $recipient = $after['recipient'];
@@ -1072,7 +1080,7 @@ final class Orders
             $changes = [];
 
             foreach ($fields as $field) {
-                $changes[$field] = [self::shown($before[$field]), self::shown($after[$field])];
+                $changes[$field] = [self::shown($before[$field], $field), self::shown($after[$field], $field)];
             }
 
             $this->journal->record($locked, 'updated', $changes);
@@ -2460,7 +2468,7 @@ final class Orders
     /**
      * The fields `updateDetails()` may change, as they are now.
      *
-     * @return array{customer_first_name: string, customer_last_name: string|null, customer_phone: string|null, customer_email: string|null, recipient: array{first_name: string, last_name: string|null, phone: string|null}|null, comment: string|null, manager_note: string|null}
+     * @return array{customer_first_name: string, customer_last_name: string|null, customer_phone: string|null, customer_email: string|null, recipient: array{first_name: string, last_name: string|null, phone: string|null}|null, comment: string|null, manager_note: string|null, fields: list<array{key: string, type: string, label: string, value: bool|string, text: string}>|null}
      */
     private function details(Order $order): array
     {
@@ -2472,13 +2480,19 @@ final class Orders
             'recipient' => $order->recipient,
             'comment' => $order->comment,
             'manager_note' => $order->manager_note,
+            'fields' => $order->fields,
         ];
     }
 
-    /** A value as the journal shows it: the recipient as one line, not as json. */
-    private static function shown(mixed $value): ?string
+    /**
+     * A value as the journal shows it: the recipient as one line, not as json; the extra fields as
+     * «label: text; …» — a list of rows, not a recipient (WEBX_UI_ORDER_FIELDS.md §6.2).
+     */
+    private static function shown(mixed $value, string $field = ''): ?string
     {
-        if (is_array($value)) {
+        if ($field === 'fields') {
+            $value = is_array($value) ? implode('; ', array_map(static fn (array $row): string => $row['label'].': '.$row['text'], $value)) : null;
+        } elseif (is_array($value)) {
             $value = implode(', ', array_filter([trim(($value['first_name'] ?? '').' '.($value['last_name'] ?? '')), $value['phone'] ?? null], static fn (mixed $part): bool => is_string($part) && $part !== ''));
         }
 

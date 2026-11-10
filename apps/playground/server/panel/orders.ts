@@ -101,6 +101,14 @@ interface HistoryRecord {
   edit?: Record<string, unknown>
 }
 
+interface FieldRow {
+  key: string
+  type: 'checkbox' | 'text' | 'textarea' | 'select'
+  label: string
+  value: true | string
+  text: string
+}
+
 interface OrderRecord {
   id: number
   number: string
@@ -114,6 +122,8 @@ interface OrderRecord {
   recipient: { first_name: string; last_name: string | null; phone: string | null } | null
   comment: string | null
   manager_note: string | null
+  /** The extra fields filled, as `orders.fields` keeps them (WEBX_UI_ORDER_FIELDS.md §2.2). */
+  fields?: FieldRow[]
   items: ItemRecord[]
   adjustments: { id: number; label: string; amount: number }[]
   tenders: { id: number; label: string; amount: number; refunded: number }[]
@@ -304,6 +314,23 @@ const orders: OrderRecord[] = [
   order(0, {
     items: [item('a'), item('c', 2)],
     manager_note: 'Regular buyer: call only in the morning.',
+    // The extra fields of the checkout (WEBX_UI_ORDER_FIELDS.md §6.1): two answered, the rest to fill in.
+    fields: [
+      {
+        key: 'installation',
+        type: 'checkbox',
+        label: 'Installation and setup needed',
+        value: true,
+        text: 'Yes',
+      },
+      {
+        key: 'delivery_time',
+        type: 'select',
+        label: 'Convenient delivery time',
+        value: 'evening',
+        text: '18:00–21:00',
+      },
+    ],
   }),
   order(1, { status: 2, awaiting: true, marks: {} }),
   order(2, { status: 2, awaiting: true, failed_at: day(-9, 12) }),
@@ -312,6 +339,16 @@ const orders: OrderRecord[] = [
     marks: {},
     items: [item('b', 3)],
     comment: 'Please call before delivery.',
+    // A field deleted since: the order keeps its row and its label, the card marks it as gone.
+    fields: [
+      {
+        key: 'heard_from',
+        type: 'text',
+        label: 'How did you hear about us?',
+        value: 'From a friend',
+        text: 'From a friend',
+      },
+    ],
   }),
   order(4, {
     status: 3,
@@ -879,6 +916,7 @@ function glance(record: OrderRecord) {
         }
       : null,
     comment: record.comment,
+    fields: (record.fields ?? []).map(({ key, label, text }) => ({ key, label, text })),
     manager_note: record.manager_note,
     last_note: last
       ? {
@@ -1083,6 +1121,7 @@ function card(record: OrderRecord, locale: string, line: Line) {
             ]
           : [],
       ),
+      fields: fieldRows(record),
       timeline: timeline(record, locale, line),
       // The note pinned over the feed (decision 91).
       manager_note: record.manager_note,
@@ -2003,6 +2042,9 @@ export function registerOrders(on: On, fail: Fail, line: Line): void {
     }
     if (has('comment')) record.comment = text(values.comment)
     if (has('manager_note')) record.manager_note = text(values.manager_note)
+    if (body.fields && typeof body.fields === 'object') {
+      editFields(record, body.fields as Record<string, unknown>, fail)
+    }
 
     record.history.push({
       key: `h${record.id}-d${record.history.length}`,
@@ -3325,6 +3367,111 @@ const checkoutFields: FieldRecord[] = [
 ]
 
 const FIELD_KEY = /^[a-z][a-z0-9_]{0,31}$/
+
+/** The order's language is English here: the words of a new row come in it. */
+const fieldLabel = (field: FieldRecord) => field.label.en ?? field.key
+
+/**
+ * The rows of the card «Additional» as `OrderCard` counts them (§6.1): the snapshot's, then each
+ * field switched on with no answer; a row of a field that is gone — `known: false`.
+ */
+function fieldRows(record: OrderRecord) {
+  type CardRow = Omit<FieldRow, 'value' | 'text'> & {
+    value: true | string | null
+    text: string | null
+    known: boolean
+    options: { value: string; label: string }[]
+  }
+
+  const rows: CardRow[] = (record.fields ?? []).map((row) => {
+    const field = checkoutFields.find((one) => one.key === row.key)
+    const options = (field?.options ?? []).map((one) => ({
+      value: one.value,
+      label: one.label.en ?? one.value,
+    }))
+
+    if (row.type === 'select' && !options.some((one) => one.value === row.value)) {
+      options.push({ value: String(row.value), label: row.text })
+    }
+
+    return { ...row, known: Boolean(field), options }
+  })
+
+  for (const field of checkoutFields) {
+    if (!field.active || rows.some((row) => row.key === field.key)) continue
+
+    rows.push({
+      key: field.key,
+      type: field.type,
+      label: fieldLabel(field),
+      value: null,
+      text: null,
+      known: true,
+      options: field.options.map((one) => ({ value: one.value, label: one.label.en ?? one.value })),
+    })
+  }
+
+  return rows
+}
+
+/** The manager's answers (§6.1): only the keys sent; null, '' or false takes a row away. */
+function editFields(record: OrderRecord, sent: Record<string, unknown>, fail: Fail): void {
+  const rows = [...(record.fields ?? [])]
+  const errors: Record<string, string[]> = {}
+
+  for (const [key, raw] of Object.entries(sent)) {
+    const at = rows.findIndex((row) => row.key === key)
+    const field = checkoutFields.find((one) => one.key === key)
+    const value = typeof raw === 'string' ? raw.trim() : raw
+
+    if (value === null || value === '' || value === false) {
+      if (at >= 0) rows.splice(at, 1)
+      continue
+    }
+
+    if (at >= 0 && rows[at]!.value === value) continue
+
+    if (!field) {
+      if (at >= 0 && (rows[at]!.type === 'text' || rows[at]!.type === 'textarea')) {
+        rows[at] = { ...rows[at]!, value: String(value), text: String(value) }
+      } else {
+        errors[`fields.${key}`] = [`There is no field «${key}» to fill in.`]
+      }
+      continue
+    }
+
+    const option = field.options.find((one) => one.value === value)
+
+    if (field.type === 'select' && !option) {
+      errors[`fields.${key}`] = [
+        `The option chosen for «${fieldLabel(field)}» is no longer offered.`,
+      ]
+      continue
+    }
+
+    const row: FieldRow = {
+      key,
+      type: field.type,
+      label: fieldLabel(field),
+      value: field.type === 'checkbox' ? true : String(value),
+      text:
+        field.type === 'checkbox'
+          ? 'Yes'
+          : field.type === 'select'
+            ? (option!.label.en ?? option!.value)
+            : String(value),
+    }
+
+    if (at >= 0) rows[at] = row
+    else rows.push(row)
+  }
+
+  if (Object.keys(errors).length > 0) {
+    throw fail(422, Object.values(errors)[0]![0]!, undefined, errors)
+  }
+
+  record.fields = rows
+}
 
 /**
  * `/orders/checkout-fields` under the rules of `OrderFields` (§7.3): a key once and fixed, a list

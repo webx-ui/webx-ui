@@ -480,6 +480,34 @@ async function pin(text: string | null): Promise<boolean> {
   }
 }
 
+/**
+ * The extra fields are saved on their own, as the pinned note is (WEBX_UI_ORDER_FIELDS.md §6.1):
+ * the card «Additional» is drawn from the order, not from the screen's fields, and what is being
+ * typed in the contacts stays. The errors go back to the card, under its rows.
+ */
+async function saveFields(
+  fields: Record<string, boolean | string | null>,
+): Promise<true | Record<string, string[]>> {
+  const open = order.value
+
+  if (!open) return {}
+
+  try {
+    take(await api.saveFields(open.id, fields), false)
+    toast.success(t('panel.fields-saved'))
+
+    return true
+  } catch (error) {
+    const body = (error as { body?: { errors?: Record<string, string[]> } }).body
+
+    if (body?.errors && Object.keys(body.errors).length > 0) return body.errors
+
+    toast.danger(message(error))
+
+    return {}
+  }
+}
+
 // The order's id for the nodes its neighbours patch onto the card (the tab «Delivery»): they
 // read it the way a node on any editor does, without knowing this module.
 provideHistorySubject({
@@ -508,6 +536,7 @@ provideOrderCard({
   resend,
   note,
   pin,
+  saveFields,
   linkVisitor,
   unlinkVisitor,
 })

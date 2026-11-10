@@ -11,9 +11,11 @@ use WebxUi\Admin\Visitors\Visitors;
 use WebxUi\Cart\Money;
 use WebxUi\Orders\Balance;
 use WebxUi\Orders\Blocks\OrderBlocks;
+use WebxUi\Orders\FieldAnswers;
 use WebxUi\Orders\Milestone;
 use WebxUi\Orders\Models\Order;
 use WebxUi\Orders\Models\OrderAdjustment;
+use WebxUi\Orders\Models\OrderField;
 use WebxUi\Orders\Models\OrderItem;
 use WebxUi\Orders\Models\OrderMilestone;
 use WebxUi\Orders\Models\OrderRefund;
@@ -21,6 +23,7 @@ use WebxUi\Orders\Models\OrderRevision;
 use WebxUi\Orders\Models\OrderTender;
 use WebxUi\Orders\Models\StatusChange;
 use WebxUi\Orders\Notifications\OrderChannels;
+use WebxUi\Orders\OrderFields;
 use WebxUi\Orders\Orders;
 use WebxUi\Orders\Site\VisitorOrders;
 
@@ -47,6 +50,8 @@ final readonly class OrderCard
         private OrderList $list,
         private OrderChannels $channels,
         private OrderBlocks $blocks,
+        private OrderFields $definitions,
+        private FieldAnswers $answers,
     ) {}
 
     /**
@@ -120,6 +125,9 @@ final readonly class OrderCard
                 'phone' => $recipient['phone'] ?? null,
             ] : null,
             'comment' => $order->comment,
+            // The extra fields as the order keeps them (WEBX_UI_ORDER_FIELDS.md §5.4): the snapshot,
+            // already loaded with the order — no definition is read.
+            'fields' => array_map(static fn (array $row): array => ['key' => $row['key'], 'label' => $row['label'], 'text' => $row['text']], $order->fields ?? []),
             'manager_note' => $order->manager_note,
             'last_note' => $notes === [] ? null : $notes[array_key_last($notes)],
             'blocks' => array_map(static fn (array $block): array => ['key' => $block['key'], 'summary' => $block['summary']], $this->blocks($order, $locale)),
@@ -231,6 +239,7 @@ final readonly class OrderCard
                 ] : null,
             ])->values()->all(),
             'blocks' => $this->blocks($order, $locale, $can),
+            'fields' => $this->fields($order),
             'timeline' => $this->timeline($order, $statuses, $locale, $people, $money),
             // The note pinned over the feed (decision 91): one standing line, changed in place.
             'manager_note' => $order->manager_note,
@@ -263,6 +272,68 @@ final readonly class OrderCard
                 'notify_reason' => $notifyReason !== null ? (string) __('webx-orders::panel.notify-refusals.'.$notifyReason) : null,
             ],
         ];
+    }
+
+    /**
+     * The rows of the card «Additional» (WEBX_UI_ORDER_FIELDS.md §5.4, §6.1): the snapshot's first,
+     * as the order keeps them, then each field switched on the order has no answer to — what the
+     * buyer left empty, or a one-click order never asked. All in the order's language, the one a
+     * new answer is written in. A row of a field that is gone keeps its label and `known: false`:
+     * a line or a text may still change, a checkbox and a list may only go. A list offers the
+     * options as they are now, and the one the order holds even if it is gone.
+     *
+     * @return list<array{key: string, type: string, label: string, value: bool|string|null, text: string|null, known: bool, options: list<array{value: string, label: string}>}>
+     */
+    private function fields(Order $order): array
+    {
+        $definitions = $this->definitions->all()->keyBy('key');
+        $rows = [];
+
+        foreach ($order->fields ?? [] as $row) {
+            /** @var OrderField|null $field */
+            $field = $definitions->get($row['key']);
+            $rows[] = [...$row, 'known' => $field !== null, 'options' => $this->options($field, $row, $order->locale)];
+        }
+
+        $answered = array_column($order->fields ?? [], 'key');
+
+        foreach ($definitions as $field) {
+            /** @var OrderField $field */
+            if ($field->active && ! in_array($field->key, $answered, true)) {
+                $rows[] = [
+                    'key' => $field->key,
+                    'type' => $field->type,
+                    'label' => $this->answers->label($field, $order->locale),
+                    'value' => null,
+                    'text' => null,
+                    'known' => true,
+                    'options' => $this->options($field, null, $order->locale),
+                ];
+            }
+        }
+
+        return $rows;
+    }
+
+    /**
+     * @param  array{value: bool|string, text: string, type: string}|null  $row
+     * @return list<array{value: string, label: string}>
+     */
+    private function options(?OrderField $field, ?array $row, string $locale): array
+    {
+        $choices = $field !== null && $field->type === OrderField::SELECT ? $this->answers->choices($field, $locale) : [];
+
+        if ($row !== null && $row['type'] === OrderField::SELECT && is_string($row['value']) && ! isset($choices[$row['value']])) {
+            $choices[$row['value']] = $row['text'];
+        }
+
+        $options = [];
+
+        foreach ($choices as $value => $label) {
+            $options[] = ['value' => (string) $value, 'label' => $label];
+        }
+
+        return $options;
     }
 
     /**

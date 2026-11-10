@@ -31,6 +31,7 @@ return [
         'comment' => 'Buyer\'s comment',
         'manager_note' => 'Manager note',
         'user_id' => 'Visitor',
+        'fields' => 'Additional fields',
     ],
     'milestones' => [
         'placed' => 'Placed',

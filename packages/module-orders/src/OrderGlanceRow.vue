@@ -60,6 +60,8 @@ const blocks = computed(() =>
 )
 
 const lastNote = computed(() => props.glance?.last_note ?? null)
+// A list served before the extra fields were has no `fields`: nothing to show.
+const fields = computed(() => props.glance?.fields ?? [])
 
 const count = computed(() => {
   const counted = props.glance?.count
@@ -193,7 +195,7 @@ const source = computed(() =>
       </section>
 
       <section
-        v-if="glance.manager_note || lastNote || glance.comment"
+        v-if="glance.manager_note || lastNote || glance.comment || fields.length > 0"
         class="wx-orders-glance__part"
       >
         <h4 class="wx-orders-glance__title">{{ t('panel.glance-notes') }}</h4>
@@ -213,6 +215,16 @@ const source = computed(() =>
         <div v-if="glance.comment" class="wx-orders-glance__note">
           <span class="wx-orders-glance__label">{{ t('module.fields.comment') }}</span>
           <p class="wx-orders-glance__text">{{ glance.comment }}</p>
+        </div>
+        <!-- The extra fields the buyer filled (WEBX_UI_ORDER_FIELDS.md §5.4): the card's «Additional». -->
+        <div
+          v-for="field in fields"
+          :key="field.key"
+          class="wx-orders-glance__note"
+          data-test="glance-field"
+        >
+          <span class="wx-orders-glance__label">{{ field.label }}</span>
+          <p class="wx-orders-glance__text">{{ field.text }}</p>
         </div>
       </section>
 

@@ -142,6 +142,8 @@ export interface OrderGlance {
   customer: { name: string; phone: string | null; email: string | null }
   recipient: { name: string; phone: string | null } | null
   comment: string | null
+  /** The extra fields as the order keeps them (WEBX_UI_ORDER_FIELDS.md §5.4); empty — none filled. */
+  fields: { key: string; label: string; text: string }[]
   manager_note: string | null
   last_note: OrderNote | null
   blocks: { key: string; summary: string | null }[]
@@ -291,6 +293,22 @@ export interface OrderNote {
   created_at: string | null
 }
 
+/**
+ * A row of the card «Additional»: the snapshot's, or a field switched on the order has no answer
+ * to (`value` and `text` null). `known: false` — the field is gone: a line or a text may still
+ * change, a checkbox and a list may only be cleared. A list's `options` are in the order's
+ * language, the one the order holds among them even if it is gone.
+ */
+export interface OrderFieldRow {
+  key: string
+  type: 'checkbox' | 'text' | 'textarea' | 'select'
+  label: string
+  value: boolean | string | null
+  text: string | null
+  known: boolean
+  options: { value: string; label: string }[]
+}
+
 export interface OrderCardData {
   id: number
   number: string | null
@@ -348,6 +366,8 @@ export interface OrderCardData {
     value: Record<string, unknown> | null
     own: boolean
   }[]
+  /** The rows of the card «Additional» (WEBX_UI_ORDER_FIELDS.md §6.1); empty — no card. */
+  fields: OrderFieldRow[]
   timeline: TimelineLine[]
   /** The note pinned over the feed «Notes» (decision 91); null — none. */
   manager_note: string | null
