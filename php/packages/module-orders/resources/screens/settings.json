@@ -323,6 +323,17 @@
               ]
             },
             {
+              "id": "checkout-extra-card",
+              "type": "wx-card",
+              "label": "trans::webx-orders::checkout.settings.extra",
+              "children": [
+                {
+                  "id": "checkout-extra-fields",
+                  "type": "wx-orders-checkout-fields"
+                }
+              ]
+            },
+            {
               "id": "checkout-terms-card",
               "type": "wx-card",
               "label": "trans::webx-orders::checkout.settings.terms-card",

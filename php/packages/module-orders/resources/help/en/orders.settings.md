@@ -28,6 +28,27 @@ If an order already has that number, saving is refused: change the prefix or the
 
 The first name is always asked. If neither the phone nor the e-mail stays required, saving is refused.
 
+## How to ask the buyer something of your own
+
+1. If you have the tab «Checkout», find the card «Extra fields».
+2. Press «Add a field» by the place it should stand in: in the contacts, or in «Additional» before or
+   after the comment.
+3. Give it a label in every language, choose the type and, for a list, add the options.
+4. Press «Save». The field is saved at once, without the button under the form.
+
+The key and the type stay as they were saved: to change them, delete the field and add another.
+Orders already placed keep what their buyers answered, whatever happens to the field later. Do not
+ask for card numbers, passwords or documents: the answers go into letters and the history as they are.
+
+## How to show a field only when a checkbox is ticked
+
+1. Add the checkbox first, for example «Buying for a company».
+2. Add the field and choose that checkbox in «Show». The field stands in the checkbox's place.
+3. Drag the fields under the checkbox to change their order.
+
+A checkbox with fields behind it cannot be deleted until they are deleted or shown always. Switched
+off, it hides them too.
+
 ## How to ask buyers to agree with the terms
 
 1. If you have the tab «Checkout», set «Agreement with the terms» to «Notice» or «Checkbox».

@@ -9,7 +9,8 @@
  * The statuses and the settings of the section (§5.6, §11.4) are here too: both levels in the
  * order of the arrays, written, dragged, deleted softly and brought back under the service's
  * rules — the initial status stays, a group with orders keeps an active stage, a public group goes
- * only empty or with its stages moved.
+ * only empty or with its stages moved. The extra fields of the checkout (WEBX_UI_ORDER_FIELDS.md §7)
+ * are here as well, under the rules of `OrderFields`.
  */
 
 type On = (
@@ -2714,6 +2715,7 @@ export function registerOrders(on: On, fail: Fail, line: Line): void {
   })
 
   registerStatuses(on, fail, line)
+  registerCheckoutFields(on, fail, line)
 }
 
 /* ----------------------------------------------------------------------------- statuses ----- */
@@ -3215,5 +3217,365 @@ function registerStatuses(on: On, fail: Fail, line: Line): void {
     Object.assign(settings, values)
 
     return { data: settingsAnswer() }
+  })
+}
+
+/* ------------------------------------------ extra fields of the checkout (ORDER_FIELDS §7) ----- */
+
+interface FieldRecord {
+  id: number
+  key: string
+  type: 'checkbox' | 'text' | 'textarea' | 'select'
+  place: string
+  label: Record<string, string>
+  hint: Record<string, string>
+  options: { value: string; label: Record<string, string> }[]
+  required: boolean
+  active: boolean
+  parent: string | null
+}
+
+/** The places of the registry (§4.2), in the order a buyer meets them. */
+const FIELD_PLACES = [
+  { key: 'contacts', step: 'contacts' },
+  { key: 'extra-before-comment', step: 'comment' },
+  { key: 'extra-after-comment', step: 'comment' },
+]
+
+/* The fields of the demo of the stage 8 (§10): a checkbox with two fields behind it among them. */
+const checkoutFields: FieldRecord[] = [
+  {
+    id: 1,
+    key: 'for_company',
+    type: 'checkbox',
+    place: 'contacts',
+    label: { en: 'Buying for a company', ru: 'Покупаю для компании' },
+    hint: {},
+    options: [],
+    required: false,
+    active: true,
+    parent: null,
+  },
+  {
+    id: 2,
+    key: 'company_name',
+    type: 'text',
+    place: 'contacts',
+    label: { en: 'Company name', ru: 'Название компании' },
+    hint: {},
+    options: [],
+    required: true,
+    active: true,
+    parent: 'for_company',
+  },
+  {
+    id: 3,
+    key: 'company_code',
+    type: 'text',
+    place: 'contacts',
+    label: { en: 'Company code', ru: 'Код компании' },
+    hint: { en: 'As in the documents of the company.', ru: 'Как в документах компании.' },
+    options: [],
+    required: false,
+    active: true,
+    parent: 'for_company',
+  },
+  {
+    id: 4,
+    key: 'installation',
+    type: 'checkbox',
+    place: 'extra-before-comment',
+    label: { en: 'Installation and setup needed', ru: 'Нужен монтаж и настройка' },
+    hint: {},
+    options: [],
+    required: false,
+    active: true,
+    parent: null,
+  },
+  {
+    id: 5,
+    key: 'delivery_time',
+    type: 'select',
+    place: 'extra-before-comment',
+    label: { en: 'Convenient delivery time', ru: 'Удобное время доставки' },
+    hint: {},
+    options: [
+      { value: 'morning', label: { en: '9:00–12:00', ru: '9:00–12:00' } },
+      { value: 'evening', label: { en: '18:00–21:00', ru: '18:00–21:00' } },
+    ],
+    required: false,
+    active: true,
+    parent: null,
+  },
+  {
+    id: 6,
+    key: 'no_callback',
+    type: 'checkbox',
+    place: 'extra-after-comment',
+    label: {
+      en: 'Do not call back if everything is in stock',
+      ru: 'Не перезванивайте, если всё в наличии',
+    },
+    hint: {},
+    options: [],
+    required: false,
+    active: true,
+    parent: null,
+  },
+]
+
+const FIELD_KEY = /^[a-z][a-z0-9_]{0,31}$/
+
+/**
+ * `/orders/checkout-fields` under the rules of `OrderFields` (§7.3): a key once and fixed, a list
+ * with options and nothing else with them, a field behind a checkbox of its place one level deep,
+ * a checkbox with fields behind it not deleted — refused under the input, said on a dry run.
+ */
+function registerCheckoutFields(on: On, fail: Fail, line: Line): void {
+  const dry = (value: unknown) => value === true || value === 1 || value === '1' || value === 'true'
+  const word = (locale: string, key: string, values: Record<string, string | number> = {}) =>
+    Object.entries(values).reduce(
+      (text, [name, value]) => text.replaceAll(`:${name}`, String(value)),
+      line(locale, 'webx-orders', `panel.checkout-fields.${key}`),
+    )
+  const nameOf = (field: FieldRecord, locale: string) =>
+    field.label[locale] || field.label.en || Object.values(field.label)[0] || field.key
+  const named = (keys: string[], locale: string) =>
+    keys
+      .map((key) => checkoutFields.find((one) => one.key === key))
+      .map((one) => `«${one ? nameOf(one, locale) : ''}»`)
+      .join(', ')
+  const placeName = (key: string, locale: string) =>
+    line(locale, 'webx-orders', `checkout.places.${key}`)
+  const behind = (key: string) => checkoutFields.filter((one) => one.parent === key)
+
+  const answer = (locale: string) => ({
+    data: {
+      places: FIELD_PLACES.map((place) => ({ ...place, label: placeName(place.key, locale) })),
+      fields: checkoutFields.map((field, position) => ({
+        ...field,
+        place_known: FIELD_PLACES.some((place) => place.key === field.place),
+        name: nameOf(field, locale),
+        position,
+      })),
+      limits: { fields: 30, options: 50, label: 190, hint: 500 },
+    },
+  })
+
+  const said = (
+    locale: string,
+    plan: { refusal: string | null; field: string | null; effects: string[]; dependents: string[] },
+    place?: string,
+  ) => {
+    const lines: string[] = []
+
+    for (const effect of plan.effects) {
+      lines.push(
+        effect === 'moved'
+          ? word(locale, 'effects.moved', { place: placeName(place ?? '', locale) })
+          : word(locale, `effects.${effect}`),
+      )
+      if (plan.dependents.length > 0 && (effect === 'hidden' || effect === 'moved'))
+        lines.push(
+          word(locale, `effects.${effect}-dependents`, {
+            fields: named(plan.dependents, locale),
+          }),
+        )
+    }
+
+    if (plan.effects.some((effect) => ['deleted', 'options_removed', 'hidden'].includes(effect)))
+      lines.push(word(locale, 'effects.orders'))
+
+    return {
+      ...plan,
+      message: plan.refusal
+        ? word(locale, `refusals.${plan.refusal}`, {
+            fields: plan.refusal === 'too_many' ? 30 : named(plan.dependents, locale),
+            options: 50,
+          })
+        : null,
+      lines: plan.refusal ? [] : lines,
+    }
+  }
+
+  const words = (value: unknown): Record<string, string> =>
+    Object.fromEntries(
+      Object.entries((value ?? {}) as Record<string, unknown>)
+        .filter(([, text]) => typeof text === 'string' && text.trim() !== '')
+        .map(([locale, text]) => [locale, String(text).trim()]),
+    )
+
+  function write(body: Record<string, unknown>, locale: string, field: FieldRecord | null) {
+    const key = field ? field.key : String(body.key ?? '').trim()
+    const type = (field ? field.type : String(body.type ?? '')) as FieldRecord['type']
+    const parent =
+      'parent' in body
+        ? typeof body.parent === 'string' && body.parent
+          ? body.parent
+          : null
+        : (field?.parent ?? null)
+    const parentField = parent ? checkoutFields.find((one) => one.key === parent) : undefined
+    const place =
+      typeof body.place === 'string' && body.place
+        ? body.place
+        : (parentField?.place ?? field?.place ?? 'extra-before-comment')
+    const label = 'label' in body ? words(body.label) : (field?.label ?? {})
+    const options =
+      'options' in body
+        ? ((Array.isArray(body.options) ? body.options : []) as FieldRecord['options']).map(
+            (one) => ({
+              value: String(one.value ?? ''),
+              label: words(one.label),
+            }),
+          )
+        : (field?.options ?? [])
+    const dependents = field ? behind(field.key).map((one) => one.key) : []
+    const required = 'required' in body ? body.required === true : (field?.required ?? false)
+    const active = 'active' in body ? body.active === true : (field?.active ?? true)
+
+    const refusal = (): [string, string] | null => {
+      if (
+        field &&
+        ((body.key && body.key !== field.key) || (body.type && body.type !== field.type))
+      )
+        return ['locked', body.key && body.key !== field.key ? 'key' : 'type']
+      if (!FIELD_KEY.test(key)) return ['key_invalid', 'key']
+      if (!field && checkoutFields.some((one) => one.key === key)) return ['key_taken', 'key']
+      if (!field && checkoutFields.length >= 30) return ['too_many', 'key']
+      if (!FIELD_PLACES.some((one) => one.key === place)) return ['place_invalid', 'place']
+      // The demo site writes in either of its two languages; the service asks for the main one.
+      if (!label.en && !label.ru) return ['no_label', 'label']
+      if ((type === 'select') !== options.length > 0) return ['no_options', 'options']
+      if (
+        options.some((one) => !FIELD_KEY.test(one.value) || !(one.label.en || one.label.ru)) ||
+        new Set(options.map((one) => one.value)).size !== options.length
+      )
+        return ['option_invalid', 'options']
+      if (
+        parent !== null &&
+        (!parentField ||
+          parentField.key === key ||
+          parentField.type !== 'checkbox' ||
+          parentField.parent !== null ||
+          parentField.place !== place ||
+          dependents.length > 0)
+      )
+        return ['parent_invalid', 'parent']
+
+      return null
+    }
+
+    const refused = refusal()
+    const effects: string[] = []
+
+    if (!field) effects.push('created')
+    else {
+      if (required !== field.required) effects.push(required ? 'required_on' : 'required_off')
+      if (active !== field.active) effects.push(active ? 'shown' : 'hidden')
+      if (place !== field.place) effects.push('moved')
+      if (field.options.some((one) => !options.some((kept) => kept.value === one.value)))
+        effects.push('options_removed')
+    }
+
+    const plan = {
+      refusal: refused?.[0] ?? null,
+      field: refused?.[1] ?? null,
+      effects: refused ? [] : effects,
+      dependents,
+    }
+
+    if (dry(body.dry_run)) return { data: said(locale, plan, place) }
+
+    if (refused) {
+      const text = said(locale, plan).message ?? ''
+
+      throw fail(422, text, undefined, { [refused[1]]: [text] })
+    }
+
+    const hint = 'hint' in body ? words(body.hint) : (field?.hint ?? {})
+    const record: FieldRecord = field ?? {
+      id: Math.max(0, ...checkoutFields.map((one) => one.id)) + 1,
+      key,
+      type,
+      place,
+      label,
+      hint,
+      options: [],
+      required,
+      active,
+      parent,
+    }
+
+    Object.assign(record, {
+      place,
+      label,
+      hint,
+      options: type === 'select' ? options : [],
+      required,
+      active,
+      parent,
+    })
+    if (!field) checkoutFields.push(record)
+    // The fields behind a checkbox go where it goes, in the same write (§3.3).
+    for (const dependent of behind(record.key)) dependent.place = place
+
+    return answer(locale)
+  }
+
+  const fieldOf = (id: string) => {
+    const found = checkoutFields.find((one) => one.id === Number(id))
+
+    if (!found) throw fail(404, 'No such field.')
+
+    return found
+  }
+
+  on('GET', '/orders/checkout-fields', ({ locale }) => answer(locale))
+
+  on('POST', '/orders/checkout-fields', ({ body, locale }) => write(body, locale, null))
+
+  on('PUT', '/orders/checkout-fields/arrange', ({ body, locale }) => {
+    const keys = (Array.isArray(body.keys) ? body.keys : []).map(String)
+    const same =
+      keys.length === checkoutFields.length &&
+      new Set(keys).size === keys.length &&
+      checkoutFields.every((one) => keys.includes(one.key))
+
+    if (!same) {
+      const text = word(locale, 'refusals.arrangement')
+
+      throw fail(422, text, undefined, { keys: [text] })
+    }
+
+    checkoutFields.sort((a, b) => keys.indexOf(a.key) - keys.indexOf(b.key))
+
+    return answer(locale)
+  })
+
+  on('PUT', '/orders/checkout-fields/(\\d+)', ({ params, body, locale }) =>
+    write(body, locale, fieldOf(params[0] as string)),
+  )
+
+  on('DELETE', '/orders/checkout-fields/(\\d+)', ({ params, query, locale }) => {
+    const field = fieldOf(params[0] as string)
+    const dependents = behind(field.key).map((one) => one.key)
+    const plan = {
+      refusal: dependents.length > 0 ? 'has_dependents' : null,
+      field: dependents.length > 0 ? 'key' : null,
+      effects: dependents.length > 0 ? [] : ['deleted'],
+      dependents,
+    }
+
+    if (dry(query.get('dry_run'))) return { data: said(locale, plan) }
+
+    if (plan.refusal) {
+      const text = said(locale, plan).message ?? ''
+
+      throw fail(422, text, undefined, { key: [text] })
+    }
+
+    checkoutFields.splice(checkoutFields.indexOf(field), 1)
+
+    return answer(locale)
   })
 }

@@ -105,6 +105,7 @@ return [
         'version-unknown' => 'unknown',
     ],
     'settings' => [
+        'extra' => 'Extra fields',
         'tab' => 'Checkout',
         'fields' => 'Buyer\'s contacts',
         'fields-help' => 'The first name is always asked. An order needs a phone or an e-mail, so at least one of them stays required.',

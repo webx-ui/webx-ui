@@ -105,6 +105,7 @@ return [
         'version-unknown' => 'bilinmiyor',
     ],
     'settings' => [
+        'extra' => 'Ek alanlar',
         'tab' => 'Ödeme sayfası',
         'fields' => 'Alıcının iletişim bilgileri',
         'fields-help' => 'Ad her zaman sorulur. Bir sipariş için telefon veya e-posta gerekir, bu yüzden en az biri zorunlu kalır.',

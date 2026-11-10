@@ -105,6 +105,7 @@ return [
         'version-unknown' => 'inconnue',
     ],
     'settings' => [
+        'extra' => 'Champs supplémentaires',
         'tab' => 'Commande',
         'fields' => 'Coordonnées de l\'acheteur',
         'fields-help' => 'Le prénom est toujours demandé. Une commande a besoin d\'un téléphone ou d\'un e-mail : au moins l\'un des deux reste obligatoire.',

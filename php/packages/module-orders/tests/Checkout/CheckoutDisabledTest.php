@@ -20,7 +20,8 @@ use WebxUi\Settings\SettingsServiceProvider;
 
 /**
  * `webx-orders.checkout.enabled = false` (spec §19, decision 80): nothing of the checkout is wired
- * in — no prune command or its schedule, no listener of the cart's merge, no tab «Checkout», no
+ * in — no prune command or its schedule, no listener of the cart's merge, no tab «Checkout» or its
+ * extra fields, no
  * tools `orders_checkout_*` or `orders://checkout` —
  * while orders, their settings and `Orders::place()` stand as they were.
  */
@@ -62,6 +63,8 @@ final class CheckoutDisabledTest extends PanelTestCase
         $root = $this->getJson('/api/cms/screens/orders.settings')->assertOk()->json('data.root');
         $tabs = array_column($root[0]['children'], 'id');
         $this->assertSame(['orders-tab'], $tabs);
+        // Nor the extra fields of the checkout (WEBX_UI_ORDER_FIELDS.md §7.3): no route to them.
+        $this->getJson($this->api('checkout-fields'))->assertNotFound();
 
         $values = $this->getJson($this->api('settings'))->assertOk()->json('data.values');
         $this->assertArrayNotHasKey('orders.checkout.terms', $values);

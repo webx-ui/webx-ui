@@ -105,6 +105,7 @@ return [
         'version-unknown' => 'desconocida',
     ],
     'settings' => [
+        'extra' => 'Campos adicionales',
         'tab' => 'Checkout',
         'fields' => 'Datos de contacto del comprador',
         'fields-help' => 'El nombre se pide siempre. Un pedido necesita un teléfono o un e-mail, así que al menos uno de ellos sigue siendo obligatorio.',

@@ -105,6 +105,7 @@ return [
         'version-unknown' => 'sconosciuta',
     ],
     'settings' => [
+        'extra' => 'Campi aggiuntivi',
         'tab' => 'Checkout',
         'fields' => 'Contatti dell\'acquirente',
         'fields-help' => 'Il nome viene sempre chiesto. Un ordine ha bisogno di un telefono o di un\'e-mail, quindi almeno uno dei due resta obbligatorio.',

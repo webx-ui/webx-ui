@@ -105,6 +105,7 @@ return [
         'version-unknown' => 'unbekannt',
     ],
     'settings' => [
+        'extra' => 'Zusätzliche Felder',
         'tab' => 'Checkout',
         'fields' => 'Kontaktdaten des Käufers',
         'fields-help' => 'Der Vorname wird immer abgefragt. Eine Bestellung braucht Telefon oder E-Mail, daher bleibt mindestens eines davon Pflicht.',

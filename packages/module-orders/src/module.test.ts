@@ -23,6 +23,7 @@ describe('orders()', () => {
      does not know is drawn as a loud placeholder, so the two lists have to stay one. */
   it('registers every node type of the card and the settings', () => {
     expect(Object.keys(orders().types ?? {}).sort()).toEqual([
+      'wx-orders-checkout-fields',
       'wx-orders-count',
       'wx-orders-items',
       'wx-orders-layout',

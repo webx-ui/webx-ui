@@ -876,3 +876,69 @@ export interface NewOrderPreview {
     warnings: { code: string; line: number | string | null; message: string }[]
   }
 }
+
+/* ------------------------------------------- extra fields of the checkout (ORDER_FIELDS §7) ----- */
+
+export type CheckoutFieldType = 'checkbox' | 'text' | 'textarea' | 'select'
+
+/** A point of a step's form where fields stand (§4.1), in the order a buyer meets them. */
+export interface CheckoutFieldPlace {
+  key: string
+  step: string
+  label: string
+}
+
+export interface CheckoutFieldOption {
+  value: string
+  label: Record<string, string>
+}
+
+/** One definition as the panel shows it (§7.1): words in every language, the parent by key. */
+export interface CheckoutField {
+  id: number
+  key: string
+  type: CheckoutFieldType
+  place: string
+  /** False — the registry no longer knows the place: the buyer is not asked the field. */
+  place_known: boolean
+  /** The label in the panel's language, else the site's main one, else the key. */
+  name: string
+  label: Record<string, string>
+  hint: Record<string, string>
+  options: CheckoutFieldOption[]
+  required: boolean
+  active: boolean
+  /** The key of the checkbox it is shown behind; null — always shown. */
+  parent: string | null
+  position: number
+}
+
+export interface CheckoutFieldsData {
+  places: CheckoutFieldPlace[]
+  fields: CheckoutField[]
+  limits: { fields: number; options: number; label: number; hint: number }
+}
+
+/** What is sent to write a field; left out on a change — as it was. */
+export interface CheckoutFieldInput {
+  key?: string
+  type?: CheckoutFieldType
+  place?: string
+  label?: Record<string, string>
+  hint?: Record<string, string>
+  options?: CheckoutFieldOption[]
+  required?: boolean
+  active?: boolean
+  parent?: string | null
+}
+
+/** What a change does for the buyer — or, refused, why (§7.3). */
+export interface CheckoutFieldConsequences {
+  refusal: string | null
+  message: string | null
+  /** The input a refusal is about. */
+  field: string | null
+  effects: string[]
+  dependents: string[]
+  lines: string[]
+}

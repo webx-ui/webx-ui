@@ -105,6 +105,7 @@ return [
         'version-unknown' => 'nieznana',
     ],
     'settings' => [
+        'extra' => 'Dodatkowe pola',
         'tab' => 'Składanie zamówienia',
         'fields' => 'Dane kontaktowe kupującego',
         'fields-help' => 'Imię jest wymagane zawsze. Zamówienie potrzebuje telefonu lub e-maila, więc co najmniej jedno z nich pozostaje wymagane.',

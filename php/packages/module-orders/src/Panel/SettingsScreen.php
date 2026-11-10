@@ -19,11 +19,15 @@ use WebxUi\Settings\Settings;
  * The channels of the milestones' events only with `webx-ui/module-notifications` installed.
  * Without `module-settings` there is nowhere to keep these; the cards give way to a line that
  * says the config `webx-orders` decides. The tab «Checkout» (§31.2) stands only while the checkout
- * is on, and only where the settings are kept.
+ * is on; where the settings are not kept, it holds only the extra fields of the checkout, which
+ * live in a table of their own.
  */
 final readonly class SettingsScreen
 {
     public const string NAME = 'orders.settings';
+
+    /** The cards of the tab «Checkout» that are settings: without `module-settings` nowhere to keep them. */
+    private const array CHECKOUT_SETTINGS_CARDS = ['checkout-fields-card', 'checkout-terms-card', 'checkout-antispam-card', 'checkout-quick-card'];
 
     public function __construct(private Container $container) {}
 
@@ -36,7 +40,9 @@ final readonly class SettingsScreen
 
         if (! $this->container->bound(Settings::class)) {
             return [
-                ['op' => 'remove', 'target' => 'checkout-tab'],
+                // The extra fields are a table of their own (WEBX_UI_ORDER_FIELDS.md §7.1): their card
+                // stays on the tab, the cards of the settings go.
+                ...($checkout === [] ? array_map(static fn (string $card): array => ['op' => 'remove', 'target' => $card], self::CHECKOUT_SETTINGS_CARDS) : $checkout),
                 ['op' => 'remove', 'target' => 'initial-card'],
                 ['op' => 'remove', 'target' => 'notify-card'],
                 ['op' => 'replace', 'target' => 'number-card', 'node' => [
