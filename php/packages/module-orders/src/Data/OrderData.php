@@ -57,6 +57,12 @@ final readonly class OrderData
         public int $balance = 0,
         /** The edit the lines are at (§37.1); 0 — as placed. */
         public int $itemsRevision = 0,
+        /**
+         * The extra fields the buyer filled, as the order keeps them (WEBX_UI_ORDER_FIELDS.md §2.2).
+         *
+         * @var list<array{key: string, type: string, label: string, value: bool|string, text: string}>
+         */
+        public array $fields = [],
     ) {}
 
     /**
@@ -132,6 +138,7 @@ final readonly class OrderData
             paidTotal: $order->paid_total,
             balance: $order->balance,
             itemsRevision: $order->items_revision,
+            fields: $order->fields ?? [],
         );
     }
 }

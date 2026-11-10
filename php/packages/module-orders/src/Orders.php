@@ -60,6 +60,7 @@ use WebxUi\Orders\Events\OrderStatusChanged;
 use WebxUi\Orders\Models\Order;
 use WebxUi\Orders\Models\OrderAdjustment;
 use WebxUi\Orders\Models\OrderBenefit;
+use WebxUi\Orders\Models\OrderField;
 use WebxUi\Orders\Models\OrderItem;
 use WebxUi\Orders\Models\OrderMilestone;
 use WebxUi\Orders\Models\OrderRefund;
@@ -114,6 +115,7 @@ final class Orders
 
         $this->validate($customer, $recipient, $comment);
         $this->blocks->check($input->blocks);
+        $fields = self::fieldRows($input->fields);
 
         $key = $input->idempotencyKey !== null && $input->idempotencyKey !== '' ? self::hash($input->idempotencyKey) : null;
 
@@ -122,7 +124,7 @@ final class Orders
         }
 
         try {
-            return $this->db->transaction(fn (): Order => $this->write($input, $customer, $recipient, $comment, $key));
+            return $this->db->transaction(fn (): Order => $this->write($input, $customer, $recipient, $comment, $key, $fields));
         } catch (UniqueConstraintViolationException $e) {
             // A twin that came past the lock of another cart with the same key: the key is the
             // order's, whichever request made it.
@@ -1198,7 +1200,8 @@ final class Orders
         $this->validate($input->customer->normalised(), $input->recipient?->normalised(), $comment);
     }
 
-    private function write(PlaceOrder $input, Contact $customer, ?Contact $recipient, ?string $comment, ?string $key): Order
+    /** @param  list<array{key: string, type: string, label: string, value: bool|string, text: string}>|null  $fields */
+    private function write(PlaceOrder $input, Contact $customer, ?Contact $recipient, ?string $comment, ?string $key, ?array $fields): Order
     {
         // 2. The lock of the cart's row, the first of the locks (§6.3): the same cart is not
         // ordered twice from two tabs, and a line added meanwhile waits for the order.
@@ -1250,6 +1253,7 @@ final class Orders
             'comment' => $comment,
             'delivery' => $input->blocks['delivery'] ?? null,
             'payment' => $input->blocks['payment'] ?? null,
+            'fields' => $fields,
             'placed_at' => $at,
             'awaiting_payment' => $input->awaitPayment,
         ]);
@@ -2509,6 +2513,38 @@ final class Orders
         $id = $this->auth->guard($guard)->id();
 
         return is_int($id) || (is_string($id) && ctype_digit($id)) ? (int) $id : null;
+    }
+
+    /**
+     * The rows of the extra fields as the order keeps them (WEBX_UI_ORDER_FIELDS.md §2.2), or null
+     * — none filled. The order does not know the definitions: the checkout made the rows, and only
+     * their shape is checked here, so a mistake of code is not written into an order.
+     *
+     * @param  list<array<string, mixed>>  $rows
+     * @return list<array{key: string, type: string, label: string, value: bool|string, text: string}>|null
+     *
+     * @throws InvalidArgumentException a row of another shape, or a key twice
+     */
+    private static function fieldRows(array $rows): ?array
+    {
+        $kept = [];
+
+        foreach ($rows as $row) {
+            $key = $row['key'] ?? null;
+            $value = $row['value'] ?? null;
+
+            if (! is_string($key) || preg_match(OrderField::KEY, $key) !== 1 || isset($kept[$key])
+                || ! in_array($row['type'] ?? null, OrderField::TYPES, true)
+                || ! is_string($row['label'] ?? null) || $row['label'] === ''
+                || ! is_string($row['text'] ?? null) || $row['text'] === ''
+                || ! (is_string($value) || $value === true)) {
+                throw new InvalidArgumentException('A row of the extra fields of an order is a key, a type, a label, a value and a text, each key once: '.json_encode($row));
+            }
+
+            $kept[$key] = ['key' => $key, 'type' => $row['type'], 'label' => $row['label'], 'value' => $value, 'text' => $row['text']];
+        }
+
+        return $kept === [] ? null : array_values($kept);
     }
 
     private static function hash(string $key): string

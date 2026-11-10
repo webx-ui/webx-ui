@@ -42,6 +42,7 @@ final readonly class CheckoutPreview
     public function __construct(
         private CheckoutContexts $contexts,
         private CheckoutSteps $steps,
+        private CheckoutFields $fields,
         private CheckoutSettings $settings,
         private Calculator $calculator,
         private Orders $orders,
@@ -74,7 +75,7 @@ final readonly class CheckoutPreview
 
         // 1. The steps, as `ready()` of the confirmation checks them.
         foreach ($this->steps->for($context) as $step) {
-            $errors = $step->check($context, Purpose::Order);
+            $errors = $this->fields->check($step, $context, Purpose::Order);
             $answer['steps'][] = [
                 'key' => $step->key(),
                 'title' => $step->title(),

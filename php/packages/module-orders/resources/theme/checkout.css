@@ -158,6 +158,28 @@
   border-radius: var(--site-radius-sm);
 }
 
+/* The extra fields of a place (WEBX_UI_ORDER_FIELDS.md §4.5): one column, as the form's own. */
+.webx-orders-checkout__fields,
+.webx-orders-checkout__field-group,
+.webx-orders-checkout__field-when {
+  display: grid;
+  gap: var(--site-space-3);
+}
+
+/* The fields behind a checkbox only while it is ticked — without JavaScript too; the server
+   ignores their answers otherwise. Only the group's own checkbox counts, not one behind it. */
+.webx-orders-checkout__field-group:not(
+    :has(> .webx-orders-checkout__field input[type='checkbox']:checked)
+  )
+  > .webx-orders-checkout__field-when {
+  display: none;
+}
+
+.webx-orders-checkout__field-when {
+  padding-inline-start: var(--site-space-4);
+  border-inline-start: 2px solid var(--site-color-border);
+}
+
 .webx-orders-checkout__aside {
   display: grid;
   gap: var(--site-space-4);

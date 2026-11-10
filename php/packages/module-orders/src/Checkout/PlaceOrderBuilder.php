@@ -26,6 +26,9 @@ final class PlaceOrderBuilder
     /** @var array<string, array<string, mixed>> */
     private array $blocks = [];
 
+    /** @var array<string, array{key: string, type: string, label: string, value: bool|string, text: string}> */
+    private array $fields = [];
+
     public function customer(Contact $customer): self
     {
         $this->customer = $customer;
@@ -68,6 +71,26 @@ final class PlaceOrderBuilder
         return $this;
     }
 
+    /**
+     * Rows of the extra fields (WEBX_UI_ORDER_FIELDS.md §4.4), after the ones already put: the
+     * checkout puts the rows of a step's places right after the step, so the snapshot goes in the
+     * order of the page.
+     *
+     * @param  list<array{key: string, type: string, label: string, value: bool|string, text: string}>  $rows
+     */
+    public function fields(array $rows): self
+    {
+        foreach ($rows as $row) {
+            if (array_key_exists($row['key'], $this->fields)) {
+                throw new LogicException("Two places of the checkout put the field \"{$row['key']}\" into one order.");
+            }
+
+            $this->fields[$row['key']] = $row;
+        }
+
+        return $this;
+    }
+
     /** Whether a step put the buyer in: without one there is no order to place. */
     public function hasCustomer(): bool
     {
@@ -95,6 +118,7 @@ final class PlaceOrderBuilder
             idempotencyKey: $idempotencyKey,
             userId: $context->visitor?->id,
             source: 'checkout',
+            fields: array_values($this->fields),
         );
     }
 }

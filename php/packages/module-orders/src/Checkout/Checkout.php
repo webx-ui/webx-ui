@@ -8,6 +8,7 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\View\Factory as Views;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use WebxUi\Cart\Events\CartsMerging;
@@ -91,6 +92,15 @@ final class Checkout
         $app->make('events')->listen(OrderPlacing::class, PlacingListener::class);
         // The funnel's «the amount went apart» (§32), counted by the draft.
         $app->make('events')->listen(CheckoutPayableChanged::class, [self::class, 'countDivergence']);
+
+        // The extra fields of a place, for whichever view of a step includes them (WEBX_UI_ORDER_FIELDS.md
+        // §4.1): the line of the include is all a step — or a theme's copy of one — needs.
+        $app->make(Views::class)->composer('webx-orders::checkout.parts.fields', static function (View $view) use ($app): void {
+            $place = $view->getData()['place'] ?? null;
+            $view->with('groups', is_string($place)
+                ? $app->make(CheckoutFields::class)->view($place, $app->make(CheckoutContexts::class)->current())
+                : []);
+        });
 
         RateLimiter::for(self::THROTTLE_PLACE, static fn (Request $request): Limit => Limit::perMinute(
             max(1, (int) config('webx-orders.checkout.throttle.place_per_minute', 10)),

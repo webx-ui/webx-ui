@@ -60,7 +60,7 @@ final class MigrationTest extends TestCase
     public function the_orders_table_has_the_columns_of_the_spec(): void
     {
         $this->assertSame(
-            ['id', 'number', 'idempotency_key', 'user_id', 'cart_id', 'locale', 'currency', 'status_id', 'subtotal', 'adjustments_total', 'total', 'tenders_total', 'payable', 'refunded_total', 'customer_first_name', 'customer_last_name', 'customer_phone', 'customer_phone_key', 'customer_email', 'recipient', 'comment', 'manager_note', 'delivery', 'payment', 'placed_at', 'awaiting_payment', 'payment_failed_at', 'paid_at', 'received_at', 'cancelled_at', 'refunded_at', 'created_at', 'updated_at', 'paid_total', 'balance', 'items_revision', 'items_changed_at'],
+            ['id', 'number', 'idempotency_key', 'user_id', 'cart_id', 'locale', 'currency', 'status_id', 'subtotal', 'adjustments_total', 'total', 'tenders_total', 'payable', 'refunded_total', 'customer_first_name', 'customer_last_name', 'customer_phone', 'customer_phone_key', 'customer_email', 'recipient', 'comment', 'manager_note', 'delivery', 'payment', 'placed_at', 'awaiting_payment', 'payment_failed_at', 'paid_at', 'received_at', 'cancelled_at', 'refunded_at', 'created_at', 'updated_at', 'paid_total', 'balance', 'items_revision', 'items_changed_at', 'fields'],
             Schema::getColumnListing('orders'),
         );
     }
