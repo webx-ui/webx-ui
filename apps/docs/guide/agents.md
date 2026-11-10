@@ -156,6 +156,23 @@ Everything else follows from the agent being a person: an article it writes is s
 switching their account off ends the agent's access in the same instant, and changing their
 password does too.
 
+### Putting files in
+
+An agent has three ways to put a file into the library, and which one fits depends on where the
+file is and what the agent can run:
+
+| The file is                           | Use                     | Needs                                                      |
+| ------------------------------------- | ----------------------- | ---------------------------------------------------------- |
+| on the agent's disk — a photo, a PDF  | `media_upload_link`     | a terminal and network to the site: Claude Code, a dev box |
+| at a public address                   | `media_upload_from_url` | nothing                                                    |
+| small, held as text — an icon, an SVG | `media_upload_file`     | nothing; base64 in the call                                |
+
+`media_upload_link` answers a one-time link and a `curl` command: the bytes go from the disk to the
+site and never pass through the model. base64 in `media_upload_file` is text the model writes
+itself, so a photo of a few megabytes is slow, costly and easily broken. In a chat without a
+terminal, or a cloud sandbox whose network reaches only listed hosts, there is no `curl` to run —
+the other two are what works there. Details: [the file manager](./media.md#a-file-on-the-agent-s-own-disk).
+
 ### The site's house rules
 
 An agent that writes content needs to know what a person learns in their first week: which

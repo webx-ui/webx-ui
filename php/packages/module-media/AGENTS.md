@@ -42,9 +42,13 @@ guides when the question is about one of those. An entity's own attachments are 
   `media_get_file`, `media_create_directory`, `media_delete_directory` (empty folders only),
   `media_rename_file`, `media_set_alt`, `media_move_files`, `media_upload_from_url` (public addresses only),
   `media_upload_file` (base64 bytes; larger than `piece` — `step` start/append/finish over the
-  `media.library` uploads), `media_optimize_images`, `media_delete_files`. Scopes `media:read`, `media:write`. A refusal is
+  `media.library` uploads), `media_upload_link` (a one-time link for `curl -F file=@…` or `curl -T`:
+  the bytes skip the model), `media_optimize_images`, `media_delete_files`. Scopes `media:read`, `media:write`. A refusal is
   an MCP error, not an `ok: false` answer. Resource `media://fields`: how any module's file field
   takes its value; the server's instructions point at it.
+- **Upload links**: table `media_upload_links` (`Models\MediaUploadLink`, `UploadLinks\UploadLinks`) — a
+  signed token in the path of `POST|PUT {api_path}/media/upload-links/{token}` (no session or CSRF,
+  open on a closed site), one use, `upload_links.ttl` minutes; the row is who uploaded. JSON `error` codes.
 - **Alt of a file**: `media_files.alt`, a map of languages (`Support\MediaAlt`). Written in the
   panel (card menu → Alt text, `PATCH files/{id}` with `alt`) and by `media_set_alt` (a map is laid
   over what is there, `null` clears); read by `media_get_file`/`list`/`search`. `MediaValues::resolve()`
@@ -56,11 +60,11 @@ guides when the question is about one of those. An entity's own attachments are 
 
 Uploading is separate from managing on purpose.
 
-| Permission     | Opens                                                                                                                                                    |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `media.view`   | folders and files read-only: lists, search, `by-path`, usage, `thumb`, `source`; the read tools (`media_list_*`, `media_search_files`, `media_get_file`) |
-| `media.upload` | sending files: `POST files`, `files/chunked`, the upload purpose `media.library`, `media_upload_from_url`, `media_upload_file` — nothing else is written |
-| `media.manage` | everything: upload, rename, move, delete, edit and copy pictures, restore the original, optimise, folders; every `media:write` tool                      |
+| Permission     | Opens                                                                                                                                                                         |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `media.view`   | folders and files read-only: lists, search, `by-path`, usage, `thumb`, `source`; the read tools (`media_list_*`, `media_search_files`, `media_get_file`)                      |
+| `media.upload` | sending files: `POST files`, `files/chunked`, the upload purpose `media.library`, `media_upload_from_url`, `media_upload_file`, `media_upload_link` — nothing else is written |
+| `media.manage` | everything: upload, rename, move, delete, edit and copy pictures, restore the original, optimise, folders; every `media:write` tool                                           |
 
 A route or screen node the site adds next to the module asks the same:
 `cms.can:media.view,media.manage` to read, `cms.can:media.upload,media.manage` to upload,
@@ -80,6 +84,7 @@ migration of roles.
 | Share a bucket with something else        | `WEBX_MEDIA_PREFIX=…` — the directory every new key starts with                                   |
 | Old JPEG and PNG pictures as WebP         | **Optimize** → «Convert to WebP», or `php artisan webx:media:webp --dry-run` first                |
 | Bigger or smaller uploads                 | `WEBX_MEDIA_MAX_SIZE` (kilobytes); `upload.max_files` in the published config                     |
+| Upload links that live longer             | `WEBX_MEDIA_UPLOAD_LINK_TTL` (minutes, 10); `upload_links.throttle`, `upload_links.keep_days`     |
 | Larger pieces of a chunked upload         | `webx-admin.uploads.chunk_mb`; PHP's own limits only have to fit one piece                        |
 | Allow another file type                   | add the extension to `upload.extensions` in `config/webx-media.php`                               |
 | Imagick instead of GD, other JPEG quality | `WEBX_MEDIA_IMAGE_DRIVER=imagick`; `image.quality`, `image.max_pixels` in the config              |
@@ -104,7 +109,7 @@ a migration of your own, bytes and rows together.
   gives you and let it resolve `url` and `thumb` on read.
 - Do not write files into the disk by hand or insert `media_files` rows with SQL: the row carries
   `hash`, `mime`, `size`, dimensions and `name_lower` that search and duplicates rely on. Upload
-  through the panel, the API, `media_upload_from_url` or `media_upload_file`.
+  through the panel, the API, `media_upload_link`, `media_upload_from_url` or `media_upload_file`.
 - Do not delete rows with SQL: `media_delete_files` (or the panel) removes the bytes, the
   edited original and every preview with the row. It refuses a file the site still uses and says
   where (a foreign key into `media_files`, or the key inside a text or JSON column) — the API

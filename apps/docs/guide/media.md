@@ -191,13 +191,46 @@ carry. A larger file goes in pieces, through the same uploads the panel uses:
 
 `dry_run` checks everything the real call would and stores nothing. Behind `media.upload`.
 
+### A file on the agent's own disk
+
+base64 is text the model writes out itself: an icon is fine, a photo of a few megabytes is slow,
+costly and easily broken on the way. When the agent has a terminal and network to the site —
+Claude Code, a dev box — it asks `media_upload_link` for a one-time link instead and sends the file
+with `curl`, so the bytes never pass through the model:
+
+```json
+{ "directory_id": 1, "name": "Sofa Oslo.jpg", "alt": "A grey sofa" }
+```
+
+The answer carries the link, when it ends (`expires_at`, ten minutes by default), and the command
+ready to run:
+
+```sh
+curl -F file=@sofa.jpg "https://example.com/api/cms/media/upload-links/eyJ…"
+```
+
+curl prints the file as `media_get_file` describes it, plus `duplicate` — the same rules as every
+other upload apply. A refusal is JSON too, with a code: `link_expired`, `link_used`,
+`link_invalid`, `type_not_allowed`, `too_large`, `no_file`. A link takes one file, and only for
+the folder it was made for; a refused file leaves it usable until it expires. The upload is the
+administrator's who asked for the link.
+
+PHP often refuses a form file over 2 MB (`upload_max_filesize`) whatever the library allows: the
+answer says so in `max_bytes_form`, and such a file goes as the raw body instead —
+`curl -T sofa.jpg "<link>"`, up to `max_bytes`.
+
+In a chat without a terminal, or in a cloud sandbox that may reach only a list of hosts, there is
+no curl to run: there `media_upload_file` and `media_upload_from_url` are what works. The
+lifetime is `WEBX_MEDIA_UPLOAD_LINK_TTL` (minutes); `upload_links.throttle` and
+`upload_links.keep_days` in the config.
+
 ## Pictures are optimized on the way in
 
 A JPEG, PNG or still WebP is not stored as it arrived. It is turned the right way up, stripped of
 its metadata, scaled down to no more than 2560px on its long side, and saved as a WebP at quality
 82 — unless that comes out no smaller, and then the original bytes are kept. A GIF, an animated
 WebP and everything that is not a picture go in untouched; an SVG is sanitized (below). Every way into the library goes
-through it: the panel's upload, the agent's `media_upload_from_url` and `media_upload_file`, the demo content.
+through it: the panel's upload, the agent's `media_upload_from_url`, `media_upload_file` and `media_upload_link`, the demo content.
 
 The steps live in `config/webx-media.php` under `optimize`, and a project adds its own by
 naming a class that implements `WebxUi\Media\Images\Optimizing\OptimizeStep`:

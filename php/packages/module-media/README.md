@@ -134,7 +134,7 @@ the same transaction.
 ## MCP
 
 `list_directories`, `list_files`, `search_files`, `get_file`, `create_directory`, `delete_directory`,
-`rename_file`, `move_files`, `upload_from_url`, `upload_file`, `optimize_images`, `delete_files`. Every mutating tool takes
+`rename_file`, `move_files`, `upload_from_url`, `upload_file`, `upload_link`, `optimize_images`, `delete_files`. Every mutating tool takes
 `dry_run`; a refusal is an MCP error (`ToolFailure`), not an `ok: false` answer.
 
 - `delete_directory` deletes an **empty** folder only: recursive deletion is the one operation
@@ -160,6 +160,17 @@ the same transaction.
   in pieces through `module-admin`'s uploads, purpose `media.library` — `step: start` (`name`,
   `size`), `append` (`upload`, `offset`, `content`), `finish` (`upload`, `directory_id`). The
   answer is `get_file`'s plus `duplicate`. Nothing is read from a path on the server.
+- `upload_link` (`directory_id`, `name?`, `alt?`) answers a one-time link for `curl`, so a file on
+  the agent's disk goes to the site without passing through the model:
+  `curl -F file=@<path> "<url>"`, or the raw body with `curl -T <path> "<url>"` when PHP's `upload_max_filesize` is
+  below the file (`max_bytes_form` says). The link is a signed token in the path of
+  `POST|PUT {api_path}/media/upload-links/{token}` — no session, no CSRF, open on a closed site —
+  and a row of `media_upload_links`: one use (taken atomically), `upload_links.ttl` minutes (10),
+  the folder, and the administrator and connection that asked, who are the upload's author. The
+  file goes the same way as `upload_file`'s. Answers are JSON: `get_file`'s plus `duplicate`, or
+  `{ ok: false, error, message }` with `link_invalid`, `link_expired`, `link_used`, `no_file`,
+  `type_not_allowed`, `too_large`, `not_accepted`. A refused file leaves the link usable.
+  Needs a terminal and network to the site; a chat without one keeps `upload_file`.
 
 ## Configuration
 

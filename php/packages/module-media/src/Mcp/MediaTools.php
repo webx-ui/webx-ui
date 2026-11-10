@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Media\Mcp;
 
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Validator;
@@ -15,6 +16,7 @@ use WebxUi\Admin\Uploads\UploadRefused;
 use WebxUi\Admin\Uploads\Uploads;
 use WebxUi\Localization\Locales;
 use WebxUi\Mcp\Exceptions\ToolFailure;
+use WebxUi\Mcp\Grants\Grants;
 use WebxUi\Mcp\Tool;
 use WebxUi\Media\Directories\DirectoryService;
 use WebxUi\Media\Exceptions\DirectoryNotEmpty;
@@ -30,6 +32,7 @@ use WebxUi\Media\Storage\FileStore;
 use WebxUi\Media\Storage\FileUrls;
 use WebxUi\Media\Support\MediaAlt;
 use WebxUi\Media\Support\MediaType;
+use WebxUi\Media\UploadLinks\UploadLinks;
 use WebxUi\Media\Usage\MediaUsage;
 
 /**
@@ -307,7 +310,8 @@ final class MediaTools
                     .'One call carries at most `piece` bytes — about three quarters of what the server lets one request carry; `step: "start"` answers the number, and a call over it is refused with it. '
                     .'A larger one goes in pieces, the way the panel sends every file: `step: "start"` with `name` and `size` answers an `upload` id and the `offset` to send from; '
                     .'`step: "append"` with `upload`, `offset` and the next piece in `content`, as many times as it takes; `step: "finish"` with `upload` and `directory_id` puts it in the library. '
-                    .'A start for the same name and size carries on an upload begun earlier; an unfinished one is forgotten after a day. Answers like media_get_file, with `duplicate` when the same bytes were already in that folder.',
+                    .'A start for the same name and size carries on an upload begun earlier; an unfinished one is forgotten after a day. Answers like media_get_file, with `duplicate` when the same bytes were already in that folder. '
+                    .'For a file on a disk the agent can reach with a terminal, larger than a few tens of KB, use media_upload_link instead: the bytes then go by curl and not through the model.',
                 static fn (array $arguments, mixed $user = null): array => self::upload($arguments, $user),
                 [
                     'properties' => [
@@ -333,6 +337,30 @@ final class MediaTools
                 permission: ['media.upload', 'media.manage'],
             ),
 
+            Tool::mutating(
+                'upload_link',
+                'A one-time link to upload one file from the agent\'s own disk into a folder of the library, sent with curl so the bytes never pass through the model: '
+                    .'`curl -F file=@<path> "<url>"` (answered ready in `curl`). The best way for a photo, a PDF or anything over a few tens of KB when the agent has a terminal and network to the site (Claude Code, a dev box); '
+                    .'media_upload_file is for small things the agent already holds as text, media_upload_from_url for a file at a public address. '
+                    .'The link works once, for the configured minutes (`expires_at`), and puts the file in as the administrator who asked for it, with the same types, size limit, SVG sanitizing, picture optimizing and duplicates as an upload in the panel. '
+                    .'PHP may limit a form file below the library\'s limit (`max_bytes_form`); a larger file goes as the raw body, `curl -T <path> "<url>"` (`curl_raw`, up to `max_bytes`). '
+                    .'curl prints JSON: what media_get_file answers plus `duplicate`, or `error` with a code — link_invalid, link_expired, link_used, no_file, type_not_allowed, too_large, not_accepted — and a `message`. A refused file leaves the link usable until it expires.',
+                static fn (array $arguments, mixed $user = null): array => self::link($arguments, $user),
+                [
+                    'properties' => [
+                        'directory_id' => ['type' => 'integer'],
+                        'name' => ['type' => 'string', 'description' => 'What to call the file; the name curl sends by default'],
+                        'alt' => [
+                            'type' => ['object', 'string'],
+                            'additionalProperties' => ['type' => 'string'],
+                            'description' => 'What is on the picture, as for media_set_alt',
+                        ],
+                    ],
+                    'required' => ['directory_id'],
+                ],
+                scope: 'media:write',
+                permission: ['media.upload', 'media.manage'],
+            ),
             Tool::mutating(
                 'optimize_images',
                 'Run pictures already in the library through the upload pipeline again: no side longer than the configured limit, metadata stripped, re-encoded at the configured quality. Each keeps its format and its address. With `convert: true` (off by default) JPEG and PNG pictures become WebP instead: a new key with the same uuid, every reference on the site rewritten to it (history included), the old public address redirecting to the new one; a picture is left alone when WebP is not smaller. Without ids, the pictures of the folder (or of the whole library) still to do. At most '.OptimizeController::BATCH.' per call; `remaining` says how many are left. `dry_run` reports per file what would happen, references included, and changes nothing.',
@@ -689,6 +717,66 @@ final class MediaTools
     }
 
     /**
+     * A link for curl: checked here — the folder, the alt, the permissions the call came
+     * through — so that the request it is used in needs nothing but the link.
+     *
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private static function link(array $arguments, mixed $user): array
+    {
+        $directory = self::directory($arguments['directory_id'] ?? null);
+        self::checkAlt($arguments);
+
+        $name = trim((string) ($arguments['name'] ?? ''));
+        $links = app(UploadLinks::class);
+        $limits = [
+            'max_bytes' => $links->rawBytes(),
+            'max_bytes_form' => $links->multipartBytes(),
+            'extensions' => array_values(array_map('strval', (array) config('webx-media.upload.extensions', []))),
+        ];
+
+        if ($arguments['dry_run'] ?? false) {
+            return ['ok' => true, 'would' => "make a one-time link for {$links->minutes()} minute(s) to upload into [{$directory->title}]", ...$limits];
+        }
+
+        $adminId = $user instanceof Authenticatable && is_numeric($user->getAuthIdentifier()) ? (int) $user->getAuthIdentifier() : null;
+        $grantId = $user instanceof Authenticatable ? app(Grants::class)->forUser($user)?->id : null;
+
+        $issued = $links->issue(
+            $directory,
+            $adminId,
+            is_int($grantId) ? $grantId : null,
+            $name !== '' ? Str::limit($name, 250, '') : null,
+            array_key_exists('alt', $arguments) && (is_string($arguments['alt']) || is_array($arguments['alt'])) ? $arguments['alt'] : null,
+        );
+
+        return [
+            'ok' => true,
+            'url' => $issued->url,
+            'expires_at' => $issued->link->expires_at->toIso8601String(),
+            'curl' => 'curl -F file=@<path> "'.$issued->url.'"',
+            'curl_raw' => 'curl -T <path> "'.$issued->url.'"',
+            'directory_id' => $directory->id,
+            ...$limits,
+        ];
+    }
+
+    /**
+     * A file that arrived through an upload link, into the library by the same road as
+     * every other upload. `$arguments` carries the link's `alt`, when it was given one.
+     *
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     *
+     * @throws UploadNotAccepted when the library's rules refuse the file
+     */
+    public static function receive(string $path, string $name, MediaDirectory $directory, array $arguments = []): array
+    {
+        return self::kept(self::keep($path, $name, null, $directory), $arguments);
+    }
+
+    /**
      * Into the library the way an upload in the panel goes: the type from the bytes, a name that
      * ends in it, the panel's rules, then {@see FileStore::store()} — SVG sanitizing, picture
      * optimizing, the unique key, the duplicate in the same folder.
@@ -825,7 +913,13 @@ final class MediaTools
         ]);
 
         if ($validator->fails()) {
-            throw new ToolFailure((string) $validator->errors()->first('file'));
+            $failed = array_keys($validator->failed()['file'] ?? []);
+
+            throw new UploadNotAccepted((string) $validator->errors()->first('file'), match (true) {
+                in_array('Max', $failed, true) => UploadNotAccepted::SIZE,
+                in_array('Mimes', $failed, true), in_array(SafeFileType::class, $failed, true) => UploadNotAccepted::TYPE,
+                default => UploadNotAccepted::OTHER,
+            });
         }
     }
 

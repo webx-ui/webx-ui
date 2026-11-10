@@ -40,6 +40,7 @@ final class McpToolsTest extends TestCase
             'move_files',
             'upload_from_url',
             'upload_file',
+            'upload_link',
             'optimize_images',
             'delete_files',
         ], $names);
@@ -59,6 +60,7 @@ final class McpToolsTest extends TestCase
         // anything; the tools that only add are behind the same permission.
         $this->assertSame(['media.upload', 'media.manage'], $permissions['upload_from_url']);
         $this->assertSame(['media.upload', 'media.manage'], $permissions['upload_file']);
+        $this->assertSame(['media.upload', 'media.manage'], $permissions['upload_link']);
         $this->assertSame(['media.view', 'media.manage'], $permissions['list_files']);
         $this->assertSame(['media.manage'], $permissions['delete_files']);
         $this->assertSame(['media.manage'], $permissions['rename_file']);
