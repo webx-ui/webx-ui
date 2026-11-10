@@ -47,12 +47,12 @@ plug into. No page, no panel section: a JSON API, `cart()` and a buy button for 
   at its maximum gets the notice `widget.max_reached` there, a form goes back with the cart open.
 - **The buy button** `<x-webx-cart::add type="…" :ref="…" />`: a form with `@csrf` around a
   `button.webx-cart-add` (`is-in-cart` from `cart()->has()`, `data-webx-cart-add`, `-qty`).
-- **The widget** `<x-webx-cart mode="drawer|dialog" preview="dropdown|none" />`
+- **The widget** `<x-webx-cart mode="drawer|dialog" preview="dropdown|none" :trigger="true|false" />`
   (`View\Components\Widget`, defaults `webx-cart.widget.mode` and `.preview`; anything else throws):
   a trigger with the server's counter, the main view — the widgets' `<x-webx-dialog drawer>` or
   `<x-webx-dialog>`, where lines change — and the mini cart, a `<x-webx-dropdown>` with the lines,
-  the total, «Edit cart» and the checkout. The icon opens the mini cart, on a header under 640 px
-  or in the mobile menu the main view; a buy button and `open()` always open the main view. The
+  the total, «Edit cart» and the checkout; `:trigger="false"` — the main view alone (the checkout),
+  any `[data-webx-cart-edit]` opens it. The icon opens the mini cart, on a header under 640 px or in the mobile menu the main view; a buy button and `open()` always open the main view. The
   script (`dist/cart.js`, ≤ 6 KB gzip, served at `{webx-cart.script_path}/cart.js`) fills them from
   `GET /api/cart` with `X-Webx-Cart-View: <mode>` and `X-Webx-Cart-Preview: dropdown`, answered as
   `html` and `preview_html` (`Rendering\Panel`, views `widget`, `widget.lines|line|totals|empty`). `window.webx.cart`: `add(items)`, `remove(id)`, `setQty(id, qty)`,

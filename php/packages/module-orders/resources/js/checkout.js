@@ -14,20 +14,21 @@
 // - «Thank you» says `webx:checkout:placed` with the number, the amount and the currency (§30).
 // - «Place the order» saves a step not done or typed in first, as its «Save» would, and goes on
 //   after the redraw; a step refused keeps its errors at its fields and no order is sent.
-// - «Order contents» changes the cart (§23.5): its forms go in place, the stepper 300 ms after the
-//   last press. The slots' steps and the column follow, and a slot's fields the buyer changed go
-//   over by name: a slot writes as it is typed, but the server refuses a half-done address, so the
-//   drawing has none of it. The last line gone, the page is the empty cart's. The focus stays on
-//   the control pressed, and «Place the order» waits for a press still on its way.
+// - «Order contents» only lists the lines (§23.5): its «Edit» and the warnings' «Open the cart» are
+//   the cart's own `data-webx-cart-edit`, and the widget's dialog changes them. On its
+//   `webx:cart:change` the slots' steps, the warnings and the column follow, and a slot's fields
+//   the buyer changed go over by name: a slot writes as it is typed, but the server refuses a
+//   half-done address, so the drawing has none of it. The last line gone, the page is the empty
+//   cart's. The dialog's «Checkout» leads here: on this page it only closes the dialog.
 
 const ROOT = '.webx-orders-checkout'
 const STEP = '.webx-orders-checkout__step'
 const SUMMARY = '#checkout-summary'
 const LINES = '.webx-orders-checkout__lines'
-const LINE = '.webx-orders-checkout__line'
 const WARNINGS = '#checkout-warnings'
-// The pause of the cart's own stepper: several presses are one write.
-const STEP_PAUSE = 300
+// The cart's own opener of its dialog (module-cart's script handles the click).
+const EDIT = '[data-webx-cart-edit]'
+const CART = 'webx-cart'
 const PLACE = 'checkout-place'
 // A field the buyer fills: not a hidden one, nor the honeypot of the antispam (§28).
 const FIELD = 'input:not([type="hidden"], [tabindex="-1"]), select, textarea'
@@ -65,41 +66,14 @@ function swap(old, fresh) {
   return fresh
 }
 
-/** Where the focus is in the column: the control by name, its line by id and by place. */
-function focused(column) {
-  const active = column?.ownerDocument.activeElement
-  const control = active instanceof Element ? active.closest('[data-control]') : null
-  if (!control || !column.contains(control)) return null
-  const line = control.closest(LINE)
-  return {
-    id: line?.getAttribute('data-line'),
-    index: Array.from(column.querySelectorAll(LINE)).indexOf(line),
-    control: control.getAttribute('data-control'),
-  }
-}
-
-/** The same control after a redraw; its line gone — the next one's; no lines — the title. */
-function refocus(column, { id, index, control }) {
-  const lines = Array.from(column.querySelectorAll(LINE))
-  const line =
-    lines.find((el) => el.getAttribute('data-line') === id) ?? lines[index] ?? lines[index - 1]
-  const target =
-    line?.querySelector(`[data-control="${control}"]:not(:disabled)`) ??
-    line?.querySelector('[data-control]:not(:disabled)') ??
-    column.querySelector('.webx-orders-checkout__summary-title')
-  target?.focus({ preventScroll: true })
-}
-
-/** A fresh column: «Order contents» as the buyer left it, the focus where it was. */
+/** A fresh column: «Order contents» open or closed as the buyer left it. */
 function column(root, fresh) {
   const old = root.querySelector(SUMMARY)
   const lines = old?.querySelector(LINES)
-  const focus = focused(old)
   const placed = swap(old, fresh)
   if (!placed) return null
   const details = placed.querySelector(LINES)
   if (details && lines) details.open = lines.open
-  if (focus) refocus(placed, focus)
   return placed
 }
 
@@ -235,117 +209,6 @@ export async function redrawCart(root) {
     slots.map((step) => step.getAttribute('data-step')),
     true,
   )
-}
-
-/** The refusal of a line, under it; the column drawn since has no trace of the press. */
-function refuse(root, id, message) {
-  const line = Array.from(root.querySelectorAll(`${SUMMARY} ${LINE}`)).find(
-    (el) => el.getAttribute('data-line') === id,
-  )
-  if (!line || !message) return
-  const note = document.createElement('p')
-  note.className = 'webx-orders-checkout__line-error'
-  note.setAttribute('role', 'alert')
-  note.textContent = message
-  line.append(note)
-}
-
-/** The number on the screen; a button that stops being one gives the focus to its neighbour. */
-function showQty(form, qty) {
-  const max = Number(form.getAttribute('data-max')) || Infinity
-  const value = form.querySelector('[data-qty]')
-  if (value) value.textContent = String(qty)
-  const less = form.querySelector('[data-control="decrease"]')
-  const more = form.querySelector('[data-control="increase"]')
-  const active = form.ownerDocument.activeElement
-  if (less) less.disabled = qty <= 1
-  if (more) more.disabled = qty >= max
-  if (active === less && less?.disabled) more?.focus({ preventScroll: true })
-  if (active === more && more?.disabled) less?.focus({ preventScroll: true })
-}
-
-/**
- * «Order contents» in place. Writes go one after another, and only the last one redraws: the
- * number of a press after it would be drawn back. `flush` sends what waits for its pause and
- * says whether all of it went through.
- */
-function watchLines(root, redraw) {
-  const waiting = new Map()
-  let queue = Promise.resolve(true)
-  let latest = 0
-  let flying = 0
-
-  const send = (form, qty) => {
-    const mine = ++latest
-    // A refusal of before is said and done: it does not hold the next batch back.
-    if (flying === 0) queue = Promise.resolve(true)
-    flying += 1
-    const id = form.closest(LINE)?.getAttribute('data-line') ?? null
-    const body = new FormData(form)
-    if (qty !== null) body.set('qty', String(qty))
-    const url = form.getAttribute('action')
-    queue = queue.then(async (fine) => {
-      try {
-        const { status, body: answer } = await server.send(url, body)
-        // The line is gone from another tab, or the session from under the page.
-        if (status === 404 || status === 419) {
-          server.reload()
-          return false
-        }
-        if (mine === latest && waiting.size === 0) await redraw()
-        if (status >= 400) refuse(root, id, answer?.errors?.qty?.[0] ?? answer?.message)
-        return fine && status < 400
-      } catch {
-        // No answer: the page as it is still works, a reload shows the truth.
-        return false
-      } finally {
-        flying -= 1
-      }
-    })
-    return queue
-  }
-
-  const hold = (form, qty) => {
-    const id = form.closest(LINE)?.getAttribute('data-line')
-    clearTimeout(waiting.get(id)?.timer)
-    const timer = setTimeout(() => {
-      waiting.delete(id)
-      send(form, qty)
-    }, STEP_PAUSE)
-    waiting.set(id, { timer, form, qty })
-  }
-
-  root.addEventListener('click', (event) => {
-    const target = event.target instanceof Element ? event.target : null
-    const button = target?.closest(`${SUMMARY} ${LINE} button[data-control]`)
-    const form = button?.closest('form')
-    if (!form) return
-    event.preventDefault()
-    const name = button.getAttribute('data-control')
-    if (name === 'remove') {
-      const id = form.closest(LINE)?.getAttribute('data-line')
-      clearTimeout(waiting.get(id)?.timer)
-      waiting.delete(id)
-      send(form, null)
-      return
-    }
-    const now = Number(form.querySelector('[data-qty]')?.textContent) || 1
-    const qty = now + (name === 'increase' ? 1 : -1)
-    showQty(form, qty)
-    hold(form, qty)
-  })
-
-  return {
-    busy: () => waiting.size > 0 || flying > 0,
-    flush: () => {
-      for (const [id, { timer, form, qty }] of waiting) {
-        clearTimeout(timer)
-        waiting.delete(id)
-        send(form, qty)
-      }
-      return queue
-    },
-  }
 }
 
 /** The first step with an error of the confirmation: opened, its field in focus (§20.1). */
@@ -486,19 +349,9 @@ export function start(doc = document) {
   let passed = null
   let pressing = null
 
-  const lines = watchLines(root, () => keep(redrawCart(root)))
-
   root.addEventListener('webx:form:submit', (event) => {
     const place = event.target instanceof Element ? event.target : null
     if (place?.id !== PLACE) return
-    // A press still on its way is part of the order: the column comes back with its amount.
-    if (lines.busy()) {
-      event.preventDefault()
-      lines.flush().then((fine) => {
-        if (fine) root.querySelector(`#${PLACE}`)?.requestSubmit()
-      })
-      return
-    }
     passed ??= new Set()
     const next = unsaved(root, typed, passed)
     if (!next) {
@@ -566,8 +419,46 @@ export function start(doc = document) {
     })
   }
 
-  // The cart's own widget, where the layout has one, changes the same lines.
+  // The cart's own dialog changes the lines (§23.5): the page follows each write.
   doc.addEventListener('webx:cart:change', () => keep(redrawCart(root)))
+
+  // Its «Checkout» leads to this very page: here it is the way back to the steps.
+  doc.addEventListener('click', (event) => {
+    const target = event.target instanceof Element ? event.target : null
+    const link = target?.closest('.webx-cart__checkout')
+    const dialog = link?.closest('dialog')
+    if (!link || !dialog?.open) return
+    const to = new URL(link.href, window.location.href)
+    if (to.pathname !== window.location.pathname) return
+    event.preventDefault()
+    dialog.close()
+  })
+
+  // The link that opened the dialog was redrawn while it was open: the focus comes back to the
+  // link of the same place, not to the page's start.
+  let opener = null
+  root.addEventListener('click', (event) => {
+    const link = event.target instanceof Element ? event.target.closest(EDIT) : null
+    if (link) opener = link.closest(WARNINGS) ? `${WARNINGS} ${EDIT}` : `${SUMMARY} ${EDIT}`
+  })
+  // `close` does not bubble, but it is caught on its way down; the dialog may be the layout's.
+  doc.addEventListener(
+    'close',
+    (event) => {
+      if (!(event.target instanceof Element) || event.target.id !== CART || !opener) return
+      const again = opener
+      opener = null
+      // After the dialog's own return of the focus, to an opener no longer on the page.
+      setTimeout(() => {
+        const active = doc.activeElement
+        if (active && active !== doc.body && active.isConnected) return
+        ;(root.querySelector(again) ?? root.querySelector(`${SUMMARY} ${EDIT}`))?.focus({
+          preventScroll: true,
+        })
+      })
+    },
+    true,
+  )
 
   doc.addEventListener('webx:users:signed-in', (event) => {
     event.preventDefault()

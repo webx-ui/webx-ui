@@ -57,6 +57,7 @@ return [
         'delivery-extra' => '+ envío según las tarifas del transportista',
         'payable' => 'A pagar',
         'lines' => 'Contenido del pedido',
+        'edit' => 'Editar',
         'price-down' => 'ahora más barato',
         'price-up' => 'ahora más caro',
         'place' => 'Confirmar el pedido',

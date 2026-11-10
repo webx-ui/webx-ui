@@ -187,8 +187,11 @@ function announce(text) {
   setTimeout(() => (status.textContent = text), 50)
 }
 
-/** The main view, whatever the icon opens: the mini cart closes first. `fresh` — just drawn. */
-function open(fresh = false) {
+/**
+ * The main view, whatever the icon opens: the mini cart closes first. `fresh` — just drawn;
+ * `opener` gets the focus back, the icon when none (a page's own `data-webx-cart-edit`).
+ */
+function open(fresh = false, opener = null) {
   const el = root()
   if (!el) return
   const details = el.querySelector('details')
@@ -196,7 +199,7 @@ function open(fresh = false) {
   const dialog = document.getElementById(el.getAttribute('data-webx-cart-panel') ?? '')
   drawn = fresh && !!dialog && !dialog.open
   if (dialog instanceof HTMLDialogElement && typeof webx.openDialog === 'function') {
-    webx.openDialog(dialog, el.querySelector('.webx-cart__trigger'))
+    webx.openDialog(dialog, opener ?? el.querySelector('.webx-cart__trigger'))
   } else if (dialog) {
     location.hash = dialog.id
   }
@@ -289,9 +292,10 @@ document.addEventListener(
 
 document.addEventListener('click', (event) => {
   const target = event.target instanceof Element ? event.target : null
-  if (target?.closest('[data-webx-cart-edit]')) {
+  const edit = target?.closest('[data-webx-cart-edit]')
+  if (edit) {
     event.preventDefault()
-    open()
+    open(false, edit.closest('[data-webx-cart-body]') ? null : edit)
     return
   }
 

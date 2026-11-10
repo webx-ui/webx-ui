@@ -57,6 +57,7 @@ return [
         'delivery-extra' => '+ entrega conforme as tarifas da transportadora',
         'payable' => 'A pagar',
         'lines' => 'Conteúdo da encomenda',
+        'edit' => 'Editar',
         'price-down' => 'agora mais barato',
         'price-up' => 'agora mais caro',
         'place' => 'Confirmar a encomenda',

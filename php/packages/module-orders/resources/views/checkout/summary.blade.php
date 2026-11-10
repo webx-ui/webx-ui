@@ -7,14 +7,15 @@
     «Delivery cost» is the delivery slot's (§22.2): an amount, «Free» with the old price crossed
     out, «at carrier rates» — then not in the amount to pay — or «choose a method».
 
-    «Order contents» is where the cart changes (§23.5): the forms are the cart's own API, so without
-    JavaScript each press comes back here; `checkout.js` sends them in place. Which line has which
-    control is the widget's rule: a stored line steps, a generated one is declined when it may be.
+    «Order contents» only lists the lines (§23.5): the name, the quantity, the sum, what changed
+    and what can no longer be bought, in the cart's own words. «Edit» opens the cart's dialog
+    (`data-webx-cart-edit`, the widget the page prints), where the lines change; without
+    JavaScript it is the link to `#webx-cart` of the widget.
 
     Classes: webx-orders-checkout__summary, __summary-title, __row, __row--discount,
-    __row--delivery, __was, __lines, __line, __line-link, __line-error, __line-controls, __qty,
-    __qty-button, __qty-value, __remove, __change, __benefit, __hint, __payable, __carrier,
-    __place, __terms, __honeypot.
+    __row--delivery, __was, __lines, __lines-head, __edit, __line, __line-name, __line-link,
+    __line-qty, __line-total, __change, __gone, __benefit, __hint, __payable, __carrier, __place,
+    __terms, __honeypot.
 --}}
 <div class="webx-orders-checkout__summary" id="checkout-summary">
     <h2 class="webx-orders-checkout__summary-title" tabindex="-1">{{ __('webx-orders::checkout.summary.title') }}</h2>
@@ -77,44 +78,18 @@
         <p class="webx-orders-checkout__hint">{{ $hint }}</p>
     @endforeach
     <details class="webx-orders-checkout__lines" open>
-        <summary>{{ __('webx-orders::checkout.summary.lines') }}</summary>
-        @if (isset($errors) && $errors->has('qty'))
-            <p class="webx-orders-checkout__line-error" role="alert">{{ $errors->first('qty') }}</p>
-        @endif
+        <summary><span class="webx-orders-checkout__lines-head">{{ __('webx-orders::checkout.summary.lines') }}</span> <a class="webx-orders-checkout__edit" href="#{{ \WebxUi\Cart\View\Components\Widget::ID }}" data-webx-cart-edit aria-haspopup="dialog">{{ __('webx-orders::checkout.summary.edit') }}</a></summary>
         <ul>
             @foreach ($lines as $line)
-                @php
-                    $stored = ($line['source'] ?? null) === null;
-                    $stepper = $stored && ! ($line['gone'] ?? false);
-                    $removable = $stored || ($line['declinable'] ?? false);
-                    $limit = (int) config('webx-cart.qty_max', 999);
-                    $max = min((int) ($line['max_qty'] ?? $limit), $limit);
-                @endphp
-                <li class="webx-orders-checkout__line" data-line="{{ $line['id'] }}">
-                    <span>@if (($line['url'] ?? null) !== null)<a class="webx-orders-checkout__line-link" href="{{ $line['url'] }}">{{ $line['name'] }}</a>@else{{ $line['name'] }}@endif @unless ($stepper)× {{ $line['qty'] }}@endunless</span>
-                    <span>{{ $line['line_total_formatted'] }}</span>
-                    @if ($line['price_change'] !== null)
+                <li @class(['webx-orders-checkout__line', 'is-unavailable' => ! ($line['available'] ?? true)]) data-line="{{ $line['id'] }}">
+                    <span class="webx-orders-checkout__line-name">@if (($line['url'] ?? null) !== null)<a class="webx-orders-checkout__line-link" href="{{ $line['url'] }}">{{ $line['name'] }}</a>@else{{ $line['name'] }}@endif <span class="webx-orders-checkout__line-qty">× {{ $line['qty'] }}</span></span>
+                    <span class="webx-orders-checkout__line-total">{{ $line['line_total_formatted'] }}</span>
+                    @if ($line['gone'] ?? false)
+                        <span class="webx-orders-checkout__gone">{{ __('webx-cart::widget.gone') }}</span>
+                    @elseif (! ($line['available'] ?? true))
+                        <span class="webx-orders-checkout__gone">{{ __('webx-cart::widget.unavailable') }}</span>
+                    @elseif ($line['price_change'] !== null)
                         <span class="webx-orders-checkout__change">{{ __('webx-orders::checkout.summary.price-'.$line['price_change']) }}</span>
-                    @endif
-                    @if ($stepper || $removable)
-                        <div class="webx-orders-checkout__line-controls">
-                            @if ($stepper)
-                                <form class="webx-orders-checkout__qty" method="post" action="{{ route('webx-cart.items.update', ['id' => $line['id']]) }}" data-max="{{ $max }}" role="group" aria-label="{{ __('webx-cart::widget.quantity') }}: {{ $line['name'] }}">
-                                    @csrf
-                                    @method('PATCH')
-                                    <button type="submit" class="webx-orders-checkout__qty-button" name="qty" value="{{ $line['qty'] - 1 }}" data-control="decrease" aria-label="{{ __('webx-cart::widget.decrease') }}: {{ $line['name'] }}" @disabled($line['qty'] <= 1)>&minus;</button>
-                                    <span class="webx-orders-checkout__qty-value" data-qty>{{ $line['qty'] }}</span>
-                                    <button type="submit" class="webx-orders-checkout__qty-button" name="qty" value="{{ $line['qty'] + 1 }}" data-control="increase" aria-label="{{ __('webx-cart::widget.increase') }}: {{ $line['name'] }}" @disabled($line['qty'] >= $max)>+</button>
-                                </form>
-                            @endif
-                            @if ($removable)
-                                <form method="post" action="{{ route('webx-cart.items.destroy', ['id' => $line['id']]) }}">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="webx-orders-checkout__remove" data-control="remove" aria-label="{{ __($stored ? 'webx-cart::widget.remove' : 'webx-cart::widget.decline') }}: {{ $line['name'] }}">{{ __($stored ? 'webx-cart::widget.remove' : 'webx-cart::widget.decline') }}</button>
-                                </form>
-                            @endif
-                        </div>
                     @endif
                 </li>
             @endforeach

@@ -4,7 +4,7 @@
     mini cart under the icon (`<x-webx-dropdown>`), whose «Edit cart» opens the main view. The
     panels are empty on the page and the script fills them from the API when one opens (§9.2); a
     page that came back from a buy button without JavaScript prints the main view open and full
-    (§9.5).
+    (§9.5). `trigger` off — the main view alone, opened by the page's `data-webx-cart-edit`.
 
     Override: <layer>/views/vendor/webx-cart/cart.blade.php — keep `data-webx-cart` and its
     `data-webx-cart-*` on the root, `data-webx-cart-body` on the main view's panel and
@@ -34,7 +34,7 @@
             <x-slot:trigger class="webx-cart__trigger">@include('webx-cart::trigger')</x-slot:trigger>
             <div class="webx-cart__panel webx-cart__panel--preview" data-webx-cart-body="preview">{!! $empty !!}</div>
         </x-webx-dropdown>
-    @else
+    @elseif ($trigger)
         <a class="webx-cart__trigger" href="#{{ $id }}" data-webx-dialog="{{ $id }}" aria-haspopup="dialog">@include('webx-cart::trigger')</a>
     @endif
     <x-webx-dialog class="webx-cart__dialog" :id="$id" :title="$heading" :close="__('webx-cart::widget.close')" :drawer="$mode === 'drawer'" sheet>

@@ -57,6 +57,7 @@ return [
         'delivery-extra' => '+ spedizione secondo le tariffe del corriere',
         'payable' => 'Da pagare',
         'lines' => 'Contenuto dell\'ordine',
+        'edit' => 'Modifica',
         'price-down' => 'ora costa meno',
         'price-up' => 'ora costa di più',
         'place' => 'Conferma l\'ordine',

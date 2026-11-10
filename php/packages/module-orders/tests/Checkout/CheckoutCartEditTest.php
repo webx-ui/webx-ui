@@ -15,9 +15,9 @@ use WebxUi\Orders\Checkout\Slots\ShippingLine;
 use WebxUi\Orders\Models\Order;
 
 /**
- * «Order contents» of the column (spec §23.5): the controls of a line, the cart's own API behind
- * them with JavaScript and without it, the column and the slots counted again from the new lines,
- * and an order placed after the change.
+ * «Order contents» of the column (spec §23.5): a list without controls, «Edit» and «Open the cart»
+ * to the dialog of the cart's widget the page prints, the cart's own API behind that dialog, the
+ * column and the slots counted again from the new lines, and an order placed after the change.
  */
 final class CheckoutCartEditTest extends CheckoutTestCase
 {
@@ -57,33 +57,41 @@ final class CheckoutCartEditTest extends CheckoutTestCase
     }
 
     #[Test]
-    public function a_stored_line_has_a_stepper_and_a_removal_with_their_labels(): void
+    public function the_contents_list_the_lines_and_edit_opens_the_dialog_of_the_cart(): void
     {
         $this->products->lines[1] = self::product('Item A', 1000, maxQty: 3);
         $cart = $this->cart([['type' => 'test.product', 'ref' => 1, 'qty' => 2]]);
-        $item = $this->item($cart);
 
         $html = (string) $this->visit($cart, '/checkout')->assertOk()->getContent();
 
         $this->assertStringContainsString('<details class="webx-orders-checkout__lines" open>', $html);
-        $this->assertStringContainsString('action="'.url('/api/cart/items/'.$item->id).'" data-max="3"', $html);
-        $this->assertStringContainsString('name="qty" value="1" data-control="decrease" aria-label="One less: Item A"', $html);
-        $this->assertStringContainsString('name="qty" value="3" data-control="increase" aria-label="One more: Item A"', $html);
-        $this->assertStringContainsString('data-control="remove" aria-label="Remove: Item A">Remove</button>', $html);
-        $this->assertStringContainsString('name="_method" value="PATCH"', $html);
-        $this->assertStringContainsString('name="_method" value="DELETE"', $html);
+        $this->assertStringContainsString('Item A <span class="webx-orders-checkout__line-qty">× 2</span>', $html);
+        $this->assertStringContainsString('<a class="webx-orders-checkout__edit" href="#webx-cart" data-webx-cart-edit aria-haspopup="dialog">Edit</a>', $html);
+        // No control of the cart in the column: the dialog changes the lines.
+        $this->assertStringNotContainsString('data-control=', $html);
+        $this->assertStringNotContainsString('/api/cart/items/', $html);
+        // The minimal layout has no cart: the page prints the widget's dialog without its trigger.
+        $this->assertMatchesRegularExpression('~<dialog[^>]*id="webx-cart"~', $html);
+        $this->assertStringContainsString('data-webx-cart-panel="webx-cart"', $html);
+        $this->assertStringNotContainsString('webx-cart__trigger', $html);
+        // Without JavaScript the link shows the dialog through :target, with the cart's own note.
+        $this->assertStringContainsString('Turn on JavaScript to see your cart', $html);
     }
 
     #[Test]
-    public function the_buttons_stop_at_one_and_at_the_stock(): void
+    public function a_line_that_cannot_be_bought_is_marked_and_the_warning_opens_the_cart(): void
     {
-        $this->products->lines[1] = self::product('Item A', 1000, maxQty: 1);
-        $cart = $this->cart();
+        $this->products->lines[1] = self::product('Item A', 1000);
+        $this->products->lines[2] = self::product('Item B', 2000);
+        $cart = $this->cart([['type' => 'test.product', 'ref' => 1], ['type' => 'test.product', 'ref' => 2]]);
+        // Out of sale after it was put in the cart.
+        $this->products->lines[2] = self::product('Item B', 2000, available: false);
 
         $html = (string) $this->visit($cart, '/checkout')->assertOk()->getContent();
 
-        $this->assertMatchesRegularExpression('~data-control="decrease"[^>]*disabled~', $html);
-        $this->assertMatchesRegularExpression('~data-control="increase"[^>]*disabled~', $html);
+        $this->assertMatchesRegularExpression('~<li class="webx-orders-checkout__line is-unavailable" data-line="\d+">.*?Item B.*?<span class="webx-orders-checkout__gone">Cannot be bought now</span>~s', $html);
+        $this->assertStringContainsString('<a href="#webx-cart" data-webx-cart-edit aria-haspopup="dialog">Open the cart</a>', $html);
+        $this->assertStringNotContainsString('data-webx-dialog="webx-cart"', $html);
     }
 
     #[Test]
@@ -97,7 +105,7 @@ final class CheckoutCartEditTest extends CheckoutTestCase
 
         $html = (string) $this->visit($cart, '/checkout/summary')->assertOk()->getContent();
         $this->assertStringContainsString('name="expected_payable" value="3500"', $html);
-        $this->assertStringContainsString('<span class="webx-orders-checkout__qty-value" data-qty>3</span>', $html);
+        $this->assertStringContainsString('<span class="webx-orders-checkout__line-qty">× 3</span>', $html);
     }
 
     #[Test]
@@ -126,20 +134,6 @@ final class CheckoutCartEditTest extends CheckoutTestCase
         $this->write($cart, $this->item($cart), 'PATCH', ['qty' => 3])->assertStatus(422)->assertJsonValidationErrors('qty');
 
         $this->assertSame(1, $this->item($cart)->qty);
-    }
-
-    #[Test]
-    public function without_javascript_a_press_comes_back_to_the_checkout(): void
-    {
-        $this->products->lines[1] = self::product('Item A', 1000, maxQty: 2);
-        $cart = $this->cart();
-
-        $this->write($cart, $this->item($cart), 'PATCH', ['qty' => 2], json: false)->assertRedirect(url('/checkout'));
-        $this->assertSame(2, $this->item($cart)->qty);
-
-        // A refusal comes back with its words above the lines.
-        $this->write($cart, $this->item($cart), 'PATCH', ['qty' => 3], json: false)->assertRedirect(url('/checkout'));
-        $this->assertStringContainsString('webx-orders-checkout__line-error', (string) $this->visit($cart, '/checkout')->getContent());
     }
 
     #[Test]

@@ -57,6 +57,7 @@ return [
         'delivery-extra' => '+ Versand nach Tarifen des Versanddienstes',
         'payable' => 'Zu zahlen',
         'lines' => 'Inhalt der Bestellung',
+        'edit' => 'Bearbeiten',
         'price-down' => 'jetzt günstiger',
         'price-up' => 'jetzt teurer',
         'place' => 'Bestellung abschicken',

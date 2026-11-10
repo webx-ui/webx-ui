@@ -57,6 +57,7 @@ return [
         'delivery-extra' => '+ delivery at carrier rates',
         'payable' => 'To pay',
         'lines' => 'Order contents',
+        'edit' => 'Edit',
         'price-down' => 'cheaper now',
         'price-up' => 'dearer now',
         'place' => 'Place the order',

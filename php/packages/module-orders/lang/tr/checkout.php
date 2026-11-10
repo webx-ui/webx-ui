@@ -57,6 +57,7 @@ return [
         'delivery-extra' => '+ kargo firmasının tarifesine göre teslimat',
         'payable' => 'Ödenecek tutar',
         'lines' => 'Sipariş içeriği',
+        'edit' => 'Düzenle',
         'price-down' => 'artık daha ucuz',
         'price-up' => 'artık daha pahalı',
         'place' => 'Siparişi onayla',

@@ -57,6 +57,7 @@ return [
         'delivery-extra' => '+ dostawa według cennika przewoźnika',
         'payable' => 'Do zapłaty',
         'lines' => 'Zawartość zamówienia',
+        'edit' => 'Edytuj',
         'price-down' => 'teraz taniej',
         'price-up' => 'teraz drożej',
         'place' => 'Potwierdź zamówienie',
