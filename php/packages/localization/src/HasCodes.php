@@ -44,11 +44,11 @@ trait HasCodes
     public static function bootHasCodes(): void
     {
         static::saving(static function (Model $model): void {
-            foreach (array_keys($model::codes()) as $column) {
+            foreach (array_keys(static::codes()) as $column) {
                 $value = $model->getAttribute($column);
 
                 if ($model->isDirty($column) && is_string($value)) {
-                    $model->setAttribute($column, $model::codeFor($column, $value));
+                    $model->setAttribute($column, static::codeFor($column, $value));
                 }
             }
         });
