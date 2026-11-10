@@ -44,6 +44,9 @@ of the buy button, so keep it short and clear: «Out of stock», not «Status 3�
 
 ## code
 
+Type it any way you like: the field turns what you type into a code straight away — «Brake pads»
+becomes `brake-pads`, words in another alphabet are written in Latin letters.
+
 Do not change the code of a working status without need: links to the filter that are already in
 adverts and bookmarks will stop picking this status. Buyers see the code only in the page address.
 

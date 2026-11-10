@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 /**
- * A slug is ASCII, whoever wrote it.
+ * A slug is ASCII and lower case, whoever wrote it: Russian «колодки» is `kolodki`, `Foo` is `foo`.
  *
  * On the model, because that is the one thing the panel, the exchange, an agent and a plain
  * `save()` all pass through: a check in a form would leave the other three doors open. `HasUrl`

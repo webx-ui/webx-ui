@@ -61,6 +61,9 @@ translation routes belong to `webx-ui/module-admin`, and a translated address is
 
 - Do not call `Str::slug()` without a language for a code or an address: it reads Cyrillic the
   English way. Use `Slug::make()`. `SlugCoverageTest` fails on such a call in any package's `src`.
+- Do not refuse a code someone typed (a status code, a key) for its shape: bring it to the shape
+  with `Slug::code($text, $locale, $max, $separator)` on `saving`, and give the screen field
+  `wx-code`. Refuse only a code that is taken or that leaves nothing with no fallback.
 
 - Do not add the validation lines with `FileLoader::addPath()` or replace `translation.loader`:
   another package wraps it (`themes`), and an added path is read after the site's `lang/`.

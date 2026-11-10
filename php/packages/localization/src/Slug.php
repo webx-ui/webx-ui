@@ -69,15 +69,16 @@ final class Slug
     /**
      * A slug someone wrote, brought to ASCII: the rule of the platform, whatever door it came in by.
      *
-     * Only what is not ASCII is rewritten. An ASCII slug is returned as it came — a wrong shape
-     * of it is the form's to refuse in words, not this method's to quietly repair — and `_` stays,
-     * because it means something in a slug (`make()` would turn it into a hyphen). An answer of
-     * `''` means nothing was left: only hieroglyphs, or only signs.
+     * Only what is not ASCII is rewritten, and capitals are lowered: `Foo` and `foo` are one
+     * address. Any other shape of an ASCII slug is returned as it came — a wrong shape of it is
+     * the form's to refuse in words, not this method's to quietly repair — and `_` stays, because
+     * it means something in a slug (`make()` would turn it into a hyphen). An answer of `''`
+     * means nothing was left: only hieroglyphs, or only signs.
      */
     public static function latin(string $slug, string $locale, int $max = self::LENGTH): string
     {
         if (self::isLatin($slug)) {
-            return preg_match('/[a-zA-Z0-9]/', $slug) === 1 ? $slug : '';
+            return preg_match('/[a-zA-Z0-9]/', $slug) === 1 ? strtolower($slug) : '';
         }
 
         $parts = array_map(
@@ -87,6 +88,26 @@ final class Slug
         );
 
         return rtrim(substr(implode('_', array_filter($parts, static fn (string $part): bool => $part !== '')), 0, $max), '-_');
+    }
+
+    /**
+     * A code someone typed, brought to the shape of its field — what a code field does with any
+     * input instead of refusing it. The panel does the same as it is typed (`codify()` of
+     * `@webx-ui/module-admin`), the model before its check, so the form, an agent and an import
+     * end up with one code.
+     *
+     * Transliterated by `$locale`, lower-cased, every run of what is not a Latin letter or a digit
+     * made one `$separator`, cut to `$max` with no separator left at either end: «тормозные
+     * колодки» is `tormoznye-kolodki`, `Brake_Pads` is `brake-pads` (`brake_pads` with `_`). The
+     * answer always fits `[a-z0-9]` words joined by `$separator`; `''` means nothing was left,
+     * for the caller to fall back or refuse.
+     */
+    public static function code(string $text, string $locale, int $max, string $separator = '-'): string
+    {
+        // `Str::slug()` keeps a letter of a script it has no table for, and an `_` next to a `-`.
+        $code = (string) preg_replace('/[^a-z0-9]+/', $separator, Str::slug($text, $separator, $locale));
+
+        return trim(substr(trim($code, $separator), 0, $max), $separator);
     }
 
     /** Nothing in it but ASCII: what an address may hold without being percent-encoded. */

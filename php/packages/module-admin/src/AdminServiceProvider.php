@@ -82,6 +82,7 @@ use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\Types\BooleanType;
 use WebxUi\Admin\Screens\Types\CascaderType;
+use WebxUi\Admin\Screens\Types\CodeType;
 use WebxUi\Admin\Screens\Types\CollectionType;
 use WebxUi\Admin\Screens\Types\ColorType;
 use WebxUi\Admin\Screens\Types\DateRangeType;
@@ -242,6 +243,9 @@ class AdminServiceProvider extends ServiceProvider
             // The same for a record of a module with a flat prefix (a service): one field for
             // every module after the blog, rather than a `wx-<module>-slug` in each.
             $types->register('wx-slug', new SlugType);
+            // A machine name typed by hand — a code of a status, of a label: brought to its shape
+            // as it is typed and as it is saved, never refused for it (#125).
+            $types->register('wx-code', new CodeType($app->make(Locales::class)));
             // The categories a record is in. Which table is the node's `source`, registered by
             // the module that owns it — the same string the panel asks for the list at.
             $types->register('wx-categories', new CategoriesType($app->make(CategorySources::class)));

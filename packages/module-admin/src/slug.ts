@@ -52,6 +52,39 @@ export function slugify(title: string, separator = '-', locale = 'en'): string {
     .replace(new RegExp(`^[${sep}]+|[${sep}]+$`, 'gu'), '')
 }
 
+/** How a code field is shaped: the node's `separator` and `maxlength`. */
+export interface CodeShape {
+  /** Between words: `-` (the default) or `_`. */
+  separator?: '-' | '_'
+  /** Cut to this many characters; none — no cut. */
+  max?: number
+  /** The language a word in another alphabet is read by. */
+  locale?: string
+  /**
+   * Still being typed: a separator at the end stays, so that the next word has somewhere to go —
+   * «brake » is `brake-` until it is `brake-pads`, and `brake` once the field is left.
+   */
+  typing?: boolean
+}
+
+/**
+ * What a code field does with whatever is typed into it, instead of refusing it: «тормозные
+ * колодки» is `tormoznye-kolodki`, `Brake_Pads` is `brake-pads`. The same as `Slug::code()` on
+ * the server, which a save through an agent or an import goes by.
+ */
+export function codify(text: string, shape: CodeShape = {}): string {
+  const separator = shape.separator ?? '-'
+  const code = slugify(text, separator, shape.locale)
+    // `Str::slug`'s steps keep a letter of a script it has no table for, and an `_` beside a `-`.
+    .replace(/[^a-z0-9]+/g, separator)
+    .replace(/^[-_]+|[-_]+$/g, '')
+  const cut = (shape.max === undefined ? code : code.slice(0, shape.max)).replace(/[-_]+$/, '')
+
+  const open = shape.typing === true && cut !== '' && /[\s_-]$/u.test(text)
+
+  return open && (shape.max === undefined || cut.length < shape.max) ? `${cut}${separator}` : cut
+}
+
 /**
  * The site's main language — the one a new record is named in, and so the one its address is
  * transliterated by (`Locales::defaultCode()` on the server).

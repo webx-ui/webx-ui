@@ -20,11 +20,28 @@ final class SlugTest extends TestCase
         $this->assertSame('khit', Slug::latin('Хіт', 'uk'));
         // `_` means something in a slug, and `make()` would have made it a hyphen.
         $this->assertSame('tormoza_zadnie', Slug::latin('тормоза_задние', 'ru'));
-        // Latin of a wrong shape is the form's to refuse, not this method's to repair.
-        $this->assertSame('Brake Pads', Slug::latin('Brake Pads', 'ru'));
+        // Capitals are lowered, `Foo` and `foo` being one address; any other wrong shape of Latin
+        // is the form's to refuse, not this method's to repair.
+        $this->assertSame('foo', Slug::latin('Foo', 'en'));
+        $this->assertSame('brake pads', Slug::latin('Brake Pads', 'ru'));
         $this->assertSame('', Slug::latin('漢字', 'ru'));
         $this->assertSame('', Slug::latin('!!!', 'ru'));
         $this->assertLessThanOrEqual(Slug::LENGTH, strlen(Slug::latin(str_repeat('щ', 190), 'ru')));
+    }
+
+    #[Test]
+    public function a_typed_code_is_brought_to_the_shape_of_its_field(): void
+    {
+        $this->assertSame('tormoznye-kolodki', Slug::code('тормозные колодки', 'ru', 32));
+        $this->assertSame('tormoznye_kolodki', Slug::code('Тормозные  колодки', 'ru', 32, '_'));
+        $this->assertSame('brake-pads', Slug::code('  Brake_Pads!! ', 'en', 32));
+        $this->assertSame('brake_pads', Slug::code('brake-pads', 'en', 32, '_'));
+        // A letter of a script with no table goes, and leaves no doubled separator behind.
+        $this->assertSame('a-b', Slug::code('a 漢 b', 'ru', 32));
+        // Cut to the length, with no separator left at the end.
+        $this->assertSame('brake', Slug::code('Brake pads', 'en', 6));
+        $this->assertSame('', Slug::code('!!!', 'en', 32));
+        $this->assertSame('', Slug::code('漢字', 'ru', 32));
     }
 
     #[Test]

@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
-import { slugify } from './slug'
+import { codify, slugify } from './slug'
 
 /**
  * The address the field offers while a title is being typed.
@@ -48,5 +48,38 @@ describe('slugify', () => {
     expect(slugify('Mail me@home_page')).toBe('mail-me-at-home-page')
     expect(slugify('−20%', '-', 'uk')).toBe('20')
     expect(slugify('—')).toBe('')
+  })
+})
+
+/**
+ * A code field's value as it is typed. The expectations are what `Slug::code()` answers for the
+ * same text, so the panel never shows a code the server would turn into another one.
+ */
+describe('codify', () => {
+  it('makes a code of anything typed instead of refusing it', () => {
+    expect(codify('тормозные колодки', { locale: 'ru' })).toBe('tormoznye-kolodki')
+    expect(codify('Тормозные  колодки', { locale: 'ru', separator: '_' })).toBe('tormoznye_kolodki')
+    expect(codify('  Brake_Pads!! ')).toBe('brake-pads')
+    expect(codify('brake-pads', { separator: '_' })).toBe('brake_pads')
+    expect(codify('a 漢 b', { locale: 'ru' })).toBe('a-b')
+    expect(codify('!!!')).toBe('')
+    expect(codify('漢字')).toBe('')
+  })
+
+  it('cuts to the length of the field with no separator left at the end', () => {
+    expect(codify('Brake pads', { max: 6 })).toBe('brake')
+    expect(codify('тормозные колодки и диски для легковых', { locale: 'ru', max: 32 })).toBe(
+      'tormoznye-kolodki-i-diski-dlya-l',
+    )
+  })
+
+  it('keeps the separator the next word needs while it is being typed', () => {
+    expect(codify('тормозные ', { locale: 'ru', typing: true })).toBe('tormoznye-')
+    expect(codify('brake_', { typing: true, separator: '_' })).toBe('brake_')
+    expect(codify('brake ', { typing: true })).toBe('brake-')
+    expect(codify('brake ')).toBe('brake')
+    expect(codify(' ', { typing: true })).toBe('')
+    // Not past the length: a code that is full takes no separator.
+    expect(codify('brake ', { typing: true, max: 5 })).toBe('brake')
   })
 })
