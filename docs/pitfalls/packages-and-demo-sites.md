@@ -76,9 +76,6 @@ packages/<y>/dist/index.js` против `dependencies` его `package.json`.
   пишет новый путь в lock — а симлинки в `vendor/webx-ui` остаются на прежний чекаут: версия та же,
   и composer считает пакет установленным. Снять сами ссылки (`find vendor/webx-ui -maxdepth 1 -type
 l -delete` — не `rm -rf`) и `composer install`; с `node_modules/@webx-ui` так же и `npm install`.
-- **На сайте, где панель уже есть, `webx:panel --sync` новый модуль в неё не впишет.** Команда
-  нарочно не трогает существующий `resources/js/admin.ts`: маршруты сервера на месте, пункт в
-  манифесте есть, а раздела в панели нет. Импорт, стиль и `...services()` дописываются руками.
 - **Компонент, поставленный в лэйаут сайта, не печатается на страницах конструктора.** Статьи,
   услуги и каталог стоят в `components/layout.blade.php`, а страница `module-pages` — в
   `resources/views/pages/show.blade.php`, отдельном документе со своими `<head>` и регионами, без
@@ -154,6 +151,29 @@ webx-ui/<пакет>` из `php/`. Проверка — `grep helpers.php vendor
   `webx:theme:make` входы названы `theme` и `script`, а `entryFileNames` — функцией (`script` →
   `theme.js`, остальное — `[name]-entry.js`). Правя `vite.config.js` темы, это не трогать.
   Проверка — `ls dist` после `npm run build`: `sources.json`, `theme.css`, `theme.js`.
+
+## Модули сайта
+
+Раздел панели в `modules/<name>` сайта — гайд `apps/docs/guide/site-modules.md`, спека
+`WEBX_UI_SITE_MODULES.md`.
+
+- **`composer require site/module-<x>` отвечает «does not match your minimum-stability».** У
+  path-пакета без `"version"` composer берёт версию из git сайта (`dev-main`), а скелет —
+  `minimum-stability: stable`. В `composer.json` модуля — `"version": "0.1.0"`, и её не
+  поднимать: версия модуля — коммит сайта. Проверка — `composer show site/module-<x>` даёт `0.1.0`.
+- **Образ собирается, а панель без модуля — или `npm run build` падает на `failed to resolve
+import "@site/module-<x>"`.** `Dockerfile` сайта, заведённого до модулей сайта, не копирует
+  `modules/` в стадию сборки фронта: `npm ci` молча ставит ссылку `file:` в никуда. Строка
+  `COPY modules ./modules` до `npm ci` той же стадии; релиз её не привозит — файл сайта.
+  Проверка — `php artisan webx:doctor --strict` (проверка «Site modules»).
+- **Тесты модуля не находятся (`Class "Site\<X>\Tests\TestCase" not found`), хотя
+  `autoload-dev` в `composer.json` модуля есть.** `autoload-dev` и `require-dev` зависимости
+  composer не читает никогда. Автозагрузка тестов модуля — в `autoload-dev` **сайта** (её пишет
+  `webx:make-module --local`), затем `composer dump-autoload`.
+- **Правка `composer.json` модуля не действует** — новый `require`, `autoload`, провайдер в
+  `extra.laravel`. Автозагрузка и `extra` берутся из `composer.lock` и `installed.json`, а не с
+  диска: `composer update site/module-<x>` (на live-сайте — `webx sync <сайт>`). Проверка —
+  `grep module-<x> -A3 vendor/composer/installed.json`.
 
 ## Стартовый сайт
 

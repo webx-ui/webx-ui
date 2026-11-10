@@ -7,7 +7,8 @@
 установка модулей на сайт — [`WEBX_UI_NEW_SITE.md`](WEBX_UI_NEW_SITE.md) §5–§6, права —
 [`WEBX_UI_PERMISSIONS.md`](WEBX_UI_PERMISSIONS.md), справка — [`WEBX_UI_PANEL_HELP.md`](WEBX_UI_PANEL_HELP.md).
 
-Статус: спроектировано, ждёт приёмки (webx-ui#138, этап 1). Открытые вопросы — §16, план — §15.
+Статус: сделано (webx-ui#139, план — §15); решения по открытым вопросам §16 приняты 10.11.2026.
+Гайд — [`apps/docs/guide/site-modules.md`](../../apps/docs/guide/site-modules.md).
 
 Пример во всей спеке — вымышленный модуль «Справочник офисов»: id `offices`, таблица `offices`,
 папка `modules/offices`. Ни в коде, ни в доках, ни в тестах монорепы модуль сайта не называется

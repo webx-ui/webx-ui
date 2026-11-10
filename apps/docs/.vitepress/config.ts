@@ -43,6 +43,7 @@ export default defineConfig({
             { text: 'Notes on a record', link: '/guide/notes' },
             { text: 'Screens', link: '/guide/screens' },
             { text: 'Extending', link: '/guide/extending' },
+            { text: 'Site modules', link: '/guide/site-modules' },
             { text: 'Permissions', link: '/guide/permissions' },
             { text: 'Help in the panel', link: '/guide/panel-help' },
             { text: 'Large uploads', link: '/guide/uploads' },
