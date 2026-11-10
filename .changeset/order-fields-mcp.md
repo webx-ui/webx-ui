@@ -1,0 +1,5 @@
+---
+'@webx-ui/php': minor
+---
+
+Orders: the extra fields of the checkout for an agent. `orders_checkout_fields_list` answers what the panel lists — the places of the checkout with their steps and every field with its words, options and the checkbox it is shown behind (`orders.view` or `orders.checkout.settings`); `orders_checkout_fields_save`, `orders_checkout_fields_delete` and `orders_checkout_fields_reorder` (`orders.checkout.settings`) name a field by its key, call the service the panel calls and answer a dry run in the lines of the panel's dialog. A refusal says what to do next: delete and add another for a type that never changes, the places there are, the fields shown behind a checkbox, the keys an order left out or named twice. Orders placed are never touched, and every answer says so. `orders://checkout` now reads the places with their steps, the definitions, the types with their limits, the codes a step answers about a field and the refusals. Like the rest of the checkout's tools, they exist only while the checkout is on.

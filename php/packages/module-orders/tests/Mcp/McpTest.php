@@ -36,6 +36,8 @@ final class McpTest extends McpTestCase
         // The checkout's (§32), while it is on.
         'orders_checkout_steps', 'orders_checkout_preview', 'orders_checkout_funnel', 'orders_checkout_drafts_list',
         'orders_checkout_settings_get', 'orders_checkout_settings_set',
+        // Its extra fields (WEBX_UI_ORDER_FIELDS.md §8.1).
+        'orders_checkout_fields_list', 'orders_checkout_fields_save', 'orders_checkout_fields_delete', 'orders_checkout_fields_reorder',
     ];
 
     #[Test]

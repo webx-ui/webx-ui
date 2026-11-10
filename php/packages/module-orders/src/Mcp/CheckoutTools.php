@@ -22,6 +22,8 @@ use WebxUi\Orders\Checkout\ContactMask;
 use WebxUi\Orders\Checkout\Events\CheckoutPayableChanged;
 use WebxUi\Orders\Checkout\Events\CheckoutPlaced;
 use WebxUi\Orders\Checkout\Events\CheckoutStepSaved;
+use WebxUi\Orders\Checkout\FieldPlace;
+use WebxUi\Orders\Checkout\FieldPlaces;
 use WebxUi\Orders\Checkout\Models\CheckoutDraft;
 use WebxUi\Orders\Checkout\Slots\CheckoutSlots;
 use WebxUi\Orders\Checkout\Slots\SlotStep;
@@ -35,7 +37,8 @@ use WebxUi\Orders\Panel\SettingsScreen;
 
 /**
  * The checkout for an agent (spec §32): what the page is made of, a trial confirmation of a cart,
- * where buyers stop, the drafts, the tab «Checkout». Registered only while the checkout is on.
+ * where buyers stop, the drafts, the tab «Checkout», its extra fields ({@see FieldTools}). Registered
+ * only while the checkout is on.
  *
  * A draft is somebody who did not place an order: its contacts come masked ({@see ContactMask});
  * the contacts of an order are `orders_get`. The trial confirmation asks the questions the page's
@@ -64,6 +67,8 @@ final readonly class CheckoutTools
         private OrderSettings $settings,
         private ScreenValues $values,
         private Money $money,
+        private FieldTools $fields,
+        private FieldPlaces $places,
     ) {}
 
     /**
@@ -137,6 +142,7 @@ final readonly class CheckoutTools
                 ['properties' => ['values' => ['type' => 'object']], 'required' => ['values']],
                 permission: OrdersModule::CHECKOUT_SETTINGS,
             ),
+            ...$this->fields->all(),
         ], 'orders_');
     }
 
@@ -151,7 +157,7 @@ final readonly class CheckoutTools
                 'Checkout',
                 'The checkout page as it stands on this site: the steps and the slots of other modules in their order, the '
                 .'parts of the column of the totals, the settings of the tab «Checkout» with their values, the codes a step\'s '
-                .'error and the confirmation\'s refusal come with, the events. Read it before trying a cart or changing the tab.',
+                .'error and the confirmation\'s refusal come with, the events, the extra fields with their places, types and codes. Read it before trying a cart or changing the tab.',
                 fn (): array => $this->catalog(),
             ),
         ];
@@ -168,6 +174,8 @@ final readonly class CheckoutTools
             'steps' => array_map(fn (Step $step): array => [
                 ...$this->step($step, $positions),
                 'error_codes' => $step instanceof NamesErrors ? $step->errorCodes() : null,
+                // The places of the extra fields in its form (WEBX_UI_ORDER_FIELDS.md §4.1).
+                'field_places' => array_map(static fn (FieldPlace $place): string => $place->key, $this->places->of($step->key())),
             ], $this->steps->all()),
             // The places other modules fill (§22): null — the module is not installed, no such step.
             'slots' => array_map(fn (string $key): array => [
@@ -177,6 +185,7 @@ final readonly class CheckoutTools
             ], array_keys(CheckoutSlots::POSITIONS)),
             'summary_parts' => $this->parts->describe(),
             'settings' => $this->describeSettings(),
+            'fields' => $this->fields->catalog(),
             'answers' => CheckoutAnswers::ALL,
             'events' => [
                 CheckoutStepSaved::class => 'a step was kept in the draft (cartId, step)',

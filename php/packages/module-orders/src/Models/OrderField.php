@@ -11,6 +11,7 @@ use Illuminate\Support\Carbon;
 use WebxUi\Admin\History\RecordsHistory;
 use WebxUi\Localization\HasCodes;
 use WebxUi\Localization\HasTranslations;
+use WebxUi\Orders\Checkout\Steps\CommentStep;
 use WebxUi\Orders\OrderFields;
 
 /**
@@ -68,6 +69,23 @@ class OrderField extends Model
     public const int MAX_LABEL = 190;
 
     public const int MAX_HINT = 500;
+
+    /** The longest answer to a line and to a text (§3.1): a name, and a comment of the checkout. */
+    public const int MAX_TEXT = 190;
+
+    public const int MAX_TEXTAREA = CommentStep::MAX;
+
+    /**
+     * The codes a step answers about an extra field (§3.4), and in English when: one for all the
+     * fields, whose key is the error's `field` — the shop names its fields, the codes are fixed.
+     *
+     * @var array<string, string>
+     */
+    public const array ERROR_CODES = [
+        'fields.required' => 'a required field is empty, or a required checkbox is not ticked',
+        'fields.invalid' => 'the answer is too long or not of the type of the field',
+        'fields.option_gone' => 'the option chosen is no longer one of the list',
+    ];
 
     protected $table = 'order_fields';
 
