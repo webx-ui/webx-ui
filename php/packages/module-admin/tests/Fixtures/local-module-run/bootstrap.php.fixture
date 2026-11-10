@@ -1,0 +1,14 @@
+<?php
+
+declare(strict_types=1);
+
+/*
+ * A site for the tests of a generated module: the packages of the monorepo stand in for the
+ * site's `vendor`, and the three autoloads Composer would have written for it are added here —
+ * the site's tests, the module (its path package) and the module's tests (the site's autoload-dev).
+ */
+$loader = require (string) getenv('WEBX_MONOREPO_AUTOLOAD');
+
+$loader->addPsr4('Tests\\', __DIR__.'/tests/');
+$loader->addPsr4('Site\\Offices\\', __DIR__.'/modules/offices/src/');
+$loader->addPsr4('Site\\Offices\\Tests\\', __DIR__.'/modules/offices/tests/');

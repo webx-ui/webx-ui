@@ -1,0 +1,24 @@
+---
+title: {{ Title }}
+---
+
+# about
+
+The list of {{ models }} in the order the site shows them. Each row opens its form.
+
+# howto
+
+## How to add a {{ model }}
+
+1. Press «New {{ model }}» at the top of the list.
+2. Fill in «Title» in the default language, and in the others if the site has them.
+3. Press «Save».
+
+## How to change the order
+
+1. Clear the search.
+2. Drag a row by its grip. The new order saves itself.
+
+## How to delete a {{ model }}
+
+1. In the menu of the row, press «Delete» and confirm. There is no bin: it is gone for good.

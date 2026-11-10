@@ -1,0 +1,14 @@
+# {{ Title }}
+
+A section of this site's panel, kept in the site's repository. Made by
+`php artisan webx:make-module --local {{ id }}`.
+
+- `composer.json`, `src/`, `routes/`, `database/`, `lang/`, `resources/` — the server half,
+  `site/module-{{ id }}`, installed from `modules/*` as a path package.
+- `js/` — the panel half, `@site/module-{{ id }}`, built by the site's Vite from its sources.
+- `tests/` — run by `php artisan test` (the `Modules` suite of `phpunit.xml`).
+
+After a change to `composer.json` here: `composer update site/module-{{ id }}`. After a change in
+`js/`: `npm run build` (or `npm run dev` while working). New migrations: `php artisan migrate`.
+
+What it owns and how to change it — [AGENTS.md](AGENTS.md).

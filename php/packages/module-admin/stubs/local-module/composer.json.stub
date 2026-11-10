@@ -1,0 +1,36 @@
+{
+    "name": "site/module-{{ id }}",
+    "description": "{{ Title }}: a section of this site's panel, kept in the site's repository (modules/{{ id }}).",
+    "type": "library",
+    "version": "0.1.0",
+    "license": "proprietary",
+    "require": {
+        "php": "^8.4",
+        "webx-ui/localization": "*",
+        "webx-ui/mcp": "*",
+        "webx-ui/module-admin": "*",
+        "webx-ui/module-auth": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "Site\\{{ Studly }}\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Site\\{{ Studly }}\\{{ Studly }}ServiceProvider"
+            ]
+        },
+        "webx": {
+            "module": "{{ id }}",
+            "npm": {
+                "@site/module-{{ id }}": "file:modules/{{ id }}/js"
+            },
+            "panel": {
+                "import": "import { {{ function }} } from '@site/module-{{ id }}'",
+                "register": "{{ function }}()"
+            }
+        }
+    }
+}

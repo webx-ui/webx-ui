@@ -1,0 +1,382 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Site\{{ Studly }}\Mcp;
+
+use Closure;
+use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Contracts\Container\Container;
+use Illuminate\Validation\ValidationException;
+use Site\{{ Studly }}\Models\{{ Model }};
+use Site\{{ Studly }}\Panel\{{ Model }}Form;
+use Site\{{ Studly }}\Panel\{{ Model }}List;
+use WebxUi\Admin\Categories\Ordering;
+use WebxUi\Admin\Contracts\HasPermissions;
+use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Admin\Screens\ScreenValues;
+use WebxUi\Localization\Locales;
+use WebxUi\Mcp\Arguments;
+use WebxUi\Mcp\Exceptions\ToolFailure;
+use WebxUi\Mcp\Rehearsal;
+use WebxUi\Mcp\Tool;
+
+/**
+ * What an agent can do with {{ models }}: the same doors the panel uses.
+ *
+ * The list is {@see {{ Model }}List}, so the order is the one the editor sees; the values go through
+ * {@see {{ Model }}Form}, which checks them against the described screen — a field a project
+ * patched onto `{{ id }}.form` is written under its own name; the order is {@see Ordering}, the
+ * code behind the drag.
+ *
+ * Every tool that changes something takes `dry_run`: the write itself, rolled back
+ * ({@see Rehearsal}), refused where the write would be and answering what it would answer. An
+ * argument or a field the tool does not take is refused rather than dropped ({@see Arguments}).
+ */
+final class {{ Studly }}Tools
+{
+    public function __construct(private readonly Container $container) {}
+
+    /**
+     * @return list<Tool>
+     */
+    public function all(): array
+    {
+        $record = ['type' => 'integer', 'description' => 'The id of the {{ model }}: {{ tool }}_list and {{ id }}://catalog have them.'];
+        $text = [
+            'type' => ['string', 'object'],
+            'description' => 'One language as a string (the default one), or every language as { "en": "…", "ru": "…" }.',
+        ];
+
+        return Arguments::strictAll([
+            Tool::read(
+                'list',
+                'The {{ models }} in the order they stand in: the title in every language and the place in the list. '
+                .'Read this (or {{ id }}://catalog) first: the same {{ model }} written twice is a duplicate.',
+                fn (array $arguments): array => $this->list($arguments),
+                ['properties' => [
+                    'search' => ['type' => 'string', 'description' => 'Only the {{ models }} whose title contains this, in any language the site has.'],
+                ]],
+                permission: ['{{ id }}.view', '{{ id }}.manage'],
+            ),
+
+            Tool::read(
+                'get',
+                'One {{ model }} in full: the values of its form — the title in every language and any field the project '
+                .'added to the form.',
+                fn (array $arguments): array => $this->get($arguments),
+                ['properties' => ['id' => $record], 'required' => ['id']],
+                permission: ['{{ id }}.view', '{{ id }}.manage'],
+            ),
+
+            Tool::mutating(
+                'create',
+                'Add a {{ model }} at the end of the list. The title in the default language is required.',
+                fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->create($arguments, $user)),
+                ['properties' => [
+                    'title' => $text,
+                    'values' => ['type' => 'object', 'description' => 'The fields the project added to the form, as {{ tool }}_get returns them.'],
+                ], 'required' => ['title']],
+                permission: '{{ id }}.manage',
+            ),
+
+            Tool::mutating(
+                'update',
+                'Change the values of a {{ model }}. A field left out keeps what it had, and so does a language left out of '
+                .'a translated field: send "" for a language to take it away.',
+                fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->update($arguments, $user)),
+                ['properties' => [
+                    'id' => $record,
+                    'values' => ['type' => 'object', 'description' => 'Field name → value, as {{ tool }}_get returns them. title takes { "en": "…" }.'],
+                ], 'required' => ['id', 'values']],
+                permission: '{{ id }}.manage',
+            ),
+
+            Tool::mutating(
+                'delete',
+                'Delete a {{ model }} for good. Cannot be undone — there is no bin.',
+                fn (array $arguments): array => $this->attempt(fn (): array => $this->delete($arguments)),
+                ['properties' => ['id' => $record], 'required' => ['id']],
+                permission: '{{ id }}.manage',
+            ),
+
+            Tool::mutating(
+                'reorder',
+                'Put {{ models }} in a new order. Name them in the order they should stand in — the ones you leave out '
+                .'stay where they are.',
+                fn (array $arguments): array => $this->attempt(fn (): array => $this->reorder($arguments)),
+                ['properties' => [
+                    'ids' => ['type' => 'array', 'items' => ['type' => 'integer'], 'description' => 'The ids, first to last.'],
+                ], 'required' => ['ids']],
+                permission: '{{ id }}.manage',
+            ),
+        ], '{{ tool }}_');
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function list(array $arguments): array
+    {
+        $records = $this->container->make({{ Model }}List::class)->build((string) ($arguments['search'] ?? ''))->get();
+
+        return [
+            'locales' => $this->locales()->codes(),
+            'default_locale' => $this->locales()->defaultCode(),
+            'count' => $records->count(),
+            '{{ tool }}' => $records->map(fn ({{ Model }} $record): array => $this->summary($record))->values()->all(),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function get(array $arguments): array
+    {
+        $record = $this->record($arguments['id'] ?? null);
+
+        return [
+            'record' => $this->summary($record),
+            'values' => $this->form()->values($record),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function create(array $arguments, ?Authenticatable $user): array
+    {
+        $values = $arguments['values'] ?? [];
+
+        if (! is_array($values)) {
+            throw new ToolFailure('`values` must be an object of field name → value.');
+        }
+
+        Arguments::refuseUnknown($values, $this->fields(), '{{ tool }}_create');
+
+        // The named argument wins over the same name in `values`: it is what the tool says it takes.
+        $values = [...$values, 'title' => $this->text($arguments['title'] ?? null)];
+
+        $work = fn (): array => $this->get(['id' => $this->form()->save(new {{ Model }}, $values, $this->can($user))->getKey()]);
+
+        if (! $this->dryRun($arguments)) {
+            return $work();
+        }
+
+        $would = $this->rehearse($work);
+        // The id the rehearsal was given is nobody's once it is rolled back.
+        $would['record']['id'] = null;
+
+        return ['dry_run' => true] + $would;
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function update(array $arguments, ?Authenticatable $user): array
+    {
+        $record = $this->record($arguments['id'] ?? null);
+        $values = $arguments['values'] ?? null;
+
+        if (! is_array($values) || $values === []) {
+            throw new ToolFailure('`values` must be a non-empty object of field name → value. {{ tool }}_get says what the fields are.');
+        }
+
+        Arguments::refuseUnknown($values, $this->fields(), '{{ tool }}_update');
+
+        // A plain string is the default language, as in {{ tool }}_create.
+        if (is_string($values['title'] ?? null)) {
+            $values['title'] = [$this->locales()->defaultCode() => $values['title']];
+        }
+
+        // Merged language by language: `{"title": {"ru": …}}` changes the Russian and leaves the others.
+        $values = $this->container->make(ScreenValues::class)->patch({{ Model }}::SCREEN, $this->form()->values($record), $values);
+
+        $work = function () use ($record, $values, $user): array {
+            $this->form()->save($record, $values, $this->can($user));
+
+            return $this->get(['id' => $record->getKey()]);
+        };
+
+        if (! $this->dryRun($arguments)) {
+            return $work();
+        }
+
+        return ['dry_run' => true, 'fields' => array_keys($values)] + $this->rehearse($work);
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function delete(array $arguments): array
+    {
+        $record = $this->record($arguments['id'] ?? null);
+
+        if ($this->dryRun($arguments)) {
+            return ['dry_run' => true, 'would_delete' => $this->summary($record)];
+        }
+
+        $record->delete();
+
+        return ['deleted' => true, 'id' => (int) $record->getKey()];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function reorder(array $arguments): array
+    {
+        $given = $arguments['ids'] ?? null;
+
+        if (! is_array($given) || $given === []) {
+            throw new ToolFailure('`ids` is the list of ids in their new order.');
+        }
+
+        $ids = array_values(array_map(fn (mixed $one): int => (int) $this->record($one)->getKey(), $given));
+
+        $work = function () use ($ids): array {
+            Ordering::move({{ Model }}::class, $ids);
+
+            return $this->list([]);
+        };
+
+        if (! $this->dryRun($arguments)) {
+            return $work();
+        }
+
+        return ['dry_run' => true, 'would_order' => $ids] + $this->rehearse($work);
+    }
+
+    /**
+     * What `values` may name: the fields of the screen — everything the save reads.
+     *
+     * @return list<string>
+     */
+    private function fields(): array
+    {
+        return array_values(array_unique(array_map(
+            static fn (array $node): string => (string) $node['name'],
+            $this->container->make(ScreenRegistry::class)->fields({{ Model }}::SCREEN),
+        )));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function summary({{ Model }} $record): array
+    {
+        return [
+            'id' => (int) $record->getKey(),
+            'title' => $record->getTranslations('title'),
+            'position' => (int) $record->position,
+            'updated_at' => $record->updated_at?->toAtomString(),
+        ];
+    }
+
+    private function record(mixed $id): {{ Model }}
+    {
+        if (! is_int($id) && ! (is_string($id) && ctype_digit($id))) {
+            throw new ToolFailure('A {{ model }} is named by its id, a number.');
+        }
+
+        $record = {{ Model }}::query()->find((int) $id);
+
+        return $record instanceof {{ Model }}
+            ? $record
+            : throw new ToolFailure("No {{ model }} has the id [{$id}]. {{ tool }}_list has them all.");
+    }
+
+    /**
+     * A translated field as the form takes it: a map of languages. A plain string is the default
+     * language — an agent's request has no language it chose.
+     *
+     * @return array<string, string>
+     */
+    private function text(mixed $value): array
+    {
+        if (is_string($value)) {
+            return trim($value) === ''
+                ? throw new ToolFailure('`title` cannot be empty.')
+                : [$this->locales()->defaultCode() => trim($value)];
+        }
+
+        if (! is_array($value) || $value === []) {
+            throw new ToolFailure('`title` is a string, or an object keyed by language code.');
+        }
+
+        $map = [];
+
+        foreach ($value as $locale => $text) {
+            if (! is_string($locale) || ! is_string($text)) {
+                throw new ToolFailure('`title` is an object of language code → text.');
+            }
+
+            $map[$locale] = $text;
+        }
+
+        return $map;
+    }
+
+    /**
+     * @template T
+     *
+     * @param  Closure(): T  $work
+     * @return T
+     */
+    private function rehearse(Closure $work): mixed
+    {
+        return Rehearsal::run($work, (new {{ Model }})->getConnectionName());
+    }
+
+    /**
+     * Run a change, and turn a refusal into something the agent can read.
+     *
+     * @param  callable(): array<string, mixed>  $work
+     * @return array<string, mixed>
+     */
+    private function attempt(callable $work): array
+    {
+        try {
+            return $work();
+        } catch (ValidationException $invalid) {
+            $lines = [];
+
+            foreach ($invalid->errors() as $field => $messages) {
+                $lines[] = $field.': '.implode(' ', (array) $messages);
+            }
+
+            throw new ToolFailure('Not accepted — '.implode('; ', $lines));
+        }
+    }
+
+    private function can(?Authenticatable $user): ?callable
+    {
+        return $user instanceof HasPermissions
+            ? static fn (string $permission): bool => $user->hasPermission($permission)
+            : null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     */
+    private function dryRun(array $arguments): bool
+    {
+        return (bool) ($arguments[Tool::DRY_RUN] ?? false);
+    }
+
+    private function form(): {{ Model }}Form
+    {
+        return $this->container->make({{ Model }}Form::class);
+    }
+
+    private function locales(): Locales
+    {
+        return $this->container->make(Locales::class);
+    }
+}

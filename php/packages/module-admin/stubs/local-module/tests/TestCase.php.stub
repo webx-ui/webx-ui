@@ -1,0 +1,73 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Site\{{ Studly }}\Tests;
+
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Site\{{ Studly }}\Models\{{ Model }};
+use Tests\TestCase as SiteTestCase;
+use WebxUi\Auth\Models\CmsUser;
+use WebxUi\Auth\Models\Role;
+use WebxUi\Localization\Locales;
+
+/**
+ * The module's tests run on the site itself, with every package it has (WEBX_UI_SITE_MODULES.md
+ * §10): `php artisan test` finds them through the `Modules` suite of phpunit.xml. Moved into a
+ * package, this is the one file written anew — on Testbench, naming the providers.
+ */
+abstract class TestCase extends SiteTestCase
+{
+    use RefreshDatabase;
+
+    /** The folder of the module: what its help and its translations are checked from. */
+    protected function module(): string
+    {
+        return dirname(__DIR__);
+    }
+
+    /** A {{ model }} with a title in the default language. */
+    protected function record(string $title): {{ Model }}
+    {
+        return {{ Model }}::query()->create(['title' => [$this->defaultLocale() => $title]])->refresh();
+    }
+
+    /**
+     * Somebody the panel lets in, with the permissions this test wants them to have.
+     *
+     * @param  list<string>  $permissions
+     */
+    protected function editor(array $permissions = ['{{ id }}.view', '{{ id }}.manage']): CmsUser
+    {
+        static $count = 0;
+        $count++;
+
+        $user = CmsUser::query()->create([
+            'name' => 'Editor',
+            'email' => "{{ id }}-editor-{$count}@example.test",
+            'password' => 'correct-horse-battery',
+            'is_super' => false,
+            'is_active' => true,
+        ]);
+
+        $role = Role::query()->create(['slug' => "{{ id }}-editor-{$count}", 'name' => 'Editor', 'permissions' => $permissions]);
+        $user->roles()->attach($role->getKey());
+
+        return $user;
+    }
+
+    protected function guard(): string
+    {
+        return (string) config('webx-auth.guard');
+    }
+
+    protected function api(string|int $path = ''): string
+    {
+        return rtrim('/'.trim((string) config('webx-admin.api_path'), '/').'/{{ id }}/'.$path, '/');
+    }
+
+    protected function defaultLocale(): string
+    {
+        return $this->app->make(Locales::class)->defaultCode();
+    }
+}

@@ -1,0 +1,33 @@
+import { reorderItems, type AdminContext } from '@webx-ui/module-admin'
+import type { {{ Model }}Detail, {{ Model }}Row, {{ Model }}Values } from './types'
+
+/** The path of the section under the panel's API. */
+export const {{ CONST }}_API = '{{ id }}'
+
+export interface {{ Studly }}Api {
+  list(search?: string): Promise<{{ Model }}Row[]>
+  get(id: number): Promise<{{ Model }}Detail>
+  /** A new record out of the values of its form: nothing is written before the first save. */
+  create(values: {{ Model }}Values): Promise<{{ Model }}Detail>
+  /** Refused with a 422 under the name of the field. */
+  save(id: number, values: {{ Model }}Values): Promise<{{ Model }}Detail>
+  remove(id: number): Promise<void>
+  reorder(ids: number[]): Promise<void>
+}
+
+export function create{{ Studly }}Api(admin: AdminContext): {{ Studly }}Api {
+  const base = `${admin.apiPath}/${{{ CONST }}_API}`
+  const data = <T>(body: { data: T }): T => body.data
+
+  return {
+    list: (search = '') =>
+      admin.http
+        .get<{ data: {{ Model }}Row[] }>(search === '' ? base : `${base}?${new URLSearchParams({ search })}`)
+        .then(data),
+    get: (id) => admin.http.get<{ data: {{ Model }}Detail }>(`${base}/${id}`).then(data),
+    create: (values) => admin.http.post<{ data: {{ Model }}Detail }>(base, { values }).then(data),
+    save: (id, values) => admin.http.put<{ data: {{ Model }}Detail }>(`${base}/${id}`, { values }).then(data),
+    remove: (id) => admin.http.delete<void>(`${base}/${id}`).then(() => undefined),
+    reorder: (ids) => reorderItems(admin, {{ CONST }}_API, ids, null),
+  }
+}

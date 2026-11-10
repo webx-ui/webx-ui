@@ -1,0 +1,75 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Site\{{ Studly }}\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
+use WebxUi\Admin\Screens\HasExtra;
+use WebxUi\Localization\HasTranslations;
+
+/**
+ * One {{ model }}: a title in every language of the site, and its place in the list.
+ *
+ * What else a {{ model }} is made of is the module's to add: a column here and in a migration,
+ * a field on `resources/screens/form.json`, a line of its help. A field only one site needs can
+ * also be a patch onto the screen, stored in `extra` without a column.
+ *
+ * @property int $id
+ * @property array<string, string>|string|null $title
+ * @property int $position
+ * @property array<string, mixed>|null $extra
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ */
+class {{ Model }} extends Model
+{
+    use HasExtra;
+    use HasTranslations;
+
+    /** The screen a {{ model }} is edited on, and the one a project patches its own fields onto. */
+    public const SCREEN = '{{ id }}.form';
+
+    protected $table = '{{ table }}';
+
+    /** @var list<string> */
+    protected $fillable = ['title', 'position'];
+
+    /** @var array<string, string> */
+    protected $casts = [
+        'position' => 'integer',
+    ];
+
+    protected static function booted(): void
+    {
+        static::creating(static function ({{ Model }} $record): void {
+            // At the end of the list: the only place a new row can go without moving one
+            // somebody else put where it is.
+            if (! array_key_exists('position', $record->getAttributes())) {
+                $record->position = (int) static::query()->max('position') + 1;
+            }
+        });
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function translatable(): array
+    {
+        return ['title'];
+    }
+
+    public function extraScreen(): string
+    {
+        return self::SCREEN;
+    }
+
+    /** The title in this language, in the default one where there is none, the number where there is neither. */
+    public function titleIn(string $locale): string
+    {
+        $title = $this->getTranslation('title', $locale);
+
+        return is_string($title) && trim($title) !== '' ? $title : '#'.$this->getKey();
+    }
+}

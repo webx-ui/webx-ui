@@ -1,0 +1,104 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Site\{{ Studly }}\Http\Controllers;
+
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
+use Site\{{ Studly }}\Http\Resources\{{ Model }}Resource;
+use Site\{{ Studly }}\Models\{{ Model }};
+use Site\{{ Studly }}\Panel\{{ Model }}Form;
+use Site\{{ Studly }}\Panel\{{ Model }}List;
+use WebxUi\Admin\Categories\Ordering;
+use WebxUi\Admin\Contracts\HasPermissions;
+use WebxUi\Admin\Http\ApiResponse;
+
+/**
+ * The section's list, one {{ model }} as its form opens it, and the order.
+ */
+final class {{ Model }}Controller
+{
+    public function __construct(
+        private readonly {{ Model }}List $list,
+        private readonly {{ Model }}Form $form,
+    ) {}
+
+    /** Everything at once, in its order: the list is where the order is dragged. */
+    public function index(Request $request): JsonResponse
+    {
+        return new JsonResponse([
+            'data' => $this->list->build((string) $request->query('search', ''))
+                ->get()
+                ->map(static fn ({{ Model }} $record): array => (new {{ Model }}Resource($record))->resolve($request))
+                ->values()
+                ->all(),
+        ]);
+    }
+
+    public function show({{ Model }} $record): JsonResponse
+    {
+        return ApiResponse::data($this->form->describe($record));
+    }
+
+    /**
+     * A new {{ model }}, from the values of the same screen that edits it: the list opens an empty
+     * form, and the first save is the one that creates the row.
+     */
+    public function store(Request $request): JsonResponse
+    {
+        $record = $this->form->save(new {{ Model }}, $this->values($request), $this->can($request));
+
+        return ApiResponse::data($this->form->describe($record), 201);
+    }
+
+    /** Save — 422 under the name of the field that refused. */
+    public function update(Request $request, {{ Model }} $record): JsonResponse
+    {
+        $record = $this->form->save($record, $this->values($request), $this->can($request));
+
+        return ApiResponse::data($this->form->describe($record));
+    }
+
+    public function destroy({{ Model }} $record): JsonResponse
+    {
+        $record->delete();
+
+        return ApiResponse::noContent();
+    }
+
+    /** The order on screen, as the drag left it: the rows named take their new places, the rest stay. */
+    public function reorder(Request $request): JsonResponse
+    {
+        $ids = $request->input('ids');
+
+        if (! is_array($ids) || $ids === [] || array_filter($ids, static fn (mixed $id): bool => ! is_numeric($id)) !== []) {
+            throw ValidationException::withMessages(['ids' => (string) __('webx-{{ id }}::errors.ids')]);
+        }
+
+        Ordering::move({{ Model }}::class, array_values(array_map(intval(...), $ids)));
+
+        return ApiResponse::noContent();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function values(Request $request): array
+    {
+        $values = $request->input('values');
+
+        return is_array($values) ? $values : [];
+    }
+
+    /**
+     * @return callable(string): bool
+     */
+    private function can(Request $request): callable
+    {
+        $user = $request->user();
+
+        return static fn (string $permission): bool => $user instanceof HasPermissions && $user->hasPermission($permission);
+    }
+}

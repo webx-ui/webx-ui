@@ -1,0 +1,58 @@
+# site/module-{{ id }}
+
+{{ Title }}: a section of this site's panel, kept in the site's repository in `modules/{{ id }}`
+and installed by Composer as a path package (a symlink in `vendor/site/module-{{ id }}`). It is
+built exactly like a packaged WebX UI module, so it can move into one by moving the folder and
+renaming three things: the vendor `site`, the namespace `Site\` and the npm scope `@site`.
+
+## What it owns
+
+- **Table** `{{ table }}` (`Site\{{ Studly }}\Models\{{ Model }}`). `title` is translatable;
+  `position` is the one order of the list; `extra` holds fields a patch adds to the form.
+- **Panel screen** `{{ id }}.form` (nodes `main`, `title`); help `{{ id }}.index`, `{{ id }}.form` in
+  `resources/help/<language>`.
+- **API** under `/api/cms/{{ id }}`: list, one record, create, save, delete, `reorder`.
+- **MCP** tools `{{ tool }}_list`, `{{ tool }}_get`, `{{ tool }}_create`, `{{ tool }}_update`,
+  `{{ tool }}_delete`, `{{ tool }}_reorder`; resource `{{ id }}://catalog`. Scopes `{{ id }}:read`,
+  `{{ id }}:write`.
+- **Words** under `webx-{{ id }}` (`lang/<language>`), English and the languages of the site's panel.
+- **Front end** `@site/module-{{ id }}` in `js/`: `{{ function }}()` with the list and the form,
+  built by the site's Vite from its sources — there is no `dist`.
+- Also registered: demo content (`resources/demo/{{ id }}.json`), the table for `webx:snapshot`,
+  the ready-made roles (`editor` writes, `seo` reads).
+
+### Permissions
+
+| Permission         | Opens                                                         |
+| ------------------ | ------------------------------------------------------------- |
+| `{{ id }}.view`   | the list and the form, read-only; `{{ tool }}_list`, `{{ tool }}_get` |
+| `{{ id }}.manage` | create, edit, reorder and delete; the `{{ id }}:write` tools   |
+
+## Change it
+
+| You want                         | Do this                                                                                  |
+| -------------------------------- | ---------------------------------------------------------------------------------------- |
+| A new field of a {{ model }}     | a column (migration + model), a node in `resources/screens/form.json`, its line of help in every language, the name in `OWN` of `{{ Model }}Form` |
+| A field only for this site       | a patch onto `{{ id }}.form`; it is saved in `extra` without a column                   |
+| Another word in the panel        | the same key in `lang/en` and every other language, and in `js/src/messages.ts`          |
+| A new dependency or provider     | edit `composer.json` here, then `composer update site/module-{{ id }}`                   |
+
+## Do not
+
+- Do not edit `vendor/site/module-{{ id }}`: it is a link to this folder. Edit here.
+- Do not give the module an id a packaged module has (`webx:modules`): two owners of one set of
+  tables and permissions. `webx:doctor` says so.
+- Do not add a route without `cms.can`, or a tool without a permission: `tests/AccessCoverageTest.php` fails.
+- Do not put `@webx-ui/*` or `vue` into `dependencies` of `js/package.json`: they come from the site.
+
+## Check your work
+
+- `php artisan test --testsuite=Modules` — access, help, translations, MCP dry runs, budgets, CRUD.
+- `npm run typecheck:modules` and `npm run test:modules`.
+- `php artisan webx:doctor`; open the section in the panel.
+- With MCP: read `{{ id }}://catalog` first; every tool that changes something takes `dry_run: true`.
+
+## Read more
+
+- [README.md](README.md) in this directory.
+- Guide: https://webx-ui.github.io/webx-ui/guide/site-modules

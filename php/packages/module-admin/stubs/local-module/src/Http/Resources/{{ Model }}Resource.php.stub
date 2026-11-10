@@ -1,0 +1,37 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Site\{{ Studly }}\Http\Resources;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+use Site\{{ Studly }}\Models\{{ Model }};
+use WebxUi\Localization\Locales;
+
+/**
+ * One {{ model }} as the panel knows it: a row of the list, and the record the form opens.
+ *
+ * The record is thin on purpose: the form is a described screen, so what its values are is
+ * decided by the description, not here.
+ *
+ * @mixin {{ Model }}
+ */
+final class {{ Model }}Resource extends JsonResource
+{
+    /**
+     * @return array<string, mixed>
+     */
+    public function toArray(?Request $request = null): array
+    {
+        /** @var {{ Model }} $record */
+        $record = $this->resource;
+
+        return [
+            'id' => (int) $record->getKey(),
+            'title' => $record->titleIn(app(Locales::class)->content()),
+            'position' => (int) $record->position,
+            'updated_at' => $record->updated_at?->toAtomString(),
+        ];
+    }
+}

@@ -1,0 +1,109 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Site\{{ Studly }}\Panel;
+
+use Site\{{ Studly }}\Demo\{{ Studly }}Demo;
+use Site\{{ Studly }}\Mcp\{{ Studly }}Resources;
+use Site\{{ Studly }}\Mcp\{{ Studly }}Tools;
+use WebxUi\Admin\AbstractModule;
+use WebxUi\Admin\Contracts\HasDefaultRoles;
+use WebxUi\Admin\Contracts\ProvidesDemo;
+use WebxUi\Admin\Demo\DemoLedger;
+use WebxUi\Mcp\Contracts\ProvidesMcpTools;
+use WebxUi\Mcp\McpResource;
+use WebxUi\Mcp\ProvidesMcpDefaults;
+use WebxUi\Mcp\Tool;
+
+/**
+ * {{ Title }} as a section of the panel.
+ *
+ * The panel's usual pair of permissions: `{{ id }}.view` opens the list, `{{ id }}.manage` writes —
+ * the order included. To an agent it is the same section by other doors: the tools behind
+ * `{{ id }}:read` and `{{ id }}:write`, and `{{ id }}://catalog` to read first.
+ */
+final class {{ Studly }}Module extends AbstractModule implements HasDefaultRoles, ProvidesDemo, ProvidesMcpTools
+{
+    use ProvidesMcpDefaults;
+
+    /** The id in the panel, the first segment of every permission, and the name of the tables. */
+    public const ID = '{{ id }}';
+
+    public function __construct(
+        private readonly {{ Studly }}Tools $tools,
+        private readonly {{ Studly }}Resources $resources,
+        private readonly {{ Studly }}Demo $demo,
+    ) {}
+
+    public function id(): string
+    {
+        return self::ID;
+    }
+
+    public function title(): string
+    {
+        return (string) __('webx-{{ id }}::module.title');
+    }
+
+    public function icon(): string
+    {
+        return 'list';
+    }
+
+    public function order(): int
+    {
+        return 900;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function permissions(): array
+    {
+        return ['{{ id }}.view', '{{ id }}.manage'];
+    }
+
+    /**
+     * The ready-made roles this section belongs in: the editor writes it, SEO reads it. Read by
+     * `webx:roles:defaults`, which `webx:module:add` and every `webx:boot` run.
+     *
+     * @return array<string, list<string>>
+     */
+    public function defaultRoles(): array
+    {
+        return [
+            'editor' => ['{{ id }}.view', '{{ id }}.manage'],
+            'seo' => ['{{ id }}.view'],
+        ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function requires(): array
+    {
+        return [];
+    }
+
+    public function seed(DemoLedger $ledger): void
+    {
+        $this->demo->seed($ledger);
+    }
+
+    /**
+     * @return list<Tool>
+     */
+    public function mcpTools(): array
+    {
+        return $this->tools->all();
+    }
+
+    /**
+     * @return list<McpResource>
+     */
+    public function mcpResources(): array
+    {
+        return $this->resources->all();
+    }
+}

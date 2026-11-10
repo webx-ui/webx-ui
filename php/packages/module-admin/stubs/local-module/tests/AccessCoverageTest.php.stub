@@ -1,0 +1,26 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Site\{{ Studly }}\Tests;
+
+use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Auth\Testing\AssertsPermissions;
+
+/**
+ * Nothing of {{ Title }} is open to an administrator who holds no permission, and every permission
+ * it asks for is one a module declares. A route open to every administrator on purpose is named
+ * in the second argument with the reason; anything else without `cms.can` fails here.
+ */
+final class AccessCoverageTest extends TestCase
+{
+    use AssertsPermissions;
+
+    #[Test]
+    public function every_route_and_tool_asks_for_a_declared_permission(): void
+    {
+        $this->assertPanelRoutesNeedPermission('Site\\{{ Studly }}\\');
+
+        $this->assertToolsNeedPermission('{{ id }}');
+    }
+}

@@ -1,0 +1,26 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Site\{{ Studly }}\Tests;
+
+use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Localization\Testing\AssertsTranslations;
+
+/**
+ * English and every language of the site's panel say the same things. A missing line falls back
+ * to English rather than to a key — the right behaviour, and the reason a gap goes unnoticed.
+ */
+final class TranslationsTest extends TestCase
+{
+    use AssertsTranslations;
+
+    #[Test]
+    public function every_language_has_the_keys_of_english(): void
+    {
+        /** @var list<string> $languages */
+        $languages = (array) config('webx-localization.panel', []);
+
+        $this->assertTranslationsMatch($this->module().'/lang', $languages);
+    }
+}

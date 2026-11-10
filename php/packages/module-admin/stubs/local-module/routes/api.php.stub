@@ -1,0 +1,27 @@
+<?php
+
+declare(strict_types=1);
+
+use Illuminate\Support\Facades\Route;
+use Site\{{ Studly }}\Http\Controllers\{{ Model }}Controller;
+
+/*
+ * The panel's door to the section: read with either permission, written with `{{ id }}.manage`.
+ * Every route here stands behind `cms.can` — tests/AccessCoverageTest.php fails on one that does not.
+ */
+Route::prefix((string) config('webx-admin.api_path'))
+    ->middleware('webx.panel')
+    ->name('webx.{{ id }}.panel.')
+    ->group(function (): void {
+        Route::middleware('cms.can:{{ id }}.view,{{ id }}.manage')->group(function (): void {
+            Route::get('{{ id }}', [{{ Model }}Controller::class, 'index'])->name('index');
+            Route::get('{{ id }}/{record}', [{{ Model }}Controller::class, 'show'])->whereNumber('record')->name('show');
+        });
+
+        Route::middleware('cms.can:{{ id }}.manage')->group(function (): void {
+            Route::post('{{ id }}', [{{ Model }}Controller::class, 'store'])->name('store');
+            Route::post('{{ id }}/reorder', [{{ Model }}Controller::class, 'reorder'])->name('reorder');
+            Route::put('{{ id }}/{record}', [{{ Model }}Controller::class, 'update'])->whereNumber('record')->name('update');
+            Route::delete('{{ id }}/{record}', [{{ Model }}Controller::class, 'destroy'])->whereNumber('record')->name('destroy');
+        });
+    });

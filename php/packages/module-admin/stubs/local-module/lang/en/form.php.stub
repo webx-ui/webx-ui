@@ -1,0 +1,8 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'title' => 'Title',
+    'title-help' => 'What the {{ model }} is called in the list and on the site.',
+];

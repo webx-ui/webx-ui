@@ -1,0 +1,12 @@
+FROM composer:2 AS vendor
+WORKDIR /app
+COPY . .
+RUN composer install --no-dev
+
+FROM node:22-alpine AS assets
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY vite.config.js ./
+COPY resources ./resources
+RUN npm run build

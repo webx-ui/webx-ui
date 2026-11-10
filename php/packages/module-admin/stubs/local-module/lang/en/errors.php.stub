@@ -1,0 +1,8 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'title-required' => 'A title in the default language is required.',
+    'ids' => 'The order has to be a list of ids.',
+];

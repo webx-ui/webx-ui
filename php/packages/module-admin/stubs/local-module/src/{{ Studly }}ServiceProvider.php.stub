@@ -1,0 +1,47 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Site\{{ Studly }};
+
+use Illuminate\Support\ServiceProvider;
+use Site\{{ Studly }}\Models\{{ Model }};
+use Site\{{ Studly }}\Panel\{{ Studly }}Module;
+use WebxUi\Admin\Help\HelpRegistry;
+use WebxUi\Admin\ModuleRegistry;
+use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Admin\Snapshots\SnapshotTables;
+
+/**
+ * Everything the module brings, registered the way a packaged module registers it: the section,
+ * its screen and help, its migrations, its words under `webx-{{ id }}` and the routes of the panel.
+ *
+ * Composer finds this provider through `extra.laravel.providers` of `modules/{{ id }}/composer.json`
+ * — a change there reaches the site only with `composer update site/module-{{ id }}`.
+ */
+class {{ Studly }}ServiceProvider extends ServiceProvider
+{
+    public function register(): void
+    {
+        $this->mergeConfigFrom(__DIR__.'/../config/webx-{{ id }}.php', 'webx-{{ id }}');
+
+        // What moves between stands with webx:snapshot, and what stays where it is.
+        $this->callAfterResolving(SnapshotTables::class, static function (SnapshotTables $tables): void {
+            $tables->content('{{ table }}');
+        });
+    }
+
+    public function boot(): void
+    {
+        $this->app->make(HelpRegistry::class)->directory(__DIR__.'/../resources/help');
+
+        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+        // `webx-` and not a name of the site's own: the panel's dictionary is gathered from the
+        // namespaces with that prefix, and the name stays the same if the module becomes a package.
+        $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-{{ id }}');
+        $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
+
+        $this->app->make(ScreenRegistry::class)->register({{ Model }}::SCREEN, __DIR__.'/../resources/screens/form.json');
+        $this->app->make(ModuleRegistry::class)->register($this->app->make({{ Studly }}Module::class));
+    }
+}

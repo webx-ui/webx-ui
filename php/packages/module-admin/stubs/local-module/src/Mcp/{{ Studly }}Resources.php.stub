@@ -1,0 +1,67 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Site\{{ Studly }}\Mcp;
+
+use Illuminate\Contracts\Config\Repository as Config;
+use Site\{{ Studly }}\Models\{{ Model }};
+use WebxUi\Localization\Locales;
+use WebxUi\Mcp\McpResource;
+
+/**
+ * What an agent reads before it writes a {{ model }}: the whole list in one message, in its order,
+ * one title per row in the language the agent works in. `{{ tool }}_get` has every language of the
+ * one it picks.
+ */
+final class {{ Studly }}Resources
+{
+    public function __construct(
+        private readonly Locales $locales,
+        private readonly Config $config,
+    ) {}
+
+    /**
+     * @return list<McpResource>
+     */
+    public function all(): array
+    {
+        return [
+            new McpResource(
+                '{{ id }}://catalog',
+                '{{ Title }} catalog',
+                'Every {{ model }} in the order of the list, with its id and title. Read it before adding one, so that '
+                .'you reuse rather than duplicate.',
+                fn (): array => $this->catalog(),
+            ),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function catalog(): array
+    {
+        $locale = $this->locales->content();
+        $limit = max(1, (int) $this->config->get('webx-{{ id }}.catalog_limit', 500));
+        $total = {{ Model }}::query()->count();
+
+        return [
+            'locales' => $this->locales->codes(),
+            'default_locale' => $this->locales->defaultCode(),
+            'total' => $total,
+            'more' => max(0, $total - $limit),
+            '{{ tool }}' => {{ Model }}::query()
+                ->orderBy('position')
+                ->orderBy('id')
+                ->limit($limit)
+                ->get()
+                ->map(static fn ({{ Model }} $record): array => [
+                    'id' => (int) $record->getKey(),
+                    'title' => $record->titleIn($locale),
+                ])
+                ->values()
+                ->all(),
+        ];
+    }
+}

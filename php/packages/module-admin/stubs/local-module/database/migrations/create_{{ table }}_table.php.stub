@@ -1,0 +1,40 @@
+<?php
+
+declare(strict_types=1);
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+/**
+ * One {{ model }}: a title in every language of the site, and its place in the one order of the
+ * list. The table is named by the module's id, as every section's is, so the name stays the same
+ * if the module ever moves into a package.
+ */
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('{{ table }}', function (Blueprint $table): void {
+            $table->id();
+
+            // Translatable: { "en": "…", "ru": "…" }.
+            $table->json('title');
+
+            // The order of the list, dragged in the panel and set by {{ tool }}_reorder.
+            $table->integer('position')->default(0);
+
+            // The fields a project patched onto the form (`HasExtra`).
+            $table->json('extra')->nullable();
+
+            $table->timestamps();
+
+            $table->index('position');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('{{ table }}');
+    }
+};
