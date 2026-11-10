@@ -90,8 +90,25 @@ describe('WxDescriptions', () => {
 
   it('takes a border and a label width', () => {
     const wrapper = mountList({ bordered: true, labelWidth: '140px' })
+    const style = (wrapper.element as HTMLElement).style
 
     expect(wrapper.classes()).toContain('wx-descriptions--bordered')
-    expect(wrapper.attributes('style')).toContain('--wx-descriptions-label: 140px')
+    // The width given wins over the cap, folded or not.
+    expect(style.getPropertyValue('--wx-descriptions-label')).toBe('140px')
+    expect(style.getPropertyValue('--wx-descriptions-label-folded')).toBe('140px')
+  })
+
+  it('caps a label at half its column by default, so a long one wraps', () => {
+    const style = (mountList({ columns: 2 }).element as HTMLElement).style
+
+    // A share of the column, not of the list: two label tracks at half the list each would
+    // leave the values nothing. Short labels stay at their content width — fit-content, not minmax.
+    expect(style.getPropertyValue('--wx-descriptions-label')).toBe('fit-content(calc(50% / 2))')
+    expect(style.getPropertyValue('--wx-descriptions-label-folded')).toBe('fit-content(50%)')
+    expect(
+      (mountList({ columns: 1 }).element as HTMLElement).style.getPropertyValue(
+        '--wx-descriptions-label',
+      ),
+    ).toBe('fit-content(calc(50% / 1))')
   })
 })

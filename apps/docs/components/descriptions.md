@@ -53,6 +53,18 @@ one there is, taking the placement of everything after it along.
 border colour — exact at any number of columns and under any span, where a border per cell doubles
 up along every shared edge.
 
+## Long labels
+
+A label sizes to its content, up to **half its column**; past that it wraps. Labels are often
+somebody's sentence — the name a form field was given, a product property — and sized to content
+alone one of them would take the whole of a narrow card and leave its value a track of nothing. The
+cap is `fit-content()`, not `minmax()`: short labels keep their own width, so a record of
+`Customer` and `Email` looks the same as ever. A word too long for the cap breaks rather than
+widening the column again.
+
+`labelWidth` replaces the cap with a width of your own — a length (`160px`) or any track size
+(`fit-content(30%)`). It applies folded and unfolded alike.
+
 ## Labels above their values
 
 `layout="vertical"` stacks each label over its value, which suits short figures in many columns —
@@ -70,7 +82,7 @@ lines of its own — who a letter went to — is still one pair: its rows go in 
 | `bordered`   | `boolean`                    | `false`        | Rules around every cell          |
 | `size`       | `'sm' \| 'md' \| 'lg'`       | `'md'`         | Spacing and cell padding         |
 | `layout`     | `'horizontal' \| 'vertical'` | `'horizontal'` | Label beside its value, or above |
-| `labelWidth` | `string`                     | —              | Width of the label column        |
+| `labelWidth` | `string`                     | half a column  | Width of the label column        |
 
 **Slots:** `title`; `extra` — beside the heading; `default` — the pairs.
 
