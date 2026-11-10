@@ -60,6 +60,12 @@ final class PerformanceTest extends PanelTestCase
             $orders->note($long, "Moved to {$name}", 'panel');
         }
 
+        // A short history is one note: the authors of the notes are one query whatever their number.
+        $orders->note($short, 'Called the buyer', 'panel');
+        // The sign-in and the definitions of the extra fields (their cache group, WEBX_UI_ORDER_FIELDS.md
+        // §2.1) are read once, not once an order: warm, as a working panel has them.
+        $this->getJson($this->api($short->id))->assertOk();
+
         $counts = array_map(
             fn ($order): int => $this->recordQueries(fn () => $this->getJson($this->api($order->id))->assertOk())->count(),
             [$short, $long],
