@@ -194,6 +194,62 @@ final readonly class CheckoutFields
     }
 
     /**
+     * How many fields each place of a step may ask now, the ones behind a checkbox counted —
+     * `orders_checkout_steps` (§8.3).
+     *
+     * @return array<string, int> by the key of the place, in the order registered
+     */
+    public function counts(string $step): array
+    {
+        $all = $this->fields->all();
+        $counts = [];
+
+        foreach ($this->places->of($step) as $place) {
+            $counts[$place->key] = 0;
+
+            foreach ($this->groups($place->key, $all) as [, $dependents]) {
+                $counts[$place->key] += 1 + count($dependents);
+            }
+        }
+
+        return $counts;
+    }
+
+    /**
+     * The fields of a step's places for a cart without what was answered (§8.3): a draft is a
+     * person who has not ordered yet, so `orders_checkout_preview` says whether a field is shown and
+     * filled — never its value.
+     *
+     * @return list<array{key: string, place: string, required: bool, shown: bool, filled: bool}>
+     */
+    public function states(Step $step, CheckoutContext $context): array
+    {
+        $all = $this->fields->all();
+        $answers = $this->values($context);
+        $filled = fn (OrderField $field): bool => $this->answers->answer($field, $answers[$field->key] ?? null)[0] !== null;
+        $states = [];
+
+        foreach ($this->places->of($step->key()) as $place) {
+            foreach ($this->groups($place->key, $all) as [$field, $dependents]) {
+                $ticked = $this->answers->answer($field, $answers[$field->key] ?? null)[0] === true;
+
+                foreach ([$field, ...$dependents] as $one) {
+                    $shown = $one === $field || $ticked;
+                    $states[] = [
+                        'key' => $one->key,
+                        'place' => $place->key,
+                        'required' => $one->required,
+                        'shown' => $shown,
+                        'filled' => $shown && $filled($one),
+                    ];
+                }
+            }
+        }
+
+        return $states;
+    }
+
+    /**
      * The fields of a place as `checkout.parts.fields` prints them (§4.5): each field shown always,
      * a checkbox with the fields behind it as a group.
      *

@@ -16,6 +16,7 @@ use WebxUi\Mcp\McpResource;
 use WebxUi\Mcp\Tool;
 use WebxUi\Orders\Checkout\CheckoutAnswers;
 use WebxUi\Orders\Checkout\CheckoutContexts;
+use WebxUi\Orders\Checkout\CheckoutFields;
 use WebxUi\Orders\Checkout\CheckoutPreview;
 use WebxUi\Orders\Checkout\CheckoutSettings;
 use WebxUi\Orders\Checkout\ContactMask;
@@ -28,6 +29,7 @@ use WebxUi\Orders\Checkout\Models\CheckoutDraft;
 use WebxUi\Orders\Checkout\Slots\CheckoutSlots;
 use WebxUi\Orders\Checkout\Slots\SlotStep;
 use WebxUi\Orders\Checkout\Steps\CheckoutSteps;
+use WebxUi\Orders\Checkout\Steps\CommentStep;
 use WebxUi\Orders\Checkout\Steps\NamesErrors;
 use WebxUi\Orders\Checkout\Steps\Step;
 use WebxUi\Orders\Checkout\Summary\CheckoutSummaryParts;
@@ -69,6 +71,8 @@ final readonly class CheckoutTools
         private Money $money,
         private FieldTools $fields,
         private FieldPlaces $places,
+        private CheckoutFields $answers,
+        private CheckoutSettings $checkout,
     ) {}
 
     /**
@@ -82,8 +86,9 @@ final readonly class CheckoutTools
             Tool::read(
                 'checkout_steps',
                 'The steps of the checkout page in their order: key, title, position, a step of the checkout or a slot of '
-                .'another module, the class that owns it. With `cart_id` — whether each is shown for that cart, and why '
-                .'not («no shippable lines»). The confirmation is always last and is not a step.',
+                .'another module, the class that owns it, the places of the extra fields in its form with how many fields '
+                .'each may ask (`field_places`). With `cart_id` — whether each is shown for that cart, and why not («no '
+                .'shippable lines»). The confirmation is always last and is not a step.',
                 fn (array $arguments): array => $this->stepsOf($arguments),
                 ['properties' => ['cart_id' => $cart]],
                 permission: OrdersModule::VIEW,
@@ -95,7 +100,9 @@ final readonly class CheckoutTools
                 .'confirmation checks it, and what the page would answer — `outcome` order (with the amount; `decrease` when '
                 .'it comes to less than shown and is placed at once), invalid (the errors by field, a 422 of the page), '
                 .'conflict (the `code` of the 409: a line cannot be bought, the amount went up) or empty. The antispam, '
-                .'the key of a repeat and the box of the terms are the buyer\'s request and are left out. Writes nothing.',
+                .'the key of a repeat and the box of the terms are the buyer\'s request and are left out. `fields` — each '
+                .'extra field of the steps shown: its place, whether it is required, shown (behind a checkbox — while it is '
+                .'ticked) and filled; the answers themselves are the buyer\'s and are not given. Writes nothing.',
                 fn (array $arguments): array => $this->preview->of($this->cart($arguments['cart_id'] ?? null)),
                 ['properties' => ['cart_id' => $cart], 'required' => ['cart_id']],
                 permission: OrdersModule::VIEW,
@@ -223,11 +230,12 @@ final readonly class CheckoutTools
 
     /**
      * @param  array<string, int>  $positions
-     * @return array{key: string, title: string, position: int|null, kind: string, owner: class-string}
+     * @return array<string, mixed>
      */
     private function step(Step $step, array $positions): array
     {
         $slot = $step instanceof SlotStep ? $step->slot() : null;
+        $counts = $this->answers->counts($step->key());
 
         return [
             'key' => $step->key(),
@@ -235,6 +243,11 @@ final readonly class CheckoutTools
             'position' => $positions[$step->key()] ?? null,
             'kind' => $slot !== null ? 'slot' : 'step',
             'owner' => $slot !== null ? $slot::class : $step::class,
+            // The places of the extra fields in its form and how many fields each may ask now (§8.3).
+            'field_places' => array_map(static fn (string $place, int $fields): array => ['key' => $place, 'fields' => $fields], array_keys($counts), $counts),
+            'note' => $step->key() === CommentStep::KEY && ! $this->checkout->comment() && array_sum($counts) > 0
+                ? 'shown for its extra fields alone: the comment is switched off in the settings'
+                : null,
         ];
     }
 
@@ -243,6 +256,7 @@ final readonly class CheckoutTools
         return match ($step->key()) {
             CheckoutSlots::DELIVERY => 'no shippable lines in the cart',
             CheckoutSlots::PAYMENT => 'nothing to pay, or no method of payment for this cart',
+            CommentStep::KEY => 'the comment is switched off in the settings and no extra field is asked in its places',
             default => 'the step does not apply to this cart',
         };
     }

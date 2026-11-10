@@ -23,7 +23,8 @@ use WebxUi\Orders\Orders;
  *    smaller amount, as the page places it (§24.4). No page shown yet — the amount it would show.
  *
  * The antispam, the key of a repeat and the ticked box of the terms are the request's, not the
- * cart's: the answer says when the box is asked for and leaves them out.
+ * cart's: the answer says when the box is asked for and leaves them out. The extra fields come as
+ * `fields` — shown and filled, never the answers (WEBX_UI_ORDER_FIELDS.md §8.3).
  */
 final readonly class CheckoutPreview
 {
@@ -59,6 +60,7 @@ final readonly class CheckoutPreview
             'locale' => $context->locale,
             'totals' => $state->toArray(),
             'steps' => [],
+            'fields' => [],
             'outcome' => self::ORDER,
             'code' => null,
             'message' => null,
@@ -82,6 +84,8 @@ final readonly class CheckoutPreview
                 'summary' => $step->summary($context),
                 'errors' => array_map(static fn ($error): array => $error->toArray(), $errors),
             ];
+
+            array_push($answer['fields'], ...$this->fields->states($step, $context));
 
             foreach ($errors as $error) {
                 $answer['errors'][$error->field ?? $step->key()][] = $error->message;
