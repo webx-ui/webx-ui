@@ -7,9 +7,11 @@ namespace WebxUi\Auth\Tests;
 use Illuminate\Database\Migrations\Migration;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\AbstractModule;
+use WebxUi\Admin\Contracts\HasDefaultRoles;
 use WebxUi\Admin\Doctor\Diagnosis;
 use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Admin\ModuleRegistry;
+use WebxUi\Auth\Access\DefaultRoles;
 use WebxUi\Auth\Doctor\DefaultRolesOwed;
 use WebxUi\Auth\Models\Role;
 
@@ -238,6 +240,101 @@ final class DefaultRolesTest extends TestCase
         $this->assertSame(Diagnosis::OK, $afterDelete[0]->state);
     }
 
+    // -- Named by the module ---------------------------------------------------------------------
+
+    #[Test]
+    public function a_module_that_names_its_permissions_is_in_the_roles_it_names(): void
+    {
+        $this->install('pages', ['pages.view', 'pages.manage']);
+        $this->contribute('offices', ['offices.view', 'offices.manage'], [
+            'editor' => ['offices.view', 'offices.manage'],
+            'seo' => ['offices.view'],
+            'developer' => ['offices.manage'],
+        ]);
+
+        $this->artisan('webx:roles:defaults')->assertSuccessful();
+
+        $roles = Role::query()->pluck('permissions', 'slug');
+
+        $this->assertSame(['pages.view', 'pages.manage', 'offices.view', 'offices.manage'], $roles['editor']);
+        $this->assertSame(['pages.view', 'offices.view'], $roles['seo']);
+        $this->assertSame(['cache.view', 'cache.reset', 'offices.manage'], $roles['developer']);
+        $this->assertSame(['cache.view', 'offices.view', 'pages.view'], $roles['viewer']);
+    }
+
+    #[Test]
+    public function a_module_that_names_its_permissions_is_topped_up_and_what_was_taken_stays_away(): void
+    {
+        $this->install('pages', ['pages.view', 'pages.manage']);
+        $this->artisan('webx:roles:defaults')->assertSuccessful();
+
+        $this->contribute('offices', ['offices.view', 'offices.manage'], ['editor' => ['offices.view', 'offices.manage']]);
+
+        $this->artisan('webx:roles:defaults', ['--top-up' => true])
+            ->expectsOutputToContain('offices.view, offices.manage')
+            ->assertSuccessful();
+
+        $editor = Role::query()->where('slug', 'editor')->firstOrFail();
+        $this->assertSame(['pages.view', 'pages.manage', 'offices.view', 'offices.manage'], $editor->permissions);
+
+        $editor->permissions = ['pages.view', 'pages.manage', 'offices.view'];
+        $editor->save();
+
+        $this->artisan('webx:roles:defaults', ['--top-up' => true])->assertSuccessful();
+        $this->artisan('webx:roles:defaults')->assertSuccessful();
+
+        $this->assertSame(['pages.view', 'pages.manage', 'offices.view'], $editor->refresh()->permissions);
+    }
+
+    #[Test]
+    public function a_module_names_only_its_own_permissions_and_only_in_the_three_roles(): void
+    {
+        $this->install('pages', ['pages.view', 'pages.manage']);
+        $this->install('inbox', ['inbox.view', 'inbox.update']);
+        $this->install('tasks', ['tasks.view', 'tasks.manage']);
+        $before = $this->app->make(DefaultRoles::class)->definitions();
+
+        // Somebody else's permission, a role it may not name, a role that is not there, and a
+        // key to the panel declared as its own: none of them gets in.
+        $this->contribute('offices', ['offices.view', 'offices.manage', 'debug.view'], [
+            'editor' => ['offices.manage', 'pages.view', 'inbox.update', 'debug.view'],
+            'leads' => ['offices.view'],
+            'owner' => ['offices.manage'],
+        ]);
+
+        $after = $this->app->make(DefaultRoles::class)->definitions();
+
+        $this->assertSame([...$before['editor'], 'offices.manage', 'debug.view'], $after['editor']);
+        $this->assertSame($before['leads'], $after['leads']);
+        $this->assertArrayNotHasKey('owner', $after);
+
+        $this->artisan('webx:roles:defaults')->assertSuccessful();
+
+        $this->assertSame(['pages.view', 'pages.manage', 'offices.manage'], Role::query()->where('slug', 'editor')->firstOrFail()->permissions);
+        $this->assertSame(['inbox.view', 'inbox.update'], Role::query()->where('slug', 'leads')->firstOrFail()->permissions);
+    }
+
+    #[Test]
+    public function the_roles_of_the_modules_on_the_list_are_what_they_were(): void
+    {
+        $this->install('pages', ['pages.view', 'pages.manage']);
+        $this->install('faq', ['faq.view', 'faq.manage', 'faq.categories.manage']);
+        $this->install('seo', ['seo.view', 'seo.manage']);
+        $before = $this->app->make(DefaultRoles::class)->definitions();
+
+        // A module that names nothing, or names an empty list, changes nothing.
+        $this->contribute('offices', ['offices.view'], []);
+        $this->install('notes', ['notes.view']);
+
+        $after = $this->app->make(DefaultRoles::class)->definitions();
+
+        foreach (['editor', 'seo', 'leads', 'catalog', 'developer'] as $slug) {
+            $this->assertSame($before[$slug], $after[$slug], $slug);
+        }
+
+        $this->assertEqualsCanonicalizing([...$before['viewer'], 'offices.view', 'notes.view'], $after['viewer']);
+    }
+
     private function state(DefaultRolesOwed $check): string
     {
         return $check->run()[0]->state;
@@ -266,6 +363,43 @@ final class DefaultRolesTest extends TestCase
             public function permissions(): array
             {
                 return $this->declared;
+            }
+        });
+    }
+
+    /**
+     * @param  list<string>  $permissions
+     * @param  array<string, list<string>>  $roles
+     */
+    private function contribute(string $id, array $permissions, array $roles): void
+    {
+        $this->app->make(ModuleRegistry::class)->register(new class($id, $permissions, $roles) extends AbstractModule implements HasDefaultRoles
+        {
+            /**
+             * @param  list<string>  $declared
+             * @param  array<string, list<string>>  $roles
+             */
+            public function __construct(private readonly string $key, private readonly array $declared, private readonly array $roles) {}
+
+            public function id(): string
+            {
+                return $this->key;
+            }
+
+            /**
+             * @return list<string>
+             */
+            public function permissions(): array
+            {
+                return $this->declared;
+            }
+
+            /**
+             * @return array<string, list<string>>
+             */
+            public function defaultRoles(): array
+            {
+                return $this->roles;
             }
         });
     }

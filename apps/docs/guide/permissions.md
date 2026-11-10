@@ -80,6 +80,29 @@ final class FaqModule extends AbstractModule
   action word is translated once for everybody, so `view`, `manage`, `delete` need nothing. A new
   action word gets its line there, in all ten languages.
 
+### In the ready-made roles
+
+The ready-made roles (`editor`, `seo`, `developer`, …) are a list in `module-auth`, and a module
+that list does not know — a site's own module, say — reaches only `viewer`, by its `.view`
+permissions. To be in the others, the module names its permissions there by implementing
+`WebxUi\Admin\Contracts\HasDefaultRoles`:
+
+```php
+public function defaultRoles(): array
+{
+    return [
+        'editor' => ['offices.view', 'offices.manage'],
+        'seo' => ['offices.view'],
+    ];
+}
+```
+
+- Only `editor`, `seo` and `developer`, only the module's own `permissions()`, never `admins.*`,
+  `roles.*`, `tasks.*` or `debug.*`; anything else is ignored.
+- What it names is part of the role's definition: in the role when it is created, topped up into a
+  role made before the module by `webx:roles:defaults --top-up` (every deploy and
+  `webx:module:add` run it), and never brought back once the owner took it away.
+
 ## Checking them
 
 ### Panel routes

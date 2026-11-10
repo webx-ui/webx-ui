@@ -80,7 +80,7 @@ same address, are kept; a file that is not JSON is left alone with a warning (`A
 
 Everything else here is open to every signed-in administrator and asks inside: the manifest (a
 section shows to whoever holds one of its `permissions()`, or of `visibleWith()` with
-`HasVisibility`; with neither — to everybody), screens (nodes behind a permission are cut out),
+`HasVisibility`; with neither — to everybody; `HasDefaultRoles` — its permissions in the ready-made roles), screens (nodes behind a permission are cut out),
 links, collections, relations, notes, history (`history_get`, `history_runs`), editing, uploads —
 each by the permission its registered source, type, record or upload purpose names. Help (`help/{key}`) cuts out the fields behind a permission; `help_list`, `help_get` ask any permission a module declares. A route or
 screen node the site adds next to the module asks for its own module's: `cms.can:<id>.view,<id>.manage`

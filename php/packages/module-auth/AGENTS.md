@@ -26,6 +26,8 @@ registered in `webx-ui/module-admin` — read their guides for those.
   `webx:module:add` and the update migration: only what the role was never offered
   (`cms_roles.offered`), so what the owner took away stays away; a role with `offered` null is
   the site's own and never touched. Deploys only top up — a deleted ready-made role stays deleted.
+  A module off the hard list names its own permissions in `editor` / `seo` / `developer` with
+  `WebxUi\Admin\Contracts\HasDefaultRoles`; anything else it names is dropped.
 - **MCP** tools `admins_list_admins`, `admins_list_roles` (with holders),
   `admins_list_permissions`, `admins_create_role` and `admins_update_role` (same rules as the
   screen), `admins_sync_default_roles` (the command below, `create`/`dry_run`), `admins_grant_role`, `admins_revoke_role`, `admins_recent_sign_ins`, `admins_failed_sign_in_bursts`. Scopes `admins:read`,
