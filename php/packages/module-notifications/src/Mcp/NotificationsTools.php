@@ -73,7 +73,7 @@ final class NotificationsTools
             'recipients' => ['type' => 'array', 'items' => ['type' => ['object', 'string']], 'description' => 'Who gets it, in the provider\'s shape (notifications://providers): Telegram [{"chat_id": "-100…", "label": "Managers"}], e-mail [{"email": "…"}, {"admin_id": 3}]. An addressee of the event: {"variable": "reply_to"}.'],
             'subject' => ['description' => 'E-mail only: the subject, one line, with {{variables}}. A text for the site\'s main language, or {"en": "…", "ru": "…"}.'] + $texts,
             'template' => ['description' => 'The message, Mustache: {{name}}, {{#list}}…{{/list}}, {{#name}}…{{/name}}, {{^name}}…{{/name}}; no partials, no delimiter changes. A text for the site\'s main language, or {"en": "…", "ru": "…"}. A letter\'s template that starts with a tag is HTML (notifications://providers lists its tags). Left out on create — the event\'s default template.'] + $texts,
-            'default_template' => ['type' => 'boolean', 'description' => 'Put the event\'s default template for this provider (notifications_default_template shows it) in place of subject and template, in every language it has. A new channel of an event without a template gets it anyway.'],
+            'default_template' => ['type' => 'boolean', 'description' => 'Put the event\'s default template for this provider (notifications_default_template shows it) in place of subject and template, in every language it has — the one for the channel\'s addressee when its recipients name one the event has a template for ({"variable": "customer_email"} gets the buyer\'s letter), else the event\'s. A new channel of an event without a template gets it anyway.'],
             'enabled' => ['type' => 'boolean', 'description' => 'Sends at once. False when omitted — pass true only when a person asked for that.'],
         ];
 
@@ -147,12 +147,14 @@ final class NotificationsTools
                 'default_template',
                 'The default template an event declares for a provider — the subject and the message in every language '
                 .'of the site that the event has words in (the main language always) — and the message it makes on the '
-                .'example values. A new channel of the event starts with it; default_template: true on '
-                .'notifications_channel_update puts it back on a channel.',
+                .'example values. An event may have one for an addressee of its own (the buyer of an order): pass '
+                .'addressee for the template a channel to them gets. A new channel of the event starts with it; '
+                .'default_template: true on notifications_channel_update puts it back on a channel.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->defaultTemplate($arguments)),
                 ['properties' => [
                     'event' => ['type' => 'string', 'description' => 'The key of a declared event (notifications://events).'],
                     'provider' => ['type' => 'string', 'description' => 'telegram, email, or another of notifications://providers.'],
+                    'addressee' => ['type' => 'string', 'description' => 'An addressee variable of the event (notifications://events: address), as a channel to it names it in recipients: customer_email. The template of a channel to fixed addresses (the shop) when omitted.'],
                     'locale' => ['type' => 'string', 'description' => 'The language of the rendered example; the site\'s main language when omitted.'],
                 ], 'required' => ['event', 'provider']],
                 permission: [NotificationsModule::VIEW, NotificationsModule::MANAGE],
@@ -394,7 +396,7 @@ final class NotificationsTools
     private function preview(array $arguments): array
     {
         $saved = isset($arguments['channel']) ? $this->channel($arguments['channel']) : null;
-        $given = array_intersect_key($arguments, array_flip(['provider', 'event', 'subject', 'template', 'default_template']));
+        $given = array_intersect_key($arguments, array_flip(['provider', 'event', 'recipients', 'subject', 'template', 'default_template']));
 
         if ($saved === null) {
             $this->provider(is_string($given['provider'] ?? null) ? $given['provider'] : '');
@@ -436,18 +438,30 @@ final class NotificationsTools
         $provider = $this->provider(is_string($arguments['provider'] ?? null) ? $arguments['provider'] : '');
         $event = $this->event($arguments['event'] ?? null)
             ?? throw new ToolFailure('`event` cannot be empty: a default template is an event\'s — notifications://events.');
-        $sample = $this->form()->sample($event, $provider->key())
+        $addressee = is_string($arguments['addressee'] ?? null) && $arguments['addressee'] !== '' ? $arguments['addressee'] : null;
+        $addressees = array_map(static fn ($variable): string => $variable->name, $event->addressees($provider->address()));
+
+        if ($addressee !== null && ! in_array($addressee, $addressees, true)) {
+            throw new ToolFailure("[{$addressee}] is not an addressee of [{$event->key}] for [{$provider->key()}]: "
+                .($addressees === [] ? 'it has none.' : implode(', ', $addressees).'.'));
+        }
+
+        $recipients = $addressee === null ? [] : [['variable' => $addressee]];
+        $sample = $this->form()->sample($event, $provider->key(), $recipients)
             ?? throw new ToolFailure("Event [{$event->key}] has no default template for [{$provider->key()}]: write one, notifications://events has its variables.");
 
         return [
             'event' => $event->key,
             'provider' => $provider->key(),
+            'addressee' => $addressee,
+            'own' => $event->addresseeOf($recipients, $provider->key()) !== null,
             'subject' => $sample['subject'],
             'template' => $sample['template'],
             'html' => $provider instanceof WritesHtml && $provider->isHtml((string) reset($sample['template'])),
             'preview' => $this->preview([
                 'provider' => $provider->key(),
                 'event' => $event->key,
+                'recipients' => $recipients,
                 'locale' => $arguments['locale'] ?? null,
                 'default_template' => true,
             ]),

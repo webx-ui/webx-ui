@@ -209,6 +209,12 @@ final class OrderTemplates
      * The words of a letter: an event in the audience its default is for, and the one more the
      * set a site starts with has — «Order accepted» to the buyer on `orders.placed` (decision 81).
      */
+    /** Whether the event has a letter for this audience at all, in some language. */
+    public static function hasLetter(string $event, string $audience): bool
+    {
+        return self::letter($event, $audience) !== null;
+    }
+
     private static function letter(string $event, string $audience): ?string
     {
         $short = substr($event, strlen('orders.'));

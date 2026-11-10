@@ -31,6 +31,14 @@ use WebxUi\Templates\Variables;
  * template somebody edits (decision 1). A sample is one text for every language, or a function of
  * the language that answers null for a language it has no words in. `url` turns the values of a
  * delivery into the address of what it was about, for the log.
+ *
+ * `addressed` is the default template of a channel that writes to an addressee (§5.1): by the
+ * name of an addressee variable, then by provider key as `sample` is. A channel whose recipients
+ * name that variable starts with it; any other channel — and an addressee with no words of its
+ * own for the provider — with `sample`:
+ *
+ *     sample: ['email' => fn (string $locale) => ShopLetters::placed($locale)],
+ *     addressed: ['customer_email' => ['email' => fn (string $locale) => BuyerLetters::placed($locale)]],
  */
 final readonly class EventDefinition
 {
@@ -38,6 +46,7 @@ final readonly class EventDefinition
      * @param  list<Variable>  $variables
      * @param  array<string, array{subject?: string|null, template: string}|(Closure(string): (array{subject?: string|null, template: string}|null))>  $sample
      * @param  (Closure(array<string, string|list<array<string, string>>>): ?string)|null  $url
+     * @param  array<string, array<string, array{subject?: string|null, template: string}|(Closure(string): (array{subject?: string|null, template: string}|null))>>  $addressed
      */
     public function __construct(
         public string $key,
@@ -46,6 +55,7 @@ final readonly class EventDefinition
         public array $variables = [],
         public array $sample = [],
         public ?Closure $url = null,
+        public array $addressed = [],
     ) {
         if (preg_match('/^[a-z0-9_]+(\.[a-z0-9_]+)+$/', $key) !== 1 || strlen($key) > 64) {
             throw new InvalidArgumentException("[{$key}] is not an event key: <module>.<what>, lowercase letters, digits, _ and dots, 64 at most.");
@@ -92,21 +102,46 @@ final readonly class EventDefinition
         return (new Variables($this->variables))->examples();
     }
 
-    /** Whether a channel of this provider has a default template to start with. */
-    public function hasSample(string $provider): bool
+    /**
+     * Whom a channel with these recipients writes to, as far as the default template goes: the
+     * first addressee variable among them that the event has a template of its own for, with this
+     * provider — null for a channel to fixed addresses, which takes `sample`.
+     *
+     * @param  mixed  $recipients  the channel's, as it keeps or receives them
+     */
+    public function addresseeOf(mixed $recipients, string $provider): ?string
     {
-        return isset($this->sample[$provider]) || isset($this->sample['*']);
+        if (! is_array($recipients)) {
+            return null;
+        }
+
+        foreach ($recipients as $recipient) {
+            $name = is_array($recipient) ? ($recipient['variable'] ?? null) : null;
+
+            if (is_string($name) && (isset($this->addressed[$name][$provider]) || isset($this->addressed[$name]['*']))) {
+                return $name;
+            }
+        }
+
+        return null;
+    }
+
+    /** Whether a channel of this provider (to this addressee) has a default template to start with. */
+    public function hasSample(string $provider, ?string $addressee = null): bool
+    {
+        return $this->pick($provider, $addressee) !== null;
     }
 
     /**
      * The default template for a provider in one language, or null when the event has none for
-     * the provider or no words in that language.
+     * the provider or no words in that language. With an addressee the event has a template of
+     * its own for, that one ({@see addresseeOf()}).
      *
      * @return array{subject: string|null, template: string}|null
      */
-    public function sampleFor(string $provider, string $locale = 'en'): ?array
+    public function sampleFor(string $provider, string $locale = 'en', ?string $addressee = null): ?array
     {
-        $sample = $this->sample[$provider] ?? $this->sample['*'] ?? null;
+        $sample = $this->pick($provider, $addressee);
 
         if ($sample instanceof Closure) {
             $sample = $sample($locale);
@@ -130,21 +165,22 @@ final readonly class EventDefinition
      * @param  list<string>  $locales
      * @return array{subject: array<string, string>|null, template: array<string, string>}|null
      */
-    public function samplesFor(string $provider, array $locales, string $main, string $fallback = 'en'): ?array
+    public function samplesFor(string $provider, array $locales, string $main, string $fallback = 'en', ?string $addressee = null): ?array
     {
-        if (! $this->hasSample($provider)) {
+        $sample = $this->pick($provider, $addressee);
+
+        if ($sample === null) {
             return null;
         }
 
-        $sample = $this->sample[$provider] ?? $this->sample['*'];
         $subjects = [];
         $templates = [];
 
         foreach ($sample instanceof Closure ? array_values(array_unique([$main, ...$locales])) : [$main] as $locale) {
-            $one = $this->sampleFor($provider, $locale);
+            $one = $this->sampleFor($provider, $locale, $addressee);
 
             if ($one === null && $locale === $main) {
-                $one = $this->sampleFor($provider, $fallback) ?? $this->sampleFor($provider, 'en');
+                $one = $this->sampleFor($provider, $fallback, $addressee) ?? $this->sampleFor($provider, 'en', $addressee);
             }
 
             if ($one === null) {
@@ -159,10 +195,24 @@ final readonly class EventDefinition
         }
 
         if ($templates === []) {
-            return null;
+            // An addressee without a word of its own anywhere: the event's template, as for anyone.
+            return $addressee === null ? null : $this->samplesFor($provider, $locales, $main, $fallback);
         }
 
         return ['subject' => $subjects === [] ? null : $subjects, 'template' => $templates];
+    }
+
+    /**
+     * The sample of a provider: the addressee's own when the event has one for it, else the
+     * event's — by the provider's key, then `*`.
+     *
+     * @return array{subject?: string|null, template: string}|(Closure(string): (array{subject?: string|null, template: string}|null))|null
+     */
+    private function pick(string $provider, ?string $addressee): array|Closure|null
+    {
+        $own = $addressee === null ? null : ($this->addressed[$addressee][$provider] ?? $this->addressed[$addressee]['*'] ?? null);
+
+        return $own ?? $this->sample[$provider] ?? $this->sample['*'] ?? null;
     }
 
     /**
@@ -175,7 +225,7 @@ final readonly class EventDefinition
 
     /**
      * The event as the panel and an agent read it; `sample` by provider key, each in the languages
-     * given ({@see samplesFor()}).
+     * given ({@see samplesFor()}); `addressed` the same, by addressee variable first.
      *
      * @param  list<string>  $locales
      * @return array<string, mixed>
@@ -189,12 +239,25 @@ final readonly class EventDefinition
             $samples[$provider] = $this->samplesFor($provider, $locales, $main, $fallback);
         }
 
+        $addressed = [];
+
+        foreach ($this->addressed as $addressee => $byProvider) {
+            foreach (array_keys($byProvider) as $provider) {
+                $one = $this->samplesFor($provider, $locales, $main, $fallback, $addressee);
+
+                if ($one !== null) {
+                    $addressed[$addressee][$provider] = $one;
+                }
+            }
+        }
+
         return [
             'key' => $this->key,
             'label' => (string) __($this->label),
             'module' => $this->module,
             'variables' => array_map(static fn (Variable $variable): array => $variable->toArray(), $this->variables),
             'sample' => array_filter($samples, static fn (?array $one): bool => $one !== null),
+            'addressed' => $addressed,
         ];
     }
 }

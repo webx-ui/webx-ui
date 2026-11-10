@@ -6,16 +6,22 @@ namespace WebxUi\Orders\Tests\Notifications;
 
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Testing\Fluent\AssertableJson;
 use Illuminate\Validation\ValidationException;
+use Laravel\Mcp\Server\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\AdminServiceProvider;
 use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Admin\Doctor\Diagnosis;
 use WebxUi\Auth\AuthServiceProvider;
+use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Cart\CartServiceProvider;
 use WebxUi\Compositions\CompositionsServiceProvider;
 use WebxUi\Localization\LocalizationServiceProvider;
 use WebxUi\Mcp\McpServiceProvider;
+use WebxUi\Mcp\Registry\ToolRegistry;
+use WebxUi\Mcp\Server\RegistryTool;
+use WebxUi\Mcp\Server\WebxServer;
 use WebxUi\NestedSet\NestedSetServiceProvider;
 use WebxUi\Notifications\Channels\ChannelForm;
 use WebxUi\Notifications\Models\Channel;
@@ -32,6 +38,7 @@ use WebxUi\Orders\Models\PublicStatus;
 use WebxUi\Orders\Notifications\DefaultChannels;
 use WebxUi\Orders\Notifications\OrderChannels;
 use WebxUi\Orders\Notifications\OrderEvents;
+use WebxUi\Orders\Notifications\OrderTemplates;
 use WebxUi\Orders\Notifications\OrderValues;
 use WebxUi\Orders\Orders;
 use WebxUi\Orders\OrderSettings;
@@ -134,6 +141,66 @@ final class NotificationsTest extends PlaceTestCase
                 $this->assertSame($sample['template'], $saved['channel']->getTranslations('template'));
             }
         }
+    }
+
+    #[Test]
+    public function a_channel_of_a_new_order_to_the_buyer_starts_with_the_buyer_s_letter_and_one_to_the_shop_with_the_shop_s(): void
+    {
+        $form = $this->app->make(ChannelForm::class);
+        $letter = static fn (string $audience, string $locale = 'en'): string => OrderTemplates::email(OrderEvents::PLACED, $audience, $locale)['template'] ?? '';
+        $subject = static fn (string $audience): string => OrderTemplates::email(OrderEvents::PLACED, $audience, 'en')['subject'] ?? '';
+        $buyer = [['variable' => OrderEvents::BUYER]];
+        $shop = [['email' => 'shop@example.com']];
+
+        $this->assertNotSame($letter(OrderTemplates::CUSTOMER), $letter(OrderTemplates::MANAGER));
+
+        // The panel: the two letters as the form reads them (`GET meta` is `ChannelForm::event()`),
+        // the buyer's under its addressee — the panel picks by the recipients of the form.
+        $events = $this->app->make(NotificationEvents::class);
+        $placed = $form->event($events->find(OrderEvents::PLACED) ?? $this->fail('placed'));
+        $this->assertSame($letter(OrderTemplates::MANAGER), $placed['sample']['email']['template']['en'] ?? null);
+        $this->assertSame($letter(OrderTemplates::CUSTOMER), $placed['addressed'][OrderEvents::BUYER]['email']['template']['en'] ?? null);
+        $this->assertSame($letter(OrderTemplates::CUSTOMER, 'ru'), $placed['addressed'][OrderEvents::BUYER]['email']['template']['ru'] ?? null);
+        $this->assertSame(
+            OrderTemplates::telegram(OrderEvents::PLACED, OrderTemplates::CUSTOMER, 'en')['template'] ?? null,
+            $placed['addressed'][OrderEvents::BUYER]['telegram']['template']['en'] ?? null,
+        );
+        // An event with one letter: as before, whoever it writes to.
+        $this->assertSame([], $form->event($events->find(OrderEvents::PAID) ?? $this->fail('paid'))['addressed']);
+        $admin = $this->superAdmin();
+
+        // Saving: a new channel, and the default template put back.
+        $toBuyer = $form->save(new Channel, ['name' => 'Placed — buyer', 'provider' => 'email', 'event' => OrderEvents::PLACED, 'recipients' => $buyer])['channel'];
+        $toShop = $form->save(new Channel, ['name' => 'Placed — shop', 'provider' => 'email', 'event' => OrderEvents::PLACED, 'recipients' => $shop])['channel'];
+
+        $this->assertSame($letter(OrderTemplates::CUSTOMER), $toBuyer->getTranslation('template', 'en'));
+        $this->assertSame($subject(OrderTemplates::CUSTOMER), $toBuyer->getTranslation('subject', 'en'));
+        $this->assertSame($letter(OrderTemplates::MANAGER), $toShop->getTranslation('template', 'en'));
+
+        $toShop = $form->save($toShop, ['recipients' => $buyer, 'default_template' => true])['channel'];
+        $this->assertSame($letter(OrderTemplates::CUSTOMER), $toShop->getTranslation('template', 'en'));
+
+        $paidToShop = $form->save(new Channel, ['name' => 'Paid — shop', 'provider' => 'email', 'event' => OrderEvents::PAID, 'recipients' => $shop])['channel'];
+        $this->assertSame(OrderTemplates::email(OrderEvents::PAID, OrderTemplates::CUSTOMER, 'en')['template'] ?? null, $paidToShop->getTranslation('template', 'en'));
+
+        // MCP: the template of each, and a channel created to the buyer.
+        $read = $this->content($this->agent($admin, 'notifications_default_template', ['event' => OrderEvents::PLACED, 'provider' => 'email', 'addressee' => OrderEvents::BUYER]));
+        $this->assertSame($letter(OrderTemplates::CUSTOMER), $read['template']['en']);
+        $this->assertStringNotContainsString('Picker is looking', $read['preview']['body'], 'the buyer never reads the internal status');
+
+        $read = $this->content($this->agent($admin, 'notifications_default_template', ['event' => OrderEvents::PLACED, 'provider' => 'email']));
+        $this->assertSame($letter(OrderTemplates::MANAGER), $read['template']['en']);
+        $this->assertStringContainsString('Picker is looking', $read['preview']['body']);
+
+        $created = $this->content($this->agent($admin, 'notifications_channel_create', [
+            'name' => 'Order accepted — to the buyer', 'provider' => 'email', 'event' => OrderEvents::PLACED, 'recipients' => $buyer,
+        ]));
+        $this->assertSame($letter(OrderTemplates::CUSTOMER), $created['values']['template']['en']);
+
+        $created = $this->content($this->agent($admin, 'notifications_channel_create', [
+            'name' => 'New order — to the shop', 'provider' => 'email', 'event' => OrderEvents::PLACED, 'recipients' => $shop,
+        ]));
+        $this->assertSame($letter(OrderTemplates::MANAGER), $created['values']['template']['en']);
     }
 
     #[Test]
@@ -428,6 +495,42 @@ final class NotificationsTest extends PlaceTestCase
         $this->assertNotSame([], $rows);
         $this->assertContains('alex@example.test', array_column($rows, 'recipient'));
         $this->assertSame(OrderEvents::PLACED, $rows[0]['event']);
+    }
+
+    private function superAdmin(): CmsUser
+    {
+        return CmsUser::query()->create([
+            'name' => 'Admin',
+            'email' => 'admin@example.com',
+            'password' => 'correct-horse-battery',
+            'is_super' => true,
+            'is_active' => true,
+        ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     */
+    private function agent(CmsUser $as, string $tool, array $arguments): TestResponse
+    {
+        $bound = new RegistryTool($this->app->make(ToolRegistry::class)->tool($tool));
+
+        return WebxServer::actingAs($as, 'cms')->tool($bound, $arguments);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function content(TestResponse $response): array
+    {
+        $response->assertOk();
+        $decoded = null;
+
+        $response->assertStructuredContent(static function (AssertableJson $json) use (&$decoded): void {
+            $decoded = $json->etc()->toArray();
+        });
+
+        return is_array($decoded) ? $decoded : [];
     }
 
     private function orders(): Orders

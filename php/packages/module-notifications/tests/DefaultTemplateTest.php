@@ -45,6 +45,31 @@ final class DefaultTemplateTest extends TestCase
                 },
             ],
         ));
+
+        // A letter to the shop and one to the buyer, as `orders.placed` declares them (§5.1).
+        $this->app->make(NotificationEvents::class)->register(new EventDefinition(
+            key: 'shop.sold',
+            label: 'Sold',
+            module: 'shop',
+            variables: [
+                new Variable('number', 'Number', example: '7'),
+                new Variable('buyer_email', 'Buyer', example: 'buyer@example.com', address: 'email'),
+                new Variable('other_email', 'Someone else', example: 'other@example.com', address: 'email'),
+            ],
+            sample: [
+                'email' => ['subject' => 'Sold: {{number}}', 'template' => 'New order {{number}}'],
+                '*' => ['template' => 'Sold {{number}}'],
+            ],
+            addressed: [
+                'buyer_email' => [
+                    'email' => static fn (string $locale): ?array => match ($locale) {
+                        'en' => ['subject' => 'Thank you: {{number}}', 'template' => 'We got your order {{number}}'],
+                        'ru' => ['subject' => 'Спасибо: {{number}}', 'template' => 'Мы получили заказ {{number}}'],
+                        default => null,
+                    },
+                ],
+            ],
+        ));
     }
 
     #[Test]
@@ -134,6 +159,103 @@ final class DefaultTemplateTest extends TestCase
 
         $this->agent('notifications_channel_update', ['channel' => $id, 'default_template' => true])->assertOk();
         $this->assertSame('<p>{{stars}} stars</p>', Channel::query()->findOrFail($id)->getTranslation('template', 'en'));
+    }
+
+    #[Test]
+    public function a_channel_to_an_addressee_gets_the_addressee_s_template_and_any_other_the_event_s(): void
+    {
+        $event = $this->sold();
+
+        $this->assertSame('buyer_email', $event->addresseeOf([['email' => 'shop@example.com'], ['variable' => 'buyer_email']], 'email'));
+        $this->assertNull($event->addresseeOf([['variable' => 'other_email']], 'email'), 'an addressee without a template of its own');
+        $this->assertNull($event->addresseeOf([['variable' => 'buyer_email']], 'telegram'), 'nothing of its own for the provider');
+        $this->assertNull($event->addresseeOf(null, 'email'));
+
+        $form = $this->app->make(ChannelForm::class);
+        $buyer = $form->save(new Channel, ['name' => 'To the buyer', 'provider' => 'email', 'event' => 'shop.sold', 'recipients' => [['variable' => 'buyer_email']]])['channel'];
+        $shop = $form->save(new Channel, ['name' => 'To the shop', 'provider' => 'email', 'event' => 'shop.sold', 'recipients' => [['email' => 'shop@example.com']]])['channel'];
+        $other = $form->save(new Channel, ['name' => 'To someone', 'provider' => 'email', 'event' => 'shop.sold', 'recipients' => [['variable' => 'other_email']]])['channel'];
+
+        $this->assertSame(['en' => 'We got your order {{number}}', 'ru' => 'Мы получили заказ {{number}}'], $buyer->getTranslations('template'));
+        $this->assertSame(['en' => 'Thank you: {{number}}', 'ru' => 'Спасибо: {{number}}'], $buyer->getTranslations('subject'));
+        $this->assertSame(['en' => 'New order {{number}}'], $shop->getTranslations('template'));
+        $this->assertSame(['en' => 'New order {{number}}'], $other->getTranslations('template'));
+
+        // The recipients changed to the buyer, then the default put back: the buyer's.
+        $shop = $form->save($shop, ['recipients' => [['variable' => 'buyer_email']], 'default_template' => true])['channel'];
+        $this->assertSame('We got your order {{number}}', $shop->getTranslation('template', 'en'));
+
+        // A saved channel is not touched by anything but asking (decision 6 of the orders).
+        $buyer = $form->save($buyer, ['recipients' => [['email' => 'shop@example.com']]])['channel'];
+        $this->assertSame('We got your order {{number}}', $buyer->getTranslation('template', 'en'));
+        $buyer = $form->save($buyer, ['default_template' => true])['channel'];
+        $this->assertSame(['en' => 'New order {{number}}'], $buyer->getTranslations('template'));
+
+        // An event with one template for everybody: as before, whoever the channel writes to.
+        $reviews = $form->save(new Channel, ['name' => 'Reviews', 'provider' => 'email', 'event' => 'shop.order', 'recipients' => [['variable' => 'customer_email']]])['channel'];
+        $this->assertSame(['en' => "Order {{number}}\nTotal: {{total}}"], $reviews->getTranslations('template'));
+    }
+
+    #[Test]
+    public function the_panel_reads_the_addressee_s_template_beside_the_event_s(): void
+    {
+        $response = $this->actingAs($this->admin(), 'cms')->getJson('/api/cms/notifications/meta')->assertOk();
+        $at = array_search('shop.sold', (array) $response->json('data.events.*.key'), true);
+        $review = array_search('shop.review', (array) $response->json('data.events.*.key'), true);
+        $this->assertIsInt($at);
+        $this->assertIsInt($review);
+
+        $response
+            ->assertJsonPath("data.events.{$at}.sample.email.template", ['en' => 'New order {{number}}'])
+            ->assertJsonPath("data.events.{$at}.addressed.buyer_email.email.template", ['en' => 'We got your order {{number}}', 'ru' => 'Мы получили заказ {{number}}'])
+            ->assertJsonMissingPath("data.events.{$at}.addressed.buyer_email.telegram")
+            ->assertJsonPath("data.events.{$review}.addressed", []);
+    }
+
+    #[Test]
+    public function an_agent_reads_the_template_of_an_addressee_and_a_channel_to_it_starts_with_it(): void
+    {
+        $buyer = $this->content($this->agent('notifications_default_template', ['event' => 'shop.sold', 'provider' => 'email', 'addressee' => 'buyer_email']));
+        $this->assertSame(['en' => 'We got your order {{number}}', 'ru' => 'Мы получили заказ {{number}}'], $buyer['template']);
+        $this->assertSame('buyer_email', $buyer['addressee']);
+        $this->assertTrue($buyer['own']);
+        $this->assertSame('We got your order 7', $buyer['preview']['body']);
+        $this->assertSame('Thank you: 7', $buyer['preview']['subject']);
+
+        $shop = $this->content($this->agent('notifications_default_template', ['event' => 'shop.sold', 'provider' => 'email']));
+        $this->assertSame(['en' => 'New order {{number}}'], $shop['template']);
+        $this->assertSame('New order 7', $shop['preview']['body']);
+
+        // An addressee without a template of its own: the event's, said so.
+        $other = $this->content($this->agent('notifications_default_template', ['event' => 'shop.sold', 'provider' => 'email', 'addressee' => 'other_email']));
+        $this->assertSame(['en' => 'New order {{number}}'], $other['template']);
+        $this->assertFalse($other['own']);
+
+        $this->agent('notifications_default_template', ['event' => 'shop.sold', 'provider' => 'email', 'addressee' => 'number'])
+            ->assertHasErrors(['[number] is not an addressee of [shop.sold] for [email]: buyer_email, other_email.']);
+
+        $created = $this->content($this->agent('notifications_channel_create', [
+            'name' => 'To the buyer', 'provider' => 'email', 'event' => 'shop.sold', 'recipients' => [['variable' => 'buyer_email']],
+        ]));
+        $this->assertSame('We got your order {{number}}', $created['values']['template']['en']);
+
+        $id = $created['channel']['id'];
+        $this->agent('notifications_channel_update', ['channel' => $id, 'recipients' => [['email' => 'shop@example.com']]])->assertOk();
+        $this->assertSame('We got your order {{number}}', Channel::query()->findOrFail($id)->getTranslation('template', 'en'));
+
+        $rehearsed = $this->content($this->agent('notifications_channel_update', ['channel' => $id, 'default_template' => true, 'dry_run' => true]));
+        $this->assertSame('New order {{number}}', $rehearsed['values']['template']['en']);
+
+        $preview = $this->content($this->agent('notifications_preview', ['channel' => $id]));
+        $this->assertSame('We got your order 7', $preview['body']);
+    }
+
+    private function sold(): EventDefinition
+    {
+        $event = $this->app->make(NotificationEvents::class)->find('shop.sold');
+        $this->assertNotNull($event);
+
+        return $event;
     }
 
     private function review(): EventDefinition

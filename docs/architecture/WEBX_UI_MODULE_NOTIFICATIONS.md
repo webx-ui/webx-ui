@@ -276,16 +276,38 @@ NotificationEvents::register(new EventDefinition(
 его хранит канал: языки сайта, на которых есть слова; основной — всегда (иначе запасной язык, иначе
 английский); языка без слов нет — канал пишет на нём основным, как любой канал (§7, «Языки»).
 
+**Шаблон по адресату.** Событие, которое пишет разным адресатам, объявляет образец для каждого:
+`addressed` — по имени переменной-адресата (`address`, решение 12), дальше по ключу провайдера,
+как `sample` (`addressed: [customer_email => [email => fn ($locale) => …]]`). Правило выбора
+одно для панели, API и MCP:
+
+- **адресат канала** — первая переменная среди его получателей (`{"variable": …}`), для которой у
+  события есть свой образец этого провайдера (или `*`) — `EventDefinition::addresseeOf()`;
+- есть адресат — его образец; нет (канал на фиксированные адреса, адресат без своего образца, у
+  адресата нет слов ни на одном языке) — `sample`, как раньше; событие без `addressed` не меняется;
+- `samplesFor($provider, $locales, $main, $fallback, $addressee)`, `ChannelForm::sample($event,
+$provider, $recipients)`; получатели — из пришедших, иначе сохранённые.
+
+Первый потребитель — `orders.placed` (§10.2 [`WEBX_UI_MODULE_ORDERS.md`](WEBX_UI_MODULE_ORDERS.md)): `sample` —
+письмо магазину, `addressed.customer_email` — письмо покупателю. Остальные события заказа и
+`inbox.submission` дают один образец — им `addressed` не нужен.
+
 - **Новый канал** события без `template` (панель, API, `notifications_channel_create`) получает
-  его; в панели — и канал, у которого при выборе события пусты и тема, и шаблон.
+  его (своего адресата — по получателям); в панели — и канал, у которого при выборе события пусты
+  и тема, и шаблон. У **несохранённого** канала в панели смена адресата в получателях меняет
+  нетронутый шаблон по умолчанию прежнего адресата на шаблон нового (с тостом); правленный текст
+  не трогается.
 - **«Вставить шаблон по умолчанию»** под шаблоном — заменяет тему и шаблон на всех языках; если
   что-то написано — после подтверждения. API и MCP — `default_template: true` у сохранения
   (`notifications_channel_update`, `dry_run`); нет шаблона у события для провайдера — отказ под
   `template`. Существующие каналы сами не меняются никогда.
-- `notifications_default_template {event, provider, locale?}` — шаблон по языкам, `html` и
-  рендер на примерах (та же проверка, что при сохранении).
+- `notifications_default_template {event, provider, addressee?, locale?}` — шаблон по языкам,
+  `html` и рендер на примерах (та же проверка, что при сохранении); `addressee` — переменная-адресат
+  события (иначе отказ), ответ называет её и `own` — есть ли у неё свой образец.
 - `GET meta` и `notifications://events` отдают `sample` уже по языкам сайта:
-  `{provider: {subject: {en: …}|null, template: {en: …}}}`.
+  `{provider: {subject: {en: …}|null, template: {en: …}}}`, и `addressed` — так же, по адресату:
+  `{customer_email: {provider: {…}}}` (`{}` у события без них); панель выбирает сама по получателям
+  формы (`sampleOf(event, provider, recipients)`).
 
 ## 6. Провайдеры из коробки
 
@@ -782,7 +804,7 @@ GET    meta                          notifications.view    провайдеры 
 | `notifications_channel_update`   | `channel`, любые поля create кроме `provider`; `forget?: string[]`                                                                                    | канал + `warnings`                                                        |
 | `notifications_channel_delete`   | `channel`                                                                                                                                             | в корзину                                                                 |
 | `notifications_channel_copy`     | `channel`, `name?`                                                                                                                                    | новый канал (выключен, креденшелы перенесены — §3.4)                      |
-| `notifications_default_template` | `event`, `provider`, `locale?`                                                                                                                        | шаблон по умолчанию по языкам, `html`, рендер на примерах (§5.1)          |
+| `notifications_default_template` | `event`, `provider`, `addressee?`, `locale?`                                                                                                          | шаблон по умолчанию по языкам, `html`, рендер на примерах (§5.1)          |
 | `notifications_preview`          | `channel?` и/или `provider`, `event?`, `subject?`, `template?`; `locale?`                                                                             | сообщение на примерах события, без отправки; отказ шаблона — словами      |
 | `notifications_test`             | `channel`, `recipient?`                                                                                                                               | по получателям: `sent` / ошибка                                           |
 | `notifications_find_chats`       | `channel` или `token`                                                                                                                                 | чаты: id, type, title, username                                           |

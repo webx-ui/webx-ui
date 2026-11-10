@@ -53,6 +53,12 @@ export interface NotificationEvent {
    * channel starts with and "Insert the default template" puts back.
    */
   sample: Record<string, EventSample>
+  /**
+   * The default template of a channel to an addressee (`EventDefinition::$addressed`): by the
+   * addressee variable, then by provider as `sample` — the buyer's letter of a new order beside the
+   * shop's. Missing on a server older than it.
+   */
+  addressed?: Record<string, Record<string, EventSample>>
 }
 
 /** An event's default template for one provider (`EventDefinition::samplesFor()`). */
