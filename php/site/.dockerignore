@@ -2,9 +2,10 @@
 #
 # The two directories at the top cost the most: `vendor` and `node_modules` are installed
 # inside the image from the lock files, and copying the host's copies over them is both slow
-# and wrong — they were built for another platform.
+# and wrong — they were built for another platform. Every node_modules, not the root one only:
+# a site module's js/ is installed inside the image as well.
 vendor
-node_modules
+**/node_modules
 
 .git
 .github
