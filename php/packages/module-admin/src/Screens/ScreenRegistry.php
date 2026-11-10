@@ -36,6 +36,9 @@ final class ScreenRegistry
     /** @var array<string, list<array<string, mixed>|Closure(): array<string, mixed>>> */
     private array $rules = [];
 
+    /** @var array<string, string> The file each screen was registered from, by name: who owns it. */
+    private array $files = [];
+
     /**
      * @param  string|array<int|string, mixed>  $screen  A path to a JSON file, or the decoded
      *                                                   description: the root list, or the
@@ -63,6 +66,32 @@ final class ScreenRegistry
         /** @var list<Node> $root */
         $this->trees[$name] = $root;
         unset($this->built[$name], $this->checked[$name]);
+
+        if (is_string($screen)) {
+            $this->files[$name] = $screen;
+        }
+    }
+
+    /**
+     * The screens registered from a file inside the folder, sorted: what a module of the site
+     * draws itself, told apart from the screens of every package loaded beside it.
+     *
+     * @return list<string>
+     */
+    public function registeredFrom(string $folder): array
+    {
+        $folder = rtrim((string) (realpath($folder) ?: $folder), '/').'/';
+        $names = [];
+
+        foreach ($this->files as $name => $file) {
+            if (str_starts_with((string) (realpath($file) ?: $file), $folder)) {
+                $names[] = $name;
+            }
+        }
+
+        sort($names);
+
+        return $names;
     }
 
     /**

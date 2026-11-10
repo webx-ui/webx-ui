@@ -41,6 +41,8 @@ translation routes belong to `webx-ui/module-admin`, and a translated address is
   unless `webx-ui/widgets` binds the switcher's. `offer()` — who gets the later "Switch to …?"
   (`first_visit.offer`, cookie `webx_lang_offer` once declined).
 - **Commands** `webx:locales:seed`, `webx:locales:clear`.
+- **Test trait** `Testing\AssertsTranslations` — `assertTranslationsMatch($lang, $languages)` for a module
+  outside the monorepo (a site module): `en` and the listed languages are there, every present language has the keys of `en`.
 - Validation lines in ten languages under the application's own `lang/`: `Translations\ValidationLines`
   wraps `translation.loader` (as `themes` does), so a site's published line still wins.
 
