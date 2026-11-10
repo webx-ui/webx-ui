@@ -319,6 +319,11 @@ pipe`. `… | grep -q` под `pipefail`: grep уходит на первом с
   уже удалённого скретчпада. Симптом — «FAILED: GET / — expected 200, got 404» у сайта из
   скелета, а в `site-serve.log` — «Address already in use». Чужой процесс не трогать, прогнать на
   других портах: `SMOKE_PORT=8150 scripts/php-smoke.sh` (скрипт берёт порты от него до +3).
+- **Smoke из workspace devbox падает на «FAILED: [platform] GET /up — expected 200, got 000»**, хотя
+  образ собрался и контейнер `Healthy` (`platform-up.log`). Compose публикует порт на `127.0.0.1`
+  хоста Docker, а workspace — другой контейнер: туда не достучаться ничем. Всё до платформенного
+  сценария при этом прошло; сборку образа проверять по `platform-up.log` или `docker build` скелета,
+  а сценарий целиком — в CI. Только остальное — `SMOKE_PLATFORM=0`.
 - **`site exec <сайт> php artisan tinker файл.php` висит до таймаута.** Tinker с файлом всё равно
   ждёт stdin. Скрипт — `tinker --execute="require 'storage/app/…/x.php';"` с `</dev/null` под
   `timeout 60`; русский текст — в файле, не в аргументе.
