@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Orders\Tests\Panel;
 
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Cache\CacheGroups;
 use WebxUi\Orders\Checkout\FieldPlaces;
 use WebxUi\Orders\Models\OrderField;
 
@@ -22,7 +23,10 @@ final class CheckoutFieldsTest extends PanelTestCase
         return $this->api('checkout-fields'.$path);
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * @param  array<string, mixed>  $with
+     * @return array<string, mixed>
+     */
     private function checkbox(string $key, string $label, array $with = []): array
     {
         return ['key' => $key, 'type' => 'checkbox', 'label' => ['en' => $label]] + $with;
@@ -52,7 +56,7 @@ final class CheckoutFieldsTest extends PanelTestCase
 
         // A place the registry no longer knows: listed, marked, the buyer is not asked it.
         OrderField::query()->whereKey($this->id('installation'))->update(['place' => 'delivery-after']);
-        $this->app->make(\WebxUi\Cache\CacheGroups::class)->bump('order-fields');
+        $this->app->make(CacheGroups::class)->bump('order-fields');
         $this->getJson($this->fields())->assertOk()->assertJsonPath('data.fields.0.place_known', false);
 
         // The tab «Checkout» keeps the fields' card without the settings module, and nothing else.
