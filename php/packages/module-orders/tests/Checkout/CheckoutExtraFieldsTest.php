@@ -115,7 +115,7 @@ final class CheckoutExtraFieldsTest extends CheckoutTestCase
         // Ticked, filled, then unticked — the answer behind it goes.
         $this->visit($cart, '/checkout/steps/contacts', ['customer' => $contacts, 'fields' => ['for_company' => '1', 'company_name' => 'Company A']])->assertRedirect();
         $this->visit($cart, '/checkout/steps/contacts', ['customer' => $contacts, 'fields' => ['company_name' => 'Company A']])->assertRedirect();
-        $this->assertSame([], CheckoutDraft::query()->sole()->steps['fields'] ?? []);
+        $this->assertNull(CheckoutDraft::query()->sole()->steps);
 
         // A checkbox switched off hides the fields behind it as well.
         $this->visit($cart, '/checkout/steps/contacts', ['customer' => $contacts, 'fields' => ['for_company' => '1', 'company_name' => 'Company A']])->assertRedirect();
