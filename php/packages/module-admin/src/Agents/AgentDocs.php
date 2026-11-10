@@ -6,9 +6,11 @@ namespace WebxUi\Admin\Agents;
 
 use Illuminate\Filesystem\Filesystem;
 use WebxUi\Admin\Panel\PackageRegistry;
+use WebxUi\Admin\Panel\Vendors;
 
 /**
- * Which installed `webx-ui/*` packages carry a guide for code agents.
+ * Which installed packages of ours — `webx-ui/*` and the site's own `site/*` ({@see Vendors}) —
+ * carry a guide for code agents.
  *
  * Read from Composer's own list, like the panel's packages are: install a module and it shows
  * up, remove it and it is gone. Whether a package is documented is whether the file is there
@@ -17,8 +19,6 @@ use WebxUi\Admin\Panel\PackageRegistry;
 final class AgentDocs
 {
     public const FILE = 'AGENTS.md';
-
-    public const VENDOR = 'webx-ui/';
 
     public function __construct(
         private readonly Filesystem $files,
@@ -41,16 +41,21 @@ final class AgentDocs
         foreach (is_array($installed) ? $installed : [] as $package) {
             $name = is_array($package) ? ($package['name'] ?? null) : null;
 
-            if (! is_string($name) || ! str_starts_with($name, self::VENDOR)) {
+            if (! is_string($name) || ! Vendors::ours($name)) {
                 continue;
             }
 
             $description = is_string($package['description'] ?? null) ? trim($package['description']) : '';
 
+            $local = Vendors::local($name);
             $docs[$name] = new AgentDoc(
                 name: $name,
                 description: $description,
                 documented: $this->files->exists($this->directory($path, $package).'/'.self::FILE),
+                local: $local,
+                // A site module is linked where it is written, not through its symlink in `vendor`:
+                // that is the file an agent edits.
+                directory: $local ? $this->fromRoot($package) : null,
             );
         }
 
@@ -73,5 +78,37 @@ final class AgentDocs
             : '../'.$package['name'];
 
         return dirname($installed).'/'.$relative;
+    }
+
+    /**
+     * The package's directory from the site root, read from `install-path` without touching the
+     * disk: `vendor/composer/../../modules/offices` is `modules/offices`.
+     *
+     * @param  array<array-key, mixed>  $package
+     */
+    private function fromRoot(array $package): ?string
+    {
+        $relative = is_string($package['install-path'] ?? null) ? $package['install-path'] : null;
+
+        if ($relative === null) {
+            return null;
+        }
+
+        $parts = [];
+
+        foreach (explode('/', 'vendor/composer/'.str_replace('\\', '/', $relative)) as $part) {
+            if ($part === '' || $part === '.') {
+                continue;
+            }
+
+            if ($part !== '..') {
+                $parts[] = $part;
+            } elseif (array_pop($parts) === null) {
+                // Above the site root: not a folder of this site.
+                return null;
+            }
+        }
+
+        return $parts === [] ? null : implode('/', $parts);
     }
 }

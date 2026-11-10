@@ -23,6 +23,7 @@ use WebxUi\Admin\Snapshots\SnapshotTables;
 use WebxUi\Admin\Snapshots\Snapshotter;
 use WebxUi\Admin\Snapshots\Tar;
 use WebxUi\Admin\Snapshots\UrlRewriter;
+use WebxUi\Admin\Testing\InstalledPackages;
 use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Admin\Tests\Fixtures\FixedCheck;
 
@@ -32,6 +33,7 @@ use WebxUi\Admin\Tests\Fixtures\FixedCheck;
  */
 final class SnapshotsTest extends TestCase
 {
+    use InstalledPackages;
     use MigratesOnce;
 
     private string $dir;
@@ -132,6 +134,20 @@ final class SnapshotsTest extends TestCase
         $this->assertSame(['local@example.com', 'dev@example.com'], DB::table('demo_enquiries')->pluck('email')->all());
         $this->assertSame(['Anna', 'Boris'], DB::table('demo_admins')->pluck('name')->all());
         $this->assertSame(0, DB::table('demo_bundles')->count());
+    }
+
+    /** SITE_MODULES §8, row 21: the version of a site module is written beside the packages'. */
+    #[Test]
+    public function the_versions_of_the_sites_own_modules_are_written_too(): void
+    {
+        $this->installPackages(__DIR__.'/Fixtures/site-module/vendor/composer/installed.json');
+
+        $packages = $this->manifest($this->snapshot())->data['packages'];
+
+        $this->assertIsArray($packages);
+        $this->assertSame('0.1.0', $packages['site/module-offices'] ?? null);
+        $this->assertArrayHasKey('webx-ui/module-admin', $packages);
+        $this->assertArrayNotHasKey('laravel/framework', $packages);
     }
 
     #[Test]

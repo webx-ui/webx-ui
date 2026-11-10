@@ -325,6 +325,7 @@ final class ModulesCommandTest extends TestCase
             'default' => false,
             'requires' => ['catalog', 'media', 'seo'],
             'installed' => false,
+            'local' => false,
         ], $byId['catalog-brands']);
 
         $this->assertTrue($byId['admins']['installed']);
@@ -336,9 +337,31 @@ final class ModulesCommandTest extends TestCase
         $this->assertSame('acme/module-widgets', $byId['widgets']['package']);
         $this->assertSame('@acme/module-widgets', $byId['widgets']['npm']);
         $this->assertTrue($byId['widgets']['installed']);
+        $this->assertFalse($byId['widgets']['local']);
 
         // The frame wires «System → Cache» like a module, and is not one to choose.
         $this->assertNotContains('webx-ui/module-admin', array_column($modules, 'package'));
+    }
+
+    /** SITE_MODULES §8, row 18: a module from the site's `modules/` is listed and marked local. */
+    #[Test]
+    public function a_site_module_is_marked_local(): void
+    {
+        $this->app->instance(PackageRegistry::class, new PackageRegistry($this->files, __DIR__.'/Fixtures/site-module/vendor/composer/installed.json'));
+
+        $this->assertSame(0, Artisan::call('webx:modules', ['--json' => true]));
+
+        $json = json_decode(Artisan::output(), true);
+        $this->assertIsArray($json);
+        $byId = array_column($json['modules'], null, 'id');
+
+        $this->assertSame('site/module-offices', $byId['offices']['package']);
+        $this->assertSame('@site/module-offices', $byId['offices']['npm']);
+        $this->assertTrue($byId['offices']['installed']);
+        $this->assertTrue($byId['offices']['local']);
+
+        $this->assertSame(0, Artisan::call('webx:modules'));
+        $this->assertMatchesRegularExpression('/offices\s*\|\s*site\/module-offices\s*\|[^\n]*\|\s*yes\s*\|\s*yes\s*\|/', Artisan::output());
     }
 
     #[Test]

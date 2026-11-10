@@ -48,6 +48,8 @@ final class RootFile
      */
     public static function block(array $packages, string $panelPath, array $chain = []): string
     {
+        $local = array_values(array_filter($packages, static fn (AgentDoc $doc): bool => $doc->local));
+        $packages = array_values(array_filter($packages, static fn (AgentDoc $doc): bool => ! $doc->local));
         $documented = array_values(array_filter($packages, static fn (AgentDoc $doc): bool => $doc->documented));
         $undocumented = array_values(array_filter($packages, static fn (AgentDoc $doc): bool => ! $doc->documented));
         $panel = '/'.trim($panelPath, '/');
@@ -106,6 +108,8 @@ final class RootFile
                 .implode(', ', array_map(static fn (AgentDoc $doc): string => "`{$doc->name}`", $undocumented)).'.';
         }
 
+        array_push($lines, ...self::siteModules($local));
+
         array_push(
             $lines,
             '',
@@ -118,6 +122,37 @@ final class RootFile
         );
 
         return implode("\n", $lines);
+    }
+
+    /**
+     * The modules the site keeps in its own `modules/` (SITE_MODULES): the one place where module
+     * code is the site's to edit, so the first rule is said again with its exception.
+     *
+     * @param  list<AgentDoc>  $modules
+     * @return list<string>
+     */
+    private static function siteModules(array $modules): array
+    {
+        if ($modules === []) {
+            return [];
+        }
+
+        $lines = [
+            '',
+            '## This site\'s modules',
+            '',
+            'These are the site\'s own code, `site/module-*` from `modules/` — edit them there, never through their',
+            'symlink in `vendor/site/`. Each one keeps the contract of a packaged module: read its guide before a change.',
+            '',
+        ];
+
+        foreach ($modules as $doc) {
+            $lines[] = $doc->documented
+                ? "- [{$doc->name}]({$doc->link()})".($doc->description === '' ? '' : " — {$doc->description}")
+                : "- `{$doc->name}`".($doc->description === '' ? '' : " — {$doc->description}").' (no AGENTS.md yet)';
+        }
+
+        return $lines;
     }
 
     /**

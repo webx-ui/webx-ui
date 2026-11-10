@@ -33,7 +33,7 @@ here: that is `webx-ui/module-auth`; languages are `webx-ui/localization`; the M
   (`menu()`) for the panel's text fields. `register(block: true)` is a section of a page: it prints only in `htmlIn()`, out of its `<p>`, and not with `blocks: false` (HTML that leaves the page); text is read from the stored field, never from the printed HTML; `register(menu: fn)` gives `[` ready brackets, one row each, in place of the bare name. `wx_text($value)` makes a string or a `ShortcodeText` a `ShortcodeText`, whose `trim*`, `strip*`
   and `map()` change the typed text and stay HTML.
 - **Testing** — `Testing\CountsQueries` in a Testbench case: `assertQueriesWithin(N, fn () => $this->get(…))`
-  fails over the budget listing every statement, repeated ones (an N+1) called out; `assertNoRepeatedQueries()`, `recordQueries()`; `Testing\FakeHostResolver` — DNS for `RemoteFetcher` without a network; `Testing\MigratesOnce` — `artisan migrate` once per schema on sqlite `:memory:`, replayed into every next test; `Testing\TemporaryFiles` — `temporaryFile($prefix, $extension)`, removed with the test.
+  fails over the budget listing every statement, repeated ones (an N+1) called out; `assertNoRepeatedQueries()`, `recordQueries()`; `Testing\FakeHostResolver` — DNS for `RemoteFetcher` without a network; `Testing\MigratesOnce` — `artisan migrate` once per schema on sqlite `:memory:`, replayed into every next test; `Testing\TemporaryFiles` — `temporaryFile($prefix, $extension)`, removed with the test; `Testing\InstalledPackages` — `installPackages($installedJson)` adds a fixture's packages to `InstalledVersions` for the test.
 - **Front end entry** — `resources/js/admin.ts` in the site, written from `stubs/panel.stub` (`panel-auth.stub` with
   module-auth). Three regions are the installer's: `// webx:imports`, `// webx:styles`, `// webx:modules`; the rest is the site's.
 
@@ -65,7 +65,7 @@ archive with migrations this code lacks, refuses production without `--force`, a
 
 `webx:panel` (and so `--sync`) writes a block between `<!-- webx:agents -->` and
 `<!-- /webx:agents -->`: what the site is, the first rule (forms included), where its look lives
-(`RootFile::STYLES_GUIDE`), a link to `vendor/webx-ui/<pkg>/AGENTS.md` for every installed `webx-ui/*` package that has one, what to run after updating. The block is replaced whole on each
+(`RootFile::STYLES_GUIDE`), a link to `vendor/webx-ui/<pkg>/AGENTS.md` for every installed `webx-ui/*` package that has one and, apart, to `modules/<x>/AGENTS.md` for each site module `site/*` (ours by `Panel\Vendors`, the one place for `webx-ui/` and `site/`), what to run after updating. The block is replaced whole on each
 run; everything outside it — the `## This project` section — is never touched. A hand-written file without markers keeps every word, with the block put on top.
 `CLAUDE.md` is written once as `@AGENTS.md`; an existing one without that line only gets a warning.
 Where `webx-ui/mcp` serves its HTTP endpoint (route `webx.mcp`), `.mcp.json` gets one server named after the site (`Site::name()`), at `app.url` + the route; other servers, and a key renamed over the

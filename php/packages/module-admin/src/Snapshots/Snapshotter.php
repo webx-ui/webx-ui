@@ -10,6 +10,7 @@ use Illuminate\Contracts\Config\Repository;
 use Illuminate\Database\Connection;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Support\Str;
+use WebxUi\Admin\Panel\Vendors;
 
 /**
  * Makes an archive: the content tables as JSON lines, the media files, and a manifest.
@@ -227,7 +228,9 @@ final class Snapshotter
         $packages = [];
 
         foreach (InstalledVersions::getInstalledPackages() as $package) {
-            if (str_starts_with($package, 'webx-ui/')) {
+            // The site's own modules too: a snapshot restored onto another copy of the code
+            // says which version of every module of ours wrote its rows.
+            if (Vendors::ours($package)) {
                 $packages[$package] = (string) InstalledVersions::getPrettyVersion($package);
             }
         }

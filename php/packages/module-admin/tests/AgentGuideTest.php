@@ -195,4 +195,23 @@ final class AgentGuideTest extends TestCase
             'a site on a packaged theme alone is told how to get a local one',
         );
     }
+
+    /** SITE_MODULES §8, row 17: a site module is ours, listed apart, by its folder rather than vendor. */
+    #[Test]
+    public function a_site_module_is_listed_by_its_own_folder(): void
+    {
+        $packages = (new AgentDocs($this->files, __DIR__.'/Fixtures/site-module/vendor/composer/installed.json'))->packages();
+
+        $this->assertSame(['site/module-offices'], array_map(fn ($doc) => $doc->name, $packages));
+        $this->assertTrue($packages[0]->local);
+        $this->assertTrue($packages[0]->documented);
+        $this->assertSame('modules/offices/AGENTS.md', $packages[0]->link());
+
+        $block = RootFile::block($packages, 'cms');
+
+        $this->assertStringContainsString("## This site's modules", $block);
+        $this->assertStringContainsString('- [site/module-offices](modules/offices/AGENTS.md) — Offices directory of this site.', $block);
+        $this->assertStringContainsString('None of the installed packages carries an AGENTS.md yet', $block, 'a site module is not a package from vendor');
+        $this->assertStringNotContainsString("## This site's modules", RootFile::block([], 'cms'));
+    }
 }
