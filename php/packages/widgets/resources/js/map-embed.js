@@ -42,6 +42,8 @@ export function driver(canvas, config) {
 
 export function map(root) {
   const config = settings(root)
+  // A map that does not wait for consent has its frame from the server: nothing left to do.
+  if (root.querySelector('.webx-map__frame')) return
   if (config.provider !== 'embed' || typeof config.src !== 'string' || !GOOGLE.test(config.src))
     return
 

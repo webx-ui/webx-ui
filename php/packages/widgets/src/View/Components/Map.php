@@ -83,6 +83,12 @@ final class Map extends Component
     /** Whether the map waits for consent to `media` at all — the site's setting, or `consent`. */
     public bool $waits = true;
 
+    /**
+     * Google's frame printed by the server: a map of `embed` that does not wait for consent — the
+     * block's "Show the map without consent", `:consent="false"`, or the site's "Maps without asking".
+     */
+    public bool $printed = false;
+
     /** Before consent to `media`: the notice and its buttons. */
     public bool $blocked = false;
 
@@ -257,8 +263,11 @@ final class Map extends Component
         $this->waits = self::flag($consent) ?? app(Consent::class)->mapsWait();
         $this->blocked = $this->waits && ! app(Consent::class)->has('media');
 
+        // Nothing to wait for: the frame is in the HTML — without the script, and without a moment
+        // of the place before it. A visitor's consent is not reason enough: the page may be cached.
         if (! $this->waits) {
             $this->config['consent'] = false;
+            $this->printed = true;
         }
     }
 

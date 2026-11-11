@@ -49,5 +49,7 @@ return [
         'map-id' => 'Identyfikator mapy',
         'map-id-help' => 'Opcjonalnie: identyfikator mapy z konsoli Google Cloud pokazuje pinezkę jako zaawansowany znacznik i nadaje mapie styl utworzony dla niego. Puste — zwykła mapa Google.',
         'no-key' => 'Wybrano Google Maps, ale brak klucza: zamiast mapy odwiedzający widzą adres z linkiem do Google Maps.',
+        'at-once' => 'Pokazuj mapę bez zgody',
+        'at-once-help' => 'Ładując się, mapa przekazuje adres IP odwiedzającego usłudze map (Google Maps lub serwerowi kafelków) i może zapisywać pliki cookie; w przypadku odwiedzających z UE wymaga to ich zgody. Wyłączone: mapa czeka na zgodę na osadzone multimedia. Włączone: jest od razu na stronie, tylko w tym bloku — na własną odpowiedzialność.',
     ],
 ];

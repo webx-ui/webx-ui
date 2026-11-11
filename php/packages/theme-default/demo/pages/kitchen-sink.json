@@ -4345,6 +4345,47 @@
           }
         },
         {
+          "key": "showcase-map-embed-at-once",
+          "type": "map",
+          "values": {
+            "heading": {
+              "en": "Shown without consent",
+              "ru": "Без согласия",
+              "pl": "Bez zgody"
+            },
+            "source": "embed",
+            "embed": "https://maps.google.com/maps?q=Champ%20de%20Mars%2C%20Paris&t=&z=15&ie=UTF8&iwloc=&output=embed",
+            "link": "",
+            "address": {
+              "en": "Champ de Mars, Paris",
+              "ru": "Марсово поле, Париж",
+              "pl": "Pola Marsowe, Paryż"
+            },
+            "title": {
+              "en": "Map of the Champ de Mars",
+              "ru": "Карта Марсова поля",
+              "pl": "Mapa Pól Marsowych"
+            },
+            "zoom": 15,
+            "height": "small",
+            "height_narrow": "same",
+            "width": "column",
+            "at_once": true
+          }
+        },
+        {
+          "key": "showcase-map-embed-at-once-note",
+          "type": "text",
+          "values": {
+            "heading": "",
+            "body": {
+              "en": "This block has “Show the map without consent” on: Google’s frame is in the page’s HTML at once, with no placeholder and no wait for the banner — the visitor’s IP address goes to Google as the page opens. Off, as on the two maps above, the map waits for consent to media.",
+              "ru": "У этого блока включено «Показывать карту без согласия»: фрейм Google сразу в HTML страницы, без заглушки и без ожидания баннера — IP-адрес посетителя уходит в Google, как только страница открылась. Выключено, как у двух карт выше, — карта ждёт согласия на медиа.",
+              "pl": "Ten blok ma włączone „Pokazuj mapę bez zgody”: ramka Google jest w HTML strony od razu, bez zaślepki i bez czekania na baner — adres IP odwiedzającego trafia do Google, gdy tylko strona się otworzy. Wyłączone, jak przy dwóch mapach wyżej — mapa czeka na zgodę na media."
+            }
+          }
+        },
+        {
           "key": "showcase-map-narrow",
           "type": "showcase-map",
           "values": {

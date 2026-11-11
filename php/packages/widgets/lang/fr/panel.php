@@ -49,5 +49,7 @@ return [
         'map-id' => 'ID de carte',
         'map-id-help' => 'Facultatif : un ID de carte de la console Google Cloud fait de l’épingle un marqueur avancé et donne à la carte le style créé pour lui. Vide : la carte Google habituelle.',
         'no-key' => 'Google Maps est choisi, mais il n’y a pas de clé : au lieu de la carte, les visiteurs voient l’adresse avec un lien vers Google Maps.',
+        'at-once' => 'Afficher la carte sans consentement',
+        'at-once-help' => 'En se chargeant, la carte transmet l’adresse IP du visiteur au service de cartes (Google Maps ou le serveur de tuiles) et peut déposer des cookies ; pour les visiteurs de l’UE, cela exige leur consentement. Désactivé : la carte attend le consentement aux médias intégrés. Activé : elle est sur la page tout de suite, dans ce bloc seulement — à vos risques.',
     ],
 ];

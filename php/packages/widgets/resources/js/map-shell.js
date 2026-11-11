@@ -68,7 +68,8 @@ export function shell(root, config, driver) {
       failure = document.createElement('p')
       failure.className = 'webx-map__notice webx-map__failed'
       failure.textContent = config.failed
-      place.append(failure)
+      const card = place.querySelector('.webx-map__card') ?? place
+      card.append(failure)
     }
   }
 

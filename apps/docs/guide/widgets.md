@@ -334,6 +334,16 @@ widget: the same frame, notice, buttons and consent to `media`.
   and «Load» (this map) / «Always load maps» (the consent). After it the script puts Google's frame
   in with the `title`, `loading="lazy"` and `referrerpolicy="no-referrer-when-downgrade"`, filling
   the frame the server reserved — nothing below moves.
+- **«Show the map without consent»** — a switch of each Map block, off by default (and off for
+  blocks saved before it). On, the block passes `:consent="false"`: Google's `<iframe>` is in the
+  page's HTML at once — no notice, no wait, without JavaScript too. Off, the site decides: the Cookie
+  tab's «Maps without asking», which by default waits. The block that is on wins over the site; the
+  block that is off does not overrule a site that lifted the wait. Its hint says why it is off: the
+  map hands the visitor's IP address to the map service and may set cookies, which needs consent in
+  the EU.
+- **The placeholder** is a drawing of streets in the theme's own colours with a card on the
+  theme's surface over it — the pin, the address, the notice, the buttons, the link. No picture and
+  no request: before consent the page asks the map service for nothing.
 - **`height-narrow`** — the height in a column narrower than 36em, for any map: a phone gets a
   shorter map than a monitor. The block's «Height on a phone» sets it; «Width» → «Edge to edge»
   takes the map to the window's sides (`site-bleed`).

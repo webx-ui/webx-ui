@@ -169,10 +169,29 @@ final class MapEmbedTest extends TestCase
         $this->assertStringContainsString('class="webx-map webx-map--embed"', $html);
         $this->assertStringNotContainsString('webx-map__notice', $html);
 
+        $this->assertStringNotContainsString('<iframe', $html, 'a visitor\'s consent is the script\'s: the page may be cached');
+
         $this->app['request']->cookies->remove(Consent::COOKIE);
-        $free = Blade::render('<x-webx-map :embed="$src" :consent="false" />', ['src' => self::SRC]);
+        $free = Blade::render('<x-webx-map :embed="$src" :consent="false" title="Map of the square" />', ['src' => self::SRC]);
         $this->assertStringNotContainsString('data-webx-consent', $free);
         $this->assertStringContainsString('&quot;consent&quot;:false', $free);
+        $this->assertStringContainsString('class="webx-map webx-map--embed is-loaded"', $free);
+        $this->assertStringContainsString('<div class="webx-map__canvas"><iframe class="webx-map__frame" src="'.e(self::SRC).'" title="Map of the square" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe></div>', $free, 'without the wait the frame is in the HTML');
+        $this->assertStringContainsString('<div class="webx-map__place" hidden>', $free);
+        $this->assertStringNotContainsString('webx-map__notice', $free);
+    }
+
+    #[Test]
+    public function the_sites_maps_without_asking_prints_the_frame_and_the_map_itself_can_still_wait(): void
+    {
+        $this->app['config']->set('webx-widgets.map.consent', false);
+
+        $html = Blade::render('<x-webx-map :embed="$src" />', ['src' => self::SRC]);
+        $this->assertStringContainsString('<iframe class="webx-map__frame"', $html);
+
+        $waits = Blade::render('<x-webx-map :embed="$src" :consent="true" />', ['src' => self::SRC]);
+        $this->assertStringNotContainsString('<iframe', $waits, 'the map\'s own word wins');
+        $this->assertStringContainsString('data-webx-map-load', $waits);
     }
 
     #[Test]

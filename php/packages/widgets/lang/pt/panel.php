@@ -49,5 +49,7 @@ return [
         'map-id' => 'ID do mapa',
         'map-id-help' => 'Opcional: um ID de mapa da consola do Google Cloud mostra o marcador como marcador avançado e dá ao mapa o estilo criado para ele. Vazio: o mapa habitual do Google.',
         'no-key' => 'O Google Maps está escolhido, mas não há chave: em vez do mapa, os visitantes veem a morada com uma ligação para o Google Maps.',
+        'at-once' => 'Mostrar o mapa sem consentimento',
+        'at-once-help' => 'Ao carregar, o mapa envia o endereço IP do visitante ao serviço de mapas (Google Maps ou o servidor de blocos) e pode definir cookies; para visitantes da UE, isso exige o consentimento deles. Desligado: o mapa espera o consentimento para mídia incorporada. Ligado: aparece na página de imediato, só neste bloco — por sua conta e risco.',
     ],
 ];

@@ -69,6 +69,20 @@ describe('map-embed', () => {
     expect(document.querySelector('#m2 iframe')?.src).toBe(SRC)
   })
 
+  it('leaves alone the frame the server printed for a map that does not wait', async () => {
+    const printed = map(6, { blocked: false }).replace(
+      '<div class="webx-map__place">',
+      `<div class="webx-map__canvas"><iframe class="webx-map__frame" src="${SRC}" title="Map of the square"></iframe></div>
+    <div class="webx-map__place" hidden>`,
+    )
+    await start(printed)
+    const root = document.getElementById('m6')
+
+    expect(root.querySelectorAll('iframe')).toHaveLength(1)
+    expect(root.classList.contains('is-ready')).toBe(false)
+    expect(root.querySelector('.webx-map__place').hidden).toBe(true)
+  })
+
   it('takes no address but Google’s, whatever the attribute says', async () => {
     await start(map(3, { blocked: false, src: 'https://evil.example.com/maps/embed?pb=1' }))
 

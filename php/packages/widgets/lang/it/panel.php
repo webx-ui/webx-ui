@@ -49,5 +49,7 @@ return [
         'map-id' => 'ID mappa',
         'map-id-help' => 'Facoltativo: un ID mappa dalla console Google Cloud mostra il segnaposto come indicatore avanzato e dà alla mappa lo stile creato per esso. Vuoto: la solita mappa di Google.',
         'no-key' => 'È scelto Google Maps, ma manca la chiave: al posto della mappa i visitatori vedono l’indirizzo con un link a Google Maps.',
+        'at-once' => 'Mostra la mappa senza consenso',
+        'at-once-help' => 'Caricandosi, la mappa trasmette l’indirizzo IP del visitatore al servizio di mappe (Google Maps o il server delle tessere) e può impostare cookie; per i visitatori dell’UE serve il loro consenso. Disattivato: la mappa attende il consenso ai contenuti incorporati. Attivato: è subito nella pagina, solo in questo blocco, sotto la tua responsabilità.',
     ],
 ];

@@ -497,6 +497,35 @@ final class BlocksTest extends TestCase
     }
 
     #[Test]
+    public function show_the_map_without_consent_is_the_blocks_and_off_unless_turned_on(): void
+    {
+        $src = 'https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d2483.0!2d-0.128!3d51.508!5e0';
+        $schema = collect(json_decode((string) file_get_contents(dirname(__DIR__).'/resources/blocks/map.json'), true, flags: JSON_THROW_ON_ERROR)['schema'])->firstWhere('id', 'at_once');
+        $this->assertSame('wx-switch', $schema['type'] ?? null);
+        $this->assertFalse($schema['default'] ?? null, 'off for a new block');
+        $this->assertSame('trans::webx-widgets::panel.map.at-once-help', $schema['help'] ?? null, 'the warning, in the panel\'s language');
+
+        // Saved before the switch, and off: no frame before consent.
+        foreach ([['source' => 'embed', 'embed' => $src], ['source' => 'embed', 'embed' => $src, 'at_once' => false]] as $values) {
+            $waiting = $this->render('map', $values);
+            $this->assertStringNotContainsString('<iframe', $waiting);
+            $this->assertStringContainsString('data-webx-consent="media"', $waiting);
+            $this->assertStringContainsString('data-webx-map-load', $waiting);
+        }
+
+        $free = $this->render('map', ['source' => 'embed', 'embed' => $src, 'at_once' => true, 'title' => 'Map of the square']);
+        $this->assertStringContainsString('<iframe class="webx-map__frame" src="'.e($src).'" title="Map of the square" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>', $free, 'the frame in the HTML at once');
+        $this->assertStringContainsString('class="webx-map webx-map--embed is-loaded"', $free);
+        $this->assertStringNotContainsString('data-webx-consent', $free);
+        $this->assertStringNotContainsString('data-webx-map-load', $free, 'no notice, no buttons');
+
+        // A map of coordinates is told the same: it loads without the notice.
+        $tiles = $this->render('map', ['source' => 'coordinates', 'latitude' => 48.8556, 'longitude' => 2.2986, 'at_once' => true]);
+        $this->assertStringNotContainsString('data-webx-consent', $tiles);
+        $this->assertStringContainsString('&quot;consent&quot;:false', $tiles);
+    }
+
+    #[Test]
     public function the_field_of_googles_code_keeps_the_address_and_refuses_another_sites_frame(): void
     {
         $src = 'https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d2483.0!2d-0.128!3d51.508!5e0';
