@@ -573,8 +573,8 @@ On a site with a theme the same files have a third home: `theme/blocks/`, and th
 theme layer below it. Nothing puts them on a site by itself — `webx:setup` prints the line for a
 dev copy: `php artisan webx:blocks:import --theme` reads the layers instead of `resources/blocks`, by the same
 rules — `webx:theme:sync`, a deploy and `composer update` never write a block type
-([Styles › Blocks of the theme](./styles.md#blocks-of-the-theme)). The default theme brings six —
-`hero`, `text`, `media-text`, `cards`, `cta`, `contact` ([Styles › The six blocks](./styles.md#the-six-blocks-of-the-default-theme)) — and on a
+([Styles › Blocks of the theme](./styles.md#blocks-of-the-theme)). The default theme brings seven —
+`hero`, `text`, `media-text`, `cards`, `text-tiles`, `cta`, `contact` ([Styles › The blocks of the default theme](./styles.md#the-blocks-of-the-default-theme)) — and on a
 site with it the demo's own `hero` and `text` are not seeded: the theme's stand in their place.
 
 The two drift apart quietly, so export on the day you edit. A type changed in the panel and not

@@ -31,7 +31,7 @@ use WebxUi\Themes\ThemeServiceProvider;
 use WebxUi\Widgets\WidgetsServiceProvider;
 
 /**
- * The six blocks of `webx-ui/theme-default` (THEMES §9.1) on a site, through the real import
+ * The blocks of `webx-ui/theme-default` (THEMES §9.1) on a site, through the real import
  * (`webx:blocks:import --theme`, what `webx:setup` prints for a dev copy): they publish — publishing renders each
  * sample —, every variant prints, and the demo of this package yields to them (§23, TH2.3): it
  * does not seed a slug the theme carries, and a site that got the demo first keeps its copy until
@@ -41,7 +41,7 @@ final class ThemeDefaultBlocksTest extends TestCase
 {
     private const string THEME = 'webx-ui/theme-default';
 
-    private const array SIX = ['cards', 'contact', 'cta', 'hero', 'media-text', 'text'];
+    private const array BLOCKS = ['cards', 'contact', 'cta', 'hero', 'media-text', 'text', 'text-tiles'];
 
     /**
      * @param  Application  $app
@@ -86,15 +86,15 @@ final class ThemeDefaultBlocksTest extends TestCase
     }
 
     #[Test]
-    public function the_six_blocks_are_put_on_the_site_and_published(): void
+    public function the_blocks_are_put_on_the_site_and_published(): void
     {
         $lines = $this->sync();
 
-        foreach (self::SIX as $slug) {
+        foreach (self::BLOCKS as $slug) {
             $this->assertLine($slug, Importer::CREATED, $lines);
         }
 
-        $this->assertSame(self::SIX, Block::query()->whereNotNull('published_version_id')->orderBy('slug')->pluck('slug')->all());
+        $this->assertSame(self::BLOCKS, Block::query()->whereNotNull('published_version_id')->orderBy('slug')->pluck('slug')->all());
         $this->assertSame([], array_values(array_filter($lines, static fn (array $row): bool => $row['error'] !== null)));
     }
 
@@ -114,6 +114,11 @@ final class ThemeDefaultBlocksTest extends TestCase
                 ['title' => '', 'text' => '', 'link_url' => ''],
             ]]),
             $this->node('cta', ['heading' => 'Ask', 'button_label' => 'Now', 'button_url' => '/now', 'tone' => 'plain']),
+            $this->node('text-tiles', ['heading' => 'Tiles', 'shade' => 'light', 'width' => 'column', 'tiles' => [
+                ['kind' => 'value', 'value' => '120', 'unit' => 'm²', 'label' => 'Space'],
+                ['kind' => 'icon', 'label' => 'No icon yet'],
+                ['kind' => 'value', 'value' => '', 'label' => ''],
+            ]]),
         ]);
 
         $this->assertStringContainsString('class="b-hero b-hero--plain"', $html);
@@ -126,9 +131,12 @@ final class ThemeDefaultBlocksTest extends TestCase
         $this->assertSame(2, substr_count($html, '<li class="b-cards__card'), 'a card with nothing in it is left out');
         $this->assertStringContainsString('<a class="b-cards__link" href="/more">Linked</a>', $html);
         $this->assertStringContainsString('class="b-cta b-cta--plain"', $html);
+        $this->assertStringContainsString('class="b-text-tiles b-text-tiles--light b-text-tiles--2 b-text-tiles--words"', $html);
+        $this->assertStringContainsString('<p class="b-text-tiles__value">120 <span class="b-text-tiles__unit">m²</span></p>', $html);
+        $this->assertSame(2, substr_count($html, '<li class="b-text-tiles__tile'), 'a tile with nothing in it is left out');
 
         // Nothing to say is nothing printed, not an empty frame.
-        $this->assertSame('', trim($this->render([$this->node('hero'), $this->node('text'), $this->node('cta')])));
+        $this->assertSame('', trim($this->render([$this->node('hero'), $this->node('text'), $this->node('cta'), $this->node('text-tiles')])));
     }
 
     /**
@@ -147,6 +155,7 @@ final class ThemeDefaultBlocksTest extends TestCase
             $this->node('cards', ['heading' => 'Cards', 'cards' => [['title' => 'One', 'text' => 'A card']]]),
             $this->node('cta', ['heading' => 'Ask', 'button_label' => 'Now', 'button_url' => '/now']),
             $this->node('contact', ['heading' => 'Write', 'show_contacts' => false, 'form' => '']),
+            $this->node('text-tiles', ['heading' => 'Tiles', 'tiles' => [['kind' => 'value', 'value' => '1', 'label' => 'One']]]),
         ]);
 
         $off = $page();
@@ -161,10 +170,10 @@ final class ThemeDefaultBlocksTest extends TestCase
         $on = $page();
         $this->assertStringNotContainsStringIgnoringCase('@webxReveal', $on);
         $this->assertStringNotContainsString('@webx', $on);
-        foreach (['b-hero__inner', 'b-text__inner', 'b-cards__head', 'b-cta__inner', 'b-contact__head'] as $class) {
+        foreach (['b-hero__inner', 'b-text__inner', 'b-cards__head', 'b-cta__inner', 'b-contact__head', 'b-text-tiles__words'] as $class) {
             $this->assertMatchesRegularExpression('~class="'.$class.'[^"]*"[^>]*?\sdata-webx-reveal="fade"~', $on, $class);
         }
-        foreach (['b-media-text__grid', 'b-cards__grid', 'b-contact__grid'] as $class) {
+        foreach (['b-media-text__grid', 'b-cards__grid', 'b-contact__grid', 'b-text-tiles__tiles'] as $class) {
             $this->assertMatchesRegularExpression('~class="'.$class.'[^"]*"[^>]*?\sdata-webx-reveal="stagger" data-webx-reveal-effect="fade"~', $on, $class);
         }
     }
@@ -187,6 +196,7 @@ final class ThemeDefaultBlocksTest extends TestCase
             $this->node('cta', ['heading' => 'Ask', 'button_label' => 'Now', 'button_link' => $away, 'button_url' => '/ignored']),
             $this->node('media-text', ['heading' => 'Words', 'button_label' => 'Read', 'button_link' => ['target' => 'file', 'path' => 'media/ab/cd/f00d.pdf']]),
             $this->node('cards', ['cards' => [['title' => 'Card', 'link' => $away]]]),
+            $this->node('text-tiles', ['heading' => 'Tiles', 'button_label' => 'Brochure', 'button_link' => $file]),
         ]);
 
         $this->assertStringContainsString('<a class="b-hero__button" href="/storage/media/ab/cd/f00d.pdf" download="Price list.pdf">Price list</a>', $html);
@@ -197,6 +207,7 @@ final class ThemeDefaultBlocksTest extends TestCase
         // A file without the switch opens rather than downloads.
         $this->assertStringContainsString('<a class="b-media-text__button" href="/storage/media/ab/cd/f00d.pdf">Read</a>', $html);
         $this->assertStringContainsString('<a class="b-cards__link" href="https://example.com/plan" target="_blank" rel="nofollow noopener noreferrer">Card</a>', $html);
+        $this->assertStringContainsString('<a class="b-text-tiles__button" href="/storage/media/ab/cd/f00d.pdf" download="Price list.pdf">Brochure</a>', $html);
 
         // A file the library no longer has, and a link with nowhere to go: no button, and no old
         // address put back in its place.

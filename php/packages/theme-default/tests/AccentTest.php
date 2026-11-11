@@ -28,6 +28,7 @@ final class AccentTest extends TestCase
         'cards' => ['heading', 'h2'],
         'cta' => ['heading', 'h2'],
         'contact' => ['heading', 'h2'],
+        'text-tiles' => ['heading', 'h2'],
     ];
 
     /** @var array<string, array<string, mixed>> */

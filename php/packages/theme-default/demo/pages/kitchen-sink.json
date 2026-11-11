@@ -515,14 +515,14 @@
           "type": "text",
           "values": {
             "heading": {
-              "en": "Six blocks to build a page of",
-              "ru": "Шесть блоков, из которых собирается страница",
-              "pl": "Sześć bloków, z których składa się strona"
+              "en": "Seven blocks to build a page of",
+              "ru": "Семь блоков, из которых собирается страница",
+              "pl": "Siedem bloków, z których składa się strona"
             },
             "body": {
-              "en": "<p>The default theme brings six blocks: a hero, text, a picture beside text, cards, a call to action and contacts. Their styles know only the tokens of the site, so a preset or the theme’s accent repaints every one of them.</p><p>Each page under this one shows a block in every variant and then once more in a narrow column: the layout of a block follows the width it is given, not the width of the window.</p>",
-              "ru": "<p>Тема по умолчанию приносит шесть блоков: первый экран, текст, картинку рядом с текстом, карточки, призыв и контакты. Их стили знают только токены сайта, поэтому пресет или акцент темы перекрашивают каждый из них.</p><p>Каждая страница в этом разделе показывает блок во всех вариантах и ещё раз в узкой колонке: раскладка блока следует за шириной, которую ему дали, а не за шириной окна.</p>",
-              "pl": "<p>Domyślny motyw przynosi sześć bloków: baner, tekst, zdjęcie obok tekstu, karty, wezwanie do działania i kontakty. Ich style znają tylko tokeny strony, więc preset albo akcent motywu przemalowuje każdy z nich.</p><p>Każda strona poniżej pokazuje blok we wszystkich wariantach, a potem jeszcze raz w wąskiej kolumnie: układ bloku idzie za szerokością, którą dostał, a nie za szerokością okna.</p>"
+              "en": "<p>The default theme brings seven blocks: a hero, text, a picture beside text, cards, text and tiles on a photo, a call to action and contacts. Their styles know only the tokens of the site, so a preset or the theme’s accent repaints every one of them.</p><p>Each page under this one shows a block in every variant and then once more in a narrow column: the layout of a block follows the width it is given, not the width of the window.</p>",
+              "ru": "<p>Тема по умолчанию приносит семь блоков: первый экран, текст, картинку рядом с текстом, карточки, текст и плитки на фото, призыв и контакты. Их стили знают только токены сайта, поэтому пресет или акцент темы перекрашивают каждый из них.</p><p>Каждая страница в этом разделе показывает блок во всех вариантах и ещё раз в узкой колонке: раскладка блока следует за шириной, которую ему дали, а не за шириной окна.</p>",
+              "pl": "<p>Domyślny motyw przynosi siedem bloków: baner, tekst, zdjęcie obok tekstu, karty, tekst i kafelki na zdjęciu, wezwanie do działania i kontakty. Ich style znają tylko tokeny strony, więc preset albo akcent motywu przemalowuje każdy z nich.</p><p>Każda strona poniżej pokazuje blok we wszystkich wariantach, a potem jeszcze raz w wąskiej kolumnie: układ bloku idzie za szerokością, którą dostał, a nie za szerokością okna.</p>"
             }
           }
         },
@@ -1994,6 +1994,495 @@
                           "link_url": "/kitchen-sink/blocks/contact"
                         }
                       ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "title": {
+            "en": "Text and tiles",
+            "ru": "Текст и плитки",
+            "pl": "Tekst i kafelki"
+          },
+          "slug": {
+            "en": "text-tiles",
+            "ru": "tekst-i-plitki",
+            "pl": "tekst-i-kafelki"
+          },
+          "seo": {
+            "title": {
+              "en": "Text and tiles",
+              "ru": "Текст и плитки",
+              "pl": "Tekst i kafelki"
+            },
+            "description": {
+              "en": "The block of the default theme with words beside up to four glass tiles over a photo: icons, figures, a light shade, fewer tiles and a narrow column.",
+              "ru": "Блок темы по умолчанию со словами рядом с четырьмя стеклянными плитками поверх фото: иконки, цифры, светлая тень, меньше плиток и узкая колонка.",
+              "pl": "Blok domyślnego motywu ze słowami obok czterech szklanych kafelków na zdjęciu: ikony, liczby, jasny cień, mniej kafelków i wąska kolumna."
+            }
+          },
+          "blocks": [
+            {
+              "key": "showcase-tiles-icons",
+              "type": "text-tiles",
+              "values": {
+                "eyebrow": {
+                  "en": "Four icons",
+                  "ru": "Четыре иконки",
+                  "pl": "Cztery ikony"
+                },
+                "heading": {
+                  "en": "A house ==by the park==",
+                  "ru": "Дом ==у парка==",
+                  "pl": "Dom ==przy parku=="
+                },
+                "text": {
+                  "en": "The words on the left, four glass tiles on the right: an SVG icon in each takes the colour of the words, so the same file reads on the dark shade and on the light one.",
+                  "ru": "Слова слева, четыре стеклянные плитки справа: SVG-иконка в каждой берёт цвет слов, поэтому один и тот же файл читается и на тёмной тени, и на светлой.",
+                  "pl": "Słowa po lewej, cztery szklane kafelki po prawej: ikona SVG w każdym bierze kolor słów, więc ten sam plik jest czytelny na ciemnym cieniu i na jasnym."
+                },
+                "button_label": {
+                  "en": "Look at the cards",
+                  "ru": "Посмотреть карточки",
+                  "pl": "Zobacz karty"
+                },
+                "button_link": {
+                  "target": "url",
+                  "entity_type": null,
+                  "entity_id": null,
+                  "url": "/kitchen-sink/blocks/cards",
+                  "hash": null,
+                  "new_tab": false,
+                  "rel": []
+                },
+                "tiles": [
+                  {
+                    "kind": "icon",
+                    "icon": {
+                      "path": "demo:showcase-icon-1"
+                    },
+                    "label": {
+                      "en": "A house of its own",
+                      "ru": "Свой дом",
+                      "pl": "Własny dom"
+                    },
+                    "note": {
+                      "en": "Four rooms over two floors.",
+                      "ru": "Четыре комнаты на двух этажах.",
+                      "pl": "Cztery pokoje na dwóch piętrach."
+                    }
+                  },
+                  {
+                    "kind": "icon",
+                    "icon": {
+                      "path": "demo:showcase-icon-2"
+                    },
+                    "label": {
+                      "en": "A garden",
+                      "ru": "Сад",
+                      "pl": "Ogród"
+                    },
+                    "note": {
+                      "en": "Fruit trees behind the house.",
+                      "ru": "Фруктовые деревья за домом.",
+                      "pl": "Drzewa owocowe za domem."
+                    }
+                  },
+                  {
+                    "kind": "icon",
+                    "icon": {
+                      "path": "demo:showcase-icon-3"
+                    },
+                    "label": {
+                      "en": "Light all day",
+                      "ru": "Свет весь день",
+                      "pl": "Światło przez cały dzień"
+                    },
+                    "note": {
+                      "en": "Windows to the south and the west.",
+                      "ru": "Окна на юг и на запад.",
+                      "pl": "Okna na południe i na zachód."
+                    }
+                  },
+                  {
+                    "kind": "icon",
+                    "icon": {
+                      "path": "demo:showcase-icon-4"
+                    },
+                    "label": {
+                      "en": "Keys in a month",
+                      "ru": "Ключи через месяц",
+                      "pl": "Klucze za miesiąc"
+                    },
+                    "note": {
+                      "en": "Papers ready, nothing to wait for.",
+                      "ru": "Документы готовы, ждать нечего.",
+                      "pl": "Dokumenty gotowe, nie ma na co czekać."
+                    }
+                  }
+                ],
+                "image": {
+                  "path": "demo:showcase-photo-1",
+                  "alt": {
+                    "en": "A quiet street with trees",
+                    "ru": "Тихая улица с деревьями",
+                    "pl": "Cicha ulica z drzewami"
+                  }
+                },
+                "shade": "dark",
+                "width": "bleed"
+              }
+            },
+            {
+              "key": "showcase-tiles-figures",
+              "type": "text-tiles",
+              "values": {
+                "eyebrow": {
+                  "en": "Four figures, a light shade",
+                  "ru": "Четыре цифры, светлая тень",
+                  "pl": "Cztery liczby, jasny cień"
+                },
+                "heading": {
+                  "en": "Room to live, ==close to everything==",
+                  "ru": "Простор для жизни, ==всё рядом==",
+                  "pl": "Miejsce do życia, ==wszystko blisko=="
+                },
+                "text": {
+                  "en": "A figure and its unit at the top of a tile. The light shade lightens the photo and darkens the words; the parallax moves the photo slower than the page.",
+                  "ru": "Цифра и единица вверху плитки. Светлая тень осветляет фото и делает слова тёмными; параллакс двигает фото медленнее страницы.",
+                  "pl": "Liczba i jednostka na górze kafelka. Jasny cień rozjaśnia zdjęcie i przyciemnia słowa; paralaksa przesuwa zdjęcie wolniej niż stronę."
+                },
+                "tiles": [
+                  {
+                    "kind": "value",
+                    "value": "120",
+                    "unit": {
+                      "en": "m²",
+                      "ru": "м²",
+                      "pl": "m²"
+                    },
+                    "label": {
+                      "en": "Living space",
+                      "ru": "Жилая площадь",
+                      "pl": "Powierzchnia"
+                    },
+                    "note": {
+                      "en": "Three bedrooms and a study.",
+                      "ru": "Три спальни и кабинет.",
+                      "pl": "Trzy sypialnie i gabinet."
+                    }
+                  },
+                  {
+                    "kind": "value",
+                    "value": "5",
+                    "unit": {
+                      "en": "min",
+                      "ru": "мин",
+                      "pl": "min"
+                    },
+                    "label": {
+                      "en": "To the park",
+                      "ru": "До парка",
+                      "pl": "Do parku"
+                    },
+                    "note": {
+                      "en": "On foot, by a quiet street.",
+                      "ru": "Пешком, по тихой улице.",
+                      "pl": "Pieszo, cichą ulicą."
+                    }
+                  },
+                  {
+                    "kind": "value",
+                    "value": "2",
+                    "label": {
+                      "en": "Parking places",
+                      "ru": "Машино-места",
+                      "pl": "Miejsca parkingowe"
+                    },
+                    "note": {
+                      "en": "Under the house, with a charger.",
+                      "ru": "Под домом, с зарядкой.",
+                      "pl": "Pod domem, z ładowarką."
+                    }
+                  },
+                  {
+                    "kind": "value",
+                    "value": "24/7",
+                    "label": {
+                      "en": "Concierge",
+                      "ru": "Консьерж",
+                      "pl": "Recepcja"
+                    },
+                    "note": {
+                      "en": "Someone at the door day and night.",
+                      "ru": "У двери кто-то днём и ночью.",
+                      "pl": "Ktoś przy drzwiach dniem i nocą."
+                    }
+                  }
+                ],
+                "image": {
+                  "path": "demo:showcase-photo-5",
+                  "alt": {
+                    "en": "Hills under clouds",
+                    "ru": "Холмы под облаками",
+                    "pl": "Wzgórza pod chmurami"
+                  }
+                },
+                "shade": "light",
+                "parallax": true,
+                "width": "bleed"
+              }
+            },
+            {
+              "key": "showcase-tiles-three",
+              "type": "text-tiles",
+              "values": {
+                "heading": {
+                  "en": "Three tiles in the column",
+                  "ru": "Три плитки в колонке",
+                  "pl": "Trzy kafelki w kolumnie"
+                },
+                "text": {
+                  "en": "Without a photo the section is the colour of the shade. Three tiles end in one across both columns.",
+                  "ru": "Без фото секция — цвета тени. Три плитки заканчиваются одной на обе колонки.",
+                  "pl": "Bez zdjęcia sekcja ma kolor cienia. Trzy kafelki kończą się jednym na obie kolumny."
+                },
+                "tiles": [
+                  {
+                    "kind": "value",
+                    "value": "120",
+                    "unit": {
+                      "en": "m²",
+                      "ru": "м²",
+                      "pl": "m²"
+                    },
+                    "label": {
+                      "en": "Living space",
+                      "ru": "Жилая площадь",
+                      "pl": "Powierzchnia"
+                    },
+                    "note": {
+                      "en": "Three bedrooms and a study.",
+                      "ru": "Три спальни и кабинет.",
+                      "pl": "Trzy sypialnie i gabinet."
+                    }
+                  },
+                  {
+                    "kind": "value",
+                    "value": "5",
+                    "unit": {
+                      "en": "min",
+                      "ru": "мин",
+                      "pl": "min"
+                    },
+                    "label": {
+                      "en": "To the park",
+                      "ru": "До парка",
+                      "pl": "Do parku"
+                    },
+                    "note": {
+                      "en": "On foot, by a quiet street.",
+                      "ru": "Пешком, по тихой улице.",
+                      "pl": "Pieszo, cichą ulicą."
+                    }
+                  },
+                  {
+                    "kind": "value",
+                    "value": "2",
+                    "label": {
+                      "en": "Parking places",
+                      "ru": "Машино-места",
+                      "pl": "Miejsca parkingowe"
+                    },
+                    "note": {
+                      "en": "Under the house, with a charger.",
+                      "ru": "Под домом, с зарядкой.",
+                      "pl": "Pod domem, z ładowarką."
+                    }
+                  }
+                ],
+                "width": "column"
+              }
+            },
+            {
+              "key": "showcase-tiles-alone",
+              "type": "text-tiles",
+              "values": {
+                "tiles": [
+                  {
+                    "kind": "icon",
+                    "icon": {
+                      "path": "demo:showcase-icon-1"
+                    },
+                    "label": {
+                      "en": "A house of its own",
+                      "ru": "Свой дом",
+                      "pl": "Własny dom"
+                    },
+                    "note": {
+                      "en": "Four rooms over two floors.",
+                      "ru": "Четыре комнаты на двух этажах.",
+                      "pl": "Cztery pokoje na dwóch piętrach."
+                    }
+                  },
+                  {
+                    "kind": "value",
+                    "value": "120",
+                    "unit": {
+                      "en": "m²",
+                      "ru": "м²",
+                      "pl": "m²"
+                    },
+                    "label": {
+                      "en": "Living space",
+                      "ru": "Жилая площадь",
+                      "pl": "Powierzchnia"
+                    },
+                    "note": {
+                      "en": "Three bedrooms and a study.",
+                      "ru": "Три спальни и кабинет.",
+                      "pl": "Trzy sypialnie i gabinet."
+                    }
+                  }
+                ],
+                "image": {
+                  "path": "demo:showcase-photo-2",
+                  "alt": {
+                    "en": "A road through fields",
+                    "ru": "Дорога через поля",
+                    "pl": "Droga przez pola"
+                  }
+                },
+                "width": "column"
+              }
+            },
+            {
+              "key": "showcase-tiles-narrow",
+              "type": "showcase-column",
+              "values": {
+                "heading": {
+                  "en": "In a narrow column",
+                  "ru": "В узкой колонке",
+                  "pl": "W wąskiej kolumnie"
+                },
+                "note": {
+                  "en": "The same block in a column 20rem wide: the words above, the tiles two by two under them.",
+                  "ru": "Тот же блок в колонке шириной 20rem: слова сверху, плитки по две под ними.",
+                  "pl": "Ten sam blok w kolumnie szerokiej na 20rem: słowa na górze, kafelki po dwa pod nimi."
+                },
+                "items": [
+                  {
+                    "key": "showcase-tiles-narrow-icons",
+                    "type": "text-tiles",
+                    "values": {
+                      "eyebrow": {
+                        "en": "Four icons",
+                        "ru": "Четыре иконки",
+                        "pl": "Cztery ikony"
+                      },
+                      "heading": {
+                        "en": "A house ==by the park==",
+                        "ru": "Дом ==у парка==",
+                        "pl": "Dom ==przy parku=="
+                      },
+                      "text": {
+                        "en": "The words on the left, four glass tiles on the right: an SVG icon in each takes the colour of the words, so the same file reads on the dark shade and on the light one.",
+                        "ru": "Слова слева, четыре стеклянные плитки справа: SVG-иконка в каждой берёт цвет слов, поэтому один и тот же файл читается и на тёмной тени, и на светлой.",
+                        "pl": "Słowa po lewej, cztery szklane kafelki po prawej: ikona SVG w każdym bierze kolor słów, więc ten sam plik jest czytelny na ciemnym cieniu i na jasnym."
+                      },
+                      "button_label": {
+                        "en": "Look at the cards",
+                        "ru": "Посмотреть карточки",
+                        "pl": "Zobacz karty"
+                      },
+                      "button_link": {
+                        "target": "url",
+                        "entity_type": null,
+                        "entity_id": null,
+                        "url": "/kitchen-sink/blocks/cards",
+                        "hash": null,
+                        "new_tab": false,
+                        "rel": []
+                      },
+                      "tiles": [
+                        {
+                          "kind": "icon",
+                          "icon": {
+                            "path": "demo:showcase-icon-1"
+                          },
+                          "label": {
+                            "en": "A house of its own",
+                            "ru": "Свой дом",
+                            "pl": "Własny dom"
+                          },
+                          "note": {
+                            "en": "Four rooms over two floors.",
+                            "ru": "Четыре комнаты на двух этажах.",
+                            "pl": "Cztery pokoje na dwóch piętrach."
+                          }
+                        },
+                        {
+                          "kind": "icon",
+                          "icon": {
+                            "path": "demo:showcase-icon-2"
+                          },
+                          "label": {
+                            "en": "A garden",
+                            "ru": "Сад",
+                            "pl": "Ogród"
+                          },
+                          "note": {
+                            "en": "Fruit trees behind the house.",
+                            "ru": "Фруктовые деревья за домом.",
+                            "pl": "Drzewa owocowe za domem."
+                          }
+                        },
+                        {
+                          "kind": "icon",
+                          "icon": {
+                            "path": "demo:showcase-icon-3"
+                          },
+                          "label": {
+                            "en": "Light all day",
+                            "ru": "Свет весь день",
+                            "pl": "Światło przez cały dzień"
+                          },
+                          "note": {
+                            "en": "Windows to the south and the west.",
+                            "ru": "Окна на юг и на запад.",
+                            "pl": "Okna na południe i na zachód."
+                          }
+                        },
+                        {
+                          "kind": "icon",
+                          "icon": {
+                            "path": "demo:showcase-icon-4"
+                          },
+                          "label": {
+                            "en": "Keys in a month",
+                            "ru": "Ключи через месяц",
+                            "pl": "Klucze za miesiąc"
+                          },
+                          "note": {
+                            "en": "Papers ready, nothing to wait for.",
+                            "ru": "Документы готовы, ждать нечего.",
+                            "pl": "Dokumenty gotowe, nie ma na co czekać."
+                          }
+                        }
+                      ],
+                      "image": {
+                        "path": "demo:showcase-photo-1",
+                        "alt": {
+                          "en": "A quiet street with trees",
+                          "ru": "Тихая улица с деревьями",
+                          "pl": "Cicha ulica z drzewami"
+                        }
+                      },
+                      "shade": "dark",
+                      "width": "column"
                     }
                   }
                 ]

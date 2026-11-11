@@ -14,7 +14,7 @@ A site stands on a chain, top first:
 resources/views            the site's own overrides — above every theme, for the developer
 theme/                     the site's local theme: only what makes this site different
 acme/theme-clinic          a packaged theme several sites share (optional)
-webx-ui/theme-default      the bottom: a value for every token, the shell, the six blocks
+webx-ui/theme-default      the bottom: a value for every token, the shell, the seven blocks
 the modules                each module's own views and base look
 ```
 
@@ -239,7 +239,7 @@ for the old buttons stays compatible and prints what it printed. A site gets the
 
 ### Blocks that come in as the page scrolls
 
-The six blocks of `theme-default` can come in as they scroll into view: their words rise and fade
+The blocks of `theme-default` can come in as they scroll into view: their words rise and fade
 in, a grid of cards and the picture with its text come one after another. **Off unless the theme
 says so** — a site that never asked looks as it did. The theme says it in its manifest:
 
@@ -270,13 +270,13 @@ the `<section>` itself, or a list inside it fades twice:
 `@webxReveal` prints `data-webx-reveal="<effect>"` (or, with `stagger`, the effect for the children)
 while the theme names one and nothing otherwise; the second argument is the block's own switch, a
 `wx-switch` field `no_reveal`. The motion is the widgets' `data-webx-reveal`
-([Widgets](./widgets.md)). The six blocks print the directive from the version that brought it: a
+([Widgets](./widgets.md)). The blocks print the directive from the version that brought it: a
 site takes it with `webx:blocks:import --theme --replace=<slug>`, until then the blocks stand
 still.
 
 ### A picture that moves slower than the page
 
-The `hero` of `theme-default` over a picture has the switch «Parallax», off by default: on, the
+The `hero` of `theme-default` over a picture, and its `text-tiles`, have the switch «Parallax», off by default: on, the
 picture behind the words moves slower than the page while the words and the shade stay put.
 «Parallax strength» under it — soft, medium (the default) or strong — says how far behind it falls. It is the widgets' `data-webx-parallax` ([Widgets](./widgets.md)), so a block of your own takes
 part by putting the attribute on a picture that fills its frame:
@@ -288,7 +288,8 @@ part by putting the attribute on a picture that fills its frame:
 </section>
 ```
 
-A site takes the switch with `webx:blocks:import --theme --replace=hero`.
+A site takes the switch with `webx:blocks:import --theme --replace=hero`, and `text-tiles` with a plain
+`webx:blocks:import --theme --publish` — a new slug is created, the others are left as they are.
 
 ### Cards in a carousel, with labels and photos
 
@@ -303,9 +304,9 @@ block saved before prints as it did; a site takes the fields with
 ### An accent in a heading
 
 Part of a heading in another colour — «Homes **by the river**» — is typed in the heading itself:
-two equals signs on each side of the words, `Homes ==by the river==`. The six blocks of
+two equals signs on each side of the words, `Homes ==by the river==`. The blocks of
 `theme-default` print it as `<span class="site-accent">`, in the theme's `color-accent`; on the
-accent and over a photo (`hero`, `cta`) the words keep the colour and lean instead. The heading
+accent and over a photo (`hero`, `cta`, `text-tiles`) the words keep the colour and lean instead. The heading
 stays one `<h1>`/`<h2>` with its words in reading order, and each language of the site puts the
 accent where its own word order wants it — one field, translated like any other. A heading
 without marks prints as before; `a == b` and an unclosed `==` are printed as typed.

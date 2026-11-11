@@ -1,0 +1,291 @@
+{
+  "slug": "text-tiles",
+  "title": "Text and tiles on a photo",
+  "description": "A photo across the section under a shade, the words on one side and up to four glass tiles on the other: an icon or a figure, a label, a line.",
+  "icon": null,
+  "group": "content",
+  "sort": 35,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "eyebrow",
+      "type": "wx-input",
+      "label": "Above the heading",
+      "localized": true,
+      "props": {
+        "maxlength": 80
+      }
+    },
+    {
+      "id": "heading",
+      "type": "wx-input",
+      "label": "Heading",
+      "localized": true,
+      "help": "Two equals signs around words set them off: Homes ==by the river==."
+    },
+    {
+      "id": "text",
+      "type": "wx-textarea",
+      "label": "Text",
+      "localized": true,
+      "props": {
+        "rows": 4
+      }
+    },
+    {
+      "id": "button_label",
+      "type": "wx-input",
+      "label": "Button",
+      "localized": true
+    },
+    {
+      "id": "button_link",
+      "type": "wx-link",
+      "label": "Button link",
+      "props": {
+        "files": true,
+        "allowNone": false
+      }
+    },
+    {
+      "id": "tiles",
+      "type": "wx-repeater",
+      "label": "Tiles",
+      "help": "Up to four, two by two beside the words on a wide screen and under them on a phone. A tile with nothing in it is not shown.",
+      "props": {
+        "itemLabel": "label",
+        "addLabel": "Add a tile",
+        "max": 4,
+        "sortable": true
+      },
+      "children": [
+        {
+          "id": "kind",
+          "type": "wx-segmented",
+          "label": "At the top",
+          "default": "icon",
+          "props": {
+            "options": [
+              {
+                "value": "icon",
+                "label": "Icon"
+              },
+              {
+                "value": "value",
+                "label": "Figure"
+              }
+            ]
+          }
+        },
+        {
+          "id": "icon",
+          "type": "wx-media",
+          "label": "Icon",
+          "props": {
+            "accept": "image"
+          },
+          "help": "An SVG takes the colour of the words, so one file reads on both shades; another picture is shown as it is.",
+          "visible": {
+            "when": "kind",
+            "is": "icon"
+          }
+        },
+        {
+          "id": "value",
+          "type": "wx-input",
+          "label": "Figure",
+          "localized": true,
+          "props": {
+            "maxlength": 12,
+            "placeholder": "120"
+          },
+          "visible": {
+            "when": "kind",
+            "is": "value"
+          }
+        },
+        {
+          "id": "unit",
+          "type": "wx-input",
+          "label": "Unit",
+          "localized": true,
+          "props": {
+            "maxlength": 12,
+            "placeholder": "m²"
+          },
+          "visible": {
+            "when": "kind",
+            "is": "value"
+          }
+        },
+        {
+          "id": "label",
+          "type": "wx-input",
+          "label": "Label",
+          "localized": true,
+          "props": {
+            "maxlength": 60
+          }
+        },
+        {
+          "id": "note",
+          "type": "wx-textarea",
+          "label": "Text",
+          "localized": true,
+          "props": {
+            "rows": 2,
+            "maxlength": 160
+          }
+        }
+      ]
+    },
+    {
+      "id": "image",
+      "type": "wx-media",
+      "label": "Photo",
+      "props": {
+        "accept": "image"
+      },
+      "help": "Across the whole section, under a shade that keeps the words readable. Without a photo the section is the colour of the shade."
+    },
+    {
+      "id": "shade",
+      "type": "wx-segmented",
+      "label": "Shade",
+      "default": "dark",
+      "props": {
+        "options": [
+          {
+            "value": "dark",
+            "label": "Dark"
+          },
+          {
+            "value": "light",
+            "label": "Light"
+          }
+        ]
+      },
+      "help": "Dark: light words on a darkened photo. Light: dark words on a lightened one. The dark scheme of the site turns both round."
+    },
+    {
+      "id": "parallax",
+      "type": "wx-switch",
+      "label": "Parallax",
+      "default": false,
+      "help": "The photo moves a little slower than the page as it scrolls, drawn slightly larger so its edges stay out of sight. Never for visitors who ask for less motion."
+    },
+    {
+      "id": "parallax_strength",
+      "type": "wx-segmented",
+      "label": "Parallax strength",
+      "default": "medium",
+      "props": {
+        "options": [
+          {
+            "value": "soft",
+            "label": "Soft"
+          },
+          {
+            "value": "medium",
+            "label": "Medium"
+          },
+          {
+            "value": "strong",
+            "label": "Strong"
+          }
+        ]
+      },
+      "help": "How far behind the page the photo falls.",
+      "visible": {
+        "when": "parallax",
+        "is": true
+      }
+    },
+    {
+      "id": "width",
+      "type": "wx-segmented",
+      "label": "Width",
+      "default": "bleed",
+      "props": {
+        "options": [
+          {
+            "value": "column",
+            "label": "Column"
+          },
+          {
+            "value": "bleed",
+            "label": "Edge to edge"
+          }
+        ]
+      }
+    },
+    {
+      "id": "no_reveal",
+      "type": "wx-switch",
+      "label": "Without animation",
+      "default": false,
+      "help": "Shown at once, even where the theme brings its blocks in as the page scrolls."
+    }
+  ],
+  "template": "@php\n    $button = \\WebxUi\\Admin\\Links\\LinkAttributes::of($button_link ?? null);\n    $picture = is_array($image) && ! empty($image['url']) ? $image : null;\n    $veil = ($shade ?? 'dark') === 'light' ? 'light' : 'dark';\n    // A tile is an icon or a value with its unit, a label and a line; one with none of them is not printed.\n    $shown = [];\n    foreach (is_array($tiles) ? $tiles : [] as $tile) {\n        if (! is_array($tile)) {\n            continue;\n        }\n        $kind = ($tile['kind'] ?? 'icon') === 'value' ? 'value' : 'icon';\n        $icon = $kind === 'icon' && is_array($tile['icon'] ?? null) && ! empty($tile['icon']['url']) ? $tile['icon'] : null;\n        $value = $kind === 'value' ? trim((string) ($tile['value'] ?? '')) : '';\n        $unit = $value !== '' ? trim((string) ($tile['unit'] ?? '')) : '';\n        $label = trim((string) ($tile['label'] ?? ''));\n        $line = trim((string) ($tile['note'] ?? ''));\n        if ($icon || $value !== '' || $label !== '' || $line !== '') {\n            // An SVG icon is painted in the colour of the words through a mask: one file reads on both shades.\n            // The address stands inside url('…') of a style attribute: its quotes and brackets encoded.\n            $mask = $icon && (strtolower((string) ($icon['extension'] ?? '')) === 'svg' || ($icon['mime'] ?? null) === 'image/svg+xml')\n                ? str_replace([\"'\", '\"', '(', ')', '\\\\'], ['%27', '%22', '%28', '%29', '%5C'], (string) $icon['url'])\n                : null;\n            $shown[] = compact('kind', 'icon', 'mask', 'value', 'unit', 'label', 'line');\n        }\n        if (count($shown) === 4) {\n            break;\n        }\n    }\n    $words = $eyebrow || $heading || $text || ($button_label && $button);\n@endphp\n@if ($words || $shown)\n<section @class(['b-text-tiles', 'b-text-tiles--'.$veil, 'b-text-tiles--'.count($shown), 'b-text-tiles--words' => $words, 'site-bleed' => ($width ?? 'bleed') !== 'column']) data-wx-block=\"text-tiles\">\n    @if ($picture)\n        <img class=\"b-text-tiles__picture\"@if ($parallax) data-webx-parallax{!! in_array($parallax_strength ?? null, ['soft', 'strong'], true) ? '=\"'.$parallax_strength.'\"' : '' !!} @endif src=\"{{ $picture['url'] }}\" alt=\"{{ $picture['alt'] ?? '' }}\" loading=\"lazy\" @if (! empty($picture['width'])) width=\"{{ $picture['width'] }}\" height=\"{{ $picture['height'] }}\" @endif>\n    @endif\n    <div class=\"b-text-tiles__shade\"></div>\n    <div class=\"b-text-tiles__inner\">\n        @if ($words)\n            <div class=\"b-text-tiles__words\" @webxReveal('', $no_reveal)>\n                @if ($eyebrow)\n                    <p class=\"b-text-tiles__eyebrow\">{{ $eyebrow }}</p>\n                @endif\n                @if ($heading)\n                    <h2 class=\"b-text-tiles__heading\">@webxAccent($heading)</h2>\n                @endif\n                @if ($text)\n                    <p class=\"b-text-tiles__text\">{{ $text }}</p>\n                @endif\n                @if ($button_label && $button)\n                    <a class=\"b-text-tiles__button\" {{ $button }}>{{ $button_label }}</a>\n                @endif\n            </div>\n        @endif\n        @if ($shown)\n            <ul class=\"b-text-tiles__tiles\" role=\"list\" @webxReveal('stagger', $no_reveal)>\n                @foreach ($shown as $tile)\n                    <li class=\"b-text-tiles__tile b-text-tiles__tile--{{ $tile['kind'] }}\">\n                        @if ($tile['mask'])\n                            <span class=\"b-text-tiles__icon b-text-tiles__icon--mask\" style=\"--b-text-tiles-icon: url('{{ $tile['mask'] }}')\" @if (! empty($tile['icon']['alt'])) role=\"img\" aria-label=\"{{ $tile['icon']['alt'] }}\" @else aria-hidden=\"true\" @endif></span>\n                        @elseif ($tile['icon'])\n                            <img class=\"b-text-tiles__icon\" src=\"{{ $tile['icon']['url'] }}\" alt=\"{{ $tile['icon']['alt'] ?? '' }}\" loading=\"lazy\" @if (! empty($tile['icon']['width'])) width=\"{{ $tile['icon']['width'] }}\" height=\"{{ $tile['icon']['height'] }}\" @endif>\n                        @endif\n                        @if ($tile['value'] !== '')\n                            <p class=\"b-text-tiles__value\">{{ $tile['value'] }}@if ($tile['unit'] !== '') <span class=\"b-text-tiles__unit\">{{ $tile['unit'] }}</span>@endif</p>\n                        @endif\n                        @if ($tile['label'] !== '')\n                            <p class=\"b-text-tiles__label\">{{ $tile['label'] }}</p>\n                        @endif\n                        @if ($tile['line'] !== '')\n                            <p class=\"b-text-tiles__line\">{{ $tile['line'] }}</p>\n                        @endif\n                    </li>\n                @endforeach\n            </ul>\n        @endif\n    </div>\n</section>\n@endif\n",
+  "styles": "/* The shade and the words are two token colours turned round: dark — a shade of the text colour\n   under words in the page's colour, light — a veil of the page's colour under words in the text\n   colour. Either reads on any photo, and the dark scheme turns both round together. The block's\n   own variables are the knobs a site's theme turns: how thick the shade is, how clear the glass. */\n.b-text-tiles {\n    --text-tiles-shade: var(--site-color-text);\n    --text-tiles-ink: var(--site-color-bg);\n    --text-tiles-veil: 72%;\n    --text-tiles-glass: 30%;\n    --text-tiles-glass-solid: 62%;\n    --text-tiles-blur: 14px;\n    container-type: inline-size;\n    position: relative;\n    isolation: isolate;\n    overflow: hidden;\n    padding-block: var(--site-space-7);\n    background: var(--text-tiles-shade);\n    color: var(--text-tiles-ink);\n}\n\n.b-text-tiles--light {\n    --text-tiles-shade: var(--site-color-bg);\n    --text-tiles-ink: var(--site-color-text);\n    --text-tiles-veil: 78%;\n}\n\n/* In the column it is a card of its own: rounded, and apart from the block before and after it. */\n.b-text-tiles:not(.site-bleed) {\n    margin-block: var(--site-space-5);\n    border-radius: var(--site-radius-lg);\n}\n\n.b-text-tiles__picture {\n    position: absolute;\n    inset: 0;\n    z-index: -2;\n    width: 100%;\n    max-width: none;\n    height: 100%;\n    border-radius: 0;\n    object-fit: cover;\n}\n\n/* Even, not a gradient: the words and the tiles stand anywhere on the photo, and the thinnest\n   part of a gradient would be under one of them. 72% of the text colour over a white pixel still\n   leaves the page's colour at 4.5:1 and more (WCAG AA). */\n.b-text-tiles__shade {\n    position: absolute;\n    inset: 0;\n    z-index: -1;\n    background: color-mix(in srgb, var(--text-tiles-shade) var(--text-tiles-veil), transparent);\n}\n\n.b-text-tiles__inner {\n    display: grid;\n    gap: var(--site-space-6);\n    align-items: center;\n    width: 100%;\n    max-width: var(--site-container-width);\n    margin-inline: auto;\n    padding-inline: var(--site-space-5);\n}\n\n.b-text-tiles.site-bleed .b-text-tiles__inner {\n    padding-inline: var(--site-gutter);\n}\n\n.b-text-tiles__words {\n    display: flex;\n    flex-direction: column;\n    align-items: flex-start;\n    gap: var(--site-space-3);\n    min-width: 0;\n}\n\n.b-text-tiles__eyebrow {\n    margin: 0;\n    font-size: var(--site-font-size-6);\n    font-weight: 600;\n    letter-spacing: 0.08em;\n    text-transform: uppercase;\n}\n\n.b-text-tiles__heading {\n    max-width: 22em;\n    margin: 0;\n    color: inherit;\n    font-family: var(--site-font-heading);\n    font-size: var(--site-font-size-3);\n    line-height: 1.15;\n    hyphens: auto;\n}\n\n.b-text-tiles__text {\n    max-width: 40em;\n    margin: 0;\n    white-space: pre-line;\n}\n\n.b-text-tiles__button {\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n    min-height: 44px;\n    margin-top: var(--site-space-2);\n    padding: 0 var(--site-space-5);\n    border: 1px solid transparent;\n    border-radius: var(--site-radius-md);\n    background: var(--site-color-accent);\n    color: var(--site-color-accent-contrast);\n    font-weight: 600;\n    line-height: 1.2;\n    text-align: center;\n    text-decoration: none;\n    transition: background-color var(--site-duration) var(--site-easing);\n}\n\n.b-text-tiles__button:hover {\n    background: color-mix(in srgb, var(--site-color-accent) 85%, var(--site-color-text));\n}\n\n.b-text-tiles__button:focus-visible {\n    outline: 2px solid var(--text-tiles-ink);\n    outline-offset: 2px;\n}\n\n.b-text-tiles__tiles {\n    display: grid;\n    gap: var(--site-space-3);\n    margin: 0;\n    padding: 0;\n    list-style: none;\n}\n\n/* Glass: more of the shade behind the tile and the photo blurred through it — never lighter than\n   the shade around, so the words of a tile keep the contrast of the words beside it. */\n.b-text-tiles__tile {\n    display: flex;\n    flex-direction: column;\n    gap: var(--site-space-2);\n    min-width: 0;\n    margin: 0;\n    padding: var(--site-space-4);\n    border: 1px solid color-mix(in srgb, var(--text-tiles-ink) 22%, transparent);\n    border-radius: var(--site-radius-lg);\n    background: color-mix(in srgb, var(--text-tiles-shade) var(--text-tiles-glass), transparent);\n    -webkit-backdrop-filter: blur(var(--text-tiles-blur));\n    backdrop-filter: blur(var(--text-tiles-blur));\n}\n\n/* Without the blur the photo would show through sharp: a denser tile instead. */\n@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {\n    .b-text-tiles__tile {\n        background: color-mix(in srgb, var(--text-tiles-shade) var(--text-tiles-glass-solid), transparent);\n    }\n}\n\n.b-text-tiles__tile > * {\n    margin: 0;\n}\n\n.b-text-tiles__icon {\n    display: block;\n    width: auto;\n    max-width: 100%;\n    height: 2.5rem;\n    border-radius: 0;\n    object-fit: contain;\n    object-position: left center;\n}\n\n.b-text-tiles__icon--mask {\n    width: 2.5rem;\n    background: currentColor;\n    -webkit-mask: var(--b-text-tiles-icon) left center / contain no-repeat;\n    mask: var(--b-text-tiles-icon) left center / contain no-repeat;\n}\n\n.b-text-tiles__value {\n    font-family: var(--site-font-heading);\n    font-size: var(--site-font-size-2);\n    font-weight: 700;\n    line-height: 1;\n    overflow-wrap: anywhere;\n}\n\n.b-text-tiles__unit {\n    font-size: var(--site-font-size-5);\n    font-weight: 600;\n}\n\n.b-text-tiles__label {\n    font-weight: 600;\n    line-height: 1.3;\n}\n\n.b-text-tiles__line {\n    font-size: var(--site-font-size-6);\n    line-height: 1.4;\n}\n\n/* Two across from a phone up (a 360px screen gives 20.5rem): four tiles are two rows, three end\n   in one across both. A narrower column — a sidebar — keeps one tile a row. */\n@container (min-width: 20rem) {\n    .b-text-tiles__tiles {\n        grid-template-columns: repeat(2, minmax(0, 1fr));\n    }\n\n    .b-text-tiles--1 .b-text-tiles__tiles {\n        grid-template-columns: minmax(0, 1fr);\n    }\n\n    .b-text-tiles--3 .b-text-tiles__tile:last-child {\n        grid-column: 1 / -1;\n    }\n}\n\n@container (min-width: 40rem) {\n    .b-text-tiles {\n        padding-block: var(--site-space-8);\n    }\n\n    .b-text-tiles__inner {\n        padding-inline: var(--site-space-7);\n    }\n\n    .b-text-tiles__heading {\n        font-size: var(--site-font-size-2);\n    }\n\n    .b-text-tiles__tile {\n        padding: var(--site-space-5);\n    }\n}\n\n/* The words on the left, the tiles in two by two on the right. */\n@container (min-width: 56rem) {\n    .b-text-tiles--words:not(.b-text-tiles--0) .b-text-tiles__inner {\n        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);\n        gap: var(--site-space-7);\n    }\n}\n\n/* The accented words of the heading (==words==) cannot take the accent colour over a photo: they keep the colour and lean instead. */\n.b-text-tiles .site-accent {\n    color: inherit;\n    font-style: italic;\n}\n",
+  "script": null,
+  "sample": {
+    "eyebrow": "The place",
+    "heading": "Room to live, ==close to everything==",
+    "text": "A line on what makes it worth a visit, and one more on who it suits.",
+    "button_label": "Book a viewing",
+    "button_link": {
+      "target": "url",
+      "entity_type": null,
+      "entity_id": null,
+      "url": "/contacts",
+      "hash": null,
+      "new_tab": false,
+      "rel": []
+    },
+    "tiles": [
+      {
+        "kind": "value",
+        "icon": null,
+        "value": "120",
+        "unit": "m²",
+        "label": "Living space",
+        "note": "Three bedrooms and a study."
+      },
+      {
+        "kind": "value",
+        "icon": null,
+        "value": "5",
+        "unit": "min",
+        "label": "To the park",
+        "note": "On foot, by a quiet street."
+      },
+      {
+        "kind": "value",
+        "icon": null,
+        "value": "2",
+        "unit": "",
+        "label": "Parking places",
+        "note": "Under the house, with a charger."
+      },
+      {
+        "kind": "value",
+        "icon": null,
+        "value": "24/7",
+        "unit": "",
+        "label": "Concierge",
+        "note": "Someone at the door day and night."
+      }
+    ],
+    "image": null,
+    "shade": "dark",
+    "parallax": false,
+    "parallax_strength": "medium",
+    "width": "bleed",
+    "no_reveal": false
+  }
+}

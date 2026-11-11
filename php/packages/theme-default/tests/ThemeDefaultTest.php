@@ -251,16 +251,16 @@ class ThemeDefaultTest extends TestCase
     }
 
     /**
-     * The six blocks of THEMES §9.1, in the format `webx:blocks:export` writes, that sync puts on
+     * The blocks of THEMES §9.1, in the format `webx:blocks:export` writes, that sync puts on
      * every site with this theme: §8 — the check that refuses a type at sync —, the width from
      * the container, every selector under the block, every word a visitor reads a translatable
      * field (rule 18) and every fixed label a word of this theme.
      */
     #[Test]
-    public function the_six_blocks_are_block_documents_on_the_site_tokens(): void
+    public function the_blocks_are_block_documents_on_the_site_tokens(): void
     {
         $files = glob(self::path().'/blocks/*.json') ?: [];
-        $this->assertSame(['cards', 'contact', 'cta', 'hero', 'media-text', 'text'], array_map(static fn (string $file): string => basename($file, '.json'), $files));
+        $this->assertSame(['cards', 'contact', 'cta', 'hero', 'media-text', 'text-tiles', 'text'], array_map(static fn (string $file): string => basename($file, '.json'), $files));
 
         $words = Arr::dot(require self::path().'/lang/en/theme.php');
 
@@ -318,7 +318,7 @@ class ThemeDefaultTest extends TestCase
         $this->assertSame(0, $code, $said);
         // The checkout of module-orders, which this site lacks: a packaged theme's patch waits for it.
         $this->assertStringContainsString('compositions/checkout.page/default.json note: no layer has a base for the composition "checkout.page": the patches of the theme apply once a module gives it', $said);
-        $this->assertStringContainsString('6 block types', $said);
+        $this->assertStringContainsString('7 block types', $said);
         $this->assertStringContainsString('27 icons, every one its templates name', $said);
         $this->assertMatchesRegularExpression('/\d+ letters, every colour from theme_token\(\)/', $said);
     }
@@ -754,7 +754,7 @@ class ThemeDefaultTest extends TestCase
             $templates['compositions/'.basename(dirname($file)).'/'.basename($file)] = implode("\n", $html);
         }
 
-        $this->assertCount(56, $templates);
+        $this->assertCount(57, $templates);
 
         foreach ($templates as $name => $template) {
             preg_match_all("/__\\(\\s*'([^']*)'/", $template, $calls);

@@ -17,7 +17,7 @@ Part of [WebX UI](https://github.com/webx-ui/webx-ui). The mechanism — the cha
 vocabulary, `@webxTheme` — is [`webx-ui/themes`](https://github.com/webx-ui/themes).
 
 > Early days: this release holds the tokens, the layout with its header and footer, the shell and
-> prose stylesheet, six block types, the icons, Inter in Latin, Latin Extended and Cyrillic, the
+> prose stylesheet, seven block types, the icons, Inter in Latin, Latin Extended and Cyrillic, the
 > 404 page, the frame of the letters and every word of the layout in ten languages.
 
 ## What is in it
@@ -46,7 +46,7 @@ specificity: a local theme, a module or a block overrides it by writing the rule
 ```bash
 composer require webx-ui/theme-default
 php artisan webx:theme:sync                       # files only
-php artisan webx:blocks:import --theme --publish  # the six block types, once
+php artisan webx:blocks:import --theme --publish  # the block types, once
 ```
 
 and `WEBX_THEME=webx-ui/theme-default` (or a local `theme/` that `uses` it) in `.env`.

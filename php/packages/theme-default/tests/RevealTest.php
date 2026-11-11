@@ -31,6 +31,7 @@ final class RevealTest extends TestCase
         'cards' => ['b-cards__head' => 'up', 'b-cards__grid' => 'stagger'],
         'cta' => ['b-cta__inner' => 'up'],
         'contact' => ['b-contact__head' => 'up', 'b-contact__grid' => 'stagger'],
+        'text-tiles' => ['b-text-tiles__words' => 'up', 'b-text-tiles__tiles' => 'stagger'],
     ];
 
     /**
