@@ -334,7 +334,7 @@ What a long page needs, each loading only where it stands:
   JavaScript or with reduced motion everything is simply there.
 - **Parallax** — `data-webx-parallax` on a picture that fills its frame (the parent with
   `overflow: hidden`): it moves slower than the page as the frame crosses the screen, drawn a
-  little larger so its edges stay out of sight. Scroll-driven CSS (`animation-timeline: view()`)
+  little larger so its edges stay out of sight. Scroll-driven CSS (a view timeline named on the frame)
   where the browser has it, a small script elsewhere; only `translate` and `scale`, so nothing
   shifts around it. `--webx-parallax-shift` (6, percent of the height each way) and
   `--webx-parallax-shift-narrow` (3, in a container under 40rem) set how far. Without JavaScript,

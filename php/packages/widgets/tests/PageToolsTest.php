@@ -125,7 +125,7 @@ final class PageToolsTest extends TestCase
 
         // The parallax too: an attribute on a picture, no file of its own; scroll-driven where the browser can.
         $this->assertContains('parallax', Package::RUNTIME);
-        $this->assertStringContainsString('animation-timeline:view()', (string) file_get_contents(Package::path().'/dist/runtime.css'));
+        $this->assertStringContainsString('view-timeline:--webx-parallax block', (string) file_get_contents(Package::path().'/dist/runtime.css'));
         $this->assertStringContainsString('.webx-parallax--script', (string) file_get_contents(Package::path().'/dist/runtime.css'));
     }
 

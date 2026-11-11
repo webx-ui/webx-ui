@@ -200,7 +200,7 @@ describe('parallax', () => {
 
   async function load(supports) {
     frames = []
-    vi.stubGlobal('CSS', { supports: (query) => supports && query.includes('animation-timeline') })
+    vi.stubGlobal('CSS', { supports: (query) => supports && query.includes('view-timeline') })
     vi.stubGlobal('requestAnimationFrame', (callback) => frames.push(callback))
     vi.stubGlobal('cancelAnimationFrame', () => {})
     vi.stubGlobal('innerHeight', 800)
@@ -210,8 +210,11 @@ describe('parallax', () => {
 
   it('leaves the motion to the stylesheet where the browser has scroll-driven animations', async () => {
     const picture = await load(true)
+    const frame = document.getElementById('frame')
 
     expect(picture.className).toBe('webx-parallax')
+    // The timeline is the frame's: `view()` of the picture would follow the frame that crops it.
+    expect(frame.className).toBe('webx-parallax-frame')
     // No observer, no frame asked for: the compositor does it.
     expect(watched.length).toBe(0)
     window.dispatchEvent(new Event('scroll'))
@@ -219,6 +222,34 @@ describe('parallax', () => {
 
     window.webx.unmount()
     expect(picture.className).toBe('')
+    expect(frame.className).toBe('')
+  })
+
+  it('names the timeline on the outermost frame that crops, and falls back where it is taller', async () => {
+    vi.stubGlobal('CSS', { supports: () => true })
+    vi.stubGlobal('innerHeight', 800)
+    // jsdom reads the longhand only; a browser computes it from the shorthand as well.
+    const slider =
+      '<div id="viewport" style="overflow-y: hidden"><div id="slide" style="overflow-y: hidden"><img id="a" data-webx-parallax src="/a.jpg" alt=""></div><div id="other" style="overflow-y: hidden"><img id="b" data-webx-parallax src="/b.jpg" alt=""></div></div>'
+    await start(slider)
+
+    // Two slides, one viewport: it keeps the name until the last picture lets go.
+    const viewport = document.getElementById('viewport')
+    expect(viewport.className).toBe('webx-parallax-frame')
+    expect(document.getElementById('slide').className).toBe('')
+    window.webx.unmount(document.getElementById('slide'))
+    expect(viewport.className).toBe('webx-parallax-frame')
+    window.webx.unmount()
+    expect(viewport.className).toBe('')
+
+    // A cropping page wrapper taller than the frame: no timeline follows the frame, the script does.
+    document.body.innerHTML =
+      '<div id="page" style="overflow-y: hidden"><section id="frame" style="overflow-y: hidden"><img id="c" data-webx-parallax src="/c.jpg" alt=""></section></div>'
+    at(document.getElementById('page'), 0, 3000)
+    at(document.getElementById('frame'), 400, 500)
+    window.webx.mount()
+    expect(document.getElementById('c').classList.contains('webx-parallax--script')).toBe(true)
+    expect(document.getElementById('page').className).toBe('')
   })
 
   it('without them, writes where the frame is on its way across the screen, only while it is seen', async () => {

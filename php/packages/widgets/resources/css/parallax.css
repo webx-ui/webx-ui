@@ -1,7 +1,7 @@
 /*
  * `data-webx-parallax` (spec §14). Nothing here moves an element by its attribute: the script adds
- * `webx-parallax`, and `webx-parallax--script` where the browser has no scroll-driven animations,
- * so a page without JavaScript, with reduced motion or in print shows the picture as it is.
+ * `webx-parallax` — on the picture, and `webx-parallax-frame` on the ancestor whose view timeline it
+ * follows (behaviours/parallax.js says which), or `webx-parallax--script` where there is none — so a page without JavaScript, with reduced motion or in print shows the picture as it is.
  *
  * The picture travels from `-shift` to `+shift` percent of its own height while its frame crosses
  * the screen, and is scaled up by twice that, so its edges never come into the frame. Only
@@ -16,6 +16,11 @@
   --webx-parallax-progress: 0.5;
 }
 
+/* The timeline the picture follows: the frame (or what crops it) crossing the page's screen. */
+.webx-parallax-frame {
+  view-timeline: --webx-parallax block;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .webx-parallax {
     --webx-parallax-amount: var(--webx-parallax-shift);
@@ -24,7 +29,7 @@
     will-change: translate;
     animation: webx-parallax linear both;
     /* After the shorthand, which resets it. */
-    animation-timeline: view();
+    animation-timeline: --webx-parallax;
     animation-range: cover;
   }
 

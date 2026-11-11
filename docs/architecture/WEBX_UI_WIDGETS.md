@@ -1040,12 +1040,19 @@ https://*.googleapis.com https://*.gstatic.com data:`, `connect-src https://*.go
 - **Параллакс** (`data-webx-parallax` на картинке или обёртке картинки с видео, которая заполняет
   свою рамку — родителя с `overflow: hidden`; ставят hero-баннеры по опции места и `hero` темы
   полем блока). Картинка проходит от `-shift` до `+shift` процентов своей высоты, пока рамка
-  пересекает экран (`cover` у `view()`), и увеличена `scale` на `1 + 2·shift/100` — край не
+  пересекает экран (`cover` у view timeline), и увеличена `scale` на `1 + 2·shift/100` — край не
   заходит в рамку. Токены `--webx-parallax-shift` (6) и `--webx-parallax-shift-narrow` (3, в
   контейнере уже 40rem — решает ближайший контейнер: блок, кадр баннера). Только `translate` и
   `scale` — ни раскладки, ни CLS; `background-attachment: fixed` не используется (на телефонах
-  не работает и перерисовывает страницу). **Классы ставит скрипт:** `webx-parallax`, а там, где
-  `CSS.supports('animation-timeline: view()')` ложно, ещё `webx-parallax--script` — тогда
+  не работает и перерисовывает страницу). **Классы ставит скрипт.** Не `view()` у самой картинки:
+  таймлайн следует за ближайшим скролл-контейнером, а рамка с `overflow: hidden` — он и есть, и
+  не прокручивается — прогресс стоял бы на 50%. Скрипт находит самого внешнего предка, который
+  режет (`overflow` не `visible`/`clip`: вьюпорт слайдера, кадр, секция) — его скроллер уже
+  страница, — и, если он по вертикали совпадает с рамкой (±1px), ставит ему `webx-parallax-frame`
+  (`view-timeline: --webx-parallax block`, счётчик — у слайдов один вьюпорт), картинке —
+  `webx-parallax` (`animation-timeline: --webx-parallax`). Нет таймлайнов
+  (`CSS.supports('view-timeline: …')` ложно) или режущий предок выше рамки — ещё
+  `webx-parallax--script`, тогда
   `IntersectionObserver` говорит, видна ли рамка, и только пока видна каждая прокрутка просит один
   кадр: чтение `getBoundingClientRect()` **родителя** (свой бокс несёт сдвиг) и запись одной
   `--webx-parallax-progress` (0…1). Без JS, при `prefers-reduced-motion` (скрипт не ставит класс,

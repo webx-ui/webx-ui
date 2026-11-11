@@ -4,9 +4,14 @@
  * drawn a little larger than the frame and shifted with `translate`, never laid out again, so the
  * page around it does not move (no CLS) and the frame's own `overflow` crops the overscan.
  *
- * Where the browser has scroll-driven animations (`animation-timeline: view()`) this script only
- * adds the class and the stylesheet does the rest on the compositor. Elsewhere it is the fallback:
- * an IntersectionObserver says when the frame is on screen, and only then each scroll asks for one
+ * Where the browser has scroll-driven animations the stylesheet does the motion on the compositor,
+ * on a view timeline. Not `view()` of the picture: a timeline follows the nearest scroll container,
+ * and the frame that crops the picture is one (`overflow: hidden` makes it so) that never scrolls —
+ * the timeline would stand at its middle. So the timeline is named on the outermost ancestor that
+ * crops (a slider's viewport, the frame itself), whose own scroller is the page, and only when
+ * that ancestor spans the frame's height: a taller one would move the picture at the wrong time.
+ * Otherwise, and where the browser has no such timelines, this script is the fallback: an
+ * IntersectionObserver says when the frame is on screen, and only then each scroll asks for one
  * frame that reads where the frame stands and writes one custom property — a read, then a write,
  * never a read after a write. The frame is the element's parent: the element's own box carries the
  * shift, and measuring it would measure the shift.
@@ -19,27 +24,53 @@ import { listeners } from '../core.js'
 
 const reduced = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
 
-const scrollDriven = () => window.CSS?.supports?.('animation-timeline: view()') ?? false
+const scrollDriven = () => window.CSS?.supports?.('view-timeline: --webx-parallax block') ?? false
+
+// How many pictures name their timeline on an element: a slider's slides share its viewport.
+const named = new WeakMap()
+
+// A scroll container, whatever it shows: `hidden` is one, `clip` is not.
+const crops = (el) => !/^(visible|clip|)$/.test(getComputedStyle(el).overflowY)
+
+/** The element to name the timeline on, or null when none follows the frame through the page. */
+function subjectOf(frame) {
+  let subject = frame
+  for (let el = frame.parentElement; el && el !== document.body; el = el.parentElement) {
+    if (crops(el)) subject = el
+  }
+  const a = frame.getBoundingClientRect()
+  const b = subject.getBoundingClientRect()
+  return Math.abs(a.top - b.top) <= 1 && Math.abs(a.height - b.height) <= 1 ? subject : null
+}
 
 export function parallax(el) {
   if (reduced()) return
 
-  if (scrollDriven()) {
+  const frame = el.parentElement ?? el
+  const subject = scrollDriven() ? subjectOf(frame) : null
+
+  if (subject) {
+    named.set(subject, (named.get(subject) ?? 0) + 1)
+    subject.classList.add('webx-parallax-frame')
     el.classList.add('webx-parallax')
-    return () => el.classList.remove('webx-parallax')
+    return () => {
+      el.classList.remove('webx-parallax')
+      const left = named.get(subject) - 1
+      named.set(subject, left)
+      if (!left) subject.classList.remove('webx-parallax-frame')
+    }
   }
 
   if (typeof IntersectionObserver !== 'function' || typeof requestAnimationFrame !== 'function')
     return
 
-  const frame = el.parentElement ?? el
   const on = listeners()
   let asked = 0
   let seen = false
 
   el.classList.add('webx-parallax', 'webx-parallax--script')
 
-  // 0 — the frame's top at the bottom of the screen, 1 — its bottom at the top: `cover` of view().
+  // 0 — the frame's top at the bottom of the screen, 1 — its bottom at the top: `cover` of a view timeline.
   const place = () => {
     asked = 0
     const rect = frame.getBoundingClientRect()
