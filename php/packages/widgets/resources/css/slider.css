@@ -21,7 +21,7 @@
   --webx-slider-bullet-active: var(--site-color-accent);
   --webx-slider-count-color: var(--site-color-text-muted);
   --webx-slider-count-current: var(--site-color-text);
-  --webx-slider-count-size: var(--site-font-size-sm);
+  --webx-slider-count-size: var(--site-font-size-6);
   --webx-slider-count-gap: 2px;
   --webx-slider-thumb-size: 72px;
   --webx-slider-thumb-gap: var(--site-space-2);
