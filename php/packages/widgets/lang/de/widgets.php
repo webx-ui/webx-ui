@@ -131,6 +131,7 @@ return [
         'open' => 'In Karten öffnen',
         'hint' => 'Klicken Sie auf die Karte, um mit dem Mausrad zu zoomen',
         'failed' => 'Die Karte konnte nicht geladen werden.',
+        'embed_refused' => 'Das ist kein Code einer Google-Maps-Karte. Öffnen Sie in Google Maps „Teilen“ → „Karte einbetten“, kopieren Sie den HTML-Code und fügen Sie ihn hier ein – oder nur seine Adresse, https://www.google.com/maps/embed?pb=…',
     ],
     'table' => [
         'label' => 'Tabelle',

@@ -131,6 +131,7 @@ return [
         'open' => 'Haritada aç',
         'hint' => 'Tekerlekle yakınlaştırmak için haritaya tıklayın',
         'failed' => 'Harita yüklenemedi.',
+        'embed_refused' => 'Bu bir Google Haritalar haritasının kodu değil. Google Haritalar’da Paylaş → Harita yerleştir’i açın, HTML’yi kopyalayıp buraya yapıştırın — ya da yalnızca adresini, https://www.google.com/maps/embed?pb=…',
     ],
     'table' => [
         'label' => 'Tablo',

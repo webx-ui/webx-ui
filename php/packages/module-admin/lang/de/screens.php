@@ -9,6 +9,7 @@ return [
     'row-unknown-key' => 'Diese Zeile hat kein Feld „:key“. Eine Zeile nimmt: :keys.',
     'icon-unknown' => 'In diesem Satz gibt es kein Symbol „:name“. Der Satz enthält: :names.',
     'icon-source-unknown' => 'Auf dieser Website gibt es keinen Symbolsatz „:source“.',
+    'embed-source-unknown' => 'Dieses Feld nimmt Frames von „:source“ an, und diesen Dienst gibt es auf der Website nicht.',
     // The card a module's screen keeps for the fields a project patches in (`project-fields`).
     'project-fields' => 'Weiteres',
     // The words of a list of records on a described screen; the core has English only.

@@ -309,6 +309,38 @@ ID. Without `module-settings` the config does the same:
 https://*.googleapis.com` and `font-src https://fonts.gstatic.com`. Do not preconnect to Google
   in the `<head>`: that is a request with the visitor's address before consent.
 
+### Google Maps embed, with no key
+
+A site whose owner cannot get a key for the Maps JavaScript API puts Google's own frame instead —
+**Share → Embed a map** in Google Maps. It is a mode of the same `<x-webx-map>`, not another
+widget: the same frame, notice, buttons and consent to `media`.
+
+```blade
+<x-webx-map :embed="$code" address="Sample Square, Sample City" title="Map of the office"
+            link="https://maps.app.goo.gl/…" height="28rem" height-narrow="18rem" />
+```
+
+- **What it takes** — Google's whole `<iframe …>` or only its address. The address is taken out and
+  only `https://www.google.com/maps/embed?pb=…` (and the older `maps.google.com/maps?…&output=embed`)
+  pass; a frame of another site, the keyed `/maps/embed/v1/…`, `http:` or HTML with more than the
+  one frame in it is refused.
+- **In a block** — the Map block's «Place» → «Google Maps embed», then «Map code or link». Its
+  field is the panel's `wx-embed` (`props.source: "google-maps"`): the code is pasted as it is,
+  the save keeps the address alone and refuses another site's code with a line saying where to
+  get the right one. The same holds for an agent writing through `blocks_*`.
+- **«Open in Google Maps»** — `link`, else read from the address when it says where: the centre of
+  a `pb` code, the search of an old one. A `pb` without a centre has no link unless one is given.
+- **Before consent** there is no `<iframe>` in the page at all: the address, the link, the notice
+  and «Load» (this map) / «Always load maps» (the consent). After it the script puts Google's frame
+  in with the `title`, `loading="lazy"` and `referrerpolicy="no-referrer-when-downgrade"`, filling
+  the frame the server reserved — nothing below moves.
+- **`height-narrow`** — the height in a column narrower than 36em, for any map: a phone gets a
+  shorter map than a monitor. The block's «Height on a phone» sets it; «Width» → «Edge to edge»
+  takes the map to the window's sides (`site-bleed`).
+
+Where the manager gets the code: Google Maps → the place → **Share** → **Embed a map** → **Copy
+HTML**, and paste it into the block.
+
 ## Page tools
 
 What a long page needs, each loading only where it stands:

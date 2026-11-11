@@ -4,14 +4,15 @@
     buttons the script's; with consent the script puts the map over it. The attribution of the
     tiles is printed under every map. An address with no coordinates is the place alone. A map
     the site lets load without asking has no data-webx-consent: the banner does not offer media for it.
+    Google's "Embed a map" (embed, §11.2) is the same frame: the script puts Google's <iframe> in it.
 
-    Classes: webx-map, --place (no coordinates), __place, __place--static, __address, __open, __notice, __actions,
-    __button, __button--always, __attribution, __canvas, __marker, __hint;
+    Classes: webx-map, --place (no coordinates), --embed (Google's frame), __place, __place--static, __address, __open, __notice, __actions,
+    __button, __button--always, __attribution, __canvas, __frame (Google's <iframe>), __marker, __hint;
     is-blocked (before consent), is-ready (the script took it), is-loaded (the map is in),
     is-active (clicked or focused: the wheel zooms).
 --}}
 @if ($hasMap())
-<div {{ $attributes->class(['webx-map', 'is-blocked' => $blocked])->merge(['style' => "--webx-map-height: {$height}"]) }} role="region" aria-label="{{ __('webx-widgets::widgets.map.label', ['place' => $name]) }}" data-webx-map="{{ json_encode($config, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR) }}"@if ($waits) data-webx-consent="media"@endif>
+<div {{ $attributes->class(['webx-map', 'webx-map--embed' => $embed !== null, 'is-blocked' => $blocked])->merge(['style' => $frameStyle()]) }} role="region" aria-label="{{ __('webx-widgets::widgets.map.label', ['place' => $name]) }}" data-webx-map="{{ json_encode($config, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR) }}"@if ($waits) data-webx-consent="media"@endif>
     <div class="webx-map__place">
         @if ($address)<p class="webx-map__address">{{ $address }}</p>@endif
         @if ($href)<a class="webx-map__open" href="{{ $href }}" target="_blank" rel="noopener">{{ __('webx-widgets::widgets.map.open') }}</a>@endif

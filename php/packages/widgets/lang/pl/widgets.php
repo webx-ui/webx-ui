@@ -131,6 +131,7 @@ return [
         'open' => 'Otwórz w mapach',
         'hint' => 'Kliknij mapę, aby przybliżać kółkiem',
         'failed' => 'Nie udało się wczytać mapy.',
+        'embed_refused' => 'To nie jest kod mapy Google Maps. W Google Maps otwórz Udostępnij → Umieść mapę, skopiuj HTML i wklej go tutaj — albo tylko jego adres, https://www.google.com/maps/embed?pb=…',
     ],
     'table' => [
         'label' => 'Tabela',

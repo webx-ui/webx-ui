@@ -7,6 +7,8 @@
 
 :where(:root) {
   --webx-map-height: 24rem;
+  /* The component prints both on every map: the narrow one is the height unless told. */
+  --webx-map-height-narrow: 24rem;
   --webx-map-bg: var(--site-color-surface-muted);
   --webx-map-radius: var(--site-radius-md);
   --webx-map-marker: var(--site-color-accent);
@@ -182,6 +184,18 @@ html:not(.webx-js) .webx-map__actions {
 
 .webx-map__hint.is-visible {
   opacity: 1;
+}
+
+/* A phone's column: the height told for it (`height-narrow`), else the same height. The column is the
+   nearest container around the map — a block's — never the map itself; without one, the height. */
+@container (max-width: 36em) {
+  .webx-map {
+    height: var(--webx-map-height-narrow);
+  }
+
+  .webx-map--place {
+    height: auto;
+  }
 }
 
 @container webx-map (max-width: 22rem) {

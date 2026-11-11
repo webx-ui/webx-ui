@@ -43,6 +43,7 @@ final class BlockResources
         'wx-tags-input' => ['kind' => 'field', 'note' => 'A list of short strings. props: suggestions, allowCreate (false keeps it to the suggestions), max, duplicates.'],
         'wx-autocomplete' => ['kind' => 'field', 'note' => 'One line of text with props.options ([{ value }]) offered while typing; anything may be typed.'],
         'wx-icon-picker' => ['kind' => 'field', 'note' => 'The name of an icon from the panel\'s set, as a string.'],
+        'wx-embed' => ['kind' => 'field', 'note' => 'The frame of a service, pasted as its whole <iframe …> or its address; kept as the address alone, and a code of another site is refused. props: source (google-maps — Google Maps\' "Embed a map", no key), rows, placeholder.'],
         'wx-code-editor' => ['kind' => 'field', 'note' => 'Source text — JSON, HTML, CSS and the like — kept as a string. props: language, lineNumbers, minHeight.'],
         'wx-cascader' => ['kind' => 'field', 'note' => 'A place in the tree of props.options ([{ value, label, children }]), stored as the path of values from the root; with props.emitPath: false, the last value alone. Leaves only unless props.checkStrictly.'],
         'wx-tree-select' => ['kind' => 'field', 'note' => 'The key of a node of props.nodes ([{ id, label, children }]); a list of keys with props.multiple.'],

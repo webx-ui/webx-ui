@@ -10,6 +10,7 @@ import ListScreen from './ListScreen.vue'
 import RichTextField from './RichTextField.vue'
 import SlugField from './SlugField.vue'
 import CodeField from './CodeField.vue'
+import EmbedField from './EmbedField.vue'
 import { shortcodeTextField } from './ShortcodeTextField'
 
 /**
@@ -54,6 +55,9 @@ import { shortcodeTextField } from './ShortcodeTextField'
  * `wx-code` is a machine name typed by hand — the code of a stock status, of a label — made a code
  * as it is typed rather than refused on save (`CodeField`); the server does the same (`CodeType`).
  *
+ * `wx-embed` is a service's frame — Google Maps' "Embed a map" — pasted as its code, kept by the
+ * server as its address and refused when it is another site's (`EmbedField`, `EmbedType`).
+ *
  * `wx-history` is who changed the record and what (WEBX_UI_HISTORY.md §5): a tab of any form is
  * `{ "type": "wx-history", "props": { "type": "catalog.product" } }`, and the record's id comes
  * from the editor hosting the screen (`provideHistorySubject`). It draws and edits nothing.
@@ -82,6 +86,8 @@ export const adminTypes: TypeRegistry = {
   'wx-slug': { component: SlugField, kind: 'field' },
   'wx-category-slug': { component: SlugField, kind: 'field' },
   'wx-code': { component: CodeField, kind: 'field' },
+  // Wide: a code of a frame is a long line, and half a form shows a dozen characters of it.
+  'wx-embed': { component: EmbedField, kind: 'field', wide: true },
   // The node's label is the feed's heading; inside a tab that already names it, `props.title: ""`.
   'wx-history': { component: HistoryFeed, kind: 'display', labelProp: 'title' },
 }

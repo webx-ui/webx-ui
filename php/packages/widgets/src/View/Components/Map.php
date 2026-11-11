@@ -11,6 +11,7 @@ use WebxUi\Widgets\Consent;
 use WebxUi\Widgets\Contacts\ContactsSource;
 use WebxUi\Widgets\Facades\Widgets;
 use WebxUi\Widgets\Map\GoogleMaps;
+use WebxUi\Widgets\Map\GoogleMapsEmbed;
 use WebxUi\Widgets\Map\MapTiles;
 
 /**
@@ -37,13 +38,25 @@ use WebxUi\Widgets\Map\MapTiles;
  *
  * The provider is the site's (§11.1): Leaflet over the tiles of the config, or Google Maps chosen
  * on the "Map" tab — the same frame, notice and sleep, its own script. Google without a key is
- * the place alone, the address (or the coordinates) and "Open in Google Maps".
+ * the address (or the coordinates) and "Open in Google Maps".
+ *
+ * `embed` is Google Maps' "Embed a map" instead (§11.2): the code Google gives, or its address —
+ * no key, no coordinates, Google's own frame. The same frame of the map's height, the same notice
+ * and consent; the script puts the `<iframe>` in once the visitor agreed, or for "Load". `link`
+ * is "Open in Google Maps", else read from the address when it says where the map is. A code
+ * that is not Google's map is refused, as a bad coordinate is.
+ *
+ * `height-narrow` is the height in a column narrower than 36em — a phone — where a map as tall as
+ * on a monitor would be a screen of map to scroll past; the height everywhere unless told.
  */
 final class Map extends Component
 {
     public const int ZOOM = 15;
 
     public const string HEIGHT = '24rem';
+
+    /** The provider of Google's "Embed a map". */
+    public const string EMBED = 'embed';
 
     public ?float $lat = null;
 
@@ -52,6 +65,12 @@ final class Map extends Component
     public int $zoom;
 
     public string $height;
+
+    /** The height in a column narrower than 36em, or null: the same. */
+    public ?string $heightNarrow = null;
+
+    /** Google Maps' "Embed a map": the address of its frame (§11.2), or null for a map of a point. */
+    public ?string $embed = null;
 
     /** The text of the place, printed in the frame and the pin's label. */
     public ?string $address = null;
@@ -71,7 +90,7 @@ final class Map extends Component
 
     public string $attribution = '';
 
-    /** Whose map the script puts in: Leaflet over tiles, or `google` — its own script (§11.1). */
+    /** Whose map the script puts in: Leaflet over tiles, `google` — its own script (§11.1) — or `embed` (§11.2). */
     public string $provider = 'tiles';
 
     /** @var array<string, mixed> What the script is told, `data-webx-map`. */
@@ -88,6 +107,8 @@ final class Map extends Component
         ?string $title = null,
         ?string $link = null,
         bool|string|null $consent = null,
+        ?string $embed = null,
+        float|int|string|null $heightNarrow = null,
     ) {
         if ($from !== null && $from !== 'settings') {
             throw new InvalidArgumentException("<x-webx-map>: `from` is \"settings\" or nothing, not \"{$from}\".");
@@ -95,8 +116,15 @@ final class Map extends Component
 
         $this->zoom = self::zoom($zoom);
         $this->height = self::height($height);
+        $this->heightNarrow = $heightNarrow === null || $heightNarrow === '' ? null : self::height($heightNarrow);
         $this->address = self::filled($address) ?? (is_string($marker) ? self::filled($marker) : null);
         $this->href = self::filled($link);
+
+        if (self::filled($embed) !== null) {
+            $this->embedded((string) self::filled($embed), $title, $consent);
+
+            return;
+        }
 
         if ($lat !== null || $lng !== null) {
             $this->lat = self::coordinate($lat, 90, 'lat');
@@ -182,7 +210,13 @@ final class Map extends Component
 
     public function hasMap(): bool
     {
-        return $this->lat !== null && $this->lng !== null;
+        return $this->embed !== null || ($this->lat !== null && $this->lng !== null);
+    }
+
+    /** The style of the frame: its height, and the one of a narrow column — the same unless told. */
+    public function frameStyle(): string
+    {
+        return "--webx-map-height: {$this->height}; --webx-map-height-narrow: ".($this->heightNarrow ?? $this->height);
     }
 
     public function shouldRender(): bool
@@ -192,10 +226,40 @@ final class Map extends Component
 
     public function render(): View
     {
-        // Google's place without a key wants the stylesheet alone, not Leaflet with it.
-        Widgets::need($this->provider === GoogleMaps::NAME ? 'map-google' : 'map');
+        // Google's place without a key wants the stylesheet alone, not Leaflet with it; Google's
+        // frame wants a few lines that put an <iframe> in, not a library.
+        Widgets::need(match ($this->provider) {
+            GoogleMaps::NAME => 'map-google',
+            self::EMBED => 'map-embed',
+            default => 'map',
+        });
 
         return view('webx-widgets::components.map');
+    }
+
+    /** Google Maps' "Embed a map" (§11.2): the frame Google draws, under the same notice and consent. */
+    private function embedded(string $code, ?string $title, bool|string|null $consent): void
+    {
+        $this->embed = GoogleMapsEmbed::address($code)
+            ?? throw new InvalidArgumentException('<x-webx-map>: `embed` is the code or the address of Google Maps\' "Embed a map" — https://www.google.com/maps/embed?pb=… — not "'.mb_strimwidth($code, 0, 80, '…').'".');
+
+        $this->provider = self::EMBED;
+        $this->href ??= GoogleMapsEmbed::open($this->embed);
+        $this->name = self::filled($title) ?? $this->address ?? (string) __('webx-widgets::widgets.map.untitled');
+        $this->notice = (string) __('webx-widgets::widgets.map.notice', ['provider' => GoogleMaps::LABEL]);
+        // Google draws its own attribution in the frame.
+        $this->config = [
+            'provider' => self::EMBED,
+            'src' => $this->embed,
+            'title' => $this->name,
+        ];
+
+        $this->waits = self::flag($consent) ?? app(Consent::class)->mapsWait();
+        $this->blocked = $this->waits && ! app(Consent::class)->has('media');
+
+        if (! $this->waits) {
+            $this->config['consent'] = false;
+        }
     }
 
     private static function coordinate(float|int|string|null $value, int $limit, string $name): float

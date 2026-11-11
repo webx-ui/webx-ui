@@ -101,6 +101,8 @@ export default {
         map: join(root, 'resources/js/map.js'),
         // Google Maps instead, when the site chose it: no Leaflet, Google's API asked for after consent (§11.1).
         'map-google': join(root, 'resources/js/map-google.js'),
+        // Google's "Embed a map": its own <iframe>, no key and no library, after consent (§11.2).
+        'map-embed': join(root, 'resources/js/map-embed.js'),
         // The shadows at the edge of a table of prose, claimed by the server when it wrapped one.
         table: join(root, 'resources/js/table.js'),
         'back-to-top': join(root, 'resources/js/back-to-top.js'),

@@ -54,7 +54,7 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
 - **Map** — `<x-webx-map :lat :lng :zoom marker height consent>` or `from="settings"`: address and
   "Open in maps" always, tiles after consent — unless the owner lifts the wait (Cookie tab "Maps
   without asking", `webx-widgets.map.consent` false; the audit notes it); tiles `map.provider`, or Google
-  Maps on the settings tab "Map" (`map.provider` google, `map.google-key`; no key — the place alone, `dist/map-google.js`).
+  Maps on the settings tab "Map" (`map.provider` google, `map.google-key`; no key — the place alone, `dist/map-google.js`). `embed` — Google's "Embed a map" code or address, no key (`Map\GoogleMapsEmbed`; the block's `wx-embed` field refuses any other); `height-narrow` under 36em.
 - **Page tools** — a `<table>` without a class gets a scrolling `.webx-table` frame (server-side);
   `data-webx-reveal="up|fade|scale|stagger"`; `data-webx-parallax="soft|medium|strong"` on a picture that fills its frame (`--webx-parallax-shift`); `<x-webx-back-to-top>`; `<x-webx-share>`;
   `<x-webx-counter :value>`; `<x-webx-countdown to ended>`; `<x-webx-compare :before :after>`; `<x-webx-photos :images autoplay ratio>` (a card's photos turning every 5 s, bars, swipe, pause; one photo — a plain `<img>`; `data-webx-photos-surface` on a linked card);

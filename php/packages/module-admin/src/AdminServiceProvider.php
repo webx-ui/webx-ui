@@ -81,6 +81,7 @@ use WebxUi\Admin\Manifest\ManifestBuilder;
 use WebxUi\Admin\Notes\NoteTypes;
 use WebxUi\Admin\Panel\SystemSections;
 use WebxUi\Admin\Relations\RelationTargets;
+use WebxUi\Admin\Screens\Embeds;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\Types\BooleanType;
@@ -90,6 +91,7 @@ use WebxUi\Admin\Screens\Types\CollectionType;
 use WebxUi\Admin\Screens\Types\ColorType;
 use WebxUi\Admin\Screens\Types\DateRangeType;
 use WebxUi\Admin\Screens\Types\DateType;
+use WebxUi\Admin\Screens\Types\EmbedType;
 use WebxUi\Admin\Screens\Types\IconType;
 use WebxUi\Admin\Screens\Types\InstantType;
 use WebxUi\Admin\Screens\Types\LinkType;
@@ -166,6 +168,9 @@ class AdminServiceProvider extends ServiceProvider
 
         // Which model's categories a `wx-categories` field is about, by the path they answer at.
         $this->app->singleton(CategorySources::class);
+
+        // The services a `wx-embed` field takes frames of, filled by the packages that print them.
+        $this->app->singleton(Embeds::class);
 
         // The records modules offer to show as blocks (§3 of the FAQ spec), by the key a
         // `wx-collection` field names them with. Filled from providers, like the two above.
@@ -263,6 +268,8 @@ class AdminServiceProvider extends ServiceProvider
             // node names — the theme's, a list — which it holds a new name to.
             $types->register('wx-icon-picker', new IconType($app->make(IconSets::class)));
             $types->register('wx-code-editor', new StringType);
+            // A service's frame — Google Maps' "Embed a map" — pasted as code, kept as its address.
+            $types->register('wx-embed', new EmbedType($app->make(Embeds::class)));
             // The address part of a category (`categoryLinks()` modules): drawn with the module's
             // prefix in front of it by the panel, checked for its shape here.
             $types->register('wx-category-slug', new SlugType);

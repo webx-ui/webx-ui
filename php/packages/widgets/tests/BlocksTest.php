@@ -8,11 +8,13 @@ use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Validation\ValidationException;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\AdminServiceProvider;
 use WebxUi\Admin\Testing\MigratesOnce;
 use WebxUi\Auth\AuthServiceProvider;
 use WebxUi\Blocks\BlocksServiceProvider;
+use WebxUi\Blocks\ContentValues;
 use WebxUi\Blocks\Models\Block;
 use WebxUi\Blocks\Rendering\Renderer;
 use WebxUi\Blocks\Rendering\TemplateCompiler;
@@ -444,7 +446,7 @@ final class BlocksTest extends TestCase
 
         $this->assertStringContainsString('<section class="b-map" data-wx-block="map">', $html);
         $this->assertStringContainsString('<h2 class="b-map__heading">Find us</h2>', $html);
-        $this->assertStringContainsString('style="--webx-map-height: 24em" class="webx-map is-blocked"', $html);
+        $this->assertStringContainsString('style="--webx-map-height: 24em; --webx-map-height-narrow: 24em" class="webx-map is-blocked"', $html);
         $this->assertStringContainsString('<p class="webx-map__address">1 Example Street, Sample City</p>', $html);
         $this->assertStringContainsString('&quot;lat&quot;:12.34,&quot;lng&quot;:-34.56,&quot;zoom&quot;:15', $html);
         $this->assertStringContainsString('webx-map__attribution', $html);
@@ -475,6 +477,45 @@ final class BlocksTest extends TestCase
     }
 
     #[Test]
+    public function the_map_of_googles_code_is_its_frame_waiting_for_consent(): void
+    {
+        $src = 'https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d2483.0!2d-0.128!3d51.508!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2suk!4v1700000000000';
+        $html = $this->render('map', ['heading' => 'Our location', 'source' => 'embed', 'embed' => $src, 'address' => 'Trafalgar Square, London', 'title' => 'Map of the square', 'height' => 'large', 'height_narrow' => 'small', 'width' => 'bleed', 'zoom' => 3]);
+
+        $this->assertStringContainsString('<section class="b-map site-bleed" data-wx-block="map">', $html);
+        $this->assertStringContainsString('style="--webx-map-height: 32em; --webx-map-height-narrow: 16em" class="webx-map webx-map--embed is-blocked"', $html);
+        $this->assertStringContainsString('aria-label="Map: Map of the square"', $html);
+        $this->assertStringContainsString('<p class="webx-map__address">Trafalgar Square, London</p>', $html);
+        $this->assertStringContainsString('query=51.508,-0.128', $html, 'Open in Google Maps, read from the code');
+        $this->assertStringNotContainsString('<iframe', $html);
+        $this->assertContains('map-embed', Widgets::claimed());
+
+        $linked = $this->render('map', ['source' => 'embed', 'embed' => $src, 'link' => 'https://maps.app.goo.gl/AbCdEf123']);
+        $this->assertStringContainsString('<section class="b-map" data-wx-block="map">', $linked);
+        $this->assertStringContainsString('href="https://maps.app.goo.gl/AbCdEf123"', $linked);
+        $this->assertStringContainsString('--webx-map-height: 24em; --webx-map-height-narrow: 24em', $linked, 'the same height on a phone unless told');
+    }
+
+    #[Test]
+    public function the_field_of_googles_code_keeps_the_address_and_refuses_another_sites_frame(): void
+    {
+        $src = 'https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d2483.0!2d-0.128!3d51.508!5e0';
+        $code = '<iframe src="'.htmlspecialchars($src).'" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>';
+
+        $kept = $this->app->make(ContentValues::class)->store([['key' => 'k-map', 'type' => 'map', 'values' => ['source' => 'embed', 'embed' => $code]]]);
+        $this->assertSame($src, $kept[0]['values']['embed'], 'the address, never the HTML');
+
+        foreach (['<iframe src="https://maps.example.com/embed?pb=1"></iframe>', $code.'<script>alert(1)</script>', 'https://www.google.com/maps/embed/v1/place?key=AIza&q=x'] as $pasted) {
+            try {
+                $this->app->make(ContentValues::class)->store([['key' => 'k-map', 'type' => 'map', 'values' => ['source' => 'embed', 'embed' => $pasted]]]);
+                $this->fail("Kept: {$pasted}");
+            } catch (ValidationException $refused) {
+                $this->assertStringContainsString('Embed a map', implode(' ', array_merge(...array_values($refused->errors()))), $pasted);
+            }
+        }
+    }
+
+    #[Test]
     public function a_map_with_nowhere_to_show_prints_nothing(): void
     {
         $nothing = [
@@ -483,6 +524,8 @@ final class BlocksTest extends TestCase
             'a latitude only' => ['heading' => 'Map', 'source' => 'coordinates', 'latitude' => 51.5],
             'off the earth' => ['heading' => 'Map', 'source' => 'coordinates', 'latitude' => 120, 'longitude' => 0],
             'not numbers' => ['heading' => 'Map', 'source' => 'coordinates', 'latitude' => 'north', 'longitude' => 'west'],
+            'no code' => ['heading' => 'Map', 'source' => 'embed'],
+            'a code of another site, written before the field checked it' => ['heading' => 'Map', 'source' => 'embed', 'embed' => '<iframe src="https://maps.example.com/embed"></iframe>'],
         ];
 
         foreach ($nothing as $case => $values) {

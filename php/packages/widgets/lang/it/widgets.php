@@ -131,6 +131,7 @@ return [
         'open' => 'Apri nelle mappe',
         'hint' => 'Fai clic sulla mappa per ingrandire con la rotella',
         'failed' => 'Impossibile caricare la mappa.',
+        'embed_refused' => 'Questo non è il codice di una mappa di Google Maps. In Google Maps apra Condividi → Incorpora una mappa, copi l’HTML e lo incolli qui, oppure solo il suo indirizzo, https://www.google.com/maps/embed?pb=…',
     ],
     'table' => [
         'label' => 'Tabella',

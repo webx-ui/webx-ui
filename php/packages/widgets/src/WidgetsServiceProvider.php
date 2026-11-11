@@ -15,6 +15,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use WebxUi\Admin\Help\HelpRegistry;
+use WebxUi\Admin\Screens\Embeds;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Audit\Checks\AuditChecks;
 use WebxUi\Audit\Crawl\PageReaders;
@@ -44,6 +45,8 @@ use WebxUi\Widgets\Audit\WaitForConsent;
 use WebxUi\Widgets\Audit\WidgetsPageReader;
 use WebxUi\Widgets\Audit\ZoomLink;
 use WebxUi\Widgets\Languages\LanguagePageInLanguage;
+use WebxUi\Widgets\Map\GoogleMapsEmbed;
+use WebxUi\Widgets\Map\GoogleMapsEmbedSource;
 use WebxUi\Widgets\Video\Posters;
 use WebxUi\Widgets\Video\VideoProviders;
 use WebxUi\Widgets\View\Components\BackToTop;
@@ -156,6 +159,7 @@ class WidgetsServiceProvider extends ServiceProvider
         EncryptCookies::except(Consent::COOKIE);
 
         $this->registerConsentSettings();
+        $this->registerEmbeds();
         $this->offerBlocks();
         $this->registerAudit();
 
@@ -285,6 +289,21 @@ class WidgetsServiceProvider extends ServiceProvider
             if (in_array(self::MAPS_AT_ONCE, (array) ($event->keys ?? []), true)) {
                 $this->app->make(Consent::class)->forgetSeen();
             }
+        });
+    }
+
+    /**
+     * The frames a `wx-embed` field takes, given to the panel when the site has it: Google Maps'
+     * "Embed a map" for the Map block (§11.2). Without `module-admin` there is no field to give them to.
+     */
+    private function registerEmbeds(): void
+    {
+        if (! class_exists(Embeds::class)) {
+            return;
+        }
+
+        $this->callAfterResolving(Embeds::class, static function (Embeds $embeds): void {
+            $embeds->register(GoogleMapsEmbed::SOURCE, new GoogleMapsEmbedSource);
         });
     }
 
