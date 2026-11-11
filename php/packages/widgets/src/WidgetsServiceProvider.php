@@ -75,6 +75,7 @@ use WebxUi\Widgets\View\Components\NoticeBar;
 use WebxUi\Widgets\View\Components\OpeningHours;
 use WebxUi\Widgets\View\Components\Pagination;
 use WebxUi\Widgets\View\Components\Phones;
+use WebxUi\Widgets\View\Components\Photos;
 use WebxUi\Widgets\View\Components\Select;
 use WebxUi\Widgets\View\Components\Share;
 use WebxUi\Widgets\View\Components\Slide;
@@ -183,6 +184,7 @@ class WidgetsServiceProvider extends ServiceProvider
         Blade::component('webx-language-switcher', LanguageSwitcher::class);
         Blade::component('webx-slider', Slider::class);
         Blade::component('webx-slide', Slide::class);
+        Blade::component('webx-photos', Photos::class);
         Blade::component('webx-lightbox', Lightbox::class);
         Blade::component('webx-video', Video::class);
         Blade::component('webx-map', Map::class);

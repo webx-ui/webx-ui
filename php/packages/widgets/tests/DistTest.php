@@ -51,7 +51,7 @@ final class DistTest extends PlainTestCase
     /** Each of the small widgets of §14 with a file of its own: a table's shadows, back to top, share, counter, countdown, the notice bar. */
     private const int PAGE_TOOL_BUDGET = 2 * 1024;
 
-    /** Before and after, the table of contents, show more, the zoom and the fields of a form: 3 KB gzip each — a layout of their own as well as a few lines of script. */
+    /** Before and after, the table of contents, show more, the zoom, the fields of a form and the photos of a card: 3 KB gzip each — a layout of their own as well as a few lines of script. */
     private const int CONTENT_WIDGET_BUDGET = 3 * 1024;
 
     /** The shell of a form and, from W6.3, its checks in the browser: 8 KB gzip (§17.6), only where a form stands. */
@@ -167,7 +167,7 @@ final class DistTest extends PlainTestCase
         ));
         sort($built);
 
-        $this->assertSame(['attribution.js', 'back-to-top.css', 'back-to-top.js', 'captcha.js', 'compare.css', 'compare.js', 'consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'countdown.css', 'countdown.js', 'counter.css', 'counter.js', 'datetime.css', 'datetime.js', 'field.css', 'field.js', 'files.css', 'files.js', 'form.css', 'form.js', 'language-offer.css', 'language-offer.js', 'language-switcher.css', 'lightbox.css', 'lightbox.js', 'load-more.css', 'load-more.js', 'map-google.css', 'map-google.js', 'map.css', 'map.js', 'mask.js', 'notice-bar.css', 'notice-bar.js', 'pagination.css', 'runtime.css', 'runtime.js', 'select.css', 'select.js', 'share.css', 'share.js', 'slider.css', 'slider.js', 'smooth-scroll.css', 'smooth-scroll.js', 'sources.json', 'steps.css', 'steps.js', 'suggest.css', 'suggest.js', 'summary.css', 'summary.js', 'table.css', 'table.js', 'toc.css', 'toc.js', 'video.css', 'video.js', 'zoom.css', 'zoom.js'], $built);
+        $this->assertSame(['attribution.js', 'back-to-top.css', 'back-to-top.js', 'captcha.js', 'compare.css', 'compare.js', 'consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'countdown.css', 'countdown.js', 'counter.css', 'counter.js', 'datetime.css', 'datetime.js', 'field.css', 'field.js', 'files.css', 'files.js', 'form.css', 'form.js', 'language-offer.css', 'language-offer.js', 'language-switcher.css', 'lightbox.css', 'lightbox.js', 'load-more.css', 'load-more.js', 'map-google.css', 'map-google.js', 'map.css', 'map.js', 'mask.js', 'notice-bar.css', 'notice-bar.js', 'pagination.css', 'photos.css', 'photos.js', 'runtime.css', 'runtime.js', 'select.css', 'select.js', 'share.css', 'share.js', 'slider.css', 'slider.js', 'smooth-scroll.css', 'smooth-scroll.js', 'sources.json', 'steps.css', 'steps.js', 'suggest.css', 'suggest.js', 'summary.css', 'summary.js', 'table.css', 'table.js', 'toc.css', 'toc.js', 'video.css', 'video.js', 'zoom.css', 'zoom.js'], $built);
     }
 
     /**
@@ -187,7 +187,7 @@ final class DistTest extends PlainTestCase
     #[Test]
     public function the_content_widgets_stay_inside_their_budgets(): void
     {
-        foreach (['compare', 'toc', 'load-more', 'zoom', 'field'] as $widget) {
+        foreach (['compare', 'toc', 'load-more', 'zoom', 'field', 'photos'] as $widget) {
             $size = self::gzipped("{$widget}.js") + self::gzipped("{$widget}.css");
 
             $this->assertLessThanOrEqual(self::CONTENT_WIDGET_BUDGET, $size, sprintf('%s is %.1f KB gzip.', $widget, $size / 1024));

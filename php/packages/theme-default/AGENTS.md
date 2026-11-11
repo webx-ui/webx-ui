@@ -51,7 +51,7 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
     paragraphs), `width` `narrow|wide`;
   - `media-text` — `image`, `logo` (a small picture above the heading, at most 4rem × 12rem), `heading`, `body`, one button, `side` `start|end`, `tone` `plain|surface`;
   - `cards` — `heading`, `intro`, `columns` `2|3|4` (at most; the container decides), `pictures`
-    `photo|icon`, repeater `cards` (`image`, `title`, `text`, `link_label`, `link`, `link_url`: the whole card is the link; `link_label` ends in the `arrow-right` icon, `b-cards__arrow`);
+    `photo|icon`, `view` `grid|slider` (carousel: `arrows`, `dots`, `endless`, `autoplay`, `interval` s), repeater `cards` (`image`, `photos` — 2+ turn in `<x-webx-photos>`, `title`, `chips` — labels under it, `text`, `link_label`, `link`, `link_url`: the whole card is the link; `link_label` ends in the `arrow-right` icon, `b-cards__arrow`);
   - `cta` — `heading`, `text`, two buttons, `tone` `accent|surface|plain`;
   - `contact` — `heading`, `text`, `show_contacts`/`show_hours` (Settings › Contacts through
     `contacts()` and the phones, hours and socials widgets), `form` (an Inbox form's slug),

@@ -87,6 +87,10 @@ return [
             'close' => 'Закрити',
         ],
     ],
+    'photos' => [
+        'label' => 'Фотографії',
+        'show' => 'Фото :index з :count',
+    ],
     'slider' => [
         'carousel' => 'карусель',
         'slide' => 'слайд',

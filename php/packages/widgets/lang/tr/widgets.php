@@ -87,6 +87,10 @@ return [
             'close' => 'Kapat',
         ],
     ],
+    'photos' => [
+        'label' => 'Fotoğraflar',
+        'show' => 'Fotoğraf :index / :count',
+    ],
     'slider' => [
         'carousel' => 'karusel',
         'slide' => 'slayt',

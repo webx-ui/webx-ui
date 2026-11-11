@@ -290,6 +290,16 @@ part by putting the attribute on a picture that fills its frame:
 
 A site takes the switch with `webx:blocks:import --theme --replace=hero`.
 
+### Cards in a carousel, with labels and photos
+
+The `cards` block of `theme-default` is a grid by default and a carousel on request («View»): the
+carousel shows as many cards across as the grid would in the same column, with arrows, dots, a
+loop and, if asked, turning on its own every few seconds. A card has **labels** — a few short words
+under its title («2 rooms», «54 m²») — and **more photos** beside its picture: with two or more a
+photo card turns them on its own ([the photos of a card](./widgets.md#the-photos-of-a-card)). A
+block saved before prints as it did; a site takes the fields with
+`webx:blocks:import --theme --replace=cards`.
+
 ### An accent in a heading
 
 Part of a heading in another colour — «Homes **by the river**» — is typed in the heading itself:

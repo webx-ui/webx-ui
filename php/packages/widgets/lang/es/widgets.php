@@ -87,6 +87,10 @@ return [
             'close' => 'Cerrar',
         ],
     ],
+    'photos' => [
+        'label' => 'Fotos',
+        'show' => 'Foto :index de :count',
+    ],
     'slider' => [
         'carousel' => 'carrusel',
         'slide' => 'diapositiva',

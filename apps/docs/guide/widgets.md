@@ -418,6 +418,33 @@ Inertial scrolling is this widget only: a theme does not bring Lenis or another 
   `[data-webx-countdown-scope]` around it (the Countdown block is one). Without JavaScript it is the
   line "Ends on …" rather than digits standing still; with it, that line is what a screen reader hears.
 
+## The photos of a card
+
+```blade
+<x-webx-photos :images="$flat->photos" ratio="3/2" :label="$flat->title" />
+<x-webx-photos :images="$pictures" :autoplay="8000" />
+<x-webx-photos :images="$pictures" :autoplay="false" />
+```
+
+- Several photos in one frame turn on their own — every 5 seconds by default — with a bar under
+  each that fills while its photo is shown and shows it on a click; a finger swipes sideways. The
+  pointer over it, the focus inside it or the page scrolled past stop the time, and the pause button
+  stops it for good. With reduced motion nothing turns until the button is pressed.
+- `images` takes what a template has: values of a media field, objects with `url()`, addresses —
+  the empty ones are left out. **One photo is a plain `<img>`** with the attributes you gave and no
+  script; none prints nothing. The frame has the shape of `ratio`, else of the first photo.
+- Without JavaScript the first photo stands alone.
+- A card whose link is stretched over it says so with `data-webx-photos-surface` on the card: a
+  swipe over the photos turns them, a tap still follows the link, and a slider of such cards moves
+  with the rest of the card.
+
+```blade
+<li class="card" @if ($href) data-webx-photos-surface @endif>
+    <x-webx-photos :images="$photos" ratio="3/2" />
+    <h3><a class="card__link" href="{{ $href }}">{{ $title }}</a></h3>
+</li>
+```
+
 ## Before and after, table of contents
 
 ```blade

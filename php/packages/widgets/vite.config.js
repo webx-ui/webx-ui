@@ -90,6 +90,8 @@ export default {
         'language-switcher': join(root, 'resources/css/language-switcher.css'),
         // Swiper is built in here, and only here: a page without a slider never loads it.
         slider: join(root, 'resources/js/slider.js'),
+        // The photos of a card turning on their own: a few lines, no library.
+        photos: join(root, 'resources/js/photos.js'),
         // PhotoSwipe, the same way: only where a picture opens over the page.
         lightbox: join(root, 'resources/js/lightbox.js'),
         // The facade and the notice before consent: no player library, the provider's is in its iframe.

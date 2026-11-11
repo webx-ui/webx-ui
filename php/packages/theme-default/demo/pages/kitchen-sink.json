@@ -1247,6 +1247,502 @@
               }
             },
             {
+              "key": "showcase-cards-carousel",
+              "type": "cards",
+              "values": {
+                "heading": {
+                  "en": "A carousel of ==six cards==",
+                  "ru": "Карусель из ==шести карточек==",
+                  "pl": "Karuzela ==sześciu kart=="
+                },
+                "intro": {
+                  "en": "Three across where the column has room, labels under each title; the first card turns three photos.",
+                  "ru": "Три в ряд, где колонке хватает места, метки под каждым заголовком; первая карточка листает три фото.",
+                  "pl": "Trzy w rzędzie, gdy kolumna ma miejsce, etykiety pod każdym tytułem; pierwsza karta przewija trzy zdjęcia."
+                },
+                "columns": "3",
+                "pictures": "photo",
+                "view": "slider",
+                "arrows": true,
+                "dots": true,
+                "endless": true,
+                "autoplay": true,
+                "interval": 5,
+                "cards": [
+                  {
+                    "image": {
+                      "path": "demo:showcase-photo-1",
+                      "alt": {
+                        "en": "Studio by the park",
+                        "ru": "Студия у парка",
+                        "pl": "Kawalerka przy parku"
+                      }
+                    },
+                    "photos": [
+                      {
+                        "path": "demo:showcase-photo-2",
+                        "alt": {
+                          "en": "Studio by the park",
+                          "ru": "Студия у парка",
+                          "pl": "Kawalerka przy parku"
+                        }
+                      },
+                      {
+                        "path": "demo:showcase-photo-3",
+                        "alt": {
+                          "en": "Studio by the park",
+                          "ru": "Студия у парка",
+                          "pl": "Kawalerka przy parku"
+                        }
+                      }
+                    ],
+                    "title": {
+                      "en": "Studio by the park",
+                      "ru": "Студия у парка",
+                      "pl": "Kawalerka przy parku"
+                    },
+                    "chips": [
+                      {
+                        "label": {
+                          "en": "1 room",
+                          "ru": "1 комната",
+                          "pl": "1 pokój"
+                        }
+                      },
+                      {
+                        "label": {
+                          "en": "32 m²",
+                          "ru": "32 м²",
+                          "pl": "32 m²"
+                        }
+                      },
+                      {
+                        "label": {
+                          "en": "Floor 4",
+                          "ru": "4 этаж",
+                          "pl": "Piętro 4"
+                        }
+                      }
+                    ],
+                    "text": {
+                      "en": "Morning sun and a quiet yard.",
+                      "ru": "Утреннее солнце и тихий двор.",
+                      "pl": "Poranne słońce i cichy dziedziniec."
+                    },
+                    "link_label": {
+                      "en": "See the flat",
+                      "ru": "Смотреть квартиру",
+                      "pl": "Zobacz mieszkanie"
+                    },
+                    "link_url": "/kitchen-sink/blocks/media-text"
+                  },
+                  {
+                    "image": {
+                      "path": "demo:showcase-photo-4",
+                      "alt": {
+                        "en": "Two rooms, a balcony",
+                        "ru": "Две комнаты и балкон",
+                        "pl": "Dwa pokoje z balkonem"
+                      }
+                    },
+                    "photos": [],
+                    "title": {
+                      "en": "Two rooms, a balcony",
+                      "ru": "Две комнаты и балкон",
+                      "pl": "Dwa pokoje z balkonem"
+                    },
+                    "chips": [
+                      {
+                        "label": {
+                          "en": "2 rooms",
+                          "ru": "2 комнаты",
+                          "pl": "2 pokoje"
+                        }
+                      },
+                      {
+                        "label": {
+                          "en": "54 m²",
+                          "ru": "54 м²",
+                          "pl": "54 m²"
+                        }
+                      },
+                      {
+                        "label": {
+                          "en": "Balcony",
+                          "ru": "Балкон",
+                          "pl": "Balkon"
+                        }
+                      }
+                    ],
+                    "text": {
+                      "en": "A kitchen apart from the living room.",
+                      "ru": "Кухня отдельно от гостиной.",
+                      "pl": "Kuchnia oddzielona od salonu."
+                    },
+                    "link_label": {
+                      "en": "See the flat",
+                      "ru": "Смотреть квартиру",
+                      "pl": "Zobacz mieszkanie"
+                    },
+                    "link_url": "/kitchen-sink/blocks/cta"
+                  },
+                  {
+                    "image": {
+                      "path": "demo:showcase-photo-5",
+                      "alt": {
+                        "en": "Three rooms on the corner",
+                        "ru": "Три комнаты на углу",
+                        "pl": "Trzy pokoje na rogu"
+                      }
+                    },
+                    "photos": [
+                      {
+                        "path": "demo:showcase-photo-6",
+                        "alt": {
+                          "en": "Three rooms on the corner",
+                          "ru": "Три комнаты на углу",
+                          "pl": "Trzy pokoje na rogu"
+                        }
+                      }
+                    ],
+                    "title": {
+                      "en": "Three rooms on the corner",
+                      "ru": "Три комнаты на углу",
+                      "pl": "Trzy pokoje na rogu"
+                    },
+                    "chips": [
+                      {
+                        "label": {
+                          "en": "3 rooms",
+                          "ru": "3 комнаты",
+                          "pl": "3 pokoje"
+                        }
+                      },
+                      {
+                        "label": {
+                          "en": "78 m²",
+                          "ru": "78 м²",
+                          "pl": "78 m²"
+                        }
+                      }
+                    ],
+                    "text": {
+                      "en": "Windows on two sides of the house.",
+                      "ru": "Окна на две стороны дома.",
+                      "pl": "Okna na dwie strony domu."
+                    }
+                  },
+                  {
+                    "image": {
+                      "path": "demo:showcase-photo-7",
+                      "alt": {
+                        "en": "A flat under the roof",
+                        "ru": "Квартира под крышей",
+                        "pl": "Mieszkanie pod dachem"
+                      }
+                    },
+                    "photos": [],
+                    "title": {
+                      "en": "A flat under the roof",
+                      "ru": "Квартира под крышей",
+                      "pl": "Mieszkanie pod dachem"
+                    },
+                    "chips": [
+                      {
+                        "label": {
+                          "en": "Top floor",
+                          "ru": "Последний этаж",
+                          "pl": "Ostatnie piętro"
+                        }
+                      },
+                      {
+                        "label": {
+                          "en": "96 m²",
+                          "ru": "96 м²",
+                          "pl": "96 m²"
+                        }
+                      }
+                    ],
+                    "text": {
+                      "en": "High ceilings and a view over the river.",
+                      "ru": "Высокие потолки и вид на реку.",
+                      "pl": "Wysokie sufity i widok na rzekę."
+                    }
+                  },
+                  {
+                    "image": {
+                      "path": "demo:showcase-photo-2",
+                      "alt": {
+                        "en": "Garden flat",
+                        "ru": "Квартира с садом",
+                        "pl": "Mieszkanie z ogrodem"
+                      }
+                    },
+                    "photos": [],
+                    "title": {
+                      "en": "Garden flat",
+                      "ru": "Квартира с садом",
+                      "pl": "Mieszkanie z ogrodem"
+                    },
+                    "chips": [
+                      {
+                        "label": {
+                          "en": "Ground floor",
+                          "ru": "Первый этаж",
+                          "pl": "Parter"
+                        }
+                      },
+                      {
+                        "label": {
+                          "en": "Garden",
+                          "ru": "Сад",
+                          "pl": "Ogród"
+                        }
+                      },
+                      {
+                        "label": {
+                          "en": "61 m²",
+                          "ru": "61 м²",
+                          "pl": "61 m²"
+                        }
+                      }
+                    ],
+                    "text": {
+                      "en": "A door straight out to the lawn.",
+                      "ru": "Дверь прямо на газон.",
+                      "pl": "Drzwi prosto na trawnik."
+                    },
+                    "link_label": {
+                      "en": "See the flat",
+                      "ru": "Смотреть квартиру",
+                      "pl": "Zobacz mieszkanie"
+                    },
+                    "link_url": "/kitchen-sink/blocks/contact"
+                  },
+                  {
+                    "image": {
+                      "path": "demo:showcase-photo-3",
+                      "alt": {
+                        "en": "Four rooms for a family",
+                        "ru": "Четыре комнаты для семьи",
+                        "pl": "Cztery pokoje dla rodziny"
+                      }
+                    },
+                    "photos": [],
+                    "title": {
+                      "en": "Four rooms for a family",
+                      "ru": "Четыре комнаты для семьи",
+                      "pl": "Cztery pokoje dla rodziny"
+                    },
+                    "chips": [
+                      {
+                        "label": {
+                          "en": "4 rooms",
+                          "ru": "4 комнаты",
+                          "pl": "4 pokoje"
+                        }
+                      },
+                      {
+                        "label": {
+                          "en": "112 m²",
+                          "ru": "112 м²",
+                          "pl": "112 m²"
+                        }
+                      }
+                    ],
+                    "text": {
+                      "en": "Two bathrooms and a storeroom.",
+                      "ru": "Две ванные и кладовая.",
+                      "pl": "Dwie łazienki i schowek."
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "key": "showcase-cards-photos",
+              "type": "cards",
+              "values": {
+                "heading": {
+                  "en": "Photos that turn",
+                  "ru": "Фото, которые листаются",
+                  "pl": "Zdjęcia, które się zmieniają"
+                },
+                "intro": {
+                  "en": "Two photos or more turn on their own, a bar for each; one photo stays a picture.",
+                  "ru": "Два фото и больше листаются сами, у каждого своя полоска; одно фото — обычная картинка.",
+                  "pl": "Dwa zdjęcia lub więcej zmieniają się same, każde z paskiem; jedno zdjęcie zostaje obrazem."
+                },
+                "columns": "3",
+                "pictures": "photo",
+                "cards": [
+                  {
+                    "image": {
+                      "path": "demo:showcase-photo-1",
+                      "alt": {
+                        "en": "Studio by the park",
+                        "ru": "Студия у парка",
+                        "pl": "Kawalerka przy parku"
+                      }
+                    },
+                    "photos": [
+                      {
+                        "path": "demo:showcase-photo-2",
+                        "alt": {
+                          "en": "Studio by the park",
+                          "ru": "Студия у парка",
+                          "pl": "Kawalerka przy parku"
+                        }
+                      },
+                      {
+                        "path": "demo:showcase-photo-3",
+                        "alt": {
+                          "en": "Studio by the park",
+                          "ru": "Студия у парка",
+                          "pl": "Kawalerka przy parku"
+                        }
+                      }
+                    ],
+                    "title": {
+                      "en": "Studio by the park",
+                      "ru": "Студия у парка",
+                      "pl": "Kawalerka przy parku"
+                    },
+                    "chips": [
+                      {
+                        "label": {
+                          "en": "1 room",
+                          "ru": "1 комната",
+                          "pl": "1 pokój"
+                        }
+                      },
+                      {
+                        "label": {
+                          "en": "32 m²",
+                          "ru": "32 м²",
+                          "pl": "32 m²"
+                        }
+                      },
+                      {
+                        "label": {
+                          "en": "Floor 4",
+                          "ru": "4 этаж",
+                          "pl": "Piętro 4"
+                        }
+                      }
+                    ],
+                    "text": {
+                      "en": "Morning sun and a quiet yard.",
+                      "ru": "Утреннее солнце и тихий двор.",
+                      "pl": "Poranne słońce i cichy dziedziniec."
+                    },
+                    "link_label": {
+                      "en": "See the flat",
+                      "ru": "Смотреть квартиру",
+                      "pl": "Zobacz mieszkanie"
+                    },
+                    "link_url": "/kitchen-sink/blocks/media-text"
+                  },
+                  {
+                    "image": {
+                      "path": "demo:showcase-photo-5",
+                      "alt": {
+                        "en": "Three rooms on the corner",
+                        "ru": "Три комнаты на углу",
+                        "pl": "Trzy pokoje na rogu"
+                      }
+                    },
+                    "photos": [
+                      {
+                        "path": "demo:showcase-photo-6",
+                        "alt": {
+                          "en": "Three rooms on the corner",
+                          "ru": "Три комнаты на углу",
+                          "pl": "Trzy pokoje na rogu"
+                        }
+                      }
+                    ],
+                    "title": {
+                      "en": "Three rooms on the corner",
+                      "ru": "Три комнаты на углу",
+                      "pl": "Trzy pokoje na rogu"
+                    },
+                    "chips": [
+                      {
+                        "label": {
+                          "en": "3 rooms",
+                          "ru": "3 комнаты",
+                          "pl": "3 pokoje"
+                        }
+                      },
+                      {
+                        "label": {
+                          "en": "78 m²",
+                          "ru": "78 м²",
+                          "pl": "78 m²"
+                        }
+                      }
+                    ],
+                    "text": {
+                      "en": "Windows on two sides of the house.",
+                      "ru": "Окна на две стороны дома.",
+                      "pl": "Okna na dwie strony domu."
+                    }
+                  },
+                  {
+                    "image": {
+                      "path": "demo:showcase-photo-4",
+                      "alt": {
+                        "en": "Two rooms, a balcony",
+                        "ru": "Две комнаты и балкон",
+                        "pl": "Dwa pokoje z balkonem"
+                      }
+                    },
+                    "photos": [],
+                    "title": {
+                      "en": "Two rooms, a balcony",
+                      "ru": "Две комнаты и балкон",
+                      "pl": "Dwa pokoje z balkonem"
+                    },
+                    "chips": [
+                      {
+                        "label": {
+                          "en": "2 rooms",
+                          "ru": "2 комнаты",
+                          "pl": "2 pokoje"
+                        }
+                      },
+                      {
+                        "label": {
+                          "en": "54 m²",
+                          "ru": "54 м²",
+                          "pl": "54 m²"
+                        }
+                      },
+                      {
+                        "label": {
+                          "en": "Balcony",
+                          "ru": "Балкон",
+                          "pl": "Balkon"
+                        }
+                      }
+                    ],
+                    "text": {
+                      "en": "A kitchen apart from the living room.",
+                      "ru": "Кухня отдельно от гостиной.",
+                      "pl": "Kuchnia oddzielona od salonu."
+                    },
+                    "link_label": {
+                      "en": "See the flat",
+                      "ru": "Смотреть квартиру",
+                      "pl": "Zobacz mieszkanie"
+                    },
+                    "link_url": "/kitchen-sink/blocks/cta"
+                  }
+                ]
+              }
+            },
+            {
               "key": "showcase-cards-icons",
               "type": "cards",
               "values": {
