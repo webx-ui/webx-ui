@@ -81,11 +81,23 @@ function collapsing(root) {
   return root.getAttribute('data-steps') === 'collapse'
 }
 
-/** The sticky row's amount follows the column. */
+/**
+ * The sticky row's amount follows the column, and so does its button: off while nothing in the
+ * cart can be bought (§20.4), on again once the cart's dialog brought something that can.
+ */
 function sticky(root) {
   const amount = root.querySelector(`${SUMMARY} .webx-orders-checkout__payable dd`)
   const target = root.querySelector('.webx-orders-checkout__sticky [data-payable]')
   if (amount && target) target.textContent = amount.textContent
+  const own = root.querySelector(`${SUMMARY} #${PLACE} .webx-form__submit`)
+  const button = root.querySelector('.webx-orders-checkout__sticky-place')
+  if (!own || !button) return
+  button.disabled = own.disabled
+  for (const name of ['aria-disabled', 'aria-describedby']) {
+    const value = own.getAttribute(name)
+    if (value === null) button.removeAttribute(name)
+    else button.setAttribute(name, value)
+  }
 }
 
 /** The column alone, from `data-summary`. */

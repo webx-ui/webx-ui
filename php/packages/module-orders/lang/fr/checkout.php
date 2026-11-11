@@ -62,6 +62,7 @@ return [
         'price-down' => 'moins cher maintenant',
         'price-up' => 'plus cher maintenant',
         'place' => 'Valider la commande',
+        'blocked' => 'Pour passer la commande, modifiez d’abord le panier.',
     ],
     'terms' => [
         'agree' => 'J\'accepte les conditions',

@@ -62,6 +62,7 @@ return [
         'price-down' => 'artık daha ucuz',
         'price-up' => 'artık daha pahalı',
         'place' => 'Siparişi onayla',
+        'blocked' => 'Sipariş vermek için önce sepeti değiştirin.',
     ],
     'terms' => [
         'agree' => 'Koşulları kabul ediyorum',

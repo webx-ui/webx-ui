@@ -3,7 +3,8 @@
     under the steps: the amount of the column and a button that sends its form (`form=`), so it
     works without JavaScript too. The script copies the amount after every redraw of the column,
     hides the row while the column's own button is in sight or a field has the focus (the
-    keyboard of a phone). A wide container never shows it.
+    keyboard of a phone). A wide container never shows it. Off with the column's own button when
+    nothing is left to buy; the script follows the column's after a redraw.
 
     Classes: webx-orders-checkout__sticky, __sticky-payable, __sticky-place.
 --}}
@@ -12,5 +13,5 @@
         <span>{{ __('webx-orders::checkout.summary.payable') }}</span>
         <strong data-payable>{{ $summary['payable_formatted'] }}</strong>
     </p>
-    <x-webx-form.submit :form="$summary['form']" class="webx-orders-checkout__sticky-place">{{ __('webx-orders::checkout.summary.place') }}</x-webx-form.submit>
+    <x-webx-form.submit :form="$summary['form']" :disabled="! $summary['placeable']" :aria-disabled="$summary['placeable'] ? null : 'true'" :aria-describedby="$summary['placeable'] ? null : $summary['form'].'-blocked'" class="webx-orders-checkout__sticky-place">{{ __('webx-orders::checkout.summary.place') }}</x-webx-form.submit>
 </div>
