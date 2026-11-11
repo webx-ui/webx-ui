@@ -78,6 +78,8 @@ final class CodeCoverageTest extends PlainTestCase
         'module-vacancies/resources/screens/category-form.json#slug' => 'an address: HasLatinSlug brings it',
         'widgets/resources/screens/settings.captcha.json#captcha-recaptcha-key' => 'an API key of a captcha service',
         'widgets/resources/screens/settings.captcha.json#captcha-turnstile-key' => 'an API key of a captcha service',
+        'widgets/resources/screens/settings.map.json#map-google-key' => 'an API key of Google Maps',
+        'widgets/resources/screens/settings.map.json#map-google-no-key' => 'an alert that the API key is missing, not a field',
     ];
 
     /** Field types that are not typed, or are an address held by {@see HasLatinSlug}. */
