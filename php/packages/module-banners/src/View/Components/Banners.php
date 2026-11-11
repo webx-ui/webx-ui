@@ -21,7 +21,8 @@ use WebxUi\Banners\Places;
  * Attributes given to it land on the wrapper: a theme's hero puts its own class there.
  *
  * `parallax` overrides the place's option of that name for this one print: a theme that wants its
- * hero to move says so in its template, whatever the place's configuration says.
+ * hero to move says so in its template, whatever the place's configuration says — `true`, `false`
+ * or a strength (`soft`, `medium`, `strong`).
  */
 final class Banners extends Component
 {
@@ -40,7 +41,7 @@ final class Banners extends Component
         public string $place = '',
         ?string $layout = null,
         public ?string $label = null,
-        ?bool $parallax = null,
+        bool|string|null $parallax = null,
     ) {
         $this->options = banners_layout($place, $layout);
 

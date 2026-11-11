@@ -137,6 +137,14 @@ dispatchEvent(e); e.defaultPrevented`, а в тесте так же.
   скроллер — страница) и `animation-timeline: --имя` у потомка; так делает `parallax.js` виджетов.
   Проверка: `el.getAnimations()[0].currentTime` меняется при `scrollTo`.
 
+- **CLS растёт от картинки, которая «вне потока»: в источниках `layout-shift` — сама картинка с
+  `position: absolute`.** Сдвиг считается по верхнему левому углу бокса, а не по потоку: скрипт,
+  который после загрузки меняет картинке `top` (поднять её на запас параллакса), даёт сдвиг,
+  хотя вокруг ничего не двинулось. Лечение — менять только `height` (рост вниз сдвигом не
+  считается) и поднимать `translate`; так `--webx-parallax-lift` в `parallax.css`. Проверка:
+  `PerformanceObserver({ type: 'layout-shift', buffered: true })` и `entry.sources` — CLS с
+  эффектом и без него одинаковый.
+
 - **Синтетический `pointerdown` из Playwright (`locator.dispatchEvent`) «не двигает» виджет, а
   настоящий касанием — двигает.** У такого указателя нет живого контакта, и
   `setPointerCapture(id)` бросает `NotFoundError` — обработчик падает на первой строке захвата,

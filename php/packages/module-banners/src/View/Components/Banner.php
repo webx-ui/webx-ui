@@ -31,6 +31,7 @@ use WebxUi\Banners\Rendering\Stylesheet;
  * `webx-banner__picture` that carries the shift, so every rule written for the picture's children
  * holds as it is, and the outer one crops the overscan even in a place whose layers step out of
  * the frame. The stage is not inside it: the layers stay where the editor put them in the frame.
+ * The option is the strength too: `true` or `medium`, `soft`, `strong` ({@see strength()}).
  */
 final class Banner extends Component
 {
@@ -41,8 +42,11 @@ final class Banner extends Component
 
     public string $frameStyle;
 
-    /** Whether the picture and the video move slower than the page. */
-    public bool $parallax;
+    /**
+     * How strongly the picture and the video move slower than the page — `soft`, `medium` or
+     * `strong` — or null where they stand still.
+     */
+    public ?string $parallax;
 
     /**
      * What the frame shows before a video and where none plays: the poster on a banner whose
@@ -78,7 +82,7 @@ final class Banner extends Component
     ) {
         $this->options = $layout ?? banners_layout(is_string($banner['place'] ?? null) ? $banner['place'] : null);
         $this->breakpoint = max(0, (int) ($this->options['breakpoint'] ?? 768));
-        $this->parallax = filter_var($this->options['parallax'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        $this->parallax = self::strength($this->options['parallax'] ?? false);
 
         $ratio = self::ratio($this->options['ratio'] ?? null) ?? '16/6';
         $ratioMobile = self::ratio($this->options['ratio_mobile'] ?? null) ?? $ratio;
@@ -172,5 +176,22 @@ final class Banner extends Component
     private static function number(mixed $value): ?string
     {
         return is_numeric($value) && (float) $value > 0 ? (string) round((float) $value, 4) : null;
+    }
+
+    /**
+     * The strength a `parallax` option asks for: `soft` and `strong` as they are, any other yes
+     * (`true`, `medium`, `"1"`) `medium`, and a no (`false`, `off`, `"0"`, empty) null.
+     */
+    public static function strength(mixed $option): ?string
+    {
+        if (is_string($option)) {
+            $option = strtolower(trim($option));
+
+            if (in_array($option, ['soft', 'medium', 'strong'], true)) {
+                return $option;
+            }
+        }
+
+        return filter_var($option, FILTER_VALIDATE_BOOLEAN) ? 'medium' : null;
     }
 }

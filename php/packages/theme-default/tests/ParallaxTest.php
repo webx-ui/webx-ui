@@ -75,6 +75,27 @@ final class ParallaxTest extends TestCase
     }
 
     #[Test]
+    public function the_strength_is_medium_unless_the_editor_says_otherwise(): void
+    {
+        $field = array_values(array_filter(self::type()['schema'], static fn (array $node): bool => ($node['id'] ?? null) === 'parallax_strength'))[0] ?? null;
+
+        $this->assertSame('wx-segmented', $field['type'] ?? null);
+        $this->assertSame('medium', $field['default'] ?? null);
+        $this->assertSame(['soft', 'medium', 'strong'], array_column($field['props']['options'] ?? [], 'value'));
+        $this->assertSame(['all' => [['when' => 'tone', 'is' => 'image'], ['when' => 'parallax', 'is' => true]]], $field['visible'] ?? null);
+
+        // Medium — and a block saved before the field was there — is the attribute bare.
+        $this->assertMatchesRegularExpression('~data-webx-parallax\s+src=~', $this->render(['parallax' => true]));
+        $this->assertMatchesRegularExpression('~data-webx-parallax\s+src=~', $this->render(['parallax' => true, 'parallax_strength' => null]));
+        $this->assertStringContainsString('data-webx-parallax="soft"', $this->render(['parallax' => true, 'parallax_strength' => 'soft']));
+        $this->assertStringContainsString('data-webx-parallax="strong"', $this->render(['parallax' => true, 'parallax_strength' => 'strong']));
+        // Something else written there is not printed: medium.
+        $this->assertStringNotContainsString('data-webx-parallax="', $this->render(['parallax' => true, 'parallax_strength' => '"><script>']));
+        // The strength alone moves nothing.
+        $this->assertStringNotContainsString('data-webx-parallax', $this->render(['parallax_strength' => 'strong']));
+    }
+
+    #[Test]
     public function without_a_picture_there_is_nothing_to_move(): void
     {
         $this->assertStringNotContainsString('data-webx-parallax', $this->render(['parallax' => true, 'tone' => 'accent']));
@@ -93,7 +114,7 @@ final class ParallaxTest extends TestCase
         $template = (string) $type['template'];
 
         if ($unmarked) {
-            $template = str_replace('@if ($parallax) data-webx-parallax @endif', '', $template);
+            $template = (string) preg_replace('~@if \(\$parallax\) data-webx-parallax.*? @endif~', '', $template);
             $this->assertStringNotContainsString('parallax', $template);
         }
 

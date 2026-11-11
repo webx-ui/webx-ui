@@ -225,6 +225,26 @@ describe('parallax', () => {
     expect(frame.className).toBe('')
   })
 
+  it('makes a picture placed absolutely taller for its overscan, and leaves one in the flow to be scaled', async () => {
+    vi.stubGlobal('CSS', { supports: () => false })
+    vi.stubGlobal('requestAnimationFrame', (callback) => frames.push(callback))
+    vi.stubGlobal('cancelAnimationFrame', () => {})
+    await start(
+      '<section><img id="placed" style="position: absolute" data-webx-parallax="strong" src="/a.jpg" alt=""></section><section><img id="flow" data-webx-parallax src="/b.jpg" alt=""></section>',
+    )
+    const placed = document.getElementById('placed')
+    const flow = document.getElementById('flow')
+
+    expect(placed.className).toBe('webx-parallax webx-parallax--grown webx-parallax--script')
+    expect(flow.className).toBe('webx-parallax webx-parallax--script')
+    // The strength is the stylesheet's to read: the script leaves the value as it was written.
+    expect(placed.getAttribute('data-webx-parallax')).toBe('strong')
+
+    window.webx.unmount()
+    expect(placed.className).toBe('')
+    expect(flow.className).toBe('')
+  })
+
   it('names the timeline on the outermost frame that crops, and falls back where it is taller', async () => {
     vi.stubGlobal('CSS', { supports: () => true })
     vi.stubGlobal('innerHeight', 800)

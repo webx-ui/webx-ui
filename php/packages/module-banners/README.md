@@ -123,17 +123,18 @@ and the argument, in that order, and adds `layout` (`single`, `random` or `slide
 read against the package's default, so a published config with one option keeps the others. A
 key the package does not know is handed to the template as it is.
 
-| Option            | Default | Meaning                                                     |
-| ----------------- | ------- | ----------------------------------------------------------- |
-| `interval`        | `6000`  | ms between slides                                           |
-| `autoplay`        | `true`  | off under `prefers-reduced-motion` regardless               |
-| `loop`            | `true`  | after the last slide, the first                             |
-| `arrows`, `dots`  | `true`  |                                                             |
-| `pause_on_hover`  | `true`  | and on focus inside the slider                              |
-| `ratio`           | `16/6`  | `aspect-ratio` of the frame on wide screens                 |
-| `ratio_mobile`    | `4/5`   | below the breakpoint                                        |
-| `breakpoint`      | `768`   | px: below it `image_mobile`, `ratio_mobile`, `video_mobile` |
-| `video_on_mobile` | `false` | without `video_mobile`, `video` on phones too               |
+| Option            | Default | Meaning                                                       |
+| ----------------- | ------- | ------------------------------------------------------------- |
+| `interval`        | `6000`  | ms between slides                                             |
+| `autoplay`        | `true`  | off under `prefers-reduced-motion` regardless                 |
+| `loop`            | `true`  | after the last slide, the first                               |
+| `arrows`, `dots`  | `true`  |                                                               |
+| `pause_on_hover`  | `true`  | and on focus inside the slider                                |
+| `ratio`           | `16/6`  | `aspect-ratio` of the frame on wide screens                   |
+| `ratio_mobile`    | `4/5`   | below the breakpoint                                          |
+| `breakpoint`      | `768`   | px: below it `image_mobile`, `ratio_mobile`, `video_mobile`   |
+| `video_on_mobile` | `false` | without `video_mobile`, `video` on phones too                 |
+| `parallax`        | `false` | `true` (medium), `soft` or `strong`: the picture moves slower |
 
 ## A template
 

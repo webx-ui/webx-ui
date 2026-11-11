@@ -69,6 +69,30 @@ final class ParallaxTest extends TestCase
     }
 
     #[Test]
+    public function the_option_is_the_strength_too(): void
+    {
+        $this->banner();
+
+        // Medium — `true` or by name — is the attribute bare: the markup of a place that had `true` before.
+        foreach ([true, 'medium', '1', 'on'] as $option) {
+            config()->set('webx-banners.places.hero.options', ['parallax' => $option]);
+            $this->assertMatchesRegularExpression('~webx-banner__drift" data-webx-parallax>~', $this->hero(), var_export($option, true));
+        }
+
+        foreach (['soft', 'strong', ' Strong '] as $option) {
+            config()->set('webx-banners.places.hero.options', ['parallax' => $option]);
+            $this->assertStringContainsString('data-webx-parallax="'.strtolower(trim($option)).'"', $this->hero());
+        }
+
+        foreach ([false, 'off', '0', '', null] as $option) {
+            config()->set('webx-banners.places.hero.options', ['parallax' => $option]);
+            $this->assertStringNotContainsString('data-webx-parallax', $this->hero(), var_export($option, true));
+        }
+
+        $this->assertStringContainsString('data-webx-parallax="soft"', Blade::render('<x-webx-banners place="hero" parallax="soft" />'));
+    }
+
+    #[Test]
     public function a_banner_without_a_picture_has_nothing_to_move(): void
     {
         config()->set('webx-banners.places.notice.options', ['parallax' => true]);

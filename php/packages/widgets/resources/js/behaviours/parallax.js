@@ -16,6 +16,9 @@
  * never a read after a write. The frame is the element's parent: the element's own box carries the
  * shift, and measuring it would measure the shift.
  *
+ * The value of the attribute is the strength (`soft`, `medium` or empty, `strong`): the stylesheet
+ * reads it, this script does not.
+ *
  * Nothing moves without JavaScript, under reduced motion or in print: the picture then stands in
  * its frame at its own size, cropped by nothing but what cropped it before.
  */
@@ -48,13 +51,18 @@ export function parallax(el) {
 
   const frame = el.parentElement ?? el
   const subject = scrollDriven() ? subjectOf(frame) : null
+  // Placed absolutely in its frame, the picture is made taller for its overscan; in the flow, larger.
+  const marks =
+    getComputedStyle(el).position === 'absolute'
+      ? ['webx-parallax', 'webx-parallax--grown']
+      : ['webx-parallax']
 
   if (subject) {
     named.set(subject, (named.get(subject) ?? 0) + 1)
     subject.classList.add('webx-parallax-frame')
-    el.classList.add('webx-parallax')
+    el.classList.add(...marks)
     return () => {
-      el.classList.remove('webx-parallax')
+      el.classList.remove(...marks)
       const left = named.get(subject) - 1
       named.set(subject, left)
       if (!left) subject.classList.remove('webx-parallax-frame')
@@ -68,7 +76,7 @@ export function parallax(el) {
   let asked = 0
   let seen = false
 
-  el.classList.add('webx-parallax', 'webx-parallax--script')
+  el.classList.add(...marks, 'webx-parallax--script')
 
   // 0 — the frame's top at the bottom of the screen, 1 — its bottom at the top: `cover` of a view timeline.
   const place = () => {
@@ -96,7 +104,7 @@ export function parallax(el) {
     observer.disconnect()
     on.off()
     if (asked) cancelAnimationFrame(asked)
-    el.classList.remove('webx-parallax', 'webx-parallax--script')
+    el.classList.remove(...marks, 'webx-parallax--script')
     el.style.removeProperty('--webx-parallax-progress')
   }
 }

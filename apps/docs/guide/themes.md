@@ -277,13 +277,13 @@ still.
 ### A picture that moves slower than the page
 
 The `hero` of `theme-default` over a picture has the switch «Parallax», off by default: on, the
-picture behind the words moves a little slower than the page while the words and the shade stay
-put. It is the widgets' `data-webx-parallax` ([Widgets](./widgets.md)), so a block of your own takes
+picture behind the words moves slower than the page while the words and the shade stay put.
+«Parallax strength» under it — soft, medium (the default) or strong — says how far behind it falls. It is the widgets' `data-webx-parallax` ([Widgets](./widgets.md)), so a block of your own takes
 part by putting the attribute on a picture that fills its frame:
 
 ```blade
 <section class="b-offer" data-wx-block="offer">
-    <img class="b-offer__picture"@if ($parallax) data-webx-parallax @endif src="…" alt="">
+    <img class="b-offer__picture"@if ($parallax) data-webx-parallax="{{ $strength }}" @endif src="…" alt="">
     …
 </section>
 ```

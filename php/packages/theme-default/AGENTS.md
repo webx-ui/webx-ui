@@ -43,7 +43,7 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
   the muted colours of quotes, captions and `small` inside a block, which otherwise keep the
   block's own colour).
 - **`blocks/`** — the six block types `webx:blocks:import --theme` puts on a site (`webx:setup` only prints it)
-  (THEMES §9.1), as `webx:blocks:export` writes them; CSS on the tokens and `@container` only; each has `no_reveal` («Without animation») and `@webxReveal` on its words and lists — they come in on scroll only with `"reveal": true` in the manifest (§9.3, off by default); a heading prints through `@webxAccent`, its `==words==` as `<span class="site-accent">` in `color-accent` (`base.css`; leaning on the accent and over a photo; §9.4); `hero` over a picture has `parallax` («Parallax», off; `data-webx-parallax` on the picture, §9.5):
+  (THEMES §9.1), as `webx:blocks:export` writes them; CSS on the tokens and `@container` only; each has `no_reveal` («Without animation») and `@webxReveal` on its words and lists — they come in on scroll only with `"reveal": true` in the manifest (§9.3, off by default); a heading prints through `@webxAccent`, its `==words==` as `<span class="site-accent">` in `color-accent` (`base.css`; leaning on the accent and over a photo; §9.4); `hero` over a picture has `parallax` («Parallax», off) and `parallax_strength` (soft/medium/strong; `data-webx-parallax` on the picture, §9.5):
   - buttons are `wx-link` with files (`button_link`, `second_link`, a card’s `link`); the old `*_url` stay `wx-input`, read while the link is empty;
   - `hero` — `title`, `subtitle`, two buttons (`button_*`, `second_*`), `tone`
     `plain|surface|accent|image` (+ `image`), `align` `start|center`, `width` `column|bleed`;

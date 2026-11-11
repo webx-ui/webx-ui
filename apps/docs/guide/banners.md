@@ -162,24 +162,25 @@ is the place's). Every key is read against the package's default, so a published
 option keeps the others. A key the package does not know is handed to the template as it is — a
 site can add its own.
 
-| Option            | Default | Meaning                                                     |
-| ----------------- | ------- | ----------------------------------------------------------- |
-| `interval`        | `6000`  | ms between slides                                           |
-| `autoplay`        | `true`  | off under `prefers-reduced-motion` regardless               |
-| `loop`            | `true`  | after the last slide, the first                             |
-| `arrows`, `dots`  | `true`  |                                                             |
-| `pause_on_hover`  | `true`  | and on focus inside the slider                              |
-| `ratio`           | `16/6`  | `aspect-ratio` of the frame on wide screens                 |
-| `ratio_mobile`    | `4/5`   | below the breakpoint                                        |
-| `breakpoint`      | `768`   | px: below it `image_mobile`, `ratio_mobile`, `video_mobile` |
-| `video_on_mobile` | `false` | without `video_mobile`, `video` on phones too               |
-| `parallax`        | `false` | the picture and the video move slower than the page         |
+| Option            | Default | Meaning                                                       |
+| ----------------- | ------- | ------------------------------------------------------------- |
+| `interval`        | `6000`  | ms between slides                                             |
+| `autoplay`        | `true`  | off under `prefers-reduced-motion` regardless                 |
+| `loop`            | `true`  | after the last slide, the first                               |
+| `arrows`, `dots`  | `true`  |                                                               |
+| `pause_on_hover`  | `true`  | and on focus inside the slider                                |
+| `ratio`           | `16/6`  | `aspect-ratio` of the frame on wide screens                   |
+| `ratio_mobile`    | `4/5`   | below the breakpoint                                          |
+| `breakpoint`      | `768`   | px: below it `image_mobile`, `ratio_mobile`, `video_mobile`   |
+| `video_on_mobile` | `false` | without `video_mobile`, `video` on phones too                 |
+| `parallax`        | `false` | `true` (medium), `soft` or `strong`: the picture moves slower |
 
 **Parallax.** With `parallax` on a place (or `<x-webx-banners place="hero" :parallax="true" />` in
 a template, which wins over the place) the picture and the video of each banner move slower than
-the page — the widgets' `data-webx-parallax`. The layers do not move: they stay where the editor
-put them in the frame, and the picture under them shifts by at most 6% of the frame's height (3%
-on a narrow one). An option of the place, not of a banner: every slide of a place moves alike.
+the page — the widgets' `data-webx-parallax`. The value is the strength too: `true` or `'medium'`,
+`'soft'`, `'strong'` (`parallax="strong"` on the component). The layers do not move: they stay
+where the editor put them in the frame, and the picture under them shifts by at most 10, 20 or 30%
+of the frame's height (half that on a narrow one). An option of the place, not of a banner: every slide of a place moves alike.
 Without JavaScript and with reduced motion nothing moves.
 
 ## A template
