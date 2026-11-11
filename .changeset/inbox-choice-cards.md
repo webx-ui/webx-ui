@@ -1,6 +1,0 @@
----
-'@webx-ui/module-inbox': minor
-'@webx-ui/php': minor
----
-
-Choice cards (FORM_STEPS §5). `<x-webx-field type="radio|checkbox" view="cards" :columns="3">` draws a group as cards: the same `<fieldset>`, `<legend>` and real inputs inside each `<label>`, so the whole card is the target and the arrows move through the group; a choice may carry `description` and `image`. Look — `webx-field--cards`, `__cards`, `__card`, `__card-image`, `__card-title`, `__card-text`, chosen and focused by `:has()`, the `--webx-field-card-*` variables; views `field/radio-cards` and `checkbox-cards` to override. Inbox: radio and checkbox fields take `options.view: cards`, `columns` 1–4 and, per choice, a translated `description` and an `image` from the media library (kept by its key; every picture of a form in one query; a file gone is a card without a picture; without `webx-ui/module-media` no picture). The answer in a submission is unchanged. The field dialog gets «Show the choices as: List | Cards», «Cards in a row», and a description and picture under each choice; `inbox_form_save` / `inbox_form_get` carry the same keys. The default theme's kitchen sink has «Forms › Cards». Words in ten languages, help in en/ru/uk.

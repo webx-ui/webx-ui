@@ -1,5 +1,0 @@
----
-'@webx-ui/php': minor
----
-
-widgets: `data-webx-overlap` — a section slides over the one above it as the page scrolls. The section above (a hero banner, any block) stays in place with `position: sticky`, its words and layers marked `data-webx-overlap-fade` fade as they are covered, then it goes up with the page under this one; the top of this section can be an edge picture (fog, clouds) as wide as the page, with a file of its own for a phone. `@webxOverlap($on)` prints the attribute, `@webxOverlapEdge($on, $edge, $narrow)` the picture. Scroll-driven CSS where the browser has it, a small script elsewhere; focus that comes back into the pinned section scrolls the page to where its words are whole. Without JavaScript, with reduced motion and in print the sections stand one after another. theme-default: every block has «Slide over the section above» with «Edge picture» and «Edge picture on a phone» (off by default; `hero` and `text-tiles` then crop their picture in `__media`); module-banners: a banner's stage and words are marked to fade.

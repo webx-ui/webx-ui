@@ -1,5 +1,33 @@
 # @webx-ui/module-banners
 
+## 0.4.0
+
+### Minor Changes
+
+- 764d8dd: Banners: the video of a banner is the widgets' background video — muted, looping, a pause button, played only on screen, never under reduced motion or on a connection saving data. New fields `video_mobile` (played below the breakpoint instead of `video`) and `poster` (the picture where a video plays, eager on the first slide); a banner without them looks as before. The `hero` place takes an `h1` text layer. Widgets: a background video in a slide of `<x-webx-slider>` plays only while its slide is shown.
+- 764d8dd: Every code somebody types is made, not refused (#125, stage 2). The trait `HasCodes` of `localization` brings a model's code columns to their shape on every save, and `Model::codeFor()` does the same for a request before its own check. That covers the panel, MCP, the import and a plain `save()`, and only an empty or a taken code is refused. `Slug::code()` takes `Slug::BOTH` / `Slug::BOTH_UNDERSCORED` for a key that takes `-` and `_`, and a `$lead` for a code that must start with a letter. `wx-code` and `WxCodeField` take `separator` `-_` / `_-`, `lead` and `localized`. Converted fields: label, property code and toggle slug, collection key, block slug, role slug, task project slug, menu key, banner place key, form slug, form field name, inbox status key, public order status code, checkout field key, user group code, delivery point kind, configurator key and the keys of its schema. «тормозные колодки» becomes `tormoznye-kolodki` in every one of them. `CodeCoverageTest` and `codeCoverage.test.ts` fail on a new code field that skips this.
+- 764d8dd: Banners, tariffs and product collections: the button of a banner (and its «Button» layer), the button of a tariff and the «All products» link of a collection take a file of the media library — a brochure, a price list — with «Download instead of opening» and «Open in a new tab» (`props.files: true` on their `wx-link`). The cards carry `download` (the name the file was uploaded under, or null) beside `url`, `new_tab` and `rel`; the banner views, the tariffs block and the collection view print the `<a>` with `LinkAttributes::of()`. A file key the library does not have is refused when it is new — in the panel, through the model and in an agent's `dry_run` — and a file deleted since only takes the button off the site. Every link saved before prints as it did; the files of a list of banners or tariffs are one query.
+
+  Links: `LinkUrls::candidates()` asks the library for the files of a whole set of links at once.
+
+  Tariffs: a site's own copy of the `tariffs` block type keeps its old template — a file opens rather than downloads — until `webx:blocks:import tariffs --path=vendor/webx-ui/module-tariffs/resources/blocks --replace=tariffs --publish`.
+
+  Banners: in a slider that fades, the layers of a slide faded out no longer take the click meant for a button of the slide shown — the slide's `pointer-events: none` did not reach a layer that says `auto`.
+
+### Patch Changes
+
+- Updated dependencies [764d8dd]
+- Updated dependencies [764d8dd]
+- Updated dependencies [764d8dd]
+- Updated dependencies [764d8dd]
+- Updated dependencies [764d8dd]
+- Updated dependencies [764d8dd]
+- Updated dependencies [764d8dd]
+  - @webx-ui/module-admin@0.37.0
+  - @webx-ui/core@0.48.0
+  - @webx-ui/module-media@0.13.0
+  - @webx-ui/schema@0.11.2
+
 ## 0.3.7
 
 ### Patch Changes
