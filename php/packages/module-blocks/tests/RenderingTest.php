@@ -363,18 +363,35 @@ final class RenderingTest extends TestCase
         $block = $this->publish('hero', '<h1>one</h1>');
 
         $this->render([$this->node('hero')]);
-        $one = $compiler->directory().'/hero-1-'.substr(sha1('<h1>one</h1>'), 0, 12).'.php';
-        $this->assertFileExists($one);
+        $this->assertCount(1, glob($compiler->directory().'/hero-1-*.php') ?: []);
 
         $block->saveVersion(['template' => '<h1>two</h1>']);
         $block->publish();
         $this->assertSame('<h1>two</h1>', $this->render([$this->node('hero')]));
-        $two = $compiler->directory().'/hero-2-'.substr(sha1('<h1>two</h1>'), 0, 12).'.php';
-        $this->assertFileExists($two);
+        $two = glob($compiler->directory().'/hero-2-*.php') ?: [];
+        $this->assertCount(1, $two);
 
         // The file is the cache: gone, it is written again from the template in the database.
-        unlink($two);
+        unlink($two[0]);
         $this->assertSame('<h1>two</h1>', $this->render([$this->node('hero')]));
+    }
+
+    /**
+     * Blade leaves a directive it does not know in the output as text. A template compiled while
+     * one was missing — code a step behind the database during a deploy, a checkout switched under
+     * a running site — printed `@webxReveal('', $no_reveal)` into the page, and, the file being
+     * named by the template alone, went on printing it once the directive was back.
+     */
+    #[Test]
+    public function a_template_compiled_without_a_directive_is_compiled_again_once_it_is_known(): void
+    {
+        $this->publish('hero', '<h1 @wxLabMark>one</h1>');
+
+        $this->assertSame('<h1 @wxLabMark>one</h1>', $this->render([$this->node('hero')]));
+
+        Blade::directive('wxLabMark', static fn (): string => '<?php echo \'data-mark\'; ?>');
+
+        $this->assertSame('<h1 data-mark>one</h1>', $this->render([$this->node('hero')]));
     }
 
     #[Test]

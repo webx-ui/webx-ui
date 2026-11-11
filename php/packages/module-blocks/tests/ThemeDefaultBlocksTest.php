@@ -15,6 +15,7 @@ use WebxUi\Blocks\Models\Block;
 use WebxUi\Blocks\Models\BlockVersion;
 use WebxUi\Blocks\Panel\BlockInput;
 use WebxUi\Blocks\Panel\Importer;
+use WebxUi\Blocks\Rendering\Renderer;
 use WebxUi\Blocks\Themes\LayerSource;
 use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\InboxServiceProvider;
@@ -24,6 +25,8 @@ use WebxUi\Settings\SettingsServiceProvider;
 use WebxUi\Themes\Blocks\SchemaCompatibility;
 use WebxUi\Themes\ThemeChain;
 use WebxUi\Themes\ThemeLocator;
+use WebxUi\Themes\ThemeManifest;
+use WebxUi\Themes\ThemeReveal;
 use WebxUi\Themes\ThemeServiceProvider;
 use WebxUi\Widgets\WidgetsServiceProvider;
 
@@ -126,6 +129,44 @@ final class ThemeDefaultBlocksTest extends TestCase
 
         // Nothing to say is nothing printed, not an empty frame.
         $this->assertSame('', trim($this->render([$this->node('hero'), $this->node('text'), $this->node('cta')])));
+    }
+
+    /**
+     * The entrance on scroll (THEMES §9.3) through the types imported into the tables, not the
+     * files: what the page, the panel's preview and `blocks_render` print. Off — no mark and no
+     * directive left as text; on — the marks, and still no directive as text.
+     */
+    #[Test]
+    public function the_imported_blocks_mark_their_entrance_only_when_the_theme_says_so(): void
+    {
+        $this->sync();
+        $page = fn (): string => $this->render([
+            $this->node('hero', ['title' => 'Hero']),
+            $this->node('text', ['heading' => 'Text', 'body' => '<p>Words.</p>']),
+            $this->node('media-text', ['heading' => 'Media', 'body' => '<p>Words.</p>']),
+            $this->node('cards', ['heading' => 'Cards', 'cards' => [['title' => 'One', 'text' => 'A card']]]),
+            $this->node('cta', ['heading' => 'Ask', 'button_label' => 'Now', 'button_url' => '/now']),
+            $this->node('contact', ['heading' => 'Write', 'show_contacts' => false, 'form' => '']),
+        ]);
+
+        $off = $page();
+        $this->assertStringContainsString('class="b-cta b-cta--accent"', $off);
+        $this->assertStringNotContainsString('data-webx-reveal', $off);
+        $this->assertStringNotContainsStringIgnoringCase('@webxReveal', $off);
+
+        $chain = new ThemeChain([new ThemeManifest('theme', '/theme', true, reveal: 'fade'), ...$this->app->make(ThemeChain::class)->layers]);
+        $this->app->instance(ThemeReveal::class, new ThemeReveal($chain));
+        $this->app->make(Renderer::class)->flush();
+
+        $on = $page();
+        $this->assertStringNotContainsStringIgnoringCase('@webxReveal', $on);
+        $this->assertStringNotContainsString('@webx', $on);
+        foreach (['b-hero__inner', 'b-text__inner', 'b-cards__head', 'b-cta__inner', 'b-contact__head'] as $class) {
+            $this->assertMatchesRegularExpression('~class="'.$class.'[^"]*"[^>]*?\sdata-webx-reveal="fade"~', $on, $class);
+        }
+        foreach (['b-media-text__grid', 'b-cards__grid', 'b-contact__grid'] as $class) {
+            $this->assertMatchesRegularExpression('~class="'.$class.'[^"]*"[^>]*?\sdata-webx-reveal="stagger" data-webx-reveal-effect="fade"~', $on, $class);
+        }
     }
 
     /**

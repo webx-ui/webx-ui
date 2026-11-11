@@ -17,6 +17,10 @@ use WebxUi\Blocks\BlockType;
  * a test suite on an in-memory database and the developer's own site share one compiled
  * directory, and each has a `hero` at version 1 with a different template — without the
  * hash whichever compiled first served both, and the page printed the other site's block.
+ * The hash also covers the names of the directives Blade knows: a directive it does not know is
+ * left in the output as text, so a template compiled while one was missing (code a step behind
+ * the database during a deploy, a checkout switched under a running site) printed `@webxReveal`
+ * into the page — and, keyed by the template alone, kept printing it after the code caught up.
  * `view:cache` does not know these files, so the first request after a deploy compiles again —
  * and that is all it costs.
  */
@@ -31,7 +35,7 @@ final class TemplateCompiler
     /** The compiled file of a version, written on the first ask. */
     public function path(BlockType $type): string
     {
-        $path = $this->directory.'/'.$type->slug.'-'.$type->version.'-'.substr(sha1($type->template), 0, 12).'.php';
+        $path = $this->directory.'/'.$type->slug.'-'.$type->version.'-'.substr($this->hash($type->template), 0, 12).'.php';
 
         if (! $this->files->exists($path)) {
             $this->write($path, $type->template);
@@ -46,7 +50,7 @@ final class TemplateCompiler
      */
     public function adHoc(string $slug, string $template): string
     {
-        $path = $this->directory.'/'.$slug.'-tmp-'.sha1($template).'.php';
+        $path = $this->directory.'/'.$slug.'-tmp-'.$this->hash($template).'.php';
 
         if (! $this->files->exists($path)) {
             $this->write($path, $template);
@@ -94,6 +98,15 @@ final class TemplateCompiler
         }
 
         return null;
+    }
+
+    /** The template and the directives it is compiled with: either changed is another file. */
+    private function hash(string $template): string
+    {
+        $directives = array_keys($this->blade->getCustomDirectives());
+        sort($directives);
+
+        return sha1($template."\0".implode(',', $directives));
     }
 
     private function write(string $path, string $template): void
