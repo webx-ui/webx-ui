@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { withBase } from 'vitepress'
 import { WxIconPicker } from '@webx-ui/core'
 
 /* What `module-admin` hands the panel for `source: "theme"`: the theme's names and its sprite. */
 const theme = {
   icons: ['area', 'bath', 'bed', 'terrace'],
-  sprite: `${import.meta.env.BASE_URL}demos/property-icons.svg`,
+  sprite: withBase('/demos/property-icons.svg'),
 }
 
 const feature = ref<string | null>('bed')
