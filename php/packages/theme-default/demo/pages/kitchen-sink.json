@@ -999,6 +999,80 @@
               }
             },
             {
+              "key": "showcase-media-accent",
+              "type": "media-text",
+              "values": {
+                "image": {
+                  "path": "demo:showcase-photo-3",
+                  "alt": {
+                    "en": "A quiet street with trees",
+                    "ru": "Тихая улица с деревьями",
+                    "pl": "Cicha ulica z drzewami"
+                  }
+                },
+                "logo": {
+                  "path": "demo:showcase-logo-1",
+                  "alt": {
+                    "en": "Logo",
+                    "ru": "Логотип",
+                    "pl": "Logo"
+                  }
+                },
+                "heading": {
+                  "en": "A logo and ==an accent==",
+                  "ru": "Логотип и ==акцент==",
+                  "pl": "Logo i ==akcent=="
+                },
+                "body": {
+                  "en": "<p>A small logo stands above the heading. Words between two equals signs in the heading take the accent colour — in each language where its own word order puts them.</p>",
+                  "ru": "<p>Над заголовком — небольшой логотип. Слова между двумя знаками равенства в заголовке получают цвет акцента — в каждом языке там, где их ставит его порядок слов.</p>",
+                  "pl": "<p>Nad nagłówkiem stoi małe logo. Słowa między dwoma znakami równości w nagłówku dostają kolor akcentu — w każdym języku tam, gdzie stawia je jego szyk.</p>"
+                },
+                "button_label": {
+                  "en": "Read on",
+                  "ru": "Читать дальше",
+                  "pl": "Czytaj dalej"
+                },
+                "button_url": "/kitchen-sink/blocks/text",
+                "side": "start",
+                "tone": "plain"
+              }
+            },
+            {
+              "key": "showcase-media-accent-end",
+              "type": "media-text",
+              "values": {
+                "image": {
+                  "path": "demo:showcase-photo-5",
+                  "alt": {
+                    "en": "Hills under clouds",
+                    "ru": "Холмы под облаками",
+                    "pl": "Wzgórza pod chmurami"
+                  }
+                },
+                "logo": {
+                  "path": "demo:showcase-logo-2",
+                  "alt": {
+                    "en": "Logo",
+                    "ru": "Логотип",
+                    "pl": "Logo"
+                  }
+                },
+                "heading": {
+                  "en": "==On the right==, on a tint",
+                  "ru": "==Справа==, на подложке",
+                  "pl": "==Po prawej==, na tle"
+                },
+                "body": {
+                  "en": "<p>The accent can open the heading as well as close it.</p>",
+                  "ru": "<p>Акцент может и открывать заголовок, и закрывать его.</p>",
+                  "pl": "<p>Akcent może nagłówek zarówno otwierać, jak i zamykać.</p>"
+                },
+                "side": "end",
+                "tone": "surface"
+              }
+            },
+            {
               "key": "showcase-media-narrow",
               "type": "showcase-column",
               "values": {

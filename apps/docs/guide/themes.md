@@ -274,6 +274,29 @@ while the theme names one and nothing otherwise; the second argument is the bloc
 site takes it with `webx:blocks:import --theme --replace=<slug>`, until then the blocks stand
 still.
 
+### An accent in a heading
+
+Part of a heading in another colour — «Homes **by the river**» — is typed in the heading itself:
+two equals signs on each side of the words, `Homes ==by the river==`. The six blocks of
+`theme-default` print it as `<span class="site-accent">`, in the theme's `color-accent`; on the
+accent and over a photo (`hero`, `cta`) the words keep the colour and lean instead. The heading
+stays one `<h1>`/`<h2>` with its words in reading order, and each language of the site puts the
+accent where its own word order wants it — one field, translated like any other. A heading
+without marks prints as before; `a == b` and an unclosed `==` are printed as typed.
+
+A block of your own takes the same with the directive in place of the echo:
+
+```blade
+<h2 class="b-offer__heading">@webxAccent($heading)</h2>
+```
+
+Another look for every accent of the site is one rule in the local theme on `.site-accent`
+(`font-style: italic`, `background: var(--site-color-highlight)` …). Where a span cannot go — an
+attribute, a title — `\WebxUi\Themes\ThemeAccent::plain($heading)` is the text without the marks.
+
+`media-text` also has a **logo** — a small picture above the heading (a mark, a badge, a
+partner), at most 4rem high and 12rem wide, never stretched, its `alt` from the media library.
+
 The 35 rules of a theme — where to work, tokens, where each style lives, blocks, views, languages
 and fonts, accessibility, what to check before saying it is done — are in the engine's
 [`RULES.md`](https://github.com/webx-ui/webx-ui/blob/main/php/packages/themes/RULES.md). The check

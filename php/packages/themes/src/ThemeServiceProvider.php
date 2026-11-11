@@ -119,6 +119,10 @@ class ThemeServiceProvider extends ServiceProvider
         // nothing, so a template that has it reads exactly as before.
         Blade::directive('webxReveal', static fn (string $arguments = ''): string => sprintf('<?php echo app(%s)->attributes(%s); ?>', var_export(ThemeReveal::class, true), trim($arguments)));
 
+        // The accented words of a heading (§9.4): `@webxAccent($heading)` in place of `{{ $heading }}`.
+        // A heading without `==marks==` prints what the echo printed.
+        Blade::directive('webxAccent', static fn (string $arguments = ''): string => sprintf('<?php echo %s::heading(%s); ?>', '\\'.ThemeAccent::class, trim($arguments) !== '' ? trim($arguments) : 'null'));
+
         // Without a theme too: a template that names an icon still compiles, and prints an empty <svg>.
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-themes');
         Blade::component('theme::icon', Icon::class);

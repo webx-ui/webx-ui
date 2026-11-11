@@ -39,17 +39,17 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
 - **Classes** (the contract a local theme restyles): `site` on `<body>`, `site-container`,
   `site-skip`, `site-header`, `site-header__inner|title|nav|link`, `site-main`, `site-bleed` (a
   direct child of `<main>` that spans the page), `site-footer`,
-  `site-footer__inner|nav|link|copy`, `site-error`, `site-error__code|home`, `site-prose` (prose typography outside `<main>`, and
+  `site-footer__inner|nav|link|copy`, `site-error`, `site-error__code|home`, `site-accent` (the accented words of a heading), `site-prose` (prose typography outside `<main>`, and
   the muted colours of quotes, captions and `small` inside a block, which otherwise keep the
   block's own colour).
 - **`blocks/`** — the six block types `webx:blocks:import --theme` puts on a site (`webx:setup` only prints it)
-  (THEMES §9.1), as `webx:blocks:export` writes them; CSS on the tokens and `@container` only; each has `no_reveal` («Without animation») and `@webxReveal` on its words and lists — they come in on scroll only with `"reveal": true` in the manifest (§9.3, off by default):
+  (THEMES §9.1), as `webx:blocks:export` writes them; CSS on the tokens and `@container` only; each has `no_reveal` («Without animation») and `@webxReveal` on its words and lists — they come in on scroll only with `"reveal": true` in the manifest (§9.3, off by default); a heading prints through `@webxAccent`, its `==words==` as `<span class="site-accent">` in `color-accent` (`base.css`; leaning on the accent and over a photo; §9.4):
   - buttons are `wx-link` with files (`button_link`, `second_link`, a card’s `link`); the old `*_url` stay `wx-input`, read while the link is empty;
   - `hero` — `title`, `subtitle`, two buttons (`button_*`, `second_*`), `tone`
     `plain|surface|accent|image` (+ `image`), `align` `start|center`, `width` `column|bleed`;
   - `text` — `heading`, `body` (rich text, under `site-prose`; a body of plain lines prints as
     paragraphs), `width` `narrow|wide`;
-  - `media-text` — `image`, `heading`, `body`, one button, `side` `start|end`, `tone` `plain|surface`;
+  - `media-text` — `image`, `logo` (a small picture above the heading, at most 4rem × 12rem), `heading`, `body`, one button, `side` `start|end`, `tone` `plain|surface`;
   - `cards` — `heading`, `intro`, `columns` `2|3|4` (at most; the container decides), `pictures`
     `photo|icon`, repeater `cards` (`image`, `title`, `text`, `link_label`, `link`, `link_url`: the whole card is the link; `link_label` ends in the `arrow-right` icon, `b-cards__arrow`);
   - `cta` — `heading`, `text`, two buttons, `tone` `accent|surface|plain`;

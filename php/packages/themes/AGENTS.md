@@ -17,7 +17,7 @@ and the site's `theme/`). **The rules every theme keeps, numbered as the check n
 - **The preset** — `"preset": "night"` in the manifest of a layer (the highest that names one
   decides), a preset of the chain's tokens.json; an unknown name throws on the page and is a
   finding of the check. **`"reveal": true|"fade"|"scale"`** the same way (`ThemeChain::reveal()`, off
-  unless named): the blocks come in on scroll where their templates say `@webxReveal` (`ThemeReveal`). No panel setting.
+  unless named): the blocks come in on scroll where their templates say `@webxReveal` (`ThemeReveal`). No panel setting. `@webxAccent($heading)` (`ThemeAccent`, §9.4) prints a heading with its `==words==` as `<span class="site-accent">`; without marks, what `{{ }}` printed.
 - **`settings`** — the tabs of the site's settings the theme prints, so the panel offers them:
   `"settings": {"contacts": ["phones", "emails", "hours"]}` (a tab is `true` or the list of its
   sections); per tab the nearest layer that names it decides (`ThemeChain::settings()`, by layer
