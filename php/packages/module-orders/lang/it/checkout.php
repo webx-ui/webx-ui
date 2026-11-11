@@ -62,6 +62,7 @@ return [
         'price-down' => 'ora costa meno',
         'price-up' => 'ora costa di più',
         'place' => 'Conferma l\'ordine',
+        'blocked' => 'Per fare l\'ordine, modifica prima il carrello.',
     ],
     'terms' => [
         'agree' => 'Accetto le condizioni',

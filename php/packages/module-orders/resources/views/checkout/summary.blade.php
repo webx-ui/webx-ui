@@ -14,9 +14,12 @@
     (`data-webx-cart-edit`, the widget the page prints), where the lines change; without
     JavaScript it is the link to `#webx-cart` of the widget.
 
+    Nothing left to buy (`placeable` false, §20.4): the button is `disabled`, a line above it says to
+    change the cart first; «Open the cart» stays in the warning over the steps.
+
     Classes: webx-orders-checkout__summary, __summary-title, __row, __row--discount,
     __row--delivery, __was, __lines, __lines-head, __edit, __line, __line-name, __line-link,
-    __line-qty, __line-total, __change, __gone, __benefit, __hint, __payable, __carrier, __place,
+    __line-qty, __line-total, __change, __gone, __benefit, __hint, __payable, __carrier, __place, __blocked,
     __terms, __honeypot.
 --}}
 <div class="webx-orders-checkout__summary" id="checkout-summary">
@@ -116,7 +119,10 @@
                 {{ __('webx-orders::checkout.terms.agree') }}@foreach ($documents as $document){{ $loop->first ? ': ' : ', ' }}<a href="{{ $document['url'] }}" target="_blank" rel="noopener">{{ $document['title'] }}</a>@endforeach
             </x-webx-field>
         @endif
-        <x-webx-form.submit>{{ __('webx-orders::checkout.summary.place') }}</x-webx-form.submit>
+        @unless ($placeable)
+            <p class="webx-orders-checkout__blocked" id="{{ $form }}-blocked">{{ __('webx-orders::checkout.summary.blocked') }}</p>
+        @endunless
+        <x-webx-form.submit :disabled="! $placeable" :aria-disabled="$placeable ? null : 'true'" :aria-describedby="$placeable ? null : $form.'-blocked'">{{ __('webx-orders::checkout.summary.place') }}</x-webx-form.submit>
         @if ($terms === 'notice')
             <p class="webx-orders-checkout__terms">
                 {{ __('webx-orders::checkout.terms.notice') }}@foreach ($documents as $document){{ $loop->first ? ': ' : ', ' }}<a href="{{ $document['url'] }}" target="_blank" rel="noopener">{{ $document['title'] }}</a>@endforeach

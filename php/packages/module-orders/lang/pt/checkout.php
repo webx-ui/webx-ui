@@ -62,6 +62,7 @@ return [
         'price-down' => 'agora mais barato',
         'price-up' => 'agora mais caro',
         'place' => 'Confirmar a encomenda',
+        'blocked' => 'Para fazer a encomenda, altere primeiro o carrinho.',
     ],
     'terms' => [
         'agree' => 'Aceito as condições',

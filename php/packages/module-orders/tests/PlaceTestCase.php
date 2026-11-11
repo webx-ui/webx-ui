@@ -43,7 +43,7 @@ abstract class PlaceTestCase extends TestCase
     }
 
     /** @param  array<string, string>|null  $names */
-    protected static function product(string $name, int $price, ?int $maxQty = null, bool $available = true, ?array $names = null, string $currency = 'EUR', bool $shippable = true): PurchasableLine
+    protected static function product(string $name, int $price, ?int $maxQty = null, bool $available = true, ?array $names = null, string $currency = 'EUR', bool $shippable = true, ?string $url = null): PurchasableLine
     {
         return new PurchasableLine(
             name: $name,
@@ -56,6 +56,7 @@ abstract class PlaceTestCase extends TestCase
             available: $available,
             names: $names,
             shippable: $shippable,
+            url: $url,
         );
     }
 

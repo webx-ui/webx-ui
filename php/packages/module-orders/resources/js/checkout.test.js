@@ -410,6 +410,51 @@ describe('order contents and the dialog of the cart', () => {
     expect(doc.querySelector('.webx-orders-checkout__line.is-unavailable')).toBeNull()
   })
 
+  it('turns the buttons on once the cart has something to buy again, and off when it has not', async () => {
+    // As the server prints it (CheckoutCartEditTest): nothing to buy — both buttons off, the line
+    // above the column's own says why.
+    const off =
+      '<p class="webx-orders-checkout__blocked" id="checkout-place-blocked">Change the cart first.</p>' +
+      '<button class="webx-form__submit" disabled aria-disabled="true" aria-describedby="checkout-place-blocked">Place</button>'
+    const nothing = (html) =>
+      html
+        .replace('<button class="webx-form__submit">Place</button>', off)
+        .replace(
+          '<strong data-payable>',
+          '<button class="webx-orders-checkout__sticky-place" form="checkout-place" disabled aria-disabled="true" aria-describedby="checkout-place-blocked">Place</button><strong data-payable>',
+        )
+    const sticky = () => doc.querySelector('.webx-orders-checkout__sticky-place')
+    const own = () => doc.querySelector('#checkout-place .webx-form__submit')
+    const withSticky = (html) =>
+      html.replace(
+        '<strong data-payable>',
+        '<button class="webx-orders-checkout__sticky-place" form="checkout-place">Place</button><strong data-payable>',
+      )
+    const fetch = vi.fn()
+    await open(nothing(pageOf(stepOf('contacts', 'A'), '€0.00', line(1, 1))))
+    vi.spyOn(mod.server, 'fetch').mockImplementation(fetch)
+    expect(sticky().disabled).toBe(true)
+
+    fetch.mockResolvedValue(withSticky(pageOf(stepOf('contacts', 'A'), '€20.00', line(2, 1))))
+    change()
+    await settle()
+
+    expect(own().disabled).toBe(false)
+    expect(doc.querySelector('.webx-orders-checkout__blocked')).toBeNull()
+    expect(sticky().disabled).toBe(false)
+    expect(sticky().hasAttribute('aria-disabled')).toBe(false)
+    expect(sticky().hasAttribute('aria-describedby')).toBe(false)
+
+    // The sticky row is the page's, not the column's: it follows the column both ways.
+    fetch.mockResolvedValue(nothing(pageOf(stepOf('contacts', 'A'), '€0.00', line(1, 1))))
+    change()
+    await settle()
+
+    expect(own().disabled).toBe(true)
+    expect(sticky().disabled).toBe(true)
+    expect(sticky().getAttribute('aria-describedby')).toBe('checkout-place-blocked')
+  })
+
   it('reloads into the empty cart when the last line goes', async () => {
     await open(pageOf(stepOf('contacts', 'A'), '€10.00', line(1, 1)))
     vi.spyOn(mod.server, 'fetch').mockResolvedValue(

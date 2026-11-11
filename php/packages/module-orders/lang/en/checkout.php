@@ -62,6 +62,7 @@ return [
         'price-down' => 'cheaper now',
         'price-up' => 'dearer now',
         'place' => 'Place the order',
+        'blocked' => 'To place the order, change the cart first.',
     ],
     'terms' => [
         'agree' => 'I agree with the terms',

@@ -62,6 +62,7 @@ return [
         'price-down' => 'jetzt günstiger',
         'price-up' => 'jetzt teurer',
         'place' => 'Bestellung abschicken',
+        'blocked' => 'Um zu bestellen, ändern Sie zuerst den Warenkorb.',
     ],
     'terms' => [
         'agree' => 'Ich stimme den Bedingungen zu',
