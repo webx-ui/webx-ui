@@ -33,9 +33,10 @@ final readonly class ThemeReport
 
     /**
      * @return array{
-     *     layers: list<array{name: string, title: string, local: bool, path: string, uses: list<string>, preset: string|null}>,
+     *     layers: list<array{name: string, title: string, local: bool, path: string, uses: list<string>, preset: string|null, reveal: string|null}>,
      *     below: list<string>,
      *     preset: string|null,
+     *     reveal: string|null,
      *     presets: array<string, array{title: string, tokens: array<string, string>}>,
      *     tokens: array<string, array{type: string, value: string, resolved: string|null, from: string, dark: string|null, dark_from: string|null}>,
      *     views: list<array{view: string, from: string, hides: list<string>}>,
@@ -55,10 +56,12 @@ final readonly class ThemeReport
                 'path' => $this->relative($layer->path),
                 'uses' => $layer->uses,
                 'preset' => $layer->preset,
+                'reveal' => $layer->reveal,
             ], $this->chain->layers),
             'below' => array_map(static fn (ThemeManifest $layer): string => $layer->name, $this->bottom->all()),
             'preset' => $this->tokens->preset(),
             'presets' => $this->tokens->presets(),
+            'reveal' => $this->chain->reveal(),
             'tokens' => $this->tokenRows(),
             'views' => $this->views(),
             'blocks' => $this->blocks(),

@@ -237,6 +237,43 @@ while the link is empty and shown in the panel only while they hold something: a
 for the old buttons stays compatible and prints what it printed. A site gets the new fields with
 `webx:blocks:import --theme --replace=hero` (and the other three), when it chooses to.
 
+### Blocks that come in as the page scrolls
+
+The six blocks of `theme-default` can come in as they scroll into view: their words rise and fade
+in, a grid of cards and the picture with its text come one after another. **Off unless the theme
+says so** — a site that never asked looks as it did. The theme says it in its manifest:
+
+```json
+{ "theme": { "uses": ["webx-ui/theme-default"], "reveal": true } }
+```
+
+`true` is `up`; `"fade"` and `"scale"` are the other two effects, `false` (or `"off"`) switches
+off what a layer below turned on. The layer nearest to the site that names it decides, as with the
+preset, and `webx:theme:show` prints the answer. It is not a panel setting: the look of a site is
+the theme's (and in git).
+
+What is on the screen when the page opens is never hidden — the script hides only what is below
+the fold, so the first screen does not blink and its picture is not held back. Without JavaScript,
+with `prefers-reduced-motion` and in print everything is simply there. A block that should stand
+still — a form, a price list — has the switch «Without animation».
+
+A block of your own takes part with the same directive on the elements that come in — never on
+the `<section>` itself, or a list inside it fades twice:
+
+```blade
+<section class="b-offer" data-wx-block="offer">
+    <div class="b-offer__head" @webxReveal('', $no_reveal)>…</div>
+    <ul class="b-offer__list" role="list" @webxReveal('stagger', $no_reveal)>…</ul>
+</section>
+```
+
+`@webxReveal` prints `data-webx-reveal="<effect>"` (or, with `stagger`, the effect for the children)
+while the theme names one and nothing otherwise; the second argument is the block's own switch, a
+`wx-switch` field `no_reveal`. The motion is the widgets' `data-webx-reveal`
+([Widgets](./widgets.md)). The six blocks print the directive from the version that brought it: a
+site takes it with `webx:blocks:import --theme --replace=<slug>`, until then the blocks stand
+still.
+
 The 35 rules of a theme — where to work, tokens, where each style lives, blocks, views, languages
 and fonts, accessibility, what to check before saying it is done — are in the engine's
 [`RULES.md`](https://github.com/webx-ui/webx-ui/blob/main/php/packages/themes/RULES.md). The check

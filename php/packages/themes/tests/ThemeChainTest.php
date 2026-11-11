@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace WebxUi\Themes\Tests;
 
+use Illuminate\Support\Facades\Blade;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Themes\Exceptions\ThemeException;
 use WebxUi\Themes\ThemeChain;
 use WebxUi\Themes\ThemeLocator;
 use WebxUi\Themes\ThemeManifest;
+use WebxUi\Themes\ThemeReveal;
 
 class ThemeChainTest extends TestCase
 {
@@ -108,6 +110,69 @@ class ThemeChainTest extends TestCase
             file_put_contents($dir.'/theme.json', '{"theme": {"settings": ["contacts"]}}');
             $this->expectException(ThemeException::class);
             $this->expectExceptionMessage('"settings" is an object of tabs');
+            ThemeManifest::fromLocal($dir, 'theme');
+        } finally {
+            @unlink($dir.'/theme.json');
+            @rmdir($dir);
+        }
+    }
+
+    #[Test]
+    public function the_nearest_layer_that_names_the_reveal_decides_and_nobody_naming_it_is_off(): void
+    {
+        $base = new ThemeManifest('base', '/base', false, reveal: 'fade');
+        $silent = new ThemeManifest('silent', '/silent', true);
+
+        $this->assertSame('fade', (new ThemeChain([$silent, $base]))->reveal());
+        $this->assertSame('scale', (new ThemeChain([new ThemeManifest('top', '/top', true, reveal: 'scale'), $base]))->reveal());
+        // A local theme can switch off what it stands on.
+        $this->assertNull((new ThemeChain([new ThemeManifest('top', '/top', true, reveal: 'off'), $base]))->reveal());
+        $this->assertNull((new ThemeChain([$silent]))->reveal());
+    }
+
+    #[Test]
+    public function the_reveal_prints_its_attributes_only_while_the_theme_names_it(): void
+    {
+        $off = new ThemeReveal(new ThemeChain([new ThemeManifest('silent', '/silent', true)]));
+        $on = new ThemeReveal(new ThemeChain([new ThemeManifest('top', '/top', true, reveal: 'up')]));
+
+        $this->assertSame('', $off->attributes()->toHtml());
+        $this->assertSame('', $off->attributes('stagger')->toHtml());
+        $this->assertSame(' data-webx-reveal="up"', $on->attributes()->toHtml());
+        $this->assertSame(' data-webx-reveal="stagger" data-webx-reveal-effect="up"', $on->attributes('stagger')->toHtml());
+        $this->assertSame(' data-webx-reveal="fade"', $on->attributes('fade')->toHtml());
+        // The block's own "no animation".
+        $this->assertSame('', $on->attributes('', true)->toHtml());
+        $this->assertSame('', $on->attributes('stagger', '1')->toHtml());
+        $this->assertSame(' data-webx-reveal="up"', $on->attributes('', null)->toHtml());
+    }
+
+    #[Test]
+    public function the_directive_asks_the_reveal(): void
+    {
+        $this->app->instance(ThemeReveal::class, new ThemeReveal(new ThemeChain([new ThemeManifest('top', '/top', true, reveal: 'scale')])));
+
+        $this->assertSame('<ul  data-webx-reveal="stagger" data-webx-reveal-effect="scale"></ul><p ></p>', Blade::render("<ul @webxReveal('stagger')></ul><p @webxReveal('', \$off)></p>", ['off' => true], deleteCachedView: true));
+    }
+
+    #[Test]
+    public function a_manifest_reads_its_reveal_and_refuses_another_word(): void
+    {
+        $dir = sys_get_temp_dir().'/webx-theme-reveal-'.getmypid();
+        @mkdir($dir, 0777, true);
+
+        try {
+            foreach (['true' => 'up', 'false' => 'off', '"fade"' => 'fade', '"off"' => 'off'] as $json => $reveal) {
+                file_put_contents($dir.'/theme.json', '{"theme": {"reveal": '.$json.'}}');
+                $this->assertSame($reveal, ThemeManifest::fromLocal($dir, 'theme')->reveal, $json);
+            }
+
+            file_put_contents($dir.'/theme.json', '{"theme": {}}');
+            $this->assertNull(ThemeManifest::fromLocal($dir, 'theme')->reveal);
+
+            file_put_contents($dir.'/theme.json', '{"theme": {"reveal": "slide"}}');
+            $this->expectException(ThemeException::class);
+            $this->expectExceptionMessage('"reveal" is true, false or one of');
             ThemeManifest::fromLocal($dir, 'theme');
         } finally {
             @unlink($dir.'/theme.json');

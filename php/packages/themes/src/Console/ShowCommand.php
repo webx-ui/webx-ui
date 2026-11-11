@@ -71,6 +71,10 @@ class ShowCommand extends Command
         $this->line('  '.($report['preset'] ?? 'none').($presets === [] ? '' : '  — the chain has: '.implode(', ', $presets)));
         $this->line('  Chosen by "preset" in the manifest of a layer; the panel does not change the look.');
 
+        $this->section('Reveal');
+        $this->line('  '.($report['reveal'] ?? 'off'));
+        $this->line('  The blocks of the theme come in as the page scrolls: "reveal" in the manifest of a layer, off unless one names it.');
+
         $this->section('Tokens');
         // The dark columns only for a chain with a dark scheme (§7.6): elsewhere they would be empty.
         $dark = array_filter(array_column($report['tokens'], 'dark')) !== [];
