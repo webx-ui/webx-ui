@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace WebxUi\Admin\Icons;
 
 use Closure;
+use WebxUi\Admin\AdminServiceProvider;
 
 /**
  * The icon sets a screen may name in `props.source` of a `wx-icon-picker`, by name.
  *
  * The one the frame registers is `theme`: the icons of the site's theme chain, the ones
- * `<x-theme::icon>` prints ({@see \WebxUi\Admin\AdminServiceProvider}). A module or a site adds
+ * `<x-theme::icon>` prints ({@see AdminServiceProvider}). A module or a site adds
  * its own with {@see register()}. A set is built when a screen asks for it, not when it is
  * registered: the theme's names come from files and its sprite's address from the last sync.
  */

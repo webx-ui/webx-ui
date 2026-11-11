@@ -118,7 +118,7 @@ final class IconType implements ChecksNewValues, Presents
         $source = $this->source($node);
 
         if ($source !== null) {
-            return $this->sets->get($source)?->names ?? [];
+            return $this->sets->get($source)->names ?? [];
         }
 
         $icons = $node['props']['icons'] ?? null;
