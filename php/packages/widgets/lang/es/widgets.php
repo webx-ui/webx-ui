@@ -126,6 +126,7 @@ return [
         'always' => 'Cargar mapas siempre',
         'open' => 'Abrir en mapas',
         'hint' => 'Haz clic en el mapa para hacer zoom con la rueda',
+        'failed' => 'No se pudo cargar el mapa.',
     ],
     'table' => [
         'label' => 'Tabla',

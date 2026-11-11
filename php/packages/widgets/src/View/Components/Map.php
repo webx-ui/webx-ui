@@ -10,6 +10,7 @@ use InvalidArgumentException;
 use WebxUi\Widgets\Consent;
 use WebxUi\Widgets\Contacts\ContactsSource;
 use WebxUi\Widgets\Facades\Widgets;
+use WebxUi\Widgets\Map\GoogleMaps;
 use WebxUi\Widgets\Map\MapTiles;
 
 /**
@@ -33,6 +34,10 @@ use WebxUi\Widgets\Map\MapTiles;
  * map; no address, or no `module-settings`, prints nothing. `marker` is the pin's label — the
  * address unless told — or false for none; `height` is a CSS length, 24rem unless told; `title`
  * names the region for a screen reader, the address unless told.
+ *
+ * The provider is the site's (§11.1): Leaflet over the tiles of the config, or Google Maps chosen
+ * on the "Map" tab — the same frame, notice and sleep, its own script. Google without a key is
+ * the place alone, the address (or the coordinates) and "Open in Google Maps".
  */
 final class Map extends Component
 {
@@ -65,6 +70,9 @@ final class Map extends Component
     public string $notice = '';
 
     public string $attribution = '';
+
+    /** Whose map the script puts in: Leaflet over tiles, or `google` — its own script (§11.1). */
+    public string $provider = 'tiles';
 
     /** @var array<string, mixed> What the script is told, `data-webx-map`. */
     public array $config = [];
@@ -105,26 +113,66 @@ final class Map extends Component
         $this->name = self::filled($title) ?? $this->address ?? (string) __('webx-widgets::widgets.map.untitled');
 
         if (! $this->hasMap()) {
+            // Google's place of an address: its search for the words, when the address has no link.
+            if ($this->address !== null && GoogleMaps::configured() !== null) {
+                $this->provider = GoogleMaps::NAME;
+                $this->href ??= GoogleMaps::search($this->address);
+            }
+
             return;
         }
 
-        $tiles = MapTiles::configured();
-        $this->zoom = min($this->zoom, $tiles->maxZoom);
-        $this->href ??= MapTiles::openAt((float) $this->lat, (float) $this->lng, $this->zoom);
+        $label = $marker === false ? null : ($this->address ?? '');
+        $google = GoogleMaps::configured();
+
+        if ($google !== null) {
+            $this->href ??= GoogleMaps::openAt((float) $this->lat, (float) $this->lng);
+
+            // No key: the place, with its link — not the grey window Google draws without one.
+            if (! $google->hasKey()) {
+                $this->address ??= MapTiles::number((float) $this->lat).', '.MapTiles::number((float) $this->lng);
+                $this->lat = $this->lng = null;
+                $this->provider = GoogleMaps::NAME;
+
+                return;
+            }
+
+            $this->provider = GoogleMaps::NAME;
+            $this->zoom = min($this->zoom, GoogleMaps::MAX_ZOOM);
+            $this->notice = (string) __('webx-widgets::widgets.map.notice', ['provider' => GoogleMaps::LABEL]);
+            // Google draws its own attribution on the map, as its terms ask: nothing to print.
+            $this->config = [
+                'provider' => GoogleMaps::NAME,
+                'key' => $google->key,
+                'mapId' => $google->mapId,
+                'language' => str_replace('_', '-', app()->getLocale()),
+                'lat' => $this->lat,
+                'lng' => $this->lng,
+                'zoom' => $this->zoom,
+                'maxZoom' => GoogleMaps::MAX_ZOOM,
+                'marker' => $label,
+                'hint' => (string) __('webx-widgets::widgets.map.hint'),
+                'failed' => (string) __('webx-widgets::widgets.map.failed'),
+            ];
+        } else {
+            $tiles = MapTiles::configured();
+            $this->zoom = min($this->zoom, $tiles->maxZoom);
+            $this->href ??= MapTiles::openAt((float) $this->lat, (float) $this->lng, $this->zoom);
+            $this->notice = (string) __('webx-widgets::widgets.map.notice', ['provider' => $tiles->label]);
+            $this->attribution = $tiles->attribution;
+            $this->config = [
+                'lat' => $this->lat,
+                'lng' => $this->lng,
+                'zoom' => $this->zoom,
+                'tiles' => $tiles->url,
+                'maxZoom' => $tiles->maxZoom,
+                'marker' => $label,
+                'hint' => (string) __('webx-widgets::widgets.map.hint'),
+            ];
+        }
+
         $this->waits = self::flag($consent) ?? app(Consent::class)->mapsWait();
         $this->blocked = $this->waits && ! app(Consent::class)->has('media');
-        $this->notice = (string) __('webx-widgets::widgets.map.notice', ['provider' => $tiles->label]);
-        $this->attribution = $tiles->attribution;
-        $label = $marker === false ? null : ($this->address ?? '');
-        $this->config = [
-            'lat' => $this->lat,
-            'lng' => $this->lng,
-            'zoom' => $this->zoom,
-            'tiles' => $tiles->url,
-            'maxZoom' => $tiles->maxZoom,
-            'marker' => $label,
-            'hint' => (string) __('webx-widgets::widgets.map.hint'),
-        ];
 
         // Told, so the script does not wait for a consent the site does not ask for.
         if (! $this->waits) {
@@ -144,7 +192,8 @@ final class Map extends Component
 
     public function render(): View
     {
-        Widgets::need('map');
+        // Google's place without a key wants the stylesheet alone, not Leaflet with it.
+        Widgets::need($this->provider === GoogleMaps::NAME ? 'map-google' : 'map');
 
         return view('webx-widgets::components.map');
     }

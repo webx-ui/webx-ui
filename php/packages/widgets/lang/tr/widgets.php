@@ -126,6 +126,7 @@ return [
         'always' => 'Haritaları her zaman yükle',
         'open' => 'Haritada aç',
         'hint' => 'Tekerlekle yakınlaştırmak için haritaya tıklayın',
+        'failed' => 'Harita yüklenemedi.',
     ],
     'table' => [
         'label' => 'Tablo',

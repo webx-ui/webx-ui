@@ -264,6 +264,8 @@ class WidgetsServiceProvider extends ServiceProvider
         $this->app->make(ScreenRegistry::class)->extend('settings.index', Widgets::path().'/resources/screens/settings.consent.json');
         // The site's captcha (`Captcha`): the provider and the site key; the secret stays in the environment.
         $this->app->make(ScreenRegistry::class)->extend('settings.index', Widgets::path().'/resources/screens/settings.captcha.json');
+        // The map's provider (§11.1): OpenStreetMap, or Google Maps with the site's browser key.
+        $this->app->make(ScreenRegistry::class)->extend('settings.index', Widgets::path().'/resources/screens/settings.map.json');
 
         // "Ask everyone again" is a switch saved with the tab: the save raises the version of
         // the policy — every answer given so far is to an older one — and turns the switch off.

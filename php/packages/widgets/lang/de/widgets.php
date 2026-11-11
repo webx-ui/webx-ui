@@ -126,6 +126,7 @@ return [
         'always' => 'Karten immer laden',
         'open' => 'In Karten öffnen',
         'hint' => 'Klicken Sie auf die Karte, um mit dem Mausrad zu zoomen',
+        'failed' => 'Die Karte konnte nicht geladen werden.',
     ],
     'table' => [
         'label' => 'Tabelle',

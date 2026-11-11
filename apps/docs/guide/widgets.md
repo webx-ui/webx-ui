@@ -273,6 +273,42 @@ Another provider of tiles is a config entry:
 `{key}` is replaced by the entry's `key`; a provider named but not described, or a `{key}` with no
 key, is an error at once rather than a map that silently asks for tiles without one.
 
+### Google Maps
+
+Google Maps is the other provider of the same `<x-webx-map>`, with the same frame, notice, sleep
+and "Open in maps" (to Google Maps). It is not a tile entry: Google's terms keep its tiles in its
+own Maps JavaScript API, so the page claims `map-google.js` instead of Leaflet. Choose it on the
+**Map** tab of the settings: «Map service» → Google Maps, then the API key and, optionally, a Map
+ID. Without `module-settings` the config does the same:
+
+```php
+'map' => [
+    'provider' => 'google',
+    'google' => ['key' => env('WEBX_GOOGLE_MAPS_KEY'), 'map_id' => null],
+    // …
+],
+```
+
+- **The key is a browser key** — every visitor sees it in the page. Restrict it in the Google Cloud
+  console to the site's domains (HTTP referrers) and to the Maps JavaScript API.
+- **Before consent to `media`** nothing of Google is on the page — no script, no preconnect; the API
+  is asked for on «Load», «Always load maps» or a consent given earlier, and then only as the
+  frame comes near the screen. One script for every map of the page.
+- **No key** — the map is the place: the address (or the coordinates) and a link to Google Maps,
+  never Google's grey window; the Map tab warns that the key is missing. **A key Google refuses**
+  (or a script that does not come) — the same place, with «The map could not be loaded».
+- **Asleep** the map is Google's «cooperative»: the wheel and one finger scroll the page, Google
+  says how to zoom; a click or the focus makes it «greedy», a press elsewhere puts it back.
+- **The pin** is the package's SVG in `--webx-map-marker`: a classic marker, or an advanced one
+  with a Map ID. **The scheme** follows the site — dark under `data-theme="dark"` or a dark
+  `color-scheme`, the system's where the site follows it — once, when the map is made: a switch of
+  the theme afterwards applies on the next page. With a Map ID the style is the one given to it in
+  the console.
+- **CSP** — a site with a Content Security Policy allows `script-src https://maps.googleapis.com`,
+  `img-src https://*.googleapis.com https://*.gstatic.com data:`, `connect-src
+https://*.googleapis.com` and `font-src https://fonts.gstatic.com`. Do not preconnect to Google
+  in the `<head>`: that is a request with the visitor's address before consent.
+
 ## Page tools
 
 What a long page needs, each loading only where it stands:

@@ -45,6 +45,9 @@ final class DistTest extends PlainTestCase
     /** The map, Leaflet built in: 50 KB gzip without the tiles (§4), only where a map stands. */
     private const int MAP_BUDGET = 50 * 1024;
 
+    /** The map on Google Maps (§11.1): the shell and a loader, Google's API is Google's — 4 KB gzip. */
+    private const int MAP_GOOGLE_BUDGET = 4 * 1024;
+
     /** Each of the small widgets of §14 with a file of its own: a table's shadows, back to top, share, counter, countdown, the notice bar. */
     private const int PAGE_TOOL_BUDGET = 2 * 1024;
 
@@ -164,7 +167,7 @@ final class DistTest extends PlainTestCase
         ));
         sort($built);
 
-        $this->assertSame(['attribution.js', 'back-to-top.css', 'back-to-top.js', 'captcha.js', 'compare.css', 'compare.js', 'consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'countdown.css', 'countdown.js', 'counter.css', 'counter.js', 'datetime.css', 'datetime.js', 'field.css', 'field.js', 'files.css', 'files.js', 'form.css', 'form.js', 'language-offer.css', 'language-offer.js', 'language-switcher.css', 'lightbox.css', 'lightbox.js', 'load-more.css', 'load-more.js', 'map.css', 'map.js', 'mask.js', 'notice-bar.css', 'notice-bar.js', 'pagination.css', 'runtime.css', 'runtime.js', 'select.css', 'select.js', 'share.css', 'share.js', 'slider.css', 'slider.js', 'smooth-scroll.css', 'smooth-scroll.js', 'sources.json', 'steps.css', 'steps.js', 'suggest.css', 'suggest.js', 'summary.css', 'summary.js', 'table.css', 'table.js', 'toc.css', 'toc.js', 'video.css', 'video.js', 'zoom.css', 'zoom.js'], $built);
+        $this->assertSame(['attribution.js', 'back-to-top.css', 'back-to-top.js', 'captcha.js', 'compare.css', 'compare.js', 'consent.css', 'consent.js', 'contacts.css', 'contacts.js', 'countdown.css', 'countdown.js', 'counter.css', 'counter.js', 'datetime.css', 'datetime.js', 'field.css', 'field.js', 'files.css', 'files.js', 'form.css', 'form.js', 'language-offer.css', 'language-offer.js', 'language-switcher.css', 'lightbox.css', 'lightbox.js', 'load-more.css', 'load-more.js', 'map-google.css', 'map-google.js', 'map.css', 'map.js', 'mask.js', 'notice-bar.css', 'notice-bar.js', 'pagination.css', 'runtime.css', 'runtime.js', 'select.css', 'select.js', 'share.css', 'share.js', 'slider.css', 'slider.js', 'smooth-scroll.css', 'smooth-scroll.js', 'sources.json', 'steps.css', 'steps.js', 'suggest.css', 'suggest.js', 'summary.css', 'summary.js', 'table.css', 'table.js', 'toc.css', 'toc.js', 'video.css', 'video.js', 'zoom.css', 'zoom.js'], $built);
     }
 
     /**
@@ -322,6 +325,19 @@ final class DistTest extends PlainTestCase
                 $this->assertMatchesRegularExpression('/^(?::where\(:root\)|(?:html:not\(\.webx-js\) )?\.webx-map|(?:[a-z]+(?:\.[a-z-]+)?\s*)?\.leaflet-)/', $selector, "map.css: \"{$selector}\" is neither Leaflet's nor the package's.");
             }
         }
+    }
+
+    #[Test]
+    public function the_map_on_google_is_its_own_small_file_without_leaflet(): void
+    {
+        $size = self::gzipped('map-google.js') + self::gzipped('map-google.css');
+
+        $this->assertLessThanOrEqual(self::MAP_GOOGLE_BUDGET, $size, sprintf('The map on Google is %.1f KB gzip.', $size / 1024));
+
+        // Google's API is asked for by the script, after consent; nothing of Leaflet comes with it.
+        $this->assertStringNotContainsString('leaflet', (string) file_get_contents(Widgets::path().'/dist/map-google.js'));
+        $this->assertStringNotContainsString('.leaflet-', (string) file_get_contents(Widgets::path().'/dist/map-google.css'));
+        $this->assertStringContainsString('https://maps.googleapis.com/maps/api/js', (string) file_get_contents(Widgets::path().'/dist/map-google.js'));
     }
 
     private static function gzipped(string $file): int

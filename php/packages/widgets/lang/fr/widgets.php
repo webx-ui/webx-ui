@@ -126,6 +126,7 @@ return [
         'always' => 'Toujours charger les cartes',
         'open' => 'Ouvrir dans une carte',
         'hint' => 'Cliquez sur la carte pour zoomer avec la molette',
+        'failed' => 'La carte n’a pas pu être chargée.',
     ],
     'table' => [
         'label' => 'Tableau',

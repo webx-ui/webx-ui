@@ -126,6 +126,7 @@ return [
         'always' => 'Always load maps',
         'open' => 'Open in maps',
         'hint' => 'Click the map to zoom with the wheel',
+        'failed' => 'The map could not be loaded.',
     ],
     'table' => [
         'label' => 'Table',

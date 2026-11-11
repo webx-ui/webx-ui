@@ -53,7 +53,8 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
   `:file="$media"` — `<video preload="none">`; `variant="background"` — a muted first-screen loop.
 - **Map** — `<x-webx-map :lat :lng :zoom marker height consent>` or `from="settings"`: address and
   "Open in maps" always, tiles after consent — unless the owner lifts the wait (Cookie tab "Maps
-  without asking", `webx-widgets.map.consent` false; the audit notes it); provider `map.provider`.
+  without asking", `webx-widgets.map.consent` false; the audit notes it); tiles `map.provider`, or Google
+  Maps on the settings tab "Map" (`map.provider` google, `map.google-key`; no key — the place alone, `dist/map-google.js`).
 - **Page tools** — a `<table>` without a class gets a scrolling `.webx-table` frame (server-side);
   `data-webx-reveal="up|fade|scale|stagger"`; `<x-webx-back-to-top>`; `<x-webx-share>`;
   `<x-webx-counter :value>`; `<x-webx-countdown to ended>`; `<x-webx-compare :before :after>`;
@@ -115,7 +116,7 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
 - Its pieces of the composition `layout` — `widgets.contact-button` (after `footer`): moved or gone by id, `{"remove": ["widgets.contact-button"]}` in `theme/compositions/layout/default.json`.
 - A behaviour of the site's own — `webx.widget('name', '[data-…]', (el) => cleanup)` in `theme/src/js/theme.js`.
 - HTML added later — `webx.mount(container)`; `webx.unmount(container)` before removing it.
-- A map provider — an entry in `webx-widgets.map.providers` with `{key}` in its address.
+- A map provider — an entry in `webx-widgets.map.providers` with `{key}` in its address; Google — the "Map" tab.
 
 ## Do not
 
@@ -139,8 +140,7 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
 
 ## Check your work
 
-- `webx:theme:sync` lists `webx-ui/widgets`; `runtime.css` is in `<head>`, `runtime.js` before
-  `</body>`. Walk it with Tab; turn JavaScript off.
+- `webx:theme:sync` lists `webx-ui/widgets`; `runtime.css` is in `<head>`, `runtime.js` before `</body>`. Walk it with Tab; turn JavaScript off.
 - `php artisan webx:audit:run`, then `audit_issues` with `check: "widgets.before_consent"` — nothing. The "Kitchen sink" pages of `theme-default` show each widget.
 
 ## Read more

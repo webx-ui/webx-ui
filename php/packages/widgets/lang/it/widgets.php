@@ -126,6 +126,7 @@ return [
         'always' => 'Carica sempre le mappe',
         'open' => 'Apri nelle mappe',
         'hint' => 'Fai clic sulla mappa per ingrandire con la rotella',
+        'failed' => 'Impossibile caricare la mappa.',
     ],
     'table' => [
         'label' => 'Tabella',

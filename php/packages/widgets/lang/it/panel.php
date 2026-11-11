@@ -38,4 +38,16 @@ return [
         'managed' => 'Visibile nella pagina',
         'invisible-run' => 'Invisibile, all’invio',
     ],
+    'map' => [
+        'tab' => 'Mappa',
+        'provider' => 'Servizio di mappe',
+        'provider-help' => 'Di chi è la mappa che il sito mostra: OpenStreetMap non chiede una chiave, Google Maps chiede una chiave browser del sito. Entrambe si caricano solo dopo il consenso del visitatore ai media incorporati, salvo che le mappe si carichino senza chiedere.',
+        'tiles' => 'OpenStreetMap',
+        'google' => 'Google Maps',
+        'key' => 'Chiave API di Google Maps',
+        'key-help' => 'Una chiave browser di Maps JavaScript API. Ogni visitatore la vede nella pagina, quindi limitala nella console Google Cloud ai domini del sito (referrer HTTP) e a Maps JavaScript API.',
+        'map-id' => 'ID mappa',
+        'map-id-help' => 'Facoltativo: un ID mappa dalla console Google Cloud mostra il segnaposto come indicatore avanzato e dà alla mappa lo stile creato per esso. Vuoto: la solita mappa di Google.',
+        'no-key' => 'È scelto Google Maps, ma manca la chiave: al posto della mappa i visitatori vedono l’indirizzo con un link a Google Maps.',
+    ],
 ];

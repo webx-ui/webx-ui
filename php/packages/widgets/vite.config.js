@@ -97,6 +97,8 @@ export default {
         video: join(root, 'resources/js/video.js'),
         // Leaflet, built in here and only here: tiles wait for consent to media (§11).
         map: join(root, 'resources/js/map.js'),
+        // Google Maps instead, when the site chose it: no Leaflet, Google's API asked for after consent (§11.1).
+        'map-google': join(root, 'resources/js/map-google.js'),
         // The shadows at the edge of a table of prose, claimed by the server when it wrapped one.
         table: join(root, 'resources/js/table.js'),
         'back-to-top': join(root, 'resources/js/back-to-top.js'),

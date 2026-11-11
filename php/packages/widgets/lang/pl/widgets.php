@@ -126,6 +126,7 @@ return [
         'always' => 'Zawsze wczytuj mapy',
         'open' => 'Otwórz w mapach',
         'hint' => 'Kliknij mapę, aby przybliżać kółkiem',
+        'failed' => 'Nie udało się wczytać mapy.',
     ],
     'table' => [
         'label' => 'Tabela',
