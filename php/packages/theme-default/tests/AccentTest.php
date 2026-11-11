@@ -97,7 +97,7 @@ final class AccentTest extends TestCase
         $this->assertMatchesRegularExpression('~:where\(\.site-accent\)\s*\{\s*color: var\(--site-color-accent\);~', $css);
         $this->assertStringContainsString(':where(.site) :where(.site-accent)', (string) file_get_contents(self::path().'/dist/theme.css'));
 
-        foreach (['hero' => ['accent', 'image'], 'cta' => ['accent']] as $slug => $tones) {
+        foreach (['hero' => ['accent', 'image'], 'cta' => ['accent', 'image']] as $slug => $tones) {
             foreach ($tones as $tone) {
                 $this->assertStringContainsString(".b-{$slug}--{$tone} .site-accent", (string) self::type($slug)['styles'], "{$slug}: {$tone}");
             }

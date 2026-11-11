@@ -28,6 +28,7 @@ use WebxUi\Themes\ThemeLocator;
 use WebxUi\Themes\ThemeManifest;
 use WebxUi\Themes\ThemeReveal;
 use WebxUi\Themes\ThemeServiceProvider;
+use WebxUi\Widgets\FormDialogs;
 use WebxUi\Widgets\WidgetsServiceProvider;
 
 /**
@@ -227,6 +228,42 @@ final class ThemeDefaultBlocksTest extends TestCase
         $this->assertStringContainsString('<a class="b-cta__button" href="/now">Now</a>', $old);
         $this->assertStringContainsString('<a class="b-media-text__button" href="/read">Read</a>', $old);
         $this->assertStringContainsString('<a class="b-cards__link" href="/card">Old card</a>', $old);
+    }
+
+    /**
+     * The call to action opening a form of the inbox in a dialog (THEMES §9.8): «An address» with
+     * `#webx-form-<slug>` typed in it, or the address left empty and the anchor filled, is the
+     * bare `href="#webx-form-<slug>"` the widgets' form dialogs look for — not an absolute address
+     * of the page, which they would not see.
+     */
+    #[Test]
+    public function a_call_to_action_on_a_picture_downloads_a_file_and_opens_a_form(): void
+    {
+        $this->sync();
+
+        $html = $this->render([
+            $this->node('cta', [
+                'tone' => 'image',
+                'eyebrow' => 'Open house',
+                'heading' => 'Come ==and see==',
+                'button_label' => 'The plan',
+                'button_link' => ['target' => 'file', 'path' => 'media/ab/cd/f00d.pdf', 'download' => true],
+                'second_label' => 'Book a viewing',
+                'second_link' => ['target' => 'url', 'url' => '#webx-form-viewing'],
+                'height' => 'ratio',
+                'ratio' => '21-9',
+                'width' => 'bleed',
+            ]),
+            $this->node('cta', ['heading' => 'By the anchor', 'button_label' => 'Ask', 'button_link' => ['target' => 'url', 'url' => null, 'hash' => 'webx-form-question']]),
+        ]);
+
+        $this->assertStringContainsString('class="b-cta b-cta--image b-cta--dark b-cta--ratio b-cta--ratio-21-9 site-bleed"', $html);
+        $this->assertStringContainsString('<p class="b-cta__eyebrow">Open house</p>', $html);
+        $this->assertStringContainsString('<div class="b-cta__shade"></div>', $html);
+        $this->assertStringContainsString('<a class="b-cta__button" href="/storage/media/ab/cd/f00d.pdf" download="Price list.pdf">The plan</a>', $html);
+        $this->assertStringContainsString('<a class="b-cta__button b-cta__button--quiet" href="#webx-form-viewing">Book a viewing</a>', $html);
+        $this->assertStringContainsString('<a class="b-cta__button" href="#webx-form-question">Ask</a>', $html);
+        $this->assertSame(['viewing', 'question'], FormDialogs::openers($html));
     }
 
     /**

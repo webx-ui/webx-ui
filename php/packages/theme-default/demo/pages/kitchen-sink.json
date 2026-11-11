@@ -2508,9 +2508,9 @@
               "pl": "Wezwanie do działania"
             },
             "description": {
-              "en": "The call-to-action band of the default theme on the accent, on a tint and on the page.",
-              "ru": "Полоса призыва темы по умолчанию на акценте, на подложке и на странице.",
-              "pl": "Pas wezwania do działania domyślnego motywu na akcencie, na tle i na stronie."
+              "en": "The call-to-action band of the default theme on the accent, on a tint, on the page and on a picture — and the picture alone.",
+              "ru": "Полоса призыва темы по умолчанию на акценте, на подложке, на странице и на картинке — и одна картинка.",
+              "pl": "Pas wezwania do działania domyślnego motywu na akcencie, na tle, na stronie i na zdjęciu — oraz samo zdjęcie."
             }
           },
           "blocks": [
@@ -2582,6 +2582,111 @@
                 },
                 "button_url": "/kitchen-sink/blocks/contact",
                 "tone": "plain"
+              }
+            },
+            {
+              "key": "showcase-cta-picture",
+              "type": "cta",
+              "values": {
+                "eyebrow": {
+                  "en": "On a picture",
+                  "ru": "На картинке",
+                  "pl": "Na zdjęciu"
+                },
+                "heading": {
+                  "en": "Come ==and see== it for yourself",
+                  "ru": "Приезжайте ==и посмотрите== сами",
+                  "pl": "Przyjedź ==i zobacz== sam"
+                },
+                "text": {
+                  "en": "A shade over the picture keeps the words readable. The first button downloads a file, the second opens a form in a dialog: its address is #webx-form-contact.",
+                  "ru": "Тень над картинкой сохраняет слова читаемыми. Первая кнопка скачивает файл, вторая открывает форму в диалоге: её адрес — #webx-form-contact.",
+                  "pl": "Cień nad zdjęciem utrzymuje czytelność słów. Pierwszy przycisk pobiera plik, drugi otwiera formularz w oknie: jego adres to #webx-form-contact."
+                },
+                "button_label": {
+                  "en": "Download the plan",
+                  "ru": "Скачать план",
+                  "pl": "Pobierz plan"
+                },
+                "button_link": {
+                  "target": "file",
+                  "path": "demo:showcase-photo-3",
+                  "download": true
+                },
+                "second_label": {
+                  "en": "Book a viewing",
+                  "ru": "Записаться на просмотр",
+                  "pl": "Umów oglądanie"
+                },
+                "second_link": {
+                  "target": "url",
+                  "url": "#webx-form-contact"
+                },
+                "tone": "image",
+                "image": {
+                  "path": "demo:showcase-photo-1",
+                  "alt": {
+                    "en": "A quiet street with trees",
+                    "ru": "Тихая улица с деревьями",
+                    "pl": "Cicha ulica z drzewami"
+                  }
+                },
+                "height": "ratio",
+                "ratio": "21-9",
+                "width": "bleed"
+              }
+            },
+            {
+              "key": "showcase-cta-picture-light",
+              "type": "cta",
+              "values": {
+                "heading": {
+                  "en": "A light shade, the screen high",
+                  "ru": "Светлая тень, на весь экран",
+                  "pl": "Jasny cień, na cały ekran"
+                },
+                "text": {
+                  "en": "The light shade lightens the picture and darkens the words; the parallax moves the picture slower than the page.",
+                  "ru": "Светлая тень осветляет картинку и делает слова тёмными; параллакс двигает картинку медленнее страницы.",
+                  "pl": "Jasny cień rozjaśnia zdjęcie i przyciemnia słowa; paralaksa przesuwa zdjęcie wolniej niż strona."
+                },
+                "button_label": {
+                  "en": "Get in touch",
+                  "ru": "Связаться",
+                  "pl": "Napisz do nas"
+                },
+                "button_link": {
+                  "target": "url",
+                  "url": "#webx-form-contact"
+                },
+                "tone": "image",
+                "shade": "light",
+                "parallax": true,
+                "height": "screen",
+                "image": {
+                  "path": "demo:showcase-photo-5",
+                  "alt": {
+                    "en": "Hills under clouds",
+                    "ru": "Холмы под облаками",
+                    "pl": "Wzgórza pod chmurami"
+                  }
+                }
+              }
+            },
+            {
+              "key": "showcase-cta-picture-alone",
+              "type": "cta",
+              "values": {
+                "tone": "image",
+                "width": "bleed",
+                "image": {
+                  "path": "demo:showcase-photo-2",
+                  "alt": {
+                    "en": "A road through fields",
+                    "ru": "Дорога через поля",
+                    "pl": "Droga przez pola"
+                  }
+                }
               }
             },
             {

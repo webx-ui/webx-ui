@@ -276,7 +276,7 @@ still.
 
 ### A picture that moves slower than the page
 
-The `hero` of `theme-default` over a picture, and its `text-tiles`, have the switch «Parallax», off by default: on, the
+The `hero` and the `cta` of `theme-default` over a picture, and its `text-tiles`, have the switch «Parallax», off by default: on, the
 picture behind the words moves slower than the page while the words and the shade stay put.
 «Parallax strength» under it — soft, medium (the default) or strong — says how far behind it falls. It is the widgets' `data-webx-parallax` ([Widgets](./widgets.md)), so a block of your own takes
 part by putting the attribute on a picture that fills its frame:
@@ -288,7 +288,7 @@ part by putting the attribute on a picture that fills its frame:
 </section>
 ```
 
-A site takes the switch with `webx:blocks:import --theme --replace=hero`, and `text-tiles` with a plain
+A site takes the switch with `webx:blocks:import --theme --replace=hero,cta`, and `text-tiles` with a plain
 `webx:blocks:import --theme --publish` — a new slug is created, the others are left as they are.
 
 ### A section that slides over the one above
@@ -322,6 +322,21 @@ under its title («2 rooms», «54 m²») — and **more photos** beside its pic
 photo card turns them on its own ([the photos of a card](./widgets.md#the-photos-of-a-card)). A
 block saved before prints as it did; a site takes the fields with
 `webx:blocks:import --theme --replace=cards`.
+
+### A call to action on a picture
+
+The `cta` of `theme-default` takes a fourth background, «Picture»: a photo or a sketch across the
+band under a shade that keeps the words readable — dark or light, turned round by a dark scheme —
+with the parallax of the hero. Its height is the words, the screen or a proportion (21:9, 16:9,
+3:2, 4:3); words that need more make it taller. «Above the heading» puts a line over the heading on
+any background, and «Width» takes any of them edge to edge. Everything is optional: a picture with
+no words and no buttons is the picture alone, across the column or the page, with nothing around
+it.
+
+A button opens a form of the Inbox in a dialog when its link is the address
+`#webx-form-<slug>` (or an empty address with the anchor `webx-form-<slug>`); a file of the library
+with «Download» is a brochure to save. A block saved before prints as it did; a site takes the
+fields with `webx:blocks:import --theme --replace=cta`.
 
 ### An accent in a heading
 
