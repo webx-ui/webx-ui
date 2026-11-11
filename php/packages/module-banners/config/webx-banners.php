@@ -88,6 +88,7 @@ return [
         'ratio_mobile' => '4/5',     // below the breakpoint
         'breakpoint' => 768,         // px: below it image_mobile, ratio_mobile, video_mobile
         'video_on_mobile' => false,  // without a video_mobile, below the breakpoint the poster rather than the video
+        'parallax' => false,         // the picture and the video move slower than the page; the layers stay in the frame
     ],
 
     /*

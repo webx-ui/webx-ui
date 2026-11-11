@@ -1,0 +1,5 @@
+---
+'@webx-ui/php': minor
+---
+
+Widgets: `data-webx-parallax` — a picture that fills its frame moves slower than the page as the frame crosses the screen, drawn a little larger so its edges stay out of sight. In the runtime, no file of its own: scroll-driven CSS (`animation-timeline: view()`) where the browser has it, an IntersectionObserver and one frame per scroll elsewhere; only `translate` and `scale`, so nothing around it moves. `--webx-parallax-shift` (6% of the height each way) and `--webx-parallax-shift-narrow` (3%, in a container under 40rem). Without JavaScript, with reduced motion and in print the picture simply stands there. Banners: the place option `parallax` (off by default; `<x-webx-banners :parallax>` in a template wins over it) moves the picture and the video of each banner while the layers stay where the editor put them in the frame. Theme-default: the `hero` over a picture has a «Parallax» switch, off by default; a site takes it with `webx:blocks:import --theme --replace=hero`.

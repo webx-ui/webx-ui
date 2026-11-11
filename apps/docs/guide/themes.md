@@ -274,6 +274,22 @@ while the theme names one and nothing otherwise; the second argument is the bloc
 site takes it with `webx:blocks:import --theme --replace=<slug>`, until then the blocks stand
 still.
 
+### A picture that moves slower than the page
+
+The `hero` of `theme-default` over a picture has the switch «Parallax», off by default: on, the
+picture behind the words moves a little slower than the page while the words and the shade stay
+put. It is the widgets' `data-webx-parallax` ([Widgets](./widgets.md)), so a block of your own takes
+part by putting the attribute on a picture that fills its frame:
+
+```blade
+<section class="b-offer" data-wx-block="offer">
+    <img class="b-offer__picture"@if ($parallax) data-webx-parallax @endif src="…" alt="">
+    …
+</section>
+```
+
+A site takes the switch with `webx:blocks:import --theme --replace=hero`.
+
 ### An accent in a heading
 
 Part of a heading in another colour — «Homes **by the river**» — is typed in the heading itself:

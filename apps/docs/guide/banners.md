@@ -173,6 +173,14 @@ site can add its own.
 | `ratio_mobile`    | `4/5`   | below the breakpoint                                        |
 | `breakpoint`      | `768`   | px: below it `image_mobile`, `ratio_mobile`, `video_mobile` |
 | `video_on_mobile` | `false` | without `video_mobile`, `video` on phones too               |
+| `parallax`        | `false` | the picture and the video move slower than the page         |
+
+**Parallax.** With `parallax` on a place (or `<x-webx-banners place="hero" :parallax="true" />` in
+a template, which wins over the place) the picture and the video of each banner move slower than
+the page — the widgets' `data-webx-parallax`. The layers do not move: they stay where the editor
+put them in the frame, and the picture under them shifts by at most 6% of the frame's height (3%
+on a narrow one). An option of the place, not of a banner: every slide of a place moves alike.
+Without JavaScript and with reduced motion nothing moves.
 
 ## A template
 

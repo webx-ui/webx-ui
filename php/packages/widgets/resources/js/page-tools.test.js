@@ -188,6 +188,90 @@ describe('reveal', () => {
   })
 })
 
+describe('parallax', () => {
+  const page = `<section id="frame"><img id="picture" data-webx-parallax src="/a.jpg" alt=""></section>`
+  let frames = []
+
+  const run = () => {
+    const queued = frames
+    frames = []
+    queued.forEach((callback) => callback())
+  }
+
+  async function load(supports) {
+    frames = []
+    vi.stubGlobal('CSS', { supports: (query) => supports && query.includes('animation-timeline') })
+    vi.stubGlobal('requestAnimationFrame', (callback) => frames.push(callback))
+    vi.stubGlobal('cancelAnimationFrame', () => {})
+    vi.stubGlobal('innerHeight', 800)
+    await start(page)
+    return document.getElementById('picture')
+  }
+
+  it('leaves the motion to the stylesheet where the browser has scroll-driven animations', async () => {
+    const picture = await load(true)
+
+    expect(picture.className).toBe('webx-parallax')
+    // No observer, no frame asked for: the compositor does it.
+    expect(watched.length).toBe(0)
+    window.dispatchEvent(new Event('scroll'))
+    expect(frames.length).toBe(0)
+
+    window.webx.unmount()
+    expect(picture.className).toBe('')
+  })
+
+  it('without them, writes where the frame is on its way across the screen, only while it is seen', async () => {
+    const picture = await load(false)
+    const frame = document.getElementById('frame')
+
+    expect(picture.classList.contains('webx-parallax--script')).toBe(true)
+    // The frame is measured, not the picture: its box carries the shift.
+    const observer = watched.find((o) => o.els.has(frame))
+    expect(observer).toBeTruthy()
+
+    // Off the screen: a scroll asks for nothing.
+    observer.callback([{ target: frame, isIntersecting: false }])
+    window.dispatchEvent(new Event('scroll'))
+    expect(frames.length).toBe(0)
+
+    // Its top at the bottom of the screen: the start of the way.
+    at(frame, 800, 400)
+    observer.callback([{ target: frame, isIntersecting: true }])
+    run()
+    expect(picture.style.getPropertyValue('--webx-parallax-progress')).toBe('0.0000')
+
+    // Halfway: the frame's middle at the middle of the screen.
+    at(frame, 200, 400)
+    window.dispatchEvent(new Event('scroll'))
+    window.dispatchEvent(new Event('scroll'))
+    // Two scrolls in one frame are one measure.
+    expect(frames.length).toBe(1)
+    run()
+    expect(picture.style.getPropertyValue('--webx-parallax-progress')).toBe('0.5000')
+
+    // Gone over the top: the end, and no further.
+    at(frame, -900, 400)
+    window.dispatchEvent(new Event('scroll'))
+    run()
+    expect(picture.style.getPropertyValue('--webx-parallax-progress')).toBe('1.0000')
+
+    window.webx.unmount()
+    expect(picture.className).toBe('')
+    expect(picture.style.getPropertyValue('--webx-parallax-progress')).toBe('')
+    window.dispatchEvent(new Event('scroll'))
+    expect(frames.length).toBe(0)
+  })
+
+  it('moves nothing with reduced motion', async () => {
+    reduced = true
+    const picture = await load(false)
+
+    expect(picture.className).toBe('')
+    expect(watched.length).toBe(0)
+  })
+})
+
 describe('table', () => {
   // What `Prose\Tables` prints around a table of prose.
   const table = `<div class="webx-table" data-webx-table><div class="webx-table__frame">

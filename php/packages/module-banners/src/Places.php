@@ -42,6 +42,7 @@ final class Places
         'ratio_mobile' => '4/5',
         'breakpoint' => 768,
         'video_on_mobile' => false,
+        'parallax' => false,
     ];
 
     public function __construct(

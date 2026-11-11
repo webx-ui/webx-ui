@@ -393,6 +393,11 @@ final class DistTest extends PlainTestCase
             // all :where(), and no more than a theme matches by writing the same class later.
             foreach ($rules[1] as $selectors) {
                 foreach (array_map('trim', explode(',', $selectors)) as $selector) {
+                    // The steps of a widget's own @keyframes (the parallax's) are not rules of the page.
+                    if (preg_match('/^(?:\d+%|from|to)$/', $selector) === 1) {
+                        continue;
+                    }
+
                     $this->assertMatchesRegularExpression(
                         '/^(?::where\(:root\)|(?:html:not\(\.webx-js\) )?\.webx-[a-z0-9_-]+(?:\.(?:is-[a-z-]+|webx-[a-z0-9_-]+--[a-z0-9-]+))?(?:\[[^\]]+\]|::?[a-z-]+|:has\((?::[a-z-]+|\[[^\]]+\])\))*)$/',
                         $selector,

@@ -25,6 +25,12 @@ use WebxUi\Banners\Rendering\Stylesheet;
  * else the main one where the place says `video_on_mobile`, else none: the two are two
  * backdrops, and the breakpoint's CSS hides the one that is not for this width — hidden, it is
  * never on screen, so the widget neither plays nor loads it.
+ *
+ * Where the place says `parallax`, the picture and the video move slower than the page (the
+ * widgets' `data-webx-parallax`, §14 of their spec): they are wrapped in a second
+ * `webx-banner__picture` that carries the shift, so every rule written for the picture's children
+ * holds as it is, and the outer one crops the overscan even in a place whose layers step out of
+ * the frame. The stage is not inside it: the layers stay where the editor put them in the frame.
  */
 final class Banner extends Component
 {
@@ -34,6 +40,9 @@ final class Banner extends Component
     public int $breakpoint;
 
     public string $frameStyle;
+
+    /** Whether the picture and the video move slower than the page. */
+    public bool $parallax;
 
     /**
      * What the frame shows before a video and where none plays: the poster on a banner whose
@@ -69,6 +78,7 @@ final class Banner extends Component
     ) {
         $this->options = $layout ?? banners_layout(is_string($banner['place'] ?? null) ? $banner['place'] : null);
         $this->breakpoint = max(0, (int) ($this->options['breakpoint'] ?? 768));
+        $this->parallax = filter_var($this->options['parallax'] ?? false, FILTER_VALIDATE_BOOLEAN);
 
         $ratio = self::ratio($this->options['ratio'] ?? null) ?? '16/6';
         $ratioMobile = self::ratio($this->options['ratio_mobile'] ?? null) ?? $ratio;

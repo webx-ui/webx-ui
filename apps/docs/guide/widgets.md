@@ -319,6 +319,7 @@ What a long page needs, each loading only where it stands:
 
 <div class="cards" data-webx-reveal="stagger" data-webx-reveal-effect="up">…</div>
 <section data-webx-reveal="fade">…</section>
+<section class="promo"><img class="promo__picture" data-webx-parallax src="…" alt=""></section>
 ```
 
 - **Tables of prose** — nothing to write. Every `<table>` without a class on a page — what a rich
@@ -331,6 +332,13 @@ What a long page needs, each loading only where it stands:
   on a container to bring its children in one after another. In the runtime, no component. Only
   the script hides anything, and only what is below the screen when the page opens: without
   JavaScript or with reduced motion everything is simply there.
+- **Parallax** — `data-webx-parallax` on a picture that fills its frame (the parent with
+  `overflow: hidden`): it moves slower than the page as the frame crosses the screen, drawn a
+  little larger so its edges stay out of sight. Scroll-driven CSS (`animation-timeline: view()`)
+  where the browser has it, a small script elsewhere; only `translate` and `scale`, so nothing
+  shifts around it. `--webx-parallax-shift` (6, percent of the height each way) and
+  `--webx-parallax-shift-narrow` (3, in a container under 40rem) set how far. Without JavaScript,
+  with reduced motion and in print the picture simply stands there.
 - **Share** — each network's own address for sharing as a plain link (Facebook, X, LinkedIn,
   Telegram, WhatsApp, e-mail by default; also Viber, Reddit, Pinterest, Threads, Bluesky, VK) and
   Copy link. No network's script, so nothing to ask consent for. On a phone one Share button opens

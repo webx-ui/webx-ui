@@ -1,0 +1,60 @@
+/*
+ * `data-webx-parallax` (spec §14). Nothing here moves an element by its attribute: the script adds
+ * `webx-parallax`, and `webx-parallax--script` where the browser has no scroll-driven animations,
+ * so a page without JavaScript, with reduced motion or in print shows the picture as it is.
+ *
+ * The picture travels from `-shift` to `+shift` percent of its own height while its frame crosses
+ * the screen, and is scaled up by twice that, so its edges never come into the frame. Only
+ * `translate` and `scale`: nothing is laid out again.
+ */
+
+:where(:root) {
+  /* How far the picture travels each way, in percent of its height; less in a narrow container. */
+  --webx-parallax-shift: 6;
+  --webx-parallax-shift-narrow: 3;
+  /* Where the frame is on its way across the screen, 0 to 1 — the fallback script writes it. */
+  --webx-parallax-progress: 0.5;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .webx-parallax {
+    --webx-parallax-amount: var(--webx-parallax-shift);
+
+    scale: calc(1 + var(--webx-parallax-amount) / 50);
+    will-change: translate;
+    animation: webx-parallax linear both;
+    /* After the shorthand, which resets it. */
+    animation-timeline: view();
+    animation-range: cover;
+  }
+
+  .webx-parallax--script {
+    translate: 0 calc((var(--webx-parallax-progress) * 2 - 1) * var(--webx-parallax-amount) * 1%);
+    animation: none;
+  }
+}
+
+/* The nearest container decides — a block's, a banner's frame — not the window. */
+@container (max-width: 40rem) {
+  .webx-parallax {
+    --webx-parallax-amount: var(--webx-parallax-shift-narrow);
+  }
+}
+
+@keyframes webx-parallax {
+  from {
+    translate: 0 calc(var(--webx-parallax-amount) * -1%);
+  }
+
+  to {
+    translate: 0 calc(var(--webx-parallax-amount) * 1%);
+  }
+}
+
+@media print {
+  .webx-parallax {
+    translate: none;
+    scale: none;
+    animation: none;
+  }
+}

@@ -19,6 +19,9 @@ use WebxUi\Banners\Places;
  * nothing at all — not even the wrapper — so a template needs no `@if`.
  *
  * Attributes given to it land on the wrapper: a theme's hero puts its own class there.
+ *
+ * `parallax` overrides the place's option of that name for this one print: a theme that wants its
+ * hero to move says so in its template, whatever the place's configuration says.
  */
 final class Banners extends Component
 {
@@ -37,8 +40,14 @@ final class Banners extends Component
         public string $place = '',
         ?string $layout = null,
         public ?string $label = null,
+        ?bool $parallax = null,
     ) {
         $this->options = banners_layout($place, $layout);
+
+        if ($parallax !== null) {
+            $this->options['parallax'] = $parallax;
+        }
+
         $this->banners = $place === '' ? [] : banners($place)->get();
         $this->overflow = $places->overflows($place);
 

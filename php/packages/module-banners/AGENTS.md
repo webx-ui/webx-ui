@@ -61,6 +61,7 @@ A route or screen node the site adds next to the module asks the same:
 | Another layout in one template only   | `banners_layout('hero', 'random')`                                                                      |
 | Other proportions or timing           | `ratio`, `ratio_mobile`, `interval`, `breakpoint`… in `options`, or in the place's `options`            |
 | Video on phones                       | `video_mobile` on the banner, or `'video_on_mobile' => true` in `options` to play `video` there         |
+| The picture slower than the page      | `'parallax' => true` in the place's `options`, or `:parallax` on `<x-webx-banners>`; layers stay put    |
 | Another look of a button              | add a key to `variants`; the template turns the key into a class                                        |
 | A field of the project on a banner    | a patch: `Screens::extend('banners.form', [...])` into `project-fields`; the card has it under `fields` |
 | Other words in the panel              | `php artisan vendor:publish --tag=webx-banners-lang`                                                    |

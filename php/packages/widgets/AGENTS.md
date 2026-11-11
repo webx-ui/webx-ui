@@ -56,7 +56,7 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
   without asking", `webx-widgets.map.consent` false; the audit notes it); tiles `map.provider`, or Google
   Maps on the settings tab "Map" (`map.provider` google, `map.google-key`; no key — the place alone, `dist/map-google.js`).
 - **Page tools** — a `<table>` without a class gets a scrolling `.webx-table` frame (server-side);
-  `data-webx-reveal="up|fade|scale|stagger"`; `<x-webx-back-to-top>`; `<x-webx-share>`;
+  `data-webx-reveal="up|fade|scale|stagger"`; `data-webx-parallax` on a picture that fills its frame (`--webx-parallax-shift`); `<x-webx-back-to-top>`; `<x-webx-share>`;
   `<x-webx-counter :value>`; `<x-webx-countdown to ended>`; `<x-webx-compare :before :after>`;
   `<x-webx-toc for depth side>`; `<x-webx-pagination :paginator>`; `<x-webx-load-more :paginator pages="covered|shown">`;
   `<x-webx-notice-bar place="notice">` (a `module-banners` place, closed versions remembered).

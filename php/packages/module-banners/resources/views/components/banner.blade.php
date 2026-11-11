@@ -7,6 +7,9 @@
     and the videos — the widgets' backdrops — fade in over it (the component says which plays at
     which width).
 
+    With `parallax`, the picture and the videos are in a second __picture (__drift) that moves; the
+    outer one crops it, and the stage stays put.
+
     A button's <a> is LinkAttributes::of(): href, the new tab and its rel, and `download` with the
     name a file of the library was uploaded under.
 
@@ -29,6 +32,9 @@
 ]) }}>
     @if (is_array($image))
         <div class="webx-banner__picture">
+            @if ($parallax)
+                <div class="webx-banner__picture webx-banner__drift" data-webx-parallax>
+            @endif
             <picture>
                 @if (is_array($mobile) && $phone !== null)
                     <source media="{{ $phone }}" srcset="{{ $mobile['url'] }}" @if ($mobile['width'] ?? null) width="{{ $mobile['width'] }}" height="{{ $mobile['height'] }}" @endif>
@@ -46,6 +52,9 @@
             @foreach ($videos as $video)
                 <x-webx-video variant="background" :file="$video['file']" :class="trim('webx-banner__video '.$video['class'])" />
             @endforeach
+            @if ($parallax)
+                </div>
+            @endif
         </div>
     @endif
 
