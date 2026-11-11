@@ -152,6 +152,22 @@ describe('lightbox', () => {
     expect(document.activeElement).toBe(links[1])
   })
 
+  it('pages through hidden links of its group and gives the focus back to the opener', async () => {
+    const { show } = await start(link(1) + link(2) + '<div hidden>' + link(3) + '</div>')
+    const links = document.querySelectorAll('a')
+
+    const pswp = await show(links[1])
+    expect(pswp.getNumItems()).toBe(3)
+    pswp.next()
+    expect(pswp.currIndex).toBe(2)
+
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', keyCode: 27, bubbles: true }),
+    )
+    await vi.waitFor(() => expect(viewer()).toBeNull())
+    expect(document.activeElement).toBe(links[1])
+  })
+
   it('lets PhotoSwipe go when its links are unmounted, and starts again when mounted', async () => {
     const { show } = await start('<div id="block">' + link(1) + link(2) + '</div>')
     const block = document.getElementById('block')

@@ -233,11 +233,103 @@ final class BlocksTest extends TestCase
         /** @var array{schema: list<array{id: string, visible?: mixed}>} $type */
         $type = json_decode((string) file_get_contents(__DIR__.'/../resources/blocks/gallery.json'), true);
         $visible = array_column($type['schema'], 'visible', 'id');
-        foreach (['per_view', 'arrows', 'dots', 'endless', 'autoplay'] as $id) {
-            $this->assertSame(['when' => 'view', 'is' => 'slider'], $visible[$id], $id);
+        $this->assertSame(['when' => 'view', 'is' => 'slider'], $visible['per_view']);
+        // The carousel of the mosaic turns by the same switches.
+        $turning = ['any' => [['when' => 'view', 'is' => 'slider'], ['all' => [['when' => 'view', 'is' => 'mosaic'], ['when' => 'mosaic', 'is' => 'slider']]]]];
+        foreach (['arrows', 'dots', 'endless', 'autoplay'] as $id) {
+            $this->assertSame($turning, $visible[$id], $id);
         }
-        $this->assertSame(['all' => [['when' => 'view', 'is' => 'slider'], ['when' => 'autoplay', 'is' => true]]], $visible['interval']);
+        $this->assertSame(['all' => [$turning, ['when' => 'autoplay', 'is' => true]]], $visible['interval']);
         $this->assertSame(['all' => [['when' => 'view', 'is' => 'slider'], ['when' => 'per_view', 'is' => 1]]], $visible['effect']);
+    }
+
+    #[Test]
+    public function the_mosaic_shows_three_and_the_lightbox_pages_through_them_all(): void
+    {
+        $pictures = array_map(fn (int $n): array => ['path' => $this->picture("photo-{$n}")->path, 'alt' => "Photo {$n}"], [1, 2, 3, 4, 5, 6, 7]);
+        $pictures[1]['title'] = 'Under the second';
+
+        $html = $this->render('gallery', ['heading' => 'Work', 'pictures' => $pictures, 'view' => 'mosaic', 'ratio' => '4:3']);
+
+        $this->assertStringContainsString('class="b-gallery b-gallery--mosaic"', $html);
+        $this->assertSame(1, substr_count($html, 'class="b-gallery__mosaic b-gallery__mosaic--3"'), 'still unless told otherwise: one group of three');
+        $this->assertSame(3, substr_count($html, 'class="b-gallery__tile"'));
+        $this->assertSame(3, substr_count($html, 'class="b-gallery__image"'));
+        $this->assertStringNotContainsString('webx-slider', $html);
+        $this->assertStringContainsString('<figcaption class="b-gallery__caption">Under the second</figcaption>', $html);
+        // The four not shown are links without a picture in a hidden box: in the lightbox's group, never loaded, never in the way of Tab.
+        $this->assertSame(7, preg_match_all('~<a [^>]*data-webx-lightbox="gallery-k1"[^>]*data-webx-lightbox-ratio="4:3"~', $html), 'the frame of the field');
+        $this->assertMatchesRegularExpression('~<div class="b-gallery__unseen" hidden>(?:(?!<img).)*?aria-label="Photo 4"~s', $html);
+        $this->assertSame(1, preg_match_all('~<div class="b-gallery__unseen" hidden>(?:(?!</div>).)*</div>~s', $html, $match));
+        $this->assertStringNotContainsString('<img', $match[0][0]);
+
+        // Without the lightbox nothing is printed past the third.
+        $plain = $this->render('gallery', ['pictures' => $pictures, 'view' => 'mosaic', 'zoom' => false]);
+        $this->assertStringNotContainsString('data-webx-lightbox', $plain);
+        $this->assertStringNotContainsString('b-gallery__unseen', $plain);
+
+        // Fewer than three: as many as there are, the shape says how many.
+        $this->assertStringContainsString('b-gallery__mosaic--2', $this->render('gallery', ['pictures' => array_slice($pictures, 0, 2), 'view' => 'mosaic']));
+        $this->assertStringContainsString('b-gallery__mosaic--1', $this->render('gallery', ['pictures' => array_slice($pictures, 0, 1), 'view' => 'mosaic', 'mosaic' => 'slider']));
+    }
+
+    #[Test]
+    public function the_mosaic_carousel_pages_through_threes_with_the_switches_of_the_slider(): void
+    {
+        $pictures = array_map(fn (int $n): array => ['path' => $this->picture("photo-{$n}")->path], [1, 2, 3, 4, 5, 6, 7]);
+        $html = fn (array $values): string => $this->render('gallery', ['heading' => 'Work', 'pictures' => $pictures, 'view' => 'mosaic', 'mosaic' => 'slider'] + $values);
+
+        $seven = $html([]);
+        $this->assertStringContainsString('class="b-gallery b-gallery--mosaic"', $seven);
+        $this->assertStringContainsString('webx-slider--gallery', $seven);
+        $this->assertStringContainsString('aria-label="Work"', $seven);
+        $this->assertSame(3, substr_count($seven, 'class="webx-slider__slide"'), 'seven make three groups');
+        $this->assertSame(2, substr_count($seven, 'b-gallery__mosaic--3'));
+        $this->assertSame(1, substr_count($seven, 'b-gallery__mosaic--1'), 'the last group holds what is left');
+        $this->assertSame(7, substr_count($seven, 'data-webx-lightbox="gallery-k1"'), 'one group for the lightbox across the slides');
+        $this->assertStringNotContainsString('b-gallery__unseen', $seven, 'every picture is on a slide');
+        $this->assertStringNotContainsString('data-thumb', $seven, 'no thumbnails under a mosaic');
+
+        preg_match('/data-webx-slider="([^"]+)"/', $seven, $config);
+        $config = json_decode(html_entity_decode($config[1] ?? ''), true);
+        $this->assertIsArray($config);
+        $this->assertSame(['effect' => 'slide', 'loop' => false, 'autoplay' => 0, 'thumbs' => false], array_intersect_key($config, array_flip(['effect', 'loop', 'autoplay', 'thumbs'])));
+        $this->assertStringContainsString('webx-slider__prev', $seven, 'arrows unless switched off');
+        $this->assertStringContainsString('--webx-slider-per-view: 1;', $seven);
+
+        $moving = $html(['autoplay' => true, 'interval' => 8, 'dots' => true, 'arrows' => false, 'endless' => true]);
+        $this->assertStringContainsString('webx-slider__pause', $moving);
+        $this->assertStringContainsString('webx-slider__pagination', $moving);
+        $this->assertStringNotContainsString('webx-slider__prev', $moving);
+        $this->assertStringContainsString('&quot;autoplay&quot;:8000', $moving);
+
+        // Three or fewer have nothing to page through: the still mosaic.
+        $three = $this->render('gallery', ['pictures' => array_slice($pictures, 0, 3), 'view' => 'mosaic', 'mosaic' => 'slider']);
+        $this->assertStringNotContainsString('webx-slider', $three);
+        $this->assertStringContainsString('b-gallery__mosaic--3', $three);
+    }
+
+    #[Test]
+    public function the_old_views_print_as_they_did_and_the_mosaic_is_offered_beside_them(): void
+    {
+        $pictures = array_map(fn (int $n): array => ['path' => $this->picture("photo-{$n}")->path], [1, 2, 3, 4]);
+
+        foreach ([[], ['view' => 'grid'], ['view' => 'slider'], ['view' => 'grid', 'mosaic' => 'slider'], ['view' => 'slider', 'mosaic' => 'slider']] as $values) {
+            $html = $this->render('gallery', ['pictures' => $pictures] + $values);
+            $this->assertStringNotContainsString('b-gallery__mosaic', $html);
+            $this->assertStringNotContainsString('b-gallery__unseen', $html);
+            $this->assertStringContainsString(($values['view'] ?? 'grid') === 'slider' ? 'b-gallery--slider' : 'b-gallery--grid', $html);
+        }
+
+        /** @var array{schema: list<array<string, mixed>>, sample: array<string, mixed>} $type */
+        $type = json_decode((string) file_get_contents(__DIR__.'/../resources/blocks/gallery.json'), true);
+        $nodes = array_column($type['schema'], null, 'id');
+        $this->assertSame(['grid', 'slider', 'mosaic'], array_column($nodes['view']['props']['options'], 'value'));
+        $this->assertSame('grid', $nodes['view']['default']);
+        $this->assertSame('still', $nodes['mosaic']['default']);
+        $this->assertSame(['still', 'slider'], array_column($nodes['mosaic']['props']['options'], 'value'));
+        $this->assertSame(['when' => 'view', 'is' => 'mosaic'], $nodes['mosaic']['visible']);
+        $this->assertSame('still', $type['sample']['mosaic']);
     }
 
     #[Test]

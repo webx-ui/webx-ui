@@ -208,7 +208,7 @@ downloaded first to be measured, and the audit says so.
 - **The backdrop** is opaque; `--webx-lightbox-backdrop-opacity` lowers it for a theme or a
   section, `opacity` (`data-webx-lightbox-opacity`) for one link's group.
 - **Closing leaves the page where it stood**, whichever picture of the group it closed on; the focus
-  goes to that picture's link without scrolling to it.
+  goes to that picture's link without scrolling to it — or to the opener, when that link is hidden.
 
 ## Video and map
 
@@ -561,17 +561,25 @@ On a site with `module-blocks` and `module-media` the package offers nine block 
 `php artisan webx:blocks:offered --install --module=widgets` installs them (`webx:setup` prints the
 line, it does not run it). Installed, they belong to the site: an update never overwrites them.
 
-| Block       | Fields                                                                                                                                                                                           | Inside                     |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------- |
-| `gallery`   | heading, pictures of the library, grid or slider, columns, zoom, frame, magnify; the slider: slides at a time (1–3), slide or fade, arrows, dots, thumbnails, loop, autoplay and its seconds (5) | slider `gallery`, lightbox |
-| `logos`     | heading, a name, a logo and a link each                                                                                                                                                          | slider `logos`             |
-| `video`     | heading, a link or a file (a switch), poster, caption, shape 16:9 4:3 1:1 9:16                                                                                                                   | `<x-webx-video>`           |
-| `map`       | heading, the contacts or coordinates with an address, zoom, height                                                                                                                               | `<x-webx-map>`             |
-| `counters`  | heading, a number, what stands before and after it, a label each                                                                                                                                 | `<x-webx-counter>`         |
-| `countdown` | heading, text, a date and a time of the site's zone, at the end a text or hide                                                                                                                   | `<x-webx-countdown>`       |
-| `compare`   | heading, before, after, their labels, where the divider starts, caption                                                                                                                          | `<x-webx-compare>`         |
-| `toc`       | title, the whole page or a text of its own (a switch), side, depth                                                                                                                               | `<x-webx-toc>`             |
-| `tabs`      | heading, a title, a picture and a text each, picture above or beside, alignment, change at once or fade                                                                                          | `<x-webx-tabs>`            |
+| Block       | Fields                                                                                                                                                                                                                                              | Inside                     |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
+| `gallery`   | heading, pictures of the library, grid, slider or mosaic, columns, zoom, frame, magnify; the slider: slides at a time (1–3), slide or fade, arrows, dots, thumbnails, loop, autoplay and its seconds (5); the mosaic: still or a carousel of threes | slider `gallery`, lightbox |
+| `logos`     | heading, a name, a logo and a link each                                                                                                                                                                                                             | slider `logos`             |
+| `video`     | heading, a link or a file (a switch), poster, caption, shape 16:9 4:3 1:1 9:16                                                                                                                                                                      | `<x-webx-video>`           |
+| `map`       | heading, the contacts or coordinates with an address, zoom, height                                                                                                                                                                                  | `<x-webx-map>`             |
+| `counters`  | heading, a number, what stands before and after it, a label each                                                                                                                                                                                    | `<x-webx-counter>`         |
+| `countdown` | heading, text, a date and a time of the site's zone, at the end a text or hide                                                                                                                                                                      | `<x-webx-countdown>`       |
+| `compare`   | heading, before, after, their labels, where the divider starts, caption                                                                                                                                                                             | `<x-webx-compare>`         |
+| `toc`       | title, the whole page or a text of its own (a switch), side, depth                                                                                                                                                                                  | `<x-webx-toc>`             |
+| `tabs`      | heading, a title, a picture and a text each, picture above or beside, alignment, change at once or fade                                                                                                                                             | `<x-webx-tabs>`            |
+
+**The mosaic** of `gallery` is one large picture and two smaller ones: the large on the left and the
+two one above the other beside it, or — in a column narrower than 36em — the large on top and the
+two side by side under it. Every picture is cut to its cell; the caption (the picture's title)
+stands under it. "Still" shows the first three, and the lightbox still pages through all of them:
+the rest are links without a picture in a hidden box. "Carousel of threes" puts three on each
+slide with the slider's arrows, dots, loop and autoplay; three pictures or fewer stay still. The
+last slide holds what is left, one or two pictures at the height of three.
 
 A block with nothing to show — no pictures, an unknown address, a deleted file — prints nothing.
 

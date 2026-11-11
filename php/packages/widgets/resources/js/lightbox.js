@@ -205,7 +205,10 @@ export async function show(link) {
     const last = links[pswp.currIndex] ?? link
     if (open?.pswp === pswp) open = null
     // Without `preventScroll` the focus would scroll the page to the last picture's link.
-    ;(last.isConnected ? last : link).focus({ preventScroll: true })
+    // A link the page keeps hidden — the pictures a still mosaic does not show — cannot take it:
+    // the opener does.
+    const target = last.isConnected && !last.closest('[hidden], [inert]') ? last : link
+    target.focus({ preventScroll: true })
     if (window.scrollX !== scroll.left || window.scrollY !== scroll.top) {
       // `instant`: the page's `scroll-behavior: smooth` would glide back from somewhere else.
       window.scrollTo({ ...scroll, behavior: 'instant' })
