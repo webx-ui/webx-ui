@@ -4285,6 +4285,66 @@
           }
         },
         {
+          "key": "showcase-map-embed",
+          "type": "map",
+          "values": {
+            "heading": {
+              "en": "Google Maps embed, with no key",
+              "ru": "Встроенная карта Google Maps, без ключа",
+              "pl": "Osadzona mapa Google Maps, bez klucza"
+            },
+            "source": "embed",
+            "embed": "<iframe src=\"https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d2483.5!2d-0.128!3d51.508!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2suk!4v1731300000000!5m2!1sen!2suk\" width=\"600\" height=\"450\" style=\"border:0;\" allowfullscreen=\"\" loading=\"lazy\" referrerpolicy=\"no-referrer-when-downgrade\"></iframe>",
+            "link": "",
+            "address": {
+              "en": "Trafalgar Square, London",
+              "ru": "Трафальгарская площадь, Лондон",
+              "pl": "Trafalgar Square, Londyn"
+            },
+            "title": {
+              "en": "Map of Trafalgar Square",
+              "ru": "Карта Трафальгарской площади",
+              "pl": "Mapa Trafalgar Square"
+            },
+            "zoom": 15,
+            "height": "large",
+            "height_narrow": "small",
+            "width": "column"
+          }
+        },
+        {
+          "key": "showcase-map-embed-note",
+          "type": "text",
+          "values": {
+            "heading": "",
+            "body": {
+              "en": "The map above is the code of Google Maps’ Share → Embed a map, pasted into the block as it is: Google draws it in its own frame and asks for no key. The block keeps only the address of the frame, and refuses the code of any other site. Before consent to media the page has no frame of Google’s at all — the address, Open in maps, the line and the two buttons; after it the frame comes in the height the block reserved, 32em here and 16em on a phone.",
+              "ru": "Карта выше — код из Google Maps «Поделиться» → «Встраивание карт», вставленный в блок как есть: Google рисует её в своём фрейме и ключа не просит. Блок хранит только адрес фрейма, а код любого другого сайта отклоняет. До согласия на медиа на странице нет никакого фрейма Google — адрес, «Открыть на карте», строка и две кнопки; после — фрейм встаёт в высоту, которую блок зарезервировал: здесь 32em, на телефоне 16em.",
+              "pl": "Mapa powyżej to kod z Google Maps Udostępnij → Umieść mapę, wklejony do bloku tak, jak jest: Google rysuje ją we własnej ramce i nie prosi o klucz. Blok przechowuje tylko adres ramki, a kod każdej innej strony odrzuca. Przed zgodą na media na stronie nie ma żadnej ramki Google – adres, „Otwórz w mapach”, linijka i dwa przyciski; po niej ramka wchodzi w wysokość zarezerwowaną przez blok: tutaj 32em, na telefonie 16em."
+            }
+          }
+        },
+        {
+          "key": "showcase-map-embed-bleed",
+          "type": "map",
+          "values": {
+            "heading": {
+              "en": "Edge to edge, from an address search",
+              "ru": "Во всю ширину, из поиска адреса",
+              "pl": "Na całą szerokość, z wyszukiwania adresu"
+            },
+            "source": "embed",
+            "embed": "https://maps.google.com/maps?q=Trafalgar%20Square%2C%20London&t=&z=16&ie=UTF8&iwloc=&output=embed",
+            "link": "",
+            "address": "",
+            "title": "",
+            "zoom": 15,
+            "height": "medium",
+            "height_narrow": "same",
+            "width": "bleed"
+          }
+        },
+        {
           "key": "showcase-map-narrow",
           "type": "showcase-map",
           "values": {

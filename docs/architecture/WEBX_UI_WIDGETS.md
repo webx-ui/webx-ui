@@ -904,9 +904,7 @@ Leaflet или Maps JavaScript API. Отдельный блок «Embedded map»
 Google Maps”» (`link`), «Address» (заглушка); у всех режимов — «Name for screen readers» (`title`,
 локализуемое), «Height», **«Height on a phone»** (`height_narrow`: same / low / medium / tall) и
 **«Width»** (`width`: column / edge to edge — класс `site-bleed`, рамка без скругления, заголовок
-по отступу колонки). Блок, сохранённый раньше, рисуется как прежде. На уже установленных сайтах
-тип Map сам не обновляется (`webx:blocks:offered --install` не трогает существующий тип) —
-обновить его в панели «Блоки» или удалить и поставить заново.
+по отступу колонки). Блок, сохранённый раньше, рисуется как прежде. На уже установленных сайтах тип Map сам не обновляется (`webx:blocks:offered --install` не трогает существующий тип): `php artisan webx:blocks:import map --path=vendor/webx-ui/widgets/resources/blocks --replace=map --publish`.
 
 **Менеджеру: откуда взять код.** Google Maps → найти место → «Поделиться» → вкладка «Встраивание
 карт» → размер любой (высоту задаёт блок) → «Копировать HTML» → вставить в поле «Map code or link»

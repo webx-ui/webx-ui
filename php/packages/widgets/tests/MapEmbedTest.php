@@ -136,6 +136,7 @@ final class MapEmbedTest extends TestCase
         $this->assertStringContainsString('data-webx-consent="media"', $html);
         $this->assertStringContainsString('<p class="webx-map__address">Trafalgar Square, London</p>', $html);
         $this->assertStringContainsString('href="https://www.google.com/maps/search/?api=1&amp;query=51.508,-0.128"', $html, 'the link without JavaScript');
+        $this->assertStringContainsString('rel="noopener">Open in Google Maps</a>', $html);
         $this->assertStringContainsString('The map loads from Google Maps, which receives your IP address.', $html);
         $this->assertStringContainsString('data-webx-map-load', $html);
         $this->assertStringContainsString('data-webx-map-always', $html);

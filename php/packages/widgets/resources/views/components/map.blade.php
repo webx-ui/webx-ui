@@ -15,7 +15,7 @@
 <div {{ $attributes->class(['webx-map', 'webx-map--embed' => $embed !== null, 'is-blocked' => $blocked])->merge(['style' => $frameStyle()]) }} role="region" aria-label="{{ __('webx-widgets::widgets.map.label', ['place' => $name]) }}" data-webx-map="{{ json_encode($config, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR) }}"@if ($waits) data-webx-consent="media"@endif>
     <div class="webx-map__place">
         @if ($address)<p class="webx-map__address">{{ $address }}</p>@endif
-        @if ($href)<a class="webx-map__open" href="{{ $href }}" target="_blank" rel="noopener">{{ __('webx-widgets::widgets.map.open') }}</a>@endif
+        @if ($href)<a class="webx-map__open" href="{{ $href }}" target="_blank" rel="noopener">{{ __($embed !== null ? 'webx-widgets::widgets.map.open_google' : 'webx-widgets::widgets.map.open') }}</a>@endif
         @if ($blocked)
         <p class="webx-map__notice">{{ $notice }}</p>
         <div class="webx-map__actions">

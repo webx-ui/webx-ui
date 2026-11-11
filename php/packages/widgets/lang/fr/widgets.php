@@ -129,6 +129,7 @@ return [
         'load' => 'Charger',
         'always' => 'Toujours charger les cartes',
         'open' => 'Ouvrir dans une carte',
+        'open_google' => 'Ouvrir dans Google Maps',
         'hint' => 'Cliquez sur la carte pour zoomer avec la molette',
         'failed' => 'La carte n’a pas pu être chargée.',
         'embed_refused' => 'Ce n’est pas le code d’une carte Google Maps. Dans Google Maps, ouvrez Partager → Intégrer une carte, copiez le HTML et collez-le ici — ou seulement son adresse, https://www.google.com/maps/embed?pb=…',

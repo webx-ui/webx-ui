@@ -27,7 +27,9 @@ const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
     :model-value="modelValue ?? ''"
     spellcheck="false"
     autocapitalize="off"
-    @update:model-value="(value: string) => emit('update:modelValue', value)"
+    @update:model-value="
+      (value) => emit('update:modelValue', typeof value === 'string' ? value : '')
+    "
   />
 </template>
 

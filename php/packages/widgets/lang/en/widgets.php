@@ -129,6 +129,7 @@ return [
         'load' => 'Load',
         'always' => 'Always load maps',
         'open' => 'Open in maps',
+        'open_google' => 'Open in Google Maps',
         'hint' => 'Click the map to zoom with the wheel',
         'failed' => 'The map could not be loaded.',
         'embed_refused' => 'This is not the code of a Google Maps map. In Google Maps open Share → Embed a map, copy the HTML and paste it here — or only its address, https://www.google.com/maps/embed?pb=…',

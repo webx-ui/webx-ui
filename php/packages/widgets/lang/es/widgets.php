@@ -129,6 +129,7 @@ return [
         'load' => 'Cargar',
         'always' => 'Cargar mapas siempre',
         'open' => 'Abrir en mapas',
+        'open_google' => 'Abrir en Google Maps',
         'hint' => 'Haz clic en el mapa para hacer zoom con la rueda',
         'failed' => 'No se pudo cargar el mapa.',
         'embed_refused' => 'Esto no es el código de un mapa de Google Maps. En Google Maps abra Compartir → Insertar un mapa, copie el HTML y péguelo aquí, o solo su dirección, https://www.google.com/maps/embed?pb=…',
