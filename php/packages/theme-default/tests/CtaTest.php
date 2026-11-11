@@ -10,6 +10,7 @@ use Orchestra\Testbench\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Themes\ThemeLocator;
 use WebxUi\Themes\ThemeServiceProvider;
+use WebxUi\Widgets\FormDialogs;
 use WebxUi\Widgets\WidgetsServiceProvider;
 
 /**
@@ -190,7 +191,7 @@ final class CtaTest extends TestCase
         $this->assertMatchesRegularExpression('~<a class="b-cta__button"\s+href="/media/plan\.pdf" download="Plan\.pdf">Download the plan</a>~', $html);
         // What the widgets' form dialogs look for on the page (WIDGETS §6.4).
         $this->assertMatchesRegularExpression('~<a class="b-cta__button b-cta__button--quiet"\s+href="#webx-form-viewing">Book a viewing</a>~', $html);
-        $this->assertSame(['viewing'], \WebxUi\Widgets\FormDialogs::openers($html));
+        $this->assertSame(['viewing'], FormDialogs::openers($html));
     }
 
     #[Test]
