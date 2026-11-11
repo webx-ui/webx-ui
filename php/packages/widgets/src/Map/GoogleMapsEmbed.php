@@ -39,7 +39,7 @@ final class GoogleMapsEmbed
                 return null;
             }
 
-            $text = html_entity_decode(($src[1] ?? '') !== '' ? $src[1] : ($src[2] ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            $text = html_entity_decode($src[1] !== '' ? $src[1] : ($src[2] ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8');
         } else {
             // An address copied out of the code still carries its `&amp;`.
             $text = str_replace('&amp;', '&', $text);
