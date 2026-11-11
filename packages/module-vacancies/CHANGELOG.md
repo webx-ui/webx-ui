@@ -1,5 +1,20 @@
 # @webx-ui/module-vacancies
 
+## 0.3.8
+
+### Patch Changes
+
+- Updated dependencies [764d8dd]
+- Updated dependencies [764d8dd]
+- Updated dependencies [764d8dd]
+- Updated dependencies [764d8dd]
+- Updated dependencies [764d8dd]
+- Updated dependencies [764d8dd]
+- Updated dependencies [764d8dd]
+  - @webx-ui/module-admin@0.37.0
+  - @webx-ui/core@0.48.0
+  - @webx-ui/schema@0.11.2
+
 ## 0.3.7
 
 ### Patch Changes

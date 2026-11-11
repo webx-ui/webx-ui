@@ -1,6 +1,6 @@
 {
   "name": "@webx-ui/module-catalog-collections",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Product collections for the catalogue of the WebX UI admin panel: a named block of products picked by hand or by a filter, with a live preview, the block field and the section of the panel.",
   "license": "MIT",
   "type": "module",

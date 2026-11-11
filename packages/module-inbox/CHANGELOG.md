@@ -1,5 +1,54 @@
 # @webx-ui/module-inbox
 
+## 0.12.0
+
+### Minor Changes
+
+- 764d8dd: Every code somebody types is made, not refused (#125, stage 2). The trait `HasCodes` of `localization` brings a model's code columns to their shape on every save, and `Model::codeFor()` does the same for a request before its own check. That covers the panel, MCP, the import and a plain `save()`, and only an empty or a taken code is refused. `Slug::code()` takes `Slug::BOTH` / `Slug::BOTH_UNDERSCORED` for a key that takes `-` and `_`, and a `$lead` for a code that must start with a letter. `wx-code` and `WxCodeField` take `separator` `-_` / `_-`, `lead` and `localized`. Converted fields: label, property code and toggle slug, collection key, block slug, role slug, task project slug, menu key, banner place key, form slug, form field name, inbox status key, public order status code, checkout field key, user group code, delivery point kind, configurator key and the keys of its schema. «тормозные колодки» becomes `tormoznye-kolodki` in every one of them. `CodeCoverageTest` and `codeCoverage.test.ts` fail on a new code field that skips this.
+- 764d8dd: Forms: the «Date and time» field (FORM_STEPS §6). The widgets' `<x-webx-field type="datetime" :step from to :weekdays timezone>`
+  asks for a day and a time in the site's zone and sends `<name>[date]` and `<name>[time]`: without
+  JavaScript the browser's date and a list of the day's times, with it `datetime.js` (claimed only by such
+  a field) draws a calendar of a month — the grid of the APG date picker, days gone and days not offered
+  `aria-disabled` — and the times of the chosen day as a group of radios, «today» counted in the site's
+  zone. Inbox: the field type `datetime` with `time-step`, `time-from`, `time-to`, `weekdays` and
+  `timezone-label`; the zone is `contacts.timezone` of the settings, else the application's. The intake
+  refuses a time off the grid, a day of the week not offered and a moment already gone; the answer keeps
+  «12/14/2026, 10:30 AM (Europe/…)» and a payload `{ date, time, timezone, at }`, and a column of the list
+  sorts by `at`. Saving refuses `datetime.range`, `datetime.step` and `datetime.weekdays`; the panel's
+  field dialog sets the grid with a preview of the day's times, `inbox_form_save` takes it and its dry
+  run says the times of a day.
+- 764d8dd: Forms: the summary of what was chosen (FORM_STEPS §7). The widgets' `<x-webx-form.summary :fields>`
+  repeats the answers given so far — the labels of the fields and the words of the choices — each with
+  «Edit» that brings the field's step back and focuses the field (`summary.js`, claimed only by the
+  summary; hidden without JavaScript). Inbox: a row of type `summary` (title, line under it,
+  `options.fields`) prints it in a form of steps; it is never answered and nothing of it goes into a
+  submission, a rename carries into it. The panel's field dialog has the type «Summary» with «What to
+  show»; `inbox_form_save` takes it.
+- 764d8dd: Inbox and widgets: a submission knows where the visitor came from. `<x-webx-form data-webx-attribution>` (the Inbox's forms have it) loads the widgets' `attribution.js`, which adds the `utm_*` and the outside referrer of the last touch, the landing page and the campaign of the first touch to what is sent. Without consent to statistics nothing is stored and only the page with the form counts; with it the first and the last touch are kept in `localStorage` for 90 days, removed when consent is taken back. No `gclid` / `fbclid`. The submission's `meta` gains `utm_first` and `landing` beside `utm` and `referrer` (only `utm_*` keys, values cut to 255), shown on the panel's card, in the letter and in `inbox_get`; `webx-inbox.attribution` (`WEBX_INBOX_ATTRIBUTION=false`) turns it off.
+- 764d8dd: Choice cards (FORM_STEPS §5). `<x-webx-field type="radio|checkbox" view="cards" :columns="3">` draws a group as cards: the same `<fieldset>`, `<legend>` and real inputs inside each `<label>`, so the whole card is the target and the arrows move through the group; a choice may carry `description` and `image`. Look — `webx-field--cards`, `__cards`, `__card`, `__card-image`, `__card-title`, `__card-text`, chosen and focused by `:has()`, the `--webx-field-card-*` variables; views `field/radio-cards` and `checkbox-cards` to override. Inbox: radio and checkbox fields take `options.view: cards`, `columns` 1–4 and, per choice, a translated `description` and an `image` from the media library (kept by its key; every picture of a form in one query; a file gone is a card without a picture; without `webx-ui/module-media` no picture). The answer in a submission is unchanged. The field dialog gets «Show the choices as: List | Cards», «Cards in a row», and a description and picture under each choice; `inbox_form_save` / `inbox_form_get` carry the same keys. The default theme's kitchen sink has «Forms › Cards». Words in ten languages, help in en/ru/uk.
+- 764d8dd: Inbox panel: the field dialog has a «Show» section — always, if or unless some answers of a choice field above were given (`options.when` / `options.unless`). Only select, radio, checkbox and consent fields above are offered; a consent counts on its tick; rows are joined by "and", answers inside a row by "or". An answer the field above no longer has stays in the row as a red mark until it is closed, a field that is no longer above is marked, and the server's `condition.*` refusals are shown under the section. The list of fields says under each conditional field when it is asked («if Purpose = Agency meeting») and marks a row whose condition the server would refuse; a refused drag puts the order back. Words in ten languages, help for the dialog in en/ru/uk.
+- 764d8dd: Inbox: steps of a form (FORM_STEPS §3). A row of type `step` in the list of fields starts a step —
+  title, short label, line under it, the words of «Next», a condition of its own; switched off, it takes
+  its fields with it. The site prints a form of steps through the widgets' `<x-webx-form steps>` and
+  `<x-webx-form.step>`, and «Next» asks the new door `POST {prefix}/{slug}/check` (204 or a 422, nothing
+  taken). A flat form is printed as before; a site's own `form.blade.php` without `$steps` gets the whole
+  form on one page, and the audit's `inbox.steps_in_old_view` says so. The panel's list of fields draws
+  step rows as headings with «Step» to add one; `inbox_form_get` returns `steps`, `inbox_form_save`
+  refuses an empty step and more than ten, shows the steps in `dry_run` and takes `order`.
+
+### Patch Changes
+
+- 764d8dd: The list of fields marks a field of half the width as «Half width»; it used to say «Full width» of exactly those fields.
+- Updated dependencies [764d8dd]
+- Updated dependencies [764d8dd]
+- Updated dependencies [764d8dd]
+- Updated dependencies [764d8dd]
+- Updated dependencies [764d8dd]
+- Updated dependencies [764d8dd]
+- Updated dependencies [764d8dd]
+  - @webx-ui/module-admin@0.37.0
+  - @webx-ui/core@0.48.0
+
 ## 0.11.5
 
 ### Patch Changes

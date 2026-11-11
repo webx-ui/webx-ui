@@ -1,5 +1,25 @@
 # @webx-ui/module-delivery
 
+## 0.2.0
+
+### Minor Changes
+
+- 764d8dd: Every code somebody types is made, not refused (#125, stage 2). The trait `HasCodes` of `localization` brings a model's code columns to their shape on every save, and `Model::codeFor()` does the same for a request before its own check. That covers the panel, MCP, the import and a plain `save()`, and only an empty or a taken code is refused. `Slug::code()` takes `Slug::BOTH` / `Slug::BOTH_UNDERSCORED` for a key that takes `-` and `_`, and a `$lead` for a code that must start with a letter. `wx-code` and `WxCodeField` take `separator` `-_` / `_-`, `lead` and `localized`. Converted fields: label, property code and toggle slug, collection key, block slug, role slug, task project slug, menu key, banner place key, form slug, form field name, inbox status key, public order status code, checkout field key, user group code, delivery point kind, configurator key and the keys of its schema. «тормозные колодки» becomes `tormoznye-kolodki` in every one of them. `CodeCoverageTest` and `codeCoverage.test.ts` fail on a new code field that skips this.
+
+### Patch Changes
+
+- 764d8dd: Delivery: latitude and longitude in the point and locality forms stand side by side through the grid's `xs`; the section's own `wx-delivery-coordinates` rule is gone.
+- Updated dependencies [764d8dd]
+- Updated dependencies [764d8dd]
+- Updated dependencies [764d8dd]
+- Updated dependencies [764d8dd]
+- Updated dependencies [764d8dd]
+- Updated dependencies [764d8dd]
+- Updated dependencies [764d8dd]
+  - @webx-ui/module-admin@0.37.0
+  - @webx-ui/core@0.48.0
+  - @webx-ui/schema@0.11.2
+
 ## 0.1.1
 
 ### Patch Changes
