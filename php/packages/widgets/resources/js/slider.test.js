@@ -256,7 +256,7 @@ describe('slider', () => {
 
   it('counts "current/total" for `pagination="fraction"`, without and with a loop', async () => {
     const fraction = { pagination: false, count: true, slides: 3 }
-    const { root, swiper } = await start(slider({}, fraction))
+    const { root } = await start(slider({}, fraction))
     const counter = root.querySelector('.webx-slider__count')
     const now = () => counter.querySelector('.webx-slider__current').textContent
 
