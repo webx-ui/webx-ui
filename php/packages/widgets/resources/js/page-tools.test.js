@@ -175,6 +175,61 @@ describe('reveal', () => {
     expect(document.querySelectorAll('.webx-reveal, .is-pending').length).toBe(0)
   })
 
+  it('brings in at once what holds the anchor of a link, before the page moves to it', async () => {
+    document.body.innerHTML =
+      '<a href="#deep">Deep</a><a href="#item">Item</a><a href="/other#far">Other</a>' +
+      '<section id="holder" data-webx-reveal><p id="deep">deep</p></section>' +
+      '<ul id="list" data-webx-reveal="stagger"><li><span id="item">1</span></li><li>2</li></ul>' +
+      '<div id="far-holder" data-webx-reveal><p id="far">far</p></div>'
+    at(document.getElementById('holder'), 2000)
+    at(document.getElementById('far-holder'), 4000)
+    document.querySelectorAll('#list li').forEach((li, i) => at(li, 3000 + i * 50))
+    delete window.webx
+    vi.resetModules()
+    await import('./runtime.js')
+    look()
+    expect(document.querySelectorAll('.is-pending').length).toBe(4)
+
+    // Who measures the way — the browser, the glide — listens after the reveal, which captures.
+    let seen = null
+    const follow = (event) => {
+      seen = document.getElementById('holder').className
+      event.preventDefault()
+    }
+    document.addEventListener('click', follow)
+    const [deep, item, other] = document.querySelectorAll('a')
+    deep.click()
+    expect(seen).toBe('')
+    const holder = document.getElementById('holder')
+    // Not brought in a second time when it scrolls into view.
+    expect(watched.some((o) => o.els.has(holder))).toBe(false)
+
+    item.click()
+    const [first, second] = document.querySelectorAll('#list li')
+    expect(first.className).toBe('')
+    expect(second.classList.contains('is-pending')).toBe(true)
+
+    // A link to another page leaves this one as it is.
+    other.click()
+    expect(document.getElementById('far-holder').classList.contains('is-pending')).toBe(true)
+    document.removeEventListener('click', follow)
+  })
+
+  it('leaves alone what holds the anchor of the address the page opens with', async () => {
+    history.replaceState(null, '', '#below')
+    document.body.innerHTML = page
+    place()
+    delete window.webx
+    vi.resetModules()
+    await import('./runtime.js')
+    look()
+    history.replaceState(null, '', location.pathname)
+
+    // The browser goes to it after the first word: lowered, it would end up under the header.
+    expect(document.getElementById('below').className).toBe('')
+    expect(document.querySelectorAll('#list .is-pending').length).toBe(3)
+  })
+
   it('shows everything before printing', async () => {
     document.body.innerHTML = page
     place()

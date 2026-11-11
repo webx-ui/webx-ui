@@ -61,7 +61,7 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
   `<x-webx-toc for depth side>`; `<x-webx-pagination :paginator>`; `<x-webx-load-more :paginator pages="covered|shown">`;
   `<x-webx-notice-bar place="notice">` (a `module-banners` place, closed versions remembered).
 - **Smooth scrolling** — `data-webx-smooth-scroll` on `<html>`: `{"attrs": {"html": {"data-webx-smooth-scroll": true}}}` in `theme/compositions/layout/default.json`, no copy of the layout (Lenis; `-duration`,
-  `-easing`, `-wheel` or `--webx-smooth-scroll-*`); native under reduced motion, touch, no JS, a modal, `[data-webx-scroll-native]`.
+  `-easing`, `-wheel` or `--webx-smooth-scroll-*`); native under reduced motion, touch, no JS, a modal, `[data-webx-scroll-native]`. An anchor link shows at once the `data-webx-reveal` holding its target (else it ends under the header by the reveal's distance).
 - **Fields** — `<x-webx-field type name label hint required>` for every form of the site; `type`
   `text` `email` `tel` `url` `password` `number` `textarea` `select` `radio` `checkbox`
   (`:choices` → a group, without → one tick) `consent` `date` `file` `hidden`. Value `old()`, error
