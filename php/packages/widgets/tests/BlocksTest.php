@@ -500,7 +500,9 @@ final class BlocksTest extends TestCase
     public function show_the_map_without_consent_is_the_blocks_and_off_unless_turned_on(): void
     {
         $src = 'https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d2483.0!2d-0.128!3d51.508!5e0';
-        $schema = collect(json_decode((string) file_get_contents(dirname(__DIR__).'/resources/blocks/map.json'), true, flags: JSON_THROW_ON_ERROR)['schema'])->firstWhere('id', 'at_once');
+        /** @var array{schema: list<array<string, mixed>>} $type */
+        $type = json_decode((string) file_get_contents(dirname(__DIR__).'/resources/blocks/map.json'), true, flags: JSON_THROW_ON_ERROR);
+        $schema = array_values(array_filter($type['schema'], static fn (array $node): bool => ($node['id'] ?? null) === 'at_once'))[0] ?? [];
         $this->assertSame('wx-switch', $schema['type'] ?? null);
         $this->assertFalse($schema['default'] ?? null, 'off for a new block');
         $this->assertSame('trans::webx-widgets::panel.map.at-once-help', $schema['help'] ?? null, 'the warning, in the panel\'s language');
