@@ -22,6 +22,8 @@ return [
         'reject' => 'Reject all',
         'customize' => 'Customize',
         'save' => 'Save choices',
+        'dialog_reject' => 'Reject all',
+        'dialog_accept' => 'Accept all',
         'policy' => 'Cookie policy',
         'link' => 'Cookie settings',
         'dialog' => 'Cookie settings',

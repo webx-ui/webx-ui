@@ -22,6 +22,8 @@ return [
         'reject' => 'Отклонить все',
         'customize' => 'Настроить',
         'save' => 'Сохранить выбор',
+        'dialog_reject' => 'Отклонить все',
+        'dialog_accept' => 'Принять все',
         'policy' => 'Политика cookie',
         'link' => 'Настройки cookie',
         'dialog' => 'Настройки cookie',

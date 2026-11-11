@@ -22,6 +22,8 @@ return [
         'reject' => 'Відхилити все',
         'customize' => 'Налаштувати',
         'save' => 'Зберегти вибір',
+        'dialog_reject' => 'Відхилити все',
+        'dialog_accept' => 'Прийняти все',
         'policy' => 'Політика cookie',
         'link' => 'Налаштування cookie',
         'dialog' => 'Налаштування cookie',

@@ -121,6 +121,29 @@ The banner offers only the categories something on the site asks for: `necessary
 opens them again. The answer is the `webx_consent` cookie, which the server reads too — that is how
 a video's notice is printed without a flash.
 
+The banner and the dialog take their button words from keys of their own, so a site words them
+apart in `lang/vendor/webx-widgets/<locale>/widgets.php` — no copy of the `consent` view, which
+would stop getting the package's changes. Out of the box both say the same; a design that words them
+apart:
+
+```php
+return [
+    'consent' => [
+        // The banner
+        'reject' => 'Decline',
+        'accept' => 'Accept',
+        'customize' => 'Manage preferences',
+        // The dialog
+        'dialog_reject' => 'Reject optional',
+        'dialog_accept' => 'Accept all',
+        'save' => 'Save choices',
+    ],
+];
+```
+
+Laravel merges the file with the package's key by key: a key the site leaves out keeps the
+package's words. Keep the two buttons of a pair equally plain — the view gives them one class.
+
 Third-party code of the site waits for its category in one of three ways:
 
 ```blade

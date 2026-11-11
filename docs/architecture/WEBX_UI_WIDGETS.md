@@ -616,6 +616,12 @@ aria-roledescription="carousel" aria-label>`, слайды — `role="group"` с
 вырванное неравными кнопками, согласием не считается. «Настроить» открывает диалог `#webx-consent`
 поведения `dialog` (§6) с категориями-переключателями (`role="switch"`).
 
+Подписи кнопок у баннера и диалога — **разные ключи** словаря: баннер — `consent.reject`,
+`consent.accept`, `consent.customize`; диалог — `consent.dialog_reject`, `consent.dialog_accept`,
+`consent.save`. По умолчанию слова те же, но сайт переводит их порознь (`lang/vendor/webx-widgets`):
+в макете баннер часто «Decline / Accept», а диалог — «Reject optional / Accept all», и копировать
+ради этого вьюху `consent` в тему не нужно.
+
 | Категория     | Что в ней                                     | По умолчанию         |
 | ------------- | --------------------------------------------- | -------------------- |
 | `necessary`   | сессия, CSRF, сам ответ о согласии            | всегда, не выключить |

@@ -34,7 +34,7 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
   Third-party code waits: `<script type="text/plain" data-webx-consent="statistics">`,
   `<iframe data-webx-consent="media" data-src>`, or `<x-webx-consent category="…">`. Server:
   `Consent::has('media')`; browser: `webx.consent.has|set|open`, event `webx:consent`. Settings:
-  the "Cookie" tab (`consent.*`), else `config/webx-widgets.php`.
+  the "Cookie" tab (`consent.*`), else `config/webx-widgets.php`. Button words (`lang/vendor/webx-widgets`): banner `consent.reject|accept|customize`, dialog `consent.dialog_reject|dialog_accept|save` — apart.
 - **Contacts** — read the Contacts tab of `module-settings` (`contacts()`), print nothing while it
   is empty: `<x-webx-phones layout callback compact>`, `<x-webx-hours layout="status|table">`
   (site's time zone, recomputed each minute), `<x-webx-contact-button corner form>` (off —

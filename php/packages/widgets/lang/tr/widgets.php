@@ -22,6 +22,8 @@ return [
         'reject' => 'Tümünü reddet',
         'customize' => 'Özelleştir',
         'save' => 'Seçimleri kaydet',
+        'dialog_reject' => 'Tümünü reddet',
+        'dialog_accept' => 'Tümünü kabul et',
         'policy' => 'Çerez politikası',
         'link' => 'Çerez ayarları',
         'dialog' => 'Çerez ayarları',

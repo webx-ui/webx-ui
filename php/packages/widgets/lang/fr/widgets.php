@@ -22,6 +22,8 @@ return [
         'reject' => 'Tout refuser',
         'customize' => 'Personnaliser',
         'save' => 'Enregistrer mes choix',
+        'dialog_reject' => 'Tout refuser',
+        'dialog_accept' => 'Tout accepter',
         'policy' => 'Politique de cookies',
         'link' => 'Paramètres des cookies',
         'dialog' => 'Paramètres des cookies',
