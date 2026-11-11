@@ -53,18 +53,19 @@ A route or screen node the site adds next to the module asks the same:
 
 ## Change it without forking
 
-| You want                              | Do this                                                                                                 |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| Banners somewhere on the site         | `<x-webx-banners place="<place>" />`, or `banners('<place>')` + `banners_layout('<place>')` of your own |
-| A place the templates rely on         | declare it in `places` in `config/webx-banners.php` (`--tag=webx-banners-config`)                       |
-| One place as a slider, another single | `'layout' => 'slider'` / `'single'` / `'random'` on the place; `default_layout` for the rest            |
-| Another layout in one template only   | `banners_layout('hero', 'random')`                                                                      |
-| Other proportions or timing           | `ratio`, `ratio_mobile`, `interval`, `breakpoint`… in `options`, or in the place's `options`            |
-| Video on phones                       | `video_mobile` on the banner, or `'video_on_mobile' => true` in `options` to play `video` there         |
-| The picture slower than the page      | `'parallax' => true` / `'soft'` / `'strong'` in `options`, or `:parallax` on the component; layers stay |
-| Another look of a button              | add a key to `variants`; the template turns the key into a class                                        |
-| A field of the project on a banner    | a patch: `Screens::extend('banners.form', [...])` into `project-fields`; the card has it under `fields` |
-| Other words in the panel              | `php artisan vendor:publish --tag=webx-banners-lang`                                                    |
+| You want                              | Do this                                                                                                         |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Banners somewhere on the site         | `<x-webx-banners place="<place>" />`, or `banners('<place>')` + `banners_layout('<place>')` of your own         |
+| A place the templates rely on         | declare it in `places` in `config/webx-banners.php` (`--tag=webx-banners-config`)                               |
+| One place as a slider, another single | `'layout' => 'slider'` / `'single'` / `'random'` on the place; `default_layout` for the rest                    |
+| Another layout in one template only   | `banners_layout('hero', 'random')`                                                                              |
+| Other proportions or timing           | `ratio`, `ratio_mobile`, `interval`, `breakpoint`… in `options`, or in the place's `options`                    |
+| Video on phones                       | `video_mobile` on the banner, or `'video_on_mobile' => true` in `options` to play `video` there                 |
+| The picture slower than the page      | `'parallax' => true` / `'soft'` / `'strong'` in `options`, or `:parallax` on the component; layers stay         |
+| A section slides over the place       | the block after it says so («Slide over the section above»); `__stage`/`__content` are `data-webx-overlap-fade` |
+| Another look of a button              | add a key to `variants`; the template turns the key into a class                                                |
+| A field of the project on a banner    | a patch: `Screens::extend('banners.form', [...])` into `project-fields`; the card has it under `fields`         |
+| Other words in the panel              | `php artisan vendor:publish --tag=webx-banners-lang`                                                            |
 
 A screen patch addresses nodes by `id`: `media`, `image`, `image-mobile`, `video`, `poster`,
 `video-mobile`, `words`,

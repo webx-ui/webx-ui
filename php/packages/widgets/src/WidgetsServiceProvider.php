@@ -169,6 +169,10 @@ class WidgetsServiceProvider extends ServiceProvider
         // whose forms should still send in place. Under a theme it adds nothing.
         Blade::directive('webxWidgets', static fn (): string => Widgets::SCRIPTS);
 
+        // A section that slides over the one above it (§14.1): the attribute on its root, the edge picture inside.
+        Blade::directive('webxOverlap', static fn (string $arguments = ''): string => sprintf('<?php echo \\%s::attributes(%s); ?>', Overlap::class, trim($arguments) !== '' ? trim($arguments) : 'false'));
+        Blade::directive('webxOverlapEdge', static fn (string $arguments = ''): string => sprintf('<?php echo \\%s::edge(%s); ?>', Overlap::class, trim($arguments) !== '' ? trim($arguments) : 'false'));
+
         Blade::component('webx-dialog', Dialog::class);
         Blade::component('webx-tabs', Tabs::class);
         Blade::component('webx-tabs.panel', TabsPanel::class);

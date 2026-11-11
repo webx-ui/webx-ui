@@ -527,3 +527,139 @@ describe('share', () => {
     expect(document.querySelector('.webx-share__list').hidden).toBe(false)
   })
 })
+
+describe('overlap', () => {
+  // A hero (the pinned section) of 500px with its words, then the section that slides over it.
+  const page = `<main id="main"><style>.x{}</style><p id="gone" hidden>notice</p><section id="hero"><img src="/a.jpg" alt=""><div id="words" data-webx-overlap-fade><a id="button" href="#">Go</a></div></section><section id="over" data-webx-overlap><picture class="webx-overlap__edge" id="edge"><img class="webx-overlap__image" src="/fog.png" alt=""></picture><p>Words</p></section></main>`
+  let frames = []
+
+  const run = () => {
+    const queued = frames
+    frames = []
+    queued.forEach((callback) => callback())
+  }
+
+  const tall = (el, height) =>
+    Object.defineProperty(el, 'offsetHeight', { configurable: true, value: height })
+
+  async function load(supports) {
+    frames = []
+    vi.stubGlobal('CSS', { supports: () => supports })
+    vi.stubGlobal('requestAnimationFrame', (callback) => frames.push(callback))
+    vi.stubGlobal('cancelAnimationFrame', () => {})
+    vi.stubGlobal('innerHeight', 800)
+    document.body.innerHTML = page
+    tall(document.getElementById('hero'), 500)
+    tall(document.getElementById('over'), 600)
+    tall(document.getElementById('gone'), 40)
+    delete window.webx
+    vi.resetModules()
+    await import('./runtime.js')
+    return {
+      hero: document.getElementById('hero'),
+      over: document.getElementById('over'),
+      words: document.getElementById('words'),
+      main: document.getElementById('main'),
+      edge: document.getElementById('edge'),
+    }
+  }
+
+  it('pins the section above, past what is not shown, and leaves the motion to the stylesheet', async () => {
+    const { hero, over, words, main, edge } = await load(true)
+
+    expect(over.className).toBe('webx-overlap')
+    expect(edge.classList.contains('webx-overlap__edge--page')).toBe(true)
+    expect(main.classList.contains('webx-overlap-scope')).toBe(true)
+    // The <style> and the hidden notice are skipped: the hero is the section above.
+    expect(hero.className).toBe('webx-overlap-pinned webx-overlap-pinned--held')
+    expect(words.className).toBe('webx-overlap-fade')
+    // A screen of 800, a hero of 500, a section of 600: it stops at the top, and is covered over 500.
+    expect(hero.style.getPropertyValue('--webx-overlap-top')).toBe('0px')
+    expect(hero.style.getPropertyValue('--webx-overlap-start')).toBe('300px')
+    expect(hero.style.getPropertyValue('--webx-overlap-hold')).toBe('500px')
+    expect(hero.style.getPropertyValue('--webx-overlap-leave')).toBe('500px')
+    // One timeline, the section's, lifted to the parent the hero is in.
+    const name = hero.style.getPropertyValue('--webx-overlap-timeline')
+    expect(over.style.getPropertyValue('view-timeline')).toBe(`${name} block`)
+    expect(main.style.getPropertyValue('timeline-scope')).toBe(name)
+    expect(watched.length).toBe(0)
+
+    window.webx.unmount()
+    expect(hero.className).toBe('')
+    expect(words.className).toBe('')
+    expect(over.className).toBe('')
+    expect(main.className).toBe('')
+    expect(main.style.getPropertyValue('timeline-scope')).toBe('')
+  })
+
+  it('stops a section taller than the screen at its bottom, and covers no more than the section that comes', async () => {
+    const { hero } = await load(true)
+    tall(hero, 1200)
+    tall(document.getElementById('over'), 300)
+    resized.forEach((observer) => observer.callback([]))
+
+    expect(hero.style.getPropertyValue('--webx-overlap-top')).toBe('-400px')
+    expect(hero.style.getPropertyValue('--webx-overlap-start')).toBe('0px')
+    expect(hero.style.getPropertyValue('--webx-overlap-hold')).toBe('300px')
+    expect(hero.style.getPropertyValue('--webx-overlap-leave')).toBe('800px')
+  })
+
+  it('without scroll-driven animations, writes how far the words faded and the section went up', async () => {
+    const { hero, over, words } = await load(false)
+    expect(hero.classList.contains('webx-overlap-pinned--script')).toBe(true)
+    expect(words.classList.contains('webx-overlap-fade--script')).toBe(true)
+    const observer = watched.find((o) => o.els.has(over))
+    observer.callback([{ target: over, isIntersecting: true }])
+
+    // Its top at 500 (300 up from the bottom): the pin starts.
+    at(over, 500, 600)
+    run()
+    expect(hero.style.getPropertyValue('--webx-overlap-progress')).toBe('0.0000')
+    expect(hero.style.getPropertyValue('--webx-overlap-lift')).toBe('0.0px')
+
+    // Halfway over the hero.
+    at(over, 250, 600)
+    window.dispatchEvent(new Event('scroll'))
+    window.dispatchEvent(new Event('scroll'))
+    expect(frames.length).toBe(1)
+    run()
+    expect(hero.style.getPropertyValue('--webx-overlap-progress')).toBe('0.5000')
+
+    // Past the hold: the hero goes up with the page, as far as it is tall.
+    at(over, -100, 600)
+    window.dispatchEvent(new Event('scroll'))
+    run()
+    expect(hero.style.getPropertyValue('--webx-overlap-progress')).toBe('1.0000')
+    expect(hero.style.getPropertyValue('--webx-overlap-lift')).toBe('100.0px')
+    at(over, -900, 600)
+    window.dispatchEvent(new Event('scroll'))
+    run()
+    expect(hero.style.getPropertyValue('--webx-overlap-lift')).toBe('500.0px')
+  })
+
+  it('brings the words back when focus comes into the section above', async () => {
+    const { over } = await load(true)
+    const scrolled = []
+    vi.stubGlobal('scrollTo', (options) => scrolled.push(options.top))
+    vi.stubGlobal('scrollY', 1000)
+
+    // Before the pin: nothing to bring back.
+    at(over, 600, 600)
+    document.getElementById('button').dispatchEvent(new FocusEvent('focusin', { bubbles: true }))
+    expect(scrolled).toEqual([])
+
+    // 200 into the hold: the page goes back 200.
+    at(over, 300, 600)
+    document.getElementById('button').dispatchEvent(new FocusEvent('focusin', { bubbles: true }))
+    expect(scrolled).toEqual([800])
+  })
+
+  it('under reduced motion pins nothing, and still lays the section over the one above', async () => {
+    reduced = true
+    const { hero, over, edge } = await load(true)
+
+    expect(hero.className).toBe('')
+    expect(over.className).toBe('webx-overlap')
+    expect(edge.classList.contains('webx-overlap__edge--page')).toBe(true)
+  })
+})

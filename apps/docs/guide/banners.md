@@ -183,6 +183,10 @@ where the editor put them in the frame, and the picture under them shifts by at 
 of the frame's height (half that on a narrow one). An option of the place, not of a banner: every slide of a place moves alike.
 Without JavaScript and with reduced motion nothing moves.
 
+**A block that slides over the banner.** A block of the theme after the place, with «Slide over the
+section above» on, pins the place while it comes up over it ([Widgets](./widgets.md)): the banner's
+words and layers fade, its picture and video stay. Nothing to set on the place.
+
 ## A template
 
 `<x-webx-banners place="hero" />` prints a place whole, in its layout — see

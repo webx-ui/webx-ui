@@ -77,8 +77,9 @@ final class RevealTest extends TestCase
 
             $this->assertStringNotContainsString('data-webx-reveal', $html, $slug);
             // The template without its marks is the template as it was: the same markup, give or
-            // take the space the mark stands after inside a tag.
-            $this->assertSame(self::tight($this->render($slug, unmarked: true)), self::tight($html), $slug);
+            // take the space the mark stands after inside a tag. The words a section slid over
+            // fades (`data-webx-overlap-fade`) carry their mark always: an attribute no stylesheet reads.
+            $this->assertSame(self::tight($this->render($slug, unmarked: true)), self::tight(str_replace(' data-webx-overlap-fade', '', $html)), $slug);
         }
     }
 
@@ -146,6 +147,9 @@ final class RevealTest extends TestCase
         if ($unmarked) {
             $template = (string) preg_replace("~ @webxReveal\\('[a-z]*', \\\$no_reveal\\)~", '', $template);
             $this->assertStringNotContainsString('@webxReveal', $template, $slug);
+            // And without the section sliding over the one above (OverlapTest), off by default.
+            $template = str_replace([' data-webx-overlap-fade', '@webxOverlap($overlap ?? false)'], '', $template);
+            $template = (string) preg_replace('~\n *@webxOverlapEdge\([^\n]*\)|\n *@if \(\$framed\)\n[^\n]*\n *@endif~', '', $template);
         }
 
         $data = array_fill_keys(array_column($type['schema'], 'id'), null);
@@ -162,7 +166,8 @@ final class RevealTest extends TestCase
     /** The spaces before a tag closes, which the browser drops and a mark that printed nothing leaves. */
     private static function tight(string $html): string
     {
-        return (string) preg_replace('~"\s+>~', '">', $html);
+        // And the run of spaces a directive that printed nothing leaves between two tags: the browser drops it.
+        return (string) preg_replace(['~"\s+>~', '~>\s+<~'], ['">', ">\n<"], $html);
     }
 
     /** @return array<string, mixed> */

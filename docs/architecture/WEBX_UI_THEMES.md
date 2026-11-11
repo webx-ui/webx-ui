@@ -779,6 +779,27 @@ variant="cards">` с теми же именами полей, что у слай
 слов, узкая колонка. Тесты — `TextTilesTest` темы и `ThemeDefaultBlocksTest` `module-blocks`
 (настоящий импорт).
 
+### 9.8 Наезд на предыдущую секцию
+
+У всех семи блоков `theme-default` — переключатель «Slide over the section above» (`overlap`,
+`wx-switch`, по умолчанию выкл.) и под ним, при включённом, «Edge picture» (`overlap_edge`) и «Edge
+picture on a phone» (`overlap_edge_narrow`), оба `wx-media`. Включён — корень секции получает
+`data-webx-overlap` (`@webxOverlap`), первым ребёнком — край-картинку (`@webxOverlapEdge`): при
+прокрутке предыдущая секция стоит, эта наезжает на неё, слова той гаснут (WIDGETS §14.1). Поле
+блока, а не ключ манифеста — как параллакс (§9.5): это решение о паре секций на конкретной странице.
+
+- **Что гаснет.** `__inner` у `hero` и `text-tiles` помечен `data-webx-overlap-fade` всегда (без
+  наезда атрибут ничего не делает); слова остальных блоков не помечены — под наехавшей секцией они
+  просто стоят. Баннеры места помечают `__stage` и `__content` (BANNERS §4.0).
+- **Обрезка.** `hero` и `text-tiles` режут корнем (`overflow: hidden`) — край над ними был бы
+  срезан. При включённой опции картинка и тень стоят в своей рамке `b-hero__media` /
+  `b-text-tiles__media` (`position: absolute; inset: 0; overflow: hidden; border-radius: inherit`),
+  корень — `overflow: visible`. Без опции рамки нет, разметка прежняя.
+- **Позиция.** `base.css` темы: `:where([data-webx-overlap]) { position: relative }` — край ставится
+  от секции и без скрипта.
+- Выключено — разметка прежняя (`RevealTest`: «off — what it printed before», `OverlapTest` темы).
+  Существующий сайт получает поля с `webx:blocks:import --theme --replace=<slug>`.
+
 ## 10. Модули в теме
 
 Тема по умолчанию не знает модулей, кроме обязательных (§9.1). Каждый модуль с публичными

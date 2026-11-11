@@ -10,7 +10,7 @@ use PHPUnit\Framework\Attributes\Test;
 /**
  * The parallax of a banner (§4 of the banners spec, §14 of the widgets spec): the picture and the
  * video in a second `webx-banner__picture` that moves, the layers' stage outside it — and, off, a
- * banner printed exactly as before.
+ * banner printed exactly as before. And what fades when a section slides over the banner (§14.1).
  */
 final class ParallaxTest extends TestCase
 {
@@ -46,12 +46,12 @@ final class ParallaxTest extends TestCase
         $this->assertSame(1, substr_count($html, 'data-webx-parallax'));
         // The outer picture crops; the inner one, with the picture and the video, moves.
         $this->assertMatchesRegularExpression(
-            '~<div class="webx-banner__picture">\s*<div class="webx-banner__picture webx-banner__drift" data-webx-parallax>\s*<picture>.*?webx-banner__image.*?</picture>.*?data-webx-video-background.*?</div>\s*</div>\s*</div>\s*<div class="webx-banner__stage">~s',
+            '~<div class="webx-banner__picture">\s*<div class="webx-banner__picture webx-banner__drift" data-webx-parallax>\s*<picture>.*?webx-banner__image.*?</picture>.*?data-webx-video-background.*?</div>\s*</div>\s*</div>\s*<div class="webx-banner__stage" data-webx-overlap-fade>~s',
             $html,
         );
         // The stage is the frame's, not the drift's: what the editor placed stays where it was put.
         $drift = (int) strpos($html, 'data-webx-parallax>');
-        $stage = (int) strpos($html, '<div class="webx-banner__stage">');
+        $stage = (int) strpos($html, '<div class="webx-banner__stage"');
         $this->assertGreaterThan($drift, $stage);
         $this->assertStringContainsString('Over the sea', substr($html, $stage));
     }
@@ -99,6 +99,20 @@ final class ParallaxTest extends TestCase
         $this->banner('notice', attributes: ['image' => null]);
 
         $this->assertStringNotContainsString('data-webx-parallax', Blade::render('<x-webx-banners place="notice" />'));
+    }
+
+    #[Test]
+    public function the_words_and_the_layers_are_what_fades_under_a_section_that_slides_over_the_banner(): void
+    {
+        // WIDGETS §14.1: the section after the place pins it and fades what is marked; the picture stays.
+        $this->banner(title: 'Words', attributes: ['layers' => []]);
+        $this->banner(title: null, attributes: ['layers' => [self::layer()]]);
+
+        $html = $this->hero();
+
+        $this->assertStringContainsString('<div class="webx-banner__content" data-webx-overlap-fade>', $html);
+        $this->assertStringContainsString('<div class="webx-banner__stage" data-webx-overlap-fade>', $html);
+        $this->assertSame(2, substr_count($html, 'data-webx-overlap-fade'));
     }
 
     /** @return array<string, mixed> */

@@ -291,6 +291,28 @@ part by putting the attribute on a picture that fills its frame:
 A site takes the switch with `webx:blocks:import --theme --replace=hero`, and `text-tiles` with a plain
 `webx:blocks:import --theme --publish` — a new slug is created, the others are left as they are.
 
+### A section that slides over the one above
+
+Every block of `theme-default` has the switch «Slide over the section above», off by default, and
+under it «Edge picture» and «Edge picture on a phone». On, the section before the block — the hero
+banner of the page, or any block — stays in place while this one comes up over it, the words of
+the hero (and of the text with tiles, and a banner's words and layers) fade as they are covered,
+and the edge picture stands over this block's top across the whole page. Take a PNG or WebP with
+transparency whose bottom row is the colour of the block — one file serves both schemes, so a site
+with a dark scheme wants fog that fades out into transparency. It is the widgets'
+`data-webx-overlap` ([Widgets](./widgets.md)); a block of your own takes part with two directives:
+
+```blade
+<section class="b-offer" data-wx-block="offer"@webxOverlap($overlap)>
+    @webxOverlapEdge($overlap, $overlap_edge, $overlap_edge_narrow)
+    …
+</section>
+```
+
+and `data-webx-overlap-fade` on its own words, for when something slides over it. Visitors who ask
+for less motion, and a page without JavaScript, see the sections one after another. A site takes the
+fields with `webx:blocks:import --theme --replace=hero,text,media-text,cards,cta,contact,text-tiles`.
+
 ### Cards in a carousel, with labels and photos
 
 The `cards` block of `theme-default` is a grid by default and a carousel on request («View»): the

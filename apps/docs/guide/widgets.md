@@ -362,6 +362,7 @@ What a long page needs, each loading only where it stands:
 <div class="cards" data-webx-reveal="stagger" data-webx-reveal-effect="up">…</div>
 <section data-webx-reveal="fade">…</section>
 <section class="promo"><img class="promo__picture" data-webx-parallax="strong" src="…" alt=""></section>
+<section class="offer" data-wx-block="offer"@webxOverlap($overlap)>@webxOverlapEdge($overlap, $edge, $edge_narrow)…</section>
 ```
 
 - **Tables of prose** — nothing to write. Every `<table>` without a class on a page — what a rich
@@ -384,6 +385,18 @@ What a long page needs, each loading only where it stands:
   `--webx-parallax-strong` 1.5). A picture placed absolutely is made taller rather than scaled, so
   it stays sharp; one in the flow is scaled. Without JavaScript, with reduced motion and in print
   the picture simply stands there.
+- **A section that slides over the one above** — `data-webx-overlap` on a section: the section
+  before it (a hero banner, any block) stays where it is, `position: sticky`, while this one comes
+  up over it; the elements of that section marked `data-webx-overlap-fade` fade out as they are
+  covered, then it goes up with the page under this one. The top of this section can be a picture —
+  fog, clouds — as wide as the page: `@webxOverlap($on)` prints the attribute on the root,
+  `@webxOverlapEdge($on, $edge, $edgeOnAPhone)` the picture as its first child. Scroll-driven CSS
+  where the browser has it, a small script elsewhere; the pin is `sticky` on both, so it does not
+  shake. Focus that comes back into the pinned section scrolls the page to where its words are
+  whole. Without JavaScript, with reduced motion and in print the sections stand one after another
+  and the picture lies over the bottom of the one above. The root of the section must be
+  positioned (`theme-default` does it), and must not crop: an edge over a root with
+  `overflow: hidden` is cut.
 - **Share** — each network's own address for sharing as a plain link (Facebook, X, LinkedIn,
   Telegram, WhatsApp, e-mail by default; also Viber, Reddit, Pinterest, Threads, Bluesky, VK) and
   Copy link. No network's script, so nothing to ask consent for. On a phone one Share button opens

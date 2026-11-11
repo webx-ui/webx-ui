@@ -64,3 +64,9 @@
 :where(.site) :where(.site-accent) {
   color: var(--site-color-accent);
 }
+
+/* A section that slides over the one above (`data-webx-overlap`, WIDGETS §14.1): its edge
+   picture stands over its top, placed from the section — without the script too. */
+:where(.site) :where([data-webx-overlap]) {
+  position: relative;
+}

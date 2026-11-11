@@ -59,7 +59,7 @@
     @endif
 
     @if ($layers !== [])
-        <div class="webx-banner__stage">
+        <div class="webx-banner__stage" data-webx-overlap-fade>
             @foreach ($layers as $layer)
                 @switch ($layer['type'])
                     @case('text')
@@ -78,7 +78,7 @@
             @endforeach
         </div>
     @elseif (($banner['title'] ?? '') !== '' || ($banner['text'] ?? '') !== '' || ($banner['buttons'] ?? []) !== [])
-        <div class="webx-banner__content">
+        <div class="webx-banner__content" data-webx-overlap-fade>
             @if (($banner['title'] ?? '') !== '')
                 <h2 class="webx-banner__title">{{ $banner['title'] }}</h2>
             @endif
