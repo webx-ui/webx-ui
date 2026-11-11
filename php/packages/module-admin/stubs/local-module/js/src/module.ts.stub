@@ -1,0 +1,34 @@
+import type { AdminModule } from '@webx-ui/module-admin'
+
+export interface {{ Studly }}Options {
+  /** Where the section lives inside the panel. */
+  path?: string
+}
+
+/**
+ * {{ Title }} as a section of the panel: the list, and the form of one record — the server's
+ * described screen `{{ id }}.form`. A section whose server half is not installed never appears:
+ * the entry of the menu is built from the manifest.
+ */
+export function {{ function }}(options: {{ Studly }}Options = {}): AdminModule {
+  const path = options.path ?? '/{{ id }}'
+
+  return {
+    id: '{{ id }}',
+    path,
+    routes: [
+      {
+        path,
+        meta: { help: '{{ id }}.index' },
+        component: () => import('./{{ Studly }}Page.vue'),
+        props: { base: path },
+      },
+      {
+        path: `${path}/:id(\\d+|new)`,
+        meta: { help: '{{ id }}.form' },
+        component: () => import('./{{ Model }}FormPage.vue'),
+        props: { base: path },
+      },
+    ],
+  }
+}

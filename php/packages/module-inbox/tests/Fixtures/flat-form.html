@@ -1,0 +1,112 @@
+<form id="webx-inbox-flat" action="http://localhost/webx/forms/flat" method="post" enctype="multipart/form-data" data-webx-send="" class="webx-form webx-inbox-form" data-webx-form="flat" data-webx-attribution="">
+                            <input type="hidden" name="_webx_form" value="webx-inbox-flat">
+        <div class="webx-form__body">
+                                <input type="hidden" name="webx_form" value="flat">
+    <input type="hidden" name="webx_page" value="http://localhost/page">
+    <input type="hidden" name="webx_locale" value="en">
+        <input type="hidden" name="webx_ts" value="…">
+
+    <div class="webx-inbox-form__honeypot" aria-hidden="true" style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0">
+    <label for="webx-inbox-flat-hp">Leave this field empty</label>
+    <input type="text" id="webx-inbox-flat-hp" name="webx_hp" value="" tabindex="-1" autocomplete="off">
+</div>
+
+    
+    <div class="webx-inbox-form__fields">
+                    <div class="webx-field webx-field--text is-required webx-inbox-form__field" data-webx-field="fields.line" data-webx-rules="[{&quot;rule&quot;:&quot;required&quot;,&quot;message&quot;:&quot;The Line field is required.&quot;},{&quot;rule&quot;:&quot;max&quot;,&quot;as&quot;:&quot;string&quot;,&quot;value&quot;:40,&quot;message&quot;:&quot;The Line field must not be greater than 40 characters.&quot;}]">
+                                                <label class="webx-field__label" for="webx-inbox-flat-line">Line<span class="webx-field__required" aria-hidden="true">*</span></label>
+                                <input type="text" class="webx-field__control" id="webx-inbox-flat-line" name="fields[line]" value="" required="required" aria-describedby="webx-inbox-flat-line-error">
+                                        <p class="webx-field__error" id="webx-inbox-flat-line-error"  hidden ></p>
+            </div>
+                        <div class="webx-field webx-field--email webx-inbox-form__field webx-inbox-form__field--half" data-webx-field="fields.mail" data-webx-rules="[{&quot;rule&quot;:&quot;nullable&quot;},{&quot;rule&quot;:&quot;email&quot;,&quot;message&quot;:&quot;The Mail field must be a valid email address.&quot;},{&quot;rule&quot;:&quot;max&quot;,&quot;as&quot;:&quot;string&quot;,&quot;value&quot;:255,&quot;message&quot;:&quot;The Mail field must not be greater than 255 characters.&quot;}]">
+                                                <label class="webx-field__label" for="webx-inbox-flat-mail">Mail</label>
+                                <input type="email" class="webx-field__control" id="webx-inbox-flat-mail" name="fields[mail]" value="" autocomplete="email" inputmode="email" spellcheck="false" autocapitalize="none" aria-describedby="webx-inbox-flat-mail-error">
+                                        <p class="webx-field__error" id="webx-inbox-flat-mail-error"  hidden ></p>
+            </div>
+                        <div class="webx-field webx-field--tel webx-inbox-form__field webx-inbox-form__field--half" data-webx-field="fields.phone" data-webx-rules="[{&quot;rule&quot;:&quot;nullable&quot;},{&quot;rule&quot;:&quot;max&quot;,&quot;as&quot;:&quot;string&quot;,&quot;value&quot;:64,&quot;message&quot;:&quot;The Phone field must not be greater than 64 characters.&quot;},{&quot;rule&quot;:&quot;regex&quot;,&quot;source&quot;:&quot;^(?:[0-9 +()-]{6,})$&quot;,&quot;flags&quot;:&quot;u&quot;,&quot;message&quot;:&quot;The Phone field format is invalid.&quot;}]">
+                                                <label class="webx-field__label" for="webx-inbox-flat-phone">Phone</label>
+                                <input type="tel" class="webx-field__control" id="webx-inbox-flat-phone" name="fields[phone]" value="" autocomplete="tel" inputmode="tel" aria-describedby="webx-inbox-flat-phone-error">
+                                        <p class="webx-field__error" id="webx-inbox-flat-phone-error"  hidden ></p>
+            </div>
+                        <div class="webx-field webx-field--textarea webx-inbox-form__field" data-webx-field="fields.letter" data-webx-rules="[{&quot;rule&quot;:&quot;nullable&quot;},{&quot;rule&quot;:&quot;max&quot;,&quot;as&quot;:&quot;string&quot;,&quot;value&quot;:20000,&quot;message&quot;:&quot;The Letter field must not be greater than 20000 characters.&quot;}]">
+                                                <label class="webx-field__label" for="webx-inbox-flat-letter">Letter</label>
+                                <textarea class="webx-field__control webx-field__control--textarea" id="webx-inbox-flat-letter" name="fields[letter]" rows="8" aria-describedby="webx-inbox-flat-letter-hint webx-inbox-flat-letter-error"></textarea>
+                                    <p class="webx-field__hint" id="webx-inbox-flat-letter-hint">A few words</p>
+                        <p class="webx-field__error" id="webx-inbox-flat-letter-error"  hidden ></p>
+            </div>
+                        <div class="webx-field webx-field--select webx-inbox-form__field" data-webx-field="fields.plan" data-webx-rules="[{&quot;rule&quot;:&quot;nullable&quot;},{&quot;rule&quot;:&quot;in&quot;,&quot;values&quot;:[&quot;basic&quot;,&quot;pro&quot;],&quot;message&quot;:&quot;The selected Plan is invalid.&quot;}]">
+                                                <label class="webx-field__label" for="webx-inbox-flat-plan">Plan</label>
+                                <span class="webx-field__select">
+    <select class="webx-field__control webx-field__control--select" id="webx-inbox-flat-plan" name="fields[plan]" aria-describedby="webx-inbox-flat-plan-error">
+                    <option value="">Pick one</option>
+                            <option value="basic"  >Basic</option>
+                    <option value="pro"  >Pro</option>
+            </select>
+</span>
+                                        <p class="webx-field__error" id="webx-inbox-flat-plan-error"  hidden ></p>
+            </div>
+                        <fieldset aria-describedby="webx-inbox-flat-reach-error" class="webx-field webx-field--radio webx-field--cards is-required webx-inbox-form__field" data-webx-field="fields.reach" data-webx-rules="[{&quot;rule&quot;:&quot;required&quot;,&quot;message&quot;:&quot;The Reach field is required.&quot;},{&quot;rule&quot;:&quot;in&quot;,&quot;values&quot;:[&quot;call&quot;,&quot;mail&quot;],&quot;message&quot;:&quot;The selected Reach is invalid.&quot;}]">
+            <legend class="webx-field__label webx-field__label--legend">Reach<span class="webx-field__required" aria-hidden="true">*</span></legend>
+            <div class="webx-field__choices">
+    <div class="webx-field__cards webx-field__cards--cols-2">
+                    <label class="webx-field__card" for="webx-inbox-flat-reach-0">
+                <input type="radio" class="webx-field__check webx-field__card-check" id="webx-inbox-flat-reach-0" name="fields[reach]" value="call"  required   >
+                <span class="webx-field__card-title">By phone</span>
+    <span class="webx-field__card-text">We call you back</span>
+            </label>
+                    <label class="webx-field__card" for="webx-inbox-flat-reach-1">
+                <input type="radio" class="webx-field__check webx-field__card-check" id="webx-inbox-flat-reach-1" name="fields[reach]" value="mail"  required   >
+                <span class="webx-field__card-title">By mail</span>
+            </label>
+            </div>
+</div>
+                            <p class="webx-field__error" id="webx-inbox-flat-reach-error"  hidden ></p>
+            </fieldset>
+                        <fieldset aria-describedby="webx-inbox-flat-extras-error" class="webx-field webx-field--checkbox webx-inbox-form__field" data-webx-field="fields.extras" data-webx-rules="[{&quot;rule&quot;:&quot;nullable&quot;},{&quot;rule&quot;:&quot;in&quot;,&quot;values&quot;:[&quot;ssl&quot;],&quot;message&quot;:&quot;The selected Extras is invalid.&quot;,&quot;each&quot;:true,&quot;item&quot;:&quot;fields.extras.0&quot;}]" data-webx-when="{&quot;fields.reach&quot;:[&quot;call&quot;]}">
+            <legend class="webx-field__label webx-field__label--legend">Extras</legend>
+            <div class="webx-field__choices">
+                    <label class="webx-field__choice" for="webx-inbox-flat-extras-0">
+                <input type="checkbox" class="webx-field__check" id="webx-inbox-flat-extras-0" name="fields[extras][]" value="ssl"   >
+                <span class="webx-field__choice-label">SSL</span>
+            </label>
+            </div>
+                                <p class="webx-field__condition" data-webx-condition>If chosen: By phone</p>
+                <p class="webx-field__error" id="webx-inbox-flat-extras-error"  hidden ></p>
+            </fieldset>
+                        <div class="webx-field webx-field--consent is-required webx-inbox-form__field" data-webx-field="fields.terms" data-webx-rules="[{&quot;rule&quot;:&quot;accepted&quot;,&quot;message&quot;:&quot;The Terms field must be accepted.&quot;}]">
+                            <label class="webx-field__choice webx-field__choice--consent" for="webx-inbox-flat-terms">
+    <input type="checkbox" class="webx-field__check" id="webx-inbox-flat-terms" name="fields[terms]" value="1"  required="required" aria-describedby="webx-inbox-flat-terms-error">
+    <span class="webx-field__choice-label">I agree to the <a href="/privacy">privacy policy</a><span class="webx-field__required" aria-hidden="true">*</span></span>
+</label>
+                                        <p class="webx-field__error" id="webx-inbox-flat-terms-error"  hidden ></p>
+            </div>
+                        <div class="webx-field webx-field--date webx-inbox-form__field" data-webx-field="fields.when" data-webx-rules="[{&quot;rule&quot;:&quot;nullable&quot;},{&quot;rule&quot;:&quot;date&quot;,&quot;message&quot;:&quot;The When field must be a valid date.&quot;},{&quot;rule&quot;:&quot;after_or_equal&quot;,&quot;value&quot;:&quot;2026-01-01&quot;,&quot;message&quot;:&quot;The When field must be a date after or equal to 2026-01-01.&quot;}]" data-webx-unless="{&quot;fields.terms&quot;:[&quot;1&quot;]}">
+                                                <label class="webx-field__label" for="webx-inbox-flat-when">When</label>
+                                <input type="date" class="webx-field__control" id="webx-inbox-flat-when" name="fields[when]" value="" min="2026-01-01" aria-describedby="webx-inbox-flat-when-error">
+                                            <p class="webx-field__condition" data-webx-condition>Unless chosen: Terms</p>
+                <p class="webx-field__error" id="webx-inbox-flat-when-error"  hidden ></p>
+            </div>
+                        <div class="webx-field webx-field--file webx-inbox-form__field" data-webx-field="fields.brief" data-webx-rules="[{&quot;rule&quot;:&quot;nullable&quot;},{&quot;rule&quot;:&quot;max&quot;,&quot;as&quot;:&quot;file&quot;,&quot;value&quot;:10240,&quot;message&quot;:&quot;The Brief field must not be greater than 10240 kilobytes.&quot;},{&quot;rule&quot;:&quot;mimes&quot;,&quot;values&quot;:[&quot;pdf&quot;],&quot;message&quot;:&quot;The Brief field must be a file of type: pdf.&quot;}]">
+                                                <label class="webx-field__label" for="webx-inbox-flat-brief">Brief</label>
+                                <span class="webx-field__file" data-webx-file="{&quot;none&quot;:&quot;No file chosen&quot;,&quot;many&quot;:&quot;Files chosen: :count&quot;}" data-webx-files="{&quot;remove&quot;:&quot;Remove&quot;}">
+    <input type="file" class="webx-field__control webx-field__control--file" id="webx-inbox-flat-brief" name="fields[brief]" accept=".pdf" aria-describedby="webx-inbox-flat-brief-error">
+    <span class="webx-field__file-button" aria-hidden="true">Choose a file</span>
+    <span class="webx-field__file-name" aria-hidden="true">No file chosen</span>
+</span>
+<span class="webx-field__drop" hidden>or drop a file here</span>
+<ul class="webx-field__files" hidden></ul>
+                                        <p class="webx-field__error" id="webx-inbox-flat-brief-error"  hidden ></p>
+            </div>
+                        <input type="hidden" id="webx-inbox-flat-product" name="fields[product]" value="" >
+            </div>
+
+    
+    <div class="webx-inbox-form__actions">
+        <button type="submit" class="webx-form__submit">Send</button>
+    </div>
+            </div>
+            <progress class="webx-form__progress" max="100" value="0" hidden></progress>
+        <div class="webx-form__message" role="status" aria-live="polite"></div>
+        <div class="webx-form__error" role="alert" data-webx-failed="The form could not be sent. Check the connection and try again." data-webx-expired="The page has been open too long. Reload it and send the form again."></div>
+        <button type="button" class="webx-form__done" data-webx-dialog-close hidden>Close</button>
+            </form>

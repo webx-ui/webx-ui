@@ -1,0 +1,29 @@
+{
+  "packages": [
+    {
+      "name": "laravel/framework",
+      "version": "v13.0.0",
+      "description": "The Laravel Framework.",
+      "install-path": "../laravel/framework"
+    },
+    {
+      "name": "site/module-offices",
+      "version": "0.1.0",
+      "type": "library",
+      "description": "Offices directory of this site.",
+      "install-path": "../../modules/offices",
+      "dist": { "type": "path", "url": "modules/offices" },
+      "extra": {
+        "webx": {
+          "module": "offices",
+          "npm": { "@site/module-offices": "file:modules/offices/js" },
+          "panel": {
+            "import": "import { offices } from '@site/module-offices'",
+            "register": "offices()"
+          }
+        }
+      }
+    }
+  ],
+  "dev": true
+}

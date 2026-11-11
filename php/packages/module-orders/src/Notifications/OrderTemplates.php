@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Lang;
  * provider, in every language this package (or the site over it) has words in.
  *
  * Two kinds of letter. The buyer's: what happened, the lines as a table, the money, delivery and
- * payment, the link to the page of the order — never the internal status (decision 11). The
+ * payment, the extra fields the buyer filled, the link to the page of the order — never the internal status (decision 11). The
  * shop's: the same, plus who bought, how to reach them, the internal status and the link into
  * the panel. Neutral on purpose — greys and an ink button, no name of a site: a starting point
  * the administrator makes theirs.
@@ -56,6 +56,8 @@ final class OrderTemplates
         $details = [
             '{{#delivery}}'.self::detail($say('delivery'), '{{delivery}}', $muted).'{{/delivery}}',
             '{{#payment}}'.self::detail($say('payment'), '{{payment}}', $muted).'{{/payment}}',
+            // The extra fields of checkout after delivery and payment, before the comment (§5.3 of the fields).
+            '{{#fields}}'.self::detail('{{label}}', '{{value}}', $muted).'{{/fields}}',
         ];
 
         if ($manager) {
@@ -153,6 +155,9 @@ final class OrderTemplates
             '{{#child}}— {{/child}}{{name}} × {{qty}} — {{total}}',
             '{{/items}}',
             '<b>'.$say('payable').': {{payable}}</b>',
+            '{{#fields}}',
+            '{{label}}: {{value}}',
+            '{{/fields}}',
             ...self::plainExtras($event, $say),
             ...self::plainEdit($event, $say),
             '',
@@ -188,6 +193,9 @@ final class OrderTemplates
                 '- {{name}} × {{qty}} — {{total}}',
                 '{{/items}}',
                 $say('payable').': {{payable}}',
+                '{{#fields}}',
+                '{{label}}: {{value}}',
+                '{{/fields}}',
                 ...self::plainExtras($event, $say),
                 ...self::plainEdit($event, $say),
                 '',
@@ -201,6 +209,12 @@ final class OrderTemplates
      * The words of a letter: an event in the audience its default is for, and the one more the
      * set a site starts with has — «Order accepted» to the buyer on `orders.placed` (decision 81).
      */
+    /** Whether the event has a letter for this audience at all, in some language. */
+    public static function hasLetter(string $event, string $audience): bool
+    {
+        return self::letter($event, $audience) !== null;
+    }
+
     private static function letter(string $event, string $audience): ?string
     {
         $short = substr($event, strlen('orders.'));

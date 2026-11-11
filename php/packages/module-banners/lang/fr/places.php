@@ -10,7 +10,7 @@ return [
     'new' => 'Nouvel emplacement',
     'title' => 'Nom',
     'key' => 'Clé',
-    'key-help' => 'Ce que demande le gabarit du site : lettres latines minuscules, chiffres et tirets, en commençant par une lettre. Elle ne peut plus être modifiée ensuite.',
+    'key-help' => 'Ce que demande le gabarit du site, par exemple « sidebar » : ce qui est saisi en devient une tout seul. Elle ne peut plus être modifiée ensuite.',
     'declared' => 'Déclaré dans la configuration',
     'in-template' => 'Dans un gabarit : banners(\':key\')',
     'count' => 'Bannières',

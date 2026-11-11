@@ -37,15 +37,22 @@ final class Meta
             return array_filter(['locale' => app()->getLocale()]);
         }
 
+        // Where the visitor came from (FORM_STEPS §8), as the widgets' attribution.js posts it. A
+        // site that would rather not know turns it off, and then none of it is written.
+        $attribution = (bool) $this->config->get('webx-inbox.attribution', true);
+
         return array_filter([
             'ip' => $this->ip($request),
             'user_agent' => mb_substr((string) $request->userAgent(), 0, 500),
             // Where the form was: the referrer of a POST from a page is that page.
             'page' => $this->text($request->input('webx_page') ?? $request->headers->get('referer')),
-            // Where the visitor came from before that, which only the site can know — it
-            // remembers the first referrer and posts it in a hidden field.
-            'referrer' => $this->text($request->input('webx_referrer')),
-            'utm' => $this->utm($request),
+            // Where the visitor came from before that, which only the browser can know: the
+            // outside page of the last touch, and the page of the site they came in on.
+            'referrer' => $attribution ? $this->short($request->input('webx_referrer')) : null,
+            'landing' => $attribution ? $this->short($request->input('webx_landing')) : null,
+            // The campaign of the last touch, and of the first — kept only with consent.
+            'utm' => $attribution ? $this->utm($request->all()) : [],
+            'utm_first' => $attribution ? $this->utm((array) $request->input('webx_utm_first', [])) : [],
             'locale' => app()->getLocale(),
         ], static fn ($value): bool => $value !== null && $value !== '' && $value !== []);
     }
@@ -71,14 +78,18 @@ final class Meta
     }
 
     /**
+     * Only `utm_*`, a key cut to 32 and a value to 255: whatever else a link carried — `gclid`,
+     * a visitor's own parameter — is not the campaign, and a body is anybody's to write.
+     *
+     * @param  array<array-key, mixed>  $input
      * @return array<string, string>
      */
-    private function utm(Request $request): array
+    private function utm(array $input): array
     {
         $utm = [];
 
-        foreach ($request->all() as $key => $value) {
-            if (! is_string($key) || ! str_starts_with($key, 'utm_') || ! is_scalar($value)) {
+        foreach ($input as $key => $value) {
+            if (! is_string($key) || ! str_starts_with($key, 'utm_') || ! is_scalar($value) || (string) $value === '') {
                 continue;
             }
 
@@ -86,6 +97,12 @@ final class Meta
         }
 
         return $utm;
+    }
+
+    /** A referrer or a landing page: an address, cut as a value of the campaign is. */
+    private function short(mixed $value): ?string
+    {
+        return is_string($value) && $value !== '' ? mb_substr($value, 0, 255) : null;
     }
 
     private function text(mixed $value): ?string

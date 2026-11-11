@@ -169,6 +169,7 @@ final class NotificationEvents
             variables: [...$event->variables, ...$added],
             sample: $event->sample,
             url: $event->url,
+            addressed: $event->addressed,
         );
     }
 

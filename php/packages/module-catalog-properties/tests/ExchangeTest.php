@@ -87,6 +87,26 @@ final class ExchangeTest extends TestCase
     }
 
     #[Test]
+    public function a_label_code_is_brought_to_its_shape_before_it_is_looked_up(): void
+    {
+        $this->useLocales('ru');
+        $sale = Label::query()->create(['title' => 'Sale', 'code' => 'sale-price'])->refresh();
+        $shoe = $this->sold('Shoe', 'S-1');
+
+        // Found as the panel would have saved it; a new one is made a code and named as written.
+        $run = $this->import("sku,labels\nS-1,Sale Price; Тормозные колодки\n", ['create_missing' => true]);
+        $this->assertSame([0, 1, 0], [$run->created, $run->updated, $run->failed]);
+        $made = Label::query()->where('code', 'tormoznye-kolodki')->sole();
+        $this->assertSame('Тормозные колодки', $made->getTranslation('title', 'ru'));
+        $this->assertSame([$sale->id, $made->id], $this->labelsOf($shoe));
+
+        // Nothing left of it to be a code: a row error that says so, not a label named `!!!`.
+        $run = $this->import("sku,labels\nS-1,!!!\n", ['create_missing' => true]);
+        $this->assertSame(1, $run->failed);
+        $this->assertStringContainsString('!!!', (string) DB::table('catalog_exchange_errors')->where('run_id', $run->id)->value('message'));
+    }
+
+    #[Test]
     public function a_stock_status_is_found_by_code_and_never_created(): void
     {
         $shoe = $this->sold('Shoe', 'S-1');

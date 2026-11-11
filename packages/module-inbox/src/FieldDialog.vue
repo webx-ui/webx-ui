@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, type Component } from 'vue'
 import {
-  slugify,
+  codify,
   useAdmin,
   useErrorText,
   useRemoveConfirm,
   useTranslate,
+  WxCodeField,
 } from '@webx-ui/module-admin'
 import {
+  localizedValue,
   toast,
   useModal,
   WxAction,
@@ -19,14 +21,17 @@ import {
   WxFormItem,
   WxInput,
   WxInputNumber,
+  WxSegmented,
   WxSelect,
   WxSpace,
   WxDatePicker,
   WxTagsInput,
   WxText,
+  WxTimePicker,
   useLocales,
   type LocalizedValue,
 } from '@webx-ui/core'
+import FieldCondition from './FieldCondition.vue'
 import LocalizedRichText from './LocalizedRichText.vue'
 import { createInboxApi } from './api'
 import { useInboxMessages } from './i18n'
@@ -48,8 +53,12 @@ const props = withDefaults(
     form: InboxForm
     /** The names the form's other fields answer to. */
     taken?: string[]
+    /** The form's fields in their order: a condition names one of those above this field. */
+    fields?: InboxField[]
+    /** A new row that starts a step (FORM_STEPS §3.1), not a question. */
+    step?: boolean
   }>(),
-  { taken: () => [] },
+  { taken: () => [], fields: () => [], step: false },
 )
 
 const { resolve, dismiss, open } = useModal<InboxField>()
@@ -88,7 +97,7 @@ watch(
   () => props.field,
   (field) => {
     name.value = field?.name ?? ''
-    type.value = field?.type ?? 'text'
+    type.value = field?.type ?? (props.step ? 'step' : 'text')
     title.value = { ...(field?.title ?? {}) }
     placeholder.value = { ...(field?.placeholder ?? {}) }
     help.value = { ...(field?.help ?? {}) }
@@ -119,9 +128,11 @@ function label(value: LocalizedValue): [string, string] {
 
 /** A machine name out of a label: Latin, `_` between words, a letter first, `_2` when taken. */
 function nameOf([words, locale]: [string, string]): string {
-  let base = slugify(words, '_', locale).slice(0, 60).replace(/_+$/, '')
+  let base = codify(words, { separator: '_', max: 60, locale })
 
   if (base === '') return ''
+  // A step is named as one, so the list of names — and an agent reading it — tells it from a field.
+  if (isStep.value) base = `step_${base}`.slice(0, 60)
   if (!/^[a-z]/.test(base)) base = `field_${base}`
 
   let candidate = base
@@ -153,11 +164,115 @@ const renamedFrom = computed(() => {
   return was !== '' && now !== '' && now !== was ? was : null
 })
 
-const types = computed(() =>
-  FIELD_TYPES.map((one) => ({ value: one, label: t(`fields.type-${one}`) })),
+// The questions, then the summary (FORM_STEPS §7): not a question, but chosen in the same list.
+const types = computed(() => [
+  ...FIELD_TYPES.map((one) => ({ value: one, label: t(`fields.type-${one}`) })),
+  { value: 'summary', label: t('fields.type-summary') },
+])
+
+/** The row that starts a step: a title, its words, its condition — nothing a question has. */
+const isStep = computed(() => type.value === 'step')
+
+/** The answers so far with «Edit» (FORM_STEPS §7): a title, a line, the fields it shows. */
+const isSummary = computed(() => type.value === 'summary')
+
+/** Neither a step nor a summary is answered: required, half width and a column mean nothing. */
+const isQuestion = computed(() => !isStep.value && !isSummary.value)
+
+/** What a summary may show: the questions above it, but a consent, a file and a hidden field. */
+const summarized = computed(() =>
+  above.value
+    .filter((one) => !['step', 'summary', 'consent', 'file', 'hidden'].includes(one.type))
+    .map((one) => ({
+      value: one.key,
+      label: localizedValue(one.title, locales.active.value, one.key),
+    })),
 )
 
+const summaryFields = computed({
+  get: () => (Array.isArray(options.value.fields) ? (options.value.fields as string[]) : []),
+  set: (value: string[]) => set('fields', value),
+})
+
+/** The site draws a summary only in a form of steps: on one page every answer is in sight. */
+const flat = computed(() => !props.fields.some((one) => one.type === 'step'))
+
+const dialogTitle = computed(() => {
+  if (isStep.value) return props.field ? t('fields.edit-step') : t('fields.new-step')
+
+  return props.field ? t('fields.edit-field') : t('fields.new-field')
+})
+
 const hasChoices = computed(() => ['select', 'radio', 'checkbox'].includes(type.value))
+
+/*
+ * «Date and time» (FORM_STEPS §6.2, §9.2): the step of the list, the day's hours, the days of the
+ * week, the words about the zone. The defaults are the server's — 30 minutes, 09:00–17:00, every
+ * day — and the preview is the grid the site will offer, counted the same way.
+ */
+const isDateTime = computed(() => type.value === 'datetime')
+const STEPS = [15, 20, 30, 60, 90, 120]
+const stepOptions = computed(() =>
+  STEPS.map((minutes) => ({ value: minutes, label: t('fields.time-step-minutes', { minutes }) })),
+)
+const timeStep = computed(() => Number(options.value['time-step'] ?? 30))
+const timeFrom = computed(() => String(options.value['time-from'] ?? '09:00'))
+const timeTo = computed(() => String(options.value['time-to'] ?? '17:00'))
+const weekdays = computed<number[]>(() =>
+  Array.isArray(options.value.weekdays) ? options.value.weekdays.map(Number) : [],
+)
+
+/** The days of the week from a Monday (2024-01-01), in the language of the panel. */
+const dayNames = computed(() =>
+  [1, 2, 3, 4, 5, 6, 7].map((day) => ({
+    value: day,
+    label: new Intl.DateTimeFormat(locales.active.value, {
+      weekday: 'short',
+      timeZone: 'UTC',
+    }).format(Date.UTC(2024, 0, day)),
+  })),
+)
+
+function toggleDay(day: number, on: boolean): void {
+  const next = new Set(weekdays.value)
+  if (on) next.add(day)
+  else next.delete(day)
+  set(
+    'weekdays',
+    [...next].sort((a, b) => a - b),
+  )
+}
+
+const minutesOf = (clock: string): number => {
+  const [hours, minutes] = clock.split(':').map(Number)
+
+  return (hours ?? 0) * 60 + (minutes ?? 0)
+}
+
+const clockOf = (minutes: number): string =>
+  `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`
+
+/** «09:00, 09:30 … 16:30»: the first two and the last time of a day, or all of a short one. */
+const timesPreview = computed(() => {
+  const times: string[] = []
+  const to = minutesOf(timeTo.value)
+
+  for (
+    let at = minutesOf(timeFrom.value);
+    at + timeStep.value <= to && times.length < 200;
+    at += timeStep.value
+  )
+    times.push(clockOf(at))
+
+  if (times.length === 0) return '—'
+
+  return times.length > 3
+    ? `${times[0]}, ${times[1]} … ${times[times.length - 1]}`
+    : times.join(', ')
+})
+
+/** The zone the site names when the field has no words of its own. */
+const zoneWords = computed(() => props.form.timezone ?? 'UTC')
 
 const choices = computed<FieldChoice[]>(() =>
   Array.isArray(options.value.choices) ? options.value.choices : [],
@@ -172,6 +287,36 @@ const extensions = computed({
       value.map((one) => one.replace(/^\./, '')),
     ),
 })
+
+/** Radios and ticks can be cards; a select and the rest are drawn the one way they have. */
+const canCards = computed(() => type.value === 'radio' || type.value === 'checkbox')
+const cards = computed(() => canCards.value && options.value.view === 'cards')
+
+const views = computed(() => [
+  { value: 'list', label: t('fields.view-list') },
+  { value: 'cards', label: t('fields.view-cards') },
+])
+
+function setView(view: string): void {
+  const next = { ...options.value }
+
+  if (view === 'cards') {
+    next.view = 'cards'
+  } else {
+    // A list is the default and has no columns; what a choice carries stays for the way back.
+    delete next.view
+    delete next.columns
+  }
+
+  options.value = next
+}
+
+/*
+ * The picture is picked with whatever the panel registered as `wx-media` — the media module's
+ * field. This package does not depend on the library: a panel without it shows no picture
+ * column, and a picture saved earlier stays as it is.
+ */
+const picker = computed<Component | undefined>(() => context.types?.['wx-media']?.component)
 
 function set(key: string, value: unknown): void {
   options.value = { ...options.value, [key]: value }
@@ -195,6 +340,20 @@ function setChoice(index: number, patch: Partial<FieldChoice>): void {
   )
 }
 
+/** Every field before this one; a new field goes to the end, so it is all of them. */
+const above = computed(() => {
+  const at = props.field === null ? -1 : props.fields.findIndex((one) => one.id === props.field?.id)
+
+  return at < 0
+    ? props.fields.filter((one) => one.id !== props.field?.id)
+    : props.fields.slice(0, at)
+})
+
+const conditionErrors = computed(() => [
+  ...(errors.value['options.when'] ?? []),
+  ...(errors.value['options.unless'] ?? []),
+])
+
 function errorOf(field: string): string | undefined {
   return errors.value[field]?.[0]
 }
@@ -211,9 +370,9 @@ async function save(): Promise<void> {
     help: help.value,
     options: options.value,
     is_enabled: isEnabled.value,
-    is_required: isRequired.value,
-    is_fullsize: isFullsize.value,
-    in_table: inTable.value,
+    is_required: isQuestion.value && isRequired.value,
+    is_fullsize: !isQuestion.value || isFullsize.value,
+    in_table: isQuestion.value && inTable.value,
   }
 
   try {
@@ -238,22 +397,146 @@ async function save(): Promise<void> {
 </script>
 
 <template>
-  <wx-dialog
-    v-model:open="open"
-    :title="field ? t('fields.edit-field') : t('fields.new-field')"
-    :width="720"
-  >
+  <wx-dialog v-model:open="open" :title="dialogTitle" :width="720">
     <div class="wx-inbox-field-form">
-      <wx-form-item :label="t('fields.type')">
-        <wx-select v-model="type" :options="types" />
+      <wx-text v-if="isStep" size="sm" tone="muted">{{ t('fields.step-help') }}</wx-text>
+
+      <wx-form-item v-if="!isStep" :label="t('fields.type')">
+        <wx-select
+          v-model="type"
+          :options="types"
+          :status="errorOf('type') ? 'error' : undefined"
+        />
+        <!-- Others count on this field's answers: it cannot stop being a choice under them. -->
+        <wx-text v-if="errorOf('type')" size="sm" tone="danger">{{ errorOf('type') }}</wx-text>
       </wx-form-item>
 
-      <wx-form-item :label="t('fields.title')" :error="errorOf('title')" required>
+      <wx-form-item
+        :label="isStep ? t('fields.step-title') : t('fields.title')"
+        :error="errorOf('title')"
+        required
+      >
         <wx-input v-model="title" localized />
       </wx-form-item>
 
+      <!-- A step keeps the same columns: the placeholder is its short label in the indicator, the
+           hint the line under its title (FORM_STEPS §3.1). -->
+      <template v-if="isStep">
+        <wx-form-item :label="t('fields.step-label')" :help="t('fields.step-label-help')">
+          <wx-input v-model="placeholder" localized />
+        </wx-form-item>
+
+        <wx-form-item :label="t('fields.step-hint')">
+          <wx-input v-model="help" localized />
+        </wx-form-item>
+
+        <wx-form-item :label="t('fields.step-next')" :help="t('fields.step-next-help')">
+          <wx-input
+            :model-value="(options['next-text'] as LocalizedValue) ?? {}"
+            localized
+            @update:model-value="(value) => set('next-text', value)"
+          />
+        </wx-form-item>
+      </template>
+
+      <!-- A summary: the line under its title, the fields it shows (FORM_STEPS §7). -->
+      <template v-else-if="isSummary">
+        <wx-text size="sm" tone="muted">{{ t('fields.summary-help') }}</wx-text>
+
+        <wx-form-item :label="t('fields.help')">
+          <wx-input v-model="help" localized />
+        </wx-form-item>
+
+        <wx-form-item :label="t('fields.summary-fields')" :help="t('fields.summary-fields-help')">
+          <wx-select
+            v-model="summaryFields"
+            :options="summarized"
+            :placeholder="t('fields.summary-all')"
+            multiple
+          />
+        </wx-form-item>
+
+        <wx-alert v-if="flat" type="info" variant="soft" :description="t('fields.summary-flat')" />
+      </template>
+
+      <!-- A day and a time: the hint, no placeholder — the calendar has nothing to hold one. -->
+      <template v-else-if="isDateTime">
+        <wx-text size="sm" tone="muted">{{ t('fields.datetime-help') }}</wx-text>
+
+        <wx-form-item :label="t('fields.help')">
+          <wx-input v-model="help" localized />
+        </wx-form-item>
+
+        <div class="wx-inbox-field-form__row">
+          <wx-form-item :label="t('fields.time-step')" :error="errorOf('options.time-step')">
+            <wx-select
+              :model-value="timeStep"
+              :options="stepOptions"
+              @update:model-value="(value) => set('time-step', Number(value))"
+            />
+          </wx-form-item>
+          <wx-form-item :label="t('fields.time-from')" :error="errorOf('options.time-from')">
+            <wx-time-picker
+              :model-value="timeFrom"
+              :minutes-increment="5"
+              :aria-label="t('fields.time-from')"
+              @update:model-value="(value) => set('time-from', value ?? '09:00')"
+            />
+          </wx-form-item>
+          <wx-form-item :label="t('fields.time-to')" :error="errorOf('options.time-to')">
+            <wx-time-picker
+              :model-value="timeTo"
+              :minutes-increment="5"
+              :aria-label="t('fields.time-to')"
+              @update:model-value="(value) => set('time-to', value ?? '17:00')"
+            />
+          </wx-form-item>
+        </div>
+        <wx-text size="sm" tone="muted">{{ t('fields.time-help') }}</wx-text>
+
+        <wx-form-item
+          :label="t('fields.weekdays')"
+          :help="t('fields.weekdays-help')"
+          :error="errorOf('options.weekdays')"
+        >
+          <div class="wx-inbox-field-form__days">
+            <wx-checkbox
+              v-for="day in dayNames"
+              :key="day.value"
+              :model-value="weekdays.includes(day.value)"
+              :label="day.label"
+              @update:model-value="(on) => toggleDay(day.value, Boolean(on))"
+            />
+            <wx-button variant="outline" size="sm" @click="set('weekdays', [1, 2, 3, 4, 5])">
+              {{ t('fields.weekdays-workdays') }}
+            </wx-button>
+          </div>
+        </wx-form-item>
+
+        <wx-form-item
+          :label="t('fields.timezone-label')"
+          :help="t('fields.timezone-label-help', { label: zoneWords })"
+        >
+          <wx-input
+            :model-value="(options['timezone-label'] as LocalizedValue) ?? {}"
+            localized
+            @update:model-value="(value) => set('timezone-label', value)"
+          />
+        </wx-form-item>
+
+        <wx-alert
+          type="info"
+          variant="soft"
+          :description="
+            t('fields.timezone-site', { zone: form.timezone ?? 'UTC' }) +
+            ' ' +
+            t('fields.times-preview', { times: timesPreview })
+          "
+        />
+      </template>
+
       <!-- A hidden field has neither: nobody reads a placeholder they cannot see. -->
-      <template v-if="type !== 'hidden'">
+      <template v-else-if="type !== 'hidden'">
         <wx-form-item v-if="type !== 'consent'" :label="t('fields.placeholder')">
           <wx-input v-model="placeholder" localized />
         </wx-form-item>
@@ -277,6 +560,27 @@ async function save(): Promise<void> {
         />
       </wx-form-item>
 
+      <!-- Cards (FORM_STEPS §5): the same radios or ticks, each with a description and a picture. -->
+      <div v-if="canCards" class="wx-inbox-field-form__row">
+        <wx-form-item :label="t('fields.view')" :help="cards ? t('fields.view-help') : undefined">
+          <wx-segmented
+            :model-value="cards ? 'cards' : 'list'"
+            :options="views"
+            size="sm"
+            :aria-label="t('fields.view')"
+            @update:model-value="(value) => setView(String(value))"
+          />
+        </wx-form-item>
+        <wx-form-item v-if="cards" :label="t('fields.columns')">
+          <wx-input-number
+            :model-value="(options.columns as number) ?? 1"
+            :min="1"
+            :max="4"
+            @update:model-value="(value) => set('columns', value)"
+          />
+        </wx-form-item>
+      </div>
+
       <div v-if="hasChoices" class="wx-inbox-choices">
         <wx-text size="sm" weight="medium">{{ t('fields.choices') }}</wx-text>
 
@@ -284,25 +588,56 @@ async function save(): Promise<void> {
           {{ t('fields.no-choices') }}
         </wx-text>
 
-        <div v-for="(choice, index) in choices" :key="index" class="wx-inbox-choices__row">
-          <wx-input
-            :model-value="choice.value"
-            :placeholder="t('fields.choice-value')"
-            @update:model-value="(value) => setChoice(index, { value: String(value) })"
-          />
-          <wx-input
-            :model-value="choice.label"
-            localized
-            :placeholder="t('fields.choice-label')"
-            @update:model-value="(label) => setChoice(index, { label: label as LocalizedValue })"
-          />
-          <wx-action
-            icon="trash"
-            tone="danger"
-            :title="t('fields.delete')"
-            v-bind="askRemove"
-            @click="removeChoice(index)"
-          />
+        <div
+          v-for="(choice, index) in choices"
+          :key="index"
+          :class="['wx-inbox-choices__item', { 'is-card': cards }]"
+        >
+          <div class="wx-inbox-choices__row">
+            <wx-input
+              :model-value="choice.value"
+              :placeholder="t('fields.choice-value')"
+              @update:model-value="(value) => setChoice(index, { value: String(value) })"
+            />
+            <wx-input
+              :model-value="choice.label"
+              localized
+              :placeholder="t('fields.choice-label')"
+              @update:model-value="(label) => setChoice(index, { label: label as LocalizedValue })"
+            />
+            <wx-action
+              icon="trash"
+              tone="danger"
+              :title="t('fields.delete')"
+              v-bind="askRemove"
+              @click="removeChoice(index)"
+            />
+          </div>
+
+          <div v-if="cards" class="wx-inbox-choices__card">
+            <component
+              :is="picker"
+              v-if="picker"
+              class="wx-inbox-choices__image"
+              :model-value="choice.image ?? null"
+              :label="t('fields.choice-image')"
+              accept="image"
+              aspect="4/3"
+              :width="160"
+              :captions="false"
+              @update:model-value="(image: FieldChoice['image']) => setChoice(index, { image })"
+            />
+            <wx-input
+              class="wx-inbox-choices__description"
+              :model-value="choice.description ?? {}"
+              localized
+              :placeholder="t('fields.choice-description')"
+              :aria-label="t('fields.choice-description')"
+              @update:model-value="
+                (description) => setChoice(index, { description: description as LocalizedValue })
+              "
+            />
+          </div>
         </div>
 
         <wx-button variant="outline" size="sm" @click="addChoice">
@@ -404,16 +739,32 @@ async function save(): Promise<void> {
         />
       </template>
 
+      <!-- A hidden field is filled in by the page and never seen, so it has nothing to show by. -->
+      <field-condition
+        v-if="type !== 'hidden' && !isSummary"
+        :options="options"
+        :above="above"
+        :fields="fields"
+        :errors="conditionErrors"
+        @update:options="(value) => (options = value)"
+      />
+
       <div class="wx-inbox-field-form__checks">
         <wx-checkbox v-model="isEnabled" :label="t('fields.is-enabled')" />
-        <wx-checkbox v-model="isRequired" :label="t('fields.is-required')" />
-        <wx-checkbox
-          v-if="type !== 'hidden'"
-          v-model="isFullsize"
-          :label="t('fields.is-fullsize')"
-        />
-        <wx-checkbox v-model="inTable" :label="t('fields.in-table')" />
+        <!-- A step and a summary are never answered: required, half width and a column mean nothing. -->
+        <template v-if="isQuestion">
+          <wx-checkbox v-model="isRequired" :label="t('fields.is-required')" />
+          <wx-checkbox
+            v-if="type !== 'hidden'"
+            v-model="isFullsize"
+            :label="t('fields.is-fullsize')"
+          />
+          <wx-checkbox v-model="inTable" :label="t('fields.in-table')" />
+        </template>
       </div>
+      <wx-text v-if="isStep && !isEnabled" size="sm" tone="muted">
+        {{ t('fields.step-off-help') }}
+      </wx-text>
 
       <!-- Last and apart: the name is for templates and integrations, and the label above is
            where it comes from. -->
@@ -422,11 +773,20 @@ async function save(): Promise<void> {
 
         <wx-form-item
           :label="t('fields.name')"
-          :help="t('fields.name-help', { name: name.trim() || 'name' })"
+          :help="
+            isStep
+              ? t('fields.step-name-help')
+              : t('fields.name-help', { name: name.trim() || 'name' })
+          "
           :error="errorOf('name')"
         >
-          <wx-input
+          <!-- A name typed by hand is made one as it is typed (#125), in the server's shape: a
+               typed `_` or `-` stays, any other gap is `-`, a letter first. -->
+          <wx-code-field
             :model-value="name"
+            separator="_-"
+            lead="field"
+            :maxlength="64"
             placeholder="phone"
             @update:model-value="(value) => writeName(String(value ?? ''))"
           />
@@ -481,6 +841,13 @@ async function save(): Promise<void> {
   border-block-start: 1px solid var(--wx-border-muted);
 }
 
+.wx-inbox-field-form__days {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wx-space-12);
+}
+
 .wx-inbox-field-form__checks {
   display: flex;
   flex-wrap: wrap;
@@ -494,11 +861,43 @@ async function save(): Promise<void> {
   align-items: flex-start;
 }
 
+.wx-inbox-choices__item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-8);
+  width: 100%;
+}
+
+/* A card's choice is a block of its own: the picture and the words belong to the row above. */
+.wx-inbox-choices__item.is-card {
+  box-sizing: border-box;
+  padding: var(--wx-space-8);
+  border: 1px solid var(--wx-border-muted);
+  border-radius: var(--wx-radius-md);
+}
+
 .wx-inbox-choices__row {
   display: flex;
   align-items: center;
   gap: var(--wx-space-8);
   width: 100%;
+}
+
+.wx-inbox-choices__card {
+  container-type: inline-size;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--wx-space-8);
+}
+
+.wx-inbox-choices__image {
+  flex: 0 0 160px;
+}
+
+.wx-inbox-choices__description {
+  flex: 1 1 200px;
+  min-width: 0;
 }
 
 .wx-inbox-choices__row > :first-child {

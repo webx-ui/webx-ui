@@ -43,10 +43,24 @@ const classes = computed(() => [
   { 'wx-descriptions--bordered': props.bordered },
 ])
 
-const style = computed(() => ({
-  '--wx-descriptions-columns': String(Math.max(1, props.columns)),
-  '--wx-descriptions-label': props.labelWidth ?? 'max-content',
-}))
+/*
+ * A label sizes to its content, but never past half the column it sits in. A label is often the
+ * administrator's own sentence — the name of a form field, a property — and sized to content alone
+ * it took the whole of a narrow card and left its value a track of 0px. `fit-content()` rather than
+ * `minmax(auto, 50%)`: short labels keep their content width and the values stay where they were,
+ * where minmax would stretch every label track to half the column. The cap is a share of the column,
+ * not of the list — two columns of labels at half the list each would leave the values nothing.
+ * Folded to one column, the share is of the one column there is.
+ */
+const style = computed(() => {
+  const columns = Math.max(1, props.columns)
+
+  return {
+    '--wx-descriptions-columns': String(columns),
+    '--wx-descriptions-label': props.labelWidth ?? `fit-content(calc(50% / ${columns}))`,
+    '--wx-descriptions-label-folded': props.labelWidth ?? 'fit-content(50%)',
+  }
+})
 </script>
 
 <template>
@@ -108,12 +122,13 @@ const style = computed(() => ({
 /*
  * Horizontal: every column is a label and a value, so the grid has twice as many
  * tracks as it has columns. The labels size to their content and share one width,
- * which is what keeps the values aligned down the page.
+ * which is what keeps the values aligned down the page — up to half their column, past
+ * which a label wraps (see `style` above).
  */
 .wx-descriptions--horizontal .wx-descriptions__list {
   grid-template-columns: repeat(
     var(--wx-descriptions-columns, 2),
-    var(--wx-descriptions-label, max-content) 1fr
+    var(--wx-descriptions-label) 1fr
   );
   gap: var(--wx-descriptions-row-gap) var(--wx-descriptions-column-gap);
 }
@@ -167,7 +182,7 @@ const style = computed(() => ({
  */
 @container (max-width: 420px) {
   .wx-descriptions--horizontal .wx-descriptions__list {
-    grid-template-columns: var(--wx-descriptions-label, max-content) 1fr;
+    grid-template-columns: var(--wx-descriptions-label-folded) 1fr;
   }
 
   .wx-descriptions--vertical .wx-descriptions__list {

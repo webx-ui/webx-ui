@@ -103,7 +103,7 @@ final class RenameTest extends TestCase
         $this->agent('update', ['slug' => 'quote', 'rename_to' => 'citation'])->assertOk()->assertSee('citation');
         $this->assertSame('citation', $page->refresh()->blocks[0]['type']);
 
-        $this->agent('update', ['slug' => 'citation', 'rename_to' => 'Not A Slug'])->assertHasErrors(['slug']);
+        $this->agent('update', ['slug' => 'citation', 'rename_to' => '!!!'])->assertHasErrors(['nothing is left']);
     }
 
     /**

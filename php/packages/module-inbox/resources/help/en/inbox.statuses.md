@@ -14,7 +14,7 @@ your team: visitors never see them.
 ## How to add a status
 
 1. Press «New status».
-2. Fill in «Title» and «Key»: small Latin letters, digits and hyphens, such as `waiting-for-reply`.
+2. Fill in «Title» and «Key», such as `waiting-for-reply`: whatever you type in «Key» becomes small Latin letters, digits and hyphens.
 3. Choose «Colour». It changes only the look of the badge beside a submission.
 4. Press «Save». The status gets its own tab in the list of submissions.
 

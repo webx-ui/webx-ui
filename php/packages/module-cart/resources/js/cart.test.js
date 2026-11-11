@@ -4,8 +4,9 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
  * The widget's script (§9.4) over the markup the server prints: the buy button sent in place, the
  * counters and `is-in-cart` from the answer, the server's HTML in the panels, the stepper's pause,
  * a stale answer not drawn, a stale CSRF token fetched afresh once, `webx.cart` and its event; the
- * main view opened by a buy button, by «Edit cart» and by the icon on a narrow header, and a buy at
- * the maximum answered with the cart rather than an error under the button.
+ * main view opened by a buy button, by «Edit cart», by a page's own link and by the icon on a
+ * narrow header, and a buy at the maximum answered with the cart rather than an error under the
+ * button.
  */
 
 const state = (units, lines = [], html) => ({
@@ -161,6 +162,21 @@ describe('cart widget', () => {
       document.getElementById('webx-cart'),
       document.querySelector('.webx-cart__trigger'),
     )
+  })
+
+  it("opens the main view from a page's own link, and gives the focus back to it", () => {
+    page()
+    document.body.insertAdjacentHTML(
+      'beforeend',
+      '<a class="webx-orders-checkout__edit" href="#webx-cart" data-webx-cart-edit>Edit</a>',
+    )
+    const link = document.querySelector('.webx-orders-checkout__edit')
+
+    const click = new MouseEvent('click', { bubbles: true, cancelable: true })
+    link.dispatchEvent(click)
+
+    expect(click.defaultPrevented).toBe(true)
+    expect(window.webx.openDialog).toHaveBeenCalledWith(document.getElementById('webx-cart'), link)
   })
 
   it('opens the main view from the icon on a narrow header, the mini cart on a wide one', () => {

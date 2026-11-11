@@ -9,6 +9,7 @@ use WebxUi\Admin\Links\Link;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\Links\LinkTarget;
 use WebxUi\Admin\Links\LinkUrls;
+use WebxUi\Admin\Screens\ChecksNewValues;
 use WebxUi\Admin\Screens\FieldType;
 
 /**
@@ -23,8 +24,12 @@ use WebxUi\Admin\Screens\FieldType;
  * this is — the entity behind it has an address in every language, and a hand-written path gets
  * the prefix of the one being read — so a language map here would be four copies of one decision,
  * three of them forgotten.
+ *
+ * A file of the library is a target only where the node asks for one with `props.files`: the
+ * menu, a redirect after a form and the other places that call these rules with no node at all
+ * keep the three targets they were written for.
  */
-final class LinkType implements FieldType
+final class LinkType implements ChecksNewValues, FieldType
 {
     /** As long as the menu's column, which is what the same value is kept in there. */
     public const MAX_URL = 1024;
@@ -49,8 +54,10 @@ final class LinkType implements FieldType
             }];
         }
 
-        return ['nullable', Link::SHAPE, function (string $attribute, mixed $value, Closure $fail): void {
-            $problem = $this->problem($value);
+        $files = ($node['props']['files'] ?? false) === true;
+
+        return ['nullable', Link::SHAPE, function (string $attribute, mixed $value, Closure $fail) use ($files): void {
+            $problem = $this->problem($value, $files);
 
             if ($problem !== null) {
                 $fail($problem);
@@ -103,6 +110,7 @@ final class LinkType implements FieldType
         }
 
         $candidate = $this->urls->candidate($link, $locale);
+        $file = $this->urls->file($link);
 
         return [
             'target' => $link->target->value,
@@ -110,17 +118,50 @@ final class LinkType implements FieldType
             'entity_id' => $link->entityId,
             'url' => $this->urls->href($link, $locale),
             'hash' => $link->hash,
-            'label' => $candidate?->title,
-            // An entity nothing answers for is gone; a hand-written address is always there to
-            // try, whatever is at the other end of it.
-            'available' => $link->target !== LinkTarget::Entity || ($candidate !== null && $candidate->available),
+            'path' => $link->path,
+            'label' => $candidate !== null ? $candidate->title : ($file['name'] ?? null),
+            // An entity nothing answers for is gone, and so is a file the library no longer has;
+            // a hand-written address is always there to try, whatever is at the other end of it.
+            'available' => match ($link->target) {
+                LinkTarget::Entity => $candidate !== null && $candidate->available,
+                LinkTarget::File => $file !== null,
+                default => true,
+            },
             'new_tab' => $link->newTab,
             'rel' => $link->relAttribute(),
+            // The name the file was uploaded under, for `download=""`: the key it is kept under is
+            // a hash, and that is what the browser would otherwise save it as.
+            'download' => $link->download && $file !== null ? $file['name'] : null,
         ];
     }
 
+    /**
+     * A file key nobody has, said only of a value being written for the first time.
+     *
+     * Not part of {@see rules()}: a brochure deleted from the library must not stop the page it
+     * sits on from being saved again. A key that is new and unknown is one typed rather than
+     * picked — what an agent sends when it guesses — and that is worth a word.
+     *
+     * @param  array<string, mixed>  $node
+     * @return list<string>
+     */
+    public function newValueProblems(mixed $value, array $node): array
+    {
+        if (! is_array($value)) {
+            return [];
+        }
+
+        $link = Link::fromArray($value);
+
+        if ($link->target !== LinkTarget::File || $link->path === null || $this->urls->file($link) !== null) {
+            return [];
+        }
+
+        return [(string) __('webx-admin::links.no-file', ['path' => $link->path])];
+    }
+
     /** What is wrong with the value, in words — null when nothing is. */
-    private function problem(mixed $value): ?string
+    private function problem(mixed $value, bool $files): ?string
     {
         if ($value === null || $value === []) {
             return null;
@@ -145,8 +186,29 @@ final class LinkType implements FieldType
         return match ($target) {
             LinkTarget::Entity => $this->entityProblem($value),
             LinkTarget::Url => $this->urlProblem($value),
+            LinkTarget::File => $files ? $this->fileProblem($value) : (string) __('webx-admin::links.files-off'),
             LinkTarget::None => null,
         };
+    }
+
+    /**
+     * @param  array<string, mixed>  $value
+     */
+    private function fileProblem(array $value): ?string
+    {
+        $path = $value['path'] ?? null;
+        $download = $value['download'] ?? false;
+
+        if (! is_bool($download) && ! in_array($download, [0, 1, '0', '1'], true)) {
+            return (string) __('webx-admin::links.download');
+        }
+
+        // An unfinished choice is not an error, as with an entity: the field stores nothing.
+        if ($path === null || (is_string($path) && trim($path) === '')) {
+            return null;
+        }
+
+        return is_string($path) && mb_strlen($path) <= self::MAX_URL ? null : (string) __('webx-admin::links.path');
     }
 
     /**

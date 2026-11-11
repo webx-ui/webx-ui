@@ -35,6 +35,7 @@ so the note is what your colleagues will see.
 1. Open the «Details» tab.
 2. Look at «How it arrived»: «From the site», or «Typed in» for one added by hand.
 3. Read «Page», «Came from», «Placement» and «Language». A line with nothing to say is left out.
+4. A visitor who came by an advertising link has its `utm_*` lines, «Landing page» — the page they came in on — and, if they agreed to statistics, «First visit · utm_*»: the campaign of their first visit, up to 90 days before.
 
 ## How to send a notification again
 

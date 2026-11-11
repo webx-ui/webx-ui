@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { emptyLink, useTranslate, WxLinkPicker, type LinkValue } from '@webx-ui/module-admin'
+import {
+  emptyLink,
+  useTranslate,
+  WxCodeField,
+  WxLinkPicker,
+  type LinkValue,
+} from '@webx-ui/module-admin'
 import { WxCard, WxFormItem, WxInput, WxSwitch, type LocalizedValue } from '@webx-ui/core'
 import LocalizedRichText from './LocalizedRichText.vue'
 import { option } from './options'
@@ -67,7 +73,7 @@ const redirect = computed<LinkValue | null>({
         :error="errors.slug?.[0]"
         required
       >
-        <wx-input v-model="settings.slug" placeholder="contact" />
+        <wx-code-field v-model="settings.slug" :maxlength="96" placeholder="contact" />
       </wx-form-item>
 
       <wx-form-item :help="t('panel.is-enabled-help')">

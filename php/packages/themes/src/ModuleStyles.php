@@ -6,9 +6,11 @@ namespace WebxUi\Themes;
 
 use Composer\InstalledVersions;
 use Illuminate\Contracts\Routing\UrlGenerator;
+use WebxUi\Admin\Panel\Vendors;
 
 /**
- * The base look of the installed modules (spec §10.2): each `webx-ui/module-*` with public pages
+ * The base look of the installed modules (spec §10.2): each `webx-ui/module-*` or the site's own
+ * `site/module-*` (whichever {@see Vendors} calls a module) with public pages
  * carries `resources/theme/*.css` on site tokens and its own classes, and this puts all of it on
  * the page, below every theme layer (§7.1) — a module looks decent under any theme, and any theme
  * restyles it by writing the same class later in the cascade.
@@ -112,7 +114,10 @@ class ModuleStyles
     }
 
     /**
-     * The directories of the installed `webx-ui/module-*` packages.
+     * The directories of the installed modules, packaged or the site's own.
+     *
+     * Without the panel's frame there is nothing to ask and no module to have: every module
+     * needs it.
      *
      * @return list<string>
      */
@@ -120,8 +125,12 @@ class ModuleStyles
     {
         $paths = [];
 
+        if (! class_exists(Vendors::class)) {
+            return $paths;
+        }
+
         foreach (InstalledVersions::getInstalledPackages() as $package) {
-            if (str_starts_with($package, 'webx-ui/module-')) {
+            if (Vendors::module($package)) {
                 $path = InstalledVersions::getInstallPath($package);
 
                 if ($path !== null) {

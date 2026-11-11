@@ -301,27 +301,17 @@ describe('checkout.js', () => {
   })
 })
 
-describe('order contents', () => {
-  const line = (id, qty, { max = 9 } = {}) => `
+describe('order contents and the dialog of the cart', () => {
+  const line = (id, qty) => `
     <li class="webx-orders-checkout__line" data-line="${id}">
-      <span>Item ${id}</span>
-      <form class="webx-orders-checkout__qty" method="post" action="/api/cart/items/${id}" data-max="${max}">
-        <input type="hidden" name="_token" value="t"><input type="hidden" name="_method" value="PATCH">
-        <button name="qty" value="${qty - 1}" data-control="decrease" ${qty <= 1 ? 'disabled' : ''}>-</button>
-        <span data-qty>${qty}</span>
-        <button name="qty" value="${qty + 1}" data-control="increase" ${qty >= max ? 'disabled' : ''}>+</button>
-      </form>
-      <form method="post" action="/api/cart/items/${id}">
-        <input type="hidden" name="_method" value="DELETE">
-        <button data-control="remove">Remove</button>
-      </form>
+      <span class="webx-orders-checkout__line-name">Item ${id} <span data-qty>${qty}</span></span>
     </li>`
 
   const column = (payable, lines) => `
     <div class="webx-orders-checkout__summary" id="checkout-summary">
       <h2 class="webx-orders-checkout__summary-title" tabindex="-1">Your order</h2>
       <dl><div class="webx-orders-checkout__payable"><dt>To pay</dt><dd>${payable}</dd></div></dl>
-      <details class="webx-orders-checkout__lines" open><summary>Order contents</summary><ul>${lines}</ul></details>
+      <details class="webx-orders-checkout__lines" open><summary>Order contents <a class="webx-orders-checkout__edit" href="#webx-cart" data-webx-cart-edit>Edit</a></summary><ul>${lines}</ul></details>
       <form id="checkout-place"><div class="webx-form__error"></div><button class="webx-form__submit">Place</button></form>
     </div>`
 
@@ -360,90 +350,119 @@ describe('order contents', () => {
   }
 
   const root = () => doc.querySelector('.webx-orders-checkout')
-  const press = (selector) => doc.querySelector(selector).click()
+  // The cart's dialog wrote: its script says so on the document.
+  const change = () => doc.dispatchEvent(new CustomEvent('webx:cart:change'))
 
   afterEach(() => {
     vi.useRealTimers()
     vi.restoreAllMocks()
   })
 
-  it('sends several presses as one write and redraws the slots and the column', async () => {
+  it('redraws the slots and the column after a write of the dialog, and keeps what was typed', async () => {
     await open(
       pageOf(stepOf('contacts', 'A') + stepOf('delivery', 'Old', true), '€10.00', line(1, 1)),
     )
-    const send = vi.spyOn(mod.server, 'send').mockResolvedValue({ status: 200, body: {} })
     vi.spyOn(mod.server, 'fetch').mockResolvedValue(
       pageOf(stepOf('contacts', 'A') + stepOf('delivery', 'New', true), '€30.00', line(1, 3)),
     )
     root().querySelector('[name="contacts"]').value = 'typed'
 
-    press('[data-control="increase"]')
-    press('[data-control="increase"]')
-    expect(doc.querySelector('[data-qty]').textContent).toBe('3')
+    change()
     await settle()
 
-    expect(send).toHaveBeenCalledTimes(1)
-    expect(send.mock.calls[0][0]).toBe('/api/cart/items/1')
-    expect(send.mock.calls[0][1].get('qty')).toBe('3')
-    expect(send.mock.calls[0][1].get('_method')).toBe('PATCH')
     expect(doc.querySelector('[data-step="delivery"]').textContent).toContain('New')
     expect(doc.querySelector('#checkout-summary dd').textContent).toBe('€30.00')
     expect(doc.querySelector('[data-payable]').textContent).toBe('€30.00')
+    expect(doc.querySelector('[data-qty]').textContent).toBe('3')
     // The contacts are not a slot: what the buyer typed stays.
     expect(root().querySelector('[name="contacts"]').value).toBe('typed')
   })
 
-  it('keeps the focus on the control and the contents as the buyer left them', async () => {
-    await open(pageOf(stepOf('contacts', 'A'), '€10.00', line(1, 2) + line(2, 1)))
-    vi.spyOn(mod.server, 'send').mockResolvedValue({ status: 200, body: {} })
-    vi.spyOn(mod.server, 'fetch').mockResolvedValue(
-      pageOf(stepOf('contacts', 'A'), '€20.00', line(1, 3) + line(2, 1)),
+  it('takes the count and the lines of the column as the server counts them', async () => {
+    // As the server prints it (CheckoutCartEditTest): a line that cannot be bought has no sum
+    // and is not in «N items for».
+    const units = (text, amount) =>
+      `<div class="webx-orders-checkout__row" data-units><dt>${text}</dt><dd>${amount}</dd></div>`
+    const unavailable = `
+      <li class="webx-orders-checkout__line is-unavailable" data-line="2">
+        <span class="webx-orders-checkout__line-name">Item 2 <span>× 2</span></span>
+        <span class="webx-orders-checkout__gone">Cannot be bought now</span>
+      </li>`
+    const withUnits = (html, row) => html.replace('<dl>', `<dl>${row}`)
+    await open(
+      withUnits(
+        pageOf(stepOf('contacts', 'A'), '€10.00', line(1, 1) + unavailable),
+        units('1 item for', '€10.00'),
+      ),
     )
-    const button = doc.querySelector('[data-line="1"] [data-control="increase"]')
-    button.focus()
-    button.click()
+    vi.spyOn(mod.server, 'fetch').mockResolvedValue(
+      withUnits(
+        pageOf(stepOf('contacts', 'A'), '€20.00', line(1, 2)),
+        units('2 items for', '€20.00'),
+      ),
+    )
+
+    change()
     await settle()
 
-    const active = doc.activeElement
-    expect(active.getAttribute('data-control')).toBe('increase')
-    expect(active.closest('[data-line]').getAttribute('data-line')).toBe('1')
-    expect(active).not.toBe(button)
+    expect(doc.querySelector('[data-units] dt').textContent).toBe('2 items for')
+    expect(doc.querySelector('[data-units] dd').textContent).toBe('€20.00')
+    expect(doc.querySelector('.webx-orders-checkout__line.is-unavailable')).toBeNull()
   })
 
-  it('gives the focus to the next line when a line goes, and to the neighbour at the minimum', async () => {
-    await open(pageOf(stepOf('contacts', 'A'), '€10.00', line(1, 2) + line(2, 1)))
-    const send = vi.spyOn(mod.server, 'send').mockResolvedValue({ status: 200, body: {} })
-    vi.spyOn(mod.server, 'fetch').mockResolvedValue(
-      pageOf(stepOf('contacts', 'A'), '€5.00', line(2, 1)),
-    )
+  it('turns the buttons on once the cart has something to buy again, and off when it has not', async () => {
+    // As the server prints it (CheckoutCartEditTest): nothing to buy — both buttons off, the line
+    // above the column's own says why.
+    const off =
+      '<p class="webx-orders-checkout__blocked" id="checkout-place-blocked">Change the cart first.</p>' +
+      '<button class="webx-form__submit" disabled aria-disabled="true" aria-describedby="checkout-place-blocked">Place</button>'
+    const nothing = (html) =>
+      html
+        .replace('<button class="webx-form__submit">Place</button>', off)
+        .replace(
+          '<strong data-payable>',
+          '<button class="webx-orders-checkout__sticky-place" form="checkout-place" disabled aria-disabled="true" aria-describedby="checkout-place-blocked">Place</button><strong data-payable>',
+        )
+    const sticky = () => doc.querySelector('.webx-orders-checkout__sticky-place')
+    const own = () => doc.querySelector('#checkout-place .webx-form__submit')
+    const withSticky = (html) =>
+      html.replace(
+        '<strong data-payable>',
+        '<button class="webx-orders-checkout__sticky-place" form="checkout-place">Place</button><strong data-payable>',
+      )
+    const fetch = vi.fn()
+    await open(nothing(pageOf(stepOf('contacts', 'A'), '€0.00', line(1, 1))))
+    vi.spyOn(mod.server, 'fetch').mockImplementation(fetch)
+    expect(sticky().disabled).toBe(true)
 
-    const less = doc.querySelector('[data-line="1"] [data-control="decrease"]')
-    less.focus()
-    less.click()
-    expect(less.disabled).toBe(true)
-    expect(doc.activeElement.getAttribute('data-control')).toBe('increase')
-
-    const remove = doc.querySelector('[data-line="1"] [data-control="remove"]')
-    remove.focus()
-    remove.click()
+    fetch.mockResolvedValue(withSticky(pageOf(stepOf('contacts', 'A'), '€20.00', line(2, 1))))
+    change()
     await settle()
 
-    // The removal took over from the press that waited.
-    expect(send).toHaveBeenCalledTimes(1)
-    expect(send.mock.calls[0][1].get('_method')).toBe('DELETE')
-    expect(doc.querySelector('[data-line="1"]')).toBeNull()
-    expect(doc.activeElement.closest('[data-line]').getAttribute('data-line')).toBe('2')
+    expect(own().disabled).toBe(false)
+    expect(doc.querySelector('.webx-orders-checkout__blocked')).toBeNull()
+    expect(sticky().disabled).toBe(false)
+    expect(sticky().hasAttribute('aria-disabled')).toBe(false)
+    expect(sticky().hasAttribute('aria-describedby')).toBe(false)
+
+    // The sticky row is the page's, not the column's: it follows the column both ways.
+    fetch.mockResolvedValue(nothing(pageOf(stepOf('contacts', 'A'), '€0.00', line(1, 1))))
+    change()
+    await settle()
+
+    expect(own().disabled).toBe(true)
+    expect(sticky().disabled).toBe(true)
+    expect(sticky().getAttribute('aria-describedby')).toBe('checkout-place-blocked')
   })
 
   it('reloads into the empty cart when the last line goes', async () => {
     await open(pageOf(stepOf('contacts', 'A'), '€10.00', line(1, 1)))
-    vi.spyOn(mod.server, 'send').mockResolvedValue({ status: 200, body: {} })
     vi.spyOn(mod.server, 'fetch').mockResolvedValue(
       '<div class="webx-orders-checkout is-empty"></div>',
     )
     const reload = vi.spyOn(mod.server, 'reload').mockImplementation(() => {})
 
-    press('[data-control="remove"]')
+    change()
     await settle()
 
     expect(reload).toHaveBeenCalledTimes(1)
@@ -459,7 +478,6 @@ describe('order contents', () => {
         warning,
       ),
     )
-    vi.spyOn(mod.server, 'send').mockResolvedValue({ status: 200, body: {} })
     vi.spyOn(mod.server, 'fetch').mockResolvedValue(
       pageOf(
         stepOf('contacts', 'A') + stepOf('comment', 'C').replace('>comment<', '>2. comment<'),
@@ -468,54 +486,12 @@ describe('order contents', () => {
       ),
     )
 
-    press('[data-line="2"] [data-control="remove"]')
+    change()
     await settle()
 
     expect(doc.querySelector('[data-step="delivery"]')).toBeNull()
     expect(doc.querySelector('#checkout-warnings')).toBeNull()
     expect(doc.querySelector('[data-step="comment"] h2').textContent).toBe('2. comment')
-  })
-
-  it('says a refusal under its line, with the number the server has', async () => {
-    await open(pageOf(stepOf('contacts', 'A'), '€10.00', line(1, 2)))
-    vi.spyOn(mod.server, 'send').mockResolvedValue({
-      status: 422,
-      body: { message: 'No', errors: { qty: ['At most 2.'] } },
-    })
-    vi.spyOn(mod.server, 'fetch').mockResolvedValue(
-      pageOf(stepOf('contacts', 'A'), '€10.00', line(1, 2)),
-    )
-
-    press('[data-control="increase"]')
-    await settle()
-
-    expect(doc.querySelector('[data-qty]').textContent).toBe('2')
-    expect(doc.querySelector('[data-line="1"] [role="alert"]').textContent).toBe('At most 2.')
-  })
-
-  it('holds the confirmation back for a press on its way', async () => {
-    await open(pageOf(stepOf('contacts', 'A'), '€10.00', line(1, 1)))
-    const send = vi.spyOn(mod.server, 'send').mockResolvedValue({ status: 200, body: {} })
-    vi.spyOn(mod.server, 'fetch').mockResolvedValue(
-      pageOf(stepOf('contacts', 'A'), '€20.00', line(1, 2)),
-    )
-    const places = []
-
-    press('[data-control="increase"]')
-    const held = emit(doc.querySelector('#checkout-place'), 'webx:form:submit', {})
-    expect(held).toBe(false)
-    doc.addEventListener(
-      'submit',
-      (event) => {
-        event.preventDefault()
-        places.push(doc.querySelector('#checkout-summary dd').textContent)
-      },
-      { once: true },
-    )
-    await settle()
-
-    expect(send).toHaveBeenCalledTimes(1)
-    expect(places).toEqual(['€20.00'])
   })
 
   describe('what the buyer typed in a slot', () => {
@@ -538,17 +514,15 @@ describe('order contents', () => {
       field('note').value = 'Ring twice'
     }
 
-    it('stays after a press, and the sum follows', async () => {
+    it('stays after a write of the dialog, and the sum follows', async () => {
       await open(pageOf(courier(address), '€10.00', line(1, 1) + line(2, 1)))
-      vi.spyOn(mod.server, 'send').mockResolvedValue({ status: 200, body: {} })
       vi.spyOn(mod.server, 'fetch').mockResolvedValue(
         pageOf(courier(address), '€30.00', line(1, 2) + line(2, 1)),
       )
       const old = field('street')
       type()
 
-      doc.querySelector('[data-control="increase"]').focus()
-      press('[data-control="increase"]')
+      change()
       await settle()
 
       expect(field('street')).not.toBe(old)
@@ -556,21 +530,19 @@ describe('order contents', () => {
       expect(field('note').value).toBe('Ring twice')
       expect(field('house').value).toBe('')
       expect(doc.querySelector('#checkout-summary dd').textContent).toBe('€30.00')
-      expect(doc.activeElement).toBe(doc.querySelector('[data-control="increase"]'))
     })
 
-    it('stays after «Remove» and press after press', async () => {
+    it('stays write after write', async () => {
       await open(pageOf(courier(address), '€10.00', line(1, 1) + line(2, 1)))
-      vi.spyOn(mod.server, 'send').mockResolvedValue({ status: 200, body: {} })
       const fetch = vi
         .spyOn(mod.server, 'fetch')
         .mockResolvedValue(pageOf(courier(address), '€20.00', line(1, 2) + line(2, 1)))
       type()
 
-      press('[data-control="increase"]')
+      change()
       await settle()
       fetch.mockResolvedValue(pageOf(courier(address), '€5.00', line(2, 1)))
-      press('[data-control="remove"]')
+      change()
       await settle()
 
       expect(field('street').value).toBe('Only street')
@@ -648,6 +620,50 @@ describe('order contents', () => {
 
       expect(field('street_id').value).toBe('5')
     })
+  })
+
+  it('closes the dialog on its «Checkout», which leads to this very page', async () => {
+    await open(
+      pageOf(stepOf('contacts', 'A'), '€10.00', line(1, 1)) +
+        `<dialog id="webx-cart" open><a class="webx-cart__checkout" href="${window.location.pathname}">Checkout</a><a class="webx-cart__checkout" href="/elsewhere">Away</a></dialog>`,
+    )
+    const dialog = doc.querySelector('#webx-cart')
+    dialog.close = vi.fn(() => dialog.removeAttribute('open'))
+    const away = doc.querySelectorAll('.webx-cart__checkout')[1]
+    const left = vi.fn((event) => event.preventDefault())
+    away.addEventListener('click', left)
+
+    away.click()
+    expect(dialog.close).not.toHaveBeenCalled()
+    expect(left.mock.calls[0][0].defaultPrevented).toBe(true)
+
+    const here = doc.querySelector('.webx-cart__checkout')
+    const event = new MouseEvent('click', { bubbles: true, cancelable: true })
+    here.dispatchEvent(event)
+    expect(event.defaultPrevented).toBe(true)
+    expect(dialog.close).toHaveBeenCalledTimes(1)
+  })
+
+  it('gives the focus back to «Edit» redrawn while the dialog was open', async () => {
+    await open(
+      pageOf(stepOf('contacts', 'A'), '€10.00', line(1, 1)) + '<dialog id="webx-cart"></dialog>',
+    )
+    vi.spyOn(mod.server, 'fetch').mockResolvedValue(
+      pageOf(stepOf('contacts', 'A'), '€20.00', line(1, 2)),
+    )
+    const edit = doc.querySelector('.webx-orders-checkout__edit')
+    edit.addEventListener('click', (event) => event.preventDefault())
+    edit.click()
+
+    change()
+    await settle()
+    expect(edit.isConnected).toBe(false)
+    doc.querySelector('#webx-cart').dispatchEvent(new Event('close'))
+    await settle()
+
+    expect(doc.activeElement).toBe(
+      doc.querySelector('#checkout-summary .webx-orders-checkout__edit'),
+    )
   })
 
   it('follows the widget of the cart', async () => {

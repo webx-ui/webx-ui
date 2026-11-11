@@ -186,6 +186,53 @@ final class OrderPageTest extends PlaceTestCase
     }
 
     #[Test]
+    public function the_extra_fields_stand_after_the_blocks_as_text_the_buyer_typed(): void
+    {
+        $this->app->make(OrderBlocks::class)->register(new BlockDefinition(
+            'payment',
+            'payments',
+            static fn (array $value): array => [],
+            static fn (array $value): string => 'Bank transfer',
+        ));
+        $order = $this->place($this->cart(), [
+            'blocks' => ['payment' => ['method' => 'bank-transfer']],
+            'fields' => [
+                ['key' => 'company_name', 'type' => 'text', 'label' => 'Company <b>name</b>', 'value' => '<script>x()</script> {{number}}', 'text' => '<script>x()</script> {{number}}'],
+                ['key' => 'directions', 'type' => 'textarea', 'label' => 'How to find us', 'value' => "Gate 2\nFloor 3", 'text' => "Gate 2\nFloor 3"],
+            ],
+        ]);
+
+        $page = (string) $this->get($this->link($order))->assertOk()
+            ->assertSeeInOrder([
+                'webx-order__fact--payment', 'Bank transfer',
+                '<div class="webx-order__fact webx-order__fact--field webx-order__fact--field-company_name">',
+                '<dt>Company &lt;b&gt;name&lt;/b&gt;</dt>',
+                '<dd>&lt;script&gt;x()&lt;/script&gt; {{number}}</dd>',
+                // The line break stays in the text: `white-space: pre-line` of the theme keeps it.
+                'webx-order__fact--field-directions', "<dd>Gate 2\nFloor 3</dd>",
+                'webx-order__heading',
+            ], false)
+            ->getContent();
+
+        $this->assertStringNotContainsString('<script>x()', $page);
+        $this->assertStringContainsString('.webx-order__fact--field dd', (string) file_get_contents(dirname(__DIR__, 2).'/resources/theme/orders.css'));
+    }
+
+    #[Test]
+    public function an_order_without_fields_and_blocks_has_no_section_of_facts_over_the_contacts(): void
+    {
+        $order = $this->place($this->cart());
+
+        $this->assertNull($order->fields);
+
+        $page = (string) $this->get($this->link($order))->assertOk()->getContent();
+
+        $this->assertStringNotContainsString('webx-order__fact--field', $page);
+        // The one list of facts left is the contacts'.
+        $this->assertSame(1, substr_count($page, '<dl class="webx-order__facts">'));
+    }
+
+    #[Test]
     public function a_wrong_or_missing_signature_is_a_page_that_does_not_exist(): void
     {
         $order = $this->place($this->cart());

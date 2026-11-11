@@ -8,7 +8,7 @@ return [
     'button-link' => 'Wählen Sie, wohin die Schaltfläche führt.',
     'variant' => 'Dieses Aussehen steht nicht auf der Liste der Website: :variants.',
     'buttons-max' => 'Ein Banner hat höchstens :max Schaltflächen.',
-    'place-key' => 'Ein Schlüssel besteht aus Kleinbuchstaben, Ziffern und Bindestrichen, beginnt mit einem Buchstaben und hat höchstens 64 Zeichen.',
+    'place-key' => 'Ein Schlüssel braucht Buchstaben oder Ziffern, etwa „sidebar“.',
     'place-taken' => 'Dieser Schlüssel ist vergeben.',
     'place-title' => 'Ein Name in der Standardsprache ist erforderlich.',
     'place-title-length' => 'Ein Name hat höchstens :max Zeichen.',

@@ -7,6 +7,9 @@ return [
     'row' => 'Рядок :number: :message',
     'row-shape' => 'Цей рядок не є набором полів.',
     'row-unknown-key' => 'У рядку немає поля «:key». Рядок приймає: :keys.',
+    'icon-unknown' => 'У цьому наборі немає іконки «:name». У наборі є: :names.',
+    'icon-source-unknown' => 'На сайті немає набору іконок «:source».',
+    'embed-source-unknown' => 'Це поле приймає фрейми «:source», а такого сервісу на сайті немає.',
     // The card a module's screen keeps for the fields a project patches in (`project-fields`).
     'project-fields' => 'Додатково',
     // The words of a list of records on a described screen; the core has English only.

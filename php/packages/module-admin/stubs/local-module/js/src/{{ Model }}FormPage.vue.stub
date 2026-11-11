@@ -1,0 +1,245 @@
+<script setup lang="ts">
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
+import {
+  confirm,
+  localizedValue,
+  toast,
+  useLocales,
+  WxActionBar,
+  WxButton,
+  WxCard,
+  WxSkeleton,
+  type LocalizedValue,
+} from '@webx-ui/core'
+import {
+  useAdmin,
+  useBodyKeys,
+  useErrorText,
+  useTranslate,
+  WxSaveState,
+  WxScreen,
+  WxScreenHead,
+  type ScreenAction,
+} from '@webx-ui/module-admin'
+import { create{{ Studly }}Api } from './api'
+import { use{{ Studly }}Messages } from './i18n'
+import type { {{ Model }}Detail, {{ Model }}Row, {{ Model }}Values } from './types'
+
+/**
+ * One {{ model }}: a head, the server's described screen `{{ id }}.form`, and one button. A new one
+ * is a form first and a record on the first save, so walking away leaves no empty row behind.
+ */
+const props = withDefaults(defineProps<{ base?: string }>(), { base: '/{{ id }}' })
+
+const admin = useAdmin()
+const api = create{{ Studly }}Api(admin)
+const route = useRoute()
+const router = useRouter()
+const locales = useLocales()
+use{{ Studly }}Messages()
+
+const t = useTranslate('webx-{{ id }}')
+const message = useErrorText()
+
+/** `null` — a record not written yet (`/{{ id }}/new`). */
+const id = computed<number | null>(() => {
+  const raw = route.params.id
+
+  return typeof raw === 'string' && /^\d+$/.test(raw) ? Number(raw) : null
+})
+
+const record = ref<{{ Model }}Row | null>(null)
+const values = ref<{{ Model }}Values>({})
+const snapshot = ref('')
+const loading = ref(true)
+const saving = ref(false)
+const errors = ref<Record<string, string[]>>({})
+
+const canManage = computed(() => admin.can('{{ id }}.manage'))
+const dirty = computed(() => snapshot.value !== '' && JSON.stringify(values.value) !== snapshot.value)
+
+const state = computed<'saving' | 'unsaved' | 'saved'>(() => {
+  if (saving.value) return 'saving'
+
+  return dirty.value || id.value === null ? 'unsaved' : 'saved'
+})
+
+const section = computed(
+  () => admin.state.manifest?.modules.find((module) => module.id === '{{ id }}')?.title ?? t('module.title'),
+)
+
+/** The title follows the field rather than the answer: an edit shows at the top as it is typed. */
+const title = computed(() => {
+  const written = values.value.title as LocalizedValue | string | null | undefined
+  const fallback = id.value === null ? t('list.new') : (record.value?.title ?? '')
+
+  return localizedValue(written, locales.active.value, fallback) || t('list.untitled')
+})
+
+function take(detail: {{ Model }}Detail): void {
+  record.value = detail.record
+  values.value = detail.values
+  snapshot.value = JSON.stringify(detail.values)
+}
+
+async function load(): Promise<void> {
+  loading.value = true
+
+  try {
+    if (id.value === null) {
+      record.value = null
+      values.value = { title: {} }
+      snapshot.value = JSON.stringify(values.value)
+    } else {
+      take(await api.get(id.value))
+    }
+  } catch (error) {
+    toast.danger(message(error))
+    void router.push(props.base)
+  } finally {
+    loading.value = false
+  }
+}
+
+async function save(): Promise<void> {
+  if (saving.value || !canManage.value) return
+
+  saving.value = true
+  errors.value = {}
+
+  try {
+    const made = id.value === null
+    const detail = made ? await api.create(values.value) : await api.save(id.value as number, values.value)
+
+    take(detail)
+    toast.success(t('list.saved'))
+
+    // A record now, with an address of its own; `replace`, so "back" does not reopen a blank form.
+    if (made) void router.replace(`${props.base}/${detail.record.id}`)
+  } catch (error) {
+    const body = (error as { body?: { errors?: Record<string, string[]> } }).body
+
+    if (body?.errors) {
+      errors.value = body.errors
+      toast.danger(t('list.save-failed'))
+    } else {
+      toast.danger(message(error))
+    }
+  } finally {
+    saving.value = false
+  }
+}
+
+async function remove(): Promise<void> {
+  const current = record.value
+
+  if (!current) return
+
+  const agreed = await confirm({
+    title: t('list.delete-title', { name: current.title }),
+    message: t('list.delete-text'),
+    confirmText: t('list.delete'),
+    cancelText: t('list.cancel'),
+    tone: 'danger',
+  })
+
+  if (!agreed) return
+
+  try {
+    await api.remove(current.id)
+    toast.success(t('list.deleted'))
+    // Nothing left to protect: asking about unsaved edits of a record that is gone is no question.
+    snapshot.value = JSON.stringify(values.value)
+    void router.push(props.base)
+  } catch (error) {
+    toast.danger(message(error))
+  }
+}
+
+/* The browser's own guard: it cannot wait for a request, so all it can do is ask. */
+function leaveGuard(event: BeforeUnloadEvent): void {
+  if (dirty.value) event.preventDefault()
+}
+
+/* Ctrl+S saves, as it does everywhere else that has a save button. */
+function onKeydown(event: KeyboardEvent): void {
+  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+    event.preventDefault()
+    if (dirty.value || id.value === null) void save()
+  }
+}
+
+useBodyKeys(onKeydown)
+
+/*
+ * `/{{ id }}/new` and `/{{ id }}/5` are one component on two routes, and the router patches it
+ * rather than mounting it again — so a change of record is watched for. The first save moving the
+ * address to the record it just made is not a change: that record is on screen.
+ */
+watch(id, (next) => {
+  if (next !== null && record.value?.id === next) return
+
+  void load()
+})
+
+onMounted(() => {
+  void load()
+  window.addEventListener('beforeunload', leaveGuard)
+})
+
+onBeforeUnmount(() => window.removeEventListener('beforeunload', leaveGuard))
+
+onBeforeRouteLeave(async () => {
+  if (!dirty.value || !canManage.value) return true
+
+  return await confirm({
+    title: t('list.leave-title'),
+    message: t('list.leave-text'),
+    confirmText: t('list.leave'),
+    cancelText: t('list.cancel'),
+    tone: 'danger',
+  })
+})
+
+/* What leads away from the record. On a phone the head folds it into the ···. */
+const actions = computed<ScreenAction[]>(() =>
+  canManage.value && record.value !== null
+    ? [{ key: 'delete', label: t('list.delete'), icon: 'trash', danger: true, menu: true, run: () => void remove() }]
+    : [],
+)
+</script>
+
+<template>
+  <div class="{{ id }}-form" @keydown="onKeydown">
+    <template v-if="loading">
+      <!-- Shaped like the screen it stands in for: the head, and a card for what is coming. -->
+      <wx-skeleton title :rows="1" />
+      <wx-card><wx-skeleton :rows="4" /></wx-card>
+    </template>
+
+    <template v-else>
+      <wx-screen-head divider :back="props.base" :back-label="section" :title="title" :actions="actions" />
+
+      <wx-screen v-model="values" name="{{ id }}.form" :errors="errors" :disabled="!canManage || saving" />
+
+      <wx-action-bar v-if="canManage">
+        <template #state>
+          <wx-save-state :state="state" />
+        </template>
+
+        <wx-button type="primary" :loading="saving" :disabled="!dirty && id !== null" @click="save">
+          {{ t('list.save') }}
+        </wx-button>
+      </wx-action-bar>
+    </template>
+  </div>
+</template>
+
+<style scoped>
+.{{ id }}-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-gap, var(--wx-space-16));
+}
+</style>

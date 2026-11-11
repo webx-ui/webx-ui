@@ -1,0 +1,14 @@
+---
+title: {{ Title }}
+---
+
+# about
+
+The form of one {{ model }}. What you save is on the site at once: there is no draft.
+
+# fields
+
+## title
+
+Required in the default language: without it the form will not save. A language left empty shows
+the default one instead.

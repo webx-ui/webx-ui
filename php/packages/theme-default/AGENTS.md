@@ -39,20 +39,20 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
 - **Classes** (the contract a local theme restyles): `site` on `<body>`, `site-container`,
   `site-skip`, `site-header`, `site-header__inner|title|nav|link`, `site-main`, `site-bleed` (a
   direct child of `<main>` that spans the page), `site-footer`,
-  `site-footer__inner|nav|link|copy`, `site-error`, `site-error__code|home`, `site-prose` (prose typography outside `<main>`, and
+  `site-footer__inner|nav|link|copy`, `site-error`, `site-error__code|home`, `site-accent` (the accented words of a heading), `site-prose` (prose typography outside `<main>`, and
   the muted colours of quotes, captions and `small` inside a block, which otherwise keep the
   block's own colour).
-- **`blocks/`** — the six block types `webx:blocks:import --theme` puts on a site (`webx:setup` only prints it)
-  (THEMES §9.1), as `webx:blocks:export` writes them; CSS on the tokens and `@container` only:
+- **`blocks/`** — the seven block types `webx:blocks:import --theme` puts on a site (`webx:setup` only prints it)
+  (THEMES §9.1), as `webx:blocks:export` writes them; CSS on the tokens and `@container` only; each has `no_reveal` («Without animation») and `@webxReveal` on its words and lists — they come in on scroll only with `"reveal": true` in the manifest (§9.3, off by default); a heading prints through `@webxAccent`, its `==words==` as `<span class="site-accent">` in `color-accent` (`base.css`; leaning on the accent and over a photo; §9.4); `hero` and `cta` over a picture and `text-tiles` have `parallax` («Parallax», off) and `parallax_strength` (soft/medium/strong; `data-webx-parallax` on the picture, §9.5); every block has `overlap` («Slide over the section above», off) + `overlap_edge`/`overlap_edge_narrow` (`@webxOverlap`/`@webxOverlapEdge`, §9.8; hero and text-tiles then crop in `__media`, their `__inner` is `data-webx-overlap-fade`):
+  - buttons are `wx-link` with files (`button_link`, `second_link`, a card’s `link`); the old `*_url` stay `wx-input`, read while the link is empty;
   - `hero` — `title`, `subtitle`, two buttons (`button_*`, `second_*`), `tone`
     `plain|surface|accent|image` (+ `image`), `align` `start|center`, `width` `column|bleed`;
-  - `text` — `heading`, `body` (rich text, under `site-prose`; a body of plain lines prints as
-    paragraphs), `width` `narrow|wide`;
-  - `media-text` — `image`, `heading`, `body`, one button, `side` `start|end`, `tone` `plain|surface`;
+  - `text` — `heading`, `body` (rich text, under `site-prose`; a body of plain lines prints as paragraphs), `width` `narrow|wide`;
+  - `media-text` — `image`, `logo` (a small picture above the heading, at most 4rem × 12rem), `heading`, `body`, one button, `side` `start|end`, `tone` `plain|surface`;
   - `cards` — `heading`, `intro`, `columns` `2|3|4` (at most; the container decides), `pictures`
-    `photo|icon`, repeater `cards` (`image`, `title`, `text`, `link_label`, `link_url`: the
-    whole card is the link; `link_label` ends in the `arrow-right` icon, `b-cards__arrow`);
-  - `cta` — `heading`, `text`, two buttons, `tone` `accent|surface|plain`;
+    `photo|icon`, `view` `grid|slider` (carousel: `arrows`, `dots`, `endless`, `autoplay`, `interval` s), repeater `cards` (`image`, `photos` — 2+ turn in `<x-webx-photos>`, `title`, `chips` — labels under it, `text`, `link_label`, `link`, `link_url`: the whole card is the link; `link_label` ends in the `arrow-right` icon, `b-cards__arrow`);
+  - `cta` — `eyebrow`, `heading`, `text`, two buttons, `tone` `accent|surface|plain|image` (+ `image` under `shade` `dark|light`, `height` `auto|screen|ratio` + `ratio`; a picture with no words is `b-cta--bare`, §9.9), `width` `column|bleed`;
+  - `text-tiles` («Text and tiles on a photo», §9.7) — `eyebrow`, `heading`, `text`, one button, `image` under `shade` `dark|light`, `width` `bleed|column`, repeater `tiles` (≤4: `kind` `icon|value`, `icon` — an SVG is masked in the words' colour — or `value` + `unit`, `label`, `note`); glass on the block's own `--text-tiles-glass|glass-solid|blur|veil`;
   - `contact` — `heading`, `text`, `show_contacts`/`show_hours` (Settings › Contacts through
     `contacts()` and the phones, hours and socials widgets), `form` (an Inbox form's slug),
     `form_heading` and `show_form_description` (off: the headings say what the form is for); labels `theme::theme.blocks.contact.*`, each after its icon (`b-contact__icon`).
@@ -108,7 +108,7 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
 | A piece of the header or footer          | `theme/compositions/header/default.json` (or `footer`) by id; the notice bar inside: `remove` it in `layout`, `add` to `header.topbar`                                                      |
 | An attribute, a piece moved, gone, added | `theme/compositions/layout/default.json` (or `<handle>.json`) by id: `html`, `head`, `body`, `skip-link`, `notice-bar`, `header`, `main`, `content`, `footer`, `meta.theme-color` — no copy |
 | A different document (the last door)     | `theme/views/components/layout.blade.php` — the composition is not printed then; `place` brings the modules' pieces                                                                         |
-| Another look of one of the six blocks    | `theme/blocks/<slug>.json`, every field kept; `webx:blocks:import --theme --replace=<slug>`                                                                                                 |
+| Another look of one of the blocks        | `theme/blocks/<slug>.json`, every field kept; `webx:blocks:import --theme --replace=<slug>`                                                                                                 |
 | A section of a page full width           | class `site-bleed` on the direct child of `<main>`                                                                                                                                          |
 | Another drawing of an icon, or a new one | `theme/icons/<name>.svg` in `currentColor`, then `webx:theme:sync`                                                                                                                          |
 | Another picture of the theme             | `theme/assets/<same path>`, then `webx:theme:sync`                                                                                                                                          |

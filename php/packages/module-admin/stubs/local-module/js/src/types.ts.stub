@@ -1,0 +1,16 @@
+/** The values of the form by field name, as the server's `{{ id }}.form` describes them. */
+export type {{ Model }}Values = Record<string, unknown>
+
+/** One {{ model }} as the list shows it: the title in the language of the content. */
+export interface {{ Model }}Row {
+  id: number
+  title: string
+  position: number
+  updated_at: string | null
+}
+
+/** One {{ model }} as its form opens it: the record, and the values of the screen. */
+export interface {{ Model }}Detail {
+  record: {{ Model }}Row
+  values: {{ Model }}Values
+}

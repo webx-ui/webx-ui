@@ -12,11 +12,12 @@ and the site's `theme/`). **The rules every theme keeps, numbered as the check n
   the site with `theme.json`) or a package name. Empty means no theme.
 - **`ThemeManifest`** — a theme's description: `extra.webx.theme` of a `"type": "webx-theme"`
   package, or `theme` in a local `theme.json`: `title`, `uses`, `requires`, `locales`, `fonts`,
-  `preset`, `settings`. **`ThemeChain`** — the layers, top first; **`ThemeLocator`** — reference to manifest,
+  `preset`, `settings`, `reveal`. **`ThemeChain`** — the layers, top first; **`ThemeLocator`** — reference to manifest,
   `register($name, $path)` for a theme Composer does not know.
 - **The preset** — `"preset": "night"` in the manifest of a layer (the highest that names one
   decides), a preset of the chain's tokens.json; an unknown name throws on the page and is a
-  finding of the check. No panel setting for it (see Do not).
+  finding of the check. **`"reveal": true|"fade"|"scale"`** the same way (`ThemeChain::reveal()`, off
+  unless named): the blocks come in on scroll where their templates say `@webxReveal` (`ThemeReveal`). No panel setting. `@webxAccent($heading)` (`ThemeAccent`, §9.4) prints a heading with its `==words==` as `<span class="site-accent">`; without marks, what `{{ }}` printed.
 - **`settings`** — the tabs of the site's settings the theme prints, so the panel offers them:
   `"settings": {"contacts": ["phones", "emails", "hours"]}` (a tab is `true` or the list of its
   sections); per tab the nearest layer that names it decides (`ThemeChain::settings()`, by layer

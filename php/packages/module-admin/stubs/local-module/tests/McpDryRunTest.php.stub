@@ -1,0 +1,98 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Site\{{ Studly }}\Tests;
+
+use Illuminate\Testing\Fluent\AssertableJson;
+use Laravel\Mcp\Server\Testing\TestResponse;
+use PHPUnit\Framework\Attributes\Test;
+use Site\{{ Studly }}\Models\{{ Model }};
+use WebxUi\Mcp\Registry\ToolRegistry;
+use WebxUi\Mcp\Server\RegistryTool;
+use WebxUi\Mcp\Server\WebxServer;
+
+/**
+ * Every tool that changes something, with `dry_run`, answers what it would do and writes nothing;
+ * without it, it does the work. What a tool does not take is refused rather than dropped.
+ */
+final class McpDryRunTest extends TestCase
+{
+    #[Test]
+    public function a_dry_run_of_every_change_writes_nothing(): void
+    {
+        $first = $this->record('First');
+        $second = $this->record('Second');
+        $before = $this->rows();
+
+        $created = $this->content($this->agent('{{ tool }}_create', ['title' => 'Third', 'dry_run' => true]));
+        $this->assertTrue($created['dry_run']);
+        $this->assertNull($created['record']['id']);
+
+        $this->agent('{{ tool }}_update', ['id' => $first->id, 'values' => ['title' => 'Renamed'], 'dry_run' => true])->assertOk();
+        $this->agent('{{ tool }}_reorder', ['ids' => [$second->id, $first->id], 'dry_run' => true])->assertOk();
+        $this->agent('{{ tool }}_delete', ['id' => $first->id, 'dry_run' => true])->assertOk();
+
+        $this->assertSame($before, $this->rows());
+    }
+
+    #[Test]
+    public function without_a_dry_run_the_tools_do_the_work(): void
+    {
+        $created = $this->content($this->agent('{{ tool }}_create', ['title' => 'First']));
+        $id = (int) $created['record']['id'];
+        $other = $this->record('Second');
+
+        $this->agent('{{ tool }}_update', ['id' => $id, 'values' => ['title' => 'Renamed']])->assertOk();
+        $this->assertSame('Renamed', {{ Model }}::query()->findOrFail($id)->titleIn($this->defaultLocale()));
+
+        $this->agent('{{ tool }}_reorder', ['ids' => [$other->id, $id]])->assertOk();
+        $this->assertSame([$other->id, $id], {{ Model }}::query()->orderBy('position')->pluck('id')->map(intval(...))->all());
+
+        $this->agent('{{ tool }}_delete', ['id' => $id])->assertOk();
+        $this->assertNull({{ Model }}::query()->find($id));
+    }
+
+    #[Test]
+    public function unknown_arguments_and_fields_are_refused(): void
+    {
+        $record = $this->record('First');
+
+        $this->agent('{{ tool }}_create', ['title' => 'New', 'colour' => 'red'])->assertHasErrors(['{{ tool }}_create has no argument [colour]']);
+        $this->agent('{{ tool }}_update', ['id' => $record->id, 'values' => ['colour' => 'red']])->assertHasErrors(['{{ tool }}_update has no field [colour]']);
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function rows(): array
+    {
+        return {{ Model }}::query()->orderBy('id')->get(['id', 'title', 'position'])->map(
+            static fn ({{ Model }} $record): array => ['id' => $record->id, 'title' => $record->getTranslations('title'), 'position' => $record->position],
+        )->all();
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     */
+    private function agent(string $tool, array $arguments = []): TestResponse
+    {
+        $bound = new RegistryTool($this->app->make(ToolRegistry::class)->tool($tool));
+
+        return WebxServer::actingAs($this->editor(), $this->guard())->tool($bound, $arguments);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function content(TestResponse $response): array
+    {
+        $decoded = null;
+
+        $response->assertStructuredContent(static function (AssertableJson $json) use (&$decoded): void {
+            $decoded = $json->etc()->toArray();
+        });
+
+        return is_array($decoded) ? $decoded : [];
+    }
+}

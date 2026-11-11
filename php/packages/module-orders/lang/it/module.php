@@ -9,6 +9,19 @@ return [
     'empty-help' => 'Un ordine compare qui non appena viene fatto sul sito.',
     'order' => 'Ordine',
     'statuses-cache' => 'Stati degli ordini',
+    'order-field' => [
+        'title' => 'Campo dell’ordine',
+        'cache' => 'Campi dell’ordine',
+        'key' => 'Chiave',
+        'type' => 'Tipo',
+        'place' => 'Posizione',
+        'label' => 'Nome',
+        'hint' => 'Suggerimento',
+        'options' => 'Opzioni',
+        'required' => 'Obbligatorio',
+        'active' => 'Attivo',
+        'parent_id' => 'Mostra se selezionato',
+    ],
     'fields' => [
         'customer_first_name' => 'Nome',
         'customer_last_name' => 'Cognome',
@@ -18,6 +31,7 @@ return [
         'comment' => 'Commento dell\'acquirente',
         'manager_note' => 'Nota del gestore',
         'user_id' => 'Visitatore',
+        'fields' => 'Campi aggiuntivi',
     ],
     'milestones' => [
         'placed' => 'Effettuato',

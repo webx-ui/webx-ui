@@ -5,6 +5,7 @@ import {
   useAdmin,
   useErrorText,
   useTranslate,
+  WxCodeField,
   WxHelpButton,
   WxRenameButton,
   WxScreenHead,
@@ -22,7 +23,6 @@ import {
   WxCodeEditor,
   WxFormItem,
   WxIconPicker,
-  WxInput,
   WxInputNumber,
   WxPopover,
   WxSelect,
@@ -1157,7 +1157,7 @@ const actions = computed<ScreenAction[]>(() => [
                   :error="errorOf('slug')"
                   :disabled="!canManage"
                 >
-                  <wx-input v-model="settings.slug" />
+                  <wx-code-field v-model="settings.slug" lead="block" :maxlength="64" />
                 </wx-form-item>
                 <!-- What only a block on a page needs: where it is picked from, what it may
                      hold and stand in, how many a page takes. A component is never picked. -->

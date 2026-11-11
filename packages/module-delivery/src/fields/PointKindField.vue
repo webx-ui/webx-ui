@@ -11,7 +11,7 @@ import {
   WxSpace,
   WxText,
 } from '@webx-ui/core'
-import { useAdmin, useDefaultLocale, useErrorText } from '@webx-ui/module-admin'
+import { useAdmin, useDefaultLocale, useErrorText, WxCodeField } from '@webx-ui/module-admin'
 import { createDeliveryApi } from '../api'
 import { useDeliveryWords } from '../i18n'
 import type { Option } from '../types'
@@ -108,7 +108,7 @@ async function define(): Promise<void> {
           :help="t('method.kind-key-help')"
           :error="errors.kind?.[0]"
         >
-          <wx-input v-model="key" :maxlength="32" />
+          <wx-code-field v-model="key" :maxlength="32" placeholder="parcel-shop" />
         </wx-form-item>
       </div>
 

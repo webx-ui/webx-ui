@@ -132,8 +132,12 @@ final class Cards
      * to something that is not on the site now (a page in the bin or in a draft) — a button to a
      * 404 is worse than none. The tariff stays either way.
      *
+     * `download` is the name a file of the library is saved under, for a file link that asks to be
+     * downloaded — the key it is kept under is a hash; else null. Printed with
+     * `LinkAttributes::of($tariff['button'])`.
+     *
      * @param  array<string, array<int, LinkCandidate>>  $candidates
-     * @return array{label: string, url: string, new_tab: bool, rel: string|null, variant: string|null}|null
+     * @return array{label: string, url: string, new_tab: bool, rel: string|null, download: string|null, variant: string|null}|null
      */
     private function button(Tariff $tariff, string $locale, array $candidates): ?array
     {
@@ -163,6 +167,8 @@ final class Cards
             'url' => $url,
             'new_tab' => $link->newTab,
             'rel' => $link->relAttribute(),
+            // The library was asked for every file of the list at once (LinkUrls::candidates()).
+            'download' => $link->download ? ($this->urls->file($link)['name'] ?? null) : null,
             'variant' => $this->variant($tariff->button_variant),
         ];
     }

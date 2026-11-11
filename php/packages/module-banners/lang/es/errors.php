@@ -8,7 +8,7 @@ return [
     'button-link' => 'Elija adónde lleva el botón.',
     'variant' => 'Este aspecto no está en la lista del sitio: :variants.',
     'buttons-max' => 'Un banner tiene como máximo :max botones.',
-    'place-key' => 'Una clave son letras latinas minúsculas, cifras y guiones, empieza por una letra y tiene como máximo 64 caracteres.',
+    'place-key' => 'Una clave necesita letras o cifras, por ejemplo «sidebar».',
     'place-taken' => 'Esta clave ya está en uso.',
     'place-title' => 'Se necesita un nombre en el idioma predeterminado.',
     'place-title-length' => 'Un nombre tiene como máximo :max caracteres.',

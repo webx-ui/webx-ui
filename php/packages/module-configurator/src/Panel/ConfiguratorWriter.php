@@ -12,6 +12,7 @@ use WebxUi\Admin\Screens\Types\LinkType;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Configurator\Models\Configurator;
 use WebxUi\Configurator\Pricing\Quoter;
+use WebxUi\Configurator\Schema\Keys;
 use WebxUi\Configurator\Schema\Problem;
 use WebxUi\Configurator\Schema\Validator;
 use WebxUi\Inbox\Models\Form;
@@ -45,7 +46,10 @@ final class ConfiguratorWriter
      */
     public function create(string $key, array $title, ?array $schema = null, ?string $form = null, ?int $authorId = null, string $source = EntityVersion::SOURCE_PANEL): Configurator
     {
+        // Brought before the check, so only an empty or a taken key is refused (#125).
+        $key = (string) Configurator::codeFor('key', $key);
         $this->checkKey($key);
+        $schema = $schema === null ? null : Keys::bring($schema, null, $this->locales->defaultCode());
         $this->checkTitle($title);
         $this->checkForm($form);
 
@@ -73,6 +77,15 @@ final class ConfiguratorWriter
      */
     public function update(Configurator $configurator, array $changes, ?int $authorId = null, string $source = EntityVersion::SOURCE_PANEL): Configurator
     {
+        // Brought before they are compared and checked (#125): `Shower` is the key `shower` it was.
+        if (array_key_exists('key', $changes)) {
+            $changes['key'] = (string) Configurator::codeFor('key', $changes['key']);
+        }
+
+        if (array_key_exists('schema', $changes)) {
+            $changes['schema'] = Keys::bring($changes['schema'], $configurator->editing()['schema'] ?? null, $this->locales->defaultCode());
+        }
+
         if (array_key_exists('key', $changes) && $changes['key'] !== $configurator->key) {
             if ($configurator->isPublished() || $configurator->versions()->published()->exists()) {
                 throw new Refused("The key [{$configurator->key}] has been on the site and does not change: blocks of the site name the configurator by it.", reason: 'key.locked');
@@ -205,7 +218,7 @@ final class ConfiguratorWriter
     private function checkKey(mixed $key): void
     {
         if (! is_string($key) || preg_match(self::KEY, $key) !== 1) {
-            throw new Refused('A key is a slug: a-z, 0-9 and dashes, up to 64 characters — "shower".', reason: 'key.invalid');
+            throw new Refused('Nothing is left of the key to make a slug of (a-z, 0-9 and dashes, up to 64): give it letters or digits — "shower".', reason: 'key.invalid');
         }
 
         if (Configurator::withTrashed()->where('key', $key)->exists()) {

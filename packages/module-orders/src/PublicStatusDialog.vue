@@ -10,7 +10,13 @@ import {
   WxSpace,
   type LocalizedValue,
 } from '@webx-ui/core'
-import { useAdmin, useErrorText, useTranslate, WxRelationsField } from '@webx-ui/module-admin'
+import {
+  useAdmin,
+  useErrorText,
+  useTranslate,
+  WxCodeField,
+  WxRelationsField,
+} from '@webx-ui/module-admin'
 import { createOrdersApi } from './api'
 import { NAMESPACE, useOrdersMessages } from './i18n'
 import type { BoardGroup, StatusBoardData } from './types'
@@ -97,7 +103,13 @@ async function save(): Promise<void> {
         :error="codeError"
         required
       >
-        <wx-input v-model="code" placeholder="in_progress" :maxlength="48" />
+        <wx-code-field
+          v-model="code"
+          separator="_"
+          lead="status"
+          placeholder="in_progress"
+          :maxlength="48"
+        />
       </wx-form-item>
 
       <wx-form-item

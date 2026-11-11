@@ -125,6 +125,31 @@ describe('WxRoleDialog', () => {
     })
   })
 
+  /* A code is brought to its shape as it is typed (#125), not refused on save. */
+  it('makes a code of what is typed', async () => {
+    const { put } = dialog(role)
+    await flushPromises()
+
+    const code = document.querySelector<HTMLInputElement>('input[name="slug"]')!
+    code.value = 'Content Managers!'
+    code.dispatchEvent(new Event('input'))
+    code.dispatchEvent(new Event('blur'))
+    await flushPromises()
+
+    expect(code.value).toBe('content-managers')
+
+    const save = [...document.querySelectorAll('button')].find((b) =>
+      b.textContent?.includes('Save'),
+    )
+    save!.click()
+    await flushPromises()
+
+    expect(put).toHaveBeenCalledWith(
+      '/api/cms/auth/roles/7',
+      expect.objectContaining({ slug: 'content-managers' }),
+    )
+  })
+
   it('opens a role the editor holds read-only (rule 5)', async () => {
     dialog({ ...role, held: true })
     await flushPromises()

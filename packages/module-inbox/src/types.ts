@@ -12,11 +12,17 @@ export const FIELD_TYPES = [
   'checkbox',
   'consent',
   'date',
+  'datetime',
   'file',
   'hidden',
 ] as const
 
-export type FieldType = (typeof FIELD_TYPES)[number]
+/**
+ * A kind of row of the list of fields: a question, `step` — the row that starts a step of the
+ * form (FORM_STEPS §3.1) — or `summary`, the answers so far with «Edit» (§7). Neither is answered,
+ * and neither is among `FIELD_TYPES`, the kinds of question.
+ */
+export type FieldType = (typeof FIELD_TYPES)[number] | 'step' | 'summary'
 
 /** Tones of `WxBadge`, which is what a status is coloured with — never a hex value. */
 export const STATUS_COLORS = ['default', 'primary', 'success', 'warning', 'info', 'danger'] as const
@@ -27,7 +33,14 @@ export type StatusColor = (typeof STATUS_COLORS)[number]
 export interface FieldChoice {
   value: string
   label: LocalizedValue | string
+  /** Under the label of a card (FORM_STEPS §5): the look of the field, never part of an answer. */
+  description?: LocalizedValue | string
+  /** A file of the media library, kept by its key; `url` only while it is being picked. */
+  image?: { path: string; url?: string } | null
 }
+
+/** How a group of radios or ticks is drawn on the site. */
+export type ChoiceView = 'list' | 'cards'
 
 /**
  * What a field may be configured with. Which keys mean anything depends on the type (§4), and
@@ -40,7 +53,16 @@ export interface FieldOptions {
   min?: number | string
   max?: number | string
   choices?: FieldChoice[]
+  /** Radio and checkbox: cards instead of a list, so many to a row (1–4) on a wide form. */
+  view?: ChoiceView
+  columns?: number
   text?: LocalizedValue | string
+  /** «Date and time» (FORM_STEPS §6.2): minutes of the list, the day's hours, the ISO days offered. */
+  'time-step'?: number
+  'time-from'?: string
+  'time-to'?: string
+  weekdays?: number[]
+  'timezone-label'?: LocalizedValue | string
   max_size?: number
   extensions?: string[]
   multiple?: boolean
@@ -153,6 +175,8 @@ export interface InboxForm {
    * long the queue holds one. Optional because an older server does not send it.
    */
   mail?: FormMail
+  /** The site's time zone, which a «Date and time» field shows its times in (FORM_STEPS §6.5). */
+  timezone?: string
   position: number
   /** Only where the query counted them — null on a form loaded on its own. */
   submissions_count: number | null
@@ -416,7 +440,12 @@ export interface SubmissionMeta {
   user_agent?: string
   page?: string
   referrer?: string
+  /** The page of the site the visitor came in on (FORM_STEPS §8). */
+  landing?: string
+  /** The campaign of the last touch. */
   utm?: Record<string, string>
+  /** The campaign of the first touch, kept in the browser only with consent to statistics. */
+  utm_first?: Record<string, string>
   locale?: string
   [key: string]: unknown
 }

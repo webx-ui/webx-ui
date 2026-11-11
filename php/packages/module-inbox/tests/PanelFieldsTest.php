@@ -209,19 +209,62 @@ final class PanelFieldsTest extends TestCase
     }
 
     #[Test]
-    public function a_name_with_a_dot_in_it_is_refused(): void
+    public function a_name_is_brought_to_its_shape_and_refused_only_when_taken_or_empty(): void
     {
         $form = $this->form('contact');
+        $editor = $this->editor();
+        $fields = $this->api("forms/{$form->getKey()}/fields");
 
         // `fields.company.name` would make the intake look for a nested array and report the
-        // error under a key nothing on the page has.
-        $this->actingAs($this->editor(), 'cms')
-            ->postJson($this->api("forms/{$form->getKey()}/fields"), [
-                'name' => 'company.name',
-                'type' => 'text',
-                'title' => 'Company',
-            ])
+        // error under a key nothing on the page has: the dot is dropped (#125), not refused.
+        $this->actingAs($editor, 'cms')
+            ->postJson($fields, ['name' => 'company.name', 'type' => 'text', 'title' => 'Company'])
+            ->assertCreated()
+            ->assertJsonPath('data.name', 'companyname');
+
+        $this->actingAs($editor, 'cms')
+            ->postJson($fields, ['name' => 'Тормозные колодки', 'type' => 'text', 'title' => 'Pads'])
+            ->assertCreated()
+            ->assertJsonPath('data.name', 'tormoznye_kolodki');
+
+        // A typed `_` stays, and a name has to start with a letter.
+        $made = $this->actingAs($editor, 'cms')
+            ->postJson($fields, ['name' => '2nd_Phone', 'type' => 'tel', 'title' => 'Phone'])
+            ->assertCreated()
+            ->assertJsonPath('data.name', 'field_2nd_phone');
+
+        $this->actingAs($editor, 'cms')
+            ->postJson($fields, ['name' => 'CompanyName', 'type' => 'text', 'title' => 'Again'])
             ->assertJsonValidationErrors('name');
+
+        // Nothing left of it: a new field is named after its label, as one sent with no name is…
+        $this->actingAs($editor, 'cms')
+            ->postJson($fields, ['name' => '!!!', 'type' => 'text', 'title' => 'Your city'])
+            ->assertCreated()
+            ->assertJsonPath('data.name', 'your_city');
+
+        // …and one that has a name keeps it, refused rather than renamed to nothing.
+        $id = $made->json('data.id');
+
+        $this->actingAs($editor, 'cms')
+            ->putJson($this->api("fields/{$id}"), ['name' => '!!!', 'type' => 'tel', 'title' => 'Phone'])
+            ->assertUnprocessable()
+            ->assertJsonPath('errors.name.0', 'A name needs letters or digits, like “phone”.');
+    }
+
+    #[Test]
+    public function a_name_saved_before_it_was_brought_stays_as_it_is(): void
+    {
+        $form = $this->form('contact', [['name' => 'phone', 'type' => FieldType::Tel]]);
+        $phone = $form->fields->sole();
+        // Written past the model, as a row saved before #125 was.
+        Field::query()->whereKey($phone->getKey())->update(['name' => 'Phone']);
+
+        // `{{field.Phone}}` in somebody's template: saving the label must not rename it.
+        $this->actingAs($this->editor(), 'cms')
+            ->putJson($this->api("fields/{$phone->getKey()}"), ['name' => 'Phone', 'type' => 'tel', 'title' => 'Your phone'])
+            ->assertOk()
+            ->assertJsonPath('data.name', 'Phone');
     }
 
     #[Test]

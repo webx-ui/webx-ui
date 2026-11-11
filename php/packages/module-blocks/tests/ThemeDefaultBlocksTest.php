@@ -7,6 +7,7 @@ namespace WebxUi\Blocks\Tests;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\File;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Contracts\AssetDownloads;
 use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Blocks\BlockOffers;
 use WebxUi\Blocks\Demo\BlocksDemo;
@@ -14,6 +15,7 @@ use WebxUi\Blocks\Models\Block;
 use WebxUi\Blocks\Models\BlockVersion;
 use WebxUi\Blocks\Panel\BlockInput;
 use WebxUi\Blocks\Panel\Importer;
+use WebxUi\Blocks\Rendering\Renderer;
 use WebxUi\Blocks\Themes\LayerSource;
 use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\InboxServiceProvider;
@@ -23,11 +25,14 @@ use WebxUi\Settings\SettingsServiceProvider;
 use WebxUi\Themes\Blocks\SchemaCompatibility;
 use WebxUi\Themes\ThemeChain;
 use WebxUi\Themes\ThemeLocator;
+use WebxUi\Themes\ThemeManifest;
+use WebxUi\Themes\ThemeReveal;
 use WebxUi\Themes\ThemeServiceProvider;
+use WebxUi\Widgets\FormDialogs;
 use WebxUi\Widgets\WidgetsServiceProvider;
 
 /**
- * The six blocks of `webx-ui/theme-default` (THEMES §9.1) on a site, through the real import
+ * The blocks of `webx-ui/theme-default` (THEMES §9.1) on a site, through the real import
  * (`webx:blocks:import --theme`, what `webx:setup` prints for a dev copy): they publish — publishing renders each
  * sample —, every variant prints, and the demo of this package yields to them (§23, TH2.3): it
  * does not seed a slug the theme carries, and a site that got the demo first keeps its copy until
@@ -37,7 +42,7 @@ final class ThemeDefaultBlocksTest extends TestCase
 {
     private const string THEME = 'webx-ui/theme-default';
 
-    private const array SIX = ['cards', 'contact', 'cta', 'hero', 'media-text', 'text'];
+    private const array BLOCKS = ['cards', 'contact', 'cta', 'hero', 'media-text', 'text', 'text-tiles'];
 
     /**
      * @param  Application  $app
@@ -67,18 +72,30 @@ final class ThemeDefaultBlocksTest extends TestCase
         $app->resolving(ThemeLocator::class, static function (ThemeLocator $locator): void {
             $locator->register(self::THEME, self::path());
         });
+
+        // The library a file link asks, with one file in it — bound before the field types are
+        // built, the way the media module binds it in `register()`.
+        $app->instance(AssetDownloads::class, new class implements AssetDownloads
+        {
+            public function downloads(array $paths): array
+            {
+                return array_combine($paths, array_map(static fn (string $path): ?array => $path === 'media/ab/cd/f00d.pdf'
+                    ? ['url' => '/storage/media/ab/cd/f00d.pdf', 'name' => 'Price list.pdf']
+                    : null, $paths));
+            }
+        });
     }
 
     #[Test]
-    public function the_six_blocks_are_put_on_the_site_and_published(): void
+    public function the_blocks_are_put_on_the_site_and_published(): void
     {
         $lines = $this->sync();
 
-        foreach (self::SIX as $slug) {
+        foreach (self::BLOCKS as $slug) {
             $this->assertLine($slug, Importer::CREATED, $lines);
         }
 
-        $this->assertSame(self::SIX, Block::query()->whereNotNull('published_version_id')->orderBy('slug')->pluck('slug')->all());
+        $this->assertSame(self::BLOCKS, Block::query()->whereNotNull('published_version_id')->orderBy('slug')->pluck('slug')->all());
         $this->assertSame([], array_values(array_filter($lines, static fn (array $row): bool => $row['error'] !== null)));
     }
 
@@ -98,6 +115,11 @@ final class ThemeDefaultBlocksTest extends TestCase
                 ['title' => '', 'text' => '', 'link_url' => ''],
             ]]),
             $this->node('cta', ['heading' => 'Ask', 'button_label' => 'Now', 'button_url' => '/now', 'tone' => 'plain']),
+            $this->node('text-tiles', ['heading' => 'Tiles', 'shade' => 'light', 'width' => 'column', 'tiles' => [
+                ['kind' => 'value', 'value' => '120', 'unit' => 'm²', 'label' => 'Space'],
+                ['kind' => 'icon', 'label' => 'No icon yet'],
+                ['kind' => 'value', 'value' => '', 'label' => ''],
+            ]]),
         ]);
 
         $this->assertStringContainsString('class="b-hero b-hero--plain"', $html);
@@ -110,9 +132,186 @@ final class ThemeDefaultBlocksTest extends TestCase
         $this->assertSame(2, substr_count($html, '<li class="b-cards__card'), 'a card with nothing in it is left out');
         $this->assertStringContainsString('<a class="b-cards__link" href="/more">Linked</a>', $html);
         $this->assertStringContainsString('class="b-cta b-cta--plain"', $html);
+        $this->assertStringContainsString('class="b-text-tiles b-text-tiles--light b-text-tiles--2 b-text-tiles--words"', $html);
+        $this->assertStringContainsString('<p class="b-text-tiles__value">120 <span class="b-text-tiles__unit">m²</span></p>', $html);
+        $this->assertSame(2, substr_count($html, '<li class="b-text-tiles__tile'), 'a tile with nothing in it is left out');
 
         // Nothing to say is nothing printed, not an empty frame.
-        $this->assertSame('', trim($this->render([$this->node('hero'), $this->node('text'), $this->node('cta')])));
+        $this->assertSame('', trim($this->render([$this->node('hero'), $this->node('text'), $this->node('cta'), $this->node('text-tiles')])));
+    }
+
+    /**
+     * The entrance on scroll (THEMES §9.3) through the types imported into the tables, not the
+     * files: what the page, the panel's preview and `blocks_render` print. Off — no mark and no
+     * directive left as text; on — the marks, and still no directive as text.
+     */
+    #[Test]
+    public function the_imported_blocks_mark_their_entrance_only_when_the_theme_says_so(): void
+    {
+        $this->sync();
+        $page = fn (): string => $this->render([
+            $this->node('hero', ['title' => 'Hero']),
+            $this->node('text', ['heading' => 'Text', 'body' => '<p>Words.</p>']),
+            $this->node('media-text', ['heading' => 'Media', 'body' => '<p>Words.</p>']),
+            $this->node('cards', ['heading' => 'Cards', 'cards' => [['title' => 'One', 'text' => 'A card']]]),
+            $this->node('cta', ['heading' => 'Ask', 'button_label' => 'Now', 'button_url' => '/now']),
+            $this->node('contact', ['heading' => 'Write', 'show_contacts' => false, 'form' => '']),
+            $this->node('text-tiles', ['heading' => 'Tiles', 'tiles' => [['kind' => 'value', 'value' => '1', 'label' => 'One']]]),
+        ]);
+
+        $off = $page();
+        $this->assertStringContainsString('class="b-cta b-cta--accent"', $off);
+        $this->assertStringNotContainsString('data-webx-reveal', $off);
+        $this->assertStringNotContainsStringIgnoringCase('@webxReveal', $off);
+
+        $chain = new ThemeChain([new ThemeManifest('theme', '/theme', true, reveal: 'fade'), ...$this->app->make(ThemeChain::class)->layers]);
+        $this->app->instance(ThemeReveal::class, new ThemeReveal($chain));
+        $this->app->make(Renderer::class)->flush();
+
+        $on = $page();
+        $this->assertStringNotContainsStringIgnoringCase('@webxReveal', $on);
+        $this->assertStringNotContainsString('@webx', $on);
+        foreach (['b-hero__inner', 'b-text__inner', 'b-cards__head', 'b-cta__inner', 'b-contact__head', 'b-text-tiles__words'] as $class) {
+            $this->assertMatchesRegularExpression('~class="'.$class.'[^"]*"[^>]*?\sdata-webx-reveal="fade"~', $on, $class);
+        }
+        foreach (['b-media-text__grid', 'b-cards__grid', 'b-contact__grid', 'b-text-tiles__tiles'] as $class) {
+            $this->assertMatchesRegularExpression('~class="'.$class.'[^"]*"[^>]*?\sdata-webx-reveal="stagger" data-webx-reveal-effect="fade"~', $on, $class);
+        }
+    }
+
+    /**
+     * The buttons on `wx-link` (webx-ui#132): a new tab with its `rel`, a file of the library that
+     * downloads under the name it was uploaded with, and the old `*_url` read while the link is
+     * empty — a block saved before the field existed prints what it always printed.
+     */
+    #[Test]
+    public function the_buttons_take_a_link_a_new_tab_and_a_download(): void
+    {
+        $this->sync();
+
+        $file = ['target' => 'file', 'path' => 'media/ab/cd/f00d.pdf', 'download' => true];
+        $away = ['target' => 'url', 'url' => 'https://example.com/plan', 'new_tab' => true, 'rel' => ['nofollow']];
+
+        $html = $this->render([
+            $this->node('hero', ['title' => 'Both', 'button_label' => 'Price list', 'button_link' => $file, 'second_label' => 'The plan', 'second_link' => $away]),
+            $this->node('cta', ['heading' => 'Ask', 'button_label' => 'Now', 'button_link' => $away, 'button_url' => '/ignored']),
+            $this->node('media-text', ['heading' => 'Words', 'button_label' => 'Read', 'button_link' => ['target' => 'file', 'path' => 'media/ab/cd/f00d.pdf']]),
+            $this->node('cards', ['cards' => [['title' => 'Card', 'link' => $away]]]),
+            $this->node('text-tiles', ['heading' => 'Tiles', 'button_label' => 'Brochure', 'button_link' => $file]),
+        ]);
+
+        $this->assertStringContainsString('<a class="b-hero__button" href="/storage/media/ab/cd/f00d.pdf" download="Price list.pdf">Price list</a>', $html);
+        $this->assertStringContainsString('<a class="b-hero__button b-hero__button--quiet" href="https://example.com/plan" target="_blank" rel="nofollow noopener noreferrer">The plan</a>', $html);
+        // A chosen link wins over the old address beside it.
+        $this->assertStringContainsString('<a class="b-cta__button" href="https://example.com/plan" target="_blank" rel="nofollow noopener noreferrer">Now</a>', $html);
+        $this->assertStringNotContainsString('/ignored', $html);
+        // A file without the switch opens rather than downloads.
+        $this->assertStringContainsString('<a class="b-media-text__button" href="/storage/media/ab/cd/f00d.pdf">Read</a>', $html);
+        $this->assertStringContainsString('<a class="b-cards__link" href="https://example.com/plan" target="_blank" rel="nofollow noopener noreferrer">Card</a>', $html);
+        $this->assertStringContainsString('<a class="b-text-tiles__button" href="/storage/media/ab/cd/f00d.pdf" download="Price list.pdf">Brochure</a>', $html);
+
+        // A file the library no longer has, and a link with nowhere to go: no button, and no old
+        // address put back in its place.
+        $gone = $this->render([$this->node('hero', ['title' => 'Gone', 'button_label' => 'Price list', 'button_link' => ['target' => 'file', 'path' => 'media/no/ne/gone.pdf', 'download' => true], 'button_url' => '/old'])]);
+        $this->assertStringNotContainsString('b-hero__button', $gone);
+
+        // The old shape, as every site saved it: the same anchors as before the link fields.
+        $old = $this->render([
+            $this->node('hero', ['title' => 'Old', 'button_label' => 'Go', 'button_url' => '/go', 'second_label' => 'Chat', 'second_url' => 'viber://chat?number=0000']),
+            $this->node('cta', ['heading' => 'Old', 'button_label' => 'Now', 'button_url' => '/now']),
+            $this->node('media-text', ['heading' => 'Old', 'button_label' => 'Read', 'button_url' => '/read']),
+            $this->node('cards', ['cards' => [['title' => 'Old card', 'link_url' => '/card']]]),
+        ]);
+
+        $this->assertStringContainsString('<a class="b-hero__button" href="/go">Go</a>', $old);
+        $this->assertStringContainsString('<a class="b-hero__button b-hero__button--quiet" href="viber://chat?number=0000">Chat</a>', $old);
+        $this->assertStringContainsString('<a class="b-cta__button" href="/now">Now</a>', $old);
+        $this->assertStringContainsString('<a class="b-media-text__button" href="/read">Read</a>', $old);
+        $this->assertStringContainsString('<a class="b-cards__link" href="/card">Old card</a>', $old);
+    }
+
+    /**
+     * The call to action opening a form of the inbox in a dialog (THEMES §9.8): «An address» with
+     * `#webx-form-<slug>` typed in it, or the address left empty and the anchor filled, is the
+     * bare `href="#webx-form-<slug>"` the widgets' form dialogs look for — not an absolute address
+     * of the page, which they would not see.
+     */
+    #[Test]
+    public function a_call_to_action_on_a_picture_downloads_a_file_and_opens_a_form(): void
+    {
+        $this->sync();
+
+        $html = $this->render([
+            $this->node('cta', [
+                'tone' => 'image',
+                'eyebrow' => 'Open house',
+                'heading' => 'Come ==and see==',
+                'button_label' => 'The plan',
+                'button_link' => ['target' => 'file', 'path' => 'media/ab/cd/f00d.pdf', 'download' => true],
+                'second_label' => 'Book a viewing',
+                'second_link' => ['target' => 'url', 'url' => '#webx-form-viewing'],
+                'height' => 'ratio',
+                'ratio' => '21-9',
+                'width' => 'bleed',
+            ]),
+            $this->node('cta', ['heading' => 'By the anchor', 'button_label' => 'Ask', 'button_link' => ['target' => 'url', 'url' => null, 'hash' => 'webx-form-question']]),
+        ]);
+
+        $this->assertStringContainsString('class="b-cta b-cta--image b-cta--dark b-cta--ratio b-cta--ratio-21-9 site-bleed"', $html);
+        $this->assertStringContainsString('<p class="b-cta__eyebrow">Open house</p>', $html);
+        $this->assertStringContainsString('<div class="b-cta__shade"></div>', $html);
+        $this->assertStringContainsString('<a class="b-cta__button" href="/storage/media/ab/cd/f00d.pdf" download="Price list.pdf">The plan</a>', $html);
+        $this->assertStringContainsString('<a class="b-cta__button b-cta__button--quiet" href="#webx-form-viewing">Book a viewing</a>', $html);
+        $this->assertStringContainsString('<a class="b-cta__button" href="#webx-form-question">Ask</a>', $html);
+        $this->assertSame(['viewing', 'question'], FormDialogs::openers($html));
+    }
+
+    /**
+     * Why the buttons got new fields beside the old ones rather than a new type for the old ids: a
+     * site theme that overrides one of these blocks with its own `button_url` as `wx-input` — the
+     * only shape there was — must stay a compatible override (rule 16), and its template printing
+     * `{{ $button_url }}` must keep being handed a string.
+     */
+    #[Test]
+    public function an_override_written_for_the_old_buttons_stays_compatible(): void
+    {
+        $old = [
+            'hero' => ['button_url', 'second_url'],
+            'cta' => ['button_url', 'second_url'],
+            'media-text' => ['button_url'],
+        ];
+
+        foreach ($old as $slug => $fields) {
+            $override = array_map(static fn (string $id): array => ['id' => $id, 'type' => 'wx-input', 'label' => $id], $fields);
+            $schema = SchemaCompatibility::inherit(self::document($slug)['schema'], $override)['schema'];
+
+            $this->assertSame([], SchemaCompatibility::problems(self::document($slug)['schema'], $schema), $slug);
+        }
+
+        $cards = [['id' => 'cards', 'type' => 'wx-repeater', 'label' => 'Cards', 'children' => [['id' => 'link_url', 'type' => 'wx-input', 'label' => 'Link']]]];
+        $schema = SchemaCompatibility::inherit(self::document('cards')['schema'], $cards)['schema'];
+
+        $this->assertSame([], SchemaCompatibility::problems(self::document('cards')['schema'], $schema));
+
+        // In the panel an old address shows only while it holds one. The `default` is what makes a
+        // block saved after the change — no key at all — read as empty: the form fills defaults in
+        // before it asks a `visible` condition, and the condition cannot name a missing key.
+        $old = [
+            ['hero', self::document('hero')['schema'], ['button_url', 'second_url']],
+            ['cta', self::document('cta')['schema'], ['button_url', 'second_url']],
+            ['media-text', self::document('media-text')['schema'], ['button_url']],
+            ['cards', self::field(self::document('cards')['schema'], 'cards')['children'] ?? [], ['link_url']],
+        ];
+
+        foreach ($old as [$slug, $fields, $ids]) {
+            foreach ($ids as $id) {
+                $field = self::field($fields, $id);
+
+                $this->assertSame('wx-input', $field['type'] ?? null, "{$slug}.{$id}");
+                $this->assertSame('', $field['default'] ?? null, "{$slug}.{$id}");
+                $this->assertSame(['all' => [['when' => $id, 'not' => null], ['when' => $id, 'not' => '']]], $field['visible'] ?? null, "{$slug}.{$id}");
+            }
+        }
     }
 
     /** The demo `text` of this package and anything typed through MCP: plain lines, escaped. */
@@ -346,6 +545,24 @@ final class ThemeDefaultBlocksTest extends TestCase
     {
         /** @var array{schema: list<mixed>}&array<string, mixed> */
         return json_decode((string) file_get_contents(dirname(__DIR__)."/resources/demo/{$slug}.json"), true, flags: JSON_THROW_ON_ERROR);
+    }
+
+    /**
+     * The field of a schema by its id, at the top level.
+     *
+     * @param  array<mixed>  $nodes
+     * @return array<string, mixed>|null
+     */
+    private static function field(array $nodes, string $id): ?array
+    {
+        foreach ($nodes as $node) {
+            if (is_array($node) && ($node['id'] ?? null) === $id) {
+                /** @var array<string, mixed> $node */
+                return $node;
+            }
+        }
+
+        return null;
     }
 
     private static function path(): string

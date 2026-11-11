@@ -72,6 +72,20 @@ final class SetupFailed extends RuntimeException
         return new self("composer require finished, and {$package} is still not in vendor/composer/installed.json.");
     }
 
+    /**
+     * A package that goes by the id of one of the site's own modules: two owners of one set of
+     * tables, permissions and `webx-<id>`, and the panel refuses to boot with both.
+     */
+    public static function idTaken(string $package, string $id, string $owner, ?string $folder, bool $installed): self
+    {
+        return new self(
+            "{$package} goes by `{$id}`, which the site's own module {$owner}".($folder === null ? '' : " ({$folder})")
+            ." already has — two modules would share its tables, permissions and `webx-{$id}`. Rename the site module, or"
+            .' move it into the monorepo and use the package instead (SITE_MODULES §13).'
+            .($installed ? " Composer has installed it: `composer remove {$package}` takes it away again." : ''),
+        );
+    }
+
     public static function step(string $what, int $status, string $again = 'php artisan webx:setup'): self
     {
         return new self("{$what} exited with {$status}. Fix what it said and run `{$again}` again — it carries on from where it stopped.");

@@ -4,10 +4,18 @@ declare(strict_types=1);
 
 namespace WebxUi\Media;
 
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Contracts\Events\Dispatcher;
+use Illuminate\Foundation\Exceptions\Handler;
 use Illuminate\Foundation\Http\Events\RequestHandled;
+use Illuminate\Http\Exceptions\PostTooLargeException;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use WebxUi\Admin\Contracts\AssetDownloads;
 use WebxUi\Admin\Contracts\AssetUrls;
 use WebxUi\Admin\Events\StoredContentRewritten;
 use WebxUi\Admin\Help\HelpRegistry;
@@ -26,6 +34,7 @@ use WebxUi\Media\Console\ConvertToWebpCommand;
 use WebxUi\Media\Console\PruneThumbnailsCommand;
 use WebxUi\Media\Console\SanitizeSvgCommand;
 use WebxUi\Media\Http\Controllers\OldAddressController;
+use WebxUi\Media\Mcp\UploadNotAccepted;
 use WebxUi\Media\Screens\FileFieldType;
 use WebxUi\Media\Screens\FilesFieldType;
 use WebxUi\Media\Screens\GalleryFieldType;
@@ -33,11 +42,15 @@ use WebxUi\Media\Screens\MediaFieldType;
 use WebxUi\Media\Screens\MediaFiles;
 use WebxUi\Media\Storage\FileStore;
 use WebxUi\Media\Storage\LibraryUrls;
+use WebxUi\Media\UploadLinks\UploadLinks;
 use WebxUi\Media\Usage\DatabaseUsage;
 use WebxUi\Media\Usage\MediaUsage;
 
 class MediaServiceProvider extends ServiceProvider
 {
+    /** The rate limiter of the upload links' endpoint. */
+    public const UPLOAD_LINK_LIMITER = 'webx-media-upload-link';
+
     /**
      * What a screen — or a block — can say about a file, and the class that means it.
      *
@@ -55,6 +68,8 @@ class MediaServiceProvider extends ServiceProvider
         // What moves between stands with webx:snapshot, and what stays where it is.
         $this->callAfterResolving(SnapshotTables::class, static function (SnapshotTables $tables): void {
             $tables->content('media_files', 'media_directories', 'media_aliases');
+            // Links made on this stand, for this stand's agents: nothing another stand can use.
+            $tables->stand('media_upload_links');
         });
 
         $this->mergeConfigFrom(__DIR__.'/../config/webx-media.php', 'webx-media');
@@ -67,6 +82,8 @@ class MediaServiceProvider extends ServiceProvider
         // pictures in a `wx-rich-text` document above all. Bound here rather than asked for by
         // name, because the panel may not have a file manager at all.
         $this->app->bind(AssetUrls::class, LibraryUrls::class);
+        // The same answer with the name a file was uploaded under, for a link that downloads it.
+        $this->app->bind(AssetDownloads::class, LibraryUrls::class);
 
         // Where a file is in use, asked before it is deleted. A module that keeps files where the
         // schema cannot show them tags a source of its own with the same name.
@@ -81,6 +98,7 @@ class MediaServiceProvider extends ServiceProvider
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-media');
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
         $this->oldAddresses();
+        $this->uploadLinks();
 
         $this->app->make(ModuleRegistry::class)->register($this->app->make(MediaModule::class));
 
@@ -143,6 +161,39 @@ class MediaServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../lang' => lang_path('vendor/webx-media'),
         ], 'webx-media-lang');
+    }
+
+    /**
+     * The upload links' endpoint: its rate limit, and its one refusal that happens before any
+     * route runs — a body over `post_max_size`, which PHP drops and Laravel's global middleware
+     * turns into an HTML error page. curl on a terminal gets JSON it can read instead.
+     */
+    private function uploadLinks(): void
+    {
+        RateLimiter::for(self::UPLOAD_LINK_LIMITER, static function (Request $request): Limit {
+            [$requests, $minutes] = array_map('intval', array_pad(explode(',', (string) (config('webx-media.upload_links.throttle') ?: '30,1')), 2, 1));
+
+            return Limit::perMinutes(max(1, $minutes), max(1, $requests))->by(self::UPLOAD_LINK_LIMITER.'|'.$request->ip());
+        });
+
+        $this->callAfterResolving(ExceptionHandler::class, static function (ExceptionHandler $handler): void {
+            if (! $handler instanceof Handler) {
+                return;
+            }
+
+            $handler->renderable(static function (PostTooLargeException $tooLarge, Request $request): ?JsonResponse {
+                if ($request->route()?->getName() !== 'webx.media.upload-link'
+                    && ! $request->is(trim((string) config('webx-admin.api_path'), '/').'/media/upload-links/*')) {
+                    return null;
+                }
+
+                return new JsonResponse([
+                    'ok' => false,
+                    'error' => UploadNotAccepted::SIZE,
+                    'message' => 'The request is larger than this server takes ('.app(UploadLinks::class)->rawBytes().' bytes).',
+                ], 413);
+            });
+        });
     }
 
     /**

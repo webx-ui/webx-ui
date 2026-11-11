@@ -61,6 +61,23 @@ export function media(options: MediaOptions = {}): AdminModule {
     // An editor without the library gets no image button rather than one that opens on a 403.
     pickImageWith: MEDIA_BROWSE,
     /**
+     * A file of any kind, for a link that opens or downloads it — `wx-link` with `files`. The
+     * name is the one the file was uploaded under: it is what `download=""` saves it as.
+     */
+    pickFile: async () => {
+      const file = await openMediaPicker({ accept: null })
+
+      return file ? { path: file.path, url: file.url, name: file.file_name } : null
+    },
+    describeFile: async (path, admin) => {
+      // Without the right the key is all there is to say — not "gone", which it may not be.
+      if (!canBrowseMedia(admin)) return { path, url: '', name: path.split('/').pop() ?? path }
+
+      const file = await createMediaApi(admin).fileByPath(path)
+
+      return file ? { path: file.path, url: file.url, name: file.file_name } : null
+    },
+    /**
      * Where those keys live now. One request per key, the way a media field resolves its own:
      * a document holds a handful of pictures, and the answer is the library's current one
      * rather than whatever host the paragraph was written on.

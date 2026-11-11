@@ -142,6 +142,26 @@ return [
 
     /*
     |---------------------------------------------------------------------------
+    | Upload links
+    |---------------------------------------------------------------------------
+    |
+    | `media_upload_link` hands an agent a one-time link it sends a file to with
+    | curl, so the bytes do not pass through the model. `ttl` is how many
+    | minutes a link lives; `throttle` is "requests,minutes" per IP address on
+    | the endpoint; `keep_days` is how long a used link is kept as the record of
+    | who uploaded the file (0 keeps it for ever). Unused links are deleted a
+    | day after they expire, whenever a new one is made.
+    |
+    */
+
+    'upload_links' => [
+        'ttl' => (int) env('WEBX_MEDIA_UPLOAD_LINK_TTL', 10),
+        'throttle' => '30,1',
+        'keep_days' => 90,
+    ],
+
+    /*
+    |---------------------------------------------------------------------------
     | Fetching from an address
     |---------------------------------------------------------------------------
     |

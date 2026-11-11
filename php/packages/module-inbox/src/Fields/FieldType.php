@@ -27,6 +27,15 @@ enum FieldType: string
     case Date = 'date';
     case File = 'file';
     case Hidden = 'hidden';
+    // A day of a calendar and a time of a list, in the site's zone (FORM_STEPS §6): its answer is
+    // two parts, `date` and `time`, and its snapshot keeps the zone and the moment in UTC.
+    case DateTime = 'datetime';
+    // Not a question: the line that starts a step of the form (FORM_STEPS §3.1). The fields after
+    // it, up to the next one, are its step; it is never answered and never a column.
+    case Step = 'step';
+    // Not a question either: the answers given so far, with «Edit» beside each (FORM_STEPS §7).
+    // Never answered, never a column, nothing of it in a submission.
+    case Summary = 'summary';
 
     /**
      * @return list<string>
@@ -40,6 +49,12 @@ enum FieldType: string
     public function hasChoices(): bool
     {
         return in_array($this, [self::Select, self::Radio, self::Checkbox], true);
+    }
+
+    /** Whether a visitor answers it: everything but the line that starts a step and the summary. */
+    public function isQuestion(): bool
+    {
+        return $this !== self::Step && $this !== self::Summary;
     }
 
     /** Types whose answer may be more than one thing. */

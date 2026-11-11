@@ -60,6 +60,7 @@ use WebxUi\Orders\Events\OrderStatusChanged;
 use WebxUi\Orders\Models\Order;
 use WebxUi\Orders\Models\OrderAdjustment;
 use WebxUi\Orders\Models\OrderBenefit;
+use WebxUi\Orders\Models\OrderField;
 use WebxUi\Orders\Models\OrderItem;
 use WebxUi\Orders\Models\OrderMilestone;
 use WebxUi\Orders\Models\OrderRefund;
@@ -114,6 +115,7 @@ final class Orders
 
         $this->validate($customer, $recipient, $comment);
         $this->blocks->check($input->blocks);
+        $fields = self::fieldRows($input->fields);
 
         $key = $input->idempotencyKey !== null && $input->idempotencyKey !== '' ? self::hash($input->idempotencyKey) : null;
 
@@ -122,7 +124,7 @@ final class Orders
         }
 
         try {
-            return $this->db->transaction(fn (): Order => $this->write($input, $customer, $recipient, $comment, $key));
+            return $this->db->transaction(fn (): Order => $this->write($input, $customer, $recipient, $comment, $key, $fields));
         } catch (UniqueConstraintViolationException $e) {
             // A twin that came past the lock of another cart with the same key: the key is the
             // order's, whichever request made it.
@@ -995,9 +997,10 @@ final class Orders
     }
 
     /**
-     * The contacts, the recipient, the comment, the manager note (§8) — the lines, the money and
-     * the milestones never. What changed goes to the panel's journal and to the order's timeline,
-     * and `OrderDetailsChanged` carries the old values; a patch that changes nothing is silence.
+     * The contacts, the recipient, the comment, the manager note, the extra fields (§8) — the lines,
+     * the money and the milestones never. What changed goes to the panel's journal and to the
+     * order's timeline, and `OrderDetailsChanged` carries the old values; a patch that changes
+     * nothing is silence. The buyer gets no letter about it.
      *
      * @throws ValidationException
      */
@@ -1042,6 +1045,13 @@ final class Orders
                 }
             }
 
+            if ($patch->has('fields')) {
+                /** @var array<string, mixed> $answers */
+                $answers = $patch->get('fields');
+                // Made here, under the lock: the rows of the order as they are now, the definitions too.
+                $after['fields'] = Container::getInstance()->make(FieldAnswers::class)->edit($locked->fields, $answers, $locked->locale);
+            }
+
             $customer = new Contact((string) $after['customer_first_name'], $after['customer_last_name'], $after['customer_phone'], $after['customer_email']);
             /** @var array{first_name: string, last_name: string|null, phone: string|null}|null $recipient */
             $recipient = $after['recipient'];
@@ -1070,7 +1080,7 @@ final class Orders
             $changes = [];
 
             foreach ($fields as $field) {
-                $changes[$field] = [self::shown($before[$field]), self::shown($after[$field])];
+                $changes[$field] = [self::shown($before[$field], $field), self::shown($after[$field], $field)];
             }
 
             $this->journal->record($locked, 'updated', $changes);
@@ -1198,7 +1208,8 @@ final class Orders
         $this->validate($input->customer->normalised(), $input->recipient?->normalised(), $comment);
     }
 
-    private function write(PlaceOrder $input, Contact $customer, ?Contact $recipient, ?string $comment, ?string $key): Order
+    /** @param  list<array{key: string, type: string, label: string, value: bool|string, text: string}>|null  $fields */
+    private function write(PlaceOrder $input, Contact $customer, ?Contact $recipient, ?string $comment, ?string $key, ?array $fields): Order
     {
         // 2. The lock of the cart's row, the first of the locks (§6.3): the same cart is not
         // ordered twice from two tabs, and a line added meanwhile waits for the order.
@@ -1250,6 +1261,7 @@ final class Orders
             'comment' => $comment,
             'delivery' => $input->blocks['delivery'] ?? null,
             'payment' => $input->blocks['payment'] ?? null,
+            'fields' => $fields,
             'placed_at' => $at,
             'awaiting_payment' => $input->awaitPayment,
         ]);
@@ -2456,7 +2468,7 @@ final class Orders
     /**
      * The fields `updateDetails()` may change, as they are now.
      *
-     * @return array{customer_first_name: string, customer_last_name: string|null, customer_phone: string|null, customer_email: string|null, recipient: array{first_name: string, last_name: string|null, phone: string|null}|null, comment: string|null, manager_note: string|null}
+     * @return array{customer_first_name: string, customer_last_name: string|null, customer_phone: string|null, customer_email: string|null, recipient: array{first_name: string, last_name: string|null, phone: string|null}|null, comment: string|null, manager_note: string|null, fields: list<array{key: string, type: string, label: string, value: bool|string, text: string}>|null}
      */
     private function details(Order $order): array
     {
@@ -2468,13 +2480,19 @@ final class Orders
             'recipient' => $order->recipient,
             'comment' => $order->comment,
             'manager_note' => $order->manager_note,
+            'fields' => $order->fields,
         ];
     }
 
-    /** A value as the journal shows it: the recipient as one line, not as json. */
-    private static function shown(mixed $value): ?string
+    /**
+     * A value as the journal shows it: the recipient as one line, not as json; the extra fields as
+     * «label: text; …» — a list of rows, not a recipient (WEBX_UI_ORDER_FIELDS.md §6.2).
+     */
+    private static function shown(mixed $value, string $field = ''): ?string
     {
-        if (is_array($value)) {
+        if ($field === 'fields') {
+            $value = is_array($value) ? implode('; ', array_map(static fn (array $row): string => $row['label'].': '.$row['text'], $value)) : null;
+        } elseif (is_array($value)) {
             $value = implode(', ', array_filter([trim(($value['first_name'] ?? '').' '.($value['last_name'] ?? '')), $value['phone'] ?? null], static fn (mixed $part): bool => is_string($part) && $part !== ''));
         }
 
@@ -2509,6 +2527,38 @@ final class Orders
         $id = $this->auth->guard($guard)->id();
 
         return is_int($id) || (is_string($id) && ctype_digit($id)) ? (int) $id : null;
+    }
+
+    /**
+     * The rows of the extra fields as the order keeps them (WEBX_UI_ORDER_FIELDS.md §2.2), or null
+     * — none filled. The order does not know the definitions: the checkout made the rows, and only
+     * their shape is checked here, so a mistake of code is not written into an order.
+     *
+     * @param  list<array<string, mixed>>  $rows
+     * @return list<array{key: string, type: string, label: string, value: bool|string, text: string}>|null
+     *
+     * @throws InvalidArgumentException a row of another shape, or a key twice
+     */
+    private static function fieldRows(array $rows): ?array
+    {
+        $kept = [];
+
+        foreach ($rows as $row) {
+            $key = $row['key'] ?? null;
+            $value = $row['value'] ?? null;
+
+            if (! is_string($key) || preg_match(OrderField::KEY, $key) !== 1 || isset($kept[$key])
+                || ! in_array($row['type'] ?? null, OrderField::TYPES, true)
+                || ! is_string($row['label'] ?? null) || $row['label'] === ''
+                || ! is_string($row['text'] ?? null) || $row['text'] === ''
+                || ! (is_string($value) || $value === true)) {
+                throw new InvalidArgumentException('A row of the extra fields of an order is a key, a type, a label, a value and a text, each key once: '.json_encode($row));
+            }
+
+            $kept[$key] = ['key' => $key, 'type' => $row['type'], 'label' => $row['label'], 'value' => $value, 'text' => $row['text']];
+        }
+
+        return $kept === [] ? null : array_values($kept);
     }
 
     private static function hash(string $key): string

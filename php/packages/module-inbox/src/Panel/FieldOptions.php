@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace WebxUi\Inbox\Panel;
 
+use WebxUi\Inbox\Fields\ChoiceImages;
+use WebxUi\Inbox\Fields\Conditions;
+use WebxUi\Inbox\Fields\DateTimeField;
 use WebxUi\Inbox\Fields\FieldType;
+use WebxUi\Inbox\Fields\Summary;
 
 /**
  * What each kind of field may be configured with (§4), and nothing else.
@@ -30,17 +34,56 @@ final class FieldOptions
             FieldType::Textarea => self::numbers($input, ['maxlength', 'rows']),
             FieldType::Tel => self::text($input, ['pattern']),
             FieldType::Date => self::text($input, ['min', 'max']),
-            FieldType::Select, FieldType::Radio => ['choices' => self::choices($input['choices'] ?? null)],
+            FieldType::Select => ['choices' => self::choices($input['choices'] ?? null)],
+            FieldType::Radio => ['choices' => self::choices($input['choices'] ?? null, true), ...self::view($input)],
             FieldType::Checkbox => [
-                'choices' => self::choices($input['choices'] ?? null),
+                'choices' => self::choices($input['choices'] ?? null, true),
                 ...self::numbers($input, ['min', 'max']),
+                ...self::view($input),
             ],
             FieldType::Consent => self::consent($input),
             FieldType::File => self::file($input),
             FieldType::Hidden => [],
+            // The grid of a day and the days of the week (FORM_STEPS §6.2); the zone is the site's.
+            FieldType::DateTime => DateTimeField::clean($input),
+            // A step (FORM_STEPS §3.1): the words of its «Next», when they are not the site's own.
+            FieldType::Step => ['next-text' => self::words($input['next-text'] ?? null) ?? ''],
+            // The summary (FORM_STEPS §7): the names of the fields it shows, none — every one above.
+            FieldType::Summary => [Summary::KEY => Summary::clean($input[Summary::KEY] ?? null)],
         };
 
+        // When the field is shown (FORM_STEPS §4), whatever its type: a hidden field is filled in
+        // by the site and never shown, so a condition on it would mean nothing; a summary shows
+        // what is shown above it, so it has its condition already.
+        if ($type !== FieldType::Hidden && $type !== FieldType::Summary) {
+            foreach (Conditions::KEYS as $key) {
+                $options[$key] = Conditions::clean($input[$key] ?? null) ?? [];
+            }
+        }
+
         return array_filter($options, static fn (mixed $value): bool => $value !== [] && $value !== '');
+    }
+
+    /**
+     * How a group of radios or ticks is drawn (FORM_STEPS §5.1): `view: cards` and the columns
+     * the cards stand in, 1–4. A list is the default and is not written down; columns without
+     * cards mean nothing and are dropped with them.
+     *
+     * @param  array<mixed>  $input
+     * @return array<string, mixed>
+     */
+    private static function view(array $input): array
+    {
+        if (($input['view'] ?? null) !== 'cards') {
+            return [];
+        }
+
+        $columns = $input['columns'] ?? null;
+
+        return [
+            'view' => 'cards',
+            'columns' => is_numeric($columns) ? max(1, min(4, (int) $columns)) : '',
+        ];
     }
 
     /**
@@ -121,9 +164,13 @@ final class FieldOptions
      * whose value and label are the same words: `["A", "B"]` is what anybody writing a list
      * by hand sends first, and dropping it without a word was a select with nothing in it.
      *
+     * A radio or a tick may carry what a card shows (`$cards`): a description — words in every
+     * language, like the label — and a picture of the media library, kept by its key. Kept with
+     * a list too, so that switching to cards and back loses nothing; neither goes into an answer.
+     *
      * @return list<array<string, mixed>>
      */
-    private static function choices(mixed $input): array
+    private static function choices(mixed $input, bool $cards = false): array
     {
         if (! is_array($input)) {
             return [];
@@ -148,9 +195,50 @@ final class FieldOptions
 
             $label = $choice['label'] ?? null;
 
-            $choices[] = ['value' => $value, 'label' => is_array($label) || is_string($label) ? $label : $value];
+            $kept = ['value' => $value, 'label' => is_array($label) || is_string($label) ? $label : $value];
+
+            if ($cards) {
+                $description = self::words($choice['description'] ?? null);
+                $image = ChoiceImages::store($choice['image'] ?? null);
+
+                if ($description !== null) {
+                    $kept['description'] = $description;
+                }
+
+                if ($image !== null) {
+                    $kept['image'] = $image;
+                }
+            }
+
+            $choices[] = $kept;
         }
 
         return $choices;
+    }
+
+    /**
+     * Words in every language, or in one: the blank ones dropped, nothing at all when none is left.
+     *
+     * @return array<string, string>|string|null
+     */
+    private static function words(mixed $input): array|string|null
+    {
+        if (is_string($input)) {
+            return trim($input) === '' ? null : trim($input);
+        }
+
+        if (! is_array($input)) {
+            return null;
+        }
+
+        $words = [];
+
+        foreach ($input as $locale => $line) {
+            if (is_string($locale) && is_scalar($line) && trim((string) $line) !== '') {
+                $words[$locale] = trim((string) $line);
+            }
+        }
+
+        return $words === [] ? null : $words;
     }
 }

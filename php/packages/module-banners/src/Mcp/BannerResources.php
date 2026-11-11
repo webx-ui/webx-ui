@@ -77,7 +77,7 @@ final class BannerResources
                 'text' => '{ text: { "<lang>": "…" }, tag } — {title} and {text} put in the banner\'s fields. An empty '
                     .'language shows the default one, else the first written.',
                 'image' => '{ image: "<library key>" }',
-                'button' => '{ text: { … }, link, variant }',
+                'button' => '{ text: { … }, link, variant } — link as a button of banners_create takes it, a file of the library included',
                 'buttons' => 'the banner\'s own buttons, in a row — one such layer at most',
             ],
             'ranges' => LayerRules::FRAME,
@@ -124,7 +124,7 @@ final class BannerResources
                         'title' => BannerNames::of($banner, $locales),
                         'enabled' => $banner->enabled,
                         'written_in' => $banner->wordLanguages(),
-                        'has_video' => $banner->mediaPath('video') !== null,
+                        'has_video' => $banner->mediaPath('video') !== null || $banner->mediaPath('video_mobile') !== null,
                         'layers' => count($banner->layerRows()),
                     ])
                     ->values()

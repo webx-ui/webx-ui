@@ -9,6 +9,19 @@ return [
     'empty-help' => 'Un pedido aparece aquí en cuanto se hace en el sitio.',
     'order' => 'Pedido',
     'statuses-cache' => 'Estados de los pedidos',
+    'order-field' => [
+        'title' => 'Campo del pedido',
+        'cache' => 'Campos del pedido',
+        'key' => 'Clave',
+        'type' => 'Tipo',
+        'place' => 'Lugar',
+        'label' => 'Nombre',
+        'hint' => 'Ayuda',
+        'options' => 'Opciones',
+        'required' => 'Obligatorio',
+        'active' => 'Activo',
+        'parent_id' => 'Mostrar si está marcado',
+    ],
     'fields' => [
         'customer_first_name' => 'Nombre',
         'customer_last_name' => 'Apellido',
@@ -18,6 +31,7 @@ return [
         'comment' => 'Comentario del comprador',
         'manager_note' => 'Nota del gestor',
         'user_id' => 'Visitante',
+        'fields' => 'Campos adicionales',
     ],
     'milestones' => [
         'placed' => 'Realizado',

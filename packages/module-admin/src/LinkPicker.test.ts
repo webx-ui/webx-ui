@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { defineComponent, h, ref } from 'vue'
-import { WxAutocomplete, WxCheckbox, WxInput, WxSegmented, WxSelect } from '@webx-ui/core'
+import { WxAutocomplete, WxButton, WxCheckbox, WxInput, WxSegmented, WxSelect } from '@webx-ui/core'
 import { adminKey, type AdminContext } from './admin'
 import { createI18n, i18nKey } from './i18n'
 import { adminMessages } from './messages'
@@ -33,7 +33,11 @@ const PAGES: LinkCandidate[] = [
  * every change would be computed from the value it started with — and two changes in a row, which
  * is exactly what ticking two boxes is, would lose the first one.
  */
-function picker(value: LinkValue | null = emptyLink(), props: Record<string, unknown> = {}) {
+function picker(
+  value: LinkValue | null = emptyLink(),
+  props: Record<string, unknown> = {},
+  extra: Partial<AdminContext> = {},
+) {
   const i18n = createI18n({ locale: 'en' })
   i18n.defaults('webx-admin', adminMessages)
 
@@ -50,7 +54,7 @@ function picker(value: LinkValue | null = emptyLink(), props: Record<string, unk
     ],
   }))
 
-  const admin = { apiPath: '/api/cms', http: { get, post } } as unknown as AdminContext
+  const admin = { apiPath: '/api/cms', http: { get, post }, ...extra } as unknown as AdminContext
 
   const model = ref<LinkValue | null>(value)
 
@@ -232,5 +236,93 @@ describe('WxLinkPicker', () => {
     await flushPromises()
 
     expect(wrapper.find('.wx-link-picker__hash').exists()).toBe(false)
+  })
+  describe('a file of the library', () => {
+    const PRICES = {
+      path: 'media/ab/cd/f00d.pdf',
+      url: '/storage/media/ab/cd/f00d.pdf',
+      name: 'Price list.pdf',
+    }
+
+    function targets(wrapper: ReturnType<typeof picker>['wrapper']): string[] {
+      return (wrapper.getComponent(WxSegmented).props('options') as { value: string }[]).map(
+        (one) => one.value,
+      )
+    }
+
+    it('is a target only where the field asks for files and a library can pick one', async () => {
+      const pickFile = vi.fn(async () => PRICES)
+
+      const plain = picker(emptyLink(), {}, { pickFile })
+      await flushPromises()
+      expect(targets(plain.wrapper)).toEqual(['entity', 'url', 'none'])
+
+      const noLibrary = picker(emptyLink(), { files: true })
+      await flushPromises()
+      expect(targets(noLibrary.wrapper)).toEqual(['entity', 'url', 'none'])
+
+      const both = picker(emptyLink(), { files: true }, { pickFile })
+      await flushPromises()
+      expect(targets(both.wrapper)).toEqual(['entity', 'url', 'file', 'none'])
+    })
+
+    it('keeps the key the library picked, never the address, and the download switch', async () => {
+      const pickFile = vi.fn(async () => PRICES)
+      const { wrapper, model } = picker(
+        { ...emptyLink(), target: 'file' },
+        { files: true },
+        { pickFile },
+      )
+      await flushPromises()
+
+      // A file has no anchor to point at.
+      expect(wrapper.findComponent(WxInput).exists()).toBe(false)
+
+      await wrapper.getComponent(WxButton).trigger('click')
+      await flushPromises()
+
+      expect(pickFile).toHaveBeenCalledOnce()
+      expect(model.value).toMatchObject({
+        target: 'file',
+        path: PRICES.path,
+        download: false,
+        url: null,
+      })
+      expect(wrapper.text()).toContain('Price list.pdf')
+
+      const download = wrapper
+        .findAllComponents(WxCheckbox)
+        .find((box) => box.text() === 'Download instead of opening')
+
+      download?.vm.$emit('update:modelValue', true)
+      await flushPromises()
+
+      expect(model.value?.download).toBe(true)
+    })
+
+    it('names a saved file again, and says when the library no longer has it', async () => {
+      const describeFile = vi.fn(async (path: string) => (path === PRICES.path ? PRICES : null))
+
+      const saved = picker(
+        { ...emptyLink(), target: 'file', path: PRICES.path, download: true },
+        { files: true },
+        { describeFile },
+      )
+      await flushPromises()
+
+      expect(describeFile).toHaveBeenCalledWith(PRICES.path)
+      expect(saved.wrapper.text()).toContain('Price list.pdf')
+      // Drawn even where nothing could pick a new one: the value is a file link.
+      expect(targets(saved.wrapper)).toContain('file')
+
+      const gone = picker(
+        { ...emptyLink(), target: 'file', path: 'media/no/ne/gone.pdf' },
+        { files: true },
+        { describeFile },
+      )
+      await flushPromises()
+
+      expect(gone.wrapper.text()).toContain('This file is no longer in the library')
+    })
   })
 })

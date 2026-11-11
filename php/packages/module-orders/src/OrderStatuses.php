@@ -50,8 +50,8 @@ final readonly class OrderStatuses
     public function writePublic(array $input, ?PublicStatus $status = null): PublicStatus
     {
         $fallback = $this->locales->fallback();
-        $code = $input['code'] ?? null;
-        $input['code'] = is_string($code) ? strtolower(trim($code)) : $code;
+        // Brought before the check, so only an empty or a taken code is refused (#125).
+        $input['code'] = PublicStatus::codeFor('code', $input['code'] ?? null);
 
         /** @var array{code: string, name: array<string, string|null>, description?: array<string, string|null>|null, notify_channels?: list<int>|null} $valid */
         $valid = $this->validation->make($input, [

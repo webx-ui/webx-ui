@@ -71,13 +71,34 @@ use; an administrator can add places of their own in the panel for a template th
 | `image`        | a picture from the library, kept as its key — **required**, the one field that is                                         |
 | `image_mobile` | a narrower crop for phones, shown below the breakpoint instead of `image`                                                 |
 | `video`        | a video from the library, played silently over the picture; the picture is its poster                                     |
+| `video_mobile` | a video of its own for phones, played below the breakpoint instead of `video`                                             |
+| `poster`       | a picture: what is seen before the video's first frame and where it does not play; empty — `image`                        |
 | `title`        | translatable                                                                                                              |
 | `text`         | translatable plain text; the template prints it with its line breaks; takes shortcodes                                    |
 | `buttons`      | up to three: a translatable label, a [link](/guide/menu#an-item-points-at-one-of-three-things) and a look from the config |
 | `enabled`      | the whole of «on the site»: no draft, no schedule; a new banner starts **off**                                            |
 
 The picture is required because every layout stands on it: the frame's proportions, the poster of
-the video and what is seen without JavaScript. A video without a picture is refused under `image`.
+the video and what is seen without JavaScript. A video without a picture is refused under `image`,
+and so is a phone's video.
+
+**The video** is the widgets' background video, `<x-webx-video variant="background">`: muted, in a
+loop, `playsinline`, with a pause button in its corner (WCAG 2.2.2) whose choice the next page
+remembers. It plays only while the banner is on screen — and in a slider only while its slide is
+the one shown — and never by itself under `prefers-reduced-motion` or on a connection saving data:
+then the poster is all there is, as it is without JavaScript. `preload="none"`: a video that does
+not play is never fetched.
+
+- **Which video, at which width.** Above the breakpoint `video`. Below it `video_mobile`; without
+  one, `video` where the place says `video_on_mobile`, else none — the phone sees its picture.
+  The two are two backdrops, and the breakpoint's CSS hides the one that is not for this width:
+  hidden, it is never on screen, so it is neither played nor loaded.
+- **The poster** is the banner's `<picture>`, not an attribute of the video: one image in the frame,
+  with its `width` and `height`, eager and `fetchpriority="high"` on the first banner — the page's
+  LCP — and the video fades in over it with its first frame, so nothing moves. Where a video plays
+  the picture is `poster` (else `image`); below the breakpoint `image_mobile` still wins. Give
+  the poster the picture's proportions: the layers stand on the picture's.
+- A banner without `video_mobile` and `poster` looks and plays as it did before they were there.
 
 **A banner with words is seen only in their languages.** A banner whose title or text is written in
 Russian is on the Russian pages; one written only in English is not, and there is no fallback
@@ -115,8 +136,10 @@ A card:
     'image' => ['url' => …, 'thumb' => …, 'width' => 1920, 'height' => 720, 'alt' => …, 'mime' => …],
     'image_mobile' => [ … ] | null,        // null — take image
     'video' => ['url' => …, 'mime' => 'video/mp4'] | null,
+    'video_mobile' => ['url' => …, 'mime' => 'video/mp4'] | null,  // below the breakpoint
+    'poster' => [ … ] | null,              // a picture, as image; null — image is the poster
     'buttons' => [
-        ['label' => 'Book now', 'url' => '/booking', 'new_tab' => false, 'rel' => null, 'variant' => 'primary'],
+        ['label' => 'Book now', 'url' => '/booking', 'new_tab' => false, 'rel' => null, 'download' => null, 'variant' => 'primary'],
     ],
     'fields' => ['badge' => 'New'],        // the project's own fields, by name
 ]
@@ -125,6 +148,11 @@ A card:
 - A button is left out when its link leads nowhere any more — the page is in the bin or unpublished:
   a button to a 404 is worse than no button. Its `url` already has the language prefix.
 - `rel` already carries `noopener noreferrer` for a new tab: print it as it is.
+- A button may lead to a file of the media library — «Download the brochure» on a hero. `download` is
+  then the name the file was uploaded under, when the editor ticked «Download instead of opening»;
+  else null. A file gone from the library drops the button. Inside the `<a>` print
+  `\WebxUi\Admin\Links\LinkAttributes::of($button)` in double curly braces: `href`, `target`, `rel`
+  and `download` in one, as `<x-webx-banners>` does. A button layer takes a file the same way.
 - A banner whose picture is no longer in the library is left out, before `take()` counts — a hole in
   a slider is worse than one slide fewer.
 
@@ -134,17 +162,30 @@ is the place's). Every key is read against the package's default, so a published
 option keeps the others. A key the package does not know is handed to the template as it is — a
 site can add its own.
 
-| Option            | Default | Meaning                                                   |
-| ----------------- | ------- | --------------------------------------------------------- |
-| `interval`        | `6000`  | ms between slides                                         |
-| `autoplay`        | `true`  | off under `prefers-reduced-motion` regardless             |
-| `loop`            | `true`  | after the last slide, the first                           |
-| `arrows`, `dots`  | `true`  |                                                           |
-| `pause_on_hover`  | `true`  | and on focus inside the slider                            |
-| `ratio`           | `16/6`  | `aspect-ratio` of the frame on wide screens               |
-| `ratio_mobile`    | `4/5`   | below the breakpoint                                      |
-| `breakpoint`      | `768`   | px: below it `image_mobile`, `ratio_mobile`, and no video |
-| `video_on_mobile` | `false` | below the breakpoint the poster rather than the video     |
+| Option            | Default | Meaning                                                       |
+| ----------------- | ------- | ------------------------------------------------------------- |
+| `interval`        | `6000`  | ms between slides                                             |
+| `autoplay`        | `true`  | off under `prefers-reduced-motion` regardless                 |
+| `loop`            | `true`  | after the last slide, the first                               |
+| `arrows`, `dots`  | `true`  |                                                               |
+| `pause_on_hover`  | `true`  | and on focus inside the slider                                |
+| `ratio`           | `16/6`  | `aspect-ratio` of the frame on wide screens                   |
+| `ratio_mobile`    | `4/5`   | below the breakpoint                                          |
+| `breakpoint`      | `768`   | px: below it `image_mobile`, `ratio_mobile`, `video_mobile`   |
+| `video_on_mobile` | `false` | without `video_mobile`, `video` on phones too                 |
+| `parallax`        | `false` | `true` (medium), `soft` or `strong`: the picture moves slower |
+
+**Parallax.** With `parallax` on a place (or `<x-webx-banners place="hero" :parallax="true" />` in
+a template, which wins over the place) the picture and the video of each banner move slower than
+the page — the widgets' `data-webx-parallax`. The value is the strength too: `true` or `'medium'`,
+`'soft'`, `'strong'` (`parallax="strong"` on the component). The layers do not move: they stay
+where the editor put them in the frame, and the picture under them shifts by at most 10, 20 or 30%
+of the frame's height (half that on a narrow one). An option of the place, not of a banner: every slide of a place moves alike.
+Without JavaScript and with reduced motion nothing moves.
+
+**A block that slides over the banner.** A block of the theme after the place, with «Slide over the
+section above» on, pins the place while it comes up over it ([Widgets](./widgets.md)): the banner's
+words and layers fade, its picture and video stay. Nothing to set on the place.
 
 ## A template
 
@@ -164,7 +205,10 @@ the site's own should do too, if it draws a place itself from `banners()` and `b
            width="{{ $banner['image']['width'] }}" height="{{ $banner['image']['height'] }}"
            loading="{{ $loop->first ? 'eager' : 'lazy' }}">
     </picture>
-    {{-- the video, the title, nl2br(e($banner['text'])), the buttons with their `rel` as it is --}}
+    @if ($banner['video'])
+      <x-webx-video variant="background" :file="$banner['video']" />
+    @endif
+    {{-- the phone's video, the title, nl2br(e($banner['text'])), the buttons with their `rel` as it is --}}
   </article>
 @endforeach
 ```
@@ -181,9 +225,10 @@ the site's own should do too, if it draws a place itself from `banners()` and `b
   script adds the arrows and the dots (none for a single banner — a slider of one is a picture),
   autoplay with the interval, pause on hover and on focus, and the loop. No autoplay under
   `prefers-reduced-motion`.
-- **The video** has no `src` in the markup (`data-src`): the script gives it one on a wide screen
-  (or when `video_on_mobile`) and not under `prefers-reduced-motion`. Everywhere else, and without
-  JavaScript, the picture is what is seen, and the video's bytes are never fetched.
+- **The video** is `<x-webx-video variant="background" :file="…">` of the widgets over the picture,
+  without a `poster` of its own — the picture is the poster ([A banner](#a-banner)). It plays
+  where it is seen and asks for nothing where it is not; `video_mobile` is a second one for the
+  narrow width, the other hidden by a media query at the breakpoint.
 
 ## Layers
 
@@ -193,7 +238,8 @@ the right, a round picture with a ring of words. `hero` is declared so.
 
 ```php
 'places' => [
-    'hero' => ['layout' => 'slider', 'layers' => true],
+    // The hero of a page carries its main heading: a text layer may be an h1 here.
+    'hero' => ['layout' => 'slider', 'layers' => true, 'tags' => ['h1' => 'Heading 1']],
     // A layer may step out of the frame — below the banner, over the next block.
     'promo' => ['layout' => 'single', 'layers' => true, 'overflow' => true],
 ],
@@ -214,12 +260,12 @@ computer and the phone; the look is shared. A layer without a phone layout uses 
 The site switches at the place's `breakpoint`, by the window — the width `<picture>` switches its
 source at.
 
-| Layer     | What it is                                                                      |
-| --------- | ------------------------------------------------------------------------------- |
-| `text`    | words in a tag (`p`, `h2`, `h3`, `span`; a place may add `h1` under its `tags`) |
-| `image`   | a picture from the library — a decoration with an empty `alt` takes no clicks   |
-| `button`  | a link with its label and look, as a button of the banner has                   |
-| `buttons` | the banner's own buttons, in a row — one such layer at most                     |
+| Layer     | What it is                                                                                   |
+| --------- | -------------------------------------------------------------------------------------------- |
+| `text`    | words in a tag (`p`, `h2`, `h3`, `span`; a place may add `h1` under its `tags`, `hero` does) |
+| `image`   | a picture from the library — a decoration with an empty `alt` takes no clicks                |
+| `button`  | a link with its label and look, as a button of the banner has                                |
+| `buttons` | the banner's own buttons, in a row — one such layer at most                                  |
 
 **The banner's fields are put in.** `{title}` and `{text}` in a layer's words become the
 banner's title and text in the language of the page — so the words stay where they always were
@@ -379,8 +425,10 @@ With the panel's MCP server on (see [AI agents](/guide/agents)), the section is 
 A place is named by its key, a banner by its id. Media are library keys (`"media/ab/cd/spring.jpg"`),
 and a key the library does not have is refused. A plain string in `title`, `text` or a button's
 `label` is the default language; `{ "en": "…", "ru": "…" }` is every language at once. A button is
-`{ label, link, variant }`: `link` is an address (`"/booking"`) or an entity in the form
-`menu_add_link` takes (`{ "target": "entity", "entity_type": "page", "entity_id": 3 }`), and a look
+`{ label, link, variant }`: `link` is an address (`"/booking"`), an entity in the form
+`menu_add_link` takes (`{ "target": "entity", "entity_type": "page", "entity_id": 3 }`) or a file of
+the library (`{ "target": "file", "path": "media/ab/cd/brochure.pdf", "download": true }` — a key the
+library does not have is refused, `dry_run` included), and a look
 the site does not have is refused with the list of those it has. Every tool that changes something
 takes `dry_run: true`. The values go through the same form as the panel's, in one transaction: a
 refused create leaves neither a banner nor the row of a declared place.
@@ -408,6 +456,5 @@ banner leaves the demo alone.
 
 - A block for banners inside a page's content, with its source for `wx-collection`.
 - A link on the whole banner rather than on a button.
-- A separate video for phones.
 - A schedule, together with an answer to the cached page.
 - Click and view statistics, A/B.

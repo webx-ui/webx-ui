@@ -364,7 +364,8 @@ final class McpTest extends TestCase
             ['catalog_collections_create', ['values' => []], 'Give the collection a title'],
             ['catalog_collections_create', ['values' => ['title' => 'A', 'key' => 'picks']], 'key: The key «picks» is taken'],
             ['catalog_collections_create', ['values' => ['title' => 'A', 'key' => 'old']], 'perhaps by a collection in the bin'],
-            ['catalog_collections_create', ['values' => ['title' => 'A', 'key' => 'Not A Key']], 'lowercase Latin'],
+            // Brought to `picks` first (#125): taken, not misshapen.
+            ['catalog_collections_create', ['values' => ['title' => 'A', 'key' => 'Picks!']], 'key: The key «picks» is taken'],
             ['catalog_collections_create', ['values' => ['title' => 'A', 'limit' => 49]], 'limit: The limit is a number from 1 to 48'],
             ['catalog_collections_create', ['values' => ['title' => 'A', 'limit' => 'many']], 'from 1 to 48'],
             ['catalog_collections_create', ['values' => ['title' => 'A', 'view' => 'list']], 'no view called «list»'],

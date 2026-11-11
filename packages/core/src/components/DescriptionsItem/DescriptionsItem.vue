@@ -72,6 +72,9 @@ const style = computed(() => ({ '--wx-descriptions-span': String(span.value) }))
  */
 .wx-descriptions__label {
   min-width: 0;
+  /* A capped label wraps between words, and a word too long for the cap — a URL, a code — breaks
+     rather than pushing the track wider than the cap again. */
+  overflow-wrap: anywhere;
   color: var(--wx-text-muted);
   font-weight: var(--wx-font-weight-medium);
   line-height: var(--wx-font-line-height-normal);

@@ -25,6 +25,7 @@ use WebxUi\Orders\Checkout\CheckoutAnswers;
 use WebxUi\Orders\Checkout\CheckoutAntispam;
 use WebxUi\Orders\Checkout\CheckoutContext;
 use WebxUi\Orders\Checkout\CheckoutContexts;
+use WebxUi\Orders\Checkout\CheckoutFields;
 use WebxUi\Orders\Checkout\CheckoutLinks;
 use WebxUi\Orders\Checkout\CheckoutPreview;
 use WebxUi\Orders\Checkout\CheckoutSettings;
@@ -75,6 +76,7 @@ final readonly class CheckoutController
     public function __construct(
         private CheckoutContexts $contexts,
         private CheckoutSteps $steps,
+        private CheckoutFields $fields,
         private CheckoutSlots $slots,
         private CheckoutSummaryParts $parts,
         private CheckoutSummary $summary,
@@ -140,7 +142,8 @@ final readonly class CheckoutController
 
         $draft = $context->draft ?? new CheckoutDraft(['cart_id' => $context->cart->id]);
 
-        $step->save($context, $request->all(), $draft);
+        // The step's own fields and the extra fields of its places (WEBX_UI_ORDER_FIELDS.md §4.1).
+        $this->fields->save($step, $context, $request->all(), $draft);
         $draft->last_step = $key;
         $draft->save();
         $this->contexts->forget();
@@ -214,7 +217,7 @@ final readonly class CheckoutController
         $payment = null;
 
         foreach ($this->steps->for($context) as $step) {
-            $step->contribute($context, $builder);
+            $this->fields->contribute($step, $context, $builder);
 
             if ($step instanceof SlotStep && $step->key() === CheckoutSlots::PAYMENT) {
                 $payment = $step;
@@ -340,7 +343,7 @@ final readonly class CheckoutController
 
         foreach ($this->steps->for($context) as $index => $step) {
             $summary = $step->summary($context);
-            $done = $summary !== null && $step->check($context, Purpose::Checkout) === [];
+            $done = $summary !== null && $this->fields->check($step, $context, Purpose::Checkout) === [];
             $open = ! $done && ! $opened;
             $opened = $opened || $open;
 
@@ -402,7 +405,7 @@ final readonly class CheckoutController
         $errors = [];
 
         foreach ($this->steps->for($context) as $step) {
-            foreach ($step->check($context, Purpose::Order) as $error) {
+            foreach ($this->fields->check($step, $context, Purpose::Order) as $error) {
                 $errors[$error->field ?? $step->key()][] = $error->message;
             }
         }

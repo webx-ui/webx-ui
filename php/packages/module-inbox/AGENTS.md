@@ -12,7 +12,7 @@ are `webx-ui/module-auth`, the frame `webx-ui/module-admin`, languages `webx-ui/
   `inbox_submission_values`, `inbox_submission_files`, `inbox_submission_events`. The migrations
   seed five statuses (New, In progress, Done, Rejected, Spam).
 - **A field is a row** with a machine name (`fields[email]`, the export, `{{field.<name>}}`): a new one without it is
-  named from its label (`Fields\FieldNames`, `_2` if taken). An answer keeps its field's id, name, label and type.
+  named from its label (`Fields\FieldNames`, `_2` if taken). An answer keeps its field's id, name, label and type. `options.when`/`unless` (`{"purpose": ["agency"]}`, FORM_STEPS §4) — shown only for those answers of a choice field above (`Fields\Conditions`); a hidden field is not checked, kept or hashed, with JS or without; saves refuse `condition.*`, deleting or dragging below what counts on it; a rename carries them. Panel: «Show» in the field dialog (`FieldCondition.vue`, `conditions.ts` of `@webx-ui/module-inbox`). Cards (§5): radio/checkbox `options.view: cards`, `columns` 1–4, a choice's `description` and `image` (media key, `Fields\ChoiceImages`; none without module-media) — look only, the answer is unchanged. Steps (§3): a row of type `step` starts one (`Fields\Steps`; title, help, placeholder = short label, `options.next-text`, when/unless; off takes its fields) — never answered, `Form::questions()` is what is; site `$steps` + `POST {prefix}/{slug}/check` (204/422, nothing taken); max 10, MCP refuses `step.empty`, `order` places rows; panel «Step» in `FieldList.vue`. Summary (§7): a row of type `summary` (`Fields\Summary`; title, help, `options.fields` — names, none = all above but consent/file/hidden) — the answers so far with «Edit», drawn by the widgets in a form of steps only; never answered or kept; a rename carries it. Date and time (§6): type `datetime` (`Fields\DateTimeField`; `time-step`, `time-from`, `time-to`, `weekdays`, `timezone-label`) in the site's zone (`contacts.timezone`, else `app.timezone`) — the intake refuses off the grid, a day not offered, the past; snapshot `value` + `payload` `{date,time,timezone,at}`, a column sorts by `at`; saves refuse `datetime.*`, MCP's dry run gives `times`.
 - **Public door** `POST {webx-inbox.path}/{slug}` (default `/webx/forms/{slug}`, `webx.inbox.submit`) — the
   `web` group without CSRF, so pages cached whole keep working. Answers the widgets' `FormResponse`
   (`{ ok, heading, heading_html, message, redirect, html }`), 422 keyed `fields.<name>`. `{{field.<name>}}` in `thank-you.heading`/`thank-you.text` is the visitor's answer, escaped, in `<em class="webx-form__answer-value">` (`Submissions\ThankYou`); empty, unknown, a file — nothing. `options.redirect` is a menu-style link: a record in the submission's language, else the main one.
@@ -49,7 +49,7 @@ are `webx-ui/module-auth`, the frame `webx-ui/module-admin`, languages `webx-ui/
   `inbox_set_status`, `inbox_notify`; scopes `inbox:read`, `inbox:write`. **Command** `webx:inbox:prune` (`--days`, `--spam-days`, `--dry-run`) — not scheduled by default.
 - **Audit** (`webx-ui/module-audit`): `inbox.no_recipients`, `inbox.notification` (`inbox_failed_days`,
   `inbox_queued_minutes`), `inbox.captcha_keys` (error), `inbox.captcha_provider_mismatch` (notice), `inbox.captcha_unused` (notice), `inbox.spam_without_captcha`
-  (warning; `inbox_spam_min` 3 spam + refusals in `inbox_spam_days` 30), `inbox.legacy_views` (warning: a pre-engine `form.blade.php`).
+  (warning; `inbox_spam_min` 3 spam + refusals in `inbox_spam_days` 30), `inbox.legacy_views` (warning: a pre-engine `form.blade.php`), `inbox.steps_in_old_view` (warning: a view without `$steps`).
 - **Field type** `wx-inbox-form` (`Screens\FormFieldType`; component in `@webx-ui/module-inbox`): a form
   chosen by name, kept by **slug**; a slug no form has is refused when new, kept when already held. Also: relation target
   `inbox-form` (rows with `slug`), notes on submissions, demo content.
@@ -81,7 +81,7 @@ submissions, `cms.can:inbox.update` to change them, `cms.can:inbox.manage` for f
 | A captcha                                   | the site's: tab "Captcha", secrets `WEBX_CAPTCHA_RECAPTCHA_SECRET` / `WEBX_CAPTCHA_TURNSTILE_SECRET` (`WEBX_INBOX_*` still read); then on in the form |
 | Another intake path or disk, larger uploads | `WEBX_INBOX_PATH`, `WEBX_INBOX_DISK`; `WEBX_INBOX_MAX_SIZE` (KB), `upload.extensions`, `upload.max_files`                                             |
 | Other origins, rate limit, duplicates       | `antispam.origins`, `antispam.throttle` (accepted), `antispam.attempts` (all), `duplicate_window` (`--tag=webx-inbox-config`)                         |
-| Visitors' IPs not kept whole                | `WEBX_INBOX_ANONYMISE_IP=true`                                                                                                                        |
+| Visitors' IPs not kept whole, no campaign   | `WEBX_INBOX_ANONYMISE_IP=true`; `WEBX_INBOX_ATTRIBUTION=false` — no `meta.utm`, `utm_first`, `referrer`, `landing` (the widgets' `attribution.js`)    |
 | Forget old submissions                      | `prune.days`, `prune.spam_days`, and schedule `webx:inbox:prune` in the site                                                                          |
 | A different letter                          | `theme/views/vendor/webx-inbox/mail/submission.blade.php`; colours via `$look('…')`                                                                   |
 | Somebody told about a form                  | `inbox_form_save` with `options.recipients`, or the editor's Notifications tab                                                                        |
@@ -99,7 +99,7 @@ The theme's contract (THEMES §10). Fields, messages and the button are the widg
 webx-form-\* — their AGENTS.md; the wx-form-\* of before W6.4 map to them in the guide «Inbox»). The
 inbox adds its layout, in `resources/theme/inbox.css`; restyle in the theme's `src/css`: `webx-inbox-form`
 (+ `webx-inbox-form--<placement>`), `webx-inbox-form__description`, `webx-inbox-form__fields` (two to a row from 24rem of the form), `webx-inbox-form__field`,
-`webx-inbox-form__field--half`, `webx-inbox-form__captcha`, `webx-inbox-form__actions`, `webx-inbox-form__honeypot` (leave it).
+`webx-inbox-form__field--half`, `webx-inbox-form__summary` (a whole row), `webx-inbox-form__captcha`, `webx-inbox-form__actions`, `webx-inbox-form__honeypot` (leave it).
 
 ### Send submissions to a CRM
 

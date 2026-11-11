@@ -3,7 +3,9 @@
 Three ways a site makes the library its own, in the order you reach for them: publish a view and
 rewrite it, register something of your own beside what a package already does, or replace one of
 its services in the container. The layout, which is the fourth and the first one you meet, is in
-[A new site](./new-site.md#the-layout).
+[A new site](./new-site.md#the-layout). A whole section of the panel that only this site has —
+its own records, screens and blocks — is not an extension but a module of the site: see
+[Site modules](./site-modules.md).
 
 ## Publishing views
 

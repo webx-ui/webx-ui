@@ -7,19 +7,21 @@ namespace WebxUi\Debug\Support;
 use Composer\InstalledVersions;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\Foundation\Application;
+use WebxUi\Admin\Panel\Vendors;
 
 /**
  * Where a statement came from: the first frame of the stack outside the framework and outside
  * this package (§7 of the debug bar spec).
  *
  * Laravel and every other vendor are skipped — a statement «from» the query builder says
- * nothing — except `webx-ui/*`, which is the module that asked. A file of the site is named from
+ * nothing — except ours, `webx-ui/*` and the site's own `site/*` ({@see Vendors}), which is the
+ * module that asked. A file of the site is named from
  * the site's root. A compiled Blade view is named by its source, read from the `PATH` comment
  * the compiler leaves at its end; a compiled block template by its block type and version.
  */
 final class CallSite
 {
-    /** @var array<string, string>|null real path of a webx-ui package => its short name */
+    /** @var array<string, string>|null real path of a package of ours => its short name */
     private ?array $packages = null;
 
     /** @var array<string, string|null> compiled view => its source */
@@ -128,7 +130,7 @@ final class CallSite
 
         // A package of ours is the module that asked — unless it is the renderer's own plumbing,
         // which is named by the block it was drawing instead.
-        return ! str_starts_with(substr($file, $vendor + 8), 'webx-ui/');
+        return ! Vendors::ours(substr($file, $vendor + 8));
     }
 
     /** `block hero (type v12)` for a file the block renderer compiled. */
@@ -201,7 +203,7 @@ final class CallSite
         $root = InstalledVersions::getRootPackage()['name'];
 
         foreach (InstalledVersions::getInstalledPackages() as $package) {
-            if ($package === $root || ! str_starts_with($package, 'webx-ui/')) {
+            if ($package === $root || ! Vendors::ours($package)) {
                 continue;
             }
 

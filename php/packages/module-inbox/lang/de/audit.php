@@ -11,4 +11,5 @@ return [
     'captcha-unused' => 'Das Formular :form (:slug) hat kein Captcha, und die Website hat Schlüssel für :providers',
     'spam-without-captcha' => 'Das Formular :form (:slug) hat kein Captcha und bekommt Spam. In :days Tagen als Spam markiert: :spam, abgelehnt: :refused',
     'legacy-views' => 'Das Anfrageformular wird von einer Ansicht aus der Zeit vor der Formular-Engine überschrieben: :path',
+    'steps-in-old-view' => 'Das Formular :form (:slug) hat Schritte, und die Ansicht der Website :path zeigt es auf einer Seite',
 ];

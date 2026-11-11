@@ -77,6 +77,7 @@ import {
 import {
   admins,
   countForms,
+  dependentsOf,
   eventsFor,
   fields,
   forms,
@@ -2183,6 +2184,9 @@ function next(type: BlockType): number {
 
 /* ------------------------------------------------------------------------------ inbox ----- */
 
+/** The site's zone: what a «Date and time» field shows its times in. */
+const SITE_TIMEZONE = 'Europe/Kyiv'
+
 /*
  * Who a form would write to, as the server says it beside the stored list: the playground has
  * no deleted or switched-off accounts, so an id it does not know stands for a deleted one.
@@ -2228,7 +2232,24 @@ function withRecipients(item: InboxForm): InboxForm {
     notify_via: via,
     channels: chosen,
     mail: SITE_MAIL,
+    // The zone of the site, which a «Date and time» field shows its times in (FORM_STEPS §6.5).
+    timezone: SITE_TIMEZONE,
   }
+}
+
+/** A day and a time typed in by hand, as the intake keeps its line: «2026-12-14, 10:30 (Europe/Kyiv)». */
+function answersOf(sent: Record<string, unknown>): Record<string, string | null> {
+  return Object.fromEntries(
+    Object.entries(sent).map(([key, value]) => {
+      if (value !== null && typeof value === 'object' && !Array.isArray(value) && 'date' in value) {
+        const moment = value as { date?: string; time?: string }
+
+        return [key, moment.date ? `${moment.date}, ${moment.time ?? ''} (${SITE_TIMEZONE})` : null]
+      }
+
+      return [key, value as string | null]
+    }),
+  )
 }
 
 on('GET', '/inbox/forms', () => {
@@ -2326,6 +2347,21 @@ on('GET', '/inbox/forms/(\\d+)/fields', ({ params }) => ({
 
 on('POST', '/inbox/forms/(\\d+)/fields', ({ params, body }) => {
   const formId = Number(params[0])
+  // A step row (FORM_STEPS §3.1) is never answered; past ten steps the indicator does not fit.
+  const step = body.type === 'step'
+  // Nor is a summary (§7): it shows the answers above it.
+  const answered = !step && body.type !== 'summary'
+  const own = fields.filter((item) => item.form_id === formId)
+
+  if (
+    step &&
+    own.filter((item) => item.type === 'step').length + (own[0]?.type === 'step' ? 1 : 2) > 10
+  ) {
+    throw new HttpFailure(422, 'A form has at most 10 steps.', undefined, {
+      type: ['A form has at most 10 steps.'],
+    })
+  }
+
   const field: InboxField = {
     id: nextFieldId(),
     form_id: formId,
@@ -2337,9 +2373,9 @@ on('POST', '/inbox/forms/(\\d+)/fields', ({ params, body }) => {
     help: (body.help ?? {}) as InboxField['help'],
     options: (body.options ?? {}) as InboxField['options'],
     is_enabled: body.is_enabled !== false,
-    is_required: body.is_required === true,
-    is_fullsize: body.is_fullsize === true,
-    in_table: body.in_table === true,
+    is_required: answered && body.is_required === true,
+    is_fullsize: !answered || body.is_fullsize === true,
+    in_table: answered && body.in_table === true,
     position: fields.filter((item) => item.form_id === formId).length + 1,
   }
 
@@ -2348,8 +2384,26 @@ on('POST', '/inbox/forms/(\\d+)/fields', ({ params, body }) => {
   return { data: field }
 })
 
-on('POST', '/inbox/forms/(\\d+)/fields/sorting', ({ body }) => {
-  order(fields, body.ids as number[])
+on('POST', '/inbox/forms/(\\d+)/fields/sorting', ({ params, body }) => {
+  const ids = body.ids as number[]
+
+  // As the server does: a field may not go above the field its condition counts on.
+  for (const one of fields.filter((each) => each.form_id === Number(params[0]))) {
+    for (const dependent of dependentsOf(one.form_id, one.key)) {
+      if (ids.indexOf(dependent.id) < ids.indexOf(one.id)) {
+        throw new HttpFailure(
+          422,
+          `“${dependent.key}” counts on “${one.key}”, which would stand below it.`,
+          undefined,
+          {
+            ids: [`“${dependent.key}” counts on “${one.key}”, which would stand below it.`],
+          },
+        )
+      }
+    }
+  }
+
+  order(fields, ids)
 
   return { data: null }
 })
@@ -2368,6 +2422,20 @@ on('PUT', '/inbox/fields/(\\d+)', ({ params, body }) => {
 
 on('DELETE', '/inbox/fields/(\\d+)', ({ params }) => {
   const index = fields.findIndex((item) => item.id === Number(params[0]))
+  const dependents = index >= 0 ? dependentsOf(fields[index]!.form_id, fields[index]!.key) : []
+
+  if (dependents.length > 0) {
+    const names = dependents.map((one) => `“${one.key}”`).join(', ')
+
+    throw new HttpFailure(
+      422,
+      `Fields ${names} count on this one: change their conditions first.`,
+      undefined,
+      {
+        field: [`Fields ${names} count on this one: change their conditions first.`],
+      },
+    )
+  }
 
   if (index >= 0) {
     fields.splice(index, 1)
@@ -2599,7 +2667,7 @@ on('POST', '/inbox/forms/(\\d+)/submissions', ({ params, body }) => {
     assignee_id: null,
     is_read: true,
     source: 'panel',
-    values: (body.fields ?? {}) as Record<string, string | null>,
+    values: answersOf((body.fields ?? {}) as Record<string, unknown>),
     files: [],
     meta: { locale: 'ru' },
     events: [],
@@ -2986,6 +3054,21 @@ function resolveLinkValue(link: Record<string, unknown>): Record<string, unknown
     type === null
       ? null
       : (linkRows(type, 'ru').find((row) => row.id === Number(link.entity_id)) ?? null)
+
+  /* A file of the library, as `LinkUrls::file()`: its address now, and the name it was uploaded
+     under for `download` — a file the library no longer has goes nowhere. */
+  const file =
+    link.target === 'file' && typeof link.path === 'string' ? mediaByPath(link.path) : null
+
+  if (link.target === 'file') {
+    return {
+      ...link,
+      url: file?.url ?? null,
+      label: file?.file_name ?? null,
+      available: file !== null,
+      download: file !== null && link.download === true ? file.file_name : null,
+    }
+  }
 
   const address = found?.url ?? (link.target === 'url' ? link.url : null)
 

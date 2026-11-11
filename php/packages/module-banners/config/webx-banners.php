@@ -31,6 +31,8 @@ return [
             'title' => 'webx-banners::places.hero',
             'layout' => 'slider',
             'layers' => true,
+            // The hero of a page carries its one main heading.
+            'tags' => ['h1' => 'Heading 1'],
         ],
         'promo' => [
             'title' => 'webx-banners::places.promo',
@@ -84,8 +86,9 @@ return [
         'pause_on_hover' => true,    // and on focus inside the slider
         'ratio' => '16/6',           // aspect-ratio of the frame on wide screens
         'ratio_mobile' => '4/5',     // below the breakpoint
-        'breakpoint' => 768,         // px: below it image_mobile, ratio_mobile and no video
-        'video_on_mobile' => false,  // below the breakpoint the poster rather than the video
+        'breakpoint' => 768,         // px: below it image_mobile, ratio_mobile, video_mobile
+        'video_on_mobile' => false,  // without a video_mobile, below the breakpoint the poster rather than the video
+        'parallax' => false,         // true (medium), 'soft' or 'strong': the picture and the video move slower than the page; the layers stay in the frame
     ],
 
     /*
@@ -113,8 +116,8 @@ return [
     |
     | The tags a text layer may be printed as: tag => name for the panel. No
     | h1 here on purpose — a slider has several slides; a place that is the
-    | page's only heading adds it under its own `tags`. `max` is the most
-    | layers one banner has.
+    | page's only heading adds it under its own `tags`, as `hero` does. `max`
+    | is the most layers one banner has.
     |
     */
 

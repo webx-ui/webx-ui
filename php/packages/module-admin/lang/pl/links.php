@@ -34,4 +34,13 @@ return [
     'not-localized' => 'Odnośnik jest ten sam we wszystkich językach i nie podlega tłumaczeniu.',
     'address-fallback' => 'W tym języku nie ma jeszcze adresu — to adres w :locale, głównym języku strony.',
     'address-fallback-label' => 'Adres w języku głównym',
+    'target-file' => 'Plik',
+    'file-choose' => 'Wybierz plik',
+    'file-replace' => 'Inny plik',
+    'file-gone' => 'Tego pliku nie ma już w bibliotece',
+    'file-download' => 'Pobieraj zamiast otwierać',
+    'no-file' => 'W bibliotece mediów nie ma pliku :path.',
+    'files-off' => 'To pole nie linkuje do plików.',
+    'download' => 'Pobieranie jest albo włączone, albo wyłączone.',
+    'path' => 'Wybierz plik z biblioteki mediów.',
 ];

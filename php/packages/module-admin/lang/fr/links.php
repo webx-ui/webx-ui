@@ -34,4 +34,13 @@ return [
     'not-localized' => 'Un lien est le même dans toutes les langues et ne se traduit pas.',
     'address-fallback' => 'Pas encore d\'adresse dans cette langue : voici l\'adresse en :locale, la langue principale du site.',
     'address-fallback-label' => 'Adresse dans la langue principale',
+    'target-file' => 'Un fichier',
+    'file-choose' => 'Choisir un fichier',
+    'file-replace' => 'Un autre fichier',
+    'file-gone' => 'Ce fichier n’est plus dans la médiathèque',
+    'file-download' => 'Télécharger au lieu d’ouvrir',
+    'no-file' => 'Il n’y a pas de fichier :path dans la médiathèque.',
+    'files-off' => 'Ce champ ne pointe pas vers des fichiers.',
+    'download' => 'Le téléchargement est activé ou désactivé.',
+    'path' => 'Choisissez un fichier de la médiathèque.',
 ];

@@ -146,6 +146,28 @@ final class McpTest extends TestCase
     }
 
     #[Test]
+    public function a_typed_key_is_brought_not_refused_and_the_check_sees_it_so(): void
+    {
+        $this->mediaFile();
+        $schema = $this->schema();
+        $schema['steps'][2]['key'] = 'Скло';
+        $schema['steps'][2]['options'][1]['value'] = 'Графіт темний';
+
+        // #125: the check is of what a write keeps, so a key typed as words is no problem.
+        $this->assertTrue($this->content($this->agent('configurators_validate', ['schema' => $schema]))['valid']);
+
+        $created = $this->content($this->agent('configurators_create', ['key' => 'Душові кабіни', 'title' => 'Душові кабіни', 'schema' => $schema]));
+        $this->assertSame('dushovi-kabiny', $created['configurator']['key']);
+        $this->assertSame([], $created['errors']);
+
+        $kept = Configurator::query()->sole()->editing()['schema'];
+        $this->assertSame(['sklo', 'hrafit-temnyy'], [$kept['steps'][2]['key'], $kept['steps'][2]['options'][1]['value']]);
+
+        $this->agent('configurators_create', ['key' => 'Dushovi Kabiny', 'title' => 'Ще одна'])->assertHasErrors(['is taken']);
+        $this->agent('configurators_create', ['key' => '!!!', 'title' => 'Ще одна'])->assertHasErrors(['Nothing is left']);
+    }
+
+    #[Test]
     public function a_configurator_goes_to_the_bin_only_for_real(): void
     {
         $created = $this->content($this->agent('configurators_create', ['key' => 'doors', 'title' => 'Двері']));

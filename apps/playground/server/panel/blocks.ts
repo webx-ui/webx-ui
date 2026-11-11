@@ -736,6 +736,46 @@ const TEASER_STYLES = `.b-recipe-teaser {
  */
 defineFunction('WebxUi\\Recipes\\Rendering\\Duration::format', (minutes) => minutesText(minutes))
 
+/*
+ * `WebxUi\Admin\Links\LinkAttributes::of` — the attributes of an `<a>` for a resolved link: the
+ * address, a new tab with its `rel`, `download` with the file's own name; nothing for a link that
+ * goes nowhere. The old address of a block (`button_url`) is the fallback, as on the server.
+ */
+defineFunction('WebxUi\\Admin\\Links\\LinkAttributes::of', (link, fallback) => {
+  const pairs = (attributes: Record<string, string>) =>
+    new Html(
+      Object.entries(attributes)
+        .map(([name, value]) => `${name}="${escape(value)}"`)
+        .join(' '),
+    )
+
+  if (link !== null && typeof link === 'object' && !Array.isArray(link)) {
+    const value = link as Record<string, unknown>
+
+    if (typeof value.url !== 'string' || value.url === '' || value.available === false) return null
+
+    const attributes: Record<string, string> = { href: value.url }
+
+    if (value.new_tab === true) attributes.target = '_blank'
+    if (typeof value.rel === 'string' && value.rel !== '') attributes.rel = value.rel
+    if (typeof value.download === 'string' && value.download !== '') {
+      attributes.download = value.download
+    }
+
+    return pairs(attributes)
+  }
+
+  if (
+    typeof fallback === 'string' &&
+    fallback.trim() !== '' &&
+    !/^\s*(javascript|data|vbscript):/i.test(fallback)
+  ) {
+    return pairs({ href: fallback.trim() })
+  }
+
+  return null
+})
+
 /**
  * The places modules declared for components (`BlockComponents::declare`), with the schema
  * "Customise" gives the type it makes. `customised` is not stored: it is whether a type of the

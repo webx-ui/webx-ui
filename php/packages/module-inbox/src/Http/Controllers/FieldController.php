@@ -6,6 +6,7 @@ namespace WebxUi\Inbox\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use WebxUi\Admin\Http\ApiResponse;
+use WebxUi\Inbox\Fields\ConditionPlan;
 use WebxUi\Inbox\Fields\FieldNames;
 use WebxUi\Inbox\Http\Requests\SaveFieldRequest;
 use WebxUi\Inbox\Http\Resources\FieldResource;
@@ -38,6 +39,11 @@ final class FieldController
             $values['name'] = FieldNames::fromTitle($values['title'], $form->fields->map(static fn (Field $one): string => $one->key())->values()->all());
         }
 
+        // At the end, so it may name any field above it (FORM_STEPS §4.2).
+        $layout = ConditionPlan::with($form->fields, null, $values);
+        ConditionPlan::assert($layout, (string) $values['name']);
+        ConditionPlan::assertStepRoom($layout);
+
         $field = new Field($values);
         $field->form_id = (int) $form->getKey();
         $field->position = (int) $form->fields()->max('position') + 1;
@@ -53,15 +59,37 @@ final class FieldController
      */
     public function update(SaveFieldRequest $request, Field $field): JsonResponse
     {
-        $field->update($request->values());
+        $values = $request->values();
+
+        // As the form would be after it: a choice others count on taken away, a type that stops
+        // being a choice, a condition naming a field below — refused before anything is written.
+        $layout = ConditionPlan::with($field->form->fields, (int) $field->getKey(), $values);
+        ConditionPlan::assert($layout, self::keyOf($values, $field));
+        ConditionPlan::assertStepRoom($layout);
+
+        $field->update($values);
 
         return ApiResponse::data(new FieldResource($field->refresh()));
     }
 
     public function destroy(Field $field): JsonResponse
     {
+        ConditionPlan::assertDeletable($field->form->fields, $field);
+
         $field->delete();
 
         return ApiResponse::noContent();
+    }
+
+    /**
+     * What the field will be called once the values are written.
+     *
+     * @param  array<string, mixed>  $values
+     */
+    private static function keyOf(array $values, Field $field): string
+    {
+        $name = is_string($values['name'] ?? null) ? trim($values['name']) : '';
+
+        return $name !== '' ? $name : 'f'.$field->getKey();
     }
 }

@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
+use WebxUi\Localization\HasCodes;
 use WebxUi\Localization\HasTranslations;
 
 /**
@@ -27,12 +28,22 @@ use WebxUi\Localization\HasTranslations;
  */
 class PublicStatus extends Model
 {
+    use HasCodes;
     use HasTranslations;
     use SoftDeletes;
 
     protected $table = 'order_public_statuses';
 
     protected $guarded = [];
+
+    /**
+     * Typed by a person or an agent: «В работе» is kept as `v_rabote`, not refused (#125); the
+     * shape is `OrderStatuses::CODE`.
+     */
+    protected static function codes(): array
+    {
+        return ['code' => ['max' => 48, 'separator' => '_', 'lead' => 'status']];
+    }
 
     /**
      * @return list<string>

@@ -30,7 +30,8 @@ prints it, the block that places it, the shortcode, the section of the panel and
   (`View\Components\Collection`, view `webx-catalog-collections::collection`): `view` is `grid` or
   `carousel`, `limit` can only lower the collection's own, `title` is empty for the collection's
   title and `-` for none. Off, in the bin, unknown or empty prints nothing. The card is
-  `webx-catalog::card`.
+  `webx-catalog::card`. The link goes to a page, an address or a file of the media library
+  (`props.files`); the view prints it with `LinkAttributes::of($link)`, `download` included.
 - **Block** `product-collection` (`resources/blocks/product-collection.json`), offered under the
   module id `catalog-collections`, a thin template over the tag. It stands in a region like any
   block. Its field `wx-catalog-collection` (`Screens\CollectionFieldType`) keeps the key and refuses
@@ -111,7 +112,7 @@ sends to the bin, restores and deletes for good. The section is visible to whoev
 - `php artisan migrate`, then create one in `php artisan tinker`:
   `ProductCollection::query()->create(['title' => 'New arrivals'])->key` gives `new-arrivals`.
 - A `limit` of 49 and a link to `javascript:alert(1)` throw a `ValidationException` under `limit`
-  and `link`.
+  and `link`; so does a link to a file the media library does not have (`{ target: file, path }`).
 - `app(CollectionProducts::class)->ids($collection)` gives the ids; unpublish one of the products and
   it is gone from the next call.
 - Put `<x-webx-catalog-collections::collection key="new-arrivals" />` in a template: the cards print;

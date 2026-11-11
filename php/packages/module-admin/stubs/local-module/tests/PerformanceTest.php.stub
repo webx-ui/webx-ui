@@ -1,0 +1,84 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Site\{{ Studly }}\Tests;
+
+use Laravel\Mcp\Server\Testing\TestResponse;
+use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Testing\CountsQueries;
+use WebxUi\Mcp\Registry\ToolRegistry;
+use WebxUi\Mcp\Server\RegistryTool;
+use WebxUi\Mcp\Server\WebxServer;
+
+/**
+ * The query budget of the list, the form and the MCP list. A budget is a ceiling they fit under
+ * today, not a target: a change that needs more says why here before raising the number. The
+ * rows outnumber what one query per row would get away with, so an N+1 shows as a repeated query.
+ *
+ * Guide: https://webx-ui.github.io/webx-ui/guide/performance
+ */
+final class PerformanceTest extends TestCase
+{
+    use CountsQueries;
+
+    private const ROWS = 12;
+
+    #[Test]
+    public function the_list_and_the_form_fit_their_budgets(): void
+    {
+        foreach (range(1, self::ROWS) as $number) {
+            $record = $this->record("Row {$number}");
+        }
+
+        $editor = $this->editor();
+        $this->actingAs($editor, $this->guard());
+
+        // A warm request first: what is measured is the page, not the first request after a deploy.
+        $this->getJson($this->api())->assertOk();
+
+        $this->assertQueriesWithin(8, fn () => $this->getJson($this->api())->assertOk());
+        $this->assertNothingOfOursRepeats(fn () => $this->getJson($this->api())->assertOk());
+
+        $this->assertQueriesWithin(8, fn () => $this->getJson($this->api($record->id))->assertOk());
+    }
+
+    #[Test]
+    public function the_mcp_list_fits_its_budget(): void
+    {
+        foreach (range(1, self::ROWS) as $number) {
+            $this->record("Row {$number}");
+        }
+
+        $editor = $this->editor();
+        $this->agent('{{ tool }}_list', $editor)->assertOk();
+
+        $this->assertQueriesWithin(8, fn () => $this->agent('{{ tool }}_list', $editor)->assertOk());
+        $this->assertNothingOfOursRepeats(fn () => $this->agent('{{ tool }}_list', $editor)->assertOk());
+    }
+
+    /**
+     * No statement runs twice — but the site's settings. The test runs inside a transaction, and
+     * a cache group is not filled inside one (rows read there may roll back), so on a site with
+     * the SEO module its address middleware reads `cms_settings` once per setting. Outside the
+     * test that read is the cache's, not this list's N+1.
+     */
+    private function assertNothingOfOursRepeats(callable $work): void
+    {
+        $tally = $this->recordQueries($work);
+        $repeated = array_filter(
+            $tally->repeated(),
+            static fn (string $shape): bool => ! str_contains($shape, '"cms_settings"') && ! str_contains($shape, '`cms_settings`'),
+            ARRAY_FILTER_USE_KEY,
+        );
+
+        $this->assertSame([], $repeated, 'A statement ran more than once.'.PHP_EOL.$tally->describe());
+    }
+
+    private function agent(string $tool, mixed $as): TestResponse
+    {
+        $bound = new RegistryTool($this->app->make(ToolRegistry::class)->tool($tool));
+
+        return WebxServer::actingAs($as, $this->guard())->tool($bound, []);
+    }
+}

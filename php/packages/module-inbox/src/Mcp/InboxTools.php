@@ -15,8 +15,13 @@ use WebxUi\Admin\Support\Authors;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Inbox\Exceptions\InboxException;
 use WebxUi\Inbox\Exceptions\NobodyToNotify;
+use WebxUi\Inbox\Fields\ConditionPlan;
+use WebxUi\Inbox\Fields\Conditions;
+use WebxUi\Inbox\Fields\DateTimeField;
 use WebxUi\Inbox\Fields\FieldNames;
 use WebxUi\Inbox\Fields\FieldType;
+use WebxUi\Inbox\Fields\Steps;
+use WebxUi\Inbox\Fields\Summary;
 use WebxUi\Inbox\Http\Controllers\FormController;
 use WebxUi\Inbox\Http\Resources\FieldResource;
 use WebxUi\Inbox\Http\Resources\FormResource;
@@ -113,13 +118,28 @@ final class InboxTools
                 .'A field is matched by its id or by its machine name; one that matches nothing is added at the '
                 .'end, and one sent with remove: true is put aside, which leaves the answers already given '
                 .'through it readable. Recipients that are not addresses and a slug that is not an address are '
-                .'refused here exactly as they are in the panel.',
+                .'refused here exactly as they are in the panel. A field may be shown only for some answers above it: '
+                .'options.when / options.unless (see fields.options) — checked on the form as the whole call leaves it. '
+                .'A form of steps: a field of type "step" starts one, and the fields after it, up to the next step, are its step; '
+                .'the fields before the first step are a first step called by the form\'s title. A step has a title, help (the line under it), '
+                .'placeholder (a short label for the indicator), options.next-text (the words of its «Next») and options.when / unless like a field; '
+                .'a step switched off (is_enabled false) takes its fields with it. A step with no field after it and more than '.Steps::MAX.' steps are refused. '
+                .'A field of type "summary" asks nothing: it shows the visitor the answers given above it, each with «Edit», '
+                .'and is never part of a submission; options.fields names the fields it shows (none — every one above it but consent, file and hidden). '
+                .'It is printed only in a form of steps — a form on one page has every answer in sight. '
+                .'A field of type "datetime" asks for a day of a calendar and a time of a list, in the site\'s time zone (contacts.timezone '
+                .'of the settings, else the application\'s): the visitor sends fields[<name>][date] and [time]; a time already gone, '
+                .'a day of the week not offered or a time off the grid is refused. The answer reads «12.12.2026, 10:30 (Europe/…)» '
+                .'and inbox_get gives its payload { date, time, timezone, at } — at is the moment in UTC, what the list sorts by. '
+                .'Nobody\'s time is taken by another\'s: two visitors may choose the same one. '
+                .'New fields go to the end in the order sent; `order` puts the form\'s fields in another one. '
+                .'dry_run answers with the plan, the steps the form would have and the times of a day of each datetime field.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->formSave($arguments)),
                 ['properties' => [
                     // Spread, not `+`: the left side wins a `+`, and the "omit to create" half
                     // of the description never reached the listing.
                     'form' => [...$form, 'description' => 'The form to change, by its id or its slug; omit to create one.'],
-                    'slug' => ['type' => 'string', 'description' => 'Where it answers: lower case, words joined by hyphens.'],
+                    'slug' => ['type' => 'string', 'description' => 'Where it answers: lower case, words joined by hyphens. Any text is made one ("Call Back" is kept as "call-back"), so read it back from the answer.'],
                     'title' => ['type' => ['string', 'object'], 'description' => 'One language as a string, or every language as { "en": "…" }.'],
                     'is_enabled' => ['type' => 'boolean', 'description' => 'A form that is off is a 404 to the site and keeps everything it has received.'],
                     'options' => ['type' => 'object', 'description' => 'The settings, as inbox_form_get returns them: recipients, the thank-you, the antispam. Unknown keys are dropped. '
@@ -134,20 +154,44 @@ final class InboxTools
                         .'{ "target": "entity", "entity_type": "page", "entity_id": 12 } — a record of the site (the kinds of record a menu link takes: page, article …), opened in the language the form was sent in, or in the main one when it has no translation; '
                         .'{ "target": "url", "url": "/thank-you" } — an address, a path of this site gets the visitor\'s language prefix; '
                         .'null or { "target": "none" } — the thank-you in place of the form.'],
+                    'order' => [
+                        'type' => 'array',
+                        'items' => ['type' => 'string'],
+                        'description' => 'The machine names of the form\'s fields — steps included — in the order they go, as the call leaves them: '
+                            .'the ones named first, in this order, the rest after them as they stand. Omit to keep the order (new fields at the end).',
+                    ],
                     'fields' => [
                         'type' => 'array',
                         'description' => 'The questions to add or change.',
                         'items' => ['type' => 'object', 'properties' => [
                             'id' => ['type' => 'integer', 'description' => 'The field to change; omit for a new one.'],
-                            'name' => ['type' => 'string', 'description' => 'The machine name: what the HTML calls it, what CSV and the intake key it by, and {{field.<name>}} in the templates of notification channels. Letters, digits, - and _. Omitted on a new field, it is made from the title: "Your phone" → your_phone, with _2 after a name the form has. Renaming a field breaks {{field.<old name>}} in channel templates; answers already received stay with the field.'],
-                            'type' => ['type' => 'string', 'description' => 'text · email · tel · textarea · select · radio · checkbox · consent · date · file · hidden.'],
+                            'name' => ['type' => 'string', 'description' => 'The machine name: what the HTML calls it, what CSV and the intake key it by, and {{field.<name>}} in the templates of notification channels. Letters, digits, - and _, a letter first; any other text is made one ("2nd Phone" is kept as "field-2nd-phone"; use _ between words for a name the thank-you prints). Omitted on a new field, it is made from the title: "Your phone" → your_phone, with _2 after a name the form has. Renaming a field breaks {{field.<old name>}} in channel templates; answers already received stay with the field.'],
+                            'type' => ['type' => 'string', 'description' => 'text · email · tel · textarea · select · radio · checkbox · consent · date · datetime (a day and a time) · file · hidden · step (not a question: the start of a step) · summary (not a question: the answers so far).'],
                             'title' => ['type' => ['string', 'object'], 'description' => 'The label, in one language or in all of them.'],
+                            'placeholder' => ['type' => ['string', 'object'], 'description' => 'The hint inside an empty field; of a step — the short label of the indicator.'],
+                            'help' => ['type' => ['string', 'object'], 'description' => 'The line under the field; of a step — under its title.'],
+                            'is_enabled' => ['type' => 'boolean', 'description' => 'False takes the field off the site; a step switched off takes its fields with it.'],
                             'is_required' => ['type' => 'boolean'],
                             'in_table' => ['type' => 'boolean', 'description' => 'Show this answer as a column of the submission list.'],
                             'options' => ['type' => 'object', 'description' => 'What this type takes. select · radio · checkbox: choices, required and at least one — '
                                 .'[{ "value": "pro", "label": { "en": "Pro plan" } }], or plain strings ["Pro", "Basic"] where the value is the label; '
                                 .'checkbox also min and max. text · email · textarea: maxlength (textarea also rows). tel: pattern. '
-                                .'date: min and max, YYYY-MM-DD. file: extensions, max_size in KB, multiple. consent: text, the sentence beside the tick.'],
+                                .'date: min and max, YYYY-MM-DD. file: extensions, max_size in KB, multiple. consent: text, the sentence beside the tick. '
+                                .'radio · checkbox: view "cards" draws the choices as cards (a list when omitted), columns 1–4 how many to a row on a wide form; '
+                                .'a choice of cards also takes description (one language or all) and image — a file of the media library as { "id": 62 } or { "path": "media/…" }, kept by its key. '
+                                .'They are the look of the field: an answer is still the label and the value. '
+                .'Any type but hidden and summary: `when` and `unless` — when the field is shown, as { "<name of a field>": ["<value>", …] }: '
+                .'"or" inside a list, "and" between names; `when` holds when every named field is shown and answered with one of its values '
+                .'(a checkbox — any one ticked; a consent — "1" when ticked), `unless` hides the field when the same `when` would hold. '
+                .'A condition names only a select, radio, checkbox or consent standing earlier in the form, and only values it offers. '
+                .'A hidden field is neither checked nor kept: its answer is thrown away, with JavaScript or without. '
+                .'A field others name cannot be removed or end up below them; renaming it renames the conditions. '
+                .'step: next-text — the words of its «Next» (one language or all), and when / unless as above. '
+                .'summary: fields — the names of the fields it shows, e.g. ["purpose", "meeting"]; renaming a field renames it here too. '
+                .'datetime: time-step — minutes of the list, one of '.implode(', ', DateTimeField::STEPS).' (30 when omitted); '
+                .'time-from and time-to — HH:MM, the first time of a day and its end, the last time a step before it (09:00 and 17:00); '
+                .'weekdays — the ISO days offered, 1 Monday … 7 Sunday, each once (none — every day); timezone-label — words about the zone '
+                .'instead of the site\'s own (one language or all). No zone of its own: the site has one.'],
                             'remove' => ['type' => 'boolean', 'description' => 'Put the field aside: it leaves the form and stays readable in the submissions that used it.'],
                         ]],
                     ],
@@ -181,7 +225,10 @@ final class InboxTools
             Tool::read(
                 'get',
                 'One submission in full: every answer with the label and the type it was asked under, the files '
-                .'with them, what was around it when it arrived — the page, the language, the address — the notes '
+                .'with them, what was around it when it arrived — the page, the language, the address, and in '
+                .'`meta` where the visitor came from: `utm` (the campaign of the last touch), `utm_first` (of the '
+                .'first, kept only with consent to statistics), `referrer` (the outside page), `landing` (the page '
+                .'they came in on) — the notes '
                 .'administrators have left on it, and the log of everything that has happened to it. '
                 .'`notification` says whether the letter about it left: none, queued (handed to the queue and '
                 .'not yet sent — long in this state means no queue worker runs), delivered, or failed with the '
@@ -318,6 +365,8 @@ final class InboxTools
             // usually looking at it to explain the form to somebody building a page.
             'intake' => $this->intake($form->slug),
             'fields' => $fields,
+            // The steps as the site prints them (FORM_STEPS §10): only for a form of steps.
+            ...($steps = $this->stepsOf($form)) === [] ? [] : ['steps' => $steps],
             // By key, in the language of the answer: the panel's resource carried every
             // language of every title and a count that is never loaded here.
             'statuses' => $this->statusNames(),
@@ -336,11 +385,20 @@ final class InboxTools
         // What the form would be: what it is now, with what arrived written over it. A save
         // that named only `is_enabled` would otherwise arrive at the rules with no title and
         // be refused for something nobody was changing.
-        $input = [...$this->formAsInput($form), ...array_intersect_key($arguments, array_flip(['slug', 'title', 'is_enabled', 'options']))];
+        $input = FormInput::bring([...$this->formAsInput($form), ...array_intersect_key($arguments, array_flip(['slug', 'title', 'is_enabled', 'options']))]);
 
         // The questions first: the Reply-To field the settings name has to be an e-mail field
         // of the form as it will be after this call, which may be adding it right now.
         $plan = $this->fieldsPlan($form, $sent);
+
+        // The conditions, on the form as the whole call leaves it (FORM_STEPS §4.2): a rename
+        // carries the references along, a field removed or moved below what counts on it is refused.
+        $plan = $this->carryRenames($plan);
+        $order = $this->orderSent($arguments);
+        $layout = self::reordered($this->layoutAfter($form, $plan), $order);
+        ConditionPlan::assertAll($layout, 'fields');
+        // And the steps (FORM_STEPS §3.1): none without a field, no more than fit.
+        ConditionPlan::assertSteps($layout, 'fields');
 
         $this->validator()->make(
             $input,
@@ -359,6 +417,9 @@ final class InboxTools
                     'name' => $one['values']['name'],
                     'would' => $one['would'],
                 ], $plan),
+                ...($steps = self::stepsOfLayout($layout)) === [] ? [] : ['steps' => $steps],
+                // The grid of each «Date and time» (FORM_STEPS §10): «09:00, 09:30 … 16:30, Mon–Fri».
+                ...($times = self::timesOfLayout($layout)) === [] ? [] : ['times' => $times],
             ];
         }
 
@@ -373,6 +434,10 @@ final class InboxTools
 
         foreach ($plan as $one) {
             $this->applyField($form, $one);
+        }
+
+        if ($order !== null) {
+            $this->applyOrder($form, array_column($layout, 'key'));
         }
 
         return $this->formGet(['form' => (int) $form->refresh()->getKey()]);
@@ -479,7 +544,7 @@ final class InboxTools
             return ['would' => 'remove', 'field' => $field, 'values' => ['name' => $field->key()]];
         }
 
-        $input = [...$this->fieldAsInput($field), ...array_diff_key($sent, array_flip(['id', 'remove']))];
+        $input = FieldInput::bring([...$this->fieldAsInput($field), ...array_diff_key($sent, array_flip(['id', 'remove']))], $field);
 
         // The name is checked against `$names` below rather than against the table: the table
         // does not know what the entries before this one freed or took.
@@ -522,6 +587,221 @@ final class InboxTools
             'field' => $field,
             'values' => $values,
         ];
+    }
+
+    /**
+     * The plan with every rename of the call written into the conditions it sends, so a field
+     * renamed and a condition naming it, in one call, agree.
+     *
+     * @param  list<array{would: string, field: Field|null, values: array<string, mixed>}>  $plan
+     * @return list<array{would: string, field: Field|null, values: array<string, mixed>}>
+     */
+    private function carryRenames(array $plan): array
+    {
+        $renames = [];
+
+        foreach ($plan as $one) {
+            $new = $one['values']['name'] ?? null;
+
+            if ($one['would'] === 'update' && $one['field'] instanceof Field && is_string($new) && $new !== $one['field']->key()) {
+                $renames[$one['field']->key()] = $new;
+            }
+        }
+
+        foreach ($plan as $index => $one) {
+            if ($one['would'] === 'remove' || ! is_array($one['values']['options'] ?? null)) {
+                continue;
+            }
+
+            foreach ($renames as $old => $new) {
+                $plan[$index]['values']['options'] = Summary::rename(Conditions::rename($plan[$index]['values']['options'], $old, $new), $old, $new);
+            }
+        }
+
+        return $plan;
+    }
+
+    /**
+     * The form's fields as the plan leaves them, in order: the ones it keeps where they stand —
+     * changed, renamed — then the new ones at the end, as `applyField` adds them.
+     *
+     * @param  list<array{would: string, field: Field|null, values: array<string, mixed>}>  $plan
+     * @return list<array{key: string, type: FieldType, options: array<string, mixed>}>
+     */
+    private function layoutAfter(?Form $form, array $plan): array
+    {
+        $changed = [];
+        $removed = [];
+        $added = [];
+
+        foreach ($plan as $one) {
+            if ($one['field'] === null) {
+                $added[] = $one['values'];
+            } elseif ($one['would'] === 'remove') {
+                $removed[(int) $one['field']->getKey()] = true;
+            } else {
+                $changed[(int) $one['field']->getKey()] = $one['values'];
+            }
+        }
+
+        $layout = [];
+        $renames = [];
+
+        foreach ($form === null ? [] : $form->fields as $field) {
+            $id = (int) $field->getKey();
+
+            if (isset($removed[$id])) {
+                continue;
+            }
+
+            $entry = ConditionPlan::with([$field], $id, $changed[$id] ?? [
+                'name' => $field->key(),
+                'type' => $field->type,
+                'options' => $field->options ?? [],
+            ]);
+
+            if ($entry[0]['key'] !== $field->key()) {
+                $renames[$field->key()] = $entry[0]['key'];
+            }
+
+            $layout[] = $entry[0];
+        }
+
+        foreach ($added as $values) {
+            $layout = [...$layout, ...ConditionPlan::with([], null, $values)];
+        }
+
+        // What the model does to the fields the call did not mention once a rename is written.
+        foreach ($renames as $old => $new) {
+            $layout = ConditionPlan::renamed($layout, $old, $new);
+        }
+
+        return $layout;
+    }
+
+    /**
+     * `order` of the call: machine names, or null when it says nothing about the order.
+     *
+     * @param  array<string, mixed>  $arguments
+     * @return list<string>|null
+     */
+    private function orderSent(array $arguments): ?array
+    {
+        if (! array_key_exists('order', $arguments) || $arguments['order'] === null) {
+            return null;
+        }
+
+        if (! is_array($arguments['order'])) {
+            throw new ToolFailure('`order` is a list of the machine names of the form\'s fields.');
+        }
+
+        $order = [];
+
+        foreach ($arguments['order'] as $name) {
+            if (! is_string($name) || trim($name) === '') {
+                throw new ToolFailure('`order` is a list of the machine names of the form\'s fields.');
+            }
+
+            $order[] = trim($name);
+        }
+
+        return array_values(array_unique($order));
+    }
+
+    /**
+     * The layout in the order the call asks for: the named fields first, in that order, the rest
+     * after them as they stand.
+     *
+     * @param  list<array{key: string, type: FieldType, options: array<string, mixed>}>  $layout
+     * @param  list<string>|null  $order
+     * @return list<array{key: string, type: FieldType, options: array<string, mixed>}>
+     */
+    private static function reordered(array $layout, ?array $order): array
+    {
+        if ($order === null) {
+            return $layout;
+        }
+
+        $byKey = [];
+
+        foreach ($layout as $one) {
+            $byKey[$one['key']] = $one;
+        }
+
+        $unknown = array_values(array_diff($order, array_keys($byKey)));
+
+        if ($unknown !== []) {
+            throw new ToolFailure('`order` names fields the form would not have: '.implode(', ', $unknown).'.');
+        }
+
+        $first = array_map(static fn (string $key): array => $byKey[$key], $order);
+        $rest = array_values(array_filter($layout, static fn (array $one): bool => ! in_array($one['key'], $order, true)));
+
+        return [...$first, ...$rest];
+    }
+
+    /**
+     * Number the fields in the order of the layout, once they are written.
+     *
+     * @param  list<string>  $keys
+     */
+    private function applyOrder(Form $form, array $keys): void
+    {
+        $byKey = $form->fields()->get()->keyBy(static fn (Field $field): string => $field->key());
+
+        foreach ($keys as $position => $key) {
+            $field = $byKey->get($key);
+
+            if ($field instanceof Field && $field->position !== $position) {
+                // Straight to the row: a new place is not an edit of the field, nothing to carry along.
+                Field::query()->whereKey($field->getKey())->update(['position' => $position]);
+            }
+        }
+    }
+
+    /**
+     * The steps of a form as `inbox_form_get` reads them: name, title and the names of the fields.
+     *
+     * @return list<array{name: string, title: string, fields: list<string>}>
+     */
+    private function stepsOf(Form $form): array
+    {
+        return array_map(static fn (array $group): array => [
+            'name' => $group['key'],
+            'title' => trim((string) ($group['step'] ?? $form)->title),
+            'fields' => array_map(static fn (Field $field): string => $field->key(), $group['fields']),
+        ], Steps::groups($form->fields));
+    }
+
+    /**
+     * The steps a layout would make — what `dry_run` shows: each step by name with its fields.
+     *
+     * @param  list<array{key: string, type: FieldType, options: array<string, mixed>}>  $layout
+     * @return list<array{name: string, fields: list<string>}>
+     */
+    private static function stepsOfLayout(array $layout): array
+    {
+        if (Steps::count($layout) === 0) {
+            return [];
+        }
+
+        $steps = [];
+        $current = ['name' => Steps::FIRST, 'fields' => []];
+
+        foreach ($layout as $one) {
+            if ($one['type'] === FieldType::Step) {
+                $steps[] = $current;
+                $current = ['name' => $one['key'], 'fields' => []];
+
+                continue;
+            }
+
+            $current['fields'][] = $one['key'];
+        }
+
+        $steps[] = $current;
+
+        return array_values(array_filter($steps, static fn (array $step): bool => $step['fields'] !== [] || $step['name'] !== Steps::FIRST));
     }
 
     /**
@@ -902,6 +1182,25 @@ final class InboxTools
         $submission->unsetRelation('assignee')->load('assignee');
 
         $submission->log(SubmissionEvent::ASSIGNEE, $was, $submission->assignee?->name, $admin);
+    }
+
+    /**
+     * The times of a day of each «Date and time» field of a layout, in words, by its name.
+     *
+     * @param  list<array{key: string, type: FieldType, options: array<string, mixed>}>  $layout
+     * @return array<string, string>
+     */
+    private static function timesOfLayout(array $layout): array
+    {
+        $times = [];
+
+        foreach ($layout as $one) {
+            if ($one['type'] === FieldType::DateTime) {
+                $times[$one['key']] = DateTimeField::describe($one['options']).' ('.DateTimeField::zone().')';
+            }
+        }
+
+        return $times;
     }
 
     /**

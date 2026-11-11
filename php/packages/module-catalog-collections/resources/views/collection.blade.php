@@ -3,7 +3,8 @@
 
     The card is the catalogue's own, `webx-catalog::card`: a theme that overrides it changes it here
     too, and its points and its button come with it. The carousel is the widgets' slider, which
-    loads its script when it renders.
+    loads its script when it renders. The link's <a> is LinkAttributes::of($link): href, the new tab
+    and its rel, and `download` with the name a file of the library was uploaded under.
 
     Override: <layer>/views/vendor/webx-catalog-collections/collection.blade.php — keep
     `data-collection`. Classes: `### Classes` in AGENTS.md.
@@ -15,7 +16,7 @@
                 <h2 class="webx-catalog-collection__title">{{ $title }}</h2>
             @endif
             @if ($link !== null)
-                <a class="webx-catalog-collection__all" href="{{ $link['url'] }}"@if ($link['new_tab']) target="_blank"@endif @if ($link['rel']) rel="{{ $link['rel'] }}"@endif>{{ $link['text'] }}</a>
+                <a class="webx-catalog-collection__all" {{ \WebxUi\Admin\Links\LinkAttributes::of($link) }}>{{ $link['text'] }}</a>
             @endif
         </header>
     @endif

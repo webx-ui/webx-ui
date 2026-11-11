@@ -10,7 +10,7 @@ return [
     'new' => 'Nueva ubicación',
     'title' => 'Nombre',
     'key' => 'Clave',
-    'key-help' => 'Lo que pide la plantilla del sitio: letras latinas minúsculas, cifras y guiones, empezando por una letra. Después no se puede cambiar.',
+    'key-help' => 'Lo que pide la plantilla del sitio, por ejemplo «sidebar»: lo que se escribe se convierte en una clave. Después no se puede cambiar.',
     'declared' => 'Declarado en la configuración',
     'in-template' => 'En una plantilla: banners(\':key\')',
     'count' => 'Banners',

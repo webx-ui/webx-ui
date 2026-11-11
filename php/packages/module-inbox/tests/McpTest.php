@@ -271,16 +271,46 @@ final class McpTest extends TestCase
     }
 
     #[Test]
+    public function a_slug_and_a_name_are_brought_to_their_shape_as_the_panel_brings_them(): void
+    {
+        $dry = $this->agent('form_save', [
+            'slug' => 'Тормозные колодки',
+            'title' => 'Pads',
+            'fields' => [['name' => '2nd Phone', 'type' => 'tel', 'title' => 'Phone']],
+            'dry_run' => true,
+        ]);
+
+        $dry->assertOk();
+        $this->assertSame('tormoznye-kolodki', $this->content($dry)['slug']);
+        $this->assertSame('field_2nd_phone', $this->content($dry)['fields'][0]['name']);
+
+        $this->agent('form_save', [
+            'slug' => 'Тормозные колодки',
+            'title' => 'Pads',
+            'fields' => [['name' => '2nd Phone', 'type' => 'tel', 'title' => 'Phone']],
+        ])->assertOk();
+
+        $form = Form::query()->where('slug', 'tormoznye-kolodki')->sole();
+        $this->assertSame(['field_2nd_phone'], $form->fields()->pluck('name')->all());
+
+        // Two names that are one once brought: one name, one field.
+        $this->agent('form_save', [
+            'form' => 'tormoznye-kolodki',
+            'fields' => [['name' => 'Field 2nd phone', 'type' => 'tel', 'title' => 'Again']],
+        ])->assertHasErrors(['field_2nd_phone']);
+    }
+
+    #[Test]
     public function a_save_is_refused_for_the_same_reasons_the_panel_refuses_one(): void
     {
         $this->form();
 
-        $this->agent('form_save', ['slug' => 'Contact Us', 'title' => 'Contact us'])
+        $this->agent('form_save', ['slug' => '!!!', 'title' => 'Contact us'])
             ->assertHasErrors()
             ->assertSee('slug');
 
-        // The address another form already answers at.
-        $this->agent('form_save', ['slug' => 'contact', 'title' => 'Another'])->assertHasErrors();
+        // The address another form already answers at, however it is spelled.
+        $this->agent('form_save', ['slug' => 'Contact', 'title' => 'Another'])->assertHasErrors();
 
         // A recipient nobody can be written to reads exactly like one that works.
         $this->agent('form_save', [

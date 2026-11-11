@@ -21,6 +21,8 @@ defineOptions({ name: 'WxIconPicker', inheritAttrs: false })
  * the value only ever becomes a name the set has.
  */
 const props = withDefaults(defineProps<IconPickerProps>(), {
+  icons: undefined,
+  sprite: undefined,
   clearable: false,
   placeholder: 'Search icons',
   emptyText: 'No icon of that name',
@@ -53,7 +55,19 @@ watch(model, (value) => {
   text.value = value ?? ''
 })
 
-const all = iconNames()
+const panelSet = iconNames()
+
+/*
+ * The set is the screen's when it names one: the icons of the site's theme are not the panel's,
+ * and a grid of the panel's would offer names the site cannot draw. They are never registered
+ * into the panel's set either — a theme's `close` would then redraw every close button here.
+ */
+const all = computed(() => props.icons ?? panelSet)
+
+/** Where a name of the sprite is drawn from, or null when `WxIcon` draws it. */
+function spriteHref(name: string): string | null {
+  return props.sprite ? `${props.sprite}#${name}` : null
+}
 
 /**
  * The name it holds is not in the set.
@@ -64,7 +78,7 @@ const all = iconNames()
  * which is the very confusion the component exists to end.
  */
 const unknown = computed(
-  () => model.value !== null && model.value !== '' && !all.includes(model.value),
+  () => model.value !== null && model.value !== '' && !all.value.includes(model.value),
 )
 
 const shown = computed(() => {
@@ -72,7 +86,9 @@ const shown = computed(() => {
 
   /* The whole set until somebody types: a picker that opens empty is a search box with a
      panel, and the point of it is that the icons are there to be looked at. */
-  return query === '' || query === model.value ? all : all.filter((name) => name.includes(query))
+  return query === '' || query === model.value
+    ? all.value
+    : all.value.filter((name) => name.includes(query))
 })
 
 const classes = computed(() => [
@@ -159,6 +175,14 @@ watch(open, (value) => {
             :title="unknown ? unknownText : undefined"
           >
             <wx-icon v-if="unknown" name="warning" />
+            <svg
+              v-else-if="model && sprite"
+              class="wx-icon-picker__glyph"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <use :href="spriteHref(model)!" />
+            </svg>
             <wx-icon v-else-if="model" :name="model" />
           </span>
 
@@ -214,7 +238,15 @@ watch(open, (value) => {
               :title="name"
               @click="choose(name)"
             >
-              <wx-icon :name="name" size="lg" />
+              <svg
+                v-if="sprite"
+                class="wx-icon-picker__glyph wx-icon-picker__glyph--lg"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <use :href="spriteHref(name)!" />
+              </svg>
+              <wx-icon v-else :name="name" size="lg" />
               <span class="wx-icon-picker__name">{{ name }}</span>
             </button>
           </div>
@@ -350,6 +382,19 @@ watch(open, (value) => {
   color: inherit;
   font: inherit;
   cursor: pointer;
+}
+
+/* A symbol of the site's sprite, sized like the `WxIcon` it stands in for and painted with the
+   text around it, as the theme draws it on the site. */
+.wx-icon-picker__glyph {
+  inline-size: 1em;
+  block-size: 1em;
+  fill: currentColor;
+}
+
+.wx-icon-picker__glyph--lg {
+  inline-size: var(--wx-font-size-2xl);
+  block-size: var(--wx-font-size-2xl);
 }
 
 .wx-icon-picker__option:hover {

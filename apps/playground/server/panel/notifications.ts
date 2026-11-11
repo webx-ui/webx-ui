@@ -331,12 +331,32 @@ const EVENTS = [
         fields: [],
       },
     ],
-    sample: {
-      '*': {
-        subject: { en: 'Order {{number}}: {{public_status}}' },
-        template: { en: 'Order {{number}} is now «{{public_status}}».' },
-      },
-    },
+    sample:
+      key === 'orders.placed'
+        ? {
+            '*': {
+              subject: { en: 'New order {{number}}' },
+              template: { en: 'New order {{number}}: {{customer_email}}, «{{public_status}}».' },
+            },
+          }
+        : {
+            '*': {
+              subject: { en: 'Order {{number}}: {{public_status}}' },
+              template: { en: 'Order {{number}} is now «{{public_status}}».' },
+            },
+          },
+    // A new order has a letter for the shop and one for the buyer (EventDefinition::$addressed).
+    addressed:
+      key === 'orders.placed'
+        ? {
+            customer_email: {
+              '*': {
+                subject: { en: 'Order {{number}} accepted' },
+                template: { en: 'Thank you! We have your order {{number}}.' },
+              },
+            },
+          }
+        : {},
   })),
 ]
 

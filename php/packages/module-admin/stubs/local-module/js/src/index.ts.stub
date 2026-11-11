@@ -1,0 +1,4 @@
+export { {{ function }}, type {{ Studly }}Options } from './module'
+export { create{{ Studly }}Api, {{ CONST }}_API, type {{ Studly }}Api } from './api'
+export { {{ function }}Messages } from './messages'
+export type { {{ Model }}Detail, {{ Model }}Row, {{ Model }}Values } from './types'

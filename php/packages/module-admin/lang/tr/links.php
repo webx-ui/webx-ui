@@ -34,4 +34,13 @@ return [
     'not-localized' => 'Bir bağlantı her dilde aynıdır, çevrilemez.',
     'address-fallback' => 'Bu dilde henüz adres yok — bu, sitenin ana dili :locale dilindeki adres.',
     'address-fallback-label' => 'Ana dildeki adres',
+    'target-file' => 'Bir dosya',
+    'file-choose' => 'Dosya seç',
+    'file-replace' => 'Başka bir dosya',
+    'file-gone' => 'Bu dosya artık kütüphanede yok',
+    'file-download' => 'Açmak yerine indir',
+    'no-file' => 'Medya kütüphanesinde :path dosyası yok.',
+    'files-off' => 'Bu alan dosyalara bağlantı vermez.',
+    'download' => 'İndirme ya açık ya kapalıdır.',
+    'path' => 'Medya kütüphanesinden bir dosya seçin.',
 ];

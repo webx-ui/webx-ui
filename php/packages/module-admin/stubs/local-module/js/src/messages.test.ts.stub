@@ -1,0 +1,25 @@
+// @vitest-environment node
+import { readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { describe, expect, it } from 'vitest'
+import { {{ function }}Messages } from './messages'
+
+const here = dirname(fileURLToPath(import.meta.url))
+
+/** `'key' => '…'` out of a Laravel language file of the module, the top level of it. */
+function keysOf(group: string): string[] {
+  const source = readFileSync(resolve(here, '../../lang/en', `${group}.php`), 'utf8')
+
+  return [...source.matchAll(/^ {4}'([^']+)' => /gm)].map((match) => match[1] as string).sort()
+}
+
+/**
+ * The two halves say the same things. A line on one side only is a panel translated everywhere
+ * with one English word in the middle of it, and nothing else notices.
+ */
+describe('the English here matches the English the server ships', () => {
+  it.each(Object.keys({{ function }}Messages))('%s', (group) => {
+    expect(Object.keys({{ function }}Messages[group] ?? {}).sort()).toEqual(keysOf(group))
+  })
+})

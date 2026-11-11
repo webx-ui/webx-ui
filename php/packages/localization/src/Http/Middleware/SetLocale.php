@@ -8,6 +8,7 @@ use Closure;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
+use WebxUi\Localization\FirstVisit;
 use WebxUi\Localization\Locales;
 
 /**
@@ -17,12 +18,16 @@ use WebxUi\Localization\Locales;
  * path declares its routes inside a `{locale?}` prefix, and this reads the same segment — two
  * views of one decision is better than a middleware that rewrites addresses behind routing's
  * back.
+ *
+ * The one exception is the language of the first visit (ROUTING §18), off unless a site turns it
+ * on: a 302 to the same page in another language, decided here so no site edits its middleware.
  */
 class SetLocale
 {
     public function __construct(
         private readonly Locales $locales,
         private readonly Config $config,
+        private readonly FirstVisit $firstVisit,
     ) {}
 
     public function handle(Request $request, Closure $next): Response
@@ -39,7 +44,14 @@ class SetLocale
             $this->locales->use($this->locales->defaultCode());
         }
 
-        return $next($request);
+        if (! $this->firstVisit->enabled()) {
+            return $next($request);
+        }
+
+        $target = $this->firstVisit->target($request);
+        $response = $next($request);
+
+        return $target === null ? $response : $this->firstVisit->answer($request, $response, $target);
     }
 
     /**

@@ -146,6 +146,8 @@ return [
     'any-placement' => 'Jede Platzierung',
     'placement-none' => 'Nicht angegeben',
     'meta-referrer' => 'Kam von',
+    'meta-landing' => 'Einstiegsseite',
+    'meta-utm-first' => 'Erster Besuch',
     'meta-ip' => 'Adresse',
     'meta-agent' => 'Browser',
     'meta-locale' => 'Sprache',

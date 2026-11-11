@@ -19,7 +19,7 @@
         },
         {
           "id": "code",
-          "type": "wx-input",
+          "type": "wx-code",
           "name": "code",
           "label": "trans::webx-catalog-stock::status.code",
           "help": "trans::webx-catalog-stock::status.code-help",

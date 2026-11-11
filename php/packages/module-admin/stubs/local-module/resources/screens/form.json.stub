@@ -1,0 +1,24 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "{{ id }}.form",
+  "model": "{{ id }}",
+  "root": [
+    {
+      "id": "main",
+      "type": "wx-card",
+      "children": [
+        {
+          "id": "title",
+          "type": "wx-input",
+          "name": "title",
+          "label": "trans::webx-{{ id }}::form.title",
+          "help": "trans::webx-{{ id }}::form.title-help",
+          "localized": true,
+          "props": {
+            "maxlength": 255
+          }
+        }
+      ]
+    }
+  ]
+}

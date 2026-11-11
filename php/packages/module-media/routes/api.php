@@ -9,6 +9,8 @@ use WebxUi\Media\Http\Controllers\ImageController;
 use WebxUi\Media\Http\Controllers\OptimizeController;
 use WebxUi\Media\Http\Controllers\SourceController;
 use WebxUi\Media\Http\Controllers\ThumbController;
+use WebxUi\Media\Http\Controllers\UploadLinkController;
+use WebxUi\Media\MediaServiceProvider;
 
 Route::prefix((string) config('webx-admin.api_path').'/media')
     // The panel's group: the session it signs in with, errors worded in the browser's language,
@@ -57,3 +59,12 @@ Route::prefix((string) config('webx-admin.api_path').'/media')
             Route::post('directories/{directory}/delete-unused', [DirectoryController::class, 'destroyUnused'])->name('directories.destroy-unused');
         });
     });
+
+// Where curl sends a file through a link media_upload_link made: outside the panel's group on
+// purpose — no session, no CSRF, no sign-in; the signed one-time token is the credential. Under
+// the panel's API path, so the site's addresses never reach it and the password over a closed
+// site lets it through, as it does the MCP server. PUT as well as POST: `curl -T` sends one.
+Route::match(['post', 'put'], trim((string) config('webx-admin.api_path'), '/').'/media/upload-links/{token}', UploadLinkController::class)
+    ->where('token', '[A-Za-z0-9_.-]+')
+    ->middleware('throttle:'.MediaServiceProvider::UPLOAD_LINK_LIMITER)
+    ->name('webx.media.upload-link');

@@ -354,22 +354,24 @@ Whoever changed the site's type — the client, a module, an older release of th
 does not take it over unasked: replacing is by name, one type at a time, and the version before
 stays in the history. A type deleted in the panel is not brought back by anything but an import.
 
-### The six blocks of the default theme
+### The blocks of the default theme
 
 `webx-ui/theme-default` brings the primitives a company page is built of — the same on every new
 site, restyled by the tokens, overridden by slug:
 
-| Block        | What                                                                           | Variants                                                                   |
-| ------------ | ------------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
-| `hero`       | a headline, a line under it, one or two buttons                                | page, tint, accent, over a picture; left or centre; column or edge to edge |
-| `text`       | prose in the theme's typography — headings, lists, quotes, tables              | a reading column or the whole column                                       |
-| `media-text` | a picture beside a heading, a text and a button                                | picture left or right; page or tint                                        |
-| `cards`      | a grid of cards — a photo or an icon, a title, a text, the card as a link      | two, three or four across at most                                          |
-| `cta`        | a band asking for one thing, with one or two buttons                           | accent, tint, page with a border                                           |
-| `contact`    | the contacts of Settings › Contacts and a form of the Inbox, named by its slug | contacts, a form, or both                                                  |
+| Block        | What                                                                           | Variants                                                                                    |
+| ------------ | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| `hero`       | a headline, a line under it, one or two buttons                                | page, tint, accent, over a picture; left or centre; column or edge to edge                  |
+| `text`       | prose in the theme's typography — headings, lists, quotes, tables              | a reading column or the whole column                                                        |
+| `media-text` | a picture beside a heading, a text and a button                                | picture left or right; page or tint                                                         |
+| `cards`      | a grid of cards — a photo or an icon, a title, a text, the card as a link      | two, three or four across at most                                                           |
+| `cta`        | a band asking for one thing, with one or two buttons                           | accent, tint, page with a border, over a picture, the picture alone; column or edge to edge |
+| `text-tiles` | a photo under a shade, the words beside up to four glass tiles                 | an icon or a figure in a tile; dark or light shade; column or edge to edge                  |
+| `contact`    | the contacts of Settings › Contacts and a form of the Inbox, named by its slug | contacts, a form, or both                                                                   |
 
 Every one lays itself out by its container: in a narrow column the cards go one a row and the
-picture of `media-text` goes above its words, whatever the window. Their pages, every variant and
+picture of `media-text` goes above its words, whatever the window; the tiles of `text-tiles` go
+under the words, two across from a phone up and one a row in a sidebar. Their pages, every variant and
 a narrow column each, are on the starter site under Kitchen sink › Blocks. Another look of one of
 them is the same slug in `theme/blocks/` with every field kept — not a `hero-2`.
 

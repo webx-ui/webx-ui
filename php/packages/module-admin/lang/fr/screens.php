@@ -7,6 +7,9 @@ return [
     'row' => 'Ligne :number : :message',
     'row-shape' => 'Cette ligne n’est pas un ensemble de champs.',
     'row-unknown-key' => 'Cette ligne n’a pas de champ « :key ». Une ligne accepte : :keys.',
+    'icon-unknown' => 'Ce jeu n’a pas d’icône « :name ». Le jeu contient : :names.',
+    'icon-source-unknown' => 'Ce site n’a pas de jeu d’icônes « :source ».',
+    'embed-source-unknown' => 'Ce champ accepte les cadres de « :source », et ce site n’a pas ce service.',
     // The card a module's screen keeps for the fields a project patches in (`project-fields`).
     'project-fields' => 'Plus',
     // The words of a list of records on a described screen; the core has English only.

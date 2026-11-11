@@ -8,7 +8,7 @@ return [
     'button-link' => 'Wybierz, dokąd prowadzi przycisk.',
     'variant' => 'Tego wyglądu nie ma na liście strony: :variants.',
     'buttons-max' => 'Baner ma najwyżej :max przyciski.',
-    'place-key' => 'Klucz to małe litery łacińskie, cyfry i myślniki, zaczyna się od litery i ma najwyżej 64 znaki.',
+    'place-key' => 'Klucz potrzebuje liter lub cyfr, np. „sidebar”.',
     'place-taken' => 'Ten klucz jest zajęty.',
     'place-title' => 'Wymagana jest nazwa w języku domyślnym.',
     'place-title-length' => 'Nazwa ma najwyżej :max znaków.',

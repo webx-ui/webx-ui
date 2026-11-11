@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Orders\Notifications;
 
+use Closure;
 use WebxUi\Notifications\Events\EventDefinition;
 use WebxUi\Notifications\Events\Variable;
 
@@ -66,6 +67,9 @@ final class OrderEvents
         self::PAYMENT_REQUESTED => ['amount_due'],
     ];
 
+    /** The addressee variable of the buyer: a channel that names it in its recipients writes to them. */
+    public const string BUYER = 'customer_email';
+
     /** Who the default template of an event writes to: the buyer, or the shop. */
     public const array AUDIENCE = [
         self::PLACED => OrderTemplates::MANAGER,
@@ -105,15 +109,30 @@ final class OrderEvents
             module: 'orders',
             variables: [...self::common(), ...array_map(self::extra(...), self::EXTRA[$key])],
             // The default templates (§10.2): a starting point in every language there are words in.
-            sample: [
-                'email' => static fn (string $locale): ?array => OrderTemplates::email($key, $audience, $locale),
-                'telegram' => static fn (string $locale): ?array => OrderTemplates::telegram($key, $audience, $locale),
-                '*' => static fn (string $locale): ?array => OrderTemplates::text($key, $audience, $locale),
-            ],
+            sample: self::samples($key, $audience),
             url: static fn (array $values): ?string => is_string($values['order_url'] ?? null) && $values['order_url'] !== ''
                 ? $values['order_url']
                 : null,
+            // An event whose letter is the shop's and that has a letter for the buyer too: a channel
+            // to the buyer starts with the buyer's (spec §10.2 of the notifications, §5.1).
+            addressed: $audience === OrderTemplates::MANAGER && OrderTemplates::hasLetter($key, OrderTemplates::CUSTOMER)
+                ? [self::BUYER => self::samples($key, OrderTemplates::CUSTOMER)]
+                : [],
         );
+    }
+
+    /**
+     * The default templates of an event for one audience, by provider.
+     *
+     * @return array<string, Closure(string): (array{subject: string, template: string}|null)>
+     */
+    private static function samples(string $key, string $audience): array
+    {
+        return [
+            'email' => static fn (string $locale): ?array => OrderTemplates::email($key, $audience, $locale),
+            'telegram' => static fn (string $locale): ?array => OrderTemplates::telegram($key, $audience, $locale),
+            '*' => static fn (string $locale): ?array => OrderTemplates::text($key, $audience, $locale),
+        ];
     }
 
     /**
@@ -158,6 +177,16 @@ final class OrderEvents
             $one('delivery', 'Branch 12, Town D'),
             $one('payment', 'Online by card'),
             $one('comment', 'Call before coming, please.'),
+            // The extra fields of checkout (WEBX_UI_ORDER_FIELDS.md §5.3): the rows, and one by key.
+            new Variable('fields', $vars.'fields', example: [
+                ['key' => 'company_name', 'label' => 'Company name', 'value' => 'Company A'],
+                ['key' => 'delivery_time', 'label' => 'Convenient delivery time', 'value' => '18:00–21:00'],
+            ], fields: [
+                'key' => $vars.'field_key',
+                'label' => $vars.'field_label',
+                'value' => $vars.'field_value',
+            ]),
+            new Variable('field.*', $vars.'field'),
             $one('public_status', 'In progress'),
             $one('public_status_code', 'in_progress'),
             $one('public_status_description', 'We are putting your order together.'),

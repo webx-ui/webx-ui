@@ -52,6 +52,65 @@ export function slugify(title: string, separator = '-', locale = 'en'): string {
     .replace(new RegExp(`^[${sep}]+|[${sep}]+$`, 'gu'), '')
 }
 
+/** How a code field is shaped: the node's `separator`, `maxlength` and `lead`. */
+export interface CodeShape {
+  /**
+   * Between words: `-` (the default), `_`, or `-_` for a field that takes either — a typed
+   * `_` stays, every other gap is a `-` (`Slug::BOTH`); `_-` the other way round, a typed `-`
+   * stays and a gap is `_` (`Slug::BOTH_UNDERSCORED`).
+   */
+  separator?: '-' | '_' | '-_' | '_-'
+  /** Cut to this many characters; none — no cut. */
+  max?: number
+  /** The language a word in another alphabet is read by. */
+  locale?: string
+  /** A code that must start with a letter is put after this one when it starts with a digit. */
+  lead?: string
+  /**
+   * Still being typed: a separator at the end stays, so that the next word has somewhere to go —
+   * «brake » is `brake-` until it is `brake-pads`, and `brake` once the field is left.
+   */
+  typing?: boolean
+}
+
+function words(text: string, separator: '-' | '_', locale: string | undefined): string {
+  return (
+    slugify(text, separator, locale)
+      // `Str::slug`'s steps keep a letter of a script it has no table for, and an `_` beside a `-`.
+      .replace(/[^a-z0-9]+/g, separator)
+      .replace(/^[-_]+|[-_]+$/g, '')
+  )
+}
+
+/**
+ * What a code field does with whatever is typed into it, instead of refusing it: «тормозные
+ * колодки» is `tormoznye-kolodki`, `Brake_Pads` is `brake-pads`. The same as `Slug::code()` on
+ * the server, which a save through an agent or an import goes by.
+ */
+export function codify(text: string, shape: CodeShape = {}): string {
+  const both = shape.separator === '-_' || shape.separator === '_-'
+  // With both, the gap between words is the first, the one that was typed and stays — the second.
+  const separator = shape.separator?.startsWith('_') === true ? '_' : '-'
+  const kept = separator === '-' ? '_' : '-'
+  let code = both
+    ? text
+        .split(kept)
+        .map((part) => words(part, separator, shape.locale))
+        .filter((word) => word !== '')
+        .join(kept)
+    : words(text, separator, shape.locale)
+
+  if (shape.lead !== undefined && code !== '' && !/^[a-z]/.test(code)) {
+    code = `${shape.lead}${separator}${code}`
+  }
+
+  const cut = (shape.max === undefined ? code : code.slice(0, shape.max)).replace(/[-_]+$/, '')
+  const open = shape.typing === true && cut !== '' && /[\s_-]$/u.test(text)
+  const next = both && text.endsWith(kept) ? kept : separator
+
+  return open && (shape.max === undefined || cut.length < shape.max) ? `${cut}${next}` : cut
+}
+
 /**
  * The site's main language — the one a new record is named in, and so the one its address is
  * transliterated by (`Locales::defaultCode()` on the server).

@@ -20,6 +20,14 @@ use WebxUi\Blocks\Panel\BlockInput;
  */
 final class BlockRequest extends FormRequest
 {
+    /** The slug is brought to its shape before the rules see it: a wrong shape is mended, not refused. */
+    protected function prepareForValidation(): void
+    {
+        if (is_string($this->input('slug'))) {
+            $this->merge(['slug' => BlockInput::bring(['slug' => $this->input('slug')])['slug']]);
+        }
+    }
+
     /**
      * @return array<string, mixed>
      */

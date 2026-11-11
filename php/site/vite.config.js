@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { relative, sep } from 'node:path'
 import { defineConfig } from 'vite'
 import laravel from 'laravel-vite-plugin'
+import vue from '@vitejs/plugin-vue'
 
 // What the bundle was built from, by content: `webx:doctor` hashes the same files and compares.
 //
@@ -56,6 +57,11 @@ export default defineConfig({
             input: ['theme/src/css/theme.css', 'theme/src/js/theme.js', 'resources/css/app.css', 'resources/js/app.js'].filter((entry) => existsSync(entry)),
             refresh: true,
         }),
+        // The site's own modules (modules/*/js) are built from their sources, single-file
+        // components and all: they have no dist of their own. The packages under node_modules
+        // arrive built and never reach this plugin. Asset URLs are left as written, the way
+        // Laravel's own Vue setup has them, so an absolute /images/… stays the site's public path.
+        vue({ template: { transformAssetUrls: { base: null, includeAbsolute: false } } }),
         sources(),
     ],
 

@@ -64,6 +64,8 @@ list, not an exception: a header without a banner is better than a white page.
 | `image`        | the value of a `wx-media` field (images) — required, the one required field     |
 | `image_mobile` | the same, shown below the breakpoint instead of `image`                         |
 | `video`        | the value of a `wx-media` field (video); `image` is its poster and its fallback |
+| `video_mobile` | the same, played below the breakpoint instead of `video`                        |
+| `poster`       | the value of a `wx-media` field (images): the video's poster instead of `image` |
 | `title`        | translatable                                                                    |
 | `text`         | translatable, plain text                                                        |
 | `buttons`      | up to three: `label` (translatable), `link` (a `wx-link` value), `variant`      |
@@ -100,32 +102,39 @@ A card:
     'image' => ['url' => …, 'thumb' => …, 'width' => 1920, 'height' => 720, 'alt' => …, 'mime' => …],
     'image_mobile' => [ … ] | null,       // null — take image
     'video' => ['url' => …, 'mime' => 'video/mp4'] | null,
+    'video_mobile' => ['url' => …, 'mime' => 'video/mp4'] | null,
+    'poster' => [ … ] | null,
     'buttons' => [
-        ['label' => 'Book now', 'url' => '/booking', 'new_tab' => false, 'rel' => null, 'variant' => 'primary'],
+        ['label' => 'Book now', 'url' => '/booking', 'new_tab' => false, 'rel' => null, 'download' => null, 'variant' => 'primary'],
     ],
     'fields' => ['badge' => 'New'],       // the project's own fields, by name
 ]
 ```
 
-`rel` already carries `noopener noreferrer` for a new tab. A variant that was taken out of the
-config comes back as the first one of the config: a button outranks its look.
+`rel` already carries `noopener noreferrer` for a new tab. A button may lead to a file of the media
+library — a brochure: `download` is then the name it was uploaded under when the editor ticked
+«Download instead of opening», else null; a file gone from the library drops the button. Print the
+`<a>` with `{{ \WebxUi\Admin\Links\LinkAttributes::of($button) }}` — `href`, `target`, `rel` and
+`download` in one. A variant that was taken out of the config comes back as the first one of the
+config: a button outranks its look.
 
 `banners_layout()` merges the package's options, `webx-banners.options`, the place's `options`
 and the argument, in that order, and adds `layout` (`single`, `random` or `slider`). Every key is
 read against the package's default, so a published config with one option keeps the others. A
 key the package does not know is handed to the template as it is.
 
-| Option            | Default | Meaning                                                   |
-| ----------------- | ------- | --------------------------------------------------------- |
-| `interval`        | `6000`  | ms between slides                                         |
-| `autoplay`        | `true`  | off under `prefers-reduced-motion` regardless             |
-| `loop`            | `true`  | after the last slide, the first                           |
-| `arrows`, `dots`  | `true`  |                                                           |
-| `pause_on_hover`  | `true`  | and on focus inside the slider                            |
-| `ratio`           | `16/6`  | `aspect-ratio` of the frame on wide screens               |
-| `ratio_mobile`    | `4/5`   | below the breakpoint                                      |
-| `breakpoint`      | `768`   | px: below it `image_mobile`, `ratio_mobile`, and no video |
-| `video_on_mobile` | `false` | below the breakpoint the poster rather than the video     |
+| Option            | Default | Meaning                                                       |
+| ----------------- | ------- | ------------------------------------------------------------- |
+| `interval`        | `6000`  | ms between slides                                             |
+| `autoplay`        | `true`  | off under `prefers-reduced-motion` regardless                 |
+| `loop`            | `true`  | after the last slide, the first                               |
+| `arrows`, `dots`  | `true`  |                                                               |
+| `pause_on_hover`  | `true`  | and on focus inside the slider                                |
+| `ratio`           | `16/6`  | `aspect-ratio` of the frame on wide screens                   |
+| `ratio_mobile`    | `4/5`   | below the breakpoint                                          |
+| `breakpoint`      | `768`   | px: below it `image_mobile`, `ratio_mobile`, `video_mobile`   |
+| `video_on_mobile` | `false` | without `video_mobile`, `video` on phones too                 |
+| `parallax`        | `false` | `true` (medium), `soft` or `strong`: the picture moves slower |
 
 ## A template
 
@@ -152,8 +161,7 @@ The package draws nothing; this is what a site copies and changes.
         </picture>
 
         @if ($banner['video'])
-          <video muted playsinline loop preload="none" poster="{{ $banner['image']['url'] }}"
-                 data-src="{{ $banner['video']['url'] }}"></video>
+          <x-webx-video variant="background" :file="$banner['video']" />
         @endif
 
         @if ($banner['title'] !== '')
@@ -164,9 +172,7 @@ The package draws nothing; this is what a site copies and changes.
         @endif
 
         @foreach ($banner['buttons'] as $button)
-          <a class="button button--{{ $button['variant'] }}" href="{{ $button['url'] }}"
-             @if ($button['new_tab']) target="_blank" @endif
-             @if ($button['rel']) rel="{{ $button['rel'] }}" @endif>{{ $button['label'] }}</a>
+          <a class="button button--{{ $button['variant'] }}" {{ \WebxUi\Admin\Links\LinkAttributes::of($button) }}>{{ $button['label'] }}</a>
         @endforeach
       </article>
     @endforeach
@@ -181,9 +187,11 @@ The package draws nothing; this is what a site copies and changes.
 - **slider** — a strip with `scroll-snap`, arrows, dots and autoplay read from `data-banners`,
   paused on hover and focus, no autoplay under `prefers-reduced-motion`; one banner — no arrows
   and no dots.
-- **video** — the script sets `src` from `data-src` on wide screens (or when `video_on_mobile`)
-  and not under `prefers-reduced-motion`. Without it, on a phone and with reduced motion, the
-  picture is what is seen.
+- **video** — the background video of `webx-ui/widgets` over the picture, which stays its
+  poster: muted, looping, a pause button, played only on screen and never under
+  `prefers-reduced-motion` or on a connection saving data. `video_mobile` is a second one below
+  the breakpoint, the other hidden there by a media query; `<x-webx-banner>` prints both and puts
+  `poster` in the `<picture>` where a video plays.
 
 ## Button variants
 
@@ -239,7 +247,9 @@ Nine tools through the same doors as the panel, behind `banners:read` and `banne
 `banners_places`, `banners_place_create`, `banners_place_delete`, `banners_list`, `banners_get`,
 `banners_create`, `banners_update`, `banners_delete`, `banners_reorder`. A place is its key, a
 banner its id, a picture or a video a library key (an unknown one is refused). A button is
-`{ label, link, variant }` — `link` an address or an entity as `menu_add_link` takes it, a look the
+`{ label, link, variant }` — `link` an address, an entity as `menu_add_link` takes it, or a file of
+the library `{ "target": "file", "path": "media/…", "download": true }` (a key the library does not
+have is refused, `dry_run` included), a look the
 config does not have refused with the list of those it has. `banners://catalog` is what an agent
 reads first: the looks, the layouts, every place with its banners in order, `written_in` and
 `has_video` on each — and the reminder that a template, not a block, puts a place on the site.

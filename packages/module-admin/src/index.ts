@@ -200,6 +200,7 @@ export type {
   Manifest,
   ManifestModule,
   NavEntry,
+  PickedFile,
   PickedImage,
   RowAction,
   ScreenAction,
@@ -240,7 +241,7 @@ export { default as WxBackupNote } from './BackupNote.vue'
 export { default as WxRichTextField } from './RichTextField.vue'
 export { useRichTextLabels } from './richTextLabels'
 export { useAvatars } from './avatars'
-export { slugify, useDefaultLocale } from './slug'
+export { codify, slugify, useDefaultLocale, type CodeShape } from './slug'
 export { default as WxLinkPicker } from './LinkPicker.vue'
 export { default as WxLinkField } from './LinkField.vue'
 export { default as WxCategoriesPage } from './categories/CategoriesPage.vue'
@@ -251,6 +252,7 @@ export { default as WxSourceSelect } from './categories/SourceSelect.vue'
 export { default as WxCollectionField } from './collections/CollectionField.vue'
 export { default as WxRelationsField } from './relations/RelationsField.vue'
 export { default as WxSlugField } from './SlugField.vue'
+export { default as WxCodeField } from './CodeField.vue'
 /** The shared address field under the name it was released with. */
 export { default as WxCategorySlug } from './SlugField.vue'
 export {

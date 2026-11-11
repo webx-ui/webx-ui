@@ -8,6 +8,8 @@ export interface ColProps {
   span?: number
   /** Empty columns before the cell, out of 24. */
   offset?: number
+  /** From 400px up — two short fields side by side in a dialog. */
+  xs?: ColBreakpoint
   /** From 640px up. */
   sm?: ColBreakpoint
   /** From 768px up. */

@@ -38,6 +38,8 @@ arrivals», «For winter».
 Blocks, texts and templates find the collection by this word, which is why it stays the same.
 Buyers do not see it.
 
+Type it any way you like: «Summer tyres» becomes `summer-tyres`.
+
 ## source
 
 «By hand» gives you a fixed list in your order, which needs care when products sell out. «By a filter»
@@ -57,6 +59,9 @@ line, and buyers scroll through it.
 
 Lead it to the page where buyers can see more: a category or a landing. Without a link the block
 simply ends after the last product.
+
+It can also be «A file» of the media library — the catalogue in PDF; tick «Download instead of
+opening» to have it saved under the name it was uploaded with.
 
 ## link-text
 

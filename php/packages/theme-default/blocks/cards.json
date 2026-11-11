@@ -1,7 +1,7 @@
 {
   "slug": "cards",
   "title": "Cards",
-  "description": "A grid of cards — a picture or an icon, a title, a text, a link — two, three or four across, as many as the column has room for.",
+  "description": "Cards — a picture or photos, an icon, a title, labels, a text, a link — in a grid two, three or four across, or in a carousel; as many as the column has room for.",
   "icon": null,
   "group": "content",
   "sort": 40,
@@ -14,7 +14,8 @@
       "id": "heading",
       "type": "wx-input",
       "label": "Heading",
-      "localized": true
+      "localized": true,
+      "help": "Two equals signs around words set them off in the accent colour: Homes ==by the river==."
     },
     {
       "id": "intro",
@@ -45,7 +46,8 @@
             "label": "Four"
           }
         ]
-      }
+      },
+      "help": "In the grid and in the carousel; a narrow column shows fewer."
     },
     {
       "id": "pictures",
@@ -61,6 +63,87 @@
           {
             "value": "icon",
             "label": "Icon"
+          }
+        ]
+      }
+    },
+    {
+      "id": "view",
+      "type": "wx-segmented",
+      "label": "View",
+      "default": "grid",
+      "props": {
+        "options": [
+          {
+            "value": "grid",
+            "label": "Grid"
+          },
+          {
+            "value": "slider",
+            "label": "Carousel"
+          }
+        ]
+      }
+    },
+    {
+      "id": "arrows",
+      "type": "wx-switch",
+      "label": "Arrows",
+      "default": true,
+      "visible": {
+        "when": "view",
+        "is": "slider"
+      }
+    },
+    {
+      "id": "dots",
+      "type": "wx-switch",
+      "label": "Dots",
+      "default": true,
+      "visible": {
+        "when": "view",
+        "is": "slider"
+      }
+    },
+    {
+      "id": "endless",
+      "type": "wx-switch",
+      "label": "Start over after the last card",
+      "default": true,
+      "visible": {
+        "when": "view",
+        "is": "slider"
+      }
+    },
+    {
+      "id": "autoplay",
+      "type": "wx-switch",
+      "label": "Turn on its own",
+      "help": "Stops under the mouse and in focus, has a pause button, and does not start for a visitor who asked for less motion.",
+      "default": false,
+      "visible": {
+        "when": "view",
+        "is": "slider"
+      }
+    },
+    {
+      "id": "interval",
+      "type": "wx-input-number",
+      "label": "Seconds between turns",
+      "default": 5,
+      "props": {
+        "min": 2,
+        "max": 30
+      },
+      "visible": {
+        "all": [
+          {
+            "when": "view",
+            "is": "slider"
+          },
+          {
+            "when": "autoplay",
+            "is": true
           }
         ]
       }
@@ -85,10 +168,39 @@
           }
         },
         {
+          "id": "photos",
+          "type": "wx-gallery",
+          "label": "More photos",
+          "help": "With two photos or more, a photo card turns them on its own every 5 seconds, with a bar for each; an icon card shows the first picture only."
+        },
+        {
           "id": "title",
           "type": "wx-input",
           "label": "Title",
           "localized": true
+        },
+        {
+          "id": "chips",
+          "type": "wx-repeater",
+          "label": "Labels",
+          "help": "A few short words under the title: 2 rooms, 54 m², a balcony.",
+          "props": {
+            "itemLabel": "label",
+            "addLabel": "Add a label",
+            "max": 8,
+            "sortable": true
+          },
+          "children": [
+            {
+              "id": "label",
+              "type": "wx-input",
+              "label": "Label",
+              "localized": true,
+              "props": {
+                "maxlength": 40
+              }
+            }
+          ]
         },
         {
           "id": "text",
@@ -107,46 +219,134 @@
           "help": "Shown under the text; the whole card is the link."
         },
         {
+          "id": "link",
+          "type": "wx-link",
+          "label": "Link",
+          "props": {
+            "files": true,
+            "allowNone": false
+          }
+        },
+        {
           "id": "link_url",
           "type": "wx-input",
-          "label": "Link address",
+          "label": "Link address (old)",
+          "default": "",
           "props": {
             "placeholder": "/contacts"
+          },
+          "help": "What this button had before it took a link. Used only while the link above is empty: choose the link, then clear this.",
+          "visible": {
+            "all": [
+              {
+                "when": "link_url",
+                "not": null
+              },
+              {
+                "when": "link_url",
+                "not": ""
+              }
+            ]
           }
         }
       ]
+    },
+    {
+      "id": "no_reveal",
+      "type": "wx-switch",
+      "label": "Without animation",
+      "default": false,
+      "help": "Shown at once, even where the theme brings its blocks in as the page scrolls."
+    },
+    {
+      "id": "overlap",
+      "type": "wx-switch",
+      "label": "Slide over the section above",
+      "default": false,
+      "help": "The section above stays in place while this one comes up over it, and its words fade. The edge pictures stand over this section's top. Visitors who ask for less motion see the sections one after another."
+    },
+    {
+      "id": "overlap_edge",
+      "type": "wx-media",
+      "label": "Edge picture",
+      "props": {
+        "accept": "image"
+      },
+      "help": "Over the top of this section, as wide as the page: fog or clouds in a PNG or WebP with transparency, its bottom row in the colour of this section.",
+      "visible": {
+        "when": "overlap",
+        "is": true
+      }
+    },
+    {
+      "id": "overlap_edge_narrow",
+      "type": "wx-media",
+      "label": "Edge picture on a phone",
+      "props": {
+        "accept": "image"
+      },
+      "help": "The same edge for a narrow screen. Without it the edge picture above is used there too.",
+      "visible": {
+        "when": "overlap",
+        "is": true
+      }
     }
   ],
-  "template": "@php\n    $shown = array_values(array_filter(is_array($cards) ? $cards : [], static fn ($item): bool => is_array($item) && (trim((string) ($item['title'] ?? '')) !== '' || trim((string) ($item['text'] ?? '')) !== '' || ! empty($item['image']['url']))));\n    $across = in_array((string) $columns, ['2', '4'], true) ? (string) $columns : '3';\n@endphp\n@if ($shown || $heading)\n<section class=\"b-cards b-cards--{{ $across }} b-cards--{{ $pictures === 'icon' ? 'icon' : 'photo' }}\" data-wx-block=\"cards\">\n    @if ($heading || $intro)\n        <div class=\"b-cards__head\">\n            @if ($heading)\n                <h2 class=\"b-cards__heading\">{{ $heading }}</h2>\n            @endif\n            @if ($intro)\n                <p class=\"b-cards__intro\">{{ $intro }}</p>\n            @endif\n        </div>\n    @endif\n    @if ($shown)\n        <ul class=\"b-cards__grid\" role=\"list\">\n            @foreach ($shown as $card)\n                @php\n                    $picture = is_array($card['image'] ?? null) && ! empty($card['image']['url']) ? $card['image'] : null;\n                    $title = trim((string) ($card['title'] ?? ''));\n                    $more = trim((string) ($card['link_label'] ?? ''));\n                    $href = trim((string) ($card['link_url'] ?? ''));\n                @endphp\n                <li @class(['b-cards__card', 'is-linked' => $href !== ''])>\n                    @if ($picture)\n                        <img class=\"b-cards__picture\" src=\"{{ $picture['url'] }}\" alt=\"{{ $picture['alt'] ?? '' }}\" loading=\"lazy\" @if (! empty($picture['width'])) width=\"{{ $picture['width'] }}\" height=\"{{ $picture['height'] }}\" @endif>\n                    @endif\n                    <div class=\"b-cards__body\">\n                        @if ($title !== '' || ($href !== '' && $more !== ''))\n                            <h3 class=\"b-cards__title\">\n                                @if ($href !== '')\n                                    <a class=\"b-cards__link\" href=\"{{ $href }}\">{{ $title !== '' ? $title : $more }}</a>\n                                @else\n                                    {{ $title }}\n                                @endif\n                            </h3>\n                        @endif\n                        @if (trim((string) ($card['text'] ?? '')) !== '')\n                            <p class=\"b-cards__text\">{{ $card['text'] }}</p>\n                        @endif\n                        @if ($href !== '' && $more !== '' && $title !== '')\n                            <span class=\"b-cards__more\" aria-hidden=\"true\">{{ $more }}<x-theme::icon name=\"arrow-right\" class=\"b-cards__arrow\" /></span>\n                        @endif\n                    </div>\n                </li>\n            @endforeach\n        </ul>\n    @endif\n</section>\n@endif\n",
-  "styles": ".b-cards {\n    container-type: inline-size;\n    padding-block: var(--site-space-6);\n}\n\n.b-cards__head {\n    max-width: 42rem;\n    margin-bottom: var(--site-space-5);\n}\n\n.b-cards__heading {\n    margin: 0 0 var(--site-space-2);\n}\n\n.b-cards__intro {\n    margin: 0;\n    color: var(--site-color-text-muted);\n}\n\n.b-cards__grid {\n    display: grid;\n    grid-template-columns: minmax(0, 1fr);\n    gap: var(--site-space-4);\n    margin: 0;\n    padding: 0;\n    list-style: none;\n}\n\n.b-cards__card {\n    position: relative;\n    display: flex;\n    flex-direction: column;\n    margin: 0;\n    overflow: hidden;\n    border: 1px solid var(--site-color-border);\n    border-radius: var(--site-radius-lg);\n    background: var(--site-color-surface);\n    color: var(--site-color-text);\n    transition: border-color var(--site-duration) var(--site-easing), box-shadow var(--site-duration) var(--site-easing);\n}\n\n.b-cards__card.is-linked:hover {\n    border-color: var(--site-color-accent);\n    box-shadow: var(--site-shadow-md);\n}\n\n.b-cards--photo .b-cards__picture {\n    width: 100%;\n    max-width: none;\n    height: auto;\n    aspect-ratio: 3 / 2;\n    border-radius: 0;\n    object-fit: cover;\n}\n\n.b-cards--icon .b-cards__picture {\n    width: 3rem;\n    height: 3rem;\n    margin: var(--site-space-5) var(--site-space-5) 0;\n    border-radius: 0;\n    object-fit: contain;\n}\n\n.b-cards__body {\n    display: flex;\n    flex: 1;\n    flex-direction: column;\n    gap: var(--site-space-2);\n    padding: var(--site-space-5);\n}\n\n.b-cards__title {\n    margin: 0;\n    font-size: var(--site-font-size-4);\n    line-height: 1.3;\n    hyphens: auto;\n}\n\n.b-cards__link {\n    color: inherit;\n    text-decoration: none;\n}\n\n/* The whole card is the link: the title's box stretched over it, so there is one link to\n   tab to and one name for a screen reader. */\n.b-cards__link::after {\n    content: \"\";\n    position: absolute;\n    inset: 0;\n    border-radius: inherit;\n}\n\n.b-cards__link:focus-visible {\n    outline: none;\n}\n\n.b-cards__link:focus-visible::after {\n    outline: 2px solid var(--site-color-accent);\n    outline-offset: -2px;\n}\n\n.b-cards__text {\n    margin: 0;\n    color: var(--site-color-text-muted);\n}\n\n.b-cards__more {\n    display: flex;\n    align-items: center;\n    gap: var(--site-space-1);\n    margin-top: auto;\n    padding-top: var(--site-space-2);\n    color: var(--site-color-accent);\n    font-weight: 600;\n}\n\n.b-cards__arrow {\n    transition: transform var(--site-duration) var(--site-easing);\n}\n\n.b-cards__card.is-linked:hover .b-cards__arrow {\n    transform: translateX(0.25em);\n}\n\n@container (min-width: 32rem) {\n    .b-cards__grid {\n        grid-template-columns: repeat(2, minmax(0, 1fr));\n    }\n}\n\n@container (min-width: 52rem) {\n    .b-cards--3 .b-cards__grid,\n    .b-cards--4 .b-cards__grid {\n        grid-template-columns: repeat(3, minmax(0, 1fr));\n    }\n}\n\n@container (min-width: 64rem) {\n    .b-cards--4 .b-cards__grid {\n        grid-template-columns: repeat(4, minmax(0, 1fr));\n    }\n}\n",
+  "template": "@php\n    // A card's photos: the picture, then the more photos — the ones deleted from the library left out.\n    $photosOf = static fn (array $card): array => array_values(array_filter([$card['image'] ?? null, ...(is_array($card['photos'] ?? null) ? $card['photos'] : [])], static fn ($photo): bool => is_array($photo) && ! empty($photo['url'])));\n    $shown = array_values(array_filter(is_array($cards) ? $cards : [], static fn ($item): bool => is_array($item) && (trim((string) ($item['title'] ?? '')) !== '' || trim((string) ($item['text'] ?? '')) !== '' || $photosOf($item) !== [])));\n    $across = in_array((string) $columns, ['2', '4'], true) ? (string) $columns : '3';\n    // A carousel of cards, or the grid every block saved before the field is.\n    $carousel = ($view ?? 'grid') === 'slider';\n    // As many across as the grid has at the same width of the column, and no more than it was told.\n    $views = array_slice([0 => 1, 512 => 2, 832 => 3, 1024 => 4], 0, (int) $across, true);\n    $turn = ! empty($autoplay) ? max(2, min(30, (int) ($interval ?? 5) ?: 5)) * 1000 : false;\n    $label = $heading ? trim(strip_tags(\\WebxUi\\Themes\\ThemeAccent::plain($heading))) : null;\n    $drawn = [];\n@endphp\n@foreach ($shown as $card)\n    @php\n        $photos = $photosOf($card);\n        $picture = $photos[0] ?? null;\n        // Several photos turn in a photo card; an icon is one picture.\n        $turning = $pictures !== 'icon' && count($photos) > 1;\n        $title = trim((string) ($card['title'] ?? ''));\n        $more = trim((string) ($card['link_label'] ?? ''));\n        $href = \\WebxUi\\Admin\\Links\\LinkAttributes::of($card['link'] ?? null, $card['link_url'] ?? null);\n        $chips = array_values(array_filter(array_map(static fn ($chip): string => is_array($chip) ? trim((string) ($chip['label'] ?? '')) : '', is_array($card['chips'] ?? null) ? $card['chips'] : []), static fn (string $chip): bool => $chip !== ''));\n        ob_start();\n    @endphp\n                    @if ($turning)\n                        <x-webx-photos class=\"b-cards__photos\" :images=\"$photos\" ratio=\"3/2\" :label=\"$title !== '' ? $title : null\" />\n                    @elseif ($picture)\n                        <img class=\"b-cards__picture\" src=\"{{ $picture['url'] }}\" alt=\"{{ $picture['alt'] ?? '' }}\" loading=\"lazy\" @if (! empty($picture['width'])) width=\"{{ $picture['width'] }}\" height=\"{{ $picture['height'] }}\" @endif>\n                    @endif\n                    <div class=\"b-cards__body\">\n                        @if ($title !== '' || ($href !== null && $more !== ''))\n                            <h3 class=\"b-cards__title\">\n                                @if ($href !== null)\n                                    <a class=\"b-cards__link\" {{ $href }}>{{ $title !== '' ? $title : $more }}</a>\n                                @else\n                                    {{ $title }}\n                                @endif\n                            </h3>\n                        @endif\n                        @if ($chips)\n                            <ul class=\"b-cards__chips\" role=\"list\">\n                                @foreach ($chips as $chip)\n                                    <li class=\"b-cards__chip\">{{ $chip }}</li>\n                                @endforeach\n                            </ul>\n                        @endif\n                        @if (trim((string) ($card['text'] ?? '')) !== '')\n                            <p class=\"b-cards__text\">{{ $card['text'] }}</p>\n                        @endif\n                        @if ($href !== null && $more !== '' && $title !== '')\n                            <span class=\"b-cards__more\" aria-hidden=\"true\">{{ $more }}<x-theme::icon name=\"arrow-right\" class=\"b-cards__arrow\" /></span>\n                        @endif\n                    </div>\n    @php\n        // The card is drawn once and stands in the grid's cell or in a slide: one markup for both.\n        $drawn[] = ['linked' => $href !== null, 'surface' => $turning && $href !== null, 'html' => new \\Illuminate\\Support\\HtmlString((string) ob_get_clean())];\n    @endphp\n@endforeach\n@if ($shown || $heading)\n<section class=\"b-cards b-cards--{{ $across }} b-cards--{{ $pictures === 'icon' ? 'icon' : 'photo' }}{{ $carousel && $shown ? ' b-cards--carousel' : '' }}\" data-wx-block=\"cards\"@webxOverlap($overlap ?? false)>\n    @webxOverlapEdge($overlap ?? false, $overlap_edge ?? null, $overlap_edge_narrow ?? null)\n    @if ($heading || $intro)\n        <div class=\"b-cards__head\" @webxReveal('', $no_reveal)>\n            @if ($heading)\n                <h2 class=\"b-cards__heading\">@webxAccent($heading)</h2>\n            @endif\n            @if ($intro)\n                <p class=\"b-cards__intro\">{{ $intro }}</p>\n            @endif\n        </div>\n    @endif\n    @if ($shown && $carousel)\n        <div class=\"b-cards__carousel\" @webxReveal('', $no_reveal)>\n            <x-webx-slider variant=\"cards\" :label=\"$label ?: null\" :per-view=\"$views\" :arrows=\"(bool) ($arrows ?? true)\" :pagination=\"(bool) ($dots ?? true)\" :loop=\"(bool) ($endless ?? true)\" :autoplay=\"$turn\">\n                @foreach ($drawn as $card)\n                    <x-webx-slide>\n                        <div @class(['b-cards__card', 'is-linked' => $card['linked']]) @if ($card['surface']) data-webx-photos-surface @endif>{{ $card['html'] }}</div>\n                    </x-webx-slide>\n                @endforeach\n            </x-webx-slider>\n        </div>\n    @elseif ($shown)\n        <ul class=\"b-cards__grid\" role=\"list\" @webxReveal('stagger', $no_reveal)>\n            @foreach ($drawn as $card)\n                <li @class(['b-cards__card', 'is-linked' => $card['linked']]) @if ($card['surface']) data-webx-photos-surface @endif>\n{{ $card['html'] }}                </li>\n            @endforeach\n        </ul>\n    @endif\n</section>\n@endif\n",
+  "styles": ".b-cards {\n    container-type: inline-size;\n    padding-block: var(--site-space-6);\n}\n\n.b-cards__head {\n    max-width: 42rem;\n    margin-bottom: var(--site-space-5);\n}\n\n.b-cards__heading {\n    margin: 0 0 var(--site-space-2);\n}\n\n.b-cards__intro {\n    margin: 0;\n    color: var(--site-color-text-muted);\n}\n\n.b-cards__grid {\n    display: grid;\n    grid-template-columns: minmax(0, 1fr);\n    gap: var(--site-space-4);\n    margin: 0;\n    padding: 0;\n    list-style: none;\n}\n\n.b-cards__card {\n    position: relative;\n    display: flex;\n    flex-direction: column;\n    margin: 0;\n    overflow: hidden;\n    border: 1px solid var(--site-color-border);\n    border-radius: var(--site-radius-lg);\n    background: var(--site-color-surface);\n    color: var(--site-color-text);\n    transition: border-color var(--site-duration) var(--site-easing), box-shadow var(--site-duration) var(--site-easing);\n}\n\n.b-cards__card.is-linked:hover {\n    border-color: var(--site-color-accent);\n    box-shadow: var(--site-shadow-md);\n}\n\n.b-cards--photo .b-cards__picture {\n    width: 100%;\n    max-width: none;\n    height: auto;\n    aspect-ratio: 3 / 2;\n    border-radius: 0;\n    object-fit: cover;\n}\n\n/* Several photos: the same frame as one, the photos changing in it. */\n.b-cards__photos {\n    flex: none;\n}\n\n.b-cards--icon .b-cards__picture {\n    width: 3rem;\n    height: 3rem;\n    margin: var(--site-space-5) var(--site-space-5) 0;\n    border-radius: 0;\n    object-fit: contain;\n}\n\n.b-cards__body {\n    display: flex;\n    flex: 1;\n    flex-direction: column;\n    gap: var(--site-space-2);\n    padding: var(--site-space-5);\n}\n\n.b-cards__title {\n    margin: 0;\n    font-size: var(--site-font-size-4);\n    line-height: 1.3;\n    hyphens: auto;\n}\n\n.b-cards__link {\n    color: inherit;\n    text-decoration: none;\n}\n\n/* The whole card is the link: the title's box stretched over it, so there is one link to\n   tab to and one name for a screen reader. */\n.b-cards__link::after {\n    content: \"\";\n    position: absolute;\n    inset: 0;\n    border-radius: inherit;\n}\n\n.b-cards__link:focus-visible {\n    outline: none;\n}\n\n.b-cards__link:focus-visible::after {\n    outline: 2px solid var(--site-color-accent);\n    outline-offset: -2px;\n}\n\n/* Labels: short words in a row that wraps, quieter than the text. */\n.b-cards__chips {\n    display: flex;\n    flex-wrap: wrap;\n    gap: var(--site-space-1);\n    margin: 0;\n    padding: 0;\n    list-style: none;\n}\n\n.b-cards__chip {\n    margin: 0;\n    padding: var(--site-space-1) var(--site-space-2);\n    border-radius: var(--site-radius-full);\n    background: var(--site-color-surface-muted);\n    color: var(--site-color-text-muted);\n    /* Smaller than the text: the scale of the theme has no step below it. */\n    font-size: 0.875em;\n    line-height: 1.3;\n}\n\n.b-cards__text {\n    margin: 0;\n    color: var(--site-color-text-muted);\n}\n\n.b-cards__more {\n    display: flex;\n    align-items: center;\n    gap: var(--site-space-1);\n    margin-top: auto;\n    padding-top: var(--site-space-2);\n    color: var(--site-color-accent);\n    font-weight: 600;\n}\n\n.b-cards__arrow {\n    transition: transform var(--site-duration) var(--site-easing);\n}\n\n.b-cards__card.is-linked:hover .b-cards__arrow {\n    transform: translateX(0.25em);\n}\n\n/* In the carousel the cards of a row are as tall as the tallest, as in the grid. */\n.b-cards__carousel .webx-slider__slide {\n    display: flex;\n    height: auto;\n}\n\n.b-cards__carousel .b-cards__card {\n    flex: 1;\n    min-width: 0;\n}\n\n@container (min-width: 32rem) {\n    .b-cards__grid {\n        grid-template-columns: repeat(2, minmax(0, 1fr));\n    }\n}\n\n@container (min-width: 52rem) {\n    .b-cards--3 .b-cards__grid,\n    .b-cards--4 .b-cards__grid {\n        grid-template-columns: repeat(3, minmax(0, 1fr));\n    }\n}\n\n@container (min-width: 64rem) {\n    .b-cards--4 .b-cards__grid {\n        grid-template-columns: repeat(4, minmax(0, 1fr));\n    }\n}\n",
   "script": null,
   "sample": {
     "heading": "What we do",
     "intro": "Three things, each with a page of its own.",
     "columns": "3",
     "pictures": "photo",
+    "view": "grid",
+    "arrows": true,
+    "dots": true,
+    "endless": true,
+    "autoplay": false,
+    "interval": 5,
     "cards": [
       {
         "image": null,
+        "photos": [],
         "title": "Planning",
+        "chips": [],
         "text": "A route and a date before anything moves.",
         "link_label": "More",
-        "link_url": "/about"
+        "link": {
+          "target": "url",
+          "entity_type": null,
+          "entity_id": null,
+          "url": "/about",
+          "hash": null,
+          "new_tab": false,
+          "rel": []
+        },
+        "link_url": ""
       },
       {
         "image": null,
+        "photos": [],
         "title": "Delivery",
+        "chips": [],
         "text": "Door to door, with one person answering for it.",
         "link_label": "",
+        "link": null,
         "link_url": ""
       },
       {
         "image": null,
+        "photos": [],
         "title": "Storage",
+        "chips": [],
         "text": "For a week or a season.",
         "link_label": "",
+        "link": null,
         "link_url": ""
       }
-    ]
+    ],
+    "no_reveal": false,
+    "overlap": false
   }
 }

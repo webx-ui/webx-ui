@@ -46,6 +46,34 @@
               }
             }
           ]
+        },
+        {
+          "id": "video-row",
+          "type": "wx-row",
+          "children": [
+            {
+              "id": "poster",
+              "type": "wx-media",
+              "name": "poster",
+              "label": "trans::webx-banners::screen.poster",
+              "help": "trans::webx-banners::screen.poster-help",
+              "props": {
+                "accept": "image",
+                "aspect": "16/6",
+                "width": 200
+              }
+            },
+            {
+              "id": "video-mobile",
+              "type": "wx-media",
+              "name": "video_mobile",
+              "label": "trans::webx-banners::screen.video-mobile",
+              "help": "trans::webx-banners::screen.video-mobile-help",
+              "props": {
+                "accept": "video"
+              }
+            }
+          ]
         }
       ]
     },
@@ -138,7 +166,8 @@
                       "name": "link",
                       "label": "trans::webx-banners::screen.link",
                       "props": {
-                        "allowNone": false
+                        "allowNone": false,
+                        "files": true
                       }
                     }
                   ]

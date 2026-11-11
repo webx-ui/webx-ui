@@ -34,4 +34,13 @@ return [
     'not-localized' => 'Uma ligação é a mesma em todos os idiomas e não se traduz.',
     'address-fallback' => 'Ainda não há endereço neste idioma — este é o endereço em :locale, o idioma principal do site.',
     'address-fallback-label' => 'Endereço no idioma principal',
+    'target-file' => 'Um ficheiro',
+    'file-choose' => 'Escolher um ficheiro',
+    'file-replace' => 'Outro ficheiro',
+    'file-gone' => 'Este ficheiro já não está na biblioteca',
+    'file-download' => 'Descarregar em vez de abrir',
+    'no-file' => 'Não há nenhum ficheiro :path na biblioteca de média.',
+    'files-off' => 'Este campo não liga a ficheiros.',
+    'download' => 'A descarga está ligada ou desligada.',
+    'path' => 'Escolha um ficheiro da biblioteca de média.',
 ];

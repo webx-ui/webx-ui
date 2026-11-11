@@ -8,7 +8,9 @@ use Closure;
 use Illuminate\Contracts\Validation\DataAwareRule;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Validation\Rule;
+use WebxUi\Inbox\Fields\DateTimeField;
 use WebxUi\Inbox\Fields\FieldType;
+use WebxUi\Inbox\Models\Field;
 
 /**
  * One question of a form, apart from the request that carried it — the pair of
@@ -22,9 +24,44 @@ use WebxUi\Inbox\Fields\FieldType;
  * It also has to be unique — among the live fields of this form only. A deleted field keeps
  * its name in the table so that the answers pointing at it still read (§2.3), and a name
  * reserved for ever by a field nobody can see is a name whose owner cannot be found.
+ *
+ * A name is brought to its shape rather than refused for it (#125) — {@see bring()}, called by the
+ * panel and the agent before the rules.
  */
 final class FieldInput
 {
+    /**
+     * What arrived, with the name as it will be kept: «Ваш телефон» is `vash-telefon`, `2nd` is
+     * `field-2nd`.
+     *
+     * The name a field has already is left as it is, even when it is not the shape a new one is
+     * brought to: a `Phone` saved before #125 is `{{field.Phone}}` in somebody's template, and
+     * saving the label must not rename it. With nothing left of a name, a new field is named after
+     * its label, as one sent without a name is; a field that has one keeps the refusal, rather
+     * than losing the name its templates read.
+     *
+     * @param  array<string, mixed>  $input
+     * @return array<string, mixed>
+     */
+    public static function bring(array $input, ?Field $field = null): array
+    {
+        $name = $input['name'] ?? null;
+
+        if (! is_string($name) || trim($name) === '' || trim($name) === $field?->name) {
+            return $input;
+        }
+
+        $brought = (string) Field::codeFor('name', $name);
+
+        if ($brought === '' && $field !== null) {
+            return $input;
+        }
+
+        $input['name'] = $brought;
+
+        return $input;
+    }
+
     /**
      * @param  bool  $unique  false for a caller that checks the name against more than the
      *                        table — `inbox_form_save` writes several fields in one call, and a
@@ -52,6 +89,11 @@ final class FieldInput
             'help' => ['nullable'],
             'options' => ['nullable', 'array'],
             'options.choices' => [self::choicesRequired()],
+            // The grid of a «Date and time» (FORM_STEPS §6.2), each problem under the key it is about.
+            'options.time-step' => [self::datetime('time-step')],
+            'options.time-from' => [self::datetime('time-from')],
+            'options.time-to' => [self::datetime('time-to')],
+            'options.weekdays' => [self::datetime('weekdays')],
             'is_enabled' => ['nullable', 'boolean'],
             'is_required' => ['nullable', 'boolean'],
             'is_fullsize' => ['nullable', 'boolean'],
@@ -64,7 +106,8 @@ final class FieldInput
      */
     public static function messages(): array
     {
-        return ['name.regex' => (string) trans('webx-inbox::errors.field-name-shape')];
+        // Reached by a name with nothing left of it, kept by {@see bring()} for a field that has one.
+        return ['name.regex' => (string) trans('webx-inbox::errors.field-name-empty')];
     }
 
     /**
@@ -77,6 +120,9 @@ final class FieldInput
         $name = trim((string) ($input['name'] ?? ''));
         $options = $input['options'] ?? null;
 
+        // A step row is never answered: required, half width and a column mean nothing to it.
+        $question = $type->isQuestion();
+
         return [
             'name' => $name === '' ? null : $name,
             'type' => $type,
@@ -85,11 +131,11 @@ final class FieldInput
             'help' => self::words($input, 'help'),
             'options' => FieldOptions::clean($type, is_array($options) ? $options : []),
             'is_enabled' => self::boolean($input, 'is_enabled', true),
-            'is_required' => self::boolean($input, 'is_required'),
+            'is_required' => $question && self::boolean($input, 'is_required'),
             // Most fields take the whole line, and a form of half-width fields is the rarer
             // thing to ask for; the default matches the column of the migration.
-            'is_fullsize' => self::boolean($input, 'is_fullsize', true),
-            'in_table' => self::boolean($input, 'in_table'),
+            'is_fullsize' => ! $question || self::boolean($input, 'is_fullsize', true),
+            'in_table' => $question && self::boolean($input, 'in_table'),
         ];
     }
 
@@ -134,6 +180,48 @@ final class FieldInput
 
                 if ((FieldOptions::clean($type, $options)['choices'] ?? []) === []) {
                     $fail((string) trans('webx-inbox::errors.choices-required'));
+                }
+            }
+        };
+    }
+
+    /**
+     * What is wrong with the grid of a «Date and time» field under `$key` — a step not of the list,
+     * a day with no room for a time, a day of the week twice. Implicit, like the choices: a field
+     * saved with no options at all has the defaults, and those are checked as well.
+     */
+    private static function datetime(string $key): ValidationRule
+    {
+        return new class($key) implements DataAwareRule, ValidationRule
+        {
+            public bool $implicit = true;
+
+            /** @var array<string, mixed> */
+            private array $data = [];
+
+            public function __construct(private readonly string $key) {}
+
+            /**
+             * @param  array<string, mixed>  $data
+             */
+            public function setData(array $data): static
+            {
+                $this->data = $data;
+
+                return $this;
+            }
+
+            public function validate(string $attribute, mixed $value, Closure $fail): void
+            {
+                if (FieldType::tryFrom(is_string($this->data['type'] ?? null) ? $this->data['type'] : '') !== FieldType::DateTime) {
+                    return;
+                }
+
+                $options = is_array($this->data['options'] ?? null) ? $this->data['options'] : [];
+                $problem = DateTimeField::problems($options)[$this->key] ?? null;
+
+                if ($problem !== null) {
+                    $fail(DateTimeField::message($problem));
                 }
             }
         };

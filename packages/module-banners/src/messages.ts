@@ -19,7 +19,7 @@ export const bannersMessages: Record<string, Messages> = {
     title: 'Name',
     key: 'Key',
     'key-help':
-      'What the site’s template asks for: lowercase Latin letters, digits and dashes, starting with a letter. It cannot be changed later.',
+      'What the site’s template asks for, like “sidebar”: whatever is typed is made into one. It cannot be changed later.',
     declared: 'Declared in the configuration',
     'in-template': "In a template: banners(':key')",
     count: 'Banners',
@@ -98,12 +98,18 @@ export const bannersMessages: Record<string, Messages> = {
   screen: {
     media: 'Pictures and video',
     image: 'Picture',
-    'image-help': 'Required. Shown on wide screens, and as the poster of the video.',
+    'image-help':
+      'Required. Shown on wide screens, and as the poster of the video unless it has its own.',
     'image-mobile': 'Picture for phones',
     'image-mobile-help': 'Optional. Narrow screens show it instead of the picture above.',
     video: 'Video',
     'video-help':
       'Optional. Plays silently over the picture; the picture becomes its poster and what is seen without it.',
+    'video-mobile': 'Video for phones',
+    'video-mobile-help': 'Optional. Narrow screens play it instead of the video above.',
+    poster: 'Poster',
+    'poster-help':
+      'Optional. Seen until the video plays, and instead of it where it does not; left empty, the picture is the poster.',
     words: 'Words',
     title: 'Title',
     'title-help':

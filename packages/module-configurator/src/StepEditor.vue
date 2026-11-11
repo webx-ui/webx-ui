@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useTranslate } from '@webx-ui/module-admin'
+import { codify, useDefaultLocale, useTranslate, WxCodeField } from '@webx-ui/module-admin'
 import {
   confirm,
   WxAction,
@@ -78,9 +78,18 @@ watch(
   (next) => (key.value = next),
 )
 
-/* Renamed when the field is left, not on every key: halfway it may spell another step's key. */
+const siteLocale = useDefaultLocale()
+
+/* Renamed when the field is left, not on every key: halfway it may spell another step's key. Made
+   a key here as well as in the field: the field's own blur may come after this one (#125). */
 function commitKey(): void {
-  const next = key.value.trim()
+  const next = codify(key.value, {
+    separator: '_',
+    lead: 'step',
+    max: 64,
+    locale: siteLocale.value,
+  })
+  key.value = next
   const before = step.value.key
 
   if (next === before) return
@@ -273,8 +282,11 @@ function fieldProblems(at: number): number {
           :error="errors('key')"
           required
         >
-          <wx-input
+          <wx-code-field
             v-model="key"
+            separator="_"
+            lead="step"
+            :maxlength="64"
             size="sm"
             :disabled="disabled"
             @change="commitKey"

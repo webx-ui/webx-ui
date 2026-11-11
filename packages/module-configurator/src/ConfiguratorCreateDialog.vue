@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { ref, useId, watch } from 'vue'
-import { slugify, useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
+import {
+  codify,
+  useAdmin,
+  useDefaultLocale,
+  useErrorText,
+  useTranslate,
+  WxCodeField,
+} from '@webx-ui/module-admin'
 import { toast, useModal, WxButton, WxDialog, WxFormItem, WxInput, WxSpace } from '@webx-ui/core'
 import { createConfiguratorsApi } from './api'
 import { useConfiguratorsMessages } from './i18n'
@@ -23,6 +30,7 @@ const t = useTranslate('webx-configurator')
 const message = useErrorText()
 
 const formId = useId()
+const locale = useDefaultLocale()
 const title = ref('')
 const key = ref('')
 const typed = ref(false)
@@ -30,11 +38,13 @@ const saving = ref(false)
 const errors = ref<Record<string, string[]>>({})
 
 watch(title, (name) => {
-  if (!typed.value) key.value = slugify(name).slice(0, 64)
+  // The shape of the server's key (#125): what is typed in the site's language, made a slug.
+  if (!typed.value) key.value = codify(name, { max: 64, locale: locale.value })
 })
 
-function onKey(value: string | number | Record<string, string> | undefined): void {
-  key.value = String(value ?? '')
+// The field is not `localized` here, so what it hands back is always one string.
+function onKey(value: unknown): void {
+  key.value = typeof value === 'string' ? value : ''
   typed.value = key.value !== ''
 }
 
@@ -70,7 +80,7 @@ async function submit(): Promise<void> {
         :error="errors.key"
         required
       >
-        <wx-input :model-value="key" :maxlength="64" @update:model-value="onKey" />
+        <wx-code-field :model-value="key" :maxlength="64" @update:model-value="onKey" />
       </wx-form-item>
     </form>
 

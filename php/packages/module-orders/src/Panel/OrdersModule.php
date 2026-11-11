@@ -13,6 +13,7 @@ use WebxUi\Mcp\McpResource;
 use WebxUi\Mcp\ProvidesMcpDefaults;
 use WebxUi\Mcp\Tool;
 use WebxUi\Orders\Checkout\Checkout;
+use WebxUi\Orders\Demo\OrderFieldsDemo;
 use WebxUi\Orders\Demo\OrdersDemo;
 use WebxUi\Orders\Mcp\CheckoutTools;
 use WebxUi\Orders\Mcp\OrdersResources;
@@ -96,7 +97,9 @@ final class OrdersModule extends AbstractModule implements ProvidesDemo, Provide
 
     public function seed(DemoLedger $ledger): void
     {
-        $this->container->make(OrdersDemo::class)->seed($ledger);
+        // The fields first: the demo orders answer them, if they are the demo's.
+        $answers = $this->container->make(OrderFieldsDemo::class)->seed($ledger);
+        $this->container->make(OrdersDemo::class)->seed($ledger, $answers);
     }
 
     /**

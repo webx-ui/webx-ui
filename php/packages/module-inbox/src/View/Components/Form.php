@@ -17,7 +17,12 @@ use Illuminate\View\Component;
 use WebxUi\Admin\Shortcodes\Shortcodes;
 use WebxUi\Inbox\Antispam\Captcha;
 use WebxUi\Inbox\Antispam\Guard;
+use WebxUi\Inbox\Fields\ChoiceImages;
+use WebxUi\Inbox\Fields\Conditions;
+use WebxUi\Inbox\Fields\DateTimeField;
 use WebxUi\Inbox\Fields\FieldType;
+use WebxUi\Inbox\Fields\Steps;
+use WebxUi\Inbox\Fields\Summary;
 use WebxUi\Inbox\Models\Field;
 // The component and the model are both called a form, and here the component wins the name:
 // `componentNamespace` looks up the class by what is written after `::`, so `<x-webx-inbox::form>`
@@ -98,16 +103,26 @@ final class Form extends Component
 
         $view = $this->view ?? 'webx-inbox::form';
         $legacy = $this->legacy($view);
-        $fields = $form->liveFields;
+        // What is answered — a flat list, which is what a view written before the steps reads; the
+        // steps are beside it (FORM_STEPS §12.5).
+        $fields = new Collection($form->questions());
         $formId = $this->formId($form, $legacy ? 'wx-form-' : 'webx-inbox-');
         $placement = $this->placement($form);
         $mine = $this->isMine($form);
+        $controls = $this->controls($fields, $formId);
+        // A view of before W6.4 draws its own fields and knows no steps: the whole form on one page.
+        $steps = $legacy ? [] : $this->steps($form, $controls, $fields);
 
         return $this->views->make($view, [
             'form' => $form,
             'formId' => $formId,
             'fields' => $fields,
-            'controls' => $this->controls($fields, $formId),
+            'controls' => $controls,
+            // The steps (FORM_STEPS §3): each with its words, its condition and its controls — the
+            // same entries as `controls`. Empty for a flat form, which is printed as it always was.
+            'steps' => $steps,
+            // Where «Next» asks the server about a step (§3.4).
+            'check' => $steps === [] ? null : url(trim((string) config('webx-inbox.path', 'webx/forms'), '/').'/'.$form->slug.'/check'),
             'rules' => FormRules::for($this->rules->for($form), $this->rules->attributes($form)),
             'action' => $this->action($form),
             'page' => $this->request->fullUrl(),
@@ -130,6 +145,8 @@ final class Form extends Component
             'message' => $this->message($form),
             'values' => $this->prefill($fields, $mine),
             'again' => $this->again,
+            // Whether the form asks the widgets to post the campaign and the referrer (FORM_STEPS §8).
+            'attribution' => (bool) config('webx-inbox.attribution', true),
         ]);
     }
 
@@ -149,10 +166,18 @@ final class Form extends Component
     private function controls(Collection $fields, string $formId): array
     {
         $controls = [];
+        // One zone for every «Date and time» of the form: the site's (FORM_STEPS §6.5).
+        $zone = null;
+        $byKey = $fields->keyBy(static fn (Field $field): string => $field->key());
+        // The pictures of every card of the form, in one query of the library (FORM_STEPS §5.1).
+        $images = ChoiceImages::resolve($fields->filter(static fn (Field $field): bool => $field->isCards())
+            ->flatMap(static fn (Field $field): array => array_filter(array_column($field->cardChoices(), 'image'), is_string(...)))
+            ->values()->all());
 
         foreach ($fields as $field) {
             $key = $field->key();
             $choices = $field->choices();
+            $conditions = Conditions::of($field->options);
 
             if (in_array($field->type, [FieldType::Select, FieldType::Radio], true) && $choices === []) {
                 Log::warning('webx-inbox: a field with nothing to choose from is not printed.', ['form' => $field->form_id, 'field' => $key]);
@@ -174,6 +199,12 @@ final class Form extends Component
                 'placeholder' => $placeholder !== '' ? $placeholder : null,
                 'value' => $this->values[$key] ?? $this->values[(string) $field->name] ?? null,
                 'choices' => $choices,
+                // Cards (FORM_STEPS §5.2): the same radios or ticks, each with its description and
+                // picture. Beside `choices` rather than in it: a site's own view reads those as
+                // `value => label`, and keeps working — as a list.
+                'cards' => $field->isCards() ? self::cards($field, $images) : null,
+                'view' => $field->isCards() ? 'cards' : 'list',
+                'columns' => $field->isCards() && is_numeric($field->option('columns')) ? (int) $field->option('columns') : null,
                 'multiple' => $field->type === FieldType::File && $field->isMultiple(),
                 'rows' => $field->type === FieldType::Textarea ? (is_numeric($rows) && (int) $rows > 0 ? (int) $rows : 5) : null,
                 // The panel offers "full width" per field; on the site it is a class, and the base
@@ -182,10 +213,212 @@ final class Form extends Component
                 // The consent's words are a sentence with a link in it, written in the panel:
                 // printed as they are, the same trust as the thank-you, with the site's shortcodes.
                 'consent' => $field->type === FieldType::Consent ? Container::getInstance()->make(Shortcodes::class)->htmlIn((string) $field->optionText('text', $title)) : null,
+                // When it is shown (FORM_STEPS §4.3), by the names the form's fields have on the
+                // page — `fields.purpose` — and the line that says so to a page without JavaScript.
+                'when' => self::named($conditions['when'] ?? null),
+                'unless' => self::named($conditions['unless'] ?? null),
+                'condition' => $this->condition($conditions, $byKey),
+                // A day and a time (FORM_STEPS §6.4): the grid, the days of the week and the zone the
+                // page shows them in; the times of today that are gone the script drops itself.
+                'datetime' => $field->type === FieldType::DateTime ? self::moment($field, $zone ??= DateTimeField::zone()) : null,
             ];
         }
 
         return $controls;
+    }
+
+    /**
+     * What `<x-webx-field type="datetime">` takes of a field: the grid, the days of the week, the zone.
+     *
+     * @return array{step: int, from: string, to: string, weekdays: list<int>, timezone: string, timezone_label: ?string}
+     */
+    private static function moment(Field $field, string $zone): array
+    {
+        $grid = DateTimeField::grid($field->options);
+        $clock = static fn (int $minutes): string => sprintf('%02d:%02d', intdiv($minutes, 60), $minutes % 60);
+        $label = trim($field->optionText('timezone-label'));
+
+        return [
+            'step' => $grid['step'],
+            'from' => $clock($grid['from']),
+            'to' => $clock($grid['to']),
+            'weekdays' => $grid['weekdays'],
+            'timezone' => $zone,
+            'timezone_label' => $label !== '' ? $label : null,
+        ];
+    }
+
+    /**
+     * The steps of the form as `<x-webx-form.step>` takes them, each with the controls of its fields.
+     *
+     * The first step without a row of its own is called by the form's title; a step whose fields
+     * all fell out (a half-written select) is not printed.
+     *
+     * @param  list<array<string, mixed>>  $controls
+     * @param  Collection<int, Field>  $fields
+     * @return list<array<string, mixed>>
+     */
+    private function steps(FormModel $form, array $controls, Collection $fields): array
+    {
+        $groups = Steps::groups($form->liveFields);
+
+        if ($groups === []) {
+            return [];
+        }
+
+        $byName = [];
+
+        foreach ($controls as $control) {
+            $byName[(string) $control['name']] = $control;
+        }
+
+        $byKey = $fields->keyBy(static fn (Field $field): string => $field->key());
+        $steps = [];
+
+        foreach ($groups as $group) {
+            $mine = [];
+
+            foreach ($group['fields'] as $field) {
+                if ($field->type === FieldType::Summary) {
+                    $summary = $this->summary($field, $fields);
+
+                    if ($summary !== null) {
+                        $mine[] = $summary;
+                    }
+                } elseif (isset($byName['fields.'.$field->key()])) {
+                    $mine[] = $byName['fields.'.$field->key()];
+                }
+            }
+
+            if ($mine === []) {
+                continue;
+            }
+
+            $step = $group['step'];
+            $conditions = $step === null ? [] : Conditions::of($step->options);
+            $title = $step === null ? trim((string) $form->title) : trim((string) $step->title);
+            $hint = $step === null ? '' : trim((string) $step->help);
+            $label = $step === null ? '' : trim((string) $step->placeholder);
+            $next = $step === null ? '' : $step->optionText('next-text');
+
+            $steps[] = [
+                'name' => $group['key'],
+                'title' => $title !== '' ? $title : null,
+                'hint' => $hint !== '' ? $hint : null,
+                'label' => $label !== '' ? $label : null,
+                'next' => trim($next) !== '' ? trim($next) : null,
+                'when' => self::named($conditions['when'] ?? null),
+                'unless' => self::named($conditions['unless'] ?? null),
+                'condition' => $this->condition($conditions, $byKey),
+                'controls' => $mine,
+            ];
+        }
+
+        return $steps;
+    }
+
+    /**
+     * A summary (FORM_STEPS §7) as `<x-webx-form.summary>` takes it, among the controls of its step:
+     * its title, its line, the page's names of the fields it shows — null for every field above it.
+     * Null when it names fields of which none is left.
+     *
+     * @param  Collection<int, Field>  $questions
+     * @return array<string, mixed>|null
+     */
+    private function summary(Field $field, Collection $questions): ?array
+    {
+        $shown = Summary::fieldsOf($field, $questions);
+
+        if ($shown === []) {
+            return null;
+        }
+
+        $title = trim((string) $field->title);
+        $help = trim((string) $field->help);
+
+        return [
+            'type' => FieldType::Summary->value,
+            'name' => 'fields.'.$field->key(),
+            'id' => null,
+            'label' => $title !== '' ? $title : null,
+            'hint' => $help !== '' ? $help : null,
+            'fields' => $shown === null ? null : array_map(static fn (string $key): string => 'fields.'.$key, $shown),
+        ];
+    }
+
+    /**
+     * The choices of a field drawn as cards, as `<x-webx-field>` takes them: with the words and the
+     * address of the picture. A picture the library no longer has is none.
+     *
+     * @param  array<string, array{src: string, srcset: ?string, width: ?int, height: ?int}>  $images
+     * @return list<array<string, mixed>>
+     */
+    private static function cards(Field $field, array $images): array
+    {
+        return array_map(static fn (array $choice): array => [
+            'value' => $choice['value'],
+            'label' => $choice['label'],
+            'description' => $choice['description'],
+            'image' => $choice['image'] !== null ? ($images[$choice['image']] ?? null) : null,
+        ], $field->cardChoices());
+    }
+
+    /**
+     * A condition by the names the page gives the fields.
+     *
+     * @param  array<string, list<string>>|null  $condition
+     * @return array<string, list<string>>|null
+     */
+    private static function named(?array $condition): ?array
+    {
+        if ($condition === null) {
+            return null;
+        }
+
+        $named = [];
+
+        foreach ($condition as $name => $values) {
+            $named['fields.'.$name] = $values;
+        }
+
+        return $named;
+    }
+
+    /**
+     * «If chosen: Agency meeting» — what a page without JavaScript says under a field it shows
+     * whatever was chosen, in the words of the choices (FORM_STEPS §4.3).
+     *
+     * @param  array<string, array<string, list<string>>>  $conditions
+     * @param  Collection<string, Field>  $fields
+     */
+    private function condition(array $conditions, Collection $fields): ?string
+    {
+        $lines = [];
+
+        foreach ($conditions as $key => $condition) {
+            $groups = [];
+
+            foreach ($condition as $name => $values) {
+                $source = $fields->get($name);
+
+                if (! $source instanceof Field) {
+                    continue;
+                }
+
+                $choices = $source->choices();
+                $groups[] = $source->type === FieldType::Consent
+                    ? trim((string) $source->title)
+                    : implode(', ', array_map(static fn (string $value): string => $choices[$value] ?? $value, $values));
+            }
+
+            $groups = array_filter($groups, static fn (string $group): bool => $group !== '');
+
+            if ($groups !== []) {
+                $lines[] = (string) trans('webx-inbox::form.condition-'.$key, ['choices' => implode('; ', $groups)]);
+            }
+        }
+
+        return $lines === [] ? null : implode(' ', $lines);
     }
 
     /**

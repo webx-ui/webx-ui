@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Auth\Access;
 
 use WebxUi\Admin\Access\AccessPolicy;
+use WebxUi\Admin\Contracts\HasDefaultRoles;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Auth\Models\Role;
 
@@ -16,6 +17,9 @@ use WebxUi\Auth\Models\Role;
  * it — and only with the permissions of the modules installed; a role left with none is not
  * created at all. None of them holds `admins.*`, `roles.*`, `tasks.*` or `debug.view`: who runs
  * the panel and its queue is the owner's to hand out, by hand.
+ *
+ * A module outside the list below names its own permissions in `editor`, `seo` and `developer`
+ * through {@see HasDefaultRoles}; they are added to the definitions, and go the same way.
  *
  * A module installed later is topped up into the roles made before it ({@see sync()}). What a
  * role has been offered is remembered in `cms_roles.offered`, and only what was never offered is
@@ -43,6 +47,9 @@ final class DefaultRoles
         'banners.view', 'banners.manage',
     ];
 
+    /** The roles a module may name its permissions in through {@see HasDefaultRoles}. */
+    private const CONTRIBUTED = ['editor', 'seo', 'developer'];
+
     /** Never in a ready-made role, whatever a module declares. */
     private const NEVER = ['admins.', 'roles.', 'tasks.', 'debug.'];
 
@@ -60,7 +67,7 @@ final class DefaultRoles
     {
         $contentViews = array_values(array_filter(self::CONTENT, static fn (string $p): bool => str_ends_with($p, '.view')));
 
-        return [
+        $definitions = [
             'editor' => [
                 ...self::CONTENT,
                 'pages.view', 'pages.manage', 'blocks.view', 'menu.view', 'menu.manage',
@@ -90,6 +97,45 @@ final class DefaultRoles
                 static fn (string $permission): bool => str_ends_with($permission, '.view'),
             )),
         ];
+
+        foreach ($this->contributed() as $slug => $permissions) {
+            $definitions[$slug] = array_values(array_unique([...$definitions[$slug], ...$permissions]));
+        }
+
+        return $definitions;
+    }
+
+    /**
+     * What the modules with {@see HasDefaultRoles} name, by role: only their own permissions, only
+     * in the roles a module may name.
+     *
+     * @return array<string, list<string>>
+     */
+    private function contributed(): array
+    {
+        $contributed = [];
+
+        foreach ($this->modules->all() as $module) {
+            if (! $module instanceof HasDefaultRoles) {
+                continue;
+            }
+
+            $own = $module->permissions();
+
+            foreach ($module->defaultRoles() as $slug => $permissions) {
+                if (! in_array($slug, self::CONTRIBUTED, true)) {
+                    continue;
+                }
+
+                foreach ($permissions as $permission) {
+                    if (in_array($permission, $own, true)) {
+                        $contributed[$slug][] = $permission;
+                    }
+                }
+            }
+        }
+
+        return $contributed;
     }
 
     /**

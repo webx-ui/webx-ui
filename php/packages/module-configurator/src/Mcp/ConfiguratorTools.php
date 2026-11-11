@@ -22,6 +22,7 @@ use WebxUi\Configurator\Panel\Refused;
 use WebxUi\Configurator\Panel\Revision;
 use WebxUi\Configurator\Pricing\Quoter;
 use WebxUi\Configurator\Pricing\Texts;
+use WebxUi\Configurator\Schema\Keys;
 use WebxUi\Configurator\Schema\Problem;
 use WebxUi\Configurator\Schema\Validator;
 use WebxUi\Localization\Locales;
@@ -573,7 +574,8 @@ final class ConfiguratorTools
      */
     private function validate(array $arguments): array
     {
-        $problems = $this->quoter()->problems($arguments['schema'] ?? null);
+        // Checked as a write would keep it: a typed key that does not fit is brought first (#125).
+        $problems = $this->quoter()->problems(Keys::bring($arguments['schema'] ?? null, null, $this->locales()->defaultCode()));
 
         return ['valid' => $problems === [], 'errors' => $this->problems($problems)];
     }

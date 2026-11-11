@@ -9,6 +9,19 @@ return [
     'empty-help' => 'Une commande apparaît ici dès qu’elle est passée sur le site.',
     'order' => 'Commande',
     'statuses-cache' => 'Statuts des commandes',
+    'order-field' => [
+        'title' => 'Champ de commande',
+        'cache' => 'Champs de commande',
+        'key' => 'Clé',
+        'type' => 'Type',
+        'place' => 'Emplacement',
+        'label' => 'Libellé',
+        'hint' => 'Aide',
+        'options' => 'Options',
+        'required' => 'Obligatoire',
+        'active' => 'Actif',
+        'parent_id' => 'Afficher si coché',
+    ],
     'fields' => [
         'customer_first_name' => 'Prénom',
         'customer_last_name' => 'Nom',
@@ -18,6 +31,7 @@ return [
         'comment' => 'Commentaire de l\'acheteur',
         'manager_note' => 'Note du gestionnaire',
         'user_id' => 'Visiteur',
+        'fields' => 'Champs supplémentaires',
     ],
     'milestones' => [
         'placed' => 'Passée',

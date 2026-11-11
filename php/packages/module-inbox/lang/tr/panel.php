@@ -146,6 +146,8 @@ return [
     'any-placement' => 'Herhangi bir konum',
     'placement-none' => 'Belirtilmemiş',
     'meta-referrer' => 'Geldiği yer',
+    'meta-landing' => 'Giriş sayfası',
+    'meta-utm-first' => 'İlk ziyaret',
     'meta-ip' => 'Adres',
     'meta-agent' => 'Tarayıcı',
     'meta-locale' => 'Dil',

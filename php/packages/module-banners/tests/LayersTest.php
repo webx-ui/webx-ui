@@ -73,7 +73,7 @@ final class LayersTest extends TestCase
             'image' => ['path' => 'media/ab/cd/wide.jpg'],
             'layers' => [
                 self::text('Fine'),
-                self::text('Too far', 400, extra: ['tag' => 'h1', 'style' => ['color' => 'red']]),
+                self::text('Too far', 400, extra: ['tag' => 'h4', 'style' => ['color' => 'red']]),
                 ['type' => 'button', 'text' => ['en' => 'Go']],
                 ['type' => 'buttons'],
                 ['type' => 'buttons'],

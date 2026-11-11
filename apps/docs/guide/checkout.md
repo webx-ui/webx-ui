@@ -42,10 +42,12 @@ cart's button leads to the route named `checkout` by itself.
   (`draft_days`, 30 by default) and runs daily.
 - **Signing in** from the contacts step joins the guest's cart and draft to the account's, and the
   page redraws without a reload.
-- **The cart changes on the page.** «Order contents» has a stepper and «Remove» on each line, through
-  the cart's own API, with and without JavaScript. The totals, delivery and payment are counted
-  again, what the buyer typed in the other steps stays, and the last line gone leaves the page of
-  an empty cart.
+- **The cart changes on the page.** «Order contents» lists the lines; its «Edit» and «Open the cart»
+  of the warnings open the cart's own dialog — the page prints `<x-webx-cart :trigger="false" />`,
+  since the checkout's layout has no cart in its header. After each change in the dialog the totals,
+  delivery and payment are counted again, what the buyer typed in the other steps stays, and the
+  last line gone leaves the page of an empty cart. Without JavaScript the links show the cart's
+  dialog with its «Turn on JavaScript» note.
 - **The amount is checked.** The column carries the amount the buyer saw. If the cart counts more
   at the confirmation — a price went up, a discount ended — the buyer gets the new column and
   confirms again; if it counts less, the order is placed at once and «Thank you» says by how
@@ -70,7 +72,7 @@ A step is a section of the page. The registry `CheckoutSteps` keeps them by posi
 | `contacts` | 100      | the checkout                       | the buyer, signing in, the recipient      |
 | `delivery` | 200      | a `ShippingSlot` (delivery module) | shown when the cart has a line to ship    |
 | `payment`  | 300      | a `PaymentSlot` (payment module)   | after delivery: a method may depend on it |
-| `comment`  | 900      | the checkout                       | off with the setting «Comment»            |
+| `comment`  | 900      | the checkout                       | «Additional»: extra fields and comment    |
 | `confirm`  | —        | the checkout                       | the column of the totals; never removed   |
 
 Every step prints its form and a one-line summary. The section is `is-done` when the summary is
@@ -209,7 +211,7 @@ public function boot(): void
 ```
 
 - **The key** — lowercase letters, digits and dashes; it is the step's address
-  (`/checkout/steps/call-time`) and its name for agents. `confirm` is taken.
+  (`/checkout/steps/call-time`) and its name for agents. `confirm` and `fields` are taken.
 - **A step with a key that exists replaces it**: registering your own `contacts` changes the
   contacts step; `$steps->remove('comment')` takes one away.
 - **`check()` refuses with `StepError`** — the field, the message and a `code` for agents
@@ -218,6 +220,26 @@ public function boot(): void
   comment, a block. Two steps putting the same block into one order is an exception.
 - **Read the cookie and the session only through `CheckoutContext`**: the cart, its state counted
   once a request, the draft, the visitor, the language.
+
+### Extra fields in a step
+
+The fields an administrator adds on the tab «Checkout» stand in places (`FieldPlaces`): `contacts`
+in the contacts step, `extra-before-comment` and `extra-after-comment` in the step `comment`, which
+is then called «Additional» and stays with the comment switched off while it has fields. A place is
+printed by one line in the view of its step:
+
+```blade
+@include('webx-orders::checkout.parts.fields', ['place' => 'contacts'])
+```
+
+Saving, checking and the snapshot of the fields are the checkout's (`CheckoutFields`), not the step's:
+a project that replaces `contacts` with its own step keeps the fields by keeping that line in its
+view. A module adds a place of its own with
+`$places->register('delivery-after', step: 'delivery', label: '…')` in
+`callAfterResolving(FieldPlaces::class, …)`, without a migration. A field behind a checkbox is
+hidden by `checkout.css` until the checkbox is ticked, and the server ignores it until then. The
+answers live in the draft's `steps.fields` and go into `orders.fields` — the label and the value of
+each filled field, in the order of the page (`WEBX_UI_ORDER_FIELDS.md`).
 
 ## Slots: delivery and payment
 

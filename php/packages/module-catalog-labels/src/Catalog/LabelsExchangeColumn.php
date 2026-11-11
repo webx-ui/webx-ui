@@ -15,15 +15,19 @@ use WebxUi\Catalog\Exchange\Lookup;
 use WebxUi\Catalog\Exchange\RowError;
 use WebxUi\Catalog\Models\Product;
 use WebxUi\CatalogLabels\Models\Label;
+use WebxUi\Localization\Locales;
+use WebxUi\Localization\Slug;
 
 /**
  * The labels of a product in an exchange file (§7.2 of the exchange spec): `labels`, codes through
  * `;` — `sale;new` — into `labels.ids`.
  *
  * A code is what a label is known by everywhere (an address, a template), so it is also what a
- * file carries: the export writes codes and the import reads them, case aside. A label in the bin
- * is still on its products, and still found by its code. An unknown code is created with
- * `create_missing` — named by its code, which a person renames in the panel afterwards.
+ * file carries: the export writes codes and the import reads them. A code is brought to its shape
+ * before it is looked up, as the panel brings a typed one (#125): `Sale Price` and `распродажа`
+ * find `sale-price` and `rasprodazha`. A label in the bin is still on its products, and still
+ * found by its code. An unknown code is created with `create_missing` — named by the code as the
+ * file wrote it, which a person renames in the panel afterwards.
  */
 final class LabelsExchangeColumn implements DescribesCell, ExchangeColumn
 {
@@ -51,7 +55,7 @@ final class LabelsExchangeColumn implements DescribesCell, ExchangeColumn
 
     public function cellFormat(): string
     {
-        return 'Label codes through ";" (sale;new), case aside. A missing code ([a-z0-9-], up to 32) is created with create_missing, named by its code.';
+        return 'Label codes through ";" (sale;new), brought to a code as the panel brings one: "Sale Price" is sale-price. A missing code is created with create_missing, named by what the file wrote.';
     }
 
     public function export(Collection $products, ?string $locale): array
@@ -74,21 +78,40 @@ final class LabelsExchangeColumn implements DescribesCell, ExchangeColumn
             ->all());
         $ids = [];
 
-        foreach (explode(';', $cell) as $code) {
-            $code = mb_strtolower(trim($code));
+        foreach (explode(';', $cell) as $typed) {
+            $typed = trim($typed);
 
-            if ($code !== '') {
-                $ids[] = $book->find($code) ?? $this->create($code, $book, $context);
+            if ($typed === '') {
+                continue;
             }
+
+            $code = $this->codeOf($typed);
+
+            if ($code === '') {
+                throw new RowError((string) __('webx-catalog-labels::exchange.bad-code', ['code' => $typed]));
+            }
+
+            $ids[] = $book->find($code) ?? $this->create($code, $typed, $book, $context);
         }
 
         return array_values(array_unique($ids));
     }
 
     /**
+     * What the label model keeps a typed code as (`Dictionary::codeOf()`), so a file finds the label
+     * the panel saved. The language is asked for only when it matters: it is a read of `locales`.
+     */
+    private function codeOf(string $typed): string
+    {
+        $locale = Slug::isLatin($typed) ? 'en' : app(Locales::class)->defaultCode();
+
+        return Slug::code($typed, $locale, Dictionary::CODE_LENGTH);
+    }
+
+    /**
      * @throws RowError
      */
-    private function create(string $code, Lookup $book, ImportContext $context): int
+    private function create(string $code, string $typed, Lookup $book, ImportContext $context): int
     {
         if (! $context->createMissing) {
             throw new RowError((string) __('webx-catalog-labels::exchange.unknown', ['code' => $code]));
@@ -100,13 +123,9 @@ final class LabelsExchangeColumn implements DescribesCell, ExchangeColumn
             throw RowError::because('create-forbidden', ['permission' => $permission]);
         }
 
-        if (preg_match(Dictionary::CODE, $code) !== 1 || strlen($code) > Dictionary::CODE_LENGTH) {
-            throw new RowError((string) __('webx-catalog-labels::exchange.bad-code', ['code' => $code, 'max' => Dictionary::CODE_LENGTH]));
-        }
-
         try {
             // The shared path of the panel and the agent; the code is made from the slug it is given.
-            $label = app(CategoryForm::class)->create(Label::class, $code, $code);
+            $label = app(CategoryForm::class)->create(Label::class, $typed, $code);
         } catch (ValidationException $refused) {
             throw new RowError((string) collect($refused->errors())->flatten()->first());
         }

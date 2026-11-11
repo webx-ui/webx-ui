@@ -5,7 +5,7 @@ import { localesKey, type CodeEditorCompleter } from '@webx-ui/core'
 import { createI18n, i18nKey } from '@webx-ui/module-admin'
 import type { ScreenModel } from '@webx-ui/schema'
 import { provideChannel, type ChannelContext } from './context'
-import { fillOnEvent } from './defaults'
+import { fillOnEvent, sampleOf } from './defaults'
 import TemplateField from './TemplateField.vue'
 import type { NotificationsMeta } from './types'
 
@@ -55,6 +55,29 @@ const META: NotificationsMeta = {
       },
     },
     { key: 'shop.quiet', label: 'Nothing to say', module: 'shop', variables: [], sample: {} },
+    {
+      key: 'shop.sold',
+      label: 'Sold, to the shop and to the buyer',
+      module: 'shop',
+      variables: [
+        { name: 'number', label: 'Number', example: '7', address: null, fields: [] },
+        {
+          name: 'buyer_email',
+          label: 'Buyer',
+          example: 'b@example.com',
+          address: 'email',
+          fields: [],
+        },
+      ],
+      sample: {
+        email: { subject: { en: 'New order {{number}}' }, template: { en: 'Shop: {{number}}' } },
+      },
+      addressed: {
+        buyer_email: {
+          email: { subject: { en: 'Thank you' }, template: { en: 'Buyer: {{number}}' } },
+        },
+      },
+    },
   ],
 }
 
@@ -266,5 +289,92 @@ describe('fillOnEvent', () => {
     expect(values.value.template).toEqual({})
     expect(filled).toHaveBeenCalledTimes(1)
     expect(context).not.toBeNull()
+  })
+})
+
+describe('the default template of an addressee', () => {
+  const sold = META.events.find((one) => one.key === 'shop.sold')
+  const buyer = [{ variable: 'buyer_email' }]
+  const shop = [{ email: 'shop@example.com' }]
+
+  it("picks the buyer's for a channel to the buyer and the event's for any other", () => {
+    expect(sampleOf(sold, 'email', buyer)?.template).toEqual({ en: 'Buyer: {{number}}' })
+    expect(sampleOf(sold, 'email', [...shop, ...buyer])?.template).toEqual({
+      en: 'Buyer: {{number}}',
+    })
+    expect(sampleOf(sold, 'email', shop)?.template).toEqual({ en: 'Shop: {{number}}' })
+    expect(sampleOf(sold, 'email')?.template).toEqual({ en: 'Shop: {{number}}' })
+    // An event with one template: as before, whoever it writes to.
+    expect(sampleOf(META.events[0], 'email', buyer)?.template).toEqual({
+      en: '<p>Order {{number}}</p>',
+      ru: '<p>Заказ {{number}}</p>',
+    })
+  })
+
+  it("inserts the buyer's on a channel to the buyer", async () => {
+    const { wrapper, context } = form({
+      provider: 'email',
+      event: 'shop.sold',
+      recipients: buyer,
+      subject: { en: '' },
+      template: { en: '' },
+    })
+    await loaded(wrapper)
+
+    await wrapper.find('.template .wx-notifications-template__default button').trigger('click')
+    await flushPromises()
+
+    expect(context().values.value.template).toEqual({ en: 'Buyer: {{number}}' })
+    expect(context().values.value.subject).toEqual({ en: 'Thank you' })
+    wrapper.unmount()
+  })
+
+  it('swaps an untouched default when the buyer is added to a new channel, never an edited one', () => {
+    const values = ref<ScreenModel>({
+      provider: 'email',
+      event: null,
+      recipients: [],
+      subject: {},
+      template: {},
+    })
+    const id = ref<number | null>(null)
+    const filled = vi.fn()
+
+    mount(
+      defineComponent({
+        setup() {
+          fillOnEvent(provideChannel(ref(META), values, id), ref(false), filled)
+
+          return () => h('div')
+        },
+      }),
+    )
+
+    values.value = { ...values.value, event: 'shop.sold' }
+    expect(values.value.template).toEqual({ en: 'Shop: {{number}}' })
+
+    values.value = { ...values.value, recipients: buyer }
+    expect(values.value.template).toEqual({ en: 'Buyer: {{number}}' })
+    expect(values.value.subject).toEqual({ en: 'Thank you' })
+
+    values.value = { ...values.value, recipients: shop }
+    expect(values.value.template).toEqual({ en: 'Shop: {{number}}' })
+    expect(filled).toHaveBeenCalledTimes(3)
+
+    // Edited: the text stays.
+    values.value = { ...values.value, template: { en: 'Mine' } }
+    values.value = { ...values.value, recipients: buyer }
+    expect(values.value.template).toEqual({ en: 'Mine' })
+
+    // A saved channel keeps its message whatever its recipients become.
+    values.value = {
+      ...values.value,
+      recipients: shop,
+      template: { en: 'Shop: {{number}}' },
+      subject: { en: 'New order {{number}}' },
+    }
+    id.value = 5
+    values.value = { ...values.value, recipients: buyer }
+    expect(values.value.template).toEqual({ en: 'Shop: {{number}}' })
   })
 })

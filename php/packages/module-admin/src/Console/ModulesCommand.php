@@ -7,6 +7,7 @@ namespace WebxUi\Admin\Console;
 use Illuminate\Console\Command;
 use WebxUi\Admin\Panel\PackageRegistry;
 use WebxUi\Admin\Panel\PanelPackage;
+use WebxUi\Admin\Panel\Vendors;
 use WebxUi\Admin\Setup\Catalogue;
 
 /**
@@ -18,7 +19,9 @@ use WebxUi\Admin\Setup\Catalogue;
  * has none yet.
  *
  * A module that is installed but not in the catalogue — one of the site's own, or a third
- * party's — is listed as well, by what its package says under `extra.webx`.
+ * party's — is listed as well, by what its package says under `extra.webx`. One of the site's own,
+ * `site/module-*` from its `modules/` folder, is marked local: it comes with the site's code, not
+ * from a registry.
  */
 final class ModulesCommand extends Command
 {
@@ -29,7 +32,10 @@ final class ModulesCommand extends Command
 
     public function handle(Catalogue $catalogue, PackageRegistry $registry): int
     {
-        $modules = [...$catalogue->describe(), ...$this->outsiders($catalogue, $registry)];
+        $modules = [
+            ...array_map(static fn (array $module): array => [...$module, 'local' => false], $catalogue->describe()),
+            ...$this->outsiders($catalogue, $registry),
+        ];
 
         if ($this->option('json')) {
             $this->line((string) json_encode(
@@ -41,13 +47,14 @@ final class ModulesCommand extends Command
         }
 
         $this->table(
-            ['Id', 'Package', 'Default', 'Requires', 'Installed'],
+            ['Id', 'Package', 'Default', 'Requires', 'Installed', 'Local'],
             array_map(static fn (array $module): array => [
                 $module['id'],
                 $module['package'],
                 $module['default'] ? 'yes' : '',
                 implode(', ', $module['requires']),
                 $module['installed'] ? 'yes' : '',
+                $module['local'] ? 'yes' : '',
             ], $modules),
         );
 
@@ -59,7 +66,7 @@ final class ModulesCommand extends Command
     /**
      * Installed panel modules the catalogue does not know.
      *
-     * @return list<array{id: string, package: string, npm: string|null, label: string, default: bool, requires: list<string>, installed: bool}>
+     * @return list<array{id: string, package: string, npm: string|null, label: string, default: bool, requires: list<string>, installed: bool, local: bool}>
      */
     private function outsiders(Catalogue $catalogue, PackageRegistry $registry): array
     {
@@ -83,6 +90,7 @@ final class ModulesCommand extends Command
                 'default' => false,
                 'requires' => [],
                 'installed' => true,
+                'local' => Vendors::local($package->name),
             ];
         }
 

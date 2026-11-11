@@ -9,6 +9,19 @@ return [
     'empty-help' => 'Zamówienie pojawi się tutaj, gdy tylko zostanie złożone na stronie.',
     'order' => 'Zamówienie',
     'statuses-cache' => 'Statusy zamówień',
+    'order-field' => [
+        'title' => 'Pole zamówienia',
+        'cache' => 'Pola zamówienia',
+        'key' => 'Klucz',
+        'type' => 'Typ',
+        'place' => 'Miejsce',
+        'label' => 'Nazwa',
+        'hint' => 'Podpowiedź',
+        'options' => 'Opcje',
+        'required' => 'Wymagane',
+        'active' => 'Włączone',
+        'parent_id' => 'Pokaż po zaznaczeniu',
+    ],
     'fields' => [
         'customer_first_name' => 'Imię',
         'customer_last_name' => 'Nazwisko',
@@ -18,6 +31,7 @@ return [
         'comment' => 'Komentarz kupującego',
         'manager_note' => 'Notatka menedżera',
         'user_id' => 'Odwiedzający',
+        'fields' => 'Dodatkowe pola',
     ],
     'milestones' => [
         'placed' => 'Złożone',

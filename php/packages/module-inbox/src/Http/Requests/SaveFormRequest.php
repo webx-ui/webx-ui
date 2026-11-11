@@ -25,6 +25,11 @@ use WebxUi\Inbox\Panel\FormOptions;
  */
 final class SaveFormRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        $this->replace(FormInput::bring($this->all()));
+    }
+
     /**
      * @return array<string, mixed>
      */

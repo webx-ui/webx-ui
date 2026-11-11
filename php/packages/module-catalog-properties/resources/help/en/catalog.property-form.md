@@ -48,6 +48,9 @@ say it: «Screen size», not «Display param. 2».
 
 ## code
 
+Type it any way you like, in each language: the field turns what you type into a code straight away
+and reads it the way of that language — «Brake pads» becomes `brake-pads`.
+
 Changing it changes the addresses of filter pages with this property, and search engines take time to
 catch up. Buyers see it only in the address.
 
@@ -107,6 +110,8 @@ Decides how the number is rounded on the site. For a weight of 1.25 kg, 2 digits
 and 0 digits show 1.
 
 ## toggle-slug
+
+Type it any way you like: «Yes Please» becomes `yes-please`, each language read its own way.
 
 Buyers see this word only in the address of the filter page. Changing it changes those addresses, so
 leave it alone once the filter is working.

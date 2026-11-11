@@ -34,6 +34,11 @@ says `inbox({ landing: false })`.
 The migration creates the `inbox_*` tables and seeds five statuses — New · In progress · Done ·
 Rejected · Spam — in every language the package ships words in.
 
+`php artisan webx:demo` adds two forms, with nobody to notify: `contact` — name, e-mail, message —
+and `meeting`, a form of steps with every part of this guide: the purpose as cards, a step with a
+date and time and an «Agency» field asked only for some purposes, a summary over the contacts
+(the example of FORM_STEPS §11). A theme's form by the same slug takes the place of either.
+
 Three permissions rather than the usual two, because reading and answering is not the same job as
 building the form:
 
@@ -63,9 +68,116 @@ agent's or an API's field without one gets the same. Renaming a field warns that
 the field — they point at it by id, and the export keeps them in its column.
 :::
 
-Eleven types: `text` · `email` · `tel` · `textarea` · `select` · `radio` · `checkbox` · `consent`
-· `date` · `file` · `hidden`. A multiple answer is written twice — joined by commas in `value`,
+Twelve types: `text` · `email` · `tel` · `textarea` · `select` · `radio` · `checkbox` · `consent`
+· `date` · `datetime` · `file` · `hidden`. A multiple answer is written twice — joined by commas in `value`,
 which is what a person reads in the letter and in the export, and as an array in `payload`.
+
+### Shown only for some answers
+
+A field may be shown only for some answers above it: `options.when` / `options.unless`, as
+`{ "purpose": ["agency", "pre-register"] }` — "or" inside a list, "and" between names, the format of
+the configurator. `when` holds when every named field is shown and answered with one of the values
+(a field of ticks — any one of them; a consent — `"1"`), `unless` hides the field when the same
+`when` would hold. A condition names only a `select`, `radio`, `checkbox` or `consent` standing
+earlier, and only values it offers: anything else is refused on save (`condition.unknown_field`,
+`condition.not_choice`, `condition.not_before`, `condition.unknown_value`). A field that others
+name is not deleted, nor dragged below them, nor loses a choice they count on; a rename carries
+their conditions along.
+
+The server decides. The intake reads visibility in one pass over the fields in order from what was
+sent — a hidden field has no value, so its answer reaches no field below — and a hidden field is
+not checked, not kept, not in the hash of duplicates, the letter or the export. On the site the
+widgets' `form.js` hides it as the answers change; without JavaScript every field is shown, a
+required one with a condition without the browser's `required`, and a line under it says when it
+applies («If chosen: Agency meeting»); the server throws away what does not apply.
+
+In the panel it is the «Show» section of the field dialog: «Always | If | Unless», then rows of «a
+choice field above — any of these answers», joined by «and». Only choice fields standing above are
+offered, a consent counts on its tick. An answer the field above no longer has stays in the row in red
+until it is closed, so a save never drops it quietly. The list of fields says under a field when it is
+asked («if Purpose = Agency meeting») and marks a row whose condition would be refused — one edited
+through `inbox_form_save` or older than the check; a drag the server refuses puts the order back.
+
+### Cards
+
+A `radio` or a `checkbox` may be drawn as cards (FORM_STEPS §5): `options.view: "cards"` and
+`options.columns` (1–4), and a choice takes a `description` (in every language, like the label) and
+an `image` — a file of the media library, kept by its key `{ "path": "media/…" }` and given as
+`{ "id": 62 }` or `{ "path": … }` through `inbox_form_save`. The page asks the library for every
+picture of the form at once; a file gone from it is a card without a picture. Without
+`webx-ui/module-media` the dialog has no picture column and a key already written shows nothing. A
+list is the default and is not written down; back to a list, the columns go and what the choices
+carry stays. It is the look of the field only: the answer is the label and the value, as from a list.
+
+In the panel it is «Show the choices as: List | Cards» in the field dialog, «Cards in a row», and
+under each choice a description and the picture (`wx-media` of the media module, when the panel has
+it). A view of the form published before cards (`vendor/webx-inbox/form.blade.php`) keeps drawing
+them as a list: the cards come with `:view`, `:columns` and `$control['cards']`.
+
+### Steps
+
+A row of type `step` in the list of fields starts a step (FORM_STEPS §3): the fields after it, down
+to the next such row, are asked on one screen. No table and no migration — the order is the fields'
+`position`, dragged as they are. The fields above the first row are step 1, named by the form's
+title; a form without such a row is a flat form, printed byte for byte as before.
+
+A step row uses the columns it has: `title` is its heading, `help` the line under it, `placeholder`
+the short label of the indicator, `options.next-text` the words of its «Next», and
+`options.when` / `unless` the condition of the whole step, as a field's. A step switched off takes its
+fields with it; required, half width and a column mean nothing to it and are never written. It is
+never answered: no value in a submission, no column in the list or the CSV, nothing in the letter.
+
+On the site the form is the widgets' `<x-webx-form steps :check>` with an `<x-webx-form.step>` per
+step ([Forms](./forms#steps)): one step at a time, «Next» checking it in the browser and then at
+
+```
+POST /webx/forms/{slug}/check     webx_step=<the step>, no files — 204, or a 422 under the fields
+```
+
+— the rules of the fields of the steps up to it, with the conditions read from what was sent. Nothing
+is written and the limit of accepted submissions is not touched; the origin check and the route's
+limit of attempts are the intake's. Without JavaScript every step is a fieldset on one page, and the
+intake checks it all at once. A step hidden by its condition is hidden whole: its answers are not
+checked and not kept.
+
+In the panel «Step» puts a row at the end of the list; it is a heading of the list, numbered as the
+site counts, and dragged like a field. A step with nothing under it is marked «Empty» and skipped by
+the site; `inbox_form_save` refuses one (`step.empty`). More than ten steps are refused everywhere.
+
+**A view of the site.** It gets `$steps` — each step with its controls — beside `$controls`, which is still every field in one flat list.
+A `form.blade.php` published before the steps prints the whole form on one page; the audit's
+`inbox.steps_in_old_view` names it.
+
+### Summary
+
+A row of type `summary` (FORM_STEPS §7) asks nothing: on the site it is the widgets'
+`<x-webx-form.summary>` ([Forms](./forms#summary)) — the answers given above it, each with «Edit». Its
+`title` and `help` are its heading and the line under it; `options.fields` names the fields it
+shows, none — every one above it but consents, files and hidden fields. A rename carries into it; a
+field deleted later drops out. It is never answered — nothing of it in a submission, no column, no
+condition — and is printed only in a form of steps: on one page every answer is in sight. In the panel
+it is the type «Summary» of the field dialog, with «What to show».
+
+### Date and time
+
+A field of type `datetime` (FORM_STEPS §6) asks for a day of a calendar and a time of a list —
+the widgets' `<x-webx-field type="datetime">` ([Forms](./forms#date-and-time)). `options`:
+`time-step` (15, 20, 30, 60, 90 or 120 minutes; 30), `time-from` and `time-to` (`HH:MM`; 09:00 and
+17:00, the last time a step before the end), `weekdays` (ISO, none — every day), `timezone-label`
+(words of the form's own about the zone). Saving refuses `datetime.range` (no room for a time),
+`datetime.step` and `datetime.weekdays` — in the panel under the option, in `inbox_form_save` with
+the plan, whose dry run says the times of a day: «09:00, 09:30 … 16:30, Mon–Fri (Europe/…)».
+
+- **The zone** is the site's: `contacts.timezone` of `module-settings`, else `app.timezone`. A field
+  has none of its own; the panel names it in the field's dialog.
+- **The intake** wants both parts, a day of the week offered, a time on the grid and a moment not
+  earlier than now in that zone — with the script and without it, the same words under the field.
+- **The snapshot**: `value` «12/14/2026, 10:30 AM (Europe/Kyiv)» in the language of the submission, and
+  `payload` `{ date, time, timezone, at }` — what the visitor saw, and the moment in UTC. A site that
+  changes its zone later changes nothing of what was written. The letter, the CSV and the channels read
+  `value` like any answer; a column of the list sorts by `payload.at`.
+- **Nothing is reserved**: two visitors may choose the same time; a manager settles it with the statuses
+  and notes of the submission.
 
 ### Answers keep a copy of the question
 
@@ -584,6 +696,11 @@ matched by id or machine name is updated, one sent with `remove: true` is put as
 given through it stay readable. Everything that changes something takes `dry_run: true` and then
 reports what it would have done. The form's description is `options.description`, per language,
 like the thank-you.
+
+**Steps.** A step is a field of type `step` (see [Steps](#steps)); `inbox_form_get` of a form of steps
+adds `steps: [{ name, title, fields }]`, and the `dry_run` of `inbox_form_save` says the steps the
+form would have. New fields go to the end in the order sent; `order` — the machine names in the order
+they go — puts a step row where it belongs in a form that already has fields.
 
 **Two things are deliberately missing.** Receiving a submission is not a tool: the intake is a
 public door with the antispam in front of it, and a second way in that skipped both would be the

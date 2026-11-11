@@ -221,13 +221,20 @@ final class ChannelForm
 
     /**
      * The event's default template for a provider, a text per language of the site; null when the
-     * event has none for it.
+     * event has none for it. With the channel's recipients, the one of its addressee (§5.1):
+     * a channel to the buyer gets the buyer's letter, a channel to the shop — the event's own.
      *
      * @return array{subject: array<string, string>|null, template: array<string, string>}|null
      */
-    public function sample(EventDefinition $event, string $provider): ?array
+    public function sample(EventDefinition $event, string $provider, mixed $recipients = null): ?array
     {
-        return $event->samplesFor($provider, $this->locales->codes(), $this->locales->defaultCode(), $this->locales->fallback());
+        return $event->samplesFor(
+            $provider,
+            $this->locales->codes(),
+            $this->locales->defaultCode(),
+            $this->locales->fallback(),
+            $event->addresseeOf($recipients, $provider),
+        );
     }
 
     /**
@@ -251,7 +258,8 @@ final class ChannelForm
         $key = array_key_exists('event', $input) ? $input['event'] : $channel->event;
         $provider = $input['provider'] ?? $channel->provider;
         $event = is_string($key) ? $this->events->find($key) : null;
-        $sample = $event === null || ! is_string($provider) ? null : $this->sample($event, $provider);
+        $recipients = array_key_exists('recipients', $input) ? $input['recipients'] : $channel->recipients;
+        $sample = $event === null || ! is_string($provider) ? null : $this->sample($event, $provider, $recipients);
 
         if ($sample === null) {
             if ($reset) {

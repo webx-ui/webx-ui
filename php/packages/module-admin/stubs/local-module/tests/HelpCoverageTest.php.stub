@@ -1,0 +1,24 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Site\{{ Studly }}\Tests;
+
+use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Testing\AssertsHelp;
+
+/**
+ * Every screen of the module is explained, field by field, in English and in every language of
+ * the site's panel (`webx-localization.panel`). A new field without a line in
+ * `resources/help/<language>/{{ id }}.form.md` fails here.
+ */
+final class HelpCoverageTest extends TestCase
+{
+    use AssertsHelp;
+
+    #[Test]
+    public function every_screen_and_field_is_explained(): void
+    {
+        $this->assertModuleScreensHaveHelp($this->module());
+    }
+}

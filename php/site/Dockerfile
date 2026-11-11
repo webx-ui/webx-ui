@@ -30,13 +30,18 @@ RUN --mount=type=cache,target=/tmp/composer-cache \
     COMPOSER_CACHE_DIR=/tmp/composer-cache \
     composer install --no-dev --no-scripts --prefer-dist --no-interaction \
         --ignore-platform-reqs --optimize-autoloader --classmap-authoritative \
-    && mkdir -p theme
+    && mkdir -p theme modules
 
 # ---------- 2. The panel and the site's own styles, built by the site's own Vite ----------
 FROM node:22-alpine AS assets
 WORKDIR /app
 
 COPY package.json package-lock.json ./
+# The site's own modules before the install: their npm halves are `file:modules/<name>/js`
+# dependencies, and without the folder `npm ci` links them to nothing and the build stops on
+# the import. Their sources are what Vite builds the panel from, too. From the stage above rather
+# than the context, like theme/: a site without modules has no modules/, and that stage makes one.
+COPY --from=vendor /app/modules ./modules
 RUN --mount=type=cache,target=/root/.npm npm ci --no-audit --no-fund
 
 COPY vite.config.js ./

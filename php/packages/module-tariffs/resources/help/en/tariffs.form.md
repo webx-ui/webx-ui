@@ -111,6 +111,10 @@ not saved.
 A link without a «Label» prints nothing. The button goes quietly: if the page is later taken off the
 site, the card loses it with no warning, so look here after moving pages around.
 
+The full price list in PDF is «A file» of the media library; with «Download instead of opening» the
+browser saves it under the name it was uploaded with. A file deleted from the library takes the
+button off the card the same quiet way.
+
 ## button-variant
 
 It changes only how the button looks, not where it leads. The looks are set up for the whole site;

@@ -48,7 +48,7 @@ the panel's menu, **Tariffs**, with two entries: **Tariffs** and **Groups**.
 | `features`       | rows `{ "text": { "en": … } }` in their order — "what is included"             |
 | `description`    | translatable plain text, printed with its line breaks                          |
 | `button_label`   | translatable                                                                   |
-| `button_link`    | the value of a `wx-link` field: a page of the site, or an address              |
+| `button_link`    | the value of a `wx-link` field: a page, an address or a file of the library    |
 | `button_variant` | a key of `webx-tariffs.variants`                                               |
 | `featured`       | the "recommended" mark                                                         |
 | `published`      | a new tariff is not — the first save of a half-written card is not on the site |
@@ -142,7 +142,7 @@ Both roads hand over the same card:
     'price_text' => '',                // printed when price is null
     'features' => ['Design', 'SEO'],   // the rows written in the language
     'description' => '…',              // '' when it is not written in the language
-    'button' => ['label' => 'Get started', 'url' => '/contacts', 'new_tab' => false, 'rel' => null, 'variant' => 'primary'], // or null
+    'button' => ['label' => 'Get started', 'url' => '/contacts', 'new_tab' => false, 'rel' => null, 'download' => null, 'variant' => 'primary'], // or null
     'featured' => true,
     'service_links' => [['id' => 3, 'title' => 'SEO', 'url' => '/seo']], // [] without services
     'fields' => ['note' => '…'],       // the project's own fields, by name

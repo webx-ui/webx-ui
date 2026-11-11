@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use WebxUi\Banners\Places;
+use WebxUi\Localization\HasCodes;
 use WebxUi\Localization\HasTranslations;
 
 /**
@@ -26,6 +27,7 @@ use WebxUi\Localization\HasTranslations;
  */
 class Place extends Model
 {
+    use HasCodes;
     use HasTranslations;
 
     /** What a key may be: lowercase letters, digits and dashes, a letter first. */
@@ -35,6 +37,17 @@ class Place extends Model
 
     /** @var list<string> */
     protected $fillable = ['key', 'title'];
+
+    /**
+     * The shape of {@see KEY}: a key that starts with a digit goes after `place`, `2 columns` is
+     * kept as `place-2-columns`.
+     *
+     * @return array<string, array{max: int, separator?: string, lead?: string}>
+     */
+    protected static function codes(): array
+    {
+        return ['key' => ['max' => 64, 'lead' => 'place']];
+    }
 
     /**
      * @return list<string>

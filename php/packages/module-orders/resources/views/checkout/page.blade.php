@@ -6,6 +6,10 @@
     The layout is `layout.minimal` of the theme (a header of the brand, no footer, §27.1) with the
     handle `checkout.page`, or what `webx-orders.checkout.layout` names (`CheckoutLayout`).
 
+    The minimal layout has no cart in its header, so the page prints the cart's widget without a
+    trigger (`<x-webx-cart :trigger="false" />`): its dialog is where «Order contents» changes
+    (§23.5). A layout with its own cart keeps one dialog — the widget's script drops the copy.
+
     Override: <layer>/views/vendor/webx-orders/checkout/page.blade.php.
 --}}
 @php($title = __('webx-orders::checkout.page.title'))
@@ -20,6 +24,7 @@
          of copying this file. The leaves get $steps, $warnings, $summary, $summaryUrl and $parts
          from here — its `vars`. --}}
     @include(composition_view('checkout.page'))
+    <x-webx-cart :trigger="false" />
 
     @push('scripts')
         <script type="module" src="{{ \WebxUi\Orders\Checkout\Http\ScriptController::url() }}"></script>

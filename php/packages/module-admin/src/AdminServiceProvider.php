@@ -9,6 +9,7 @@ use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Filesystem\Factory as FilesystemFactory;
 use Illuminate\Contracts\Http\Kernel as HttpKernel;
+use Illuminate\Contracts\Routing\UrlGenerator;
 use Illuminate\Contracts\Validation\Factory as ValidationFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -48,6 +49,7 @@ use WebxUi\Admin\Console\PruneVersionsCommand;
 use WebxUi\Admin\Console\SetupCommand;
 use WebxUi\Admin\Console\SnapshotCommand;
 use WebxUi\Admin\Console\SnapshotRestoreCommand;
+use WebxUi\Admin\Contracts\AssetDownloads;
 use WebxUi\Admin\Contracts\AssetUrls;
 use WebxUi\Admin\Contracts\BrandingSource;
 use WebxUi\Admin\Contracts\HasPermissions;
@@ -70,6 +72,8 @@ use WebxUi\Admin\History\Journal;
 use WebxUi\Admin\History\Mcp\HistoryModule;
 use WebxUi\Admin\Http\Middleware\HistorySource;
 use WebxUi\Admin\Http\Middleware\RequireVisitor;
+use WebxUi\Admin\Icons\IconSet;
+use WebxUi\Admin\Icons\IconSets;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\Links\LinkUrls;
 use WebxUi\Admin\Links\RoutingSiteUrls;
@@ -77,14 +81,18 @@ use WebxUi\Admin\Manifest\ManifestBuilder;
 use WebxUi\Admin\Notes\NoteTypes;
 use WebxUi\Admin\Panel\SystemSections;
 use WebxUi\Admin\Relations\RelationTargets;
+use WebxUi\Admin\Screens\Embeds;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\Types\BooleanType;
 use WebxUi\Admin\Screens\Types\CascaderType;
+use WebxUi\Admin\Screens\Types\CodeType;
 use WebxUi\Admin\Screens\Types\CollectionType;
 use WebxUi\Admin\Screens\Types\ColorType;
 use WebxUi\Admin\Screens\Types\DateRangeType;
 use WebxUi\Admin\Screens\Types\DateType;
+use WebxUi\Admin\Screens\Types\EmbedType;
+use WebxUi\Admin\Screens\Types\IconType;
 use WebxUi\Admin\Screens\Types\InstantType;
 use WebxUi\Admin\Screens\Types\LinkType;
 use WebxUi\Admin\Screens\Types\NumberType;
@@ -119,6 +127,7 @@ use WebxUi\Localization\Locales;
 use WebxUi\Localization\Translations\DictionaryBuilder;
 use WebxUi\Mcp\Contracts\ProvidesMcpTools;
 use WebxUi\Routing\SiteUrl;
+use WebxUi\Themes\ThemeIcons;
 
 class AdminServiceProvider extends ServiceProvider
 {
@@ -159,6 +168,9 @@ class AdminServiceProvider extends ServiceProvider
 
         // Which model's categories a `wx-categories` field is about, by the path they answer at.
         $this->app->singleton(CategorySources::class);
+
+        // The services a `wx-embed` field takes frames of, filled by the packages that print them.
+        $this->app->singleton(Embeds::class);
 
         // The records modules offer to show as blocks (§3 of the FAQ spec), by the key a
         // `wx-collection` field names them with. Filled from providers, like the two above.
@@ -206,7 +218,29 @@ class AdminServiceProvider extends ServiceProvider
             $app->make(LinkSources::class),
             $app->make(Locales::class),
             $app->bound(SiteUrls::class) ? $app->make(SiteUrls::class) : null,
+            $app->bound(AssetDownloads::class) ? $app->make(AssetDownloads::class) : null,
         ));
+
+        // The sets a `wx-icon-picker` may name in `props.source`. `theme` is the icons of the site's
+        // theme chain, behind `class_exists` like the addresses above: the frame does not require
+        // `webx-ui/themes`, and a site without it has no theme icons to offer.
+        $this->app->singleton(IconSets::class, static function ($app): IconSets {
+            $sets = new IconSets;
+
+            if (class_exists(ThemeIcons::class)) {
+                $sets->register('theme', static function () use ($app): IconSet {
+                    if (! $app->bound(ThemeIcons::class)) {
+                        return new IconSet([]);
+                    }
+
+                    $icons = $app->make(ThemeIcons::class);
+
+                    return new IconSet($icons->names(), $icons->url($app->make(UrlGenerator::class)));
+                });
+            }
+
+            return $sets;
+        });
 
         $this->app->singleton(FieldTypes::class, static function ($app): FieldTypes {
             $types = new FieldTypes;
@@ -230,16 +264,21 @@ class AdminServiceProvider extends ServiceProvider
             $types->register('wx-tags-input', new TagsType);
             // Free text with suggestions beside it: the suggestions are help, not a list to pick from.
             $types->register('wx-autocomplete', new StringType(2000));
-            // A name from the icon set. The set is the page's, and a project can add to it, so the
-            // server does not know which names exist and checks only that it is a short string.
-            $types->register('wx-icon-picker', new StringType(255));
+            // A name from the icon set: the panel's, which the server does not know, or the one the
+            // node names — the theme's, a list — which it holds a new name to.
+            $types->register('wx-icon-picker', new IconType($app->make(IconSets::class)));
             $types->register('wx-code-editor', new StringType);
+            // A service's frame — Google Maps' "Embed a map" — pasted as code, kept as its address.
+            $types->register('wx-embed', new EmbedType($app->make(Embeds::class)));
             // The address part of a category (`categoryLinks()` modules): drawn with the module's
             // prefix in front of it by the panel, checked for its shape here.
             $types->register('wx-category-slug', new SlugType);
             // The same for a record of a module with a flat prefix (a service): one field for
             // every module after the blog, rather than a `wx-<module>-slug` in each.
             $types->register('wx-slug', new SlugType);
+            // A machine name typed by hand — a code of a status, of a label: brought to its shape
+            // as it is typed and as it is saved, never refused for it (#125).
+            $types->register('wx-code', new CodeType($app->make(Locales::class)));
             // The categories a record is in. Which table is the node's `source`, registered by
             // the module that owns it — the same string the panel asks for the list at.
             $types->register('wx-categories', new CategoriesType($app->make(CategorySources::class)));

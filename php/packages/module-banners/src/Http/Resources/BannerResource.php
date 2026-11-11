@@ -38,7 +38,7 @@ final class BannerResource extends JsonResource
             'thumb' => $picture['thumb'] ?? $picture['url'] ?? null,
             // The full picture, for the gallery a click on the thumbnail opens.
             'image' => $picture['url'] ?? null,
-            'video' => $banner->mediaPath('video') !== null,
+            'video' => $banner->mediaPath('video') !== null || $banner->mediaPath('video_mobile') !== null,
             'enabled' => $banner->enabled,
             'position' => (int) $banner->position,
             'updated_at' => $banner->updated_at?->toAtomString(),

@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
+use WebxUi\Orders\Checkout\Checkout;
+use WebxUi\Orders\Http\Controllers\Panel\FieldController;
 use WebxUi\Orders\Http\Controllers\Panel\ItemsController;
 use WebxUi\Orders\Http\Controllers\Panel\MassController;
 use WebxUi\Orders\Http\Controllers\Panel\NewOrderController;
@@ -79,6 +81,18 @@ Route::prefix((string) config('webx-admin.api_path').'/orders')
             Route::delete('statuses/internal/{status}', [StatusController::class, 'destroy'])->whereNumber('status')->name('statuses.destroy');
             Route::post('statuses/internal/{status}/restore', [StatusController::class, 'restore'])->whereNumber('status')->name('statuses.restore');
         });
+
+        // The extra fields of the checkout (WEBX_UI_ORDER_FIELDS.md §7.3): written with their own
+        // calls, not the button of the tab, and there only while the checkout is on.
+        if (Checkout::enabled()) {
+            Route::middleware('cms.can:'.OrdersModule::CHECKOUT_SETTINGS)->group(function (): void {
+                Route::get('checkout-fields', [FieldController::class, 'index'])->name('checkout-fields.index');
+                Route::post('checkout-fields', [FieldController::class, 'store'])->name('checkout-fields.store');
+                Route::put('checkout-fields/arrange', [FieldController::class, 'arrange'])->name('checkout-fields.arrange');
+                Route::put('checkout-fields/{field}', [FieldController::class, 'update'])->whereNumber('field')->name('checkout-fields.update');
+                Route::delete('checkout-fields/{field}', [FieldController::class, 'destroy'])->whereNumber('field')->name('checkout-fields.destroy');
+            });
+        }
 
         // The settings screen holds both tabs; each field stands behind its tab's `can`.
         Route::middleware('cms.can:'.OrdersModule::STATUSES.','.OrdersModule::CHECKOUT_SETTINGS)->group(function (): void {

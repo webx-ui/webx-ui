@@ -8,6 +8,8 @@ use Illuminate\Contracts\Validation\Factory as ValidationFactory;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Validation\ValidationException;
 use WebxUi\Admin\Links\Link;
+use WebxUi\Admin\Links\LinkTarget;
+use WebxUi\Admin\Screens\ChecksNewValues;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRecord;
 use WebxUi\Banners\Models\Banner;
@@ -38,10 +40,17 @@ final class BannerForm
      *
      * @var list<string>
      */
-    private const OWN = ['image', 'image_mobile', 'video', 'title', 'text', 'buttons', 'layers', 'enabled'];
+    private const OWN = ['image', 'image_mobile', 'video', 'video_mobile', 'poster', 'title', 'text', 'buttons', 'layers', 'enabled'];
 
     /** The most buttons a banner has. */
     public const MAX_BUTTONS = 3;
+
+    /**
+     * The link of a button as the screen draws it (`form.json`), a file of the library included:
+     * the rules of the field are asked with the same node, so a button, a layer and an agent are
+     * told the same thing.
+     */
+    private const LINK_NODE = ['type' => 'wx-link', 'props' => ['allowNone' => false, 'files' => true]];
 
     public function __construct(
         private readonly ScreenRecord $record,
@@ -86,6 +95,8 @@ final class BannerForm
             'image' => $banner->image,
             'image_mobile' => $banner->image_mobile,
             'video' => $banner->video,
+            'video_mobile' => $banner->video_mobile,
+            'poster' => $banner->poster,
             'title' => $banner->getTranslations('title'),
             'text' => $banner->getTranslations('text'),
             'buttons' => $banner->buttonRows(),
@@ -108,38 +119,7 @@ final class BannerForm
      */
     public function save(Banner $banner, array $input, ?string $place = null, ?callable $can = null): Banner
     {
-        $errors = [];
-
-        if ($place === null && ! $banner->exists) {
-            $errors['place'] = [(string) __('webx-banners::errors.place-unknown')];
-        } elseif ($place !== null && ! $this->places->exists($place)) {
-            $errors['place'] = [(string) __('webx-banners::errors.place-unknown')];
-        }
-
-        $kept = [];
-
-        if (array_key_exists('buttons', $input)) {
-            [$input['buttons'], $kept, $buttonErrors] = $this->buttons($input['buttons'], $banner);
-            $errors = [...$errors, ...$buttonErrors];
-        }
-
-        // Checked and tidied whole before the screen sees them: the screen knows a list, the
-        // layers spec knows what is in it (§3.4).
-        if (array_key_exists('layers', $input)) {
-            [$input['layers'], $layerErrors] = $this->layers->check(
-                $input['layers'],
-                $banner,
-                $place ?? $banner->place?->key,
-                fn (array $link): ?string => $this->linkProblem($link),
-            );
-            $errors = [...$errors, ...$layerErrors];
-        }
-
-        $errors = [...$errors, ...$this->pictureErrors($banner, $input, $place ?? $banner->place?->key)];
-
-        if ($errors !== []) {
-            throw ValidationException::withMessages($errors);
-        }
+        [$input, $kept] = $this->check($banner, $input, $place);
 
         $split = $this->record->split(Banner::SCREEN, $input, self::OWN, [], $can);
 
@@ -168,6 +148,57 @@ final class BannerForm
         });
     }
 
+    /**
+     * What the screen cannot check, checked first: the place, the buttons, the layers and the
+     * pictures — and the input tidied for the screen. Apart from {@see save()} so that an agent's
+     * `dry_run` is refused for the same things a write is.
+     *
+     * Answers the input and the kept variants of the buttons, by the row's place among them.
+     *
+     * @param  array<string, mixed>  $input
+     * @return array{0: array<string, mixed>, 1: array<int, string>}
+     *
+     * @throws ValidationException
+     */
+    public function check(Banner $banner, array $input, ?string $place = null): array
+    {
+        $errors = [];
+        $held = self::heldFiles($banner);
+
+        if ($place === null && ! $banner->exists) {
+            $errors['place'] = [(string) __('webx-banners::errors.place-unknown')];
+        } elseif ($place !== null && ! $this->places->exists($place)) {
+            $errors['place'] = [(string) __('webx-banners::errors.place-unknown')];
+        }
+
+        $kept = [];
+
+        if (array_key_exists('buttons', $input)) {
+            [$input['buttons'], $kept, $buttonErrors] = $this->buttons($input['buttons'], $banner, $held);
+            $errors = [...$errors, ...$buttonErrors];
+        }
+
+        // Checked and tidied whole before the screen sees them: the screen knows a list, the
+        // layers spec knows what is in it (§3.4).
+        if (array_key_exists('layers', $input)) {
+            [$input['layers'], $layerErrors] = $this->layers->check(
+                $input['layers'],
+                $banner,
+                $place ?? $banner->place?->key,
+                fn (array $link): ?string => $this->linkProblem($link, $held),
+            );
+            $errors = [...$errors, ...$layerErrors];
+        }
+
+        $errors = [...$errors, ...$this->pictureErrors($banner, $input, $place ?? $banner->place?->key)];
+
+        if ($errors !== []) {
+            throw ValidationException::withMessages($errors);
+        }
+
+        return [$input, $kept];
+    }
+
     private function write(Banner $banner, string $field, mixed $value): void
     {
         switch ($field) {
@@ -181,6 +212,8 @@ final class BannerForm
             case 'image':
             case 'image_mobile':
             case 'video':
+            case 'video_mobile':
+            case 'poster':
             case 'buttons':
                 $banner->setAttribute($field, is_array($value) && $value !== [] ? $value : null);
                 break;
@@ -207,7 +240,11 @@ final class BannerForm
             return [];
         }
 
-        $video = array_key_exists('video', $input) ? $this->media->store($input['video']) : $banner->video;
+        $video = null;
+
+        foreach (['video', 'video_mobile'] as $field) {
+            $video ??= array_key_exists($field, $input) ? $this->media->store($input[$field]) : $banner->getAttribute($field);
+        }
 
         if ($video === null && ! $this->places->needsPicture($place)) {
             return [];
@@ -230,9 +267,10 @@ final class BannerForm
      * Answers the rows for the screen, the kept variants by the row's place among them, and the
      * errors.
      *
+     * @param  list<string>  $held  the library keys the banner's links already point at
      * @return array{0: mixed, 1: array<int, string>, 2: array<string, list<string>>}
      */
-    private function buttons(mixed $value, Banner $banner): array
+    private function buttons(mixed $value, Banner $banner, array $held): array
     {
         if (! is_array($value)) {
             return [$value, [], []];
@@ -266,7 +304,7 @@ final class BannerForm
             if ($empty) {
                 $errors["{$at}.link"] = [(string) __('webx-banners::errors.button-link')];
             } else {
-                $problem = $this->linkProblem($link);
+                $problem = $this->linkProblem($link, $held);
 
                 if ($problem !== null) {
                     $errors["{$at}.link"] = [$problem];
@@ -322,15 +360,52 @@ final class BannerForm
     /**
      * What the link field says of a link, in its own words — null when it takes it.
      *
+     * A file the library does not have is refused only when the banner did not point at it
+     * before: a brochure deleted from the library since must not stop the banner from being saved
+     * again (the button then drops out on the site), while a key nobody ever had is one typed
+     * rather than picked.
+     *
      * @param  array<string, mixed>  $link
+     * @param  list<string>  $held
      */
-    private function linkProblem(array $link): ?string
+    private function linkProblem(array $link, array $held): ?string
     {
-        $rules = $this->types->get('wx-link')?->rules([]) ?? [];
+        $type = $this->types->get('wx-link');
+        $rules = $type?->rules(self::LINK_NODE) ?? [];
         $label = (string) __('webx-banners::screen.link');
         $validator = $this->validator->make(['value' => $link], ['value' => $rules], [], ['value' => $label]);
 
-        return $validator->fails() ? (string) $validator->errors()->first('value') : null;
+        if ($validator->fails()) {
+            return (string) $validator->errors()->first('value');
+        }
+
+        $path = Link::fromArray($link)->path;
+
+        if (! $type instanceof ChecksNewValues || $path === null || in_array($path, $held, true)) {
+            return null;
+        }
+
+        return $type->newValueProblems($link, self::LINK_NODE)[0] ?? null;
+    }
+
+    /**
+     * The library keys the buttons and the button layers of the banner point at now.
+     *
+     * @return list<string>
+     */
+    private static function heldFiles(Banner $banner): array
+    {
+        $paths = [];
+
+        foreach ([...$banner->buttonRows(), ...$banner->layerRows()] as $row) {
+            $link = is_array($row['link'] ?? null) ? Link::fromArray($row['link']) : null;
+
+            if ($link?->target === LinkTarget::File && $link->path !== null) {
+                $paths[] = $link->path;
+            }
+        }
+
+        return $paths;
     }
 
     private static function hasWords(mixed $label): bool

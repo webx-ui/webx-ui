@@ -310,15 +310,18 @@ final class PanelTest extends PanelTestCase
         $this->assertSame(['club', 'Club', 0], [$club['code'], $club['name'], $club['users_count']]);
 
         $this->postJson($this->api('groups'), ['code' => 'club', 'name' => 'Again'])->assertUnprocessable()->assertJsonValidationErrors('code');
-        $this->postJson($this->api('groups'), ['code' => 'two words', 'name' => 'Bad'])->assertUnprocessable()->assertJsonValidationErrors('code');
+        // A code is brought to its shape, not refused for it (#125): only an empty or a taken one is.
+        $this->postJson($this->api('groups'), ['code' => 'Тормозные Колодки', 'name' => 'Brakes'])->assertCreated()->assertJsonPath('data.code', 'tormoznye-kolodki');
+        $this->postJson($this->api('groups'), ['code' => 'tormoznye kolodki', 'name' => 'Again'])->assertUnprocessable()->assertJsonValidationErrors('code');
+        $this->postJson($this->api('groups'), ['code' => '!!!', 'name' => 'Bad'])->assertUnprocessable()->assertJsonValidationErrors('code');
         $this->postJson($this->api('groups'), ['code' => 'wholesale', 'name' => 'A wholesale'])->assertCreated();
 
         $anna = $this->visitor();
         $anna->groups()->attach($club['id']);
 
         $list = $this->getJson($this->api('groups'))->assertOk()->json('data');
-        $this->assertSame(['A wholesale', 'Club'], array_column($list, 'name'), 'by name');
-        $this->assertSame(1, $list[1]['users_count']);
+        $this->assertSame(['A wholesale', 'Brakes', 'Club'], array_column($list, 'name'), 'by name');
+        $this->assertSame(1, $list[2]['users_count']);
 
         $this->putJson($this->api('groups/'.$club['id']), ['code' => 'club', 'name' => 'Club members'])->assertOk()->assertJsonPath('data.name', 'Club members');
         $this->deleteJson($this->api('groups/'.$club['id']))->assertNoContent();

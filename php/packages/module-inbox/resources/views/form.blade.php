@@ -16,12 +16,28 @@
       · the honeypot and the timestamp — the antispam that costs the visitor nothing,
       · the captcha block — `data-webx-field="captcha"` is where the intake's word about it goes,
       · `data-webx-form` on the form — the hook for a site's own script (`webx:form:success`),
-      · `:again="$again"` — `<x-webx-inbox::form again>`, the way back to the fields after the thank-you.
+      · `:again="$again"` — `<x-webx-inbox::form again>`, the way back to the fields after the thank-you,
+      · `:when`, `:unless`, `:condition` on a field — when it is shown (FORM_STEPS §4.3); a view without
+        them shows every field, and the intake still throws away the answers to the hidden ones,
+      · `:view`, `:columns` and `$control['cards']` as the choices — a group of radios or ticks drawn
+        as cards (FORM_STEPS §5); a view without them draws the same choices as a list, the answer
+        is the same,
+      · `$steps` — the steps of the form (FORM_STEPS §3), each an <x-webx-form.step> around its controls
+        (the same entries as `$controls`), `steps` and `:check` on the form; a view that prints only
+        `$controls` draws the whole form on one page, as a page without JavaScript sees it, and the
+        audit's `inbox.steps_in_old_view` says so,
+      · `type` `summary` among the controls of a step — <x-webx-form.summary> (FORM_STEPS §7): the answers
+        so far with «Edit»; `$controls` never has one, a view without it simply shows no summary,
+      · `$control['datetime']` on a field of type `datetime` — `:step`, `:from`, `:to`, `:weekdays`, `:timezone`,
+        `:timezone-label` (FORM_STEPS §6.4): the grid of the day in the site's zone; a view without them
+        shows the widgets' defaults, and the intake still checks the field's own grid,
+      · `data-webx-attribution` — the widgets' attribution.js posts the campaign, the referrer and the
+        landing page (`webx-inbox.attribution`, FORM_STEPS §8); a view without it sends none of them.
 
     `$description` — the line under the form's title (§5), HTML with its shortcodes; null without
     one, and in a dialog, which prints it under its own title.
 
-    Classes: webx-inbox-form (+ --<placement>), __description, __fields, __field, __field--half, __captcha,
+    Classes: webx-inbox-form (+ --<placement>), __description, __fields, __field, __field--half, __summary, __captcha,
     __actions, __honeypot; the rest are the widgets' webx-form-* and webx-field-*.
 --}}
 <x-webx-form
@@ -30,7 +46,10 @@
     :id="$formId"
     :rules="$rules"
     :again="$again"
+    :steps="($steps ?? []) !== []"
+    :check="$check ?? null"
     data-webx-form="{{ $form->slug }}"
+    :data-webx-attribution="($attribution ?? false) ? '' : null"
     {{ $attributes->class(['webx-inbox-form', 'webx-inbox-form--'.$placement => $placement !== null]) }}
 >
     <input type="hidden" name="webx_form" value="{{ $form->slug }}">
@@ -47,6 +66,68 @@
         <p class="webx-inbox-form__description">{{ $description }}</p>
     @endif
 
+@if (($steps ?? []) !== [])
+        @foreach ($steps as $step)
+            <x-webx-form.step
+                :name="$step['name']"
+                :title="$step['title']"
+                :hint="$step['hint']"
+                :label="$step['label']"
+                :next-label="$step['next']"
+                :when="$step['when']"
+                :unless="$step['unless']"
+                :condition="$step['condition']"
+            >
+                <div class="webx-inbox-form__fields">
+                    @foreach ($step['controls'] as $control)
+                    @if ($control['type'] === 'summary')
+                    <x-webx-form.summary
+                        :title="$control['label']"
+                        :hint="$control['hint']"
+                        :fields="$control['fields']"
+                        class="webx-inbox-form__summary"
+                    />
+                    @else
+                    <x-webx-field
+                        :type="$control['type']"
+                        :name="$control['name']"
+                        :id="$control['id']"
+                        :label="$control['label']"
+                        :hint="$control['hint']"
+                        :placeholder="$control['placeholder']"
+                        :value="$control['value']"
+                        :choices="$control['cards'] ?? $control['choices']"
+                        :multiple="$control['multiple']"
+                        :rows="$control['rows']"
+                        :view="$control['view'] ?? 'list'"
+                        :columns="$control['columns'] ?? null"
+                        :when="$control['when'] ?? null"
+                        :unless="$control['unless'] ?? null"
+                        :condition="$control['condition'] ?? null"
+                :step="$control['datetime']['step'] ?? null"
+                :from="$control['datetime']['from'] ?? null"
+                :to="$control['datetime']['to'] ?? null"
+                :weekdays="$control['datetime']['weekdays'] ?? null"
+                :timezone="$control['datetime']['timezone'] ?? null"
+                :timezone-label="$control['datetime']['timezone_label'] ?? null"
+                        :step="$control['datetime']['step'] ?? null"
+                        :from="$control['datetime']['from'] ?? null"
+                        :to="$control['datetime']['to'] ?? null"
+                        :weekdays="$control['datetime']['weekdays'] ?? null"
+                        :timezone="$control['datetime']['timezone'] ?? null"
+                        :timezone-label="$control['datetime']['timezone_label'] ?? null"
+                        :class="'webx-inbox-form__field'.($control['half'] ? ' webx-inbox-form__field--half' : '')"
+                    >@if ($control['consent'] !== null){!! $control['consent'] !!}@endif</x-webx-field>
+                    @endif
+                    @endforeach
+                </div>
+                {{-- On the last step, which the form's own button sends from. --}}
+                @if ($loop->last)
+                    @includeWhen($captcha !== null, 'webx-inbox::form.captcha', ['captcha' => $captcha])
+                @endif
+            </x-webx-form.step>
+        @endforeach
+@else
     <div class="webx-inbox-form__fields">
         @foreach ($controls as $control)
             <x-webx-field
@@ -57,15 +138,27 @@
                 :hint="$control['hint']"
                 :placeholder="$control['placeholder']"
                 :value="$control['value']"
-                :choices="$control['choices']"
+                :choices="$control['cards'] ?? $control['choices']"
                 :multiple="$control['multiple']"
                 :rows="$control['rows']"
+                :view="$control['view'] ?? 'list'"
+                :columns="$control['columns'] ?? null"
+                :when="$control['when'] ?? null"
+                :unless="$control['unless'] ?? null"
+                :condition="$control['condition'] ?? null"
+                :step="$control['datetime']['step'] ?? null"
+                :from="$control['datetime']['from'] ?? null"
+                :to="$control['datetime']['to'] ?? null"
+                :weekdays="$control['datetime']['weekdays'] ?? null"
+                :timezone="$control['datetime']['timezone'] ?? null"
+                :timezone-label="$control['datetime']['timezone_label'] ?? null"
                 :class="'webx-inbox-form__field'.($control['half'] ? ' webx-inbox-form__field--half' : '')"
             >@if ($control['consent'] !== null){!! $control['consent'] !!}@endif</x-webx-field>
         @endforeach
     </div>
 
     @includeWhen($captcha !== null, 'webx-inbox::form.captcha', ['captcha' => $captcha])
+@endif
 
     <div class="webx-inbox-form__actions">
         <x-webx-form.submit>{{ $submitText }}</x-webx-form.submit>

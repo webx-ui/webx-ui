@@ -1,8 +1,8 @@
 # webx-ui/module-banners
 
-Banners kept in **named places** the way menus are: a picture (and one for phones), a video, a
-title, a text and up to three buttons. A site template prints a place with `<x-webx-banners
-place="hero" />`, or reads its cards — `banners('hero')` — and draws them itself. The module has
+Banners kept in **named places** the way menus are: a picture (and one for phones), a video (and
+one for phones, and a poster), a title, a text and up to three buttons. A site template prints a
+place with `<x-webx-banners place="hero" />`, or reads its cards — `banners('hero')` — and draws them itself. The module has
 **no public route, page or block**. The section «Banners» of the panel and the MCP tools
 `banners_*` edit it. Pictures and videos are `webx-ui/module-media`, button links the panel's
 link picker in `webx-ui/module-admin`, the languages `webx-ui/localization` — read their guides
@@ -25,7 +25,15 @@ for those.
 - **Components** `<x-webx-banners place="…">` (a place in its layout) and `<x-webx-banner :banner>`
   (one card); views under `webx-banners-views`. A place declared with `'layers' => true` gets the
   layer editor, and its banners are printed only through these components.
+- **Video**: the background video of `webx-ui/widgets` (`<x-webx-video variant="background">`) over
+  the picture — muted, looping, a pause button, only on screen, never under reduced motion or on
+  saved data. `video_mobile` plays below `breakpoint`; `poster` stands for the picture where a
+  video plays.
 - **Button variants** `config('webx-banners.variants')` — `primary`, `secondary`, `link`.
+- **Button links** — a page, an address or a file of the media library (`props.files` on
+  `button-link` and in the button layer). A card's button carries `label`, `url`, `new_tab`, `rel`,
+  `download` (the file's own name, or null) and `variant`; print the `<a>` with
+  `{{ \WebxUi\Admin\Links\LinkAttributes::of($button) }}`. A file gone from the library drops the button.
 - **Cache group** `banners` (WEBX_UI_CACHE.md): moved by every `Banner` and `Place` save; a mass write says `CacheGroups::bump('banners')` itself.
 - **Panel screen** `banners.form`; API under `/api/cms/banners`.
 - **MCP** tools `banners_places`, `banners_place_create`, `banners_place_delete`, `banners_list`,
@@ -45,19 +53,22 @@ A route or screen node the site adds next to the module asks the same:
 
 ## Change it without forking
 
-| You want                              | Do this                                                                                                 |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| Banners somewhere on the site         | `<x-webx-banners place="<place>" />`, or `banners('<place>')` + `banners_layout('<place>')` of your own |
-| A place the templates rely on         | declare it in `places` in `config/webx-banners.php` (`--tag=webx-banners-config`)                       |
-| One place as a slider, another single | `'layout' => 'slider'` / `'single'` / `'random'` on the place; `default_layout` for the rest            |
-| Another layout in one template only   | `banners_layout('hero', 'random')`                                                                      |
-| Other proportions or timing           | `ratio`, `ratio_mobile`, `interval`, `breakpoint`… in `options`, or in the place's `options`            |
-| Video on phones                       | `'video_on_mobile' => true` in `options`                                                                |
-| Another look of a button              | add a key to `variants`; the template turns the key into a class                                        |
-| A field of the project on a banner    | a patch: `Screens::extend('banners.form', [...])` into `project-fields`; the card has it under `fields` |
-| Other words in the panel              | `php artisan vendor:publish --tag=webx-banners-lang`                                                    |
+| You want                              | Do this                                                                                                         |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Banners somewhere on the site         | `<x-webx-banners place="<place>" />`, or `banners('<place>')` + `banners_layout('<place>')` of your own         |
+| A place the templates rely on         | declare it in `places` in `config/webx-banners.php` (`--tag=webx-banners-config`)                               |
+| One place as a slider, another single | `'layout' => 'slider'` / `'single'` / `'random'` on the place; `default_layout` for the rest                    |
+| Another layout in one template only   | `banners_layout('hero', 'random')`                                                                              |
+| Other proportions or timing           | `ratio`, `ratio_mobile`, `interval`, `breakpoint`… in `options`, or in the place's `options`                    |
+| Video on phones                       | `video_mobile` on the banner, or `'video_on_mobile' => true` in `options` to play `video` there                 |
+| The picture slower than the page      | `'parallax' => true` / `'soft'` / `'strong'` in `options`, or `:parallax` on the component; layers stay         |
+| A section slides over the place       | the block after it says so («Slide over the section above»); `__stage`/`__content` are `data-webx-overlap-fade` |
+| Another look of a button              | add a key to `variants`; the template turns the key into a class                                                |
+| A field of the project on a banner    | a patch: `Screens::extend('banners.form', [...])` into `project-fields`; the card has it under `fields`         |
+| Other words in the panel              | `php artisan vendor:publish --tag=webx-banners-lang`                                                            |
 
-A screen patch addresses nodes by `id`: `media`, `image`, `image-mobile`, `video`, `words`,
+A screen patch addresses nodes by `id`: `media`, `image`, `image-mobile`, `video`, `poster`,
+`video-mobile`, `words`,
 `title`, `text`, `buttons-card`, `buttons` (rows: `button-label`, `button-link`,
 `button-variant`), `settings`, `enabled`, `project-fields`.
 
@@ -72,6 +83,8 @@ A screen patch addresses nodes by `id`: `media`, `image`, `image-mobile`, `video
   then gets an empty list and the banners sit in a place nobody prints. Change the template too.
 - Do not take a variant out of `variants` expecting old buttons to change: they keep their key
   and are printed with the first variant. Edit the buttons, or keep the key.
+- Do not print `href`, `target` and `rel` of a button by hand in a site's copy of the views: a
+  file link then opens instead of downloading. `LinkAttributes::of($button)` carries all four.
 - Do not write a picture or a video as a URL: they are library keys, and an unknown one is
   refused. Upload into the library first; `image` is the one required field.
 - Do not create a banner and forget `enabled`: a new one is off, so it is not on the site. Turn
@@ -83,8 +96,9 @@ A screen patch addresses nodes by `id`: `media`, `image`, `image-mobile`, `video
 
 - Open a page whose template prints the place, in each language: a banner without words in a
   language is not there, and with `random` one banner is shown per view.
-- On a phone width: `image_mobile` and `ratio_mobile` below `breakpoint`, the poster instead of
-  the video unless `video_on_mobile`.
+- On a phone width: `image_mobile` and `ratio_mobile` below `breakpoint`; `video_mobile` playing,
+  else `video` only with `video_on_mobile`, else the picture. Check that the video pauses on its
+  button and off screen, and stays a poster under reduced motion.
 - With MCP: read `banners://catalog` first, then `banners_list` for a place; every mutating tool
   takes `dry_run: true`.
 

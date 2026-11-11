@@ -37,9 +37,15 @@ final readonly class CheckoutSummary
         ));
         $discount = array_sum(array_map(static fn (Adjustment $adjustment): int => $adjustment->amount, $discounts));
         $currency = $state->currency;
+        $units = $state->availableUnits();
 
         return [
-            'units' => $array['units'],
+            // What the order would be placed with, as the subtotal beside it (§23.1): not the
+            // header's count, which keeps the lines that cannot be bought.
+            'units' => $units,
+            // Nothing to buy: the button is off, as the server would turn the order away anyway
+            // (§20.4). Some line still to buy keeps it on — pressing it says which lines are wrong.
+            'placeable' => $units > 0,
             'subtotal' => $array['subtotal_formatted'],
             'lines' => $array['lines'],
             'discount' => $discounts !== [] && $currency !== null ? $this->money->format($discount, $currency) : null,

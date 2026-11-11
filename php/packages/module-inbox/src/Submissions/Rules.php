@@ -5,7 +5,11 @@ declare(strict_types=1);
 namespace WebxUi\Inbox\Submissions;
 
 use Closure;
+use Illuminate\Http\Request;
+use WebxUi\Inbox\Fields\Conditions;
+use WebxUi\Inbox\Fields\DateTimeField;
 use WebxUi\Inbox\Fields\FieldType;
+use WebxUi\Inbox\Fields\Steps;
 use WebxUi\Inbox\Models\Field;
 use WebxUi\Inbox\Models\Form;
 use WebxUi\Inbox\Storage\FileStore;
@@ -25,19 +29,52 @@ final class Rules
     public function __construct(private readonly FileStore $files) {}
 
     /**
+     * With what was sent under `fields`, the rules of the fields shown for it (FORM_STEPS §4.4):
+     * a field hidden by its condition has none, and the validator leaves its answer out of what
+     * it returns. Without — the rules of every field, which is what the browser is given: it
+     * needs those of the fields hidden now for when they are shown.
+     *
+     * `$upTo` — the name of a step (FORM_STEPS §3.4): only the fields of the steps up to it, itself
+     * included, which is what the door that checks a step asks for. A step row has no rules: it is
+     * never answered.
+     *
+     * @param  array<array-key, mixed>|null  $values
+     * @param  list<string>|null  $upTo  the keys of {@see Steps::upTo()}
      * @return array<string, mixed>
      */
-    public function for(Form $form): array
+    public function for(Form $form, ?array $values = null, ?array $upTo = null): array
     {
         $rules = [];
+        $visible = $values === null ? null : Conditions::visible($form->liveFields, $values);
+        $within = $upTo === null ? null : array_flip($upTo);
 
-        foreach ($form->liveFields as $field) {
+        foreach ($form->questions() as $field) {
+            if ($visible !== null && ! ($visible[$field->key()] ?? true)) {
+                continue;
+            }
+
+            if ($within !== null && ! isset($within[$field->key()])) {
+                continue;
+            }
+
             foreach ($this->field($field) as $key => $rule) {
                 $rules[$key] = $rule;
             }
         }
 
         return $rules;
+    }
+
+    /**
+     * What a request sent under `fields`, as {@see for()} reads the conditions from it.
+     *
+     * @return array<array-key, mixed>
+     */
+    public static function sent(Request $request): array
+    {
+        $fields = $request->input('fields');
+
+        return is_array($fields) ? $fields : [];
     }
 
     /**
@@ -50,7 +87,7 @@ final class Rules
     {
         $attributes = [];
 
-        foreach ($form->liveFields as $field) {
+        foreach ($form->questions() as $field) {
             $label = (string) $field->title;
 
             if ($label !== '') {
@@ -90,7 +127,34 @@ final class Rules
             // and a required consent has to fail on that rather than on its shape.
             FieldType::Consent => [$key => $field->is_required ? ['accepted'] : ['nullable']],
             FieldType::File => $this->file($field, $key),
+            FieldType::DateTime => [$key => [$presence, 'array', $this->moment($field)]],
             default => [$key => [$presence, 'string', 'max:'.$this->maxLength($field)]],
+        };
+    }
+
+    /**
+     * A day and a time of the field's grid, not earlier than now in the site's zone (FORM_STEPS
+     * §6.3). One error, under the field itself: the visitor chose one thing in two controls.
+     *
+     * `required` passes an array of two empty parts, so «nothing chosen» is said here too — in the
+     * words `required` would have used.
+     */
+    private function moment(Field $field): Closure
+    {
+        return static function (string $attribute, mixed $value, Closure $fail) use ($field): void {
+            if (DateTimeField::isEmpty($value)) {
+                if ($field->is_required) {
+                    $fail('validation.required')->translate();
+                }
+
+                return;
+            }
+
+            $refusal = DateTimeField::refusal($field->options, $value, DateTimeField::zone());
+
+            if ($refusal !== null) {
+                $fail($refusal[0])->translate($refusal[1]);
+            }
         };
     }
 

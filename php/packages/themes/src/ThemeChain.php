@@ -112,6 +112,22 @@ final readonly class ThemeChain
     }
 
     /**
+     * How the theme's blocks come in as the page scrolls (§9.3) — `up`, `fade` or `scale` — or
+     * null when they do not. The layer nearest to the site that names it decides, as with the
+     * preset; nobody naming it is off, so a site that never asked looks as it always did.
+     */
+    public function reveal(): ?string
+    {
+        foreach ($this->layers as $layer) {
+            if ($layer->reveal !== null) {
+                return $layer->reveal === 'off' ? null : $layer->reveal;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * The tabs of the site's settings the theme prints. Unlike `requires`, a tab is not summed
      * down the chain: the layer nearest to the site that names it decides — a child theme that
      * lists its own sections replaces its parent's list, one that leaves the tab out inherits it.

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
+import { useAdmin, useErrorText, useTranslate, WxCodeField } from '@webx-ui/module-admin'
 import {
   toast,
   useModal,
@@ -116,7 +116,7 @@ async function save(): Promise<void> {
       </wx-form-item>
 
       <wx-form-item :label="t('panel.status-key')" :error="errorOf('key')" required>
-        <wx-input v-model="key" placeholder="in-progress" />
+        <wx-code-field v-model="key" :maxlength="32" placeholder="in-progress" />
       </wx-form-item>
 
       <wx-form-item :label="t('panel.status-color')" :error="errorOf('color')">

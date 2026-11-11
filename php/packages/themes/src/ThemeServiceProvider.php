@@ -74,6 +74,8 @@ class ThemeServiceProvider extends ServiceProvider
 
         $this->app->singleton(BottomLayers::class);
 
+        $this->app->singleton(ThemeReveal::class, fn (Application $app) => new ThemeReveal($app->make(ThemeChain::class)));
+
         $this->app->singleton(ThemeAssets::class, fn (Application $app) => new ThemeAssets($app->publicPath()));
 
         // If: a test points it at fixtures instead of what Composer installed.
@@ -111,6 +113,15 @@ class ThemeServiceProvider extends ServiceProvider
 
         // The colour of the browser bar (COMPOSITIONS §7): `@webxThemeColor` or `@webxThemeColor('color-surface')`.
         Blade::directive('webxThemeColor', static fn (string $token = ''): string => sprintf('<?php echo app(%s)->render(%s); ?>', var_export(ThemeColor::class, true), trim($token)));
+
+        // The blocks' entrance on scroll (§9.3): `@webxReveal`, `@webxReveal('stagger')`, and the
+        // block's own "no animation" as the second argument. Prints nothing while the theme says
+        // nothing, so a template that has it reads exactly as before.
+        Blade::directive('webxReveal', static fn (string $arguments = ''): string => sprintf('<?php echo app(%s)->attributes(%s); ?>', var_export(ThemeReveal::class, true), trim($arguments)));
+
+        // The accented words of a heading (§9.4): `@webxAccent($heading)` in place of `{{ $heading }}`.
+        // A heading without `==marks==` prints what the echo printed.
+        Blade::directive('webxAccent', static fn (string $arguments = ''): string => sprintf('<?php echo %s::heading(%s); ?>', '\\'.ThemeAccent::class, trim($arguments) !== '' ? trim($arguments) : 'null'));
 
         // Without a theme too: a template that names an icon still compiles, and prints an empty <svg>.
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-themes');

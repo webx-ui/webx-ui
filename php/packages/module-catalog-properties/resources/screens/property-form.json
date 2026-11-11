@@ -28,7 +28,7 @@
                 },
                 {
                   "id": "code",
-                  "type": "wx-input",
+                  "type": "wx-code",
                   "name": "code",
                   "label": "trans::webx-catalog-properties::property.code",
                   "help": "trans::webx-catalog-properties::property.code-help",
@@ -213,7 +213,7 @@
                 },
                 {
                   "id": "toggle-slug",
-                  "type": "wx-input",
+                  "type": "wx-code",
                   "name": "toggle_slug",
                   "label": "trans::webx-catalog-properties::property.toggle_slug",
                   "localized": true,

@@ -9,6 +9,19 @@ return [
     'empty-help' => 'Sitede bir sipariş verildiği anda burada görünür.',
     'order' => 'Sipariş',
     'statuses-cache' => 'Sipariş durumları',
+    'order-field' => [
+        'title' => 'Sipariş alanı',
+        'cache' => 'Sipariş alanları',
+        'key' => 'Anahtar',
+        'type' => 'Tür',
+        'place' => 'Yer',
+        'label' => 'Ad',
+        'hint' => 'İpucu',
+        'options' => 'Seçenekler',
+        'required' => 'Zorunlu',
+        'active' => 'Etkin',
+        'parent_id' => 'İşaretlenince göster',
+    ],
     'fields' => [
         'customer_first_name' => 'Ad',
         'customer_last_name' => 'Soyad',
@@ -18,6 +31,7 @@ return [
         'comment' => 'Müşteri yorumu',
         'manager_note' => 'Yönetici notu',
         'user_id' => 'Ziyaretçi',
+        'fields' => 'Ek alanlar',
     ],
     'milestones' => [
         'placed' => 'Verildi',

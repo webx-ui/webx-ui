@@ -11,4 +11,5 @@ return [
     'captcha-unused' => 'The form :form (:slug) has no captcha, and the site has keys for :providers',
     'spam-without-captcha' => 'The form :form (:slug) has no captcha and draws spam. In :days days, marked as spam: :spam, refused: :refused',
     'legacy-views' => 'The inbox form is overridden by a view from before the form engine: :path',
+    'steps-in-old-view' => 'The form :form (:slug) has steps, and the site’s view :path prints it on one page',
 ];

@@ -55,8 +55,22 @@ words large enough to read. Left empty, phones get the main picture, cropped.
 
 ## video
 
-By default phones, and visitors who asked for less motion, get the picture, and the video is not
-even loaded. A video cannot be saved without a picture. There is no separate video for phones.
+It plays without sound, in a loop, only while the banner is on screen, and the visitor can pause it
+with the button in the corner. Visitors who asked for less motion or save data get the picture, and
+the video is not even loaded. By default phones get the picture too. A video cannot be saved
+without a picture.
+
+## video-mobile
+
+A phone plays this one instead of the main video, so it can be shot upright and kept short and
+light. Without it, phones see the picture, unless the place is set to play the main video on
+phones as well.
+
+## poster
+
+What is seen before the first frame, and the whole banner where the video does not play. Pick a
+frame of the video with the same proportions as the picture, or the layers will stand on the wrong
+spot. Left empty, the picture is the poster.
 
 ## layers
 
@@ -89,6 +103,10 @@ with neither a label nor a link is dropped on saving.
 
 Where the button leads. Without it the button is not saved, and a link to a page lets the address
 of that page change without breaking the button.
+
+A brochure or a price list is «A file»: pick it from the media library, and tick «Download instead of
+opening» to have the browser save it under the name it was uploaded with. «Open in a new tab» keeps
+the banner's page open behind it. The same choice is in a «Button» layer.
 
 ## button-variant
 

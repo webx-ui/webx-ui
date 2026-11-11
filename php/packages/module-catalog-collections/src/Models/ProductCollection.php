@@ -14,12 +14,14 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use WebxUi\Admin\History\RecordsHistory;
+use WebxUi\Admin\Links\Link;
 use WebxUi\Admin\Screens\Types\LinkType;
 use WebxUi\Catalog\Facets\Facets;
 use WebxUi\Catalog\Filter\FacetSet;
 use WebxUi\Catalog\Filter\FilterState;
 use WebxUi\Catalog\Models\Category;
 use WebxUi\Catalog\Models\Product;
+use WebxUi\Localization\HasCodes;
 use WebxUi\Localization\HasTranslations;
 use WebxUi\Localization\Locales;
 use WebxUi\Localization\Slug;
@@ -56,6 +58,7 @@ use WebxUi\Localization\Slug;
  */
 class ProductCollection extends Model
 {
+    use HasCodes;
     use HasTranslations;
     use RecordsHistory;
     use SoftDeletes;
@@ -90,6 +93,9 @@ class ProductCollection extends Model
 
     /** The ways of printing one (§5.4). */
     public const VIEWS = [self::GRID, self::CAROUSEL];
+
+    /** The link «All products» as the screen draws it (`collection-form.json`): a file of the library is a target. */
+    private const LINK_NODE = ['type' => 'wx-link', 'props' => ['files' => true]];
 
     /** `attention`: a value of the set was deleted (§3.5). Saving the form clears it. */
     public const VALUE_DELETED = 'value-deleted';
@@ -132,6 +138,17 @@ class ProductCollection extends Model
             'link' => 'array',
             'is_enabled' => 'boolean',
         ];
+    }
+
+    /**
+     * The key is brought to its shape rather than refused (#125): «Летние шины» is kept as
+     * `letnie-shiny` before {@see settleKey()} looks at it, whatever door it came in by.
+     *
+     * @return array<string, array{max: int}>
+     */
+    protected static function codes(): array
+    {
+        return ['key' => ['max' => self::KEY_LENGTH]];
     }
 
     protected static function booted(): void
@@ -242,8 +259,10 @@ class ProductCollection extends Model
     }
 
     /**
-     * Made from the title when none is given, and fixed from then on: it lives in templates and
-     * texts, where nobody would change it (§2.2). A key in the bin is as taken as any other; only
+     * Made from the title when none is given — or when what was typed left nothing, `!!!` — and
+     * fixed from then on: it lives in templates and texts, where nobody would change it (§2.2).
+     * A key sent again as it was typed (`Popular` for `popular`) is brought to itself and is
+     * no change. A key in the bin is as taken as any other; only
      * deleting the collection for good frees it.
      */
     private function settleKey(): void
@@ -323,6 +342,10 @@ class ProductCollection extends Model
      * The link as `wx-link` keeps it, by the same reading as a block's, or nothing. Checked when it
      * is written: a link to a module that has gone since must not stop a repair of the set, which
      * would take the deletion of a brand down with it.
+     *
+     * A file of the library is a target, as on the screen (`props.files`). A key the library does
+     * not have is refused only when the collection did not point at it before: a brochure deleted
+     * since must not stop a save, a key nobody ever had is one typed rather than picked.
      */
     private function settleLink(): void
     {
@@ -331,13 +354,25 @@ class ProductCollection extends Model
         }
 
         $type = Container::getInstance()->make(LinkType::class);
-        $checks = Validator::make(['link' => $this->link], ['link' => $type->rules([])]);
+        $checks = Validator::make(['link' => $this->link], ['link' => $type->rules(self::LINK_NODE)]);
 
         if ($checks->fails()) {
             throw ValidationException::withMessages(['link' => [(string) $checks->errors()->first('link')]]);
         }
 
-        $stored = $type->store($this->link, []);
+        $was = $this->exists ? $this->getOriginal('link') : null;
+        $path = is_array($this->link) ? Link::fromArray($this->link)->path : null;
+        $held = is_array($was) ? Link::fromArray($was)->path : null;
+
+        if ($path !== null && $path !== $held) {
+            $problem = $type->newValueProblems($this->link, self::LINK_NODE)[0] ?? null;
+
+            if ($problem !== null) {
+                throw ValidationException::withMessages(['link' => [$problem]]);
+            }
+        }
+
+        $stored = $type->store($this->link, self::LINK_NODE);
         $this->link = is_array($stored) ? $stored : null;
     }
 

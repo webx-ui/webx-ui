@@ -45,7 +45,7 @@ final class HelperTest extends TestCase
 
         $this->assertIsArray($card);
         $this->assertSame(
-            ['id', 'anchor', 'place', 'title', 'text', 'image', 'image_mobile', 'video', 'buttons', 'fields', 'layers', 'ratio', 'ratio_mobile'],
+            ['id', 'anchor', 'place', 'title', 'text', 'image', 'image_mobile', 'video', 'video_mobile', 'poster', 'buttons', 'fields', 'layers', 'ratio', 'ratio_mobile'],
             array_keys($card),
         );
         $this->assertSame($banner->id, $card['id']);
@@ -60,8 +60,8 @@ final class HelperTest extends TestCase
         $this->assertSame(['url', 'mime'], array_keys((array) $card['video']));
         $this->assertSame('video/mp4', $card['video']['mime']);
         $this->assertSame([
-            ['label' => 'Book now', 'url' => $page->url('en'), 'new_tab' => false, 'rel' => null, 'variant' => 'primary'],
-            ['label' => 'Prices', 'url' => 'https://example.org/prices', 'new_tab' => true, 'rel' => 'nofollow noopener noreferrer', 'variant' => 'link'],
+            ['label' => 'Book now', 'url' => $page->url('en'), 'new_tab' => false, 'rel' => null, 'download' => null, 'variant' => 'primary'],
+            ['label' => 'Prices', 'url' => 'https://example.org/prices', 'new_tab' => true, 'rel' => 'nofollow noopener noreferrer', 'download' => null, 'variant' => 'link'],
         ], $card['buttons']);
         $this->assertSame(['badge' => 'New'], $card['fields']);
     }

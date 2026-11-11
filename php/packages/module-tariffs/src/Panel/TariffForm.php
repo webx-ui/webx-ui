@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace WebxUi\Tariffs\Panel;
 
+use Illuminate\Contracts\Validation\Factory as ValidationFactory;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Validation\ValidationException;
 use WebxUi\Admin\Links\Link;
+use WebxUi\Admin\Screens\ChecksNewValues;
+use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRecord;
 use WebxUi\Localization\Locales;
 use WebxUi\Tariffs\Currencies;
@@ -56,12 +59,17 @@ final class TariffForm
     /** The longest line of "what is included". */
     public const FEATURE_MAX = 255;
 
+    /** The button's link as the screen draws it (`form.json`): a file of the library is a target. */
+    private const LINK_NODE = ['type' => 'wx-link', 'props' => ['allowNone' => false, 'files' => true]];
+
     public function __construct(
         private readonly ScreenRecord $record,
         private readonly Locales $locales,
         private readonly ConnectionInterface $db,
         private readonly Currencies $currencies,
         private readonly Variants $variants,
+        private readonly FieldTypes $types,
+        private readonly ValidationFactory $validator,
     ) {}
 
     /**
@@ -162,14 +170,14 @@ final class TariffForm
      * What the screen cannot check, checked first — and the input tidied for the screen: a
      * currency or a look this tariff already has, taken out of the config since, is kept as it is
      * and never shown to the check of the select (decisions 11 and 15); empty rows of the list are
-     * dropped.
+     * dropped. Public for an agent's `dry_run`, which is refused for what a write would be.
      *
      * @param  array<string, mixed>  $input
      * @return array<string, mixed>
      *
      * @throws ValidationException
      */
-    private function check(Tariff $tariff, array $input): array
+    public function check(Tariff $tariff, array $input): array
     {
         $errors = [];
 
@@ -209,6 +217,12 @@ final class TariffForm
 
         if ($this->labelled($tariff, $input) && ! $this->linked($tariff, $input)) {
             $errors['button_link'] = [(string) __('webx-tariffs::errors.button-link')];
+        } elseif (array_key_exists('button_link', $input)) {
+            $problem = $this->linkProblem($input['button_link'], $tariff->button_link);
+
+            if ($problem !== null) {
+                $errors['button_link'] = [$problem];
+            }
         }
 
         if ($errors !== []) {
@@ -324,6 +338,35 @@ final class TariffForm
         $link = array_key_exists('button_link', $input) ? $input['button_link'] : $tariff->button_link;
 
         return is_array($link) && ! Link::fromArray($link)->isEmpty();
+    }
+
+    /**
+     * What the link field says of the button's link — null when it takes it. A file the library
+     * does not have is refused only when it is not the one the tariff already points at: a
+     * brochure deleted since must not stop the tariff from being saved again (the button then
+     * drops out on the site), while a key nobody ever had is one typed rather than picked.
+     */
+    private function linkProblem(mixed $link, mixed $held): ?string
+    {
+        $type = $this->types->get('wx-link');
+        $label = (string) __('webx-tariffs::screen.button-link');
+        $validator = $this->validator->make(['value' => $link], ['value' => $type?->rules(self::LINK_NODE) ?? []], [], ['value' => $label]);
+
+        if ($validator->fails()) {
+            return (string) $validator->errors()->first('value');
+        }
+
+        if (! $type instanceof ChecksNewValues || ! is_array($link) || $link === $held) {
+            return null;
+        }
+
+        $path = Link::fromArray($link)->path;
+
+        if ($path !== null && is_array($held) && Link::fromArray($held)->path === $path) {
+            return null;
+        }
+
+        return $type->newValueProblems($link, self::LINK_NODE)[0] ?? null;
     }
 
     private function write(Tariff $tariff, string $field, mixed $value): void

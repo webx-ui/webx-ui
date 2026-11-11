@@ -1,0 +1,45 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests;
+
+use Illuminate\Foundation\Application;
+use Orchestra\Testbench\TestCase as Orchestra;
+use Site\Offices\OfficesServiceProvider;
+use WebxUi\Admin\AdminServiceProvider;
+use WebxUi\Auth\AuthServiceProvider;
+use WebxUi\Localization\LocalizationServiceProvider;
+use WebxUi\Mcp\McpServiceProvider;
+
+/**
+ * The site's `Tests\TestCase`, on Testbench: a site has Composer discover the providers, and
+ * here they are named — the skeleton's two packages, what they bring, and the module.
+ */
+abstract class TestCase extends Orchestra
+{
+    /**
+     * @param  Application  $app
+     * @return list<class-string>
+     */
+    protected function getPackageProviders($app): array
+    {
+        return [
+            LocalizationServiceProvider::class,
+            AdminServiceProvider::class,
+            McpServiceProvider::class,
+            AuthServiceProvider::class,
+            OfficesServiceProvider::class,
+        ];
+    }
+
+    /**
+     * @param  Application  $app
+     */
+    protected function defineEnvironment($app): void
+    {
+        $app['config']->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
+        $app['config']->set('cache.default', 'array');
+        $app['config']->set('webx-localization.cache.enabled', false);
+    }
+}

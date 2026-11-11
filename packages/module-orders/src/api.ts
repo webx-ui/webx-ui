@@ -4,6 +4,9 @@ import type {
   BuyerEvents,
   NotifyPreview,
   CancelConsequences,
+  CheckoutFieldConsequences,
+  CheckoutFieldInput,
+  CheckoutFieldsData,
   MassCancelAnswer,
   MassStatusAnswer,
   MoveConsequences,
@@ -119,6 +122,8 @@ export interface OrdersApi {
   previewCancel(id: number): Promise<CancelConsequences>
   cancel(id: number, reason: string): Promise<OrderDetail>
   saveDetails(id: number, values: ScreenModel): Promise<OrderDetail>
+  /** The extra fields named, `key => value | null` — null, '' or false clears a row (§6.1). */
+  saveFields(id: number, fields: Record<string, boolean | string | null>): Promise<OrderDetail>
   previewRefund(id: number, input: RefundInput): Promise<RefundPreview>
   refund(id: number, input: RefundInput): Promise<OrderDetail>
   /** What reversing a refund record does (decision 98) — nothing is written. */
@@ -153,6 +158,16 @@ export interface OrdersApi {
   restoreStage(id: number): Promise<StatusBoardData>
   previewArrange(arrangement: StatusArrangement): Promise<StatusConsequences>
   arrange(arrangement: StatusArrangement): Promise<StatusBoardData>
+  /** The extra fields of the checkout (ORDER_FIELDS §7.3), behind `orders.checkout.settings`. */
+  checkoutFields(): Promise<CheckoutFieldsData>
+  previewCheckoutField(
+    id: number | null,
+    input: CheckoutFieldInput,
+  ): Promise<CheckoutFieldConsequences>
+  saveCheckoutField(id: number | null, input: CheckoutFieldInput): Promise<CheckoutFieldsData>
+  previewRemoveCheckoutField(id: number): Promise<CheckoutFieldConsequences>
+  removeCheckoutField(id: number): Promise<CheckoutFieldsData>
+  arrangeCheckoutFields(keys: string[]): Promise<CheckoutFieldsData>
   settings(): Promise<OrdersSettings>
   saveSettings(values: ScreenModel): Promise<OrdersSettings>
   /** Customers to link the order to (§13.3), by a part of the name, the e-mail or the phone. */
@@ -231,6 +246,8 @@ export function createOrdersApi(admin: AdminContext): OrdersApi {
       admin.http.post<{ data: OrderDetail }>(`${base}/${id}/cancel`, { reason }).then(data),
     saveDetails: (id, values) =>
       admin.http.put<{ data: OrderDetail }>(`${base}/${id}/details`, { values }).then(data),
+    saveFields: (id, fields) =>
+      admin.http.put<{ data: OrderDetail }>(`${base}/${id}/details`, { fields }).then(data),
     previewRefund: (id, input) =>
       admin.http
         .post<{ data: RefundPreview }>(`${base}/${id}/refunds`, refundBody(input, true))
@@ -328,6 +345,36 @@ export function createOrdersApi(admin: AdminContext): OrdersApi {
         .then(data),
     arrange: (arrangement) =>
       admin.http.put<{ data: StatusBoardData }>(`${base}/statuses/arrange`, arrangement).then(data),
+    checkoutFields: () =>
+      admin.http.get<{ data: CheckoutFieldsData }>(`${base}/checkout-fields`).then(data),
+    previewCheckoutField: (id, input) =>
+      (id === null
+        ? admin.http.post<{ data: CheckoutFieldConsequences }>(`${base}/checkout-fields`, {
+            ...input,
+            dry_run: true,
+          })
+        : admin.http.put<{ data: CheckoutFieldConsequences }>(`${base}/checkout-fields/${id}`, {
+            ...input,
+            dry_run: true,
+          })
+      ).then(data),
+    saveCheckoutField: (id, input) =>
+      (id === null
+        ? admin.http.post<{ data: CheckoutFieldsData }>(`${base}/checkout-fields`, input)
+        : admin.http.put<{ data: CheckoutFieldsData }>(`${base}/checkout-fields/${id}`, input)
+      ).then(data),
+    previewRemoveCheckoutField: (id) =>
+      admin.http
+        .delete<{ data: CheckoutFieldConsequences }>(`${base}/checkout-fields/${id}`, {
+          query: { dry_run: 1 },
+        })
+        .then(data),
+    removeCheckoutField: (id) =>
+      admin.http.delete<{ data: CheckoutFieldsData }>(`${base}/checkout-fields/${id}`).then(data),
+    arrangeCheckoutFields: (keys) =>
+      admin.http
+        .put<{ data: CheckoutFieldsData }>(`${base}/checkout-fields/arrange`, { keys })
+        .then(data),
     settings: () => admin.http.get<{ data: OrdersSettings }>(`${base}/settings`).then(data),
     saveSettings: (values) =>
       admin.http.put<{ data: OrdersSettings }>(`${base}/settings`, { values }).then(data),

@@ -19,6 +19,15 @@ describe('WxCol', () => {
     expect(style).toContain('--wx-col-span-lg: 8')
   })
 
+  it('writes the narrow xs breakpoint like the others', () => {
+    const style = mount(WxCol, { props: { span: 24, xs: { span: 12, offset: 0 } } }).attributes(
+      'style',
+    )
+
+    expect(style).toContain('--wx-col-span-xs: 12')
+    expect(style).toContain('--wx-col-offset-xs: 0')
+  })
+
   it('takes a span and an offset together at one breakpoint', () => {
     const wrapper = mount(WxCol, { props: { span: 12, offset: 6, lg: { span: 8, offset: 2 } } })
     const style = wrapper.attributes('style')

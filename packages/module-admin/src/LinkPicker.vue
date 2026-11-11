@@ -2,6 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import {
   WxAutocomplete,
+  WxButton,
   WxCheckbox,
   WxInput,
   WxSegmented,
@@ -13,6 +14,7 @@ import {
 } from '@webx-ui/core'
 import { useAdmin } from './admin'
 import { useI18n, useTranslate } from './i18n'
+import type { PickedFile } from './types'
 import {
   createLinksApi,
   emptyLink,
@@ -44,9 +46,15 @@ const props = withDefaults(
     allowNone?: boolean
     /** Off where the two attributes are somebody else's business, as in a menu item's own form. */
     attributes?: boolean
+    /**
+     * A file of the media library as a fourth target. Off by default: a menu item keeps its link
+     * in columns with nowhere to put a file key, and the server refuses one unless the field asks.
+     * Offered only when a module installed here has a library to pick from.
+     */
+    files?: boolean
     disabled?: boolean
   }>(),
-  { allowNone: true, attributes: true, disabled: false },
+  { allowNone: true, attributes: true, files: false, disabled: false },
 )
 
 const value = defineModel<LinkValue | null>({ default: null })
@@ -82,11 +90,25 @@ let echo: string | null = null
 
 const link = computed<LinkValue>(() => value.value ?? emptyLink())
 
+/** The file behind a `file` link, once the library has said what it is called. */
+const file = ref<PickedFile | null>(null)
+
+/** The saved key is one the library no longer has. */
+const fileGone = ref(false)
+
+const canPickFile = computed(() => props.files && Boolean(admin.pickFile))
+
 const targets = computed(() => {
   const options = [
     { value: 'entity', label: t('links.target-entity') },
     { value: 'url', label: t('links.target-url') },
   ]
+
+  // A saved file link keeps its tab even where nothing can pick a new one: hiding the kind the
+  // value is would leave the segmented control with nothing selected.
+  if (canPickFile.value || link.value.target === 'file') {
+    options.push({ value: 'file', label: t('links.target-file') })
+  }
 
   return props.allowNone ? [...options, { value: 'none', label: t('links.target-none') }] : options
 })
@@ -119,8 +141,73 @@ onMounted(async () => {
   // The section the value already names, so opening a saved link lands in the right list.
   section.value = link.value.entity_type ?? sources.value[0]?.type ?? null
 
-  await Promise.all([restore(), loadRoutes()])
+  await Promise.all([restore(), loadRoutes(), restoreFile()])
 })
+
+watch(
+  () => link.value.path ?? null,
+  () => {
+    void restoreFile()
+  },
+)
+
+/** The name of the saved file, asked of the library the way the entity's title is asked above. */
+async function restoreFile(): Promise<void> {
+  const path = link.value.path ?? null
+
+  if (path === null) {
+    file.value = null
+    fileGone.value = false
+
+    return
+  }
+
+  if (file.value?.path === path) {
+    return
+  }
+
+  const describe = admin.describeFile
+
+  // Without a library nothing can be said about the key; the field shows it as it is.
+  if (!describe) {
+    file.value = null
+    fileGone.value = false
+
+    return
+  }
+
+  const found = await describe(path)
+
+  file.value = found
+  fileGone.value = found === null
+}
+
+async function chooseFile(): Promise<void> {
+  const pick = admin.pickFile
+
+  if (!pick) {
+    return
+  }
+
+  const chosen = await pick()
+
+  if (chosen === null) {
+    return
+  }
+
+  file.value = chosen
+  fileGone.value = false
+  value.value = {
+    ...link.value,
+    target: 'file',
+    path: chosen.path,
+    download: link.value.download ?? false,
+  }
+}
+
+function setDownload(on: boolean): void {
+  value.value = { ...link.value, download: on }
+}
 
 /*
  * What a saved value cannot carry: the title of the thing it points at. Asked for once, on open,
@@ -312,12 +399,30 @@ const REL: LinkRel[] = ['nofollow', 'sponsored', 'ugc']
       />
     </div>
 
+    <div v-else-if="link.target === 'file'" class="wx-link-picker__file">
+      <wx-text v-if="fileGone" size="sm" tone="danger">{{ t('links.file-gone') }}</wx-text>
+      <wx-text v-else-if="file" class="wx-link-picker__file-name">{{ file.name }}</wx-text>
+      <wx-text v-else-if="link.path" size="sm" tone="muted" class="wx-link-picker__file-name">
+        {{ link.path }}
+      </wx-text>
+      <wx-button v-if="canPickFile" size="sm" :disabled="props.disabled" @click="chooseFile">
+        {{ link.path ? t('links.file-replace') : t('links.file-choose') }}
+      </wx-button>
+      <wx-checkbox
+        :model-value="link.download ?? false"
+        :disabled="props.disabled"
+        @update:model-value="(on: boolean) => setDownload(on)"
+      >
+        {{ t('links.file-download') }}
+      </wx-checkbox>
+    </div>
+
     <!--
       The anchor belongs to both kinds of target: an address can carry one inline, a chosen page
       has nowhere else to put one. The `#` is drawn rather than typed, so what is in the field is
       the name and nothing else.
     -->
-    <label v-if="link.target !== 'none'" class="wx-link-picker__hash">
+    <label v-if="link.target === 'entity' || link.target === 'url'" class="wx-link-picker__hash">
       <wx-text size="sm" tone="muted">{{ t('links.hash') }}</wx-text>
       <span class="wx-link-picker__sign" aria-hidden="true">#</span>
       <wx-input
@@ -402,6 +507,19 @@ const REL: LinkRel[] = ['nofollow', 'sponsored', 'ugc']
 
 .wx-link-picker__hash > :first-child {
   grid-column: 1 / -1;
+}
+
+/* The name, the button and the switch in a column: the name of a long PDF wraps rather than
+   pushing the button out of a narrow editing column. */
+.wx-link-picker__file {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--wx-space-8);
+}
+
+.wx-link-picker__file-name {
+  overflow-wrap: anywhere;
 }
 
 .wx-link-picker__sign {

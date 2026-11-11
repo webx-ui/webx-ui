@@ -1,0 +1,65 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Site\{{ Studly }}\Demo;
+
+use Illuminate\Filesystem\Filesystem;
+use RuntimeException;
+use Site\{{ Studly }}\Models\{{ Model }};
+use WebxUi\Admin\Demo\DemoLedger;
+use WebxUi\Localization\Locales;
+
+/**
+ * Three {{ models }} from `resources/demo/{{ id }}.json`, for `php artisan webx:demo --module={{ id }}`.
+ *
+ * Every row goes into the ledger, so `webx:demo --remove` takes back exactly what was put here and
+ * nothing anybody wrote beside it. Only the languages the site has are written.
+ */
+final class {{ Studly }}Demo
+{
+    public function __construct(
+        private readonly Filesystem $files,
+        private readonly Locales $locales,
+    ) {}
+
+    public function seed(DemoLedger $ledger): void
+    {
+        // A list with anything in it is somebody's list.
+        if ({{ Model }}::query()->exists()) {
+            return;
+        }
+
+        $codes = $this->locales->codes();
+
+        foreach ($this->rows() as $row) {
+            $title = array_filter(
+                is_array($row['title'] ?? null) ? $row['title'] : [],
+                static fn (mixed $text, mixed $locale): bool => is_string($text) && in_array($locale, $codes, true),
+                ARRAY_FILTER_USE_BOTH,
+            );
+
+            // The default language at least: a row nobody can name in the list is not a demo.
+            $default = $this->locales->defaultCode();
+            $title[$default] ??= (string) ($row['title']['en'] ?? '');
+
+            $record = {{ Model }}::query()->create(['title' => $title]);
+            $ledger->created($record, $record->titleIn($default));
+        }
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function rows(): array
+    {
+        $path = __DIR__.'/../../resources/demo/{{ id }}.json';
+        $decoded = json_decode((string) $this->files->get($path), true);
+
+        if (! is_array($decoded) || ! is_array($decoded['rows'] ?? null)) {
+            throw new RuntimeException("{$path} has no list of rows.");
+        }
+
+        return array_values(array_filter($decoded['rows'], is_array(...)));
+    }
+}

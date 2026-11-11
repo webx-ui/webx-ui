@@ -10,7 +10,7 @@ return [
     'new' => 'Novo local',
     'title' => 'Nome',
     'key' => 'Chave',
-    'key-help' => 'O que o modelo do site pede: letras latinas minúsculas, algarismos e hífens, começando por uma letra. Não pode ser alterada depois.',
+    'key-help' => 'O que o modelo do site pede, por exemplo «sidebar»: o que se escreve torna-se uma chave sozinho. Não pode ser alterada depois.',
     'declared' => 'Declarado na configuração',
     'in-template' => 'Num modelo: banners(\':key\')',
     'count' => 'Banners',

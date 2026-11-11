@@ -46,5 +46,11 @@ return [
             'why' => 'Per ora funziona: il modulo le passa i dati di prima e serve il vecchio script. Una versione successiva lo toglie, e i moduli di quella vista smettono di inviarsi senza ricaricare e perdono il captcha.',
             'fix' => 'Elimini la copia del sito per avere il modulo del pacchetto, oppure la riscriva attorno a <x-webx-form> e <x-webx-field>; cambi lo stile dei campi con webx-field-* e webx-form-* invece di wx-form-* (la tabella delle classi è nella guida delle richieste).',
         ],
+        'steps_in_old_view' => [
+            'title' => 'Un modulo a passi mostrato su una sola pagina',
+            'found' => 'Un modulo ha dei passi, e il sito sostituisce il modulo inbox con un proprio form.blade.php che stampa solo $controls, senza i passi.',
+            'why' => 'Il modulo funziona, come una pagina lunga — come lo vede una pagina senza JavaScript — e il server controlla e conserva ciò che ha sempre fatto. Ma il visitatore non vede mai i passi messi dall’editor.',
+            'fix' => 'Elimina la copia del sito per avere il modulo del pacchetto, oppure stampa $steps al suo interno: un <x-webx-form.step> attorno ai campi di ogni passo, steps e :check su <x-webx-form> (la guida di inbox mostra come).',
+        ],
     ],
 ];

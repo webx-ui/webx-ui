@@ -10,9 +10,12 @@ use WebxUi\Admin\Screens\ScreenRegistry;
 /**
  * What is wrong with the help of the screens loaded right now (WEBX_UI_PANEL_HELP.md §6.2).
  *
- * One walk for two readers. A package's `HelpCoverageTest` is `strict`: three languages, and a
+ * One walk for three readers. A package's `HelpCoverageTest` is `strict`: three languages, and a
  * field belongs to one package. `webx:help --check` on a real site is not, because a project may
- * write one language and may describe a field of a package over it (§2.4).
+ * write one language and may describe a field of a package over it (§2.4). A module of the site
+ * ({@see problemsOf()}) is strict about its own folder and its own screens only, in English and the
+ * languages of the site's panel: its test runs on the site with every package loaded beside it,
+ * and their help is not its business (WEBX_UI_SITE_MODULES.md §10).
  *
  * A screen is judged with everything allowed, so a field behind a permission counts. What must be
  * described is what this site has; what may be described is what any site has, so a text stays
@@ -36,20 +39,58 @@ final readonly class HelpAudit
      */
     public function problems(?string $guides = null, bool $strict = false): array
     {
-        $files = $this->files($problems);
+        return $this->walk($this->help->directories(), $this->screens->names(), self::LANGUAGES, $guides, $strict);
+    }
 
-        foreach ($files as $languages) {
-            foreach ($languages as $parts) {
+    /**
+     * The help of one folder and the screens it answers for — a module of the site. Strict, as a
+     * package's test is, but in English and the given languages only: a language the site's panel
+     * does not speak is not required, and a file in one is not read.
+     *
+     * @param  list<string>  $screens  The screens the folder owns ({@see ScreenRegistry::registeredFrom()}).
+     * @param  list<string>  $languages  The languages besides English, as `webx-localization.panel` lists them.
+     * @return list<string> One line per problem; empty is healthy.
+     */
+    public function problemsOf(string $directory, array $screens, array $languages): array
+    {
+        $languages = array_values(array_unique([HelpRegistry::FALLBACK, ...$languages]));
+
+        // The provider says `__DIR__.'/../resources/help'`, the test says where the folder is.
+        $real = realpath($directory) ?: rtrim($directory, '/');
+        $registered = array_values(array_filter(
+            $this->help->directories(),
+            static fn (string $known): bool => (realpath($known) ?: $known) === $real,
+        ));
+
+        if ($registered === []) {
+            return ["{$directory}: the folder is not registered, nothing reads it — HelpRegistry::directory() in the provider"];
+        }
+
+        return $this->walk($registered, $screens, $languages, null, true);
+    }
+
+    /**
+     * @param  list<string>  $directories
+     * @param  list<string>  $screens
+     * @param  list<string>  $languages  English first.
+     * @return list<string>
+     */
+    private function walk(array $directories, array $screens, array $languages, ?string $guides, bool $strict): array
+    {
+        $files = $this->files($directories, $languages, $problems);
+
+        foreach ($files as $parsed) {
+            foreach ($parsed as $parts) {
                 foreach ($parts as $file) {
                     array_push($problems, ...$this->markup($file));
                 }
             }
 
             if ($strict) {
-                array_push($problems, ...$this->languages($languages));
+                array_push($problems, ...$this->languages($parsed, $languages));
             }
 
-            array_push($problems, ...$this->guides($languages[HelpRegistry::FALLBACK] ?? [], $guides));
+            array_push($problems, ...$this->guides($parsed[HelpRegistry::FALLBACK] ?? [], $guides));
         }
 
         if ($strict) {
@@ -61,8 +102,8 @@ final readonly class HelpAudit
             return $problems;
         }
 
-        foreach ($this->screens->names() as $name) {
-            array_push($problems, ...$this->screen($name));
+        foreach ($screens as $name) {
+            array_push($problems, ...$this->screen($name, $languages));
         }
 
         array_push($problems, ...$this->pages($files, $strict));
@@ -75,22 +116,24 @@ final readonly class HelpAudit
     }
 
     /**
-     * Every file of the three languages, parsed, by directory, language and name. What cannot be
-     * parsed is a problem and an empty place, so the rest of the walk still sees the others.
+     * Every file of the languages, parsed, by directory, language and name. What cannot be parsed
+     * is a problem and an empty place, so the rest of the walk still sees the others.
      *
+     * @param  list<string>  $directories
+     * @param  list<string>  $languages
      * @param  list<string>|null  $problems
      *
      * @param-out list<string>  $problems
      *
      * @return array<string, array<string, array<string, HelpFile|null>>>
      */
-    private function files(?array &$problems): array
+    private function files(array $directories, array $languages, ?array &$problems): array
     {
         $problems = [];
         $files = [];
 
-        foreach ($this->help->directories() as $directory) {
-            foreach (self::LANGUAGES as $language) {
+        foreach ($directories as $directory) {
+            foreach ($languages as $language) {
                 $folder = $directory.'/'.$language;
 
                 foreach (is_dir($folder) ? (glob($folder.'/*.md') ?: []) : [] as $path) {
@@ -162,18 +205,19 @@ final readonly class HelpAudit
     }
 
     /**
-     * `en` is the reference of what exists, and the other two follow it (§2.5). On a page with no
+     * `en` is the reference of what exists, and the others follow it (§2.5). On a page with no
      * tree a heading is the words of a label, so only their number can be compared.
      *
      * @param  array<string, array<string, HelpFile|null>>  $languages
+     * @param  list<string>  $required
      * @return list<string>
      */
-    private function languages(array $languages): array
+    private function languages(array $languages, array $required): array
     {
         $problems = [];
         $english = $languages[HelpRegistry::FALLBACK] ?? [];
 
-        foreach (self::LANGUAGES as $language) {
+        foreach ($required as $language) {
             if ($language === HelpRegistry::FALLBACK) {
                 continue;
             }
@@ -287,9 +331,10 @@ final readonly class HelpAudit
     }
 
     /**
+     * @param  list<string>  $languages
      * @return list<string>
      */
-    private function screen(string $name): array
+    private function screen(string $name, array $languages): array
     {
         $page = $this->help->page($name, HelpRegistry::FALLBACK);
 
@@ -309,7 +354,7 @@ final readonly class HelpAudit
             $problems[] = "{$name}: [{$id}] is described, and the screen has no such field";
         }
 
-        foreach (self::LANGUAGES as $language) {
+        foreach ($languages as $language) {
             $translated = $this->help->page($name, $language);
 
             foreach ($translated === null ? [] : $this->fields($translated, $language) as $field) {

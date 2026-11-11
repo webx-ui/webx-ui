@@ -11,8 +11,10 @@ use WebxUi\Orders\Checkout\ContactMask;
 use WebxUi\Orders\Checkout\Events\CheckoutPayableChanged;
 use WebxUi\Orders\Checkout\Events\CheckoutPlaced;
 use WebxUi\Orders\Checkout\Events\CheckoutStepSaved;
+use WebxUi\Orders\Checkout\FieldPlaces;
 use WebxUi\Orders\Checkout\Models\CheckoutDraft;
 use WebxUi\Orders\Models\Order;
+use WebxUi\Orders\OrderFields;
 use WebxUi\Orders\OrderSettings;
 use WebxUi\Orders\Tests\Checkout\UsesFakeSlots;
 use WebxUi\Orders\Tests\Checkout\VisitsCheckout;
@@ -22,7 +24,8 @@ use WebxUi\Settings\SettingsServiceProvider;
 /**
  * The checkout for an agent (spec §30, §32): the trial confirmation answers what the page's
  * `place` answers, a draft's contacts come masked, the tab «Checkout» is its own permission and its
- * dry run keeps nothing, and the funnel counts what the page's events say.
+ * dry run keeps nothing, and the funnel counts what the page's events say. The extra fields: the
+ * preview says which are shown and filled and never what was answered, the steps name their places.
  */
 final class CheckoutToolsTest extends McpTestCase
 {
@@ -111,6 +114,71 @@ final class CheckoutToolsTest extends McpTestCase
         $delivery = self::pick($steps, 'key', 'delivery');
         $this->assertSame(['slot', false, 'no shippable lines in the cart'], [$delivery['kind'], $delivery['shown'], $delivery['why_not']]);
         $this->assertTrue(self::pick($steps, 'key', 'payment')['shown']);
+    }
+
+    #[Test]
+    public function the_preview_says_which_fields_are_shown_and_filled_never_what_was_answered(): void
+    {
+        $this->extraFields();
+        $cart = $this->cart();
+
+        // Nothing answered: the checkbox unticked hides the field behind it; the required list stops the order.
+        $preview = $this->preview($cart);
+        $this->assertSame([
+            ['key' => 'for_company', 'place' => FieldPlaces::CONTACTS, 'required' => false, 'shown' => true, 'filled' => false],
+            ['key' => 'company_name', 'place' => FieldPlaces::CONTACTS, 'required' => true, 'shown' => false, 'filled' => false],
+            ['key' => 'delivery_time', 'place' => FieldPlaces::BEFORE_COMMENT, 'required' => true, 'shown' => true, 'filled' => false],
+            ['key' => 'no_callback', 'place' => FieldPlaces::AFTER_COMMENT, 'required' => false, 'shown' => true, 'filled' => false],
+        ], $preview['fields']);
+        $this->assertSame('invalid', $preview['outcome']);
+        $this->assertArrayHasKey('fields.delivery_time', $preview['errors']);
+        $this->assertSame('fields.required', self::pick(self::pick($preview['steps'], 'key', 'comment')['errors'], 'field', 'fields.delivery_time')['code']);
+
+        $this->visit($cart, '/checkout/steps/contacts', [
+            'customer' => ['first_name' => 'Buyer', 'last_name' => 'Aster', 'phone' => '+800 1234 5678', 'email' => 'buyer@example.com'],
+            'fields' => ['for_company' => '1', 'company_name' => 'Company A'],
+        ])->assertRedirect();
+        $this->visit($cart, '/checkout/steps/comment', ['fields' => ['delivery_time' => 'evening']])->assertRedirect();
+
+        $preview = $this->preview($cart);
+        $this->assertSame('order', $preview['outcome']);
+        $this->assertSame([true, true, true, true], array_column($preview['fields'], 'shown'));
+        $this->assertSame([true, true, true, false], array_column($preview['fields'], 'filled'));
+
+        // A draft is a person who has not ordered yet: no answer of theirs comes out (§8.3).
+        $json = (string) json_encode($preview);
+        foreach (['Company A', 'evening', '18:00'] as $answer) {
+            $this->assertStringNotContainsString($answer, $json);
+        }
+        $this->assertStringNotContainsString('Company A', (string) json_encode($this->ask('orders_checkout_drafts_list')));
+    }
+
+    #[Test]
+    public function the_steps_name_their_places_and_why_the_block_additional_is_shown(): void
+    {
+        $this->extraFields();
+        $cart = $this->cart();
+
+        $steps = $this->ask('orders_checkout_steps', ['cart_id' => $cart->cart->id])['steps'];
+        $this->assertSame([['key' => FieldPlaces::CONTACTS, 'fields' => 2]], self::pick($steps, 'key', 'contacts')['field_places']);
+        $comment = self::pick($steps, 'key', 'comment');
+        $this->assertSame([['key' => FieldPlaces::BEFORE_COMMENT, 'fields' => 1], ['key' => FieldPlaces::AFTER_COMMENT, 'fields' => 1]], $comment['field_places']);
+        $this->assertSame([true, null], [$comment['shown'], $comment['note']]);
+
+        // The comment switched off: the block stays for its fields, and says so.
+        $this->app->make(Settings::class)->save(['orders.checkout.comment' => 'off']);
+        $comment = self::pick($this->ask('orders_checkout_steps', ['cart_id' => $cart->cart->id])['steps'], 'key', 'comment');
+        $this->assertTrue($comment['shown']);
+        $this->assertSame('shown for its extra fields alone: the comment is switched off in the settings', $comment['note']);
+
+        // Neither a comment nor a field: the block is gone, and the reason is said.
+        $fields = $this->app->make(OrderFields::class);
+        $fields->remove($fields->all()->firstWhere('key', 'no_callback'));
+        $fields->remove($fields->all()->firstWhere('key', 'delivery_time'));
+        $comment = self::pick($this->ask('orders_checkout_steps', ['cart_id' => $cart->cart->id])['steps'], 'key', 'comment');
+        $this->assertSame([[FieldPlaces::BEFORE_COMMENT, 0], [FieldPlaces::AFTER_COMMENT, 0]], array_map(static fn (array $place): array => [$place['key'], $place['fields']], $comment['field_places']));
+        $this->assertSame([false, null], [$comment['shown'], $comment['note']]);
+        $this->assertSame('the comment is switched off in the settings and no extra field is asked in its places', $comment['why_not']);
     }
 
     #[Test]
@@ -219,5 +287,18 @@ final class CheckoutToolsTest extends McpTestCase
         $this->assertSame(409, $catalog['answers']['checkout.payable_changed']['status']);
         $this->assertSame('notice', $catalog['settings']['values']['orders.checkout.terms']['value']);
         $this->assertArrayHasKey(CheckoutPlaced::class, $catalog['events']);
+    }
+
+    /** A checkbox in the contacts with a required field behind it, a required list before the comment, a checkbox after it. */
+    private function extraFields(): void
+    {
+        $fields = $this->app->make(OrderFields::class);
+        $fields->write(['key' => 'for_company', 'type' => 'checkbox', 'label' => ['en' => 'Buying for a company'], 'place' => FieldPlaces::CONTACTS]);
+        $fields->write(['key' => 'company_name', 'type' => 'text', 'label' => ['en' => 'Company name'], 'required' => true, 'parent' => 'for_company']);
+        $fields->write(['key' => 'delivery_time', 'type' => 'select', 'label' => ['en' => 'Convenient delivery time'], 'required' => true, 'options' => [
+            ['value' => 'morning', 'label' => ['en' => '9:00–12:00']],
+            ['value' => 'evening', 'label' => ['en' => '18:00–21:00']],
+        ]]);
+        $fields->write(['key' => 'no_callback', 'type' => 'checkbox', 'label' => ['en' => 'Do not call back'], 'place' => FieldPlaces::AFTER_COMMENT]);
     }
 }

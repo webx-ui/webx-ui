@@ -464,6 +464,15 @@ export const adminMessages: Record<string, Messages> = {
     'address-fallback':
       "No address in this language yet — this is the address in :locale, the site's main language.",
     'address-fallback-label': 'Address in the main language',
+    'target-file': 'A file',
+    'file-choose': 'Choose a file',
+    'file-replace': 'Another file',
+    'file-gone': 'This file is no longer in the library',
+    'file-download': 'Download instead of opening',
+    'no-file': 'There is no file :path in the media library.',
+    'files-off': 'This field does not link to files.',
+    download: 'Download is either on or off.',
+    path: 'Choose a file from the media library.',
   },
   // The categories every module shares: the refusals the server says, and the words of the
   // shared screens under a module's own.

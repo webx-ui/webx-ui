@@ -10,7 +10,7 @@ return [
     'new' => 'Nuova posizione',
     'title' => 'Nome',
     'key' => 'Chiave',
-    'key-help' => 'Ciò che chiede il template del sito: lettere latine minuscole, cifre e trattini, iniziando con una lettera. Non si può cambiare dopo.',
+    'key-help' => 'Ciò che chiede il template del sito, ad esempio «sidebar»: ciò che si scrive diventa una chiave da sé. Non si può cambiare dopo.',
     'declared' => 'Dichiarato nella configurazione',
     'in-template' => 'In un template: banners(\':key\')',
     'count' => 'Banner',

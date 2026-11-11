@@ -89,7 +89,8 @@ app(Notifications::class)->send('shop.order', $order->notify_channels, [
 `sample` is the event's **default template** by provider (`*` — any other): one text for every
 language, or a function of the language that answers null where the module has no words. A new
 channel starts with it in each language it has (the main one always); `default_template: true`
-puts it back. It passes the same check as a typed one — test it with `notifications_default_template`.
+puts it back. `addressed: ['customer_email' => ['email' => …]]` is one for a channel naming that addressee in
+its recipients (the buyer's letter, the shop's in `sample`); `notifications_default_template` + `addressee`.
 
 A consumer as it is: `webx-ui/module-inbox`, `src/Notifications` — the event (`SubmissionEvent`), a
 listener of its own Laravel event calling `send()` (`SendToChannels`), and `Channels`: whether this

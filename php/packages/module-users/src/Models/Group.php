@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Carbon;
 use WebxUi\Admin\History\RecordsHistory;
+use WebxUi\Localization\HasCodes;
 
 /**
  * A customer group (spec §13.1): a code the rules of a shop and the site's code name it by, and a
@@ -24,6 +25,7 @@ use WebxUi\Admin\History\RecordsHistory;
  */
 class Group extends Model
 {
+    use HasCodes;
     use RecordsHistory;
 
     /** The journal's type (§16). */
@@ -35,6 +37,12 @@ class Group extends Model
     protected $table = 'users_groups';
 
     protected $fillable = ['code', 'name'];
+
+    /** Typed by a person or an agent: «Оптовики» is kept as `optoviki`, not refused (#125). */
+    protected static function codes(): array
+    {
+        return ['code' => ['max' => 64]];
+    }
 
     /** @return BelongsToMany<User, $this> */
     public function users(): BelongsToMany

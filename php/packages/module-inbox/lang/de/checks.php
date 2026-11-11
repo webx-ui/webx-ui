@@ -46,5 +46,11 @@ return [
             'why' => 'Vorerst funktioniert sie: Das Modul übergibt ihr die alten Daten und liefert das alte Skript aus. Eine spätere Version entfernt das, und die Formulare dieser Ansicht senden nicht mehr ohne Neuladen und verlieren ihr Captcha.',
             'fix' => 'Löschen Sie die Kopie der Website, um das Formular des Pakets zu erhalten, oder schreiben Sie sie um <x-webx-form> und <x-webx-field> herum neu; gestalten Sie die Felder über webx-field-* und webx-form-* statt wx-form-* (die Tabelle der Klassen steht im Inbox-Leitfaden).',
         ],
+        'steps_in_old_view' => [
+            'title' => 'Ein Formular mit Schritten auf einer Seite',
+            'found' => 'Ein Formular hat Schritte, und die Website überschreibt das Inbox-Formular mit einer eigenen form.blade.php, die nur $controls ausgibt, ohne die Schritte.',
+            'why' => 'Das Formular funktioniert, als eine lange Seite — so, wie eine Seite ohne JavaScript es sieht — und der Server prüft und speichert, was er immer getan hat. Die Schritte, die die Redaktion gesetzt hat, sieht der Besucher aber nie.',
+            'fix' => 'Löschen Sie die Kopie der Website, um das Formular des Pakets zu bekommen, oder geben Sie darin $steps aus: ein <x-webx-form.step> um die Felder jedes Schritts, steps und :check an <x-webx-form> (der Inbox-Leitfaden zeigt, wie).',
+        ],
     ],
 ];

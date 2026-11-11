@@ -271,7 +271,7 @@ final class McpTest extends TestCase
     #[Test]
     public function what_is_not_accepted_is_said_and_nothing_is_written(): void
     {
-        $this->agent('create', ['slug' => 'Bad Slug', 'title' => 'Bad'])
+        $this->agent('create', ['slug' => '!!!', 'title' => 'Bad'])
             ->assertHasErrors(['slug']);
 
         $this->agent('get', ['slug' => 'nothing'])

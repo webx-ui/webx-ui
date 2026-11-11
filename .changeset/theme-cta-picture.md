@@ -1,0 +1,5 @@
+---
+'@webx-ui/php': minor
+---
+
+Theme-default: the call to action (`cta`) on a picture. A fourth background, «Picture»: a photo or a sketch across the band under a shade that keeps the words readable — dark or light, from the tokens, even so the words keep WCAG AA on any picture, turned round by the dark scheme — with the hero's «Parallax» and its strength. «Height» is by the content, the screen, or a proportion (21:9, 16:9, 3:2, 4:3), always a least height: words that need more make the band taller. «Above the heading» puts a line over the heading, and «Width» takes the band edge to edge, on any background. Everything is optional: a picture with no words and no buttons is the picture alone, with no shade and nothing around it. A button whose link is the address `#webx-form-<slug>` opens that form of the Inbox in a dialog; a file of the library with «Download» is saved under its name. A block saved before prints exactly what it printed. A site takes the fields with `php artisan webx:blocks:import --theme --replace=cta`; the showcase has three new bands under Kitchen sink › Blocks › Call to action.

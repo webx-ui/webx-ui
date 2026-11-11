@@ -195,4 +195,53 @@ final class AgentGuideTest extends TestCase
             'a site on a packaged theme alone is told how to get a local one',
         );
     }
+
+    /** SITE_MODULES §8, row 17: a site module is ours, listed apart, by its folder rather than vendor. */
+    #[Test]
+    public function a_site_module_is_listed_by_its_own_folder(): void
+    {
+        $packages = (new AgentDocs($this->files, __DIR__.'/Fixtures/site-module/vendor/composer/installed.json'))->packages();
+
+        $this->assertSame(['site/module-offices'], array_map(fn ($doc) => $doc->name, $packages));
+        $this->assertTrue($packages[0]->local);
+        $this->assertTrue($packages[0]->documented);
+        $this->assertSame('modules/offices/AGENTS.md', $packages[0]->link());
+
+        $block = RootFile::block($packages, 'cms');
+
+        $this->assertStringContainsString("## This site's modules", $block);
+        $this->assertStringContainsString('- [site/module-offices](modules/offices/AGENTS.md) — Offices directory of this site.', $block);
+        $this->assertStringContainsString('None of the installed packages carries an AGENTS.md yet', $block, 'a site module is not a package from vendor');
+        $this->assertStringNotContainsString("## This site's modules", RootFile::block([], 'cms'));
+    }
+
+    #[Test]
+    public function a_site_module_installed_through_its_symlink_is_listed_by_its_own_folder(): void
+    {
+        // What Composer really writes for a path repository with `symlink: true`: the folder in
+        // vendor, which is a link to `modules/offices`.
+        $site = sys_get_temp_dir().'/webx-agents-'.uniqid();
+        $this->files->ensureDirectoryExists($site.'/modules/offices');
+        $this->files->ensureDirectoryExists($site.'/vendor/composer');
+        $this->files->ensureDirectoryExists($site.'/vendor/site');
+        $this->files->put($site.'/modules/offices/AGENTS.md', "# Offices\n");
+        symlink('../../modules/offices/', $site.'/vendor/site/module-offices');
+        $this->files->put($site.'/vendor/composer/installed.json', (string) json_encode(['packages' => [
+            ['name' => 'site/module-offices', 'description' => 'Offices directory of this site.', 'install-path' => '../site/module-offices'],
+            ['name' => 'site/module-mirrored', 'description' => 'A copy.', 'install-path' => '../site/module-mirrored'],
+        ]]));
+        $this->files->ensureDirectoryExists($site.'/vendor/site/module-mirrored');
+
+        try {
+            $packages = (new AgentDocs($this->files, $site.'/vendor/composer/installed.json'))->packages();
+
+            $this->assertSame(['site/module-mirrored', 'site/module-offices'], array_map(fn ($doc) => $doc->name, $packages));
+            $this->assertTrue($packages[1]->documented);
+            $this->assertSame('modules/offices/AGENTS.md', $packages[1]->link());
+            $this->assertSame('vendor/site/module-mirrored/AGENTS.md', $packages[0]->link(), 'a mirrored copy has no folder of the site to name');
+        } finally {
+            unlink($site.'/vendor/site/module-offices');
+            $this->files->deleteDirectory($site);
+        }
+    }
 }

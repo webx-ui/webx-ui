@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Site\{{ Studly }}\Panel;
+
+use Illuminate\Database\Eloquent\Builder;
+use Site\{{ Studly }}\Models\{{ Model }};
+
+/**
+ * The query behind the list — the panel's and an agent's: everything at once, in its order.
+ *
+ * No paginator on purpose: a reference book has dozens of rows, and the list is where they are put
+ * in order — a drag cannot cross a page boundary. A search narrows without changing the order;
+ * the panel stops offering the drag then, because the gaps between the rows it shows are rows it
+ * does not.
+ */
+final class {{ Model }}List
+{
+    /**
+     * @return Builder<{{ Model }}>
+     */
+    public function build(string $search = ''): Builder
+    {
+        $query = {{ Model }}::query();
+        $term = trim($search);
+
+        if ($term !== '') {
+            $like = '%'.str_replace(['%', '_'], ['\%', '\_'], $term).'%';
+
+            // In every language the site has: a row written in one language only is still on the
+            // screen of a panel read in another, and has to be findable there.
+            $query->whereTranslationLikeAny('title', $like);
+        }
+
+        return $query->orderBy('position')->orderBy('id');
+    }
+}

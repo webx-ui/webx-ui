@@ -51,6 +51,7 @@ each one is a label, the control, a hint and the place of its error.
 | `checkbox` | with `:choices` — a group, the name gets `[]`; without — one tick with its words beside it, `:checked` |
 | `consent`  | one tick whose words are the slot (a link allowed) or the label                                        |
 | `date`     | the browser's picker, ISO in the value, `min` and `max`                                                |
+| `datetime` | a day of a calendar and a time of a list in the site's zone — [Date and time](#date-and-time)          |
 | `file`     | a button and a line in the page's words, the name chosen or how many; `multiple`, `accept`             |
 | `hidden`   | the input alone — what the page fills in                                                               |
 
@@ -62,6 +63,66 @@ each one is a label, the control, a hint and the place of its error.
     {!! __('shop.terms', ['url' => route('terms')]) !!}
 </x-webx-field>
 ```
+
+### Cards
+
+A group of radios or ticks may be drawn as cards — `view="cards"` (FORM_STEPS §5): a choice that
+needs a few words or a picture to be understood. A choice then carries `description` and `image` —
+an address, or `['src', 'srcset', 'width', 'height']`; `:columns` (1–4) is how many to a row once the
+form is wide enough, a narrow form has them one under another whatever it says.
+
+```blade
+<x-webx-field type="radio" name="fields.purpose" label="Purpose of contact" view="cards" :columns="3" required :choices="[
+    ['value' => 'viewing', 'label' => 'Book a viewing', 'description' => 'We show the flat when it suits you', 'image' => $viewing],
+    ['value' => 'question', 'label' => 'Just a question', 'description' => 'We answer by e-mail'],
+]" />
+```
+
+Nothing changes but the look. The markup is the same `<fieldset>` and `<legend>`, a real
+`input[type=radio]` (or a tick) inside each `<label>`, so the whole card is the target, the arrows
+move through a group of radios as in any radio group, the label is read with its description, and
+no ARIA role is laid over it. The name, `required` and the error are those of the list; an answer is
+the same. Without CSS it is a list of radios with their descriptions. A picture is decorative
+(`alt=""`): the label says what the choice is. `view="cards"` on a select or on one tick changes nothing.
+
+### Date and time
+
+`type="datetime"` asks for a day and a time (FORM_STEPS §6): a meeting, a call back, a viewing. Two
+parts are sent, `<name>[date]` (`YYYY-MM-DD`) and `<name>[time]` (`HH:MM`), with the script and
+without it:
+
+```blade
+<x-webx-field type="datetime" name="fields.meeting" label="Meeting time" :step="30" from="09:00" to="17:00"
+    :weekdays="[1, 2, 3, 4, 5]" timezone="Europe/Kyiv" required />
+```
+
+- **The grid** — `step` minutes apart (30 by default) from `from` (09:00); the last time is a step
+  before `to` (17:00): 9:00–17:00 by 30 minutes ends at 16:30. `weekdays` — the ISO days offered,
+  1 Monday … 7 Sunday; none — every day.
+- **The zone** — `timezone`, the site's (the Inbox gives `contacts.timezone` of the settings), else
+  the application's. Times are shown and chosen in it, never in the visitor's: «Times are in
+  Europe/Kyiv (UTC+2)» under the field, or `timezone-label` instead.
+- **Without JavaScript** — the browser's date (`min` — today in that zone as the page was printed) and
+  a `select` of the day's times. A day of the week not offered and a time of today already gone are the
+  server's to refuse.
+- **With it** — `datetime.js` (claimed only by such a field, ≤ 3 KB) hides both and draws the calendar
+  of a month and the times of the chosen day, writing every choice back into them with a `change`, so
+  the checks, the 422 and the summary are those of any field. «Today» and «now» are counted in the
+  browser in the site's zone (`Intl`): a page cached whole would keep yesterday's. Days gone, days not
+  offered and a today with no time left are `aria-disabled` — the focus goes over them and they say
+  why; times of today already gone are not shown. On a form of 40rem and up the calendar and the times
+  stand in a row, the times under it on a narrower one.
+- **The keyboard** — the grid of the APG date picker without the dialog: the arrows move a day and a
+  week, PageUp/PageDown a month, Home/End the ends of the week, Enter or Space chooses; the month's
+  name is a live region; the times are a group of radios with a `legend` («Times on 12 December»),
+  described by the zone. The focus of an error goes to the day of the grid.
+- **The summary** reads `data-webx-answer` of the field — «Monday, 14 December 2026, 10:30 (Europe/Kyiv)».
+- **The words** are props: `date-label`, `time-label`, `previous-month-label`, `next-month-label`,
+  `no-times-label`, `unavailable-label`, `times-label` («Times on :date»), `timezone-label`. Names of
+  months and days are the browser's `Intl` and Carbon, not a dictionary.
+
+Nobody's time is taken by anybody else's: the field knows nothing of other answers. The checks of the
+grid, the day of the week and the past are the server's — in the Inbox, `Rules` (FORM_STEPS §6.3).
 
 ### Values and errors come from Laravel
 
@@ -126,13 +187,16 @@ never the colour alone.
 | `__label` (`--legend` on a group), `__required`, `__optional`, `__hint`, `__error`                                                   | around the control      |
 | `__control` (`--textarea`, `--select`, `--password`, `--file`), `__select`, `__password`, `__show`                                   | the control             |
 | `__file`, `__file-button`, `__file-name`; `__choices`, `__choice` (`--inline`, `--single`, `--consent`), `__check`, `__choice-label` | files, groups and ticks |
+| `webx-field--cards`; `__cards` (`--cols-2…4`), `__card`, `__card-check`, `__card-image`, `__card-title`, `__card-text`               | cards                   |
 
 Repaint it the way every widget is repainted — [Where the styles live](./styles):
 
 - **tokens** — the field follows `color-border`, `color-danger`, `color-accent`, `radius-md`;
 - **its own variables** on `:root` — `--webx-field-height`, `--webx-field-radius`,
   `--webx-field-border`, `--webx-field-bg`, `--webx-field-focus`, `--webx-field-gap`,
-  `--webx-field-check`;
+  `--webx-field-check`; cards — `--webx-field-card-gap`, `--webx-field-card-padding`,
+  `--webx-field-card-bg`, `--webx-field-card-checked-bg`, `--webx-field-card-image-ratio`. The chosen
+  card is `.webx-field__card:has(:checked)`, the focused one `:has(:focus-visible)`;
 - **the same classes** in `theme/src/css` — they come later in the cascade;
 
 <!-- v-pre: the mustaches below are Blade. -->
@@ -141,7 +205,8 @@ Repaint it the way every widget is repainted — [Where the styles live](./style
 
 - **another control of a type** — `theme/views/vendor/webx-widgets/components/field/<type>.blade.php`.
   Keep `{{ $control($attributes) }}` on the control: it carries `required`, the ARIA and the
-  hints. The frame is `components/field.blade.php`.
+  hints. The frame is `components/field.blade.php`; cards are `components/field/radio-cards` and
+  `checkbox-cards`, what a card says beside its input — `components/field/partials/card`.
 
 :::
 
@@ -243,6 +308,7 @@ On the `<form>`, bubbling — a module hangs its own on them and never writes a 
 | `webx:form:submit`  | before sending; cancelable   | `data` — the `FormData` (add to it), `submitter`, `wait(promise)` |
 | `webx:form:success` | a 2xx                        | `status`, `response` — the JSON of the answer                     |
 | `webx:form:error`   | 422, 419 twice, 5xx, offline | `status` (0 offline), `errors`, `message`                         |
+| `webx:form:step`    | a change of step; cancelable | `from`, `to`, `name` — see «Steps»                                |
 
 ```js
 document.querySelector('#checkout').addEventListener('webx:form:success', (event) => {
@@ -250,6 +316,120 @@ document.querySelector('#checkout').addEventListener('webx:form:success', (event
   if (window.webx.consent?.has('statistics')) window.dataLayer?.push({ event: 'order' })
 })
 ```
+
+### Where the visitor came from
+
+`<x-webx-form data-webx-attribution>` — the Inbox's forms have it — also loads `attribution.js`. On
+`webx:form:submit` it adds to `data` whatever the form does not have already: the `utm_*` of the
+last touch, `webx_referrer` (the outside page the visitor came from), `webx_landing` (the page they
+came in on) and `webx_utm_first[utm_*]` — the campaign of the first touch. No `gclid` or `fbclid`.
+
+Without consent to `statistics` nothing is stored: the last touch is the page with the form — its
+`utm_*` and its referrer when it is from outside, which is the landing page of an advert. With it,
+`localStorage` `webx_attribution` keeps the first touch (never written over) and the last for 90
+days; taking consent back removes the key. The Inbox writes them into the submission as
+`meta.utm`, `meta.utm_first`, `meta.referrer`, `meta.landing`; `WEBX_INBOX_ATTRIBUTION=false` turns
+it off.
+
+### Shown only for some answers
+
+`<x-webx-field :when="['fields.purpose' => ['agency', 'pre-register']]">` is shown only while the
+field `fields.purpose` above it is answered with one of those values; `:unless` hides it when the
+same `when` would hold. Inside a list it is "or", between names "and"; a field of several ticks
+holds it with any one of them, a consent with `"1"`. The names are the validator's names of the
+form's fields — what `data-webx-field` says.
+
+`form.js` reads `data-webx-when` / `data-webx-unless` in one pass in the page's order on every
+`change`: a hidden field is `hidden`, its controls `disabled` — not sent, not checked — and gives no
+answer to the fields below it; shown again, it has what was typed in it. A required field with a
+condition has no `required` attribute in the HTML (without the script it would stop a form that
+does not need it): the mark stays, and the script puts the attribute back on show. `condition="…"`
+is a line under the field (`webx-field__condition`) for the page without the script, which shows
+every field; the script hides it.
+
+The browser only hides: the server decides. The rules of the fields hidden for what was sent are
+left out of the check and their answers out of what is kept — the Inbox does it with `Rules::for($form,
+$sent)` (its guide, «Shown only for some answers»).
+
+### Steps
+
+`<x-webx-form steps>` with its fields in `<x-webx-form.step>`s is a form of several steps — «what
+brings you» → «when» → «how to reach you» — sent once, at the end:
+
+```blade
+<x-webx-form :action="route('visit')" steps :check="route('visit.check')">
+    <x-webx-form.step name="purpose" :title="__('Purpose of contact')">
+        <x-webx-field type="radio" name="fields.purpose" :label="__('How can we help?')" :choices="$purposes" view="cards" required />
+    </x-webx-form.step>
+    <x-webx-form.step name="meeting" :title="__('Choose a meeting time')" :label="__('Time')"
+        :when="['fields.purpose' => ['agency']]" :condition="__('If chosen: Agency meeting')">
+        <x-webx-field type="date" name="fields.day" :label="__('Day')" required />
+    </x-webx-form.step>
+    <x-webx-form.step name="contacts" :title="__('Your details')">
+        <x-webx-field name="fields.name" :label="__('Name')" required />
+    </x-webx-form.step>
+    <x-webx-form.submit>{{ __('Send') }}</x-webx-form.submit>
+</x-webx-form>
+```
+
+- **With JavaScript** (`steps.js`, claimed only by `steps`) one step is shown, the rest `hidden` —
+  their fields stay in the form and go with it. Over the steps an indicator numbers them: the
+  current one `aria-current="step"`, the ones behind are buttons back to them; «Step 2 of 3» over the
+  title. «Next» checks the step's fields by the form's `:rules`, then asks the server if the form has
+  `:check`; «Back» checks nothing and wipes nothing. Enter in a field off the last step is «Next».
+  The last step shown has the form's own buttons beside «Back».
+- **`:check`** (`data-webx-check` on the form) — a door of the site that checks a step and takes nothing: the same body as the
+  submission without its files (the browser has measured them), plus `webx_step` — the step's
+  `name`. It answers 204, or a 422 the way the submission does; its errors go under the fields and
+  the step stays. Without `check` a step is checked in the browser only — a sign-in needs no server
+  on every step.
+- **An error on a step behind** — the server's, at the last press: the form goes back to that step,
+  the focus on the field, and the alert says «Please check step 1: …».
+- **A step's condition** — `:when` / `:unless`, as a field's: the step is out of the way and out of
+  the count until the answers before it call for it; its fields are `disabled` meanwhile.
+- **The focus** goes to the step's title (`tabindex="-1"`, a heading of `level`, 3 by default) without
+  a jump; the top of the form comes in sight — in a dialog, of the dialog's own scroll.
+- **In a dialog** closed before sending, the step and what was typed stay while the page is open
+  (in its memory only: nothing goes to the browser's storage). The thank-you, or a reset, brings the
+  first step back.
+- **Without JavaScript** every step is a `<fieldset>` with its title in the `<legend>`, one under
+  another; the indicator, «Next» and «Back» are hidden, the one button sends it all, and the page
+  comes back with the errors under the fields of every step.
+
+`webx:form:step` on the form, before the change — cancelable; `detail.from`, `detail.to` (numbers
+among the steps shown), `detail.name` (the step's `name`): a goal of the analytics, a step a site
+holds back. `webx:form:reveal` is the form's ask, on a step's `<fieldset>`, to bring forward the step
+of an error — `steps.js` answers it.
+
+The words are props: `steps-label`, `step-label` («Step :current of :total»), `return-label`
+(«Back to step :number: :title»), `fix-label` («Please check step :number: :message») on the form,
+`next-label` and `back-label` on a step; `label` is a step's short line in the indicator.
+
+### Summary
+
+`<x-webx-form.summary>` repeats the answers given so far — usually on the last step, over the contacts —
+each with «Edit» that brings its field back (FORM_STEPS §7). It asks nothing and sends nothing:
+
+```blade
+<x-webx-form.step name="contacts" :title="__('Your details')">
+    <x-webx-form.summary :title="__('Your request')" :fields="['fields.purpose', 'fields.day']" />
+    <x-webx-field name="fields.name" :label="__('Name')" required />
+</x-webx-form.step>
+```
+
+- **What it shows** — the fields `:fields` names, by their names on the page, in the order of the
+  form; without it, every field above the summary. Only a field that is shown (a condition, a step
+  out of the way) and answered; never a consent, a file, a hidden field, a password or a single tick.
+- **How** — a `<dl>` of the field's label and its answer: the words of a choice, not its value; the
+  text typed. Built from the form as it stands, on every change and when its step comes
+  (`summary.js`, claimed only by the summary).
+- **«Edit»** — the field's step comes back (`webx:form:reveal` with `detail.edit`, without a word in
+  the alert), the focus on the field. Its name for a screen reader is «Edit: Purpose».
+- **Without JavaScript** it is hidden: every answer stands on the page above it. With nothing to show,
+  it is hidden too.
+
+The words are props: `edit-label` («Edit»), `edit-field-label` («Edit: :field»); `level` — the heading
+level of its title, 4 by default.
 
 ### In a dialog
 
@@ -284,17 +464,21 @@ it is a link to the same page, which comes back without the answer, so the form 
 
 ### The look of the form
 
-| Classes                                          | What                                 |
-| ------------------------------------------------ | ------------------------------------ |
-| `webx-form`, `is-sending`, `is-sent`             | the form                             |
-| `__body`, `__submit`                             | the fields, the button               |
-| `__message` > `__answer` > `__heading`, `__text` | the live region and the answer in it |
-| `__error` > `__refusals` > `__refusal`           | the alert and what it says           |
-| `__progress`, `__done`                           | the upload, «Close» in a dialog      |
-| `__again`                                        | «Send another» (`again`)             |
-| `__answer-value`                                 | a visitor's answer in the thank-you  |
+| Classes                                                                                                                      | What                                 |
+| ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| `webx-form`, `is-sending`, `is-sent`                                                                                         | the form                             |
+| `__body`, `__submit`                                                                                                         | the fields, the button               |
+| `__message` > `__answer` > `__heading`, `__text`                                                                             | the live region and the answer in it |
+| `__error` > `__refusals` > `__refusal`                                                                                       | the alert and what it says           |
+| `__progress`, `__done`                                                                                                       | the upload, «Close» in a dialog      |
+| `__again`                                                                                                                    | «Send another» (`again`)             |
+| `__answer-value`                                                                                                             | a visitor's answer in the thank-you  |
+| `webx-form--steps`, `webx-form-steps` > `__step` > `__button`, `__number`, `__label` (`is-current`, `is-done`, `is-reached`) | a form of steps, its indicator       |
+| `webx-form-step` > `__legend` > `__count`, `__title`; `__hint`, `__condition`, `__fields`, `__nav` > `__back`, `__next`      | a step                               |
+| `webx-form-summary` > `__title`, `__hint`, `__list` > `__row` > `__term`, `__value`, `__actions` > `__edit`                  | the summary                          |
 
-Variables on `:root`: `--webx-form-gap`, `--webx-form-button-height`.
+Variables on `:root`: `--webx-form-gap`, `--webx-form-button-height`, `--webx-form-steps-size`,
+`--webx-form-steps-line`.
 
 ## Checks in the browser
 
@@ -827,9 +1011,9 @@ What it prints, in short:
 </x-webx-form>
 ```
 
-- **The fields** are `<x-webx-field>` named `fields.<machine name>` — the eleven types of the panel
+- **The fields** are `<x-webx-field>` named `fields.<machine name>` — the twelve types of the panel
   are the widgets' own (`text`, `email`, `tel`, `textarea`, `select`, `radio`, `checkbox`,
-  `consent`, `date`, `file`, `hidden`); «half width» in the panel is
+  `consent`, `date`, `datetime`, `file`, `hidden`); «half width» in the panel is
   `webx-inbox-form__field--half`, two to a row from 24rem of the form.
 - **No token:** `:csrf="false"` — the intake guards itself (the origin, the honeypot, the
   timestamp, the limit per address), so a page cached whole for a day still sends.
@@ -873,6 +1057,11 @@ JavaScript off and on: the same words in the same places.
 and, with «Ask the server», past it — the same words both ways, in English, Russian and Polish.
 The name `admin` passes the browser and not the server: that rule is the server's alone. The phone
 mask, and photos dropped, listed, refused by type and size and removed before sending.
+
+**Kitchen sink › Forms › Steps**: a form of three steps whose second is there only for a meeting,
+checked by a door of the demo on every «Next» — the name `admin` passes the browser and not the
+server — and the same form checked in the browser only, whose last press brings the first step back
+with the server's word; one more in a dialog, a sheet on a phone. With JavaScript off: one page.
 
 **Kitchen sink › Forms › Inbox**: a form built in the panel, with a field of every kind of the
 Inbox, on the same engine — send it empty with JavaScript on and off: the same words under the same

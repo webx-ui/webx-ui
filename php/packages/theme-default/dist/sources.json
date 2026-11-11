@@ -1,7 +1,7 @@
 {
   "algorithm": "sha256",
   "files": {
-    "src/css/base.css": "4bc4b9b1d46f845c5b0b9c2d9fe850c52f10e4d42abb5a59915f696aea413218",
+    "src/css/base.css": "cabf668d75610cfbe19e6f9af2447abd5123abc829ed195b2a88a13f1e34fd50",
     "src/css/prose.css": "aa425724a4dc564c8c2c397e441c25018b7564b0f67bdf4017d8c67cbffab50a",
     "src/css/shell.css": "f0cc8e206adfa4e1030c20db06f22006216f88e2e0cd302eca402b7789b89a6e",
     "src/css/theme.css": "c48992294f00bea9e06c0fdb6dcc826d86dedeb92ff183e420e5a41c3148dbc0"

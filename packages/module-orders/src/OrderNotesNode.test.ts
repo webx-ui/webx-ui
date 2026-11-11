@@ -47,6 +47,7 @@ function card(data: OrderCardData, kept = true) {
         resend: () => Promise.resolve(),
         note,
         pin,
+        saveFields: () => Promise.resolve(true as const),
         linkVisitor: () => Promise.resolve(),
         unlinkVisitor: () => Promise.resolve(),
       })

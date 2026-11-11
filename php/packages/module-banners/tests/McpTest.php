@@ -61,7 +61,17 @@ final class McpTest extends TestCase
         $this->assertFalse($created['place']['declared']);
 
         $this->agent('banners_place_create', ['key' => 'hero', 'title' => 'Again'])->assertHasErrors(['key:']);
-        $this->agent('banners_place_create', ['key' => '9lives', 'title' => 'Bad'])->assertHasErrors(['key:']);
+        $this->agent('banners_place_create', ['key' => '!!!', 'title' => 'Bad'])->assertHasErrors(['key:']);
+        $this->agent('banners_place_create', ['key' => '!!!', 'title' => 'Bad', 'dry_run' => true])->assertHasErrors(['key:']);
+
+        // Brought, not refused (#125), and a dry run answers with the key a real run keeps.
+        $dry = $this->content($this->agent('banners_place_create', ['key' => 'Тормозные колодки', 'title' => 'Pads', 'dry_run' => true]));
+        $this->assertSame('tormoznye-kolodki', $dry['would_create']['key']);
+
+        $brought = $this->content($this->agent('banners_place_create', ['key' => '9 Lives', 'title' => 'Lives']));
+        $this->assertSame('place-9-lives', $brought['place']['key']);
+        $this->agent('banners_place_create', ['key' => 'Place 9 lives', 'title' => 'Again'])->assertHasErrors(['key:']);
+        Place::query()->where('key', 'place-9-lives')->delete();
 
         $this->agent('banners_place_delete', ['place' => 'hero'])->assertHasErrors(['declared']);
         $this->agent('banners_place_delete', ['place' => 'nowhere'])->assertHasErrors(['no place [nowhere]', 'hero, promo, notice, sidebar']);
@@ -114,6 +124,42 @@ final class McpTest extends TestCase
         $this->assertTrue($banner->enabled);
         $this->assertSame(['en' => 'Spring sale', 'ru' => 'Весенняя распродажа'], $banner->getTranslations('title'));
         $this->assertCount(2, $banner->buttonRows(), 'buttons left out keep what they had');
+    }
+
+    #[Test]
+    public function an_agent_gives_a_banner_a_phone_video_and_a_poster(): void
+    {
+        $this->picture('media/ab/cd/wide.jpg');
+        $this->picture('media/ab/cd/still.jpg');
+        $this->picture('media/ab/cd/upright.mp4', 'video/mp4');
+
+        $arguments = [
+            'place' => 'hero',
+            'image' => 'media/ab/cd/wide.jpg',
+            'video_mobile' => 'media/ab/cd/upright.mp4',
+            'poster' => 'media/ab/cd/still.jpg',
+        ];
+
+        $dry = $this->content($this->agent('banners_create', [...$arguments, 'dry_run' => true]));
+        $this->assertSame('media/ab/cd/upright.mp4', $dry['would_create']['video_mobile']);
+        $this->assertSame('media/ab/cd/still.jpg', $dry['would_create']['poster']);
+        $this->assertNull($dry['would_create']['video']);
+        $this->assertSame(0, Banner::query()->count(), 'a dry run writes nothing');
+
+        $created = $this->content($this->agent('banners_create', $arguments));
+        $this->assertSame(['path' => 'media/ab/cd/upright.mp4'], $created['values']['video_mobile']);
+        $this->assertSame(['path' => 'media/ab/cd/still.jpg'], $created['values']['poster']);
+        $this->assertTrue($created['banner']['has_video'], 'a phone video is a video');
+
+        $id = $created['banner']['id'];
+        $this->agent('banners_update', ['banner' => $id, 'values' => ['poster' => 'media/ab/cd/upright.mp4']])->assertHasErrors(['poster']);
+        $this->agent('banners_update', ['banner' => $id, 'values' => ['video_mobile' => 'media/no/such.mp4']])->assertHasErrors(['no file [media/no/such.mp4]']);
+
+        $this->agent('banners_update', ['banner' => $id, 'values' => ['poster' => null], 'dry_run' => true])->assertOk();
+        $this->assertNotNull(Banner::query()->findOrFail($id)->poster);
+
+        $this->agent('banners_update', ['banner' => $id, 'values' => ['poster' => null]])->assertOk();
+        $this->assertNull(Banner::query()->findOrFail($id)->poster);
     }
 
     #[Test]

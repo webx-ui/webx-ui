@@ -164,6 +164,42 @@ fetches the screen by name, lays the project's patch from `createAdmin({ screens
 and passes the panel's dictionary, registry and permissions — `<wx-screen name="settings.index"
 v-model="values" :errors="errors" />`. [Settings](/guide/settings) is the first page built on it.
 
+### Two fields side by side
+
+A `wx-row` of two `wx-col` puts short fields — latitude and longitude, from and to — on one line.
+The columns count the width of the row, not of the window ([Grid](/components/grid)), and a row on
+a screen is never wider than a field (`--wx-field-max-width`, 640px), so pick the breakpoint by
+where the screen opens:
+
+- **In a dialog or a drawer** — `xs` (from 400px of row). A dialog's form rarely has the 640px `sm`
+  waits for, so `"sm": 12` there stacks the two at every window size. With `xs` they meet on a
+  desktop dialog and stack on a phone.
+- **On a page** — `sm` (from 640px), as the forms of the sections already do.
+
+```json
+{
+  "id": "coordinates",
+  "type": "wx-row",
+  "children": [
+    {
+      "id": "lat-col",
+      "type": "wx-col",
+      "props": { "span": 24, "xs": 12 },
+      "children": [{ "id": "lat", "type": "wx-input-number", "name": "lat" }]
+    },
+    {
+      "id": "lng-col",
+      "type": "wx-col",
+      "props": { "span": 24, "xs": 12 },
+      "children": [{ "id": "lng", "type": "wx-input-number", "name": "lng" }]
+    }
+  ]
+}
+```
+
+No stylesheet of the module's own is needed for it — a rule like `.my-row > .wx-col { width: 50% }`
+is what `xs` replaces.
+
 ## The registry
 
 A type is the full component name — `wx-input`, `wx-card` — so the name says it is the UI kit.
@@ -233,7 +269,8 @@ list emptied to `[]` and a date cleared to `''` are kept as `null`:
 | `wx-time-picker`                              | `HH:mm`, or `HH:mm:ss` with `seconds`                                       |
 | `wx-date-time-picker`                         | ISO 8601 with the offset, moved into the application's timezone             |
 | `wx-tags-input`                               | a list of strings; only `props.suggestions` with `allowCreate: false`       |
-| `wx-autocomplete`, `wx-icon-picker`           | a string                                                                    |
+| `wx-autocomplete`                             | a string                                                                    |
+| `wx-icon-picker`                              | a name; a new one from the set the node names (`props.source`, `icons`)     |
 | `wx-code-editor`                              | a string                                                                    |
 
 `wx-date-time-picker` always writes the offset: the registry binds its `valueFormat`, because a
@@ -250,12 +287,73 @@ digits, spaces and `+ ( ) - .`, at least three digits. An empty value is still a
 { "id": "email", "type": "wx-input", "name": "contacts.email", "props": { "type": "email" } }
 ```
 
+### Icons of the site's theme
+
+`wx-icon-picker` picks from the panel's set unless the node names another. What a site module
+keeps in an icon field is usually printed by the theme — `<x-theme::icon :name="$feature['icon']">`
+— and the theme's icons are not the panel's. `props.source: "theme"` gives the field the theme
+chain's icons:
+
+```json
+{
+  "id": "features",
+  "type": "wx-repeater",
+  "name": "features",
+  "children": [
+    {
+      "id": "feature-icon",
+      "type": "wx-icon-picker",
+      "name": "icon",
+      "props": { "source": "theme" }
+    },
+    { "id": "feature-label", "type": "wx-input", "name": "label", "localized": true }
+  ]
+}
+```
+
+- **Served:** `module-admin` replaces `source` with `icons` — `ThemeIcons::names()` — and `sprite`,
+  the address `webx:theme:sync` published the sprite at. The panel draws the grid and the preview
+  from the sprite; nothing is registered into the panel's own set. `Screens::tree()` keeps the node
+  as written, `Screens::render()` is what is spelled out.
+- **Saved:** a name the field did not hold before must be in the set — on the screen and in a
+  row of a repeater alike. A name it held is let through: a theme that dropped an icon does not
+  block the record, and the field marks the name as unknown until somebody picks another.
+- **Agents:** a repeater's `itemShape()` lists the names as the row field's `options`.
+- **Other sets:** `IconSets::register('<source>', fn () => new IconSet($names, $spriteUrl))` from a
+  provider; a list fixed in the screen is `props.icons` (with `sprite` to draw it) and needs no
+  registration. A source nobody registered is an empty grid and refuses every new name.
+- **No themes:** `theme` is registered only when `webx-ui/themes` is installed.
+
+Block schemas (`module-blocks`) are content edited in the panel, not served screens, so a
+`source` there is not spelled out: a block names its icons with `props.icons` and `sprite`.
+
 The panel's own frame comes with `module-admin` and is in every screen it draws:
 
 | Type           | From           | Kind     | What it is                             |
 | -------------- | -------------- | -------- | -------------------------------------- |
 | `wx-list`      | `module-admin` | `layout` | the frame a section's list is drawn in |
 | `wx-rich-text` | `module-admin` | `field`  | a document, kept as HTML               |
+| `wx-link`      | `module-admin` | `field`  | somewhere to go, chosen, not typed     |
+| `wx-code`      | `module-admin` | `field`  | a machine name, made of what is typed  |
+
+`wx-code` is a code, a key or a machine name somebody types: whatever is typed becomes one as it is
+typed, rather than a refusal on save — «тормозные колодки» is `tormoznye-kolodki`, transliterated by
+the site's main language. `props`: `maxlength` (the code is cut to it, a longer text is not refused),
+`separator` — `-` (the default), `_`, or `-_` for a key that takes either (a typed `_` stays), and
+`lead` for a code that must start with a letter (`2 columns` → `block-2-columns`). The server brings
+the value to the same shape (`Slug::code()`), and so does the model on every other door (`HasCodes`
+of `webx-ui/localization`). A dialog of a module that is not a screen uses `<wx-code-field>` and
+`codify()` of `@webx-ui/module-admin` with the same props.
+
+`wx-link` keeps the target and never its address: a page of the site by its morph pair, a typed
+address, a file of the media library by its key, or nowhere. `props`: `allowNone` (off for a
+button), `attributes` (the new tab and `rel`) and `files` — on, the picker offers a file of the
+library and a switch that makes the browser save it rather than open it. A file is a target only
+where the node says `files: true`, on both sides: the menu and every other caller of the rules with
+no node keep the three targets their columns hold. The site reads the link resolved — `url`,
+`new_tab`, `rel` (with `noopener noreferrer` for a new tab), `available`, and `download`, the name
+the file was uploaded under — and a template prints all of it with
+`WebxUi\Admin\Links\LinkAttributes::of($link)` ([blocks](/guide/blocks#a-link-field)).
 
 `wx-list` is one shape for every list in the panel: the section's name on its own line, the one
 action the section exists for beside it, the views of the list as tabs under that, and a card
@@ -492,7 +590,7 @@ field's width; one whose rows lay fields side by side — a `wx-row` among the c
 an editor takes the whole width.
 
 Fields of an item can stand in columns: a `wx-row` of `wx-col` among the children, as anywhere
-else on a screen. A column's `sm`/`md` count the width of the row, not of the window, so a
+else on a screen. A column's `xs`/`sm`/`md` count the width of the row, not of the window, so a
 repeater in a narrow column stacks them and a wide one lays them side by side.
 
 A condition inside a row is read against that row: `{ "when": "hq", "is": true }` on a child asks

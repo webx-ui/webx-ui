@@ -134,10 +134,10 @@ php artisan migrate                                 # its tables: module:add lea
 
 `webx:modules` needs no database, so it answers on a machine where the site has none yet. Each
 entry of the JSON is
-`{ id, package, npm, label, default, requires, installed }`: `id` is what `--modules` takes,
+`{ id, package, npm, label, default, requires, installed, local }`: `id` is what `--modules` takes,
 `requires` the ids Composer will bring along with it, and an installed module the catalogue does
 not know — the site's own, a third party's — is listed by what its package says under
-`extra.webx`. `webx:module:add` is safe to run twice: an installed package skips Composer and
+`extra.webx`, with `local` true for a module of the site itself ([Site modules](./site-modules.md)). `webx:module:add` is safe to run twice: an installed package skips Composer and
 still gets the rest, which is also how a run that stopped at npm is finished. Every step that
 fails is a non-zero exit — nothing is a warning a script could miss.
 
@@ -624,6 +624,8 @@ When the site opens, remove the two lines or set `WEBX_SITE_GATE=false`.
   somebody without experience, working with an agent.
 - [Extending](./extending.md) — publishing a module's views, replacing its services, the
   registries to add your own things to.
+- [Site modules](./site-modules.md) — a section of the panel only this site has, in
+  `modules/<name>`: `webx:make-module --local`, its tests, the `Dockerfile` line older sites need.
 - [Addresses](./routing.md) — the registry every public URL comes from.
 - What the modules actually do: [Pages](./pages.md), [Blocks](./blocks.md),
   [Menus](./menu.md), [Inbox](./inbox.md), [SEO](./seo.md), and the content modules —

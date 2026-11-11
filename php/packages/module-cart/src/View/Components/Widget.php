@@ -27,6 +27,9 @@ use WebxUi\Cart\Rendering\Panel;
  * from `GET /api/cart` when one opens. A page that came back from a buy button without
  * JavaScript (the `webx-cart` flash) prints the main view open and full instead (§9.5), with the
  * notes of a refusal when the item was already there at its maximum.
+ *
+ * `:trigger="false"` — the main view alone, without the icon and the mini cart: a page whose
+ * layout has no cart in its header (the checkout) opens it by its own `data-webx-cart-edit`.
  */
 final class Widget extends Component
 {
@@ -48,11 +51,12 @@ final class Widget extends Component
         ?string $mode = null,
         ?string $preview = null,
         public ?string $title = null,
+        public bool $trigger = true,
     ) {
         $configured = $config->get('webx-cart.widget.mode');
         $this->resolvedMode = Panel::mode($mode ?? (is_string($configured) ? $configured : 'drawer'));
         $configured = $config->get('webx-cart.widget.preview');
-        $this->resolvedPreview = Panel::preview($preview ?? (is_string($configured) ? $configured : 'dropdown'));
+        $this->resolvedPreview = $trigger ? Panel::preview($preview ?? (is_string($configured) ? $configured : 'dropdown')) : 'none';
     }
 
     public function render(): View
@@ -65,9 +69,11 @@ final class Widget extends Component
         return $this->views->make('webx-cart::cart', [
             'mode' => $this->resolvedMode,
             'preview' => $this->resolvedPreview,
+            'trigger' => $this->trigger,
             'id' => self::ID,
             'heading' => $this->title ?? __('webx-cart::widget.title'),
-            'count' => $this->cart->count(),
+            // The counter is the trigger's: without it there is nothing to count.
+            'count' => $this->trigger ? $this->cart->count() : 0,
             'returned' => $returned,
             'content' => $returned ? $this->panel->render($this->cart->state(), $this->resolvedMode, controls: false, notes: $notes) : null,
             'api' => rtrim($this->request->getBasePath().'/'.trim((string) config('webx-cart.path', 'api/cart'), '/'), '/'),

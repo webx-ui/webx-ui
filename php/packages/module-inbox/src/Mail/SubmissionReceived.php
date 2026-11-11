@@ -75,7 +75,7 @@ class SubmissionReceived extends Mailable implements ShouldQueue
         $submission->created_at = now();
         $submission->setRelation('form', $form);
         $submission->setRelation('files', new Collection);
-        $submission->setRelation('values', $form->liveFields()->get()
+        $submission->setRelation('values', collect($form->questions())
             ->filter(static fn (Field $field): bool => ($answers[$field->key()] ?? '') !== '')
             ->map(static fn (Field $field): SubmissionValue => new SubmissionValue([
                 'name' => $field->key(),

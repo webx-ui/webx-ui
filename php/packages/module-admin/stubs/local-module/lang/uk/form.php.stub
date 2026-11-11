@@ -1,0 +1,8 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'title' => 'Назва',
+    'title-help' => 'Так запис називається у списку та на сайті.',
+];

@@ -23,6 +23,7 @@ use WebxUi\Admin\Doctor\Checks\Queue;
 use WebxUi\Admin\Doctor\Checks\Regions;
 use WebxUi\Admin\Doctor\Checks\Relations;
 use WebxUi\Admin\Doctor\Checks\SiteGate;
+use WebxUi\Admin\Doctor\Checks\SiteModules;
 use WebxUi\Admin\Doctor\Checks\Snapshots;
 use WebxUi\Admin\Doctor\Checks\Storage;
 use WebxUi\Admin\Doctor\Checks\StorageOwner;
@@ -62,6 +63,7 @@ final class DoctorCommand extends Command
     private const CHECKS = [
         Halves::class,
         NpmRanges::class,
+        SiteModules::class,
         Migrations::class,
         Storage::class,
         StorageOwner::class,

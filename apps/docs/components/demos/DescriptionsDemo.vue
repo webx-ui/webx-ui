@@ -43,5 +43,25 @@ import { WxBadge, WxButton, WxDescriptions, WxDescriptionsItem } from '@webx-ui/
         <wx-descriptions-item label="Tracking">1Z 999 AA1</wx-descriptions-item>
       </wx-descriptions>
     </div>
+
+    <div class="wx-demo__narrow">
+      <span class="wx-demo__label">A long label in a narrow card</span>
+      <wx-descriptions :columns="1" size="sm">
+        <wx-descriptions-item label="Name">Ada Lovelace</wx-descriptions-item>
+        <wx-descriptions-item
+          label="Do not call back if everything is in stock — just send it to the address above"
+        >
+          Yes
+        </wx-descriptions-item>
+        <wx-descriptions-item label="Phone">+00 000 000 0000</wx-descriptions-item>
+      </wx-descriptions>
+    </div>
   </div>
 </template>
+
+<style scoped>
+/* A card as narrow as a phone: where a long label used to take every pixel. */
+.wx-demo__narrow {
+  max-width: 360px;
+}
+</style>

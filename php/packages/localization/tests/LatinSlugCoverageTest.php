@@ -22,14 +22,15 @@ final class LatinSlugCoverageTest extends PlainTestCase
      */
     private const array ALLOWED = [
         'module-auth/src/Models/CmsUser.php' => 'only asks a role by its slug',
-        'module-auth/src/Models/Role.php' => 'a machine name, made by Slug::make() and never typed',
-        'module-blocks/src/Models/Block.php' => 'a code, refused unless `[a-z0-9-]` on every door',
+        'module-auth/src/Models/Role.php' => 'a code: brought to `[a-z0-9][a-z0-9-]*` by HasCodes, not an address',
+        'module-blocks/src/Models/Block.php' => 'a code: brought to `[a-z][a-z0-9-]*` by HasCodes, not an address',
         'module-catalog-properties/src/Models/PropertyGroup.php' => 'emptied on every save: a group has no page',
         'module-faq/src/Models/FaqCategory.php' => 'emptied on every save',
+        'module-inbox/src/Models/Form.php' => 'a code of a form: brought by HasCodes, not an address',
         'module-recipes/src/Models/RecipeNutrient.php' => 'emptied on every save',
         'module-reviews/src/Models/ReviewCategory.php' => 'emptied on every save',
         'module-tariffs/src/Models/TariffCategory.php' => 'emptied on every save',
-        'module-tasks/src/Models/Project.php' => 'a code of the task queue, refused unless Latin',
+        'module-tasks/src/Models/Project.php' => 'a code of the task queue: brought by HasCodes, not an address',
     ];
 
     #[Test]

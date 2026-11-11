@@ -1,0 +1,133 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Site\{{ Studly }}\Panel;
+
+use Illuminate\Database\ConnectionInterface;
+use Illuminate\Validation\ValidationException;
+use Site\{{ Studly }}\Http\Resources\{{ Model }}Resource;
+use Site\{{ Studly }}\Models\{{ Model }};
+use WebxUi\Admin\Screens\ScreenRecord;
+use WebxUi\Localization\Locales;
+
+/**
+ * The form on the server side: what its fields hold, and what a save writes — the panel's door
+ * and an agent's alike.
+ *
+ * The screen is `{{ id }}.form`, keyed by field name, so what {{ a model }} is made of is decided by
+ * the description: a project's field arrives as a patch and is saved into `extra` by being on the
+ * screen at all. What this class knows is which names are the record's own.
+ */
+final class {{ Model }}Form
+{
+    /**
+     * The record's own fields.
+     *
+     * @var list<string>
+     */
+    private const OWN = ['title'];
+
+    /** The fields that are a map of languages rather than a value. */
+    private const TRANSLATED = ['title'];
+
+    public function __construct(
+        private readonly ScreenRecord $record,
+        private readonly Locales $locales,
+        private readonly ConnectionInterface $db,
+    ) {}
+
+    /**
+     * {{ A model }} and the values of its screen.
+     *
+     * @return array<string, mixed>
+     */
+    public function describe({{ Model }} $record): array
+    {
+        return [
+            'record' => (new {{ Model }}Resource($record))->resolve(),
+            'values' => $this->values($record),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function values({{ Model }} $record): array
+    {
+        return [
+            // The project's fields first, so that none of them can stand in for one of the
+            // record's own.
+            ...($record->extraRaw() ?? []),
+            'title' => $record->getTranslations('title'),
+        ];
+    }
+
+    /**
+     * Check what came in against the screen and write it — a new {{ model }} or an existing one.
+     *
+     * @param  array<string, mixed>  $input
+     * @param  (callable(string): bool)|null  $can
+     *
+     * @throws ValidationException
+     */
+    public function save({{ Model }} $record, array $input, ?callable $can = null): {{ Model }}
+    {
+        $split = $this->record->split({{ Model }}::SCREEN, $input, self::OWN, [], $can);
+
+        return $this->db->transaction(function () use ($record, $split): {{ Model }} {
+            foreach ($split->own as $field => $value) {
+                $this->translate($record, $field, $value);
+            }
+
+            if ($split->extra !== []) {
+                $record->setAttribute('extra', $this->record->merge({{ Model }}::SCREEN, $record->extraRaw(), $split->extra));
+            }
+
+            $this->checkTitle($record);
+            $record->save();
+
+            return $record->refresh();
+        });
+    }
+
+    /**
+     * A translated field travels as its whole map from the form and as one string from an agent
+     * speaking one language; neither is ever written over the whole field. A language emptied
+     * comes back as `''` or null and is taken away; a language nobody mentioned stays.
+     */
+    private function translate({{ Model }} $record, string $field, mixed $value): void
+    {
+        if (! in_array($field, self::TRANSLATED, true)) {
+            return;
+        }
+
+        $map = is_array($value) ? $value : [$this->locales->defaultCode() => $value];
+        $translations = array_filter(
+            [...$record->getTranslations($field), ...$map],
+            static fn (mixed $text): bool => is_string($text) && trim($text) !== '',
+        );
+
+        $record->setTranslations($field, $translations);
+    }
+
+    /**
+     * The one required field: a title in the default language — what the row is called in the
+     * list and on a page nobody translated. Under the language, so the form shows it on its chip.
+     *
+     * @throws ValidationException
+     */
+    private function checkTitle({{ Model }} $record): void
+    {
+        $default = $this->locales->defaultCode();
+        $title = $record->getTranslation('title', $default, fallback: false);
+
+        if (is_string($title) && trim($title) !== '') {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            "title.{$default}" => (string) __('webx-{{ id }}::errors.title-required'),
+        ]);
+    }
+}

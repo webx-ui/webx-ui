@@ -48,7 +48,7 @@ final class Tasks
      */
     public function createProject(array $values): Project
     {
-        $values = $this->validate($values, $this->projectRules(null));
+        $values = $this->validate($this->bringSlug($values), $this->projectRules(null));
 
         return Project::query()->create($this->projectAttributes($values));
     }
@@ -58,7 +58,7 @@ final class Tasks
      */
     public function updateProject(Project $project, array $values): Project
     {
-        $values = $this->validate($values, $this->projectRules($project));
+        $values = $this->validate($this->bringSlug($values), $this->projectRules($project));
 
         $project->fill($this->projectAttributes($values, $project))->save();
 
@@ -761,7 +761,7 @@ final class Tasks
         $presence = $project === null ? 'required' : 'sometimes';
 
         return [
-            'slug' => [$presence, 'string', 'max:64', 'regex:/^[a-z0-9][a-z0-9-]*$/', Rule::unique('tasks_projects', 'slug')->ignore($project?->id)],
+            'slug' => [$presence, 'filled', 'string', 'max:64', 'regex:/^[a-z0-9][a-z0-9-]*$/', Rule::unique('tasks_projects', 'slug')->ignore($project?->id)],
             'title' => [$presence, 'string', 'max:255'],
             'workdir' => ['sometimes', 'nullable', 'string', 'max:1024'],
             'repo_url' => ['sometimes', 'nullable', 'string', 'max:1024'],
@@ -769,6 +769,22 @@ final class Tasks
             'rules' => ['sometimes', 'nullable', 'string'],
             'archived' => ['sometimes', 'boolean'],
         ];
+    }
+
+    /**
+     * The slug brought to its shape before the rules see it (#125), on both doors: «Тормозные
+     * колодки» is kept as `tormoznye-kolodki`. Only one nothing is left of, or one taken, is refused.
+     *
+     * @param  array<string, mixed>  $values
+     * @return array<string, mixed>
+     */
+    private function bringSlug(array $values): array
+    {
+        if (array_key_exists('slug', $values)) {
+            $values['slug'] = Project::codeFor('slug', $values['slug']);
+        }
+
+        return $values;
     }
 
     /**

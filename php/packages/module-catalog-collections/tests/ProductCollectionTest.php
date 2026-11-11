@@ -116,25 +116,33 @@ final class ProductCollectionTest extends TestCase
     }
 
     /**
-     * @return array<string, array{mixed}>
+     * @return array<string, array{string, string}>
      */
-    public static function badKeys(): array
+    public static function typedKeys(): array
     {
         return [
-            'capitals' => ['Cameras'],
-            'an underscore' => ['top_cameras'],
-            'a space' => ['top cameras'],
-            'cyrillic' => ['камеры'],
-            'a line break at the end' => ["cameras\n"],
-            'too long' => [str_repeat('a', 65)],
+            'capitals' => ['Cameras', 'cameras'],
+            'an underscore' => ['top_cameras', 'top-cameras'],
+            'a space' => ['top cameras', 'top-cameras'],
+            'cyrillic' => ['камеры', 'kamery'],
+            'a line break at the end' => ["cameras\n", 'cameras'],
+            'too long' => [str_repeat('a', 65), str_repeat('a', 64)],
         ];
     }
 
     #[Test]
-    #[DataProvider('badKeys')]
-    public function a_key_is_lowercase_latin_digits_and_dashes(mixed $key): void
+    #[DataProvider('typedKeys')]
+    public function a_typed_key_is_brought_to_lowercase_latin_digits_and_dashes(string $typed, string $key): void
     {
-        $this->assertRefused('key', ['key' => $key]);
+        $this->assertSame($key, $this->collection(['key' => $typed])->key);
+    }
+
+    #[Test]
+    public function a_key_that_leaves_nothing_is_made_of_the_title_and_one_that_is_not_text_is_refused(): void
+    {
+        $this->assertSame('sale', $this->collection(['title' => 'Sale', 'key' => '!!!'])->key);
+
+        $this->assertRefused('key', ['key' => ['cameras']]);
     }
 
     #[Test]

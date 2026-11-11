@@ -41,6 +41,20 @@ const spans = [12, 8, 6, 4]
     </div>
 
     <div>
+      <span class="wx-demo__label">
+        xs — two short fields, as in a dialog: side by side from 400px of row, drag it narrower
+      </span>
+      <div class="grid-demo__scroller">
+        <div class="grid-demo__resizable grid-demo__dialog">
+          <wx-row>
+            <wx-col :span="24" :xs="12"><div class="grid-demo__cell">Latitude</div></wx-col>
+            <wx-col :span="24" :xs="12"><div class="grid-demo__cell">Longitude</div></wx-col>
+          </wx-row>
+        </div>
+      </div>
+    </div>
+
+    <div>
       <span class="wx-demo__label">The same markup in a 300px column</span>
       <div class="grid-demo__narrow">
         <wx-row :gutter="12">
@@ -88,6 +102,12 @@ const spans = [12, 8, 6, 4]
   border-radius: var(--wx-radius-sm);
   overflow: hidden;
   resize: horizontal;
+}
+
+/* Starts at a desktop dialog's width, where xs already holds. */
+.grid-demo__dialog {
+  width: 480px;
+  max-width: 100%;
 }
 
 /* A stand-in for a drawer or a narrow panel: same markup, less room. */

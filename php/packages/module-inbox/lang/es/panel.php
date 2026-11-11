@@ -146,6 +146,8 @@ return [
     'any-placement' => 'Cualquier ubicación',
     'placement-none' => 'Sin indicar',
     'meta-referrer' => 'Vino de',
+    'meta-landing' => 'Página de entrada',
+    'meta-utm-first' => 'Primera visita',
     'meta-ip' => 'Dirección',
     'meta-agent' => 'Navegador',
     'meta-locale' => 'Idioma',

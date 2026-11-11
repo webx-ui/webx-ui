@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import {
+  WxCodeField,
   WxLinkPicker,
   createRelationsApi,
   useAdmin,
@@ -160,7 +161,7 @@ function setLabel(next: LocalizedValue | string | number | undefined): void {
           :error="serverErrors('key')"
           required
         >
-          <wx-input v-model="values.key" :maxlength="64" :disabled="disabled || keyLocked" />
+          <wx-code-field v-model="values.key" :maxlength="64" :disabled="disabled || keyLocked" />
         </wx-form-item>
 
         <wx-form-item

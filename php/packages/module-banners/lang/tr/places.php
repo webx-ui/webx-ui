@@ -10,7 +10,7 @@ return [
     'new' => 'Yeni yer',
     'title' => 'Ad',
     'key' => 'Anahtar',
-    'key-help' => 'Sitenin şablonunun istediği şey: küçük Latin harfleri, rakamlar ve tireler, ilki harf. Sonradan değiştirilemez.',
+    'key-help' => 'Sitenin şablonunun istediği şey, örneğin “sidebar”: yazılan kendiliğinden anahtara dönüşür. Sonradan değiştirilemez.',
     'declared' => 'Yapılandırmada tanımlı',
     'in-template' => 'Şablonda: banners(\':key\')',
     'count' => 'Bannerlar',

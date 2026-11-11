@@ -9,6 +9,19 @@ return [
     'empty-help' => 'An order appears here as soon as it is placed on the site.',
     'order' => 'Order',
     'statuses-cache' => 'Order statuses',
+    'order-field' => [
+        'title' => 'Checkout field',
+        'cache' => 'Checkout fields',
+        'key' => 'Key',
+        'type' => 'Type',
+        'place' => 'Place',
+        'label' => 'Label',
+        'hint' => 'Hint',
+        'options' => 'Options',
+        'required' => 'Required',
+        'active' => 'Active',
+        'parent_id' => 'Shown when checked',
+    ],
     'fields' => [
         'customer_first_name' => 'First name',
         'customer_last_name' => 'Last name',
@@ -18,6 +31,7 @@ return [
         'comment' => 'Buyer\'s comment',
         'manager_note' => 'Manager note',
         'user_id' => 'Visitor',
+        'fields' => 'Additional fields',
     ],
     'milestones' => [
         'placed' => 'Placed',

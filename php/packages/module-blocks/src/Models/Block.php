@@ -16,6 +16,7 @@ use WebxUi\Blocks\Rendering\Calls;
 use WebxUi\Blocks\Rendering\Renderer;
 use WebxUi\Blocks\Rendering\Thumbnails;
 use WebxUi\Blocks\Themes\TypeHash;
+use WebxUi\Localization\HasCodes;
 
 /**
  * A block type: what it is called, where it may go, and two pointers into its own history.
@@ -55,6 +56,8 @@ use WebxUi\Blocks\Themes\TypeHash;
  */
 class Block extends Model
 {
+    use HasCodes;
+
     /** Stands in content and is offered by the picker. */
     public const KIND_BLOCK = 'block';
 
@@ -94,6 +97,15 @@ class Block extends Model
             'draft_version_id' => 'integer',
             'published_version_id' => 'integer',
         ];
+    }
+
+    /**
+     * The slug is what templates call the type by (`data-wx-block`, `.b-{slug}`), so it keeps a
+     * letter first: `2 колонки` is kept as `block-2-kolonki`.
+     */
+    protected static function codes(): array
+    {
+        return ['slug' => ['max' => 64, 'lead' => 'block']];
     }
 
     protected static function booted(): void

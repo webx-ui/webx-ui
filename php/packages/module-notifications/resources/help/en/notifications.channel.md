@@ -56,6 +56,11 @@ something else, the log shows a «Skipped» line, and nothing is sent to them.
 
 The button is there for a channel of an event that has a ready message.
 
+Some events have a ready message for each addressee: a new order has the shop's letter and the
+buyer's. A channel that writes to the buyer (their address among its recipients) gets the
+buyer's letter; any other channel gets the shop's. Add the recipients first, then press the button.
+On a new channel the message changes by itself while nobody has edited it.
+
 ## How to check a channel before it goes to work
 
 1. Press «Send a test».

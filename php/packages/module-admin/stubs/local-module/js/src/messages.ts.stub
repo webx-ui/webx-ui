@@ -1,0 +1,33 @@
+/**
+ * The English this module speaks on its own, before the server's dictionary arrives. The server
+ * ships the same lines under `webx-{{ id }}::` (`lang/en`) and overrides these; `messages.test.ts`
+ * keeps the two sets of keys equal.
+ */
+export const {{ function }}Messages: Record<string, Record<string, string>> = {
+  module: {
+    title: '{{ Title }}',
+  },
+  list: {
+    new: 'New {{ model }}',
+    untitled: 'Untitled',
+    search: 'Search',
+    empty: 'Nothing here yet.',
+    'empty-search': 'Nothing matches the search.',
+    order: 'Drag the rows to change the order.',
+    'order-search': 'Clear the search to change the order.',
+    reorder: 'Move',
+    'reorder-failed': 'The order was not saved.',
+    open: 'Open',
+    delete: 'Delete',
+    'delete-title': 'Delete «:name»?',
+    'delete-text': 'It is deleted for good: there is no bin.',
+    deleted: 'Deleted.',
+    cancel: 'Cancel',
+    save: 'Save',
+    saved: 'Saved.',
+    'save-failed': 'Not saved: check the fields.',
+    'leave-title': 'Leave without saving?',
+    'leave-text': 'The changes on this form will be lost.',
+    leave: 'Leave',
+  },
+}

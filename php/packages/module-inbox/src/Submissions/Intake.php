@@ -13,6 +13,8 @@ use Psr\Log\LoggerInterface;
 use Throwable;
 use WebxUi\Inbox\Events\SubmissionStored;
 use WebxUi\Inbox\Exceptions\NoStatuses;
+use WebxUi\Inbox\Fields\Conditions;
+use WebxUi\Inbox\Fields\DateTimeField;
 use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\Models\Field;
 use WebxUi\Inbox\Models\Form;
@@ -46,6 +48,9 @@ final class Intake
      */
     public function receive(Form $form, array $values, Request $request, string $source = Submission::SOURCE_WEB, array $enclosures = []): Submission
     {
+        // An answer to a field its condition hides is thrown away before anything else sees it
+        // (FORM_STEPS §4.4): a form sent without JavaScript carries every field.
+        $values = Conditions::only($form->liveFields, $values);
         $hash = $this->hash($form, $values, $enclosures);
         $submission = $this->find($form, $hash);
         $repeated = $submission !== null;
@@ -110,9 +115,11 @@ final class Intake
     public function hash(Form $form, array $values, array $enclosures = []): string
     {
         $subject = [];
+        // A hidden field is not in it at all, so a form without conditions hashes as it always did.
+        $visible = Conditions::visible($form->liveFields, $values);
 
-        foreach ($form->liveFields as $field) {
-            if ($field->type === FieldType::File) {
+        foreach ($form->questions() as $field) {
+            if ($field->type === FieldType::File || ! ($visible[$field->key()] ?? true)) {
                 continue;
             }
 
@@ -192,8 +199,14 @@ final class Intake
      */
     private function write(Submission $submission, Form $form, array $values, Request $request): void
     {
-        foreach ($form->liveFields as $field) {
+        $visible = Conditions::visible($form->liveFields, $values);
+
+        foreach ($form->questions() as $field) {
             $key = $field->key();
+
+            if (! ($visible[$key] ?? true)) {
+                continue;
+            }
 
             if ($field->type === FieldType::File) {
                 $this->writeFiles($submission, $form, $field, $request);
@@ -201,7 +214,8 @@ final class Intake
                 continue;
             }
 
-            if (! array_key_exists($key, $values) || $this->isEmpty($values[$key])) {
+            if (! array_key_exists($key, $values) || $this->isEmpty($values[$key])
+                || ($field->type === FieldType::DateTime && DateTimeField::isEmpty($values[$key]))) {
                 continue;
             }
 
@@ -291,10 +305,16 @@ final class Intake
      * belongs in the mail is "Plan B"; the raw values stay in the payload for anything that
      * has to match them later.
      *
-     * @return array{0: string, 1: list<mixed>|null}
+     * @return array{0: string, 1: array<int|string, mixed>|null}
      */
     private function readable(Field $field, mixed $value): array
     {
+        // A day and a time (FORM_STEPS §6.3): the line with the zone, and what the visitor saw beside
+        // the same moment in UTC — the zone kept, so that a site changing its own later changes nothing.
+        if ($field->type === FieldType::DateTime && is_array($value)) {
+            return DateTimeField::snapshot($value, DateTimeField::zone());
+        }
+
         $choices = $field->choices();
 
         if (is_array($value)) {

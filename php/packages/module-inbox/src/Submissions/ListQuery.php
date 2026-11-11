@@ -47,6 +47,7 @@ final class ListQuery
         FieldType::Select,
         FieldType::Radio,
         FieldType::Date,
+        FieldType::DateTime,
     ];
 
     /**
@@ -68,7 +69,7 @@ final class ListQuery
 
     public static function for(Form $form): self
     {
-        $fields = $form->liveFields()->get();
+        $fields = collect($form->questions());
         $columns = $fields->where('in_table', true);
 
         // A form that marks no field as a column — every form an agent writes without saying
@@ -282,6 +283,21 @@ final class ListQuery
     }
 
     /**
+     * The moment of a «Date and time» answer, `payload.at`, as a subquery to sort by — the same
+     * index as the column's own.
+     *
+     * @param  Builder<Submission>  $query
+     */
+    private function moment(Builder $query, Field $field): string
+    {
+        return '(select '.$query->getQuery()->getGrammar()->wrap('v.payload->at').' from inbox_submission_values as v'
+            .' where v.submission_id = inbox_submissions.id'
+            .' and v.form_id = inbox_submissions.form_id'
+            .' and v.field_id = '.(int) $field->getKey()
+            .' limit 1)';
+    }
+
+    /**
      * Which tab is open. Apart from the rows, so that the counts of every tab can be taken
      * under the same filters.
      *
@@ -393,7 +409,11 @@ final class ListQuery
         // A column of answers, named the way the table draws it.
         foreach ($this->columns as $field) {
             if ($key === 'values.'.$field->key()) {
-                $query->orderByRaw(self::alias($field).' '.$direction);
+                // A day and a time by its moment in UTC (FORM_STEPS §6.6), not by its words: «02.01»
+                // would stand before «12.12» of the year before.
+                $field->type === FieldType::DateTime
+                    ? $query->orderByRaw($this->moment($query, $field).' '.$direction)
+                    : $query->orderByRaw(self::alias($field).' '.$direction);
 
                 return;
             }

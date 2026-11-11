@@ -8,8 +8,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
+use WebxUi\Inbox\Fields\Conditions;
 use WebxUi\Inbox\Fields\FieldType;
+use WebxUi\Inbox\Fields\Summary;
+use WebxUi\Localization\HasCodes;
 use WebxUi\Localization\HasTranslations;
+use WebxUi\Localization\Slug;
 
 /**
  * One question of a form.
@@ -31,12 +35,27 @@ use WebxUi\Localization\HasTranslations;
  */
 class Field extends Model
 {
+    use HasCodes;
     use HasTranslations;
     use SoftDeletes;
 
     protected $table = 'inbox_form_fields';
 
     protected $guarded = [];
+
+    /**
+     * The machine name (§2.6), brought rather than refused (#125): a typed `_` stays and so does a
+     * `-` — `vash_telefon` made out of a label and `step-contacts` written by hand are both kept —
+     * any other gap is a `_`, the one the thank-you page reads (`{{field.vash_telefon}}`), and a
+     * name that starts with a digit goes after `field`. A null name is left alone: it is the field
+     * nobody named, `f17`.
+     *
+     * @return array<string, array{max: int, separator?: string, lead?: string}>
+     */
+    protected static function codes(): array
+    {
+        return ['name' => ['max' => 64, 'separator' => Slug::BOTH_UNDERSCORED, 'lead' => 'field']];
+    }
 
     /**
      * @return list<string>
@@ -102,6 +121,21 @@ class Field extends Model
                 $form->options = [...($form->options ?? []), 'email_field' => $field->key()];
                 $form->save();
             }
+
+            // The conditions that name it follow it too (FORM_STEPS §4.2): left behind, they would
+            // name a field that is not there, and their fields would never be shown again. So does a
+            // summary that names it (§7).
+            $others = self::query()->where('form_id', $field->form_id)->whereKeyNot($field->getKey())->get();
+
+            foreach ($others as $other) {
+                $options = $other->options ?? [];
+                $renamed = Summary::rename(Conditions::rename($options, $old, $field->key()), $old, $field->key());
+
+                if ($renamed !== $options) {
+                    $other->options = $renamed;
+                    $other->save();
+                }
+            }
         });
     }
 
@@ -135,6 +169,43 @@ class Field extends Model
         }
 
         return $choices;
+    }
+
+    /**
+     * Drawn as cards (FORM_STEPS §5): a group of radios or ticks with `view: cards`.
+     */
+    public function isCards(): bool
+    {
+        return in_array($this->type, [FieldType::Radio, FieldType::Checkbox], true) && $this->option('view') === 'cards';
+    }
+
+    /**
+     * The choices as a card shows them: the label and the description in the language being read,
+     * the key of the picture. Only the look of the field — an answer keeps the label alone.
+     *
+     * @return list<array{value: string, label: string, description: ?string, image: ?string}>
+     */
+    public function cardChoices(): array
+    {
+        $cards = [];
+
+        foreach ((array) $this->option('choices', []) as $choice) {
+            if (! is_array($choice) || ! isset($choice['value'])) {
+                continue;
+            }
+
+            $description = $this->pick($choice['description'] ?? null);
+            $image = $choice['image']['path'] ?? null;
+
+            $cards[] = [
+                'value' => (string) $choice['value'],
+                'label' => $this->label($choice),
+                'description' => trim($description) !== '' ? $description : null,
+                'image' => is_string($image) && $image !== '' ? $image : null,
+            ];
+        }
+
+        return $cards;
     }
 
     /** Whether one answer to this field may be several things. */

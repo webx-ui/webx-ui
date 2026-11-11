@@ -21,6 +21,7 @@ final class ShowCommandTest extends TestCase
         $this->assertSame([self::fixture('site/theme'), 'webx-ui/theme-fixture'], array_column($report['layers'], 'name'));
         $this->assertTrue($report['layers'][0]['local']);
         $this->assertNull($report['preset']);
+        $this->assertNull($report['reveal']);
         $this->assertSame(['night', 'warm'], array_keys($report['presets']));
     }
 

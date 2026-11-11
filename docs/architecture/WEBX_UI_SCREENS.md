@@ -343,7 +343,10 @@ interface TypeEntry {
 `wx-tree-select` (ключ из `props.nodes`, список при `multiple`), `wx-slider` (число, пара при
 `range`), `wx-rate`, `wx-time-picker` (`HH:mm`), `wx-date-time-picker` (ISO 8601 со смещением, в
 поясе приложения), `wx-date-range-picker` (`[start, end]`), `wx-tags-input` (список строк),
-`wx-autocomplete`/`wx-icon-picker`/`wx-code-editor` (string); `wx-heading` — display, значения
+`wx-autocomplete`/`wx-code-editor` (string), `wx-icon-picker` (имя иконки; с набором узла —
+`props.source` из `IconSets`, `theme` — иконки темы, или `props.icons` — новое имя только из набора,
+`ChecksNewValues`; `source` раскрывается в `icons` + `sprite` при отдаче экрана, интерфейс `Presents`);
+`wx-heading` — display, значения
 нет. Модули добавляют свои: `wx-media` и соседи (`module-media`), `wx-inbox-form` (`module-inbox`,
 slug формы «Заявок»; §10.1 `WEBX_UI_MODULE_INBOX.md`). Полная таблица — в `apps/docs/guide/screens.md`.
 

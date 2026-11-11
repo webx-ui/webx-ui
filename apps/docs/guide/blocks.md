@@ -292,6 +292,31 @@ are what keep the page from jumping, and `size` with `extension` are what a link
 labelled with. A file that has since been deleted comes back with `url: null` instead of breaking
 the page.
 
+### A link field
+
+A `wx-link` field arrives resolved: `url` with the anchor on it, `new_tab`, `rel`, `available`
+(false for a draft or a file the library no longer has) and `download` — the name the file was
+uploaded under when the editor chose a file of the library and ticked «Download instead of opening»
+(`props.files: true` on the field offers the file target). `LinkAttributes::of()` turns all of it
+into the attributes of an `<a>`, or `null` when there is nowhere to go:
+
+```blade
+@php
+    $first = \WebxUi\Admin\Links\LinkAttributes::of($button_link, $button_url);
+@endphp
+@if ($button_label && $first)
+    <a class="b-hero__button" {{ $first }}>{{ $button_label }}</a>
+@endif
+```
+
+prints `href="…" target="_blank" rel="noopener noreferrer"` for a new tab and
+`href="…" download="Price list.pdf"` for a download. The second argument is the plain address a
+block kept before it had a link field: it is read only while the link is empty, so a type that
+gains the link beside its old `*_url` prints every block saved before exactly as it did. That is
+how the buttons of `theme-default` moved to links — new fields, not a new type for the old ones,
+because a theme that overrides the block with its own `button_url` as `wx-input` has to stay a
+compatible override.
+
 **The styles start with `.b-{slug}`**, in BEM: `.b-hero__title`, `.b-hero--wide`. Width decisions
 are container queries, because the block does not know whether it is the page or a third of it.
 Saving reports what leaks — a selector outside the prefix, a bare element selector, `@media`, a
@@ -548,8 +573,8 @@ On a site with a theme the same files have a third home: `theme/blocks/`, and th
 theme layer below it. Nothing puts them on a site by itself — `webx:setup` prints the line for a
 dev copy: `php artisan webx:blocks:import --theme` reads the layers instead of `resources/blocks`, by the same
 rules — `webx:theme:sync`, a deploy and `composer update` never write a block type
-([Styles › Blocks of the theme](./styles.md#blocks-of-the-theme)). The default theme brings six —
-`hero`, `text`, `media-text`, `cards`, `cta`, `contact` ([Styles › The six blocks](./styles.md#the-six-blocks-of-the-default-theme)) — and on a
+([Styles › Blocks of the theme](./styles.md#blocks-of-the-theme)). The default theme brings seven —
+`hero`, `text`, `media-text`, `cards`, `text-tiles`, `cta`, `contact` ([Styles › The blocks of the default theme](./styles.md#the-blocks-of-the-default-theme)) — and on a
 site with it the demo's own `hero` and `text` are not seeded: the theme's stand in their place.
 
 The two drift apart quietly, so export on the day you edit. A type changed in the panel and not
@@ -646,7 +671,7 @@ screen runs — on every door: `blocks_set_content`, `blocks_edit_content`, the 
 autosave, a region's save, and a publication (for a draft written before the checks). A number past
 its `min`/`max`, an option the select does not offer, a rating, a checkbox group or a repeater past
 its `max`, something that is not a date or a colour, a link that is not `http(s)`, `mailto`, `tel`,
-a relative path or an `#anchor`, a library key nobody has, a form of the Inbox nobody made — each is refused, naming the block's key
+a relative path or an `#anchor`, a file link where the field has no `files`, a library key nobody has, a form of the Inbox nobody made — each is refused, naming the block's key
 and the field (`hero [k1], field [title]: …`); the panel opens that block and shows the message
 under the field. Where a block stands is checked too: a container field's `props.allow` and
 `props.max` (or the type's `allow` when the field names none), a type's `allowed_in` and

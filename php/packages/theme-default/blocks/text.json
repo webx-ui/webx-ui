@@ -14,7 +14,8 @@
       "id": "heading",
       "type": "wx-input",
       "label": "Heading",
-      "localized": true
+      "localized": true,
+      "help": "Two equals signs around words set them off in the accent colour: Homes ==by the river==."
     },
     {
       "id": "body",
@@ -39,14 +40,56 @@
           }
         ]
       }
+    },
+    {
+      "id": "no_reveal",
+      "type": "wx-switch",
+      "label": "Without animation",
+      "default": false,
+      "help": "Shown at once, even where the theme brings its blocks in as the page scrolls."
+    },
+    {
+      "id": "overlap",
+      "type": "wx-switch",
+      "label": "Slide over the section above",
+      "default": false,
+      "help": "The section above stays in place while this one comes up over it, and its words fade. The edge pictures stand over this section's top. Visitors who ask for less motion see the sections one after another."
+    },
+    {
+      "id": "overlap_edge",
+      "type": "wx-media",
+      "label": "Edge picture",
+      "props": {
+        "accept": "image"
+      },
+      "help": "Over the top of this section, as wide as the page: fog or clouds in a PNG or WebP with transparency, its bottom row in the colour of this section.",
+      "visible": {
+        "when": "overlap",
+        "is": true
+      }
+    },
+    {
+      "id": "overlap_edge_narrow",
+      "type": "wx-media",
+      "label": "Edge picture on a phone",
+      "props": {
+        "accept": "image"
+      },
+      "help": "The same edge for a narrow screen. Without it the edge picture above is used there too.",
+      "visible": {
+        "when": "overlap",
+        "is": true
+      }
     }
   ],
-  "template": "@php\n    $html = is_string($body) ? trim($body) : '';\n    if ($html !== '' && ! str_starts_with($html, '<')) {\n        $html = implode('', array_map(static fn (string $line): string => '<p>'.e(trim($line)).'</p>', preg_split('/\\R+/u', $html) ?: []));\n    }\n@endphp\n@if ($heading || $html !== '')\n<section class=\"b-text b-text--{{ $width === 'wide' ? 'wide' : 'narrow' }}\" data-wx-block=\"text\">\n    <div class=\"b-text__inner site-prose\">\n        @if ($heading)\n            <h2 class=\"b-text__heading\">{{ $heading }}</h2>\n        @endif\n        @if ($html !== '')\n            <div class=\"b-text__body\">{!! $html !!}</div>\n        @endif\n    </div>\n</section>\n@endif\n",
+  "template": "@php\n    $html = is_string($body) ? trim($body) : '';\n    if ($html !== '' && ! str_starts_with($html, '<')) {\n        $html = implode('', array_map(static fn (string $line): string => '<p>'.e(trim($line)).'</p>', preg_split('/\\R+/u', $html) ?: []));\n    }\n@endphp\n@if ($heading || $html !== '')\n<section class=\"b-text b-text--{{ $width === 'wide' ? 'wide' : 'narrow' }}\" data-wx-block=\"text\"@webxOverlap($overlap ?? false)>\n    @webxOverlapEdge($overlap ?? false, $overlap_edge ?? null, $overlap_edge_narrow ?? null)\n    <div class=\"b-text__inner site-prose\" @webxReveal('', $no_reveal)>\n        @if ($heading)\n            <h2 class=\"b-text__heading\">@webxAccent($heading)</h2>\n        @endif\n        @if ($html !== '')\n            <div class=\"b-text__body\">{!! $html !!}</div>\n        @endif\n    </div>\n</section>\n@endif\n",
   "styles": ".b-text {\n    padding-block: var(--site-space-5);\n}\n\n.b-text--narrow .b-text__inner {\n    max-width: 42rem;\n}\n\n.b-text__heading {\n    margin: 0 0 var(--site-space-4);\n}\n\n.b-text__body > :first-child {\n    margin-top: 0;\n}\n\n.b-text__body > :last-child {\n    margin-bottom: 0;\n}\n",
   "script": null,
   "sample": {
     "heading": "Why blocks",
     "body": "<p>A page is a list of blocks, and a block is a type: its fields, its template, its styles.</p><ul><li>The editor fills the fields.</li><li>The site prints the template.</li></ul>",
-    "width": "narrow"
+    "width": "narrow",
+    "no_reveal": false,
+    "overlap": false
   }
 }

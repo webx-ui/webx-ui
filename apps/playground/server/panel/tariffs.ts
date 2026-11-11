@@ -168,8 +168,19 @@ export const tariffs: Tariff[] = [
     badge: { ru: '120+ ЧАСОВ', en: '120+ HOURS' },
     price_text: { ru: 'По запросу', en: 'On request' },
     features: lines({ ru: 'Выделенная команда', en: 'A dedicated team' }, { ru: 'SLA', en: 'SLA' }),
-    button_label: { ru: 'Связаться', en: 'Contact us' },
-    button_link: page('contacts'),
+    /* A file of the library the browser saves under its own name (`props.files` of the node). */
+    button_label: { ru: 'Скачать прайс', en: 'Download the price list' },
+    button_link: {
+      target: 'file',
+      entity_type: null,
+      entity_id: null,
+      url: null,
+      hash: null,
+      new_tab: false,
+      rel: [],
+      path: 'banners/studio-brochure.pdf',
+      download: true,
+    },
     button_variant: 'link',
   }),
   /* Another currency, a fraction-free price with a thousands separator, and an address. */
@@ -769,6 +780,7 @@ function button(record: Tariff, locale: string, resolveLink: LinkResolver) {
     url: resolved.url,
     new_tab: newTab,
     rel: rel.size > 0 ? [...rel].join(' ') : null,
+    download: typeof resolved.download === 'string' ? resolved.download : null,
     variant,
   }
 }
@@ -809,6 +821,7 @@ function linked(link: Link | null): boolean {
     return typeof link.entity_type === 'string' && Number(link.entity_id) > 0
   }
   if (link.target === 'url') return typeof link.url === 'string' && link.url.trim() !== ''
+  if (link.target === 'file') return typeof link.path === 'string' && link.path !== ''
 
   return false
 }

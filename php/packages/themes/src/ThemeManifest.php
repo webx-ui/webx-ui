@@ -24,6 +24,8 @@ final readonly class ThemeManifest
      * @param  array<string, true|list<string>>|null  $settings  The tabs of the site's settings the theme prints —
      *                                                           `contacts` whole (`true`) or by its sections;
      *                                                           null when the manifest says nothing about them.
+     * @param  string|null  $reveal  How the theme's blocks come in as the page scrolls (§9.3): `up`, `fade`,
+     *                               `scale`, or `off`; null when the manifest says nothing — the layer below decides.
      */
     public function __construct(
         public string $name,
@@ -36,6 +38,7 @@ final readonly class ThemeManifest
         public array $fonts = [],
         public ?string $preset = null,
         public ?array $settings = null,
+        public ?string $reveal = null,
     ) {}
 
     /** A packaged theme: a directory with a composer.json of `"type": "webx-theme"`. */
@@ -223,7 +226,34 @@ final readonly class ThemeManifest
             fonts: $fonts,
             preset: $preset === null ? null : trim($preset),
             settings: self::settings($theme, $file),
+            reveal: self::reveal($theme, $file),
         );
+    }
+
+    /**
+     * `reveal`: whether the theme's blocks come in as the page scrolls, and how (§9.3). `true` is
+     * `up`, `false` is `off`; absent leaves it to the layer below, which is how a local theme says
+     * nothing and keeps what it stands on.
+     *
+     * @param  array<mixed>  $theme
+     */
+    private static function reveal(array $theme, string $file): ?string
+    {
+        if (! array_key_exists('reveal', $theme)) {
+            return null;
+        }
+
+        $value = $theme['reveal'];
+
+        if (is_bool($value)) {
+            return $value ? 'up' : 'off';
+        }
+
+        if (! is_string($value) || ! in_array($value, ThemeReveal::EFFECTS, true)) {
+            throw ThemeException::invalidManifest($file, '"reveal" is true, false or one of "'.implode('", "', ThemeReveal::EFFECTS).'".');
+        }
+
+        return $value;
     }
 
     /**

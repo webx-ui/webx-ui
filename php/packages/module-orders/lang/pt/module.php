@@ -9,6 +9,19 @@ return [
     'empty-help' => 'Um pedido aparece aqui assim que é feito no site.',
     'order' => 'Pedido',
     'statuses-cache' => 'Estados das encomendas',
+    'order-field' => [
+        'title' => 'Campo da encomenda',
+        'cache' => 'Campos da encomenda',
+        'key' => 'Chave',
+        'type' => 'Tipo',
+        'place' => 'Local',
+        'label' => 'Nome',
+        'hint' => 'Dica',
+        'options' => 'Opções',
+        'required' => 'Obrigatório',
+        'active' => 'Ativo',
+        'parent_id' => 'Mostrar se marcado',
+    ],
     'fields' => [
         'customer_first_name' => 'Nome',
         'customer_last_name' => 'Apelido',
@@ -18,6 +31,7 @@ return [
         'comment' => 'Comentário do comprador',
         'manager_note' => 'Nota do gestor',
         'user_id' => 'Visitante',
+        'fields' => 'Campos adicionais',
     ],
     'milestones' => [
         'placed' => 'Realizado',

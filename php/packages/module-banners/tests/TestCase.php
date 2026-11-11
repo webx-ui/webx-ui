@@ -27,6 +27,8 @@ use WebxUi\Pages\PagesServiceProvider;
 use WebxUi\Routing\RoutingServiceProvider;
 use WebxUi\Seo\SeoServiceProvider;
 use WebxUi\Settings\SettingsServiceProvider;
+use WebxUi\Themes\ThemeServiceProvider;
+use WebxUi\Widgets\WidgetsServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
@@ -61,6 +63,9 @@ abstract class TestCase extends Orchestra
             SettingsServiceProvider::class,
             SeoServiceProvider::class,
             PagesServiceProvider::class,
+            // A banner's video is the widgets' backdrop, `<x-webx-video variant="background">`.
+            ThemeServiceProvider::class,
+            WidgetsServiceProvider::class,
             BannersServiceProvider::class,
         ];
     }

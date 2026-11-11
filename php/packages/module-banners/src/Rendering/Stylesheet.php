@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace WebxUi\Banners\Rendering;
 
+use WebxUi\Banners\View\Components\Banner;
+
 /**
- * The CSS and the two small scripts a banner with layers needs, printed once a page however many
+ * The CSS and the small script a place of banners needs, printed once a page however many
  * banners it has (§4.2 of the layers spec).
  *
  * `layers.css` is the one file: the panel's canvas imports it as it is. The phone's layout in it
@@ -55,8 +57,9 @@ final class Stylesheet
     }
 
     /**
-     * What plays a banner's video where it is wanted and opens a random banner of a `random`
-     * place — once a page. Without it, the picture is seen, and the first banner of a place.
+     * What turns a `slider` place's strip and opens a random banner of a `random` place — once a
+     * page. Without it, the first banner of a place is seen. A banner's video is not here: it is
+     * the widgets' backdrop, played by their script ({@see Banner}).
      */
     public function scripts(): string
     {
@@ -70,13 +73,6 @@ final class Stylesheet
             (() => {
               const run = () => {
               const still = matchMedia('(prefers-reduced-motion: reduce)').matches
-              document.querySelectorAll('.webx-banner__video[data-src]').forEach((video) => {
-                const wide = matchMedia(`(min-width: ${video.dataset.breakpoint || 0}px)`).matches
-                if (still || (!wide && video.dataset.onMobile !== 'true')) return
-                video.src = video.dataset.src
-                video.removeAttribute('data-src')
-                video.play().catch(() => {})
-              })
               document.querySelectorAll('.webx-banners__strip').forEach((strip) => {
                 const place = strip.parentElement
                 const items = [...strip.querySelectorAll(':scope > .webx-banners__item')]

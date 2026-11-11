@@ -57,6 +57,25 @@ final class LatinSlugsTest extends TestCase
     }
 
     #[Test]
+    public function a_slug_with_capitals_is_kept_in_lower_case_on_every_door(): void
+    {
+        $id = (int) $this->actingAs($this->editor(), 'cms')
+            ->postJson($this->api(), ['title' => 'Foo', 'slug' => 'Foo'])
+            ->assertCreated()
+            ->json('data.id');
+
+        $page = Page::query()->findOrFail($id);
+
+        $this->assertSame('foo', $page->getTranslation('slug', 'en'));
+        $this->assertSame('http://localhost/foo', $page->url('en'));
+
+        $page->setTranslation('slug', 'en', 'Foo-Bar');
+        $page->save();
+
+        $this->assertSame('foo-bar', $page->refresh()->getTranslation('slug', 'en'));
+    }
+
+    #[Test]
     public function a_title_that_leaves_nothing_gives_the_type_and_the_id(): void
     {
         $id = (int) $this->actingAs($this->editor(), 'cms')

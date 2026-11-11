@@ -1,0 +1,5 @@
+---
+'@webx-ui/php': minor
+---
+
+Widgets: `<x-webx-photos :images>` — the photos of a card. Two photos or more turn in one frame every 5 seconds (`autoplay` in milliseconds, `false` for none), a bar under each fills while its photo is shown and shows it on a click, a finger swipes sideways; the pointer, the focus, the page scrolled past and the pause button stop it, and with reduced motion nothing turns until the button is pressed. One photo is a plain `<img>` with no script, and without JavaScript the first photo stands alone. A card whose link is stretched over it marks itself `data-webx-photos-surface`: a swipe turns the photos, a tap follows the link. Its own small file, `dist/photos.js`. Theme-default: the `cards` block becomes a grid or a carousel (`view`; `arrows`, `dots`, `endless`, `autoplay`, `interval` as the gallery's slider), as many cards across as the grid in the same column; a card gets labels under its title (`chips`) and more photos beside its picture (`photos`), turning in `<x-webx-photos>`. A block saved before prints exactly as before; a site takes the fields with `webx:blocks:import --theme --replace=cards`.

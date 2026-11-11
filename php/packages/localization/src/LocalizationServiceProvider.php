@@ -5,13 +5,17 @@ declare(strict_types=1);
 namespace WebxUi\Localization;
 
 use Illuminate\Contracts\Translation\Loader;
+use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
+use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Cache\CacheGroups;
 use WebxUi\Cache\CacheServiceProvider;
 use WebxUi\Localization\Console\ClearLocalesCommand;
 use WebxUi\Localization\Console\SeedLocalesCommand;
+use WebxUi\Localization\Contracts\PageInLanguage;
+use WebxUi\Localization\Doctor\FirstVisitCheck;
 use WebxUi\Localization\Http\Middleware\SetLocale;
 use WebxUi\Localization\Http\Middleware\SetPanelLocale;
 use WebxUi\Localization\Models\Locale;
@@ -34,6 +38,10 @@ class LocalizationServiceProvider extends ServiceProvider
             $app,
             $app->make('config'),
         ));
+
+        // Nothing here knows the site's addresses: `webx-ui/widgets` binds the switcher's own
+        // answer, whichever of the two providers runs first (ROUTING §18.1, 10).
+        $this->app->bindIf(PageInLanguage::class, NoPageInLanguage::class);
 
         // Extended rather than replaced, as `webx-ui/themes` does: whichever wraps the other, both
         // answer, and the loader the site set up stays the one underneath.
@@ -63,6 +71,23 @@ class LocalizationServiceProvider extends ServiceProvider
         $router = $this->app->make('router');
         $router->aliasMiddleware('webx.locale', SetLocale::class);
         $router->aliasMiddleware('webx.panel-locale', SetPanelLocale::class);
+
+        // The language of the first visit is read by a proxy in front of the site as well, and its
+        // value is no secret (ROUTING §18.1, 7); the declined offer is written by a script (§18.6).
+        if (class_exists(EncryptCookies::class)) {
+            $config = $this->app->make('config');
+            EncryptCookies::except([
+                (string) $config->get('webx-localization.first_visit.cookie', 'webx_lang'),
+                (string) $config->get('webx-localization.first_visit.offer.cookie', 'webx_lang_offer'),
+            ]);
+        }
+
+        // `webx:doctor` is the frame's, which this package does not require.
+        if (class_exists(DoctorChecks::class)) {
+            $this->callAfterResolving(DoctorChecks::class, static function (DoctorChecks $checks): void {
+                $checks->register(FirstVisitCheck::class);
+            });
+        }
 
         if (! $this->app->runningInConsole()) {
             return;

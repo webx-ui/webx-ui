@@ -46,6 +46,22 @@ than a deploy. `config/webx-localization.php` names the set a fresh installation
 and is also the answer while the table does not exist yet — the first `migrate` runs through
 code that wants a language long before there is one to read.
 
+## The language of the first visit
+
+`WEBX_LOCALE_FIRST_VISIT=uk` — a language code of the site — sends a person's first visit to a
+page of another language to the same page in that one, once: a 302 with
+`Cache-Control: private, no-store` and the cookie `webx_lang`, after which nobody is sent anywhere
+again. Robots (`first_visit.bots` in the config, a User-Agent substring each) are never sent. It
+runs inside `webx.locale`, so a site changes no middleware, and the language switcher's links stay
+as they are.
+
+Which page is "the same" is not this package's to know: it asks
+`WebxUi\Localization\Contracts\PageInLanguage`, which answers `null` here and is bound by
+`webx-ui/widgets` to its language switcher's links. `WEBX_LOCALE_FIRST_VISIT_OFFER=true` adds, on
+later visits to a page of another language, a "Switch to …?" offer beside the switcher; who gets
+it is `FirstVisit::offer()`, declining it keeps the cookie `webx_lang_offer`. Off — no header,
+cookie or script changes anywhere.
+
 ## Translated attributes
 
 A model says which of its columns hold a language map:

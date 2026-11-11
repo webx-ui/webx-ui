@@ -142,6 +142,8 @@ export interface OrderGlance {
   customer: { name: string; phone: string | null; email: string | null }
   recipient: { name: string; phone: string | null } | null
   comment: string | null
+  /** The extra fields as the order keeps them (WEBX_UI_ORDER_FIELDS.md §5.4); empty — none filled. */
+  fields: { key: string; label: string; text: string }[]
   manager_note: string | null
   last_note: OrderNote | null
   blocks: { key: string; summary: string | null }[]
@@ -291,6 +293,22 @@ export interface OrderNote {
   created_at: string | null
 }
 
+/**
+ * A row of the card «Additional»: the snapshot's, or a field switched on the order has no answer
+ * to (`value` and `text` null). `known: false` — the field is gone: a line or a text may still
+ * change, a checkbox and a list may only be cleared. A list's `options` are in the order's
+ * language, the one the order holds among them even if it is gone.
+ */
+export interface OrderFieldRow {
+  key: string
+  type: 'checkbox' | 'text' | 'textarea' | 'select'
+  label: string
+  value: boolean | string | null
+  text: string | null
+  known: boolean
+  options: { value: string; label: string }[]
+}
+
 export interface OrderCardData {
   id: number
   number: string | null
@@ -348,6 +366,8 @@ export interface OrderCardData {
     value: Record<string, unknown> | null
     own: boolean
   }[]
+  /** The rows of the card «Additional» (WEBX_UI_ORDER_FIELDS.md §6.1); empty — no card. */
+  fields: OrderFieldRow[]
   timeline: TimelineLine[]
   /** The note pinned over the feed «Notes» (decision 91); null — none. */
   manager_note: string | null
@@ -875,4 +895,70 @@ export interface NewOrderPreview {
     payable_formatted: string | null
     warnings: { code: string; line: number | string | null; message: string }[]
   }
+}
+
+/* ------------------------------------------- extra fields of the checkout (ORDER_FIELDS §7) ----- */
+
+export type CheckoutFieldType = 'checkbox' | 'text' | 'textarea' | 'select'
+
+/** A point of a step's form where fields stand (§4.1), in the order a buyer meets them. */
+export interface CheckoutFieldPlace {
+  key: string
+  step: string
+  label: string
+}
+
+export interface CheckoutFieldOption {
+  value: string
+  label: Record<string, string>
+}
+
+/** One definition as the panel shows it (§7.1): words in every language, the parent by key. */
+export interface CheckoutField {
+  id: number
+  key: string
+  type: CheckoutFieldType
+  place: string
+  /** False — the registry no longer knows the place: the buyer is not asked the field. */
+  place_known: boolean
+  /** The label in the panel's language, else the site's main one, else the key. */
+  name: string
+  label: Record<string, string>
+  hint: Record<string, string>
+  options: CheckoutFieldOption[]
+  required: boolean
+  active: boolean
+  /** The key of the checkbox it is shown behind; null — always shown. */
+  parent: string | null
+  position: number
+}
+
+export interface CheckoutFieldsData {
+  places: CheckoutFieldPlace[]
+  fields: CheckoutField[]
+  limits: { fields: number; options: number; label: number; hint: number }
+}
+
+/** What is sent to write a field; left out on a change — as it was. */
+export interface CheckoutFieldInput {
+  key?: string
+  type?: CheckoutFieldType
+  place?: string
+  label?: Record<string, string>
+  hint?: Record<string, string>
+  options?: CheckoutFieldOption[]
+  required?: boolean
+  active?: boolean
+  parent?: string | null
+}
+
+/** What a change does for the buyer — or, refused, why (§7.3). */
+export interface CheckoutFieldConsequences {
+  refusal: string | null
+  message: string | null
+  /** The input a refusal is about. */
+  field: string | null
+  effects: string[]
+  dependents: string[]
+  lines: string[]
 }

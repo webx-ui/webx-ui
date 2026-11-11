@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useAdmin, useTranslate } from '@webx-ui/module-admin'
 import { toast, WxAction, WxCard, WxTable, WxText, type TableColumn } from '@webx-ui/core'
 import { useInboxMessages } from './i18n'
+import { questionsOf } from './steps'
 import type { InboxField, InboxForm } from './types'
 
 /**
@@ -56,7 +57,7 @@ const columns = computed<TableColumn<InboxField>[]>(() => [
 ])
 
 /** Only the ones a page can actually fill in or a visitor can actually answer. */
-const listed = computed(() => props.fields.filter((field) => field.is_enabled))
+const listed = computed(() => questionsOf(props.fields))
 
 async function copy(text: string): Promise<void> {
   try {

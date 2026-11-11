@@ -19,6 +19,13 @@ enum LinkTarget: string
     /** A path on this site, or an absolute address somewhere else. */
     case Url = 'url';
 
+    /**
+     * A file of the media library, by its key — a brochure, a price list. Offered only where the
+     * field asks for it (`props.files`): a menu item keeps its link in columns that have nowhere
+     * to put a key, and a redirect after a form has no business sending somebody a PDF.
+     */
+    case File = 'file';
+
     /** Nowhere: a group heading, a separator, a button whose script does the work. */
     case None = 'none';
 }

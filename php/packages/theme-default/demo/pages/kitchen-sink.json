@@ -515,14 +515,14 @@
           "type": "text",
           "values": {
             "heading": {
-              "en": "Six blocks to build a page of",
-              "ru": "Шесть блоков, из которых собирается страница",
-              "pl": "Sześć bloków, z których składa się strona"
+              "en": "Seven blocks to build a page of",
+              "ru": "Семь блоков, из которых собирается страница",
+              "pl": "Siedem bloków, z których składa się strona"
             },
             "body": {
-              "en": "<p>The default theme brings six blocks: a hero, text, a picture beside text, cards, a call to action and contacts. Their styles know only the tokens of the site, so a preset or the theme’s accent repaints every one of them.</p><p>Each page under this one shows a block in every variant and then once more in a narrow column: the layout of a block follows the width it is given, not the width of the window.</p>",
-              "ru": "<p>Тема по умолчанию приносит шесть блоков: первый экран, текст, картинку рядом с текстом, карточки, призыв и контакты. Их стили знают только токены сайта, поэтому пресет или акцент темы перекрашивают каждый из них.</p><p>Каждая страница в этом разделе показывает блок во всех вариантах и ещё раз в узкой колонке: раскладка блока следует за шириной, которую ему дали, а не за шириной окна.</p>",
-              "pl": "<p>Domyślny motyw przynosi sześć bloków: baner, tekst, zdjęcie obok tekstu, karty, wezwanie do działania i kontakty. Ich style znają tylko tokeny strony, więc preset albo akcent motywu przemalowuje każdy z nich.</p><p>Każda strona poniżej pokazuje blok we wszystkich wariantach, a potem jeszcze raz w wąskiej kolumnie: układ bloku idzie za szerokością, którą dostał, a nie za szerokością okna.</p>"
+              "en": "<p>The default theme brings seven blocks: a hero, text, a picture beside text, cards, text and tiles on a photo, a call to action and contacts. Their styles know only the tokens of the site, so a preset or the theme’s accent repaints every one of them.</p><p>Each page under this one shows a block in every variant and then once more in a narrow column: the layout of a block follows the width it is given, not the width of the window.</p>",
+              "ru": "<p>Тема по умолчанию приносит семь блоков: первый экран, текст, картинку рядом с текстом, карточки, текст и плитки на фото, призыв и контакты. Их стили знают только токены сайта, поэтому пресет или акцент темы перекрашивают каждый из них.</p><p>Каждая страница в этом разделе показывает блок во всех вариантах и ещё раз в узкой колонке: раскладка блока следует за шириной, которую ему дали, а не за шириной окна.</p>",
+              "pl": "<p>Domyślny motyw przynosi siedem bloków: baner, tekst, zdjęcie obok tekstu, karty, tekst i kafelki na zdjęciu, wezwanie do działania i kontakty. Ich style znają tylko tokeny strony, więc preset albo akcent motywu przemalowuje każdy z nich.</p><p>Każda strona poniżej pokazuje blok we wszystkich wariantach, a potem jeszcze raz w wąskiej kolumnie: układ bloku idzie za szerokością, którą dostał, a nie za szerokością okna.</p>"
             }
           }
         },
@@ -999,6 +999,80 @@
               }
             },
             {
+              "key": "showcase-media-accent",
+              "type": "media-text",
+              "values": {
+                "image": {
+                  "path": "demo:showcase-photo-3",
+                  "alt": {
+                    "en": "A quiet street with trees",
+                    "ru": "Тихая улица с деревьями",
+                    "pl": "Cicha ulica z drzewami"
+                  }
+                },
+                "logo": {
+                  "path": "demo:showcase-logo-1",
+                  "alt": {
+                    "en": "Logo",
+                    "ru": "Логотип",
+                    "pl": "Logo"
+                  }
+                },
+                "heading": {
+                  "en": "A logo and ==an accent==",
+                  "ru": "Логотип и ==акцент==",
+                  "pl": "Logo i ==akcent=="
+                },
+                "body": {
+                  "en": "<p>A small logo stands above the heading. Words between two equals signs in the heading take the accent colour — in each language where its own word order puts them.</p>",
+                  "ru": "<p>Над заголовком — небольшой логотип. Слова между двумя знаками равенства в заголовке получают цвет акцента — в каждом языке там, где их ставит его порядок слов.</p>",
+                  "pl": "<p>Nad nagłówkiem stoi małe logo. Słowa między dwoma znakami równości w nagłówku dostają kolor akcentu — w każdym języku tam, gdzie stawia je jego szyk.</p>"
+                },
+                "button_label": {
+                  "en": "Read on",
+                  "ru": "Читать дальше",
+                  "pl": "Czytaj dalej"
+                },
+                "button_url": "/kitchen-sink/blocks/text",
+                "side": "start",
+                "tone": "plain"
+              }
+            },
+            {
+              "key": "showcase-media-accent-end",
+              "type": "media-text",
+              "values": {
+                "image": {
+                  "path": "demo:showcase-photo-5",
+                  "alt": {
+                    "en": "Hills under clouds",
+                    "ru": "Холмы под облаками",
+                    "pl": "Wzgórza pod chmurami"
+                  }
+                },
+                "logo": {
+                  "path": "demo:showcase-logo-2",
+                  "alt": {
+                    "en": "Logo",
+                    "ru": "Логотип",
+                    "pl": "Logo"
+                  }
+                },
+                "heading": {
+                  "en": "==On the right==, on a tint",
+                  "ru": "==Справа==, на подложке",
+                  "pl": "==Po prawej==, na tle"
+                },
+                "body": {
+                  "en": "<p>The accent can open the heading as well as close it.</p>",
+                  "ru": "<p>Акцент может и открывать заголовок, и закрывать его.</p>",
+                  "pl": "<p>Akcent może nagłówek zarówno otwierać, jak i zamykać.</p>"
+                },
+                "side": "end",
+                "tone": "surface"
+              }
+            },
+            {
               "key": "showcase-media-narrow",
               "type": "showcase-column",
               "values": {
@@ -1168,6 +1242,502 @@
                       "pl": "Więcej"
                     },
                     "link_url": "/kitchen-sink/blocks/contact"
+                  }
+                ]
+              }
+            },
+            {
+              "key": "showcase-cards-carousel",
+              "type": "cards",
+              "values": {
+                "heading": {
+                  "en": "A carousel of ==six cards==",
+                  "ru": "Карусель из ==шести карточек==",
+                  "pl": "Karuzela ==sześciu kart=="
+                },
+                "intro": {
+                  "en": "Three across where the column has room, labels under each title; the first card turns three photos.",
+                  "ru": "Три в ряд, где колонке хватает места, метки под каждым заголовком; первая карточка листает три фото.",
+                  "pl": "Trzy w rzędzie, gdy kolumna ma miejsce, etykiety pod każdym tytułem; pierwsza karta przewija trzy zdjęcia."
+                },
+                "columns": "3",
+                "pictures": "photo",
+                "view": "slider",
+                "arrows": true,
+                "dots": true,
+                "endless": true,
+                "autoplay": true,
+                "interval": 5,
+                "cards": [
+                  {
+                    "image": {
+                      "path": "demo:showcase-photo-1",
+                      "alt": {
+                        "en": "Studio by the park",
+                        "ru": "Студия у парка",
+                        "pl": "Kawalerka przy parku"
+                      }
+                    },
+                    "photos": [
+                      {
+                        "path": "demo:showcase-photo-2",
+                        "alt": {
+                          "en": "Studio by the park",
+                          "ru": "Студия у парка",
+                          "pl": "Kawalerka przy parku"
+                        }
+                      },
+                      {
+                        "path": "demo:showcase-photo-3",
+                        "alt": {
+                          "en": "Studio by the park",
+                          "ru": "Студия у парка",
+                          "pl": "Kawalerka przy parku"
+                        }
+                      }
+                    ],
+                    "title": {
+                      "en": "Studio by the park",
+                      "ru": "Студия у парка",
+                      "pl": "Kawalerka przy parku"
+                    },
+                    "chips": [
+                      {
+                        "label": {
+                          "en": "1 room",
+                          "ru": "1 комната",
+                          "pl": "1 pokój"
+                        }
+                      },
+                      {
+                        "label": {
+                          "en": "32 m²",
+                          "ru": "32 м²",
+                          "pl": "32 m²"
+                        }
+                      },
+                      {
+                        "label": {
+                          "en": "Floor 4",
+                          "ru": "4 этаж",
+                          "pl": "Piętro 4"
+                        }
+                      }
+                    ],
+                    "text": {
+                      "en": "Morning sun and a quiet yard.",
+                      "ru": "Утреннее солнце и тихий двор.",
+                      "pl": "Poranne słońce i cichy dziedziniec."
+                    },
+                    "link_label": {
+                      "en": "See the flat",
+                      "ru": "Смотреть квартиру",
+                      "pl": "Zobacz mieszkanie"
+                    },
+                    "link_url": "/kitchen-sink/blocks/media-text"
+                  },
+                  {
+                    "image": {
+                      "path": "demo:showcase-photo-4",
+                      "alt": {
+                        "en": "Two rooms, a balcony",
+                        "ru": "Две комнаты и балкон",
+                        "pl": "Dwa pokoje z balkonem"
+                      }
+                    },
+                    "photos": [],
+                    "title": {
+                      "en": "Two rooms, a balcony",
+                      "ru": "Две комнаты и балкон",
+                      "pl": "Dwa pokoje z balkonem"
+                    },
+                    "chips": [
+                      {
+                        "label": {
+                          "en": "2 rooms",
+                          "ru": "2 комнаты",
+                          "pl": "2 pokoje"
+                        }
+                      },
+                      {
+                        "label": {
+                          "en": "54 m²",
+                          "ru": "54 м²",
+                          "pl": "54 m²"
+                        }
+                      },
+                      {
+                        "label": {
+                          "en": "Balcony",
+                          "ru": "Балкон",
+                          "pl": "Balkon"
+                        }
+                      }
+                    ],
+                    "text": {
+                      "en": "A kitchen apart from the living room.",
+                      "ru": "Кухня отдельно от гостиной.",
+                      "pl": "Kuchnia oddzielona od salonu."
+                    },
+                    "link_label": {
+                      "en": "See the flat",
+                      "ru": "Смотреть квартиру",
+                      "pl": "Zobacz mieszkanie"
+                    },
+                    "link_url": "/kitchen-sink/blocks/cta"
+                  },
+                  {
+                    "image": {
+                      "path": "demo:showcase-photo-5",
+                      "alt": {
+                        "en": "Three rooms on the corner",
+                        "ru": "Три комнаты на углу",
+                        "pl": "Trzy pokoje na rogu"
+                      }
+                    },
+                    "photos": [
+                      {
+                        "path": "demo:showcase-photo-6",
+                        "alt": {
+                          "en": "Three rooms on the corner",
+                          "ru": "Три комнаты на углу",
+                          "pl": "Trzy pokoje na rogu"
+                        }
+                      }
+                    ],
+                    "title": {
+                      "en": "Three rooms on the corner",
+                      "ru": "Три комнаты на углу",
+                      "pl": "Trzy pokoje na rogu"
+                    },
+                    "chips": [
+                      {
+                        "label": {
+                          "en": "3 rooms",
+                          "ru": "3 комнаты",
+                          "pl": "3 pokoje"
+                        }
+                      },
+                      {
+                        "label": {
+                          "en": "78 m²",
+                          "ru": "78 м²",
+                          "pl": "78 m²"
+                        }
+                      }
+                    ],
+                    "text": {
+                      "en": "Windows on two sides of the house.",
+                      "ru": "Окна на две стороны дома.",
+                      "pl": "Okna na dwie strony domu."
+                    }
+                  },
+                  {
+                    "image": {
+                      "path": "demo:showcase-photo-7",
+                      "alt": {
+                        "en": "A flat under the roof",
+                        "ru": "Квартира под крышей",
+                        "pl": "Mieszkanie pod dachem"
+                      }
+                    },
+                    "photos": [],
+                    "title": {
+                      "en": "A flat under the roof",
+                      "ru": "Квартира под крышей",
+                      "pl": "Mieszkanie pod dachem"
+                    },
+                    "chips": [
+                      {
+                        "label": {
+                          "en": "Top floor",
+                          "ru": "Последний этаж",
+                          "pl": "Ostatnie piętro"
+                        }
+                      },
+                      {
+                        "label": {
+                          "en": "96 m²",
+                          "ru": "96 м²",
+                          "pl": "96 m²"
+                        }
+                      }
+                    ],
+                    "text": {
+                      "en": "High ceilings and a view over the river.",
+                      "ru": "Высокие потолки и вид на реку.",
+                      "pl": "Wysokie sufity i widok na rzekę."
+                    }
+                  },
+                  {
+                    "image": {
+                      "path": "demo:showcase-photo-2",
+                      "alt": {
+                        "en": "Garden flat",
+                        "ru": "Квартира с садом",
+                        "pl": "Mieszkanie z ogrodem"
+                      }
+                    },
+                    "photos": [],
+                    "title": {
+                      "en": "Garden flat",
+                      "ru": "Квартира с садом",
+                      "pl": "Mieszkanie z ogrodem"
+                    },
+                    "chips": [
+                      {
+                        "label": {
+                          "en": "Ground floor",
+                          "ru": "Первый этаж",
+                          "pl": "Parter"
+                        }
+                      },
+                      {
+                        "label": {
+                          "en": "Garden",
+                          "ru": "Сад",
+                          "pl": "Ogród"
+                        }
+                      },
+                      {
+                        "label": {
+                          "en": "61 m²",
+                          "ru": "61 м²",
+                          "pl": "61 m²"
+                        }
+                      }
+                    ],
+                    "text": {
+                      "en": "A door straight out to the lawn.",
+                      "ru": "Дверь прямо на газон.",
+                      "pl": "Drzwi prosto na trawnik."
+                    },
+                    "link_label": {
+                      "en": "See the flat",
+                      "ru": "Смотреть квартиру",
+                      "pl": "Zobacz mieszkanie"
+                    },
+                    "link_url": "/kitchen-sink/blocks/contact"
+                  },
+                  {
+                    "image": {
+                      "path": "demo:showcase-photo-3",
+                      "alt": {
+                        "en": "Four rooms for a family",
+                        "ru": "Четыре комнаты для семьи",
+                        "pl": "Cztery pokoje dla rodziny"
+                      }
+                    },
+                    "photos": [],
+                    "title": {
+                      "en": "Four rooms for a family",
+                      "ru": "Четыре комнаты для семьи",
+                      "pl": "Cztery pokoje dla rodziny"
+                    },
+                    "chips": [
+                      {
+                        "label": {
+                          "en": "4 rooms",
+                          "ru": "4 комнаты",
+                          "pl": "4 pokoje"
+                        }
+                      },
+                      {
+                        "label": {
+                          "en": "112 m²",
+                          "ru": "112 м²",
+                          "pl": "112 m²"
+                        }
+                      }
+                    ],
+                    "text": {
+                      "en": "Two bathrooms and a storeroom.",
+                      "ru": "Две ванные и кладовая.",
+                      "pl": "Dwie łazienki i schowek."
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "key": "showcase-cards-photos",
+              "type": "cards",
+              "values": {
+                "heading": {
+                  "en": "Photos that turn",
+                  "ru": "Фото, которые листаются",
+                  "pl": "Zdjęcia, które się zmieniają"
+                },
+                "intro": {
+                  "en": "Two photos or more turn on their own, a bar for each; one photo stays a picture.",
+                  "ru": "Два фото и больше листаются сами, у каждого своя полоска; одно фото — обычная картинка.",
+                  "pl": "Dwa zdjęcia lub więcej zmieniają się same, każde z paskiem; jedno zdjęcie zostaje obrazem."
+                },
+                "columns": "3",
+                "pictures": "photo",
+                "cards": [
+                  {
+                    "image": {
+                      "path": "demo:showcase-photo-1",
+                      "alt": {
+                        "en": "Studio by the park",
+                        "ru": "Студия у парка",
+                        "pl": "Kawalerka przy parku"
+                      }
+                    },
+                    "photos": [
+                      {
+                        "path": "demo:showcase-photo-2",
+                        "alt": {
+                          "en": "Studio by the park",
+                          "ru": "Студия у парка",
+                          "pl": "Kawalerka przy parku"
+                        }
+                      },
+                      {
+                        "path": "demo:showcase-photo-3",
+                        "alt": {
+                          "en": "Studio by the park",
+                          "ru": "Студия у парка",
+                          "pl": "Kawalerka przy parku"
+                        }
+                      }
+                    ],
+                    "title": {
+                      "en": "Studio by the park",
+                      "ru": "Студия у парка",
+                      "pl": "Kawalerka przy parku"
+                    },
+                    "chips": [
+                      {
+                        "label": {
+                          "en": "1 room",
+                          "ru": "1 комната",
+                          "pl": "1 pokój"
+                        }
+                      },
+                      {
+                        "label": {
+                          "en": "32 m²",
+                          "ru": "32 м²",
+                          "pl": "32 m²"
+                        }
+                      },
+                      {
+                        "label": {
+                          "en": "Floor 4",
+                          "ru": "4 этаж",
+                          "pl": "Piętro 4"
+                        }
+                      }
+                    ],
+                    "text": {
+                      "en": "Morning sun and a quiet yard.",
+                      "ru": "Утреннее солнце и тихий двор.",
+                      "pl": "Poranne słońce i cichy dziedziniec."
+                    },
+                    "link_label": {
+                      "en": "See the flat",
+                      "ru": "Смотреть квартиру",
+                      "pl": "Zobacz mieszkanie"
+                    },
+                    "link_url": "/kitchen-sink/blocks/media-text"
+                  },
+                  {
+                    "image": {
+                      "path": "demo:showcase-photo-5",
+                      "alt": {
+                        "en": "Three rooms on the corner",
+                        "ru": "Три комнаты на углу",
+                        "pl": "Trzy pokoje na rogu"
+                      }
+                    },
+                    "photos": [
+                      {
+                        "path": "demo:showcase-photo-6",
+                        "alt": {
+                          "en": "Three rooms on the corner",
+                          "ru": "Три комнаты на углу",
+                          "pl": "Trzy pokoje na rogu"
+                        }
+                      }
+                    ],
+                    "title": {
+                      "en": "Three rooms on the corner",
+                      "ru": "Три комнаты на углу",
+                      "pl": "Trzy pokoje na rogu"
+                    },
+                    "chips": [
+                      {
+                        "label": {
+                          "en": "3 rooms",
+                          "ru": "3 комнаты",
+                          "pl": "3 pokoje"
+                        }
+                      },
+                      {
+                        "label": {
+                          "en": "78 m²",
+                          "ru": "78 м²",
+                          "pl": "78 m²"
+                        }
+                      }
+                    ],
+                    "text": {
+                      "en": "Windows on two sides of the house.",
+                      "ru": "Окна на две стороны дома.",
+                      "pl": "Okna na dwie strony domu."
+                    }
+                  },
+                  {
+                    "image": {
+                      "path": "demo:showcase-photo-4",
+                      "alt": {
+                        "en": "Two rooms, a balcony",
+                        "ru": "Две комнаты и балкон",
+                        "pl": "Dwa pokoje z balkonem"
+                      }
+                    },
+                    "photos": [],
+                    "title": {
+                      "en": "Two rooms, a balcony",
+                      "ru": "Две комнаты и балкон",
+                      "pl": "Dwa pokoje z balkonem"
+                    },
+                    "chips": [
+                      {
+                        "label": {
+                          "en": "2 rooms",
+                          "ru": "2 комнаты",
+                          "pl": "2 pokoje"
+                        }
+                      },
+                      {
+                        "label": {
+                          "en": "54 m²",
+                          "ru": "54 м²",
+                          "pl": "54 m²"
+                        }
+                      },
+                      {
+                        "label": {
+                          "en": "Balcony",
+                          "ru": "Балкон",
+                          "pl": "Balkon"
+                        }
+                      }
+                    ],
+                    "text": {
+                      "en": "A kitchen apart from the living room.",
+                      "ru": "Кухня отдельно от гостиной.",
+                      "pl": "Kuchnia oddzielona od salonu."
+                    },
+                    "link_label": {
+                      "en": "See the flat",
+                      "ru": "Смотреть квартиру",
+                      "pl": "Zobacz mieszkanie"
+                    },
+                    "link_url": "/kitchen-sink/blocks/cta"
                   }
                 ]
               }
@@ -1433,6 +2003,495 @@
         },
         {
           "title": {
+            "en": "Text and tiles",
+            "ru": "Текст и плитки",
+            "pl": "Tekst i kafelki"
+          },
+          "slug": {
+            "en": "text-tiles",
+            "ru": "tekst-i-plitki",
+            "pl": "tekst-i-kafelki"
+          },
+          "seo": {
+            "title": {
+              "en": "Text and tiles",
+              "ru": "Текст и плитки",
+              "pl": "Tekst i kafelki"
+            },
+            "description": {
+              "en": "The block of the default theme with words beside up to four glass tiles over a photo: icons, figures, a light shade, fewer tiles and a narrow column.",
+              "ru": "Блок темы по умолчанию со словами рядом с четырьмя стеклянными плитками поверх фото: иконки, цифры, светлая тень, меньше плиток и узкая колонка.",
+              "pl": "Blok domyślnego motywu ze słowami obok czterech szklanych kafelków na zdjęciu: ikony, liczby, jasny cień, mniej kafelków i wąska kolumna."
+            }
+          },
+          "blocks": [
+            {
+              "key": "showcase-tiles-icons",
+              "type": "text-tiles",
+              "values": {
+                "eyebrow": {
+                  "en": "Four icons",
+                  "ru": "Четыре иконки",
+                  "pl": "Cztery ikony"
+                },
+                "heading": {
+                  "en": "A house ==by the park==",
+                  "ru": "Дом ==у парка==",
+                  "pl": "Dom ==przy parku=="
+                },
+                "text": {
+                  "en": "The words on the left, four glass tiles on the right: an SVG icon in each takes the colour of the words, so the same file reads on the dark shade and on the light one.",
+                  "ru": "Слова слева, четыре стеклянные плитки справа: SVG-иконка в каждой берёт цвет слов, поэтому один и тот же файл читается и на тёмной тени, и на светлой.",
+                  "pl": "Słowa po lewej, cztery szklane kafelki po prawej: ikona SVG w każdym bierze kolor słów, więc ten sam plik jest czytelny na ciemnym cieniu i na jasnym."
+                },
+                "button_label": {
+                  "en": "Look at the cards",
+                  "ru": "Посмотреть карточки",
+                  "pl": "Zobacz karty"
+                },
+                "button_link": {
+                  "target": "url",
+                  "entity_type": null,
+                  "entity_id": null,
+                  "url": "/kitchen-sink/blocks/cards",
+                  "hash": null,
+                  "new_tab": false,
+                  "rel": []
+                },
+                "tiles": [
+                  {
+                    "kind": "icon",
+                    "icon": {
+                      "path": "demo:showcase-icon-1"
+                    },
+                    "label": {
+                      "en": "A house of its own",
+                      "ru": "Свой дом",
+                      "pl": "Własny dom"
+                    },
+                    "note": {
+                      "en": "Four rooms over two floors.",
+                      "ru": "Четыре комнаты на двух этажах.",
+                      "pl": "Cztery pokoje na dwóch piętrach."
+                    }
+                  },
+                  {
+                    "kind": "icon",
+                    "icon": {
+                      "path": "demo:showcase-icon-2"
+                    },
+                    "label": {
+                      "en": "A garden",
+                      "ru": "Сад",
+                      "pl": "Ogród"
+                    },
+                    "note": {
+                      "en": "Fruit trees behind the house.",
+                      "ru": "Фруктовые деревья за домом.",
+                      "pl": "Drzewa owocowe za domem."
+                    }
+                  },
+                  {
+                    "kind": "icon",
+                    "icon": {
+                      "path": "demo:showcase-icon-3"
+                    },
+                    "label": {
+                      "en": "Light all day",
+                      "ru": "Свет весь день",
+                      "pl": "Światło przez cały dzień"
+                    },
+                    "note": {
+                      "en": "Windows to the south and the west.",
+                      "ru": "Окна на юг и на запад.",
+                      "pl": "Okna na południe i na zachód."
+                    }
+                  },
+                  {
+                    "kind": "icon",
+                    "icon": {
+                      "path": "demo:showcase-icon-4"
+                    },
+                    "label": {
+                      "en": "Keys in a month",
+                      "ru": "Ключи через месяц",
+                      "pl": "Klucze za miesiąc"
+                    },
+                    "note": {
+                      "en": "Papers ready, nothing to wait for.",
+                      "ru": "Документы готовы, ждать нечего.",
+                      "pl": "Dokumenty gotowe, nie ma na co czekać."
+                    }
+                  }
+                ],
+                "image": {
+                  "path": "demo:showcase-photo-1",
+                  "alt": {
+                    "en": "A quiet street with trees",
+                    "ru": "Тихая улица с деревьями",
+                    "pl": "Cicha ulica z drzewami"
+                  }
+                },
+                "shade": "dark",
+                "width": "bleed"
+              }
+            },
+            {
+              "key": "showcase-tiles-figures",
+              "type": "text-tiles",
+              "values": {
+                "eyebrow": {
+                  "en": "Four figures, a light shade",
+                  "ru": "Четыре цифры, светлая тень",
+                  "pl": "Cztery liczby, jasny cień"
+                },
+                "heading": {
+                  "en": "Room to live, ==close to everything==",
+                  "ru": "Простор для жизни, ==всё рядом==",
+                  "pl": "Miejsce do życia, ==wszystko blisko=="
+                },
+                "text": {
+                  "en": "A figure and its unit at the top of a tile. The light shade lightens the photo and darkens the words; the parallax moves the photo slower than the page.",
+                  "ru": "Цифра и единица вверху плитки. Светлая тень осветляет фото и делает слова тёмными; параллакс двигает фото медленнее страницы.",
+                  "pl": "Liczba i jednostka na górze kafelka. Jasny cień rozjaśnia zdjęcie i przyciemnia słowa; paralaksa przesuwa zdjęcie wolniej niż stronę."
+                },
+                "tiles": [
+                  {
+                    "kind": "value",
+                    "value": "120",
+                    "unit": {
+                      "en": "m²",
+                      "ru": "м²",
+                      "pl": "m²"
+                    },
+                    "label": {
+                      "en": "Living space",
+                      "ru": "Жилая площадь",
+                      "pl": "Powierzchnia"
+                    },
+                    "note": {
+                      "en": "Three bedrooms and a study.",
+                      "ru": "Три спальни и кабинет.",
+                      "pl": "Trzy sypialnie i gabinet."
+                    }
+                  },
+                  {
+                    "kind": "value",
+                    "value": "5",
+                    "unit": {
+                      "en": "min",
+                      "ru": "мин",
+                      "pl": "min"
+                    },
+                    "label": {
+                      "en": "To the park",
+                      "ru": "До парка",
+                      "pl": "Do parku"
+                    },
+                    "note": {
+                      "en": "On foot, by a quiet street.",
+                      "ru": "Пешком, по тихой улице.",
+                      "pl": "Pieszo, cichą ulicą."
+                    }
+                  },
+                  {
+                    "kind": "value",
+                    "value": "2",
+                    "label": {
+                      "en": "Parking places",
+                      "ru": "Машино-места",
+                      "pl": "Miejsca parkingowe"
+                    },
+                    "note": {
+                      "en": "Under the house, with a charger.",
+                      "ru": "Под домом, с зарядкой.",
+                      "pl": "Pod domem, z ładowarką."
+                    }
+                  },
+                  {
+                    "kind": "value",
+                    "value": "24/7",
+                    "label": {
+                      "en": "Concierge",
+                      "ru": "Консьерж",
+                      "pl": "Recepcja"
+                    },
+                    "note": {
+                      "en": "Someone at the door day and night.",
+                      "ru": "У двери кто-то днём и ночью.",
+                      "pl": "Ktoś przy drzwiach dniem i nocą."
+                    }
+                  }
+                ],
+                "image": {
+                  "path": "demo:showcase-photo-5",
+                  "alt": {
+                    "en": "Hills under clouds",
+                    "ru": "Холмы под облаками",
+                    "pl": "Wzgórza pod chmurami"
+                  }
+                },
+                "shade": "light",
+                "parallax": true,
+                "width": "bleed"
+              }
+            },
+            {
+              "key": "showcase-tiles-three",
+              "type": "text-tiles",
+              "values": {
+                "heading": {
+                  "en": "Three tiles in the column",
+                  "ru": "Три плитки в колонке",
+                  "pl": "Trzy kafelki w kolumnie"
+                },
+                "text": {
+                  "en": "Without a photo the section is the colour of the shade. Three tiles end in one across both columns.",
+                  "ru": "Без фото секция — цвета тени. Три плитки заканчиваются одной на обе колонки.",
+                  "pl": "Bez zdjęcia sekcja ma kolor cienia. Trzy kafelki kończą się jednym na obie kolumny."
+                },
+                "tiles": [
+                  {
+                    "kind": "value",
+                    "value": "120",
+                    "unit": {
+                      "en": "m²",
+                      "ru": "м²",
+                      "pl": "m²"
+                    },
+                    "label": {
+                      "en": "Living space",
+                      "ru": "Жилая площадь",
+                      "pl": "Powierzchnia"
+                    },
+                    "note": {
+                      "en": "Three bedrooms and a study.",
+                      "ru": "Три спальни и кабинет.",
+                      "pl": "Trzy sypialnie i gabinet."
+                    }
+                  },
+                  {
+                    "kind": "value",
+                    "value": "5",
+                    "unit": {
+                      "en": "min",
+                      "ru": "мин",
+                      "pl": "min"
+                    },
+                    "label": {
+                      "en": "To the park",
+                      "ru": "До парка",
+                      "pl": "Do parku"
+                    },
+                    "note": {
+                      "en": "On foot, by a quiet street.",
+                      "ru": "Пешком, по тихой улице.",
+                      "pl": "Pieszo, cichą ulicą."
+                    }
+                  },
+                  {
+                    "kind": "value",
+                    "value": "2",
+                    "label": {
+                      "en": "Parking places",
+                      "ru": "Машино-места",
+                      "pl": "Miejsca parkingowe"
+                    },
+                    "note": {
+                      "en": "Under the house, with a charger.",
+                      "ru": "Под домом, с зарядкой.",
+                      "pl": "Pod domem, z ładowarką."
+                    }
+                  }
+                ],
+                "width": "column"
+              }
+            },
+            {
+              "key": "showcase-tiles-alone",
+              "type": "text-tiles",
+              "values": {
+                "tiles": [
+                  {
+                    "kind": "icon",
+                    "icon": {
+                      "path": "demo:showcase-icon-1"
+                    },
+                    "label": {
+                      "en": "A house of its own",
+                      "ru": "Свой дом",
+                      "pl": "Własny dom"
+                    },
+                    "note": {
+                      "en": "Four rooms over two floors.",
+                      "ru": "Четыре комнаты на двух этажах.",
+                      "pl": "Cztery pokoje na dwóch piętrach."
+                    }
+                  },
+                  {
+                    "kind": "value",
+                    "value": "120",
+                    "unit": {
+                      "en": "m²",
+                      "ru": "м²",
+                      "pl": "m²"
+                    },
+                    "label": {
+                      "en": "Living space",
+                      "ru": "Жилая площадь",
+                      "pl": "Powierzchnia"
+                    },
+                    "note": {
+                      "en": "Three bedrooms and a study.",
+                      "ru": "Три спальни и кабинет.",
+                      "pl": "Trzy sypialnie i gabinet."
+                    }
+                  }
+                ],
+                "image": {
+                  "path": "demo:showcase-photo-2",
+                  "alt": {
+                    "en": "A road through fields",
+                    "ru": "Дорога через поля",
+                    "pl": "Droga przez pola"
+                  }
+                },
+                "width": "column"
+              }
+            },
+            {
+              "key": "showcase-tiles-narrow",
+              "type": "showcase-column",
+              "values": {
+                "heading": {
+                  "en": "In a narrow column",
+                  "ru": "В узкой колонке",
+                  "pl": "W wąskiej kolumnie"
+                },
+                "note": {
+                  "en": "The same block in a column 20rem wide: the words above, the tiles two by two under them.",
+                  "ru": "Тот же блок в колонке шириной 20rem: слова сверху, плитки по две под ними.",
+                  "pl": "Ten sam blok w kolumnie szerokiej na 20rem: słowa na górze, kafelki po dwa pod nimi."
+                },
+                "items": [
+                  {
+                    "key": "showcase-tiles-narrow-icons",
+                    "type": "text-tiles",
+                    "values": {
+                      "eyebrow": {
+                        "en": "Four icons",
+                        "ru": "Четыре иконки",
+                        "pl": "Cztery ikony"
+                      },
+                      "heading": {
+                        "en": "A house ==by the park==",
+                        "ru": "Дом ==у парка==",
+                        "pl": "Dom ==przy parku=="
+                      },
+                      "text": {
+                        "en": "The words on the left, four glass tiles on the right: an SVG icon in each takes the colour of the words, so the same file reads on the dark shade and on the light one.",
+                        "ru": "Слова слева, четыре стеклянные плитки справа: SVG-иконка в каждой берёт цвет слов, поэтому один и тот же файл читается и на тёмной тени, и на светлой.",
+                        "pl": "Słowa po lewej, cztery szklane kafelki po prawej: ikona SVG w każdym bierze kolor słów, więc ten sam plik jest czytelny na ciemnym cieniu i na jasnym."
+                      },
+                      "button_label": {
+                        "en": "Look at the cards",
+                        "ru": "Посмотреть карточки",
+                        "pl": "Zobacz karty"
+                      },
+                      "button_link": {
+                        "target": "url",
+                        "entity_type": null,
+                        "entity_id": null,
+                        "url": "/kitchen-sink/blocks/cards",
+                        "hash": null,
+                        "new_tab": false,
+                        "rel": []
+                      },
+                      "tiles": [
+                        {
+                          "kind": "icon",
+                          "icon": {
+                            "path": "demo:showcase-icon-1"
+                          },
+                          "label": {
+                            "en": "A house of its own",
+                            "ru": "Свой дом",
+                            "pl": "Własny dom"
+                          },
+                          "note": {
+                            "en": "Four rooms over two floors.",
+                            "ru": "Четыре комнаты на двух этажах.",
+                            "pl": "Cztery pokoje na dwóch piętrach."
+                          }
+                        },
+                        {
+                          "kind": "icon",
+                          "icon": {
+                            "path": "demo:showcase-icon-2"
+                          },
+                          "label": {
+                            "en": "A garden",
+                            "ru": "Сад",
+                            "pl": "Ogród"
+                          },
+                          "note": {
+                            "en": "Fruit trees behind the house.",
+                            "ru": "Фруктовые деревья за домом.",
+                            "pl": "Drzewa owocowe za domem."
+                          }
+                        },
+                        {
+                          "kind": "icon",
+                          "icon": {
+                            "path": "demo:showcase-icon-3"
+                          },
+                          "label": {
+                            "en": "Light all day",
+                            "ru": "Свет весь день",
+                            "pl": "Światło przez cały dzień"
+                          },
+                          "note": {
+                            "en": "Windows to the south and the west.",
+                            "ru": "Окна на юг и на запад.",
+                            "pl": "Okna na południe i na zachód."
+                          }
+                        },
+                        {
+                          "kind": "icon",
+                          "icon": {
+                            "path": "demo:showcase-icon-4"
+                          },
+                          "label": {
+                            "en": "Keys in a month",
+                            "ru": "Ключи через месяц",
+                            "pl": "Klucze za miesiąc"
+                          },
+                          "note": {
+                            "en": "Papers ready, nothing to wait for.",
+                            "ru": "Документы готовы, ждать нечего.",
+                            "pl": "Dokumenty gotowe, nie ma na co czekać."
+                          }
+                        }
+                      ],
+                      "image": {
+                        "path": "demo:showcase-photo-1",
+                        "alt": {
+                          "en": "A quiet street with trees",
+                          "ru": "Тихая улица с деревьями",
+                          "pl": "Cicha ulica z drzewami"
+                        }
+                      },
+                      "shade": "dark",
+                      "width": "column"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "title": {
             "en": "Call to action",
             "ru": "Призыв",
             "pl": "Wezwanie do działania"
@@ -1449,9 +2508,9 @@
               "pl": "Wezwanie do działania"
             },
             "description": {
-              "en": "The call-to-action band of the default theme on the accent, on a tint and on the page.",
-              "ru": "Полоса призыва темы по умолчанию на акценте, на подложке и на странице.",
-              "pl": "Pas wezwania do działania domyślnego motywu na akcencie, na tle i na stronie."
+              "en": "The call-to-action band of the default theme on the accent, on a tint, on the page and on a picture — and the picture alone.",
+              "ru": "Полоса призыва темы по умолчанию на акценте, на подложке, на странице и на картинке — и одна картинка.",
+              "pl": "Pas wezwania do działania domyślnego motywu na akcencie, na tle, na stronie i na zdjęciu — oraz samo zdjęcie."
             }
           },
           "blocks": [
@@ -1523,6 +2582,111 @@
                 },
                 "button_url": "/kitchen-sink/blocks/contact",
                 "tone": "plain"
+              }
+            },
+            {
+              "key": "showcase-cta-picture",
+              "type": "cta",
+              "values": {
+                "eyebrow": {
+                  "en": "On a picture",
+                  "ru": "На картинке",
+                  "pl": "Na zdjęciu"
+                },
+                "heading": {
+                  "en": "Come ==and see== it for yourself",
+                  "ru": "Приезжайте ==и посмотрите== сами",
+                  "pl": "Przyjedź ==i zobacz== sam"
+                },
+                "text": {
+                  "en": "A shade over the picture keeps the words readable. The first button downloads a file, the second opens a form in a dialog: its address is #webx-form-contact.",
+                  "ru": "Тень над картинкой сохраняет слова читаемыми. Первая кнопка скачивает файл, вторая открывает форму в диалоге: её адрес — #webx-form-contact.",
+                  "pl": "Cień nad zdjęciem utrzymuje czytelność słów. Pierwszy przycisk pobiera plik, drugi otwiera formularz w oknie: jego adres to #webx-form-contact."
+                },
+                "button_label": {
+                  "en": "Download the plan",
+                  "ru": "Скачать план",
+                  "pl": "Pobierz plan"
+                },
+                "button_link": {
+                  "target": "file",
+                  "path": "demo:showcase-photo-3",
+                  "download": true
+                },
+                "second_label": {
+                  "en": "Book a viewing",
+                  "ru": "Записаться на просмотр",
+                  "pl": "Umów oglądanie"
+                },
+                "second_link": {
+                  "target": "url",
+                  "url": "#webx-form-contact"
+                },
+                "tone": "image",
+                "image": {
+                  "path": "demo:showcase-photo-1",
+                  "alt": {
+                    "en": "A quiet street with trees",
+                    "ru": "Тихая улица с деревьями",
+                    "pl": "Cicha ulica z drzewami"
+                  }
+                },
+                "height": "ratio",
+                "ratio": "21-9",
+                "width": "bleed"
+              }
+            },
+            {
+              "key": "showcase-cta-picture-light",
+              "type": "cta",
+              "values": {
+                "heading": {
+                  "en": "A light shade, the screen high",
+                  "ru": "Светлая тень, на весь экран",
+                  "pl": "Jasny cień, na cały ekran"
+                },
+                "text": {
+                  "en": "The light shade lightens the picture and darkens the words; the parallax moves the picture slower than the page.",
+                  "ru": "Светлая тень осветляет картинку и делает слова тёмными; параллакс двигает картинку медленнее страницы.",
+                  "pl": "Jasny cień rozjaśnia zdjęcie i przyciemnia słowa; paralaksa przesuwa zdjęcie wolniej niż strona."
+                },
+                "button_label": {
+                  "en": "Get in touch",
+                  "ru": "Связаться",
+                  "pl": "Napisz do nas"
+                },
+                "button_link": {
+                  "target": "url",
+                  "url": "#webx-form-contact"
+                },
+                "tone": "image",
+                "shade": "light",
+                "parallax": true,
+                "height": "screen",
+                "image": {
+                  "path": "demo:showcase-photo-5",
+                  "alt": {
+                    "en": "Hills under clouds",
+                    "ru": "Холмы под облаками",
+                    "pl": "Wzgórza pod chmurami"
+                  }
+                }
+              }
+            },
+            {
+              "key": "showcase-cta-picture-alone",
+              "type": "cta",
+              "values": {
+                "tone": "image",
+                "width": "bleed",
+                "image": {
+                  "path": "demo:showcase-photo-2",
+                  "alt": {
+                    "en": "A road through fields",
+                    "ru": "Дорога через поля",
+                    "pl": "Droga przez pola"
+                  }
+                }
               }
             },
             {
@@ -2772,6 +3936,61 @@
           }
         },
         {
+          "key": "showcase-slider-counter",
+          "type": "showcase-slider",
+          "values": {
+            "heading": {
+              "en": "Photos with a counter",
+              "ru": "Фото со счётчиком",
+              "pl": "Zdjęcia z licznikiem"
+            },
+            "note": {
+              "en": "pagination=\"fraction\": \"1/6\" between the arrows instead of the dots, for the photos of a flat or a product. It follows the slide in view, and a screen reader does not hear it twice — the slides are named \"2 / 6\" already.",
+              "ru": "pagination=\"fraction\": «1/6» между стрелками вместо точек — для фото квартиры или товара. Номер следует за слайдом в кадре, а экранный чтец не слышит его дважды: слайды и так названы «2 / 6».",
+              "pl": "pagination=\"fraction\": „1/6” między strzałkami zamiast kropek — do zdjęć mieszkania lub produktu. Numer idzie za slajdem na widoku, a czytnik ekranu nie słyszy go dwa razy: slajdy i tak nazywają się „2 / 6”."
+            },
+            "titles": {
+              "en": "Strategy\nDesign\nDevelopment\nSupport\nHosting\nAnalytics\nTraining\nAudit\nContent\nSearch\nMobile\nSecurity",
+              "ru": "Стратегия\nДизайн\nРазработка\nПоддержка\nХостинг\nАналитика\nОбучение\nАудит\nКонтент\nПоиск\nМобильная версия\nБезопасность",
+              "pl": "Strategia\nProjektowanie\nProgramowanie\nWsparcie\nHosting\nAnalityka\nSzkolenia\nAudyt\nTreści\nWyszukiwanie\nWersja mobilna\nBezpieczeństwo"
+            },
+            "hero": {
+              "en": ":word that lasts",
+              "ru": ":word надолго",
+              "pl": ":word na lata"
+            },
+            "slide": {
+              "en": "Slide :n of :count",
+              "ru": "Слайд :n из :count",
+              "pl": "Slajd :n z :count"
+            },
+            "photo": {
+              "en": "Photo :n of :count",
+              "ru": "Фото :n из :count",
+              "pl": "Zdjęcie :n z :count"
+            },
+            "card": {
+              "en": "Card :n of :count.",
+              "ru": "Карточка :n из :count.",
+              "pl": "Karta :n z :count."
+            },
+            "longer": {
+              "en": "A longer line of text, so that the cards of one strip differ in height and the strip shows whether they still line up.",
+              "ru": "Строка подлиннее, чтобы карточки одной ленты были разной высоты и было видно, выравниваются ли они.",
+              "pl": "Dłuższy wiersz tekstu, żeby karty jednego paska różniły się wysokością i było widać, czy nadal się wyrównują."
+            },
+            "more": {
+              "en": "More about :word",
+              "ru": "Подробнее: :word",
+              "pl": "Więcej: :word"
+            },
+            "variant": "gallery",
+            "pagination": "fraction",
+            "width": "full",
+            "slides": "6"
+          }
+        },
+        {
           "key": "showcase-slider-gallery",
           "type": "gallery",
           "values": {
@@ -3712,6 +4931,107 @@
             },
             "zoom": 11,
             "height": "small"
+          }
+        },
+        {
+          "key": "showcase-map-embed",
+          "type": "map",
+          "values": {
+            "heading": {
+              "en": "Google Maps embed, with no key",
+              "ru": "Встроенная карта Google Maps, без ключа",
+              "pl": "Osadzona mapa Google Maps, bez klucza"
+            },
+            "source": "embed",
+            "embed": "<iframe src=\"https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d2483.5!2d-0.128!3d51.508!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2suk!4v1731300000000!5m2!1sen!2suk\" width=\"600\" height=\"450\" style=\"border:0;\" allowfullscreen=\"\" loading=\"lazy\" referrerpolicy=\"no-referrer-when-downgrade\"></iframe>",
+            "link": "",
+            "address": {
+              "en": "Trafalgar Square, London",
+              "ru": "Трафальгарская площадь, Лондон",
+              "pl": "Trafalgar Square, Londyn"
+            },
+            "title": {
+              "en": "Map of Trafalgar Square",
+              "ru": "Карта Трафальгарской площади",
+              "pl": "Mapa Trafalgar Square"
+            },
+            "zoom": 15,
+            "height": "large",
+            "height_narrow": "small",
+            "width": "column"
+          }
+        },
+        {
+          "key": "showcase-map-embed-note",
+          "type": "text",
+          "values": {
+            "heading": "",
+            "body": {
+              "en": "The map above is the code of Google Maps’ Share → Embed a map, pasted into the block as it is: Google draws it in its own frame and asks for no key. The block keeps only the address of the frame, and refuses the code of any other site. Before consent to media the page has no frame of Google’s at all — the address, Open in maps, the line and the two buttons; after it the frame comes in the height the block reserved, 32em here and 16em on a phone.",
+              "ru": "Карта выше — код из Google Maps «Поделиться» → «Встраивание карт», вставленный в блок как есть: Google рисует её в своём фрейме и ключа не просит. Блок хранит только адрес фрейма, а код любого другого сайта отклоняет. До согласия на медиа на странице нет никакого фрейма Google — адрес, «Открыть на карте», строка и две кнопки; после — фрейм встаёт в высоту, которую блок зарезервировал: здесь 32em, на телефоне 16em.",
+              "pl": "Mapa powyżej to kod z Google Maps Udostępnij → Umieść mapę, wklejony do bloku tak, jak jest: Google rysuje ją we własnej ramce i nie prosi o klucz. Blok przechowuje tylko adres ramki, a kod każdej innej strony odrzuca. Przed zgodą na media na stronie nie ma żadnej ramki Google – adres, „Otwórz w mapach”, linijka i dwa przyciski; po niej ramka wchodzi w wysokość zarezerwowaną przez blok: tutaj 32em, na telefonie 16em."
+            }
+          }
+        },
+        {
+          "key": "showcase-map-embed-bleed",
+          "type": "map",
+          "values": {
+            "heading": {
+              "en": "Edge to edge, from an address search",
+              "ru": "Во всю ширину, из поиска адреса",
+              "pl": "Na całą szerokość, z wyszukiwania adresu"
+            },
+            "source": "embed",
+            "embed": "https://maps.google.com/maps?q=Trafalgar%20Square%2C%20London&t=&z=16&ie=UTF8&iwloc=&output=embed",
+            "link": "",
+            "address": "",
+            "title": "",
+            "zoom": 15,
+            "height": "medium",
+            "height_narrow": "same",
+            "width": "bleed"
+          }
+        },
+        {
+          "key": "showcase-map-embed-at-once",
+          "type": "map",
+          "values": {
+            "heading": {
+              "en": "Shown without consent",
+              "ru": "Без согласия",
+              "pl": "Bez zgody"
+            },
+            "source": "embed",
+            "embed": "https://maps.google.com/maps?q=Champ%20de%20Mars%2C%20Paris&t=&z=15&ie=UTF8&iwloc=&output=embed",
+            "link": "",
+            "address": {
+              "en": "Champ de Mars, Paris",
+              "ru": "Марсово поле, Париж",
+              "pl": "Pola Marsowe, Paryż"
+            },
+            "title": {
+              "en": "Map of the Champ de Mars",
+              "ru": "Карта Марсова поля",
+              "pl": "Mapa Pól Marsowych"
+            },
+            "zoom": 15,
+            "height": "small",
+            "height_narrow": "same",
+            "width": "column",
+            "at_once": true
+          }
+        },
+        {
+          "key": "showcase-map-embed-at-once-note",
+          "type": "text",
+          "values": {
+            "heading": "",
+            "body": {
+              "en": "This block has “Show the map without consent” on: Google’s frame is in the page’s HTML at once, with no placeholder and no wait for the banner — the visitor’s IP address goes to Google as the page opens. Off, as on the two maps above, the map waits for consent to media.",
+              "ru": "У этого блока включено «Показывать карту без согласия»: фрейм Google сразу в HTML страницы, без заглушки и без ожидания баннера — IP-адрес посетителя уходит в Google, как только страница открылась. Выключено, как у двух карт выше, — карта ждёт согласия на медиа.",
+              "pl": "Ten blok ma włączone „Pokazuj mapę bez zgody”: ramka Google jest w HTML strony od razu, bez zaślepki i bez czekania na baner — adres IP odwiedzającego trafia do Google, gdy tylko strona się otworzy. Wyłączone, jak przy dwóch mapach wyżej — mapa czeka na zgodę na media."
+            }
           }
         },
         {
@@ -5853,6 +7173,31 @@
                     "autocomplete": ""
                   },
                   {
+                    "type": "datetime",
+                    "name": "visit.at",
+                    "label": {
+                      "en": "Viewing",
+                      "ru": "Просмотр",
+                      "pl": "Oglądanie"
+                    },
+                    "hint": {
+                      "en": "Weekdays, 9:00 to 17:00.",
+                      "ru": "По будням, с 9:00 до 17:00.",
+                      "pl": "W dni robocze, od 9:00 do 17:00."
+                    },
+                    "error": {
+                      "en": "Choose a weekday: Mon–Fri.",
+                      "ru": "Выберите день недели: пн–пт.",
+                      "pl": "Wybierz dzień tygodnia: pon.–pt."
+                    },
+                    "choices": "",
+                    "value": "2027-03-15 10:30",
+                    "required": true,
+                    "multiple": false,
+                    "inline": false,
+                    "autocomplete": ""
+                  },
+                  {
                     "type": "file",
                     "name": "contact.attachment",
                     "label": {
@@ -6194,6 +7539,740 @@
               }
             }
           ]
+        },
+        {
+          "title": {
+            "en": "Cards",
+            "ru": "Карточки",
+            "pl": "Karty"
+          },
+          "slug": {
+            "en": "cards",
+            "ru": "kartochki",
+            "pl": "karty"
+          },
+          "seo": {
+            "title": {
+              "en": "Cards",
+              "ru": "Карточки",
+              "pl": "Karty"
+            },
+            "description": {
+              "en": "One of several and several of several as cards with a description and a picture: the same radios and ticks inside, in every state, one column on a phone.",
+              "ru": "Один из нескольких и несколько из нескольких — карточками с описанием и картинкой: внутри те же радиокнопки и галочки, во всех состояниях, на телефоне — в один столбец.",
+              "pl": "Jedno z kilku i kilka z kilku jako karty z opisem i obrazkiem: w środku te same pola wyboru, w każdym stanie, na telefonie w jednej kolumnie."
+            }
+          },
+          "blocks": [
+            {
+              "key": "showcase-choice-cards-intro",
+              "type": "text",
+              "values": {
+                "heading": {
+                  "en": "Cards",
+                  "ru": "Карточки",
+                  "pl": "Karty"
+                },
+                "body": {
+                  "en": "A choice that needs a few words or a picture to be understood is drawn as a card: view=\"cards\" on a group of radios or ticks. Inside each card is the same input as in a list, and the whole card is its label — a click anywhere chooses it, the arrows move through a group of radios, a screen reader reads the label with the description.\nThe chosen card has the accent border and a tint; the focused one, a ring. Without styles it is a list of radios with their descriptions. The columns are a wish: on a narrow form the cards stand one under another.",
+                  "ru": "Выбор, которому нужны пара слов или картинка, рисуется карточками: view=\"cards\" у группы радиокнопок или галочек. Внутри каждой карточки — тот же элемент, что в списке, а вся карточка — его подпись: щелчок в любом месте выбирает её, стрелки ходят по группе радиокнопок, экранный диктор читает подпись вместе с описанием.\nУ выбранной карточки — рамка цвета акцента и подложка, у карточки в фокусе — обводка. Без стилей это список радиокнопок с описаниями. Колонки — пожелание: на узкой форме карточки встают одна под другой.",
+                  "pl": "Wybór, który potrzebuje kilku słów lub obrazka, jest rysowany jako karty: view=\"cards\" przy grupie pól wyboru. W każdej karcie jest ten sam element co na liście, a cała karta jest jego etykietą – kliknięcie w dowolnym miejscu ją wybiera, strzałki przechodzą po grupie, czytnik ekranu czyta etykietę razem z opisem.\nWybrana karta ma ramkę w kolorze akcentu i tło, karta z fokusem – obwódkę. Bez stylów to lista pól wyboru z opisami. Kolumny to życzenie: w wąskim formularzu karty stają jedna pod drugą."
+                }
+              }
+            },
+            {
+              "key": "showcase-choice-cards-every",
+              "type": "showcase-fields",
+              "values": {
+                "heading": {
+                  "en": "One of several, several of several",
+                  "ru": "Один из нескольких, несколько из нескольких",
+                  "pl": "Jedno z kilku, kilka z kilku"
+                },
+                "note": {
+                  "en": "Up to three cards to a row with pictures of the media library, two to a row without; the last tick has a long word that has to break.",
+                  "ru": "До трёх карточек в ряд с картинками медиатеки, две в ряд без них; у последней галочки длинное слово, которое должно переноситься.",
+                  "pl": "Do trzech kart w rzędzie z obrazkami z biblioteki mediów, dwie bez nich; ostatnie pole ma długie słowo, które musi się łamać."
+                },
+                "width": "page",
+                "states": [
+                  {
+                    "state": "empty",
+                    "title": {
+                      "en": "Empty",
+                      "ru": "Пустые",
+                      "pl": "Puste"
+                    }
+                  },
+                  {
+                    "state": "filled",
+                    "title": {
+                      "en": "Chosen",
+                      "ru": "Выбранные",
+                      "pl": "Wybrane"
+                    }
+                  },
+                  {
+                    "state": "invalid",
+                    "title": {
+                      "en": "With the server’s errors",
+                      "ru": "С ошибками сервера",
+                      "pl": "Z błędami serwera"
+                    }
+                  },
+                  {
+                    "state": "disabled",
+                    "title": {
+                      "en": "Disabled",
+                      "ru": "Недоступные",
+                      "pl": "Wyłączone"
+                    }
+                  }
+                ],
+                "fields": [
+                  {
+                    "type": "radio",
+                    "name": "request.purpose",
+                    "label": {
+                      "en": "What brings you to the property?",
+                      "ru": "С чем вы к нам?",
+                      "pl": "W jakiej sprawie?"
+                    },
+                    "hint": {
+                      "en": "Each card is one radio: the arrows move between them.",
+                      "ru": "Каждая карточка — одна радиокнопка: стрелки ходят между ними.",
+                      "pl": "Każda karta to jedno pole wyboru: strzałki przechodzą między nimi."
+                    },
+                    "error": {
+                      "en": "Choose what you came for.",
+                      "ru": "Выберите, с чем вы пришли.",
+                      "pl": "Wybierz, w jakiej sprawie."
+                    },
+                    "choices": {
+                      "en": "Book a viewing | We show the flat when it suits you\nAgency meeting | For agents who bring a client\nJust a question | We answer by e-mail within a day",
+                      "ru": "Записаться на просмотр | Покажем квартиру в удобное время\nВстреча агентства | Для агентов, которые приводят клиента\nПросто вопрос | Ответим письмом в течение дня",
+                      "pl": "Umów oglądanie | Pokażemy mieszkanie, kiedy Ci pasuje\nSpotkanie agencji | Dla agentów, którzy przyprowadzają klienta\nTylko pytanie | Odpowiemy e-mailem w ciągu dnia"
+                    },
+                    "value": "1",
+                    "required": true,
+                    "multiple": false,
+                    "inline": false,
+                    "view": "cards",
+                    "columns": "3",
+                    "autocomplete": ""
+                  },
+                  {
+                    "type": "checkbox",
+                    "name": "request.extras",
+                    "label": {
+                      "en": "What else should we prepare?",
+                      "ru": "Что ещё подготовить?",
+                      "pl": "Co jeszcze przygotować?"
+                    },
+                    "hint": "",
+                    "error": {
+                      "en": "Choose at most two.",
+                      "ru": "Выберите не больше двух.",
+                      "pl": "Wybierz najwyżej dwa."
+                    },
+                    "choices": {
+                      "en": "A parking space | Underground, by the lift\nA storage room | On the same floor\nThe floor plan | As a PDF before the viewing\nA long-word check: Wohnungsbesichtigungstermin",
+                      "ru": "Место на парковке | Подземной, у лифта\nКладовую | На том же этаже\nПланировку | В PDF до просмотра\nПроверка длинного слова: Wohnungsbesichtigungstermin",
+                      "pl": "Miejsce parkingowe | Podziemne, przy windzie\nKomórkę lokatorską | Na tym samym piętrze\nRzut mieszkania | Jako PDF przed oglądaniem\nTest długiego słowa: Wohnungsbesichtigungstermin"
+                    },
+                    "value": "1,3",
+                    "required": false,
+                    "multiple": false,
+                    "inline": false,
+                    "view": "cards",
+                    "columns": "2",
+                    "autocomplete": ""
+                  }
+                ],
+                "pictures": [
+                  {
+                    "path": "demo:showcase-photo-1",
+                    "alt": {
+                      "en": "A viewing",
+                      "ru": "Просмотр",
+                      "pl": "Oglądanie"
+                    }
+                  },
+                  {
+                    "path": "demo:showcase-photo-2",
+                    "alt": {
+                      "en": "A meeting",
+                      "ru": "Встреча",
+                      "pl": "Spotkanie"
+                    }
+                  },
+                  {
+                    "path": "demo:showcase-photo-3",
+                    "alt": {
+                      "en": "A question",
+                      "ru": "Вопрос",
+                      "pl": "Pytanie"
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "key": "showcase-choice-cards-narrow",
+              "type": "showcase-fields",
+              "values": {
+                "heading": {
+                  "en": "In a narrow column",
+                  "ru": "В узкой колонке",
+                  "pl": "W wąskiej kolumnie"
+                },
+                "note": {
+                  "en": "The same cards in a column as narrow as a sidebar: one under another, whatever the columns say.",
+                  "ru": "Те же карточки в колонке шириной с боковую: одна под другой, сколько бы колонок ни просили.",
+                  "pl": "Te same karty w kolumnie wąskiej jak pasek boczny: jedna pod drugą, niezależnie od liczby kolumn."
+                },
+                "width": "narrow",
+                "states": [
+                  {
+                    "state": "empty",
+                    "title": {
+                      "en": "Empty",
+                      "ru": "Пустые",
+                      "pl": "Puste"
+                    }
+                  }
+                ],
+                "fields": [
+                  {
+                    "type": "radio",
+                    "name": "request.purpose",
+                    "label": {
+                      "en": "What brings you to the property?",
+                      "ru": "С чем вы к нам?",
+                      "pl": "W jakiej sprawie?"
+                    },
+                    "hint": {
+                      "en": "Each card is one radio: the arrows move between them.",
+                      "ru": "Каждая карточка — одна радиокнопка: стрелки ходят между ними.",
+                      "pl": "Każda karta to jedno pole wyboru: strzałki przechodzą między nimi."
+                    },
+                    "error": {
+                      "en": "Choose what you came for.",
+                      "ru": "Выберите, с чем вы пришли.",
+                      "pl": "Wybierz, w jakiej sprawie."
+                    },
+                    "choices": {
+                      "en": "Book a viewing | We show the flat when it suits you\nAgency meeting | For agents who bring a client\nJust a question | We answer by e-mail within a day",
+                      "ru": "Записаться на просмотр | Покажем квартиру в удобное время\nВстреча агентства | Для агентов, которые приводят клиента\nПросто вопрос | Ответим письмом в течение дня",
+                      "pl": "Umów oglądanie | Pokażemy mieszkanie, kiedy Ci pasuje\nSpotkanie agencji | Dla agentów, którzy przyprowadzają klienta\nTylko pytanie | Odpowiemy e-mailem w ciągu dnia"
+                    },
+                    "value": "1",
+                    "required": true,
+                    "multiple": false,
+                    "inline": false,
+                    "view": "cards",
+                    "columns": "3",
+                    "autocomplete": ""
+                  }
+                ],
+                "pictures": [
+                  {
+                    "path": "demo:showcase-photo-1",
+                    "alt": {
+                      "en": "A viewing",
+                      "ru": "Просмотр",
+                      "pl": "Oglądanie"
+                    }
+                  },
+                  {
+                    "path": "demo:showcase-photo-2",
+                    "alt": {
+                      "en": "A meeting",
+                      "ru": "Встреча",
+                      "pl": "Spotkanie"
+                    }
+                  },
+                  {
+                    "path": "demo:showcase-photo-3",
+                    "alt": {
+                      "en": "A question",
+                      "ru": "Вопрос",
+                      "pl": "Pytanie"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "title": {
+            "en": "Steps",
+            "ru": "Шаги",
+            "pl": "Kroki"
+          },
+          "slug": {
+            "en": "steps",
+            "ru": "shagi",
+            "pl": "kroki"
+          },
+          "seo": {
+            "title": {
+              "en": "Steps",
+              "ru": "Шаги",
+              "pl": "Kroki"
+            },
+            "description": {
+              "en": "A form of several steps: one at a time with an indicator, «Next» checking the step in the browser and on the server, «Back» checking nothing, a step only for some answers, a dialog and a sheet, one page without JavaScript.",
+              "ru": "Форма из нескольких шагов: по одному с индикатором, «Далее» проверяет шаг в браузере и на сервере, «Назад» — ничего, шаг только для некоторых ответов, окно и шторка, без JavaScript — одна страница.",
+              "pl": "Formularz z kilku kroków: po jednym ze wskaźnikiem, „Dalej” sprawdza krok w przeglądarce i na serwerze, „Wstecz” niczego, krok tylko dla niektórych odpowiedzi, okno i panel, bez JavaScriptu — jedna strona."
+            }
+          },
+          "blocks": [
+            {
+              "key": "showcase-steps-intro",
+              "type": "text",
+              "values": {
+                "heading": {
+                  "en": "Steps",
+                  "ru": "Шаги",
+                  "pl": "Kroki"
+                },
+                "body": {
+                  "en": "<p>A longer form is easier as a conversation: what brings you, when, how to reach you. &lt;x-webx-form steps&gt; shows one step at a time with an indicator over it; «Next» checks the step, «Back» checks nothing and wipes nothing, and everything is sent once, at the end.</p><p>The meeting step is there only when a meeting is chosen: it leaves the indicator, and the numbers follow. Without JavaScript the steps stand one under another and one button sends them all.</p>",
+                  "ru": "<p>Длинную форму проще пройти как разговор: зачем вы пишете, когда удобно, как с вами связаться. &lt;x-webx-form steps&gt; показывает по одному шагу с индикатором над ним; «Далее» проверяет шаг, «Назад» ничего не проверяет и не стирает, а отправляется всё один раз, в конце.</p><p>Шаг встречи есть, только когда выбрана встреча: он уходит из индикатора, и номера пересчитываются. Без JavaScript шаги стоят друг под другом, и одна кнопка отправляет всё.</p>",
+                  "pl": "<p>Dłuższy formularz łatwiej przejść jak rozmowę: w jakiej sprawie, kiedy, jak się z tobą skontaktować. &lt;x-webx-form steps&gt; pokazuje po jednym kroku ze wskaźnikiem nad nim; „Dalej” sprawdza krok, „Wstecz” niczego nie sprawdza i nie kasuje, a wszystko wysyłane jest raz, na końcu.</p><p>Krok spotkania jest tylko wtedy, gdy wybrano spotkanie: znika ze wskaźnika, a numery się przeliczają. Bez JavaScriptu kroki stoją jeden pod drugim, a jeden przycisk wysyła wszystko.</p>"
+                }
+              }
+            },
+            {
+              "key": "showcase-steps-server",
+              "type": "showcase-steps",
+              "values": {
+                "heading": {
+                  "en": "Checked by the server on every «Next»",
+                  "ru": "Сервер проверяет каждое «Далее»",
+                  "pl": "Serwer sprawdza każde „Dalej”"
+                },
+                "note": {
+                  "en": "Each «Next» asks the server about the step before going on: a Saturday or the name “admin” is refused right on its step.",
+                  "ru": "Каждое «Далее» спрашивает сервер о шаге, прежде чем идти дальше: суббота или имя «admin» отклоняются сразу на своём шаге.",
+                  "pl": "Każde „Dalej” pyta serwer o krok, zanim pójdzie dalej: sobota albo imię „admin” są odrzucane od razu na swoim kroku."
+                },
+                "mode": "check",
+                "title_purpose": {
+                  "en": "What brings you",
+                  "ru": "С чем вы пришли",
+                  "pl": "W jakiej sprawie"
+                },
+                "short_purpose": {
+                  "en": "Purpose",
+                  "ru": "Цель",
+                  "pl": "Cel"
+                },
+                "label_purpose": {
+                  "en": "How can we help?",
+                  "ru": "Чем помочь?",
+                  "pl": "Jak możemy pomóc?"
+                },
+                "choice_question": {
+                  "en": "A question",
+                  "ru": "Вопрос",
+                  "pl": "Pytanie"
+                },
+                "choice_question_text": {
+                  "en": "About homes, prices or terms",
+                  "ru": "О квартирах, ценах или условиях",
+                  "pl": "O mieszkaniach, cenach lub warunkach"
+                },
+                "choice_meeting": {
+                  "en": "A meeting",
+                  "ru": "Встреча",
+                  "pl": "Spotkanie"
+                },
+                "choice_meeting_text": {
+                  "en": "A viewing at the sales office",
+                  "ru": "Показ в офисе продаж",
+                  "pl": "Prezentacja w biurze sprzedaży"
+                },
+                "title_meeting": {
+                  "en": "Choose a meeting time",
+                  "ru": "Выберите время встречи",
+                  "pl": "Wybierz termin spotkania"
+                },
+                "short_meeting": {
+                  "en": "Meeting",
+                  "ru": "Встреча",
+                  "pl": "Spotkanie"
+                },
+                "condition": {
+                  "en": "If chosen: A meeting",
+                  "ru": "Если выбрано: Встреча",
+                  "pl": "Jeśli wybrano: Spotkanie"
+                },
+                "label_day": {
+                  "en": "Day",
+                  "ru": "День",
+                  "pl": "Dzień"
+                },
+                "hint_day": {
+                  "en": "Try a Saturday: the browser lets it through, the server does not.",
+                  "ru": "Попробуйте субботу: браузер пропустит, сервер — нет.",
+                  "pl": "Spróbuj soboty: przeglądarka przepuści, serwer nie."
+                },
+                "weekday": {
+                  "en": "Choose a weekday: the office is closed at the weekend.",
+                  "ru": "Выберите будний день: в выходные офис закрыт.",
+                  "pl": "Wybierz dzień roboczy: w weekend biuro jest zamknięte."
+                },
+                "label_time": {
+                  "en": "Time of day",
+                  "ru": "Время",
+                  "pl": "Pora dnia"
+                },
+                "time_morning": {
+                  "en": "Morning",
+                  "ru": "Утро",
+                  "pl": "Rano"
+                },
+                "time_afternoon": {
+                  "en": "Afternoon",
+                  "ru": "День",
+                  "pl": "Po południu"
+                },
+                "title_contacts": {
+                  "en": "Your details",
+                  "ru": "Ваши данные",
+                  "pl": "Twoje dane"
+                },
+                "short_contacts": {
+                  "en": "Details",
+                  "ru": "Данные",
+                  "pl": "Dane"
+                },
+                "label_name": {
+                  "en": "Name",
+                  "ru": "Имя",
+                  "pl": "Imię"
+                },
+                "hint_name": {
+                  "en": "Try “admin”: the browser lets it through, the server does not.",
+                  "ru": "Попробуйте «admin»: браузер пропустит, сервер — нет.",
+                  "pl": "Spróbuj „admin”: przeglądarka przepuści, serwer nie."
+                },
+                "label_email": {
+                  "en": "E-mail",
+                  "ru": "E-mail",
+                  "pl": "E-mail"
+                },
+                "button": {
+                  "en": "Send",
+                  "ru": "Отправить",
+                  "pl": "Wyślij"
+                },
+                "opener": {
+                  "en": "Book a viewing",
+                  "ru": "Записаться на показ",
+                  "pl": "Umów prezentację"
+                },
+                "thanks_heading": {
+                  "en": "Thank you",
+                  "ru": "Спасибо",
+                  "pl": "Dziękujemy"
+                },
+                "thanks_message": {
+                  "en": "Nothing was sent anywhere, :name: this is the showcase.",
+                  "ru": "Никуда ничего не отправлено, :name: это витрина.",
+                  "pl": "Nic nigdzie nie wysłano, :name: to tylko witryna."
+                }
+              }
+            },
+            {
+              "key": "showcase-steps-browser",
+              "type": "showcase-steps",
+              "values": {
+                "heading": {
+                  "en": "Checked by the browser alone",
+                  "ru": "Проверяет только браузер",
+                  "pl": "Sprawdza tylko przeglądarka"
+                },
+                "note": {
+                  "en": "No server on the way: a Saturday passes, and the last press brings the meeting step back with the server’s word.",
+                  "ru": "Без сервера по пути: суббота проходит, а последнее нажатие возвращает шаг встречи со словом сервера.",
+                  "pl": "Bez serwera po drodze: sobota przechodzi, a ostatnie naciśnięcie wraca do kroku spotkania ze słowem serwera."
+                },
+                "mode": "browser",
+                "title_purpose": {
+                  "en": "What brings you",
+                  "ru": "С чем вы пришли",
+                  "pl": "W jakiej sprawie"
+                },
+                "short_purpose": {
+                  "en": "Purpose",
+                  "ru": "Цель",
+                  "pl": "Cel"
+                },
+                "label_purpose": {
+                  "en": "How can we help?",
+                  "ru": "Чем помочь?",
+                  "pl": "Jak możemy pomóc?"
+                },
+                "choice_question": {
+                  "en": "A question",
+                  "ru": "Вопрос",
+                  "pl": "Pytanie"
+                },
+                "choice_question_text": {
+                  "en": "About homes, prices or terms",
+                  "ru": "О квартирах, ценах или условиях",
+                  "pl": "O mieszkaniach, cenach lub warunkach"
+                },
+                "choice_meeting": {
+                  "en": "A meeting",
+                  "ru": "Встреча",
+                  "pl": "Spotkanie"
+                },
+                "choice_meeting_text": {
+                  "en": "A viewing at the sales office",
+                  "ru": "Показ в офисе продаж",
+                  "pl": "Prezentacja w biurze sprzedaży"
+                },
+                "title_meeting": {
+                  "en": "Choose a meeting time",
+                  "ru": "Выберите время встречи",
+                  "pl": "Wybierz termin spotkania"
+                },
+                "short_meeting": {
+                  "en": "Meeting",
+                  "ru": "Встреча",
+                  "pl": "Spotkanie"
+                },
+                "condition": {
+                  "en": "If chosen: A meeting",
+                  "ru": "Если выбрано: Встреча",
+                  "pl": "Jeśli wybrano: Spotkanie"
+                },
+                "label_day": {
+                  "en": "Day",
+                  "ru": "День",
+                  "pl": "Dzień"
+                },
+                "hint_day": {
+                  "en": "Try a Saturday: the browser lets it through, the server does not.",
+                  "ru": "Попробуйте субботу: браузер пропустит, сервер — нет.",
+                  "pl": "Spróbuj soboty: przeglądarka przepuści, serwer nie."
+                },
+                "weekday": {
+                  "en": "Choose a weekday: the office is closed at the weekend.",
+                  "ru": "Выберите будний день: в выходные офис закрыт.",
+                  "pl": "Wybierz dzień roboczy: w weekend biuro jest zamknięte."
+                },
+                "label_time": {
+                  "en": "Time of day",
+                  "ru": "Время",
+                  "pl": "Pora dnia"
+                },
+                "time_morning": {
+                  "en": "Morning",
+                  "ru": "Утро",
+                  "pl": "Rano"
+                },
+                "time_afternoon": {
+                  "en": "Afternoon",
+                  "ru": "День",
+                  "pl": "Po południu"
+                },
+                "title_contacts": {
+                  "en": "Your details",
+                  "ru": "Ваши данные",
+                  "pl": "Twoje dane"
+                },
+                "short_contacts": {
+                  "en": "Details",
+                  "ru": "Данные",
+                  "pl": "Dane"
+                },
+                "label_name": {
+                  "en": "Name",
+                  "ru": "Имя",
+                  "pl": "Imię"
+                },
+                "hint_name": {
+                  "en": "Try “admin”: the browser lets it through, the server does not.",
+                  "ru": "Попробуйте «admin»: браузер пропустит, сервер — нет.",
+                  "pl": "Spróbuj „admin”: przeglądarka przepuści, serwer nie."
+                },
+                "label_email": {
+                  "en": "E-mail",
+                  "ru": "E-mail",
+                  "pl": "E-mail"
+                },
+                "button": {
+                  "en": "Send",
+                  "ru": "Отправить",
+                  "pl": "Wyślij"
+                },
+                "opener": {
+                  "en": "Book a viewing",
+                  "ru": "Записаться на показ",
+                  "pl": "Umów prezentację"
+                },
+                "thanks_heading": {
+                  "en": "Thank you",
+                  "ru": "Спасибо",
+                  "pl": "Dziękujemy"
+                },
+                "thanks_message": {
+                  "en": "Nothing was sent anywhere, :name: this is the showcase.",
+                  "ru": "Никуда ничего не отправлено, :name: это витрина.",
+                  "pl": "Nic nigdzie nie wysłano, :name: to tylko witryna."
+                }
+              }
+            },
+            {
+              "key": "showcase-steps-dialog",
+              "type": "showcase-steps",
+              "values": {
+                "heading": {
+                  "en": "In a dialog",
+                  "ru": "В окне",
+                  "pl": "W oknie"
+                },
+                "note": {
+                  "en": "A card on a wide screen, a sheet from the bottom on a phone. Close it halfway and open again: the step and what was typed are still there.",
+                  "ru": "Карточка на широком экране, шторка снизу на телефоне. Закройте на полпути и откройте снова: шаг и введённое на месте.",
+                  "pl": "Karta na szerokim ekranie, panel od dołu na telefonie. Zamknij w połowie i otwórz ponownie: krok i wpisane dane zostają."
+                },
+                "mode": "dialog",
+                "title_purpose": {
+                  "en": "What brings you",
+                  "ru": "С чем вы пришли",
+                  "pl": "W jakiej sprawie"
+                },
+                "short_purpose": {
+                  "en": "Purpose",
+                  "ru": "Цель",
+                  "pl": "Cel"
+                },
+                "label_purpose": {
+                  "en": "How can we help?",
+                  "ru": "Чем помочь?",
+                  "pl": "Jak możemy pomóc?"
+                },
+                "choice_question": {
+                  "en": "A question",
+                  "ru": "Вопрос",
+                  "pl": "Pytanie"
+                },
+                "choice_question_text": {
+                  "en": "About homes, prices or terms",
+                  "ru": "О квартирах, ценах или условиях",
+                  "pl": "O mieszkaniach, cenach lub warunkach"
+                },
+                "choice_meeting": {
+                  "en": "A meeting",
+                  "ru": "Встреча",
+                  "pl": "Spotkanie"
+                },
+                "choice_meeting_text": {
+                  "en": "A viewing at the sales office",
+                  "ru": "Показ в офисе продаж",
+                  "pl": "Prezentacja w biurze sprzedaży"
+                },
+                "title_meeting": {
+                  "en": "Choose a meeting time",
+                  "ru": "Выберите время встречи",
+                  "pl": "Wybierz termin spotkania"
+                },
+                "short_meeting": {
+                  "en": "Meeting",
+                  "ru": "Встреча",
+                  "pl": "Spotkanie"
+                },
+                "condition": {
+                  "en": "If chosen: A meeting",
+                  "ru": "Если выбрано: Встреча",
+                  "pl": "Jeśli wybrano: Spotkanie"
+                },
+                "label_day": {
+                  "en": "Day",
+                  "ru": "День",
+                  "pl": "Dzień"
+                },
+                "hint_day": {
+                  "en": "Try a Saturday: the browser lets it through, the server does not.",
+                  "ru": "Попробуйте субботу: браузер пропустит, сервер — нет.",
+                  "pl": "Spróbuj soboty: przeglądarka przepuści, serwer nie."
+                },
+                "weekday": {
+                  "en": "Choose a weekday: the office is closed at the weekend.",
+                  "ru": "Выберите будний день: в выходные офис закрыт.",
+                  "pl": "Wybierz dzień roboczy: w weekend biuro jest zamknięte."
+                },
+                "label_time": {
+                  "en": "Time of day",
+                  "ru": "Время",
+                  "pl": "Pora dnia"
+                },
+                "time_morning": {
+                  "en": "Morning",
+                  "ru": "Утро",
+                  "pl": "Rano"
+                },
+                "time_afternoon": {
+                  "en": "Afternoon",
+                  "ru": "День",
+                  "pl": "Po południu"
+                },
+                "title_contacts": {
+                  "en": "Your details",
+                  "ru": "Ваши данные",
+                  "pl": "Twoje dane"
+                },
+                "short_contacts": {
+                  "en": "Details",
+                  "ru": "Данные",
+                  "pl": "Dane"
+                },
+                "label_name": {
+                  "en": "Name",
+                  "ru": "Имя",
+                  "pl": "Imię"
+                },
+                "hint_name": {
+                  "en": "Try “admin”: the browser lets it through, the server does not.",
+                  "ru": "Попробуйте «admin»: браузер пропустит, сервер — нет.",
+                  "pl": "Spróbuj „admin”: przeglądarka przepuści, serwer nie."
+                },
+                "label_email": {
+                  "en": "E-mail",
+                  "ru": "E-mail",
+                  "pl": "E-mail"
+                },
+                "button": {
+                  "en": "Send",
+                  "ru": "Отправить",
+                  "pl": "Wyślij"
+                },
+                "opener": {
+                  "en": "Book a viewing",
+                  "ru": "Записаться на показ",
+                  "pl": "Umów prezentację"
+                },
+                "thanks_heading": {
+                  "en": "Thank you",
+                  "ru": "Спасибо",
+                  "pl": "Dziękujemy"
+                },
+                "thanks_message": {
+                  "en": "Nothing was sent anywhere, :name: this is the showcase.",
+                  "ru": "Никуда ничего не отправлено, :name: это витрина.",
+                  "pl": "Nic nigdzie nie wysłano, :name: to tylko witryna."
+                }
+              }
+            }
+          ],
+          "children": []
         },
         {
           "title": {

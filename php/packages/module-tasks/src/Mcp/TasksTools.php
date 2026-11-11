@@ -87,7 +87,7 @@ final class TasksTools
             'branch' => ['type' => 'string', 'description' => 'The branch the work goes into; the project\'s default branch when omitted.'],
         ];
         $projectValues = [
-            'slug' => ['type' => 'string', 'description' => 'Lowercase letters, digits and dashes; never changes the reference of its tasks.'],
+            'slug' => ['type' => 'string', 'description' => 'Unique; any text is brought to lowercase letters, digits and dashes (My Shop → my-shop). Never changes the reference of its tasks.'],
             'title' => ['type' => 'string'],
             'workdir' => ['type' => 'string', 'description' => 'The folder an agent is started in.'],
             'repo_url' => ['type' => 'string'],

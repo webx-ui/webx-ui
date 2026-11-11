@@ -20,6 +20,7 @@ final readonly class PlaceOrder
      * @param  string|null  $idempotencyKey  the checkout's form token; stored hashed
      * @param  int|null  $userId  the signed-in visitor; the caller passes it, so a command or a
      *                            test does not depend on a request
+     * @param  list<array{key: string, type: string, label: string, value: bool|string, text: string}>  $fields  the extra fields (WEBX_UI_ORDER_FIELDS.md §2.2): the checkout makes the rows, the order checks their shape alone
      */
     public function __construct(
         public Cart $cart,
@@ -33,5 +34,6 @@ final readonly class PlaceOrder
         public ?string $idempotencyKey = null,
         public ?int $userId = null,
         public string $source = 'checkout',
+        public array $fields = [],
     ) {}
 }

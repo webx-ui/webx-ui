@@ -14,7 +14,7 @@ A site stands on a chain, top first:
 resources/views            the site's own overrides — above every theme, for the developer
 theme/                     the site's local theme: only what makes this site different
 acme/theme-clinic          a packaged theme several sites share (optional)
-webx-ui/theme-default      the bottom: a value for every token, the shell, the six blocks
+webx-ui/theme-default      the bottom: a value for every token, the shell, the seven blocks
 the modules                each module's own views and base look
 ```
 
@@ -229,6 +229,137 @@ template if the block should show it
 ```
 
 A field the file describes is the file's: its label and default win over the package's.
+
+The buttons of `hero`, `cta`, `media-text` and `cards` are `wx-link` fields — `button_link`,
+`second_link`, `link` in a card — with a page, an address, a new tab or a file of the library to
+download. The old `button_url`, `second_url` and `link_url` stay beside them with their type, read
+while the link is empty and shown in the panel only while they hold something: an override written
+for the old buttons stays compatible and prints what it printed. A site gets the new fields with
+`webx:blocks:import --theme --replace=hero` (and the other three), when it chooses to.
+
+### Blocks that come in as the page scrolls
+
+The blocks of `theme-default` can come in as they scroll into view: their words rise and fade
+in, a grid of cards and the picture with its text come one after another. **Off unless the theme
+says so** — a site that never asked looks as it did. The theme says it in its manifest:
+
+```json
+{ "theme": { "uses": ["webx-ui/theme-default"], "reveal": true } }
+```
+
+`true` is `up`; `"fade"` and `"scale"` are the other two effects, `false` (or `"off"`) switches
+off what a layer below turned on. The layer nearest to the site that names it decides, as with the
+preset, and `webx:theme:show` prints the answer. It is not a panel setting: the look of a site is
+the theme's (and in git).
+
+What is on the screen when the page opens is never hidden — the script hides only what is below
+the fold, so the first screen does not blink and its picture is not held back. Without JavaScript,
+with `prefers-reduced-motion` and in print everything is simply there. A block that should stand
+still — a form, a price list — has the switch «Without animation».
+
+A block of your own takes part with the same directive on the elements that come in — never on
+the `<section>` itself, or a list inside it fades twice:
+
+```blade
+<section class="b-offer" data-wx-block="offer">
+    <div class="b-offer__head" @webxReveal('', $no_reveal)>…</div>
+    <ul class="b-offer__list" role="list" @webxReveal('stagger', $no_reveal)>…</ul>
+</section>
+```
+
+`@webxReveal` prints `data-webx-reveal="<effect>"` (or, with `stagger`, the effect for the children)
+while the theme names one and nothing otherwise; the second argument is the block's own switch, a
+`wx-switch` field `no_reveal`. The motion is the widgets' `data-webx-reveal`
+([Widgets](./widgets.md)). The blocks print the directive from the version that brought it: a
+site takes it with `webx:blocks:import --theme --replace=<slug>`, until then the blocks stand
+still.
+
+### A picture that moves slower than the page
+
+The `hero` and the `cta` of `theme-default` over a picture, and its `text-tiles`, have the switch «Parallax», off by default: on, the
+picture behind the words moves slower than the page while the words and the shade stay put.
+«Parallax strength» under it — soft, medium (the default) or strong — says how far behind it falls. It is the widgets' `data-webx-parallax` ([Widgets](./widgets.md)), so a block of your own takes
+part by putting the attribute on a picture that fills its frame:
+
+```blade
+<section class="b-offer" data-wx-block="offer">
+    <img class="b-offer__picture"@if ($parallax) data-webx-parallax="{{ $strength }}" @endif src="…" alt="">
+    …
+</section>
+```
+
+A site takes the switch with `webx:blocks:import --theme --replace=hero,cta`, and `text-tiles` with a plain
+`webx:blocks:import --theme --publish` — a new slug is created, the others are left as they are.
+
+### A section that slides over the one above
+
+Every block of `theme-default` has the switch «Slide over the section above», off by default, and
+under it «Edge picture» and «Edge picture on a phone». On, the section before the block — the hero
+banner of the page, or any block — stays in place while this one comes up over it, the words of
+the hero (and of the text with tiles, and a banner's words and layers) fade as they are covered,
+and the edge picture stands over this block's top across the whole page. Take a PNG or WebP with
+transparency whose bottom row is the colour of the block — one file serves both schemes, so a site
+with a dark scheme wants fog that fades out into transparency. It is the widgets'
+`data-webx-overlap` ([Widgets](./widgets.md)); a block of your own takes part with two directives:
+
+```blade
+<section class="b-offer" data-wx-block="offer"@webxOverlap($overlap)>
+    @webxOverlapEdge($overlap, $overlap_edge, $overlap_edge_narrow)
+    …
+</section>
+```
+
+and `data-webx-overlap-fade` on its own words, for when something slides over it. Visitors who ask
+for less motion, and a page without JavaScript, see the sections one after another. A site takes the
+fields with `webx:blocks:import --theme --replace=hero,text,media-text,cards,cta,contact,text-tiles`.
+
+### Cards in a carousel, with labels and photos
+
+The `cards` block of `theme-default` is a grid by default and a carousel on request («View»): the
+carousel shows as many cards across as the grid would in the same column, with arrows, dots, a
+loop and, if asked, turning on its own every few seconds. A card has **labels** — a few short words
+under its title («2 rooms», «54 m²») — and **more photos** beside its picture: with two or more a
+photo card turns them on its own ([the photos of a card](./widgets.md#the-photos-of-a-card)). A
+block saved before prints as it did; a site takes the fields with
+`webx:blocks:import --theme --replace=cards`.
+
+### A call to action on a picture
+
+The `cta` of `theme-default` takes a fourth background, «Picture»: a photo or a sketch across the
+band under a shade that keeps the words readable — dark or light, turned round by a dark scheme —
+with the parallax of the hero. Its height is the words, the screen or a proportion (21:9, 16:9,
+3:2, 4:3); words that need more make it taller. «Above the heading» puts a line over the heading on
+any background, and «Width» takes any of them edge to edge. Everything is optional: a picture with
+no words and no buttons is the picture alone, across the column or the page, with nothing around
+it.
+
+A button opens a form of the Inbox in a dialog when its link is the address
+`#webx-form-<slug>` (or an empty address with the anchor `webx-form-<slug>`); a file of the library
+with «Download» is a brochure to save. A block saved before prints as it did; a site takes the
+fields with `webx:blocks:import --theme --replace=cta`.
+
+### An accent in a heading
+
+Part of a heading in another colour — «Homes **by the river**» — is typed in the heading itself:
+two equals signs on each side of the words, `Homes ==by the river==`. The blocks of
+`theme-default` print it as `<span class="site-accent">`, in the theme's `color-accent`; on the
+accent and over a photo (`hero`, `cta`, `text-tiles`) the words keep the colour and lean instead. The heading
+stays one `<h1>`/`<h2>` with its words in reading order, and each language of the site puts the
+accent where its own word order wants it — one field, translated like any other. A heading
+without marks prints as before; `a == b` and an unclosed `==` are printed as typed.
+
+A block of your own takes the same with the directive in place of the echo:
+
+```blade
+<h2 class="b-offer__heading">@webxAccent($heading)</h2>
+```
+
+Another look for every accent of the site is one rule in the local theme on `.site-accent`
+(`font-style: italic`, `background: var(--site-color-highlight)` …). Where a span cannot go — an
+attribute, a title — `\WebxUi\Themes\ThemeAccent::plain($heading)` is the text without the marks.
+
+`media-text` also has a **logo** — a small picture above the heading (a mark, a badge, a
+partner), at most 4rem high and 12rem wide, never stretched, its `alt` from the media library.
 
 The 35 rules of a theme — where to work, tokens, where each style lives, blocks, views, languages
 and fonts, accessibility, what to check before saying it is done — are in the engine's

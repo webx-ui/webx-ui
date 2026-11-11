@@ -7,6 +7,7 @@ namespace WebxUi\Debug\Tests;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\File;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Testing\InstalledPackages;
 use WebxUi\Blocks\Rendering\Renderer;
 use WebxUi\Debug\Support\CallSite;
 use WebxUi\Routing\Resolver;
@@ -17,12 +18,29 @@ use WebxUi\Routing\Resolver;
  */
 final class CallSiteTest extends TestCase
 {
+    use InstalledPackages;
+
     #[Test]
     public function a_file_of_a_package_is_named_by_the_package(): void
     {
         $file = (string) (new \ReflectionClass(Resolver::class))->getFileName();
 
         $this->assertSame('webx-ui/routing · src/Resolver.php:57', $this->sites()->describe($file, 57)['label']);
+    }
+
+    /** SITE_MODULES §8, row 22: a module from the site's `modules/` is ours, the module that asked. */
+    #[Test]
+    public function a_file_of_a_site_module_is_named_by_its_package_and_not_skipped(): void
+    {
+        $this->installPackages(__DIR__.'/Fixtures/site-module/vendor/composer/installed.json');
+        $file = __DIR__.'/Fixtures/site-module/modules/offices/src/OfficeList.php';
+
+        $this->assertSame('site/module-offices · src/OfficeList.php:7', $this->sites()->describe($file, 7)['label']);
+
+        // Through its symlink in `vendor`, it is not somebody else's vendor either.
+        $skipped = new \ReflectionMethod(CallSite::class, 'skipped');
+        $this->assertFalse($skipped->invoke($this->sites(), '/srv/site/vendor/site/module-offices/src/OfficeList.php'));
+        $this->assertTrue($skipped->invoke($this->sites(), '/srv/site/vendor/acme/module-widgets/src/Widget.php'));
     }
 
     #[Test]

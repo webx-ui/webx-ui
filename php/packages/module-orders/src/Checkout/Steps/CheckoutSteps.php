@@ -6,6 +6,7 @@ namespace WebxUi\Orders\Checkout\Steps;
 
 use InvalidArgumentException;
 use WebxUi\Orders\Checkout\CheckoutContext;
+use WebxUi\Orders\Checkout\CheckoutFields;
 
 /**
  * The steps of the checkout by position (spec §20.2): contacts 100, delivery 200, payment 300,
@@ -23,8 +24,9 @@ final class CheckoutSteps
     /** A step with a key that exists replaces it: a project overrides 'contacts' this way. */
     public function register(Step $step, int $position): void
     {
-        if ($step->key() === self::CONFIRM || preg_match('/^[a-z][a-z0-9-]{0,31}$/', $step->key()) !== 1) {
-            throw new InvalidArgumentException("A step of the checkout cannot be called \"{$step->key()}\": lowercase letters, digits and dashes, not \"confirm\".");
+        // `fields` — the extra fields' answers in the draft (WEBX_UI_ORDER_FIELDS.md §4.3).
+        if (in_array($step->key(), [self::CONFIRM, CheckoutFields::DRAFT], true) || preg_match('/^[a-z][a-z0-9-]{0,31}$/', $step->key()) !== 1) {
+            throw new InvalidArgumentException("A step of the checkout cannot be called \"{$step->key()}\": lowercase letters, digits and dashes, not \"confirm\" nor \"fields\".");
         }
 
         $this->steps[$step->key()] = ['step' => $step, 'position' => $position];

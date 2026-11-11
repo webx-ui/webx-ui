@@ -1,0 +1,20 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+
+    /*
+    |---------------------------------------------------------------------------
+    | What {{ id }}://catalog lists
+    |---------------------------------------------------------------------------
+    |
+    | An agent reads the catalog before it writes, so that it reuses rather than
+    | duplicates. A reference book of this kind has dozens of rows; past this many
+    | the resource says how many more there are instead of listing them.
+    |
+    */
+
+    'catalog_limit' => 500,
+
+];

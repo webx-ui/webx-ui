@@ -29,6 +29,7 @@ function glance(over: Partial<OrderGlance> = {}): OrderGlance {
     customer: { name: 'Alex Doe', phone: '+800 1234-5678', email: 'alex@example.com' },
     recipient: { name: 'Sam Roe', phone: '+800 1234 5679' },
     comment: null,
+    fields: [],
     manager_note: null,
     last_note: null,
     blocks: [],
@@ -84,6 +85,16 @@ describe('OrderGlanceRow', () => {
     expect(totals).toContain('Awaiting payment')
     expect(totals).not.toContain('−€10.00')
     expect(wrapper.text()).not.toContain('One-click order')
+  })
+
+  it('shows the extra fields the buyer filled beside the comment', () => {
+    const wrapper = mountGlance(
+      glance({ fields: [{ key: 'delivery_time', label: 'Delivery time', text: '18:00–21:00' }] }),
+    )
+
+    const field = wrapper.get('[data-test="glance-field"]')
+    expect(field.text()).toContain('Delivery time')
+    expect(field.text()).toContain('18:00–21:00')
   })
 
   it('makes the phones and the e-mail links that do not open the order', () => {

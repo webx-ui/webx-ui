@@ -36,6 +36,9 @@ final class ScreenRegistry
     /** @var array<string, list<array<string, mixed>|Closure(): array<string, mixed>>> */
     private array $rules = [];
 
+    /** @var array<string, string> The file each screen was registered from, by name: who owns it. */
+    private array $files = [];
+
     /**
      * @param  string|array<int|string, mixed>  $screen  A path to a JSON file, or the decoded
      *                                                   description: the root list, or the
@@ -63,6 +66,32 @@ final class ScreenRegistry
         /** @var list<Node> $root */
         $this->trees[$name] = $root;
         unset($this->built[$name], $this->checked[$name]);
+
+        if (is_string($screen)) {
+            $this->files[$name] = $screen;
+        }
+    }
+
+    /**
+     * The screens registered from a file inside the folder, sorted: what a module of the site
+     * draws itself, told apart from the screens of every package loaded beside it.
+     *
+     * @return list<string>
+     */
+    public function registeredFrom(string $folder): array
+    {
+        $folder = rtrim((string) (realpath($folder) ?: $folder), '/').'/';
+        $names = [];
+
+        foreach ($this->files as $name => $file) {
+            if (str_starts_with((string) (realpath($file) ?: $file), $folder)) {
+                $names[] = $name;
+            }
+        }
+
+        sort($names);
+
+        return $names;
     }
 
     /**
@@ -232,6 +261,9 @@ final class ScreenRegistry
      * What one administrator gets to see: nodes without their permission cut out, and every
      * `trans::` string turned into words in their language.
      *
+     * A node whose type spells it out for the panel is handed to it last ({@see Presents}): an icon
+     * picker naming the theme's set gets the theme's names and sprite.
+     *
      * A field its rules always require is drawn with `required: true` — the asterisk at its label
      * ({@see Required}). A description may say so itself for a field its project checks; it is
      * never taken away here.
@@ -249,7 +281,7 @@ final class ScreenRegistry
             $root = Tree::translate($root, $translate);
         }
 
-        return $root;
+        return $this->present($root);
     }
 
     /**
@@ -282,6 +314,39 @@ final class ScreenRegistry
             if (isset($node['children']) && is_array($node['children'])) {
                 $nodes[$index]['children'] = $this->required($name, Tree::children($node));
             }
+        }
+
+        return $nodes;
+    }
+
+    /**
+     * Every node, a repeater's row fields included, through its type's {@see Presents}.
+     *
+     * @param  list<Node>  $nodes
+     * @return list<Node>
+     */
+    private function present(array $nodes): array
+    {
+        $container = Container::getInstance();
+
+        if (! $container->bound(FieldTypes::class)) {
+            return $nodes;
+        }
+
+        $types = $container->make(FieldTypes::class);
+
+        foreach ($nodes as $index => $node) {
+            $type = $types->get((string) ($node['type'] ?? ''));
+
+            if ($type instanceof Presents) {
+                $node = $type->present($node);
+            }
+
+            if (isset($node['children']) && is_array($node['children'])) {
+                $node['children'] = $this->present(Tree::children($node));
+            }
+
+            $nodes[$index] = $node;
         }
 
         return $nodes;

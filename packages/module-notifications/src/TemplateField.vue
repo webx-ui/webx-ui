@@ -171,7 +171,9 @@ onBeforeUnmount(() => {
   if (channel.inserters.get(props.part) === insert) channel.inserters.delete(props.part)
 })
 
-const sample = computed(() => sampleOf(channel.event.value, channel.provider.value?.key))
+const sample = computed(() =>
+  sampleOf(channel.event.value, channel.provider.value?.key, channel.values.value.recipients),
+)
 
 /** The event's default template in place of the message; asked first if it would replace text. */
 async function insertDefault(): Promise<void> {

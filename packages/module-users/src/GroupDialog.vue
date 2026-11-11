@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
+import { useAdmin, useErrorText, useTranslate, WxCodeField } from '@webx-ui/module-admin'
 import { toast, useModal, WxButton, WxDialog, WxFormItem, WxInput, WxSpace } from '@webx-ui/core'
 import { createUsersApi } from './api'
 import { NAMESPACE, useUsersMessages } from './i18n'
@@ -80,7 +80,7 @@ async function save(): Promise<void> {
         :error="errorOf('code')"
         required
       >
-        <wx-input v-model="code" :maxlength="64" placeholder="wholesale" />
+        <wx-code-field v-model="code" :maxlength="64" placeholder="wholesale" />
       </wx-form-item>
     </form>
 

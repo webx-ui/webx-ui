@@ -46,5 +46,11 @@ return [
             'why' => 'It still works for now: the module hands it what it used to and serves its old script. A later release removes that, and the forms printed by that view stop sending without a reload and lose their captcha.',
             'fix' => 'Delete the site’s copy to get the package’s form, or rewrite it around <x-webx-form> and <x-webx-field>; restyle the fields by webx-field-* and webx-form-* instead of wx-form-* (the inbox guide has the table of classes).',
         ],
+        'steps_in_old_view' => [
+            'title' => 'A form of steps printed on one page',
+            'found' => 'A form has steps, and the site overrides the inbox form with its own form.blade.php that prints only $controls, without the steps.',
+            'why' => 'The form works, as one long page — the way a page without JavaScript sees it — and the server checks and keeps what it always did. But the visitor never sees the steps the editor put in.',
+            'fix' => 'Delete the site’s copy to get the package’s form, or print $steps in it: an <x-webx-form.step> around the controls of each step, steps and :check on <x-webx-form> (the inbox guide shows how).',
+        ],
     ],
 ];

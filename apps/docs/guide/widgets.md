@@ -66,6 +66,11 @@ No component needed — the attributes are enough, in a block template or in a t
 
 The components `<x-webx-dialog>` and `<x-webx-tabs>` print the same markup for you.
 
+`<x-webx-tabs transition="fade">` (`data-webx-tabs-transition="fade"`) cross-fades the panels
+instead of switching at once. All panels then share one cell, so the tabs are as tall as the
+tallest panel: pictures of different proportions do not make the page jump, at the price of space
+under a shorter one. Under reduced motion the change is instant.
+
 `<x-webx-dialog id="call" title="Call me back" description="We call within 15 minutes." sheet>` —
 `description` is a line under the title, the dialog's accessible description; `sheet` makes it a
 sheet from the bottom on a window narrower than 40rem: the whole width, rounded on top, scrolling
@@ -115,6 +120,29 @@ The banner offers only the categories something on the site asks for: `necessary
 "Customize" opens the categories; "Cookie settings" in the footer (`<x-webx-consent-link />`)
 opens them again. The answer is the `webx_consent` cookie, which the server reads too — that is how
 a video's notice is printed without a flash.
+
+The banner and the dialog take their button words from keys of their own, so a site words them
+apart in `lang/vendor/webx-widgets/<locale>/widgets.php` — no copy of the `consent` view, which
+would stop getting the package's changes. Out of the box both say the same; a design that words them
+apart:
+
+```php
+return [
+    'consent' => [
+        // The banner
+        'reject' => 'Decline',
+        'accept' => 'Accept',
+        'customize' => 'Manage preferences',
+        // The dialog
+        'dialog_reject' => 'Reject optional',
+        'dialog_accept' => 'Accept all',
+        'save' => 'Save choices',
+    ],
+];
+```
+
+Laravel merges the file with the package's key by key: a key the site leaves out keeps the
+package's words. Keep the two buttons of a pair equally plain — the view gives them one class.
 
 Third-party code of the site waits for its category in one of three ways:
 
@@ -192,10 +220,31 @@ Variants: `cards`, `hero` (fade and autoplay), `gallery` (thumbnails), `logos` (
 "Per view" counts by the slider's **own** width, so a slider in a narrow column behaves like one.
 Whatever moves by itself has a pause button. Swiper is built in; nothing to install.
 
+`pagination` is `true` (dots), `false`, or `"fraction"` — a counter "1/6" between the arrows in
+place of the dots, for the photos of a flat or a product:
+
+```blade
+<x-webx-slider variant="gallery" pagination="fraction">…</x-webx-slider>
+```
+
+The counter (`.webx-slider__count`, `__current`, `__total`) follows the slide in view — in a
+loop too, and a running strip's copies are not counted. A screen reader does not hear it: the
+slides are named "2 / 6" and Swiper announces the move already. Its colours and size are
+`--webx-slider-count-color`, `--webx-slider-count-current`, `--webx-slider-count-size`; one slide
+prints no controls at all. Kitchen sink › Slider › Photos with a counter shows it.
+
 The lightbox (PhotoSwipe) opens any link with `data-webx-lightbox`; links with the same value page
 together. `<x-webx-lightbox :image="$picture">` takes a picture of the media library and writes
 its size; a link by hand needs `data-width` and `data-height` — without them the picture is
 downloaded first to be measured, and the audit says so.
+
+- **A frame** — `ratio="4:3"` (`data-webx-lightbox-ratio` on a link, "Frame over the page" in the
+  `gallery` block): the picture opens in a frame of that shape, whole and undistorted inside it,
+  on `--webx-lightbox-frame`. Nothing — the picture as it is.
+- **The backdrop** is opaque; `--webx-lightbox-backdrop-opacity` lowers it for a theme or a
+  section, `opacity` (`data-webx-lightbox-opacity`) for one link's group.
+- **Closing leaves the page where it stood**, whichever picture of the group it closed on; the focus
+  goes to that picture's link without scrolling to it — or to the opener, when that link is hidden.
 
 ## Video and map
 
@@ -260,6 +309,84 @@ Another provider of tiles is a config entry:
 `{key}` is replaced by the entry's `key`; a provider named but not described, or a `{key}` with no
 key, is an error at once rather than a map that silently asks for tiles without one.
 
+### Google Maps
+
+Google Maps is the other provider of the same `<x-webx-map>`, with the same frame, notice, sleep
+and "Open in maps" (to Google Maps). It is not a tile entry: Google's terms keep its tiles in its
+own Maps JavaScript API, so the page claims `map-google.js` instead of Leaflet. Choose it on the
+**Map** tab of the settings: «Map service» → Google Maps, then the API key and, optionally, a Map
+ID. Without `module-settings` the config does the same:
+
+```php
+'map' => [
+    'provider' => 'google',
+    'google' => ['key' => env('WEBX_GOOGLE_MAPS_KEY'), 'map_id' => null],
+    // …
+],
+```
+
+- **The key is a browser key** — every visitor sees it in the page. Restrict it in the Google Cloud
+  console to the site's domains (HTTP referrers) and to the Maps JavaScript API.
+- **Before consent to `media`** nothing of Google is on the page — no script, no preconnect; the API
+  is asked for on «Load», «Always load maps» or a consent given earlier, and then only as the
+  frame comes near the screen. One script for every map of the page.
+- **No key** — the map is the place: the address (or the coordinates) and a link to Google Maps,
+  never Google's grey window; the Map tab warns that the key is missing. **A key Google refuses**
+  (or a script that does not come) — the same place, with «The map could not be loaded».
+- **Asleep** the map is Google's «cooperative»: the wheel and one finger scroll the page, Google
+  says how to zoom; a click or the focus makes it «greedy», a press elsewhere puts it back.
+- **The pin** is the package's SVG in `--webx-map-marker`: a classic marker, or an advanced one
+  with a Map ID. **The scheme** follows the site — dark under `data-theme="dark"` or a dark
+  `color-scheme`, the system's where the site follows it — once, when the map is made: a switch of
+  the theme afterwards applies on the next page. With a Map ID the style is the one given to it in
+  the console.
+- **CSP** — a site with a Content Security Policy allows `script-src https://maps.googleapis.com`,
+  `img-src https://*.googleapis.com https://*.gstatic.com data:`, `connect-src
+https://*.googleapis.com` and `font-src https://fonts.gstatic.com`. Do not preconnect to Google
+  in the `<head>`: that is a request with the visitor's address before consent.
+
+### Google Maps embed, with no key
+
+A site whose owner cannot get a key for the Maps JavaScript API puts Google's own frame instead —
+**Share → Embed a map** in Google Maps. It is a mode of the same `<x-webx-map>`, not another
+widget: the same frame, notice, buttons and consent to `media`.
+
+```blade
+<x-webx-map :embed="$code" address="Sample Square, Sample City" title="Map of the office"
+            link="https://maps.app.goo.gl/…" height="28rem" height-narrow="18rem" />
+```
+
+- **What it takes** — Google's whole `<iframe …>` or only its address. The address is taken out and
+  only `https://www.google.com/maps/embed?pb=…` (and the older `maps.google.com/maps?…&output=embed`)
+  pass; a frame of another site, the keyed `/maps/embed/v1/…`, `http:` or HTML with more than the
+  one frame in it is refused.
+- **In a block** — the Map block's «Place» → «Google Maps embed», then «Map code or link». Its
+  field is the panel's `wx-embed` (`props.source: "google-maps"`): the code is pasted as it is,
+  the save keeps the address alone and refuses another site's code with a line saying where to
+  get the right one. The same holds for an agent writing through `blocks_*`.
+- **«Open in Google Maps»** — `link`, else read from the address when it says where: the centre of
+  a `pb` code, the search of an old one. A `pb` without a centre has no link unless one is given.
+- **Before consent** there is no `<iframe>` in the page at all: the address, the link, the notice
+  and «Load» (this map) / «Always load maps» (the consent). After it the script puts Google's frame
+  in with the `title`, `loading="lazy"` and `referrerpolicy="no-referrer-when-downgrade"`, filling
+  the frame the server reserved — nothing below moves.
+- **«Show the map without consent»** — a switch of each Map block, off by default (and off for
+  blocks saved before it). On, the block passes `:consent="false"`: Google's `<iframe>` is in the
+  page's HTML at once — no notice, no wait, without JavaScript too. Off, the site decides: the Cookie
+  tab's «Maps without asking», which by default waits. The block that is on wins over the site; the
+  block that is off does not overrule a site that lifted the wait. Its hint says why it is off: the
+  map hands the visitor's IP address to the map service and may set cookies, which needs consent in
+  the EU.
+- **The placeholder** is a drawing of streets in the theme's own colours with a card on the
+  theme's surface over it — the pin, the address, the notice, the buttons, the link. No picture and
+  no request: before consent the page asks the map service for nothing.
+- **`height-narrow`** — the height in a column narrower than 36em, for any map: a phone gets a
+  shorter map than a monitor. The block's «Height on a phone» sets it; «Width» → «Edge to edge»
+  takes the map to the window's sides (`site-bleed`).
+
+Where the manager gets the code: Google Maps → the place → **Share** → **Embed a map** → **Copy
+HTML**, and paste it into the block.
+
 ## Page tools
 
 What a long page needs, each loading only where it stands:
@@ -270,6 +397,8 @@ What a long page needs, each loading only where it stands:
 
 <div class="cards" data-webx-reveal="stagger" data-webx-reveal-effect="up">…</div>
 <section data-webx-reveal="fade">…</section>
+<section class="promo"><img class="promo__picture" data-webx-parallax="strong" src="…" alt=""></section>
+<section class="offer" data-wx-block="offer"@webxOverlap($overlap)>@webxOverlapEdge($overlap, $edge, $edge_narrow)…</section>
 ```
 
 - **Tables of prose** — nothing to write. Every `<table>` without a class on a page — what a rich
@@ -282,6 +411,28 @@ What a long page needs, each loading only where it stands:
   on a container to bring its children in one after another. In the runtime, no component. Only
   the script hides anything, and only what is below the screen when the page opens: without
   JavaScript or with reduced motion everything is simply there.
+- **Parallax** — `data-webx-parallax` on a picture that fills its frame (the parent with
+  `overflow: hidden`): it moves slower than the page as the frame crosses the screen, taller than
+  the frame so its edges stay out of sight. Scroll-driven CSS (a view timeline named on the frame)
+  where the browser has it, a small script elsewhere; the motion is `translate` only, so nothing
+  shifts around it. The value is the strength: `soft`, `medium` (or empty) and `strong` travel
+  10, 20 and 30% of the frame's height each way, half that in a container under 40rem
+  (`--webx-parallax-shift` 20, `--webx-parallax-shift-narrow` 10, `--webx-parallax-soft` 0.5,
+  `--webx-parallax-strong` 1.5). A picture placed absolutely is made taller rather than scaled, so
+  it stays sharp; one in the flow is scaled. Without JavaScript, with reduced motion and in print
+  the picture simply stands there.
+- **A section that slides over the one above** — `data-webx-overlap` on a section: the section
+  before it (a hero banner, any block) stays where it is, `position: sticky`, while this one comes
+  up over it; the elements of that section marked `data-webx-overlap-fade` fade out as they are
+  covered, then it goes up with the page under this one. The top of this section can be a picture —
+  fog, clouds — as wide as the page: `@webxOverlap($on)` prints the attribute on the root,
+  `@webxOverlapEdge($on, $edge, $edgeOnAPhone)` the picture as its first child. Scroll-driven CSS
+  where the browser has it, a small script elsewhere; the pin is `sticky` on both, so it does not
+  shake. Focus that comes back into the pinned section scrolls the page to where its words are
+  whole. Without JavaScript, with reduced motion and in print the sections stand one after another
+  and the picture lies over the bottom of the one above. The root of the section must be
+  positioned (`theme-default` does it), and must not crop: an edge over a root with
+  `overflow: hidden` is cut.
 - **Share** — each network's own address for sharing as a plain link (Facebook, X, LinkedIn,
   Telegram, WhatsApp, e-mail by default; also Viber, Reddit, Pinterest, Threads, Bluesky, VK) and
   Copy link. No network's script, so nothing to ask consent for. On a phone one Share button opens
@@ -360,6 +511,33 @@ Inertial scrolling is this widget only: a theme does not bring Lenis or another 
   end the `ended` text takes its place; without one the timer goes, and so does the nearest
   `[data-webx-countdown-scope]` around it (the Countdown block is one). Without JavaScript it is the
   line "Ends on …" rather than digits standing still; with it, that line is what a screen reader hears.
+
+## The photos of a card
+
+```blade
+<x-webx-photos :images="$flat->photos" ratio="3/2" :label="$flat->title" />
+<x-webx-photos :images="$pictures" :autoplay="8000" />
+<x-webx-photos :images="$pictures" :autoplay="false" />
+```
+
+- Several photos in one frame turn on their own — every 5 seconds by default — with a bar under
+  each that fills while its photo is shown and shows it on a click; a finger swipes sideways. The
+  pointer over it, the focus inside it or the page scrolled past stop the time, and the pause button
+  stops it for good. With reduced motion nothing turns until the button is pressed.
+- `images` takes what a template has: values of a media field, objects with `url()`, addresses —
+  the empty ones are left out. **One photo is a plain `<img>`** with the attributes you gave and no
+  script; none prints nothing. The frame has the shape of `ratio`, else of the first photo.
+- Without JavaScript the first photo stands alone.
+- A card whose link is stretched over it says so with `data-webx-photos-surface` on the card: a
+  swipe over the photos turns them, a tap still follows the link, and a slider of such cards moves
+  with the rest of the card.
+
+```blade
+<li class="card" @if ($href) data-webx-photos-surface @endif>
+    <x-webx-photos :images="$photos" ratio="3/2" />
+    <h3><a class="card__link" href="{{ $href }}">{{ $title }}</a></h3>
+</li>
+```
 
 ## Before and after, table of contents
 
@@ -470,20 +648,29 @@ The fields of every form of the site — `<x-webx-field>` of fourteen types, its
 
 ## Blocks
 
-On a site with `module-blocks` and `module-media` the package offers eight block types —
+On a site with `module-blocks` and `module-media` the package offers nine block types —
 `php artisan webx:blocks:offered --install --module=widgets` installs them (`webx:setup` prints the
 line, it does not run it). Installed, they belong to the site: an update never overwrites them.
 
-| Block       | Fields                                                                         | Inside                     |
-| ----------- | ------------------------------------------------------------------------------ | -------------------------- |
-| `gallery`   | heading, pictures of the library, grid or slider, columns, zoom, magnify       | slider `gallery`, lightbox |
-| `logos`     | heading, a name, a logo and a link each                                        | slider `logos`             |
-| `video`     | heading, a link or a file (a switch), poster, caption, shape 16:9 4:3 1:1 9:16 | `<x-webx-video>`           |
-| `map`       | heading, the contacts or coordinates with an address, zoom, height             | `<x-webx-map>`             |
-| `counters`  | heading, a number, what stands before and after it, a label each               | `<x-webx-counter>`         |
-| `countdown` | heading, text, a date and a time of the site's zone, at the end a text or hide | `<x-webx-countdown>`       |
-| `compare`   | heading, before, after, their labels, where the divider starts, caption        | `<x-webx-compare>`         |
-| `toc`       | title, the whole page or a text of its own (a switch), side, depth             | `<x-webx-toc>`             |
+| Block       | Fields                                                                                                                                                                                                                                              | Inside                     |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
+| `gallery`   | heading, pictures of the library, grid, slider or mosaic, columns, zoom, frame, magnify; the slider: slides at a time (1–3), slide or fade, arrows, dots, thumbnails, loop, autoplay and its seconds (5); the mosaic: still or a carousel of threes | slider `gallery`, lightbox |
+| `logos`     | heading, a name, a logo and a link each                                                                                                                                                                                                             | slider `logos`             |
+| `video`     | heading, a link or a file (a switch), poster, caption, shape 16:9 4:3 1:1 9:16                                                                                                                                                                      | `<x-webx-video>`           |
+| `map`       | heading, the contacts or coordinates with an address, zoom, height                                                                                                                                                                                  | `<x-webx-map>`             |
+| `counters`  | heading, a number, what stands before and after it, a label each                                                                                                                                                                                    | `<x-webx-counter>`         |
+| `countdown` | heading, text, a date and a time of the site's zone, at the end a text or hide                                                                                                                                                                      | `<x-webx-countdown>`       |
+| `compare`   | heading, before, after, their labels, where the divider starts, caption                                                                                                                                                                             | `<x-webx-compare>`         |
+| `toc`       | title, the whole page or a text of its own (a switch), side, depth                                                                                                                                                                                  | `<x-webx-toc>`             |
+| `tabs`      | heading, a title, a picture and a text each, picture above or beside, alignment, change at once or fade                                                                                                                                             | `<x-webx-tabs>`            |
+
+**The mosaic** of `gallery` is one large picture and two smaller ones: the large on the left and the
+two one above the other beside it, or — in a column narrower than 36em — the large on top and the
+two side by side under it. Every picture is cut to its cell; the caption (the picture's title)
+stands under it. "Still" shows the first three, and the lightbox still pages through all of them:
+the rest are links without a picture in a hidden box. "Carousel of threes" puts three on each
+slide with the slider's arrows, dots, loop and autoplay; three pictures or fewer stay still. The
+last slide holds what is left, one or two pictures at the height of three.
 
 A block with nothing to show — no pictures, an unknown address, a deleted file — prints nothing.
 

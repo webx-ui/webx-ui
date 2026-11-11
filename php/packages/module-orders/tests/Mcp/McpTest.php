@@ -36,6 +36,8 @@ final class McpTest extends McpTestCase
         // The checkout's (§32), while it is on.
         'orders_checkout_steps', 'orders_checkout_preview', 'orders_checkout_funnel', 'orders_checkout_drafts_list',
         'orders_checkout_settings_get', 'orders_checkout_settings_set',
+        // Its extra fields (WEBX_UI_ORDER_FIELDS.md §8.1).
+        'orders_checkout_fields_list', 'orders_checkout_fields_save', 'orders_checkout_fields_delete', 'orders_checkout_fields_reorder',
     ];
 
     #[Test]
@@ -360,6 +362,13 @@ final class McpTest extends McpTestCase
         // Public: written on a dry run, nothing kept; reordered.
         $this->assertTrue($this->ask('orders_public_statuses_save', ['code' => 'on_the_way', 'name' => ['en' => 'On the way'], 'dry_run' => true])['created']);
         $this->assertFalse(PublicStatus::withTrashed()->where('code', 'on_the_way')->exists());
+
+        // A code is brought, not refused (#125); the same text finds the same status again.
+        $brakes = $this->ask('orders_public_statuses_save', ['code' => 'Тормозные колодки', 'name' => ['en' => 'Brakes']]);
+        $this->assertSame([true, 'tormoznye_kolodki'], [$brakes['created'], $brakes['public_status']['code']]);
+        $this->assertFalse($this->ask('orders_public_statuses_save', ['code' => 'тормозные колодки', 'name' => ['en' => 'Brake pads']])['created']);
+        $this->agent('orders_public_statuses_save', ['code' => '!!!', 'name' => ['en' => 'Nothing']])->assertHasErrors(['code']);
+        $this->ask('orders_public_statuses_delete', ['code' => 'Tormoznye Kolodki']);
         $this->ask('orders_public_statuses_reorder', ['codes' => ['cancelled']]);
         $this->assertSame('cancelled', PublicStatus::query()->orderBy('position')->value('code'));
 

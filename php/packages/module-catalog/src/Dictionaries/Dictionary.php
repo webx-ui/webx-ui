@@ -90,7 +90,13 @@ abstract class Dictionary extends Model implements Category
     protected static function booted(): void
     {
         static::saving(static function (Dictionary $record): void {
-            if (trim((string) $record->getAttribute('code')) === '') {
+            // Brought to its shape rather than refused, whatever door it came in by (#125): what
+            // leaves nothing — `!!!`, hieroglyphs — is made of the name, as no code at all is.
+            if ($record->isDirty('code')) {
+                $record->setAttribute('code', $record->codeOf((string) $record->getAttribute('code')));
+            }
+
+            if ((string) $record->getAttribute('code') === '') {
                 $record->setAttribute('code', $record->freeCode());
             }
 
@@ -134,7 +140,7 @@ abstract class Dictionary extends Model implements Category
     public function writeCategoryValue(string $field, mixed $value): void
     {
         match ($field) {
-            'code' => $this->setAttribute('code', Str::lower(trim((string) $value))),
+            'code' => $this->setAttribute('code', (string) $value),
             'color' => $this->setAttribute('color', self::normalColor($value) ?? ''),
             default => $this->writeOwnValue($field, $value),
         };
@@ -287,12 +293,26 @@ abstract class Dictionary extends Model implements Category
 
         $base = Slug::first($names, Container::getInstance()->make(Locales::class)->defaultCode(), self::CODE_LENGTH - 4, $this->codePrefix());
         $code = $base;
+        // A record whose typed code left nothing may well be given its own code back.
+        $others = fn () => $this->exists ? static::withTrashed()->whereKeyNot($this->getKey()) : static::withTrashed();
 
-        for ($n = 2; static::withTrashed()->where('code', $code)->exists(); $n++) {
+        for ($n = 2; $others()->where('code', $code)->exists(); $n++) {
             $code = $base.'-'.$n;
         }
 
         return $code;
+    }
+
+    /**
+     * A code as it was typed, in the shape {@see CODE} holds: «тормозные колодки» is
+     * `tormoznye-kolodki`. The language is asked for only when it matters — it is a read of the
+     * `locales` table, and ASCII reads the same in every one.
+     */
+    protected function codeOf(string $typed): string
+    {
+        $locale = Slug::isLatin($typed) ? 'en' : Container::getInstance()->make(Locales::class)->defaultCode();
+
+        return Slug::code($typed, $locale, self::CODE_LENGTH);
     }
 
     /** What a code made of a name with no letters starts with: `label`, `stock-status`. */

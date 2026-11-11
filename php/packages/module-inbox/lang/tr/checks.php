@@ -46,5 +46,11 @@ return [
             'why' => 'Şimdilik çalışıyor: modül ona eskiden verdiklerini veriyor ve eski betiği sunuyor. Sonraki bir sürüm bunu kaldıracak; o görünümün formları sayfa yenilenmeden gönderilemeyecek ve captcha’larını kaybedecek.',
             'fix' => 'Paketin formunu almak için sitenin kopyasını silin ya da onu <x-webx-form> ve <x-webx-field> etrafında yeniden yazın; alanları wx-form-* yerine webx-field-* ve webx-form-* ile biçimlendirin (sınıf tablosu başvuru kılavuzunda).',
         ],
+        'steps_in_old_view' => [
+            'title' => 'Adımlı bir form tek sayfada gösteriliyor',
+            'found' => 'Bir formun adımları var ve site inbox formunu yalnızca $controls basan, adımları basmayan kendi form.blade.php dosyasıyla geçersiz kılıyor.',
+            'why' => 'Form çalışıyor — JavaScript olmayan bir sayfanın gördüğü gibi tek uzun sayfa olarak — ve sunucu her zaman yaptığını denetleyip saklıyor. Ama ziyaretçi editörün koyduğu adımları hiç görmüyor.',
+            'fix' => 'Paketin formunu almak için sitenin kopyasını silin ya da içinde $steps basın: her adımın alanlarının çevresinde bir <x-webx-form.step>, <x-webx-form> üzerinde steps ve :check (inbox kılavuzu nasıl olduğunu gösteriyor).',
+        ],
     ],
 ];

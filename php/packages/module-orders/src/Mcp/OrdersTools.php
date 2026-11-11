@@ -42,6 +42,7 @@ use WebxUi\Orders\Models\PublicStatus;
 use WebxUi\Orders\Notifications\OrderChannels;
 use WebxUi\Orders\NotifyRefused;
 use WebxUi\Orders\OrderDetails;
+use WebxUi\Orders\OrderFields;
 use WebxUi\Orders\OrderRefused;
 use WebxUi\Orders\Orders;
 use WebxUi\Orders\Panel\Consequences;
@@ -99,6 +100,7 @@ final readonly class OrdersTools
         private Dispatcher $events,
         private OrderChannels $channels,
         private OrdersSummary $summary,
+        private OrderFields $fields,
     ) {}
 
     /**
@@ -152,8 +154,9 @@ final readonly class OrdersTools
                 'get',
                 'One order in full: the buyer and the recipient (personal data), the lines as a tree (a set\'s parts under it) '
                 .'with their discounts and what was given back of them, the adjustments, tenders and benefits, the totals, the '
-                .'delivery and payment blocks, the internal and public status, every milestone with when, by whom and its '
-                .'reference, and the refunds. `balance`: what came in (`paid_total`), what went back, what is still `due` '
+                .'delivery and payment blocks, the answers to the extra fields of the checkout (`fields`: key, type, label, '
+                .'value, text — the buyer\'s data, as the contacts), the internal and public status, every milestone with '
+                .'when, by whom and its reference, and the refunds. `balance`: what came in (`paid_total`), what went back, what is still `due` '
                 .'or `over` (to give back), `tenders_over`, and `kind` (topup, unpaid, over, null). Money in minor units with `*_formatted`.',
                 fn (array $arguments): array => $this->get($arguments),
                 ['properties' => ['order' => $order], 'required' => ['order']],
@@ -345,8 +348,10 @@ final readonly class OrdersTools
                 'update',
                 'Change the buyer\'s contacts (`customer`: first_name, last_name, phone, e-mail — the ones sent, the rest '
                 .'stay), the recipient (`recipient`: first_name, last_name, phone; null — the buyer takes it), the buyer\'s '
-                .'comment, the manager note. Lines, money and milestones never change. The history and the panel\'s journal '
-                .'keep what was changed. `dry_run` answers the fields that would change.',
+                .'comment, the manager note, the answers to the extra fields (`fields`: {key: value | null} — a checkbox true, '
+                .'a list the value of its option, null takes the answer away; the ones not sent stay; whether a field is '
+                .'required or shown is not asked here). Lines, money and milestones never change. The history and the '
+                .'panel\'s journal keep what was changed. `dry_run` answers the fields and the rows that would change.',
                 fn (array $arguments): array => $this->update($arguments),
                 ['properties' => [
                     'order' => $order,
@@ -359,6 +364,7 @@ final readonly class OrdersTools
                     ]],
                     'comment' => ['type' => ['string', 'null']],
                     'manager_note' => ['type' => ['string', 'null']],
+                    'fields' => ['type' => 'object', 'description' => 'By the key of the field (orders_checkout_fields_list, or `fields` of orders_get): its new value, or null.'],
                 ], 'required' => ['order']],
                 permission: OrdersModule::MANAGE,
             ),
@@ -489,6 +495,8 @@ final readonly class OrdersTools
             ],
             'recipient' => $order->recipient,
             'comment' => $order->comment,
+            // The snapshot of the extra fields as the order keeps it (WEBX_UI_ORDER_FIELDS.md §8.2).
+            'fields' => $order->fields ?? [],
             'manager_note' => $order->manager_note,
             'status' => (new StatusChoices)->find($order->status_id, $locale),
             'awaiting_payment' => $order->awaiting_payment && $order->cancelled_at === null,
@@ -1018,17 +1026,29 @@ final readonly class OrdersTools
             }
         }
 
-        if ($patch->isEmpty()) {
-            throw new ToolFailure('Nothing to change: send `customer`, `recipient`, `comment` or `manager_note`.');
+        if (array_key_exists('fields', $arguments)) {
+            $patch = $patch->fields($this->answers($order, $arguments['fields']));
         }
 
-        $work = function () use ($order, $patch, $current): array {
+        if ($patch->isEmpty()) {
+            throw new ToolFailure('Nothing to change: send `customer`, `recipient`, `comment`, `manager_note` or `fields`.');
+        }
+
+        $rows = $order->fields ?? [];
+
+        $work = function () use ($order, $patch, $current, $rows): array {
             $this->orders->updateDetails($order, $patch, self::SOURCE);
             $after = OrderCard::values($order->refresh());
+            $fields = self::rowsChanged($rows, $order->fields ?? []);
 
             return [
-                'changed' => array_keys(array_diff_assoc(array_map(strval(...), $after), array_map(strval(...), $current))),
+                'changed' => [
+                    ...array_keys(array_diff_assoc(array_map(strval(...), $after), array_map(strval(...), $current))),
+                    ...($fields !== [] ? ['fields'] : []),
+                ],
                 'values' => $after,
+                'fields' => $order->fields ?? [],
+                'fields_changed' => $fields,
             ];
         };
 
@@ -1036,6 +1056,66 @@ final readonly class OrdersTools
         $answer = $this->attempt(fn (): array => $dryRun ? Rehearsal::run($work, $order->getConnectionName()) : $work());
 
         return ['number' => $order->number, ...$answer, 'dry_run' => $dryRun];
+    }
+
+    /**
+     * The answers `orders_update` sends, every key one the order has or a definition switched on asks
+     * (WEBX_UI_ORDER_FIELDS.md §8.2): a key misspelt is a refusal, not silence.
+     *
+     * @return array<string, mixed>
+     */
+    private function answers(Order $order, mixed $sent): array
+    {
+        if (! is_array($sent) || $sent === [] || array_is_list($sent)) {
+            throw new ToolFailure('`fields` is an object {key: value | null}: orders_checkout_fields_list lists the keys.');
+        }
+
+        $answered = array_column($order->fields ?? [], 'key');
+        $definitions = $this->fields->all()->keyBy('key');
+
+        foreach (array_keys($sent) as $key) {
+            $key = (string) $key;
+            $definition = $definitions->get($key);
+
+            if (in_array($key, $answered, true) || $definition?->active === true) {
+                continue;
+            }
+
+            throw new ToolFailure($definition === null
+                ? "No field „{$key}“ on this order and no such definition: orders_checkout_fields_list lists them."
+                : "The field „{$key}“ is switched off and this order has no answer to it: switch it on with orders_checkout_fields_save first.");
+        }
+
+        return $sent;
+    }
+
+    /**
+     * The rows of the snapshot an edit changed, added or took away, by their texts.
+     *
+     * @param  list<array<string, mixed>>  $before
+     * @param  list<array<string, mixed>>  $after
+     * @return list<array{key: string, label: string, before: string|null, after: string|null}>
+     */
+    private static function rowsChanged(array $before, array $after): array
+    {
+        $was = array_column($before, null, 'key');
+        $now = array_column($after, null, 'key');
+        $changed = [];
+
+        foreach (array_keys($was + $now) as $key) {
+            if (($was[$key] ?? null) === ($now[$key] ?? null)) {
+                continue;
+            }
+
+            $changed[] = [
+                'key' => (string) $key,
+                'label' => (string) ($now[$key]['label'] ?? $was[$key]['label'] ?? $key),
+                'before' => isset($was[$key]['text']) ? (string) $was[$key]['text'] : null,
+                'after' => isset($now[$key]['text']) ? (string) $now[$key]['text'] : null,
+            ];
+        }
+
+        return $changed;
     }
 
     /**

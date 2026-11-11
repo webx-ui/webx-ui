@@ -364,7 +364,7 @@ function pickColor(key: 'color' | 'background', value: string | null): void {
 
     <template v-if="layer.type === 'button'">
       <wx-form-item :label="t('layers.link')">
-        <wx-link-field v-model="link" :allow-none="false" :disabled="disabled" />
+        <wx-link-field v-model="link" :allow-none="false" files :disabled="disabled" />
       </wx-form-item>
       <wx-form-item :label="t('layers.variant')">
         <wx-select v-model="variant" :options="variants" size="sm" :disabled="disabled" />

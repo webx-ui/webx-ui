@@ -45,6 +45,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $manager_note
  * @property array<string, mixed>|null $delivery
  * @property array<string, mixed>|null $payment
+ * @property list<array{key: string, type: string, label: string, value: bool|string, text: string}>|null $fields the extra fields filled (WEBX_UI_ORDER_FIELDS.md §2.2)
  * @property Carbon $placed_at
  * @property bool $awaiting_payment
  * @property Carbon|null $payment_failed_at
@@ -89,6 +90,7 @@ class Order extends Model
             'recipient' => 'array',
             'delivery' => 'array',
             'payment' => 'array',
+            'fields' => 'array',
             'placed_at' => 'datetime',
             'awaiting_payment' => 'boolean',
             'payment_failed_at' => 'datetime',

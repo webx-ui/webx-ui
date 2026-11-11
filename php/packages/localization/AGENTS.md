@@ -20,6 +20,10 @@ translation routes belong to `webx-ui/module-admin`, and a translated address is
 - **Trait** `HasLatinSlug` — a slug being written is transliterated on the model, one that leaves
   nothing becomes `<type>-<id>`. A model with a slug and no address uses it by name and registers in
   `SlugModels`; `LatinSlugCoverageTest` holds every model to it.
+- **Trait** `HasCodes` with `static codes()` (`column => [max, separator, lead]`) — a machine name somebody types
+  (a key, a code) is brought to its shape on `saving` by `Slug::code()`; `Model::codeFor($column, $value)` is the
+  same for a request that checks the code first. `CodeCoverageTest` holds every model with a code, every
+  code-shaped `regex:` rule and every code field of a screen to it.
 - **Generator** `WebxUi\Localization\Slug` — `make($text, $locale, $max, $prefix, $separator)` and
   `first($texts, $default, …)`: every code and address part a module makes of a name. Transliterates
   by the name's language (`Хіт` is `khit` in uk, `hit` in ru — never `xit`); `$prefix` names a
@@ -30,7 +34,15 @@ translation routes belong to `webx-ui/module-admin`, and a translated address is
 - **Middleware** aliases `webx.locale` (`SetLocale`, the public site) and `webx.panel-locale`
   (`SetPanelLocale`, the panel), plus `OneSpellingPerAddress` for a module's prefixed list route
   (route parameter `webxLocale`): an unknown language is a 404, the default's prefix a 301.
+- **The language of the first visit** (`FirstVisit`, inside `SetLocale`, off by default): a
+  person's first visit to another language's page is a 302 to the same page in it plus the cookie
+  `webx_lang` ("sent once"; with it, never again); robots never; the switcher untouched. The
+  page's address comes from `Contracts\PageInLanguage` — `NoPageInLanguage` (always `null`)
+  unless `webx-ui/widgets` binds the switcher's. `offer()` — who gets the later "Switch to …?"
+  (`first_visit.offer`, cookie `webx_lang_offer` once declined).
 - **Commands** `webx:locales:seed`, `webx:locales:clear`.
+- **Test trait** `Testing\AssertsTranslations` — `assertTranslationsMatch($lang, $languages)` for a module
+  outside the monorepo (a site module): `en` and the listed languages are there, every present language has the keys of `en`.
 - Validation lines in ten languages under the application's own `lang/`: `Translations\ValidationLines`
   wraps `translation.loader` (as `themes` does), so a site's published line still wins.
 
@@ -42,6 +54,8 @@ translation routes belong to `webx-ui/module-admin`, and a translated address is
 | Add or switch off a language on a live site  | a `Locale` row (`Locale::fromCode('de')->save()`) — not the config, the table wins   |
 | Language from `Accept-Language` / not at all | `'strategy' => 'header'` / `'none'` (default `prefix`, `/uk/about`)                  |
 | A prefix on the default language too         | `'prefix_default' => true`                                                           |
+| Send a first visit to another language       | `WEBX_LOCALE_FIRST_VISIT=uk` (a code only); robots, paths — `'first_visit'`          |
+| Offer it on later visits                     | `WEBX_LOCALE_FIRST_VISIT_OFFER=true` (`'first_visit.offer'`)                         |
 | Which language fills a missing translation   | `'fallback'` — keep it on a language that is complete                                |
 | The panel offered in another language        | translate the published `lang` files, add the code to `'panel'`                      |
 | Other words in the panel                     | `php artisan vendor:publish --tag=webx-admin-lang` (or the module's own `-lang` tag) |
@@ -53,6 +67,10 @@ translation routes belong to `webx-ui/module-admin`, and a translated address is
 
 - Do not call `Str::slug()` without a language for a code or an address: it reads Cyrillic the
   English way. Use `Slug::make()`. `SlugCoverageTest` fails on such a call in any package's `src`.
+- Do not refuse a code someone typed (a status code, a key) for its shape: bring it to the shape
+  with `HasCodes` (`Slug::code($text, $locale, $max, $separator, $lead)`; `Slug::BOTH` for a key that takes
+  `-` and `_`), bring it with `codeFor()` before a request's own check, and give the field `wx-code` /
+  `<wx-code-field>`. Refuse only a code that is taken or that leaves nothing with no fallback.
 
 - Do not add the validation lines with `FileLoader::addPath()` or replace `translation.loader`:
   another package wraps it (`themes`), and an added path is read after the site's `lang/`.
@@ -80,6 +98,8 @@ translation routes belong to `webx-ui/module-admin`, and a translated address is
 - Open `/<code>/...` for each language; an unknown prefix must be a 404, the default's prefix a
   301 to the address without it (unless `prefix_default` is on).
 - `php artisan webx:doctor` — what is misconfigured on the site.
+- First visit on: `curl -sI -H 'Accept: text/html' -A 'Mozilla/5.0' <page>` is a 302 with
+  `Set-Cookie: webx_lang`; with `-A Googlebot/2.1` or `-b webx_lang=uk` — a 200.
 
 ## Read more
 

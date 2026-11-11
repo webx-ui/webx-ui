@@ -69,7 +69,7 @@ final class HelperTest extends TestCase
         $this->assertSame('', $card['price_text']);
         $this->assertSame(['Design', 'SEO'], $card['features']);
         $this->assertSame('For a start.', $card['description']);
-        $this->assertSame(['label' => 'Get started', 'url' => 'http://localhost/contacts', 'new_tab' => false, 'rel' => null, 'variant' => 'secondary'], $card['button']);
+        $this->assertSame(['label' => 'Get started', 'url' => 'http://localhost/contacts', 'new_tab' => false, 'rel' => null, 'download' => null, 'variant' => 'secondary'], $card['button']);
         $this->assertTrue($card['featured']);
         $this->assertSame([], $card['service_links']);
         $this->assertSame(['note' => 'VAT included'], $card['fields']);

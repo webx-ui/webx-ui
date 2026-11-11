@@ -178,6 +178,7 @@ export const fields: InboxField[] = [
     type: 'select',
     title: { ru: 'Бюджет', en: 'Budget' },
     options: {
+      unless: { purpose: ['question'] },
       choices: [
         { value: 'small', label: { ru: 'до 100 000 ₴', en: 'up to 100k' } },
         { value: 'medium', label: { ru: '100 000 — 300 000 ₴', en: '100k — 300k' } },
@@ -199,7 +200,12 @@ export const fields: InboxField[] = [
     key: 'file',
     type: 'file',
     title: { ru: 'Файл', en: 'File' },
-    options: { max_size: 8, extensions: ['pdf', 'png', 'jpg', 'docx'] },
+    // Counts on a choice `purpose` no longer has: the list and the dialog show it in red.
+    options: {
+      max_size: 8,
+      extensions: ['pdf', 'png', 'jpg', 'docx'],
+      when: { purpose: ['tender'] },
+    },
   }),
   field(1, {
     key: 'consent',
@@ -249,6 +255,125 @@ export const fields: InboxField[] = [
   }),
   field(3, { key: 'cv', type: 'file', title: { ru: 'Резюме', en: 'CV' }, is_required: true }),
 ]
+
+/*
+ * Conditions (FORM_STEPS §4): the question that decides what else is asked, and the fields that
+ * count on it. Made last so the ids above — which submissions point at — stay as they were, and
+ * put in place after `phone`: a condition names only a field above it.
+ */
+fields.splice(
+  3,
+  0,
+  field(1, {
+    key: 'purpose',
+    type: 'radio',
+    title: { ru: 'Цель обращения', en: 'Purpose of contact' },
+    // Drawn as cards (FORM_STEPS §5): two with a picture of the library, one with words only.
+    options: {
+      view: 'cards',
+      columns: 3,
+      choices: [
+        {
+          value: 'viewing',
+          label: { ru: 'Просмотр квартиры', en: 'Book a viewing' },
+          description: {
+            ru: 'Покажем квартиру в удобное время',
+            en: 'We show the flat when it suits you',
+          },
+          image: { path: 'pages/office.svg' },
+        },
+        {
+          value: 'agency',
+          label: { ru: 'Встреча агентства', en: 'Agency meeting' },
+          description: { ru: 'Для агентов с клиентом', en: 'For agents with a client' },
+          image: { path: 'pages/services.svg' },
+        },
+        {
+          value: 'question',
+          label: { ru: 'Просто вопрос', en: 'Just a question' },
+          description: { ru: 'Ответим письмом', en: 'We answer by e-mail' },
+        },
+      ],
+    },
+    is_required: true,
+    in_table: true,
+  }),
+  field(1, {
+    key: 'agency',
+    type: 'text',
+    title: { ru: 'Агентство', en: 'Agency' },
+    options: { when: { purpose: ['agency'] } },
+    is_required: true,
+  }),
+  // A day and a time (FORM_STEPS §6): on weekdays, every half an hour, in the site's zone.
+  field(1, {
+    key: 'meeting',
+    type: 'datetime',
+    title: { ru: 'Время встречи', en: 'Meeting time' },
+    options: {
+      when: { purpose: ['viewing', 'agency'] },
+      'time-step': 30,
+      'time-from': '09:00',
+      'time-to': '17:00',
+      weekdays: [1, 2, 3, 4, 5],
+    },
+    is_required: true,
+    in_table: true,
+  }),
+)
+
+/*
+ * Steps (FORM_STEPS §3.1): two rows that cut the feedback form into three screens — the contacts
+ * and the purpose, the agency (only for an agency meeting), the request. Made last, like the
+ * conditions, so the ids above stay; put in place by the order of the list.
+ */
+fields.splice(
+  fields.findIndex((one) => one.form_id === 1 && one.key === 'agency'),
+  0,
+  field(1, {
+    key: 'step_agency',
+    type: 'step',
+    title: { ru: 'Об агентстве', en: 'About the agency' },
+    placeholder: { ru: 'Агентство', en: 'Agency' },
+    help: { ru: 'Чтобы подготовить встречу', en: 'So we can prepare the meeting' },
+    options: { when: { purpose: ['agency'] } },
+    is_fullsize: true,
+  }),
+)
+fields.splice(
+  fields.findIndex((one) => one.form_id === 1 && one.key === 'budget'),
+  0,
+  field(1, {
+    key: 'step_request',
+    type: 'step',
+    title: { ru: 'Ваш запрос', en: 'Your request' },
+    options: { 'next-text': { ru: 'К отправке', en: 'To sending' } },
+    is_fullsize: true,
+  }),
+  // The summary (FORM_STEPS §7): on the last screen, what was chosen on the first two.
+  field(1, {
+    key: 'summary',
+    type: 'summary',
+    title: { ru: 'Вы выбрали', en: 'You chose' },
+    help: { ru: 'Проверьте перед отправкой', en: 'Check it before sending' },
+    options: { fields: ['purpose', 'agency'] },
+    is_fullsize: true,
+  }),
+)
+
+/** The fields of a form whose conditions name `key`. */
+export function dependentsOf(formId: number, key: string): InboxField[] {
+  return fields.filter(
+    (one) =>
+      one.form_id === formId &&
+      one.key !== key &&
+      (['when', 'unless'] as const).some((at) => {
+        const condition = one.options[at]
+
+        return typeof condition === 'object' && condition !== null && key in condition
+      }),
+  )
+}
 
 /** What one submission holds, before it is dressed up as a row or as a page. */
 export interface SubmissionRecord {

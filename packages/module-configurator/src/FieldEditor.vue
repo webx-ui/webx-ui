@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useTranslate } from '@webx-ui/module-admin'
+import { codify, useDefaultLocale, useTranslate, WxCodeField } from '@webx-ui/module-admin'
 import { WxFormItem, WxInput, WxInputNumber, type LocalizedValue } from '@webx-ui/core'
 import ConditionsEditor from './ConditionsEditor.vue'
 import { conditionErrors, errorsAt, useBuilder } from './builder'
@@ -33,8 +33,17 @@ watch(
   (next) => (key.value = next),
 )
 
+const siteLocale = useDefaultLocale()
+
+/* Made a key here as well as in the field: the field's own blur may come after this one (#125). */
 function commitKey(): void {
-  const next = key.value.trim()
+  const next = codify(key.value, {
+    separator: '_',
+    lead: 'field',
+    max: 64,
+    locale: siteLocale.value,
+  })
+  key.value = next
   const before = field.value.key
 
   if (next === before) return
@@ -92,8 +101,11 @@ function setCondition(which: 'when' | 'unless', next: Condition | undefined): vo
         :error="errors('key')"
         required
       >
-        <wx-input
+        <wx-code-field
           v-model="key"
+          separator="_"
+          lead="field"
+          :maxlength="64"
           size="sm"
           :disabled="disabled"
           @change="commitKey"

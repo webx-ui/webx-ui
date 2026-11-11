@@ -136,6 +136,11 @@ final class SettingsTest extends PanelTestCase
 
         $root = $this->getJson('/api/cms/screens/orders.settings')->assertOk()->json('data.root');
         $this->assertSame(['checkout-tab'], array_column($root[0]['children'], 'id'));
+        // The extra fields of the checkout right after the contacts (WEBX_UI_ORDER_FIELDS.md §7.1).
+        $this->assertSame(
+            ['checkout-fields-card', 'checkout-extra-card', 'checkout-terms-card', 'checkout-antispam-card', 'checkout-quick-card'],
+            array_column($root[0]['children'][0]['children'], 'id'),
+        );
 
         // The section's keys are not this right's to write: they are dropped, the tab's are kept.
         $values = $this->putJson($this->api('settings'), ['values' => ['orders.number.prefix' => 'X-', 'orders.checkout.terms' => 'checkbox', 'orders.checkout.fields.last_name' => 'hidden']])

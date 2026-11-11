@@ -18,6 +18,9 @@ use ReflectionClass;
  */
 final class PackageRegistry
 {
+    /** @var array<string, string> Package name to the folder Composer installed it into. */
+    private array $directories = [];
+
     public function __construct(
         private readonly Filesystem $files,
         private ?string $installed = null,
@@ -46,6 +49,10 @@ final class PackageRegistry
         foreach (is_array($installed) ? $installed : [] as $package) {
             if (! is_array($package) || ! is_string($package['name'] ?? null)) {
                 continue;
+            }
+
+            if (is_string($package['install-path'] ?? null)) {
+                $this->directories[$package['name']] = dirname($path).'/'.$package['install-path'];
             }
 
             $extra = $package['extra'] ?? null;
@@ -82,6 +89,19 @@ final class PackageRegistry
         ksort($npm);
 
         return $npm;
+    }
+
+    /**
+     * The folder a package was installed into, as Composer recorded it — for a site module that
+     * is its own folder under `modules/`, reached without the link in `vendor/site`.
+     */
+    public function directory(string $name): ?string
+    {
+        $this->packages();
+
+        $path = $this->directories[$name] ?? null;
+
+        return $path === null ? null : (realpath($path) ?: null);
     }
 
     /** Composer's list of what is installed, wherever `vendor` is. */

@@ -9,6 +9,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use WebxUi\Inbox\Exceptions\FormHasSubmissions;
+use WebxUi\Inbox\Fields\FieldType;
+use WebxUi\Inbox\Fields\Steps;
+use WebxUi\Localization\HasCodes;
 use WebxUi\Localization\HasTranslations;
 
 /**
@@ -25,6 +28,7 @@ use WebxUi\Localization\HasTranslations;
  */
 class Form extends Model
 {
+    use HasCodes;
     use HasTranslations;
 
     /** The option that says how a submission is told about: {@see notifyVia()}. */
@@ -37,6 +41,18 @@ class Form extends Model
     protected $table = 'inbox_forms';
 
     protected $guarded = [];
+
+    /**
+     * The slug is where the form answers, `webx/forms/<slug>`: lower case, words joined by `-`.
+     * Brought to that, never refused for it (#125): «Тормозные колодки» is kept as
+     * `tormoznye-kolodki`.
+     *
+     * @return array<string, array{max: int, separator?: string, lead?: string}>
+     */
+    protected static function codes(): array
+    {
+        return ['slug' => ['max' => 96]];
+    }
 
     /**
      * @return list<string>
@@ -73,11 +89,27 @@ class Form extends Model
      * visitor asks for these, never for `fields()`: a disabled field that still validated
      * would refuse a submission over something nobody was shown.
      *
+     * The rows that start a step (FORM_STEPS §3.1) are in it switched off too: a step switched off
+     * takes its fields with it, and without its row they would join the step before. What is
+     * answered is {@see questions()}; the steps — {@see Steps::groups()}.
+     *
      * @return HasMany<Field, $this>
      */
     public function liveFields(): HasMany
     {
-        return $this->fields()->where('is_enabled', true);
+        return $this->fields()->where(static function (Builder $query): void {
+            $query->where('is_enabled', true)->orWhere('type', FieldType::Step->value);
+        });
+    }
+
+    /**
+     * The live fields a visitor answers: no step rows, nothing of a step switched off.
+     *
+     * @return list<Field>
+     */
+    public function questions(): array
+    {
+        return Steps::questions($this->liveFields);
     }
 
     /**

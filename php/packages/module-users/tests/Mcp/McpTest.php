@@ -319,7 +319,13 @@ final class McpTest extends McpTestCase
         $this->assertFalse($renamed['created']);
         $this->assertSame(['club-gold', 'Gold club', 1], [$renamed['group']['code'], $renamed['group']['name'], $renamed['group']['users_count']]);
 
-        $this->agent('users_groups_save', ['code' => 'Not a code!', 'name' => 'X'])->assertHasErrors(['lowercase Latin letters']);
+        // A code is brought, not refused (#125); the same text finds the same group again.
+        $brakes = $this->content($this->agent('users_groups_save', ['code' => 'тормозные колодки', 'name' => 'Brakes']));
+        $this->assertSame(['tormoznye-kolodki', true], [$brakes['group']['code'], $brakes['created']]);
+        $this->assertFalse($this->content($this->agent('users_groups_save', ['code' => 'тормозные колодки', 'name' => 'Brake pads']))['created']);
+        $this->agent('users_groups_save', ['code' => 'club-gold', 'name' => 'X', 'new_code' => 'Tormoznye Kolodki'])->assertHasErrors(['There is a group with this code already.']);
+        $this->agent('users_groups_save', ['code' => '!!!', 'name' => 'X'])->assertHasErrors(['field is required']);
+        $this->agent('users_groups_delete', ['code' => 'Тормозные колодки'])->assertOk();
         $this->agent('users_groups_save', ['code' => 'vip', 'name' => 'VIP', 'new_code' => 'gold'])->assertHasErrors(['There is no group vip']);
 
         // The panel lists what the agent wrote, and the agent what the panel does.

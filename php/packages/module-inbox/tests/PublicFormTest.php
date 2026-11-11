@@ -13,6 +13,7 @@ use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Shortcodes\Shortcodes;
 use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\Models\Submission;
+use WebxUi\Widgets\Widgets;
 
 /**
  * `<x-webx-inbox::form>` — the form of the panel, printed on the site (§10), drawn by the widgets'
@@ -31,7 +32,11 @@ final class PublicFormTest extends TestCase
 
         $html = $this->render();
 
-        $this->assertMatchesRegularExpression('~<form id="webx-inbox-contact" action="'.preg_quote(url($this->intake()), '~').'" method="post" data-webx-send="" class="webx-form webx-inbox-form" data-webx-form="contact">~', $html);
+        $this->assertMatchesRegularExpression('~<form id="webx-inbox-contact" action="'.preg_quote(url($this->intake()), '~').'" method="post" data-webx-send="" class="webx-form webx-inbox-form" data-webx-form="contact" data-webx-attribution="">~', $html);
+
+        // The campaign and the referrer go with it (FORM_STEPS §8): the widgets' script is claimed.
+        Blade::render('<x-webx-inbox::form slug="contact" />');
+        $this->assertContains('attribution', app(Widgets::class)->claimed());
 
         // The intake guards itself (decision 8): no token, no route to renew one.
         $this->assertStringNotContainsString('name="_token"', $html);
@@ -646,6 +651,20 @@ final class PublicFormTest extends TestCase
      * does to it: `$errors` and the old input arrive through the `web` group, and a form
      * rendered outside a request has neither.
      */
+    #[Test]
+    public function a_site_that_turned_attribution_off_prints_a_form_that_does_not_ask_for_it(): void
+    {
+        config()->set('webx-inbox.attribution', false);
+        $this->form();
+
+        $html = $this->render();
+
+        $this->assertStringNotContainsString('data-webx-attribution', $html);
+        app(Widgets::class)->flush();
+        Blade::render('<x-webx-inbox::form slug="contact" />');
+        $this->assertNotContains('attribution', app(Widgets::class)->claimed());
+    }
+
     private function render(string $blade = '<x-webx-inbox::form slug="contact" />'): string
     {
         // A response prints the script once, and each of these is a response of its own.

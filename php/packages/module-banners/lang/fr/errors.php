@@ -8,7 +8,7 @@ return [
     'button-link' => 'Choisissez où mène le bouton.',
     'variant' => 'Cette apparence n’est pas dans la liste du site : :variants.',
     'buttons-max' => 'Une bannière a au plus :max boutons.',
-    'place-key' => 'Une clé se compose de lettres latines minuscules, de chiffres et de tirets, commence par une lettre et fait au plus 64 caractères.',
+    'place-key' => 'Une clé a besoin de lettres ou de chiffres, par exemple « sidebar ».',
     'place-taken' => 'Cette clé est déjà prise.',
     'place-title' => 'Un nom dans la langue par défaut est requis.',
     'place-title-length' => 'Un nom fait au plus :max caractères.',

@@ -32,6 +32,9 @@ The word on the badge and in the filter. A badge is small, so one or two words a
 
 ## code
 
+Type it any way you like: the field turns what you type into a code straight away — «Sale price»
+becomes `sale-price`, words in another alphabet are written in Latin letters.
+
 Do not change the code of a working label without need: links to the filter that are already in
 adverts and bookmarks will stop picking it. Buyers see the code only in the page address.
 

@@ -42,12 +42,15 @@
         "orchestra/testbench": "^11.0",
         "phpunit/phpunit": "^12.0 || ^13.0",
         "webx-ui/module-audit": "^0.94.0",
+        "webx-ui/module-media": "^0.94.0",
         "webx-ui/module-settings": "^0.94.0",
         "webx-ui/themes": "^0.94.0"
     },
     "suggest": {
         "webx-ui/module-audit": "The site audit reports switched-on forms that would notify nobody, and notifications that failed or have waited in the queue for long.",
+        "webx-ui/module-media": "A picture from the media library on a choice drawn as a card (radio or checkbox, view: cards).",
         "webx-ui/module-notifications": "Notify through channels too: Telegram, e-mail by a template of its own, any provider a package adds — chosen per form beside the letter.",
+        "webx-ui/module-settings": "The site's time zone (Settings › Contacts) for the «Date and time» field; without it the application's.",
         "webx-ui/themes": "With a theme, the form gets its base look on site tokens (resources/theme/inbox.css)."
     },
     "autoload": {

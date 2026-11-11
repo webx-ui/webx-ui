@@ -12,7 +12,7 @@
  * breakpoint — the one `<picture>` switches its source at.
  *
  * Classes: webx-banners, webx-banners--<layout>, webx-banners--overflow, __strip, __item;
- * webx-banner, __picture, __image, __video, __stage, __layer, __layer--<type>, __inner,
+ * webx-banner, __picture, __image, __video (--wide, --narrow), __stage, __layer, __layer--<type>, __inner,
  * __button, __button--<variant>, __buttons, __content, __title, __text; is-mobile, is-italic,
  * is-uppercase, is-shadow, has-background, is-in-<entrance>, is-loop-<loop>.
  */
@@ -115,17 +115,32 @@
   display: contents;
 }
 
-.webx-banner__image,
-.webx-banner__video {
+.webx-banner__image {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.webx-banner__video {
+/*
+ * The video is the widgets' backdrop (`<x-webx-video variant="background">`) over the picture,
+ * the frame's size: the picture under it is the poster, so the backdrop has no ground of its own.
+ * Two classes deep: video.css lays its own frame on the same element.
+ */
+.webx-banner__picture > .webx-banner__video {
+  --webx-video-bg: transparent;
+
   position: absolute;
   inset: 0;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  border-radius: 0;
+}
+
+/* The phone's own video waits for the breakpoint. Hidden, it is never on screen: not loaded, not played. */
+.webx-banner__picture > .webx-banner__video--narrow {
+  display: none;
 }
 
 .webx-banner__stage {
@@ -162,6 +177,13 @@
   translate: var(--ox) var(--oy);
   rotate: calc(var(--rotate) * 1deg);
   pointer-events: auto;
+}
+
+/* A faded-out slide of the slider is still there, stacked over the shown one, and the slide's own
+   `pointer-events: none` does not reach a layer that says `auto`: its words would take the click
+   meant for the button underneath. */
+.webx-slider__slide--fade:not(.is-active) .webx-banner__layer {
+  pointer-events: none;
 }
 
 .webx-banner__layer--image {
@@ -245,6 +267,14 @@
 /* mobile:start */
 .webx-banner.is-mobile {
   aspect-ratio: var(--ratio-mobile, 4 / 5);
+}
+
+.webx-banner.is-mobile .webx-banner__picture > .webx-banner__video--wide {
+  display: none;
+}
+
+.webx-banner.is-mobile .webx-banner__picture > .webx-banner__video--narrow {
+  display: grid;
 }
 
 .webx-banner.is-mobile .webx-banner__stage {

@@ -26,7 +26,13 @@ use WebxUi\Media\Screens\MediaValues;
  *                              null only in a place of words only (`'image' => false`)
  *     image_mobile             the same, or null — the template then takes `image`
  *     video                    url and mime, or null — the picture stays as the poster
- *     buttons                  label, url, new_tab, rel, variant — in the editor's order
+ *     video_mobile             the same, played below the breakpoint instead of `video`; null —
+ *                              `video` there only where the place says `video_on_mobile`
+ *     poster                   a picture, as `image` — what is seen before the video's first
+ *                              frame and where it does not play; null — the picture is the poster
+ *     buttons                  label, url, new_tab, rel, download, variant — in the editor's order;
+ *                              `download` the name of a library file the browser saves, else null.
+ *                              Printed with LinkAttributes::of($button)
  *     fields                   the project's own fields (a patch on `banners.form`), by name
  *     layers                   in a place with layers, the layers ({@see Layers}); else []
  *     ratio, ratio_mobile      width / height of image and of image_mobile (else image) — the
@@ -62,7 +68,7 @@ final class Cards
         $links = [];
 
         foreach ($banners as $banner) {
-            foreach (['image', 'image_mobile', 'video'] as $field) {
+            foreach (['image', 'image_mobile', 'video', 'video_mobile', 'poster'] as $field) {
                 $path = $banner->mediaPath($field);
 
                 if ($path !== null) {
@@ -128,6 +134,8 @@ final class Cards
             'image' => $image,
             'image_mobile' => $mobile,
             'video' => $this->video($banner->video),
+            'video_mobile' => $this->video($banner->video_mobile),
+            'poster' => $this->picture($banner->poster, $locale),
             'buttons' => $buttons,
             'fields' => $fields,
             'layers' => $layers,
@@ -149,7 +157,7 @@ final class Cards
     }
 
     /**
-     * Only what a `<video>` needs; the picture is its poster.
+     * Only what a `<video>` needs; its poster is `poster`, else the picture.
      *
      * @return array{url: string, mime: string|null}|null
      */
@@ -166,7 +174,7 @@ final class Cards
 
     /**
      * @param  array<string, array<int, LinkCandidate>>  $candidates
-     * @return list<array{label: string, url: string, new_tab: bool, rel: string|null, variant: string|null}>
+     * @return list<array{label: string, url: string, new_tab: bool, rel: string|null, download: string|null, variant: string|null}>
      */
     private function buttons(Banner $banner, string $locale, array $candidates): array
     {
@@ -200,6 +208,7 @@ final class Cards
                 'url' => $url,
                 'new_tab' => $link->newTab,
                 'rel' => $link->relAttribute(),
+                'download' => $this->download($link),
                 'variant' => $this->variant($row['variant'] ?? null),
             ];
         }
@@ -221,6 +230,16 @@ final class Cards
         return is_numeric($width) && is_numeric($height) && (float) $height > 0
             ? round((float) $width / (float) $height, 4)
             : null;
+    }
+
+    /**
+     * The name a file of the library is saved under, for a file link that asks to be downloaded —
+     * the key it is kept under is a hash. The library was asked for every file of the list at once
+     * ({@see LinkUrls::candidates()}).
+     */
+    private function download(Link $link): ?string
+    {
+        return $link->download ? ($this->urls->file($link)['name'] ?? null) : null;
     }
 
     /** A variant the site still has, else its first one (decision 11): a button outranks its look. */

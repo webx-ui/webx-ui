@@ -1,0 +1,96 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Site\{{ Studly }}\Tests;
+
+use PHPUnit\Framework\Attributes\Test;
+use Site\{{ Studly }}\Models\{{ Model }};
+
+/**
+ * The section as the panel reaches it: the entry of the menu, the list in its order, the form that
+ * creates and saves, the order and the delete — and a reader kept out of writing.
+ */
+final class PanelTest extends TestCase
+{
+    #[Test]
+    public function the_section_is_in_the_menu_with_its_permissions(): void
+    {
+        $response = $this->actingAs($this->editor(), $this->guard())
+            ->getJson('/'.trim((string) config('webx-admin.api_path'), '/').'/manifest')
+            ->assertOk();
+
+        $entry = collect((array) $response->json('data.modules'))->firstWhere('id', '{{ id }}');
+
+        $this->assertIsArray($entry);
+        $this->assertSame(['{{ id }}.view', '{{ id }}.manage'], $entry['permissions']);
+    }
+
+    #[Test]
+    public function a_record_is_created_read_saved_ordered_and_deleted(): void
+    {
+        $locale = $this->defaultLocale();
+        $editor = $this->editor();
+
+        $created = $this->actingAs($editor, $this->guard())
+            ->postJson($this->api(), ['values' => ['title' => [$locale => 'First']]])
+            ->assertCreated();
+        $id = (int) $created->json('data.record.id');
+
+        $this->actingAs($editor, $this->guard())->getJson($this->api($id))
+            ->assertOk()
+            ->assertJsonPath("data.values.title.{$locale}", 'First');
+
+        $this->actingAs($editor, $this->guard())
+            ->putJson($this->api($id), ['values' => ['title' => [$locale => 'Renamed']]])
+            ->assertOk()
+            ->assertJsonPath('data.record.title', 'Renamed');
+
+        $other = $this->record('Second');
+        $this->actingAs($editor, $this->guard())->postJson($this->api('reorder'), ['ids' => [$other->id, $id]])->assertNoContent();
+        $this->assertSame(
+            [$other->id, $id],
+            array_column((array) $this->actingAs($editor, $this->guard())->getJson($this->api())->assertOk()->json('data'), 'id'),
+        );
+
+        $this->actingAs($editor, $this->guard())->deleteJson($this->api($id))->assertNoContent();
+        $this->assertNull({{ Model }}::query()->find($id));
+    }
+
+    #[Test]
+    public function a_title_in_the_default_language_is_required(): void
+    {
+        $locale = $this->defaultLocale();
+
+        $this->actingAs($this->editor(), $this->guard())
+            ->postJson($this->api(), ['values' => ['title' => [$locale => ' ']]])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(["title.{$locale}"]);
+
+        $this->assertSame(0, {{ Model }}::query()->count());
+    }
+
+    #[Test]
+    public function a_reader_reads_and_does_not_write(): void
+    {
+        $record = $this->record('First');
+        $reader = $this->editor(['{{ id }}.view']);
+
+        $this->actingAs($reader, $this->guard())->getJson($this->api())->assertOk();
+        $this->actingAs($reader, $this->guard())->getJson($this->api($record->id))->assertOk();
+        $this->actingAs($reader, $this->guard())->postJson($this->api(), ['values' => ['title' => 'New']])->assertForbidden();
+        $this->actingAs($reader, $this->guard())->putJson($this->api($record->id), ['values' => ['title' => 'New']])->assertForbidden();
+        $this->actingAs($reader, $this->guard())->postJson($this->api('reorder'), ['ids' => [$record->id]])->assertForbidden();
+        $this->actingAs($reader, $this->guard())->deleteJson($this->api($record->id))->assertForbidden();
+    }
+
+    #[Test]
+    public function the_demo_puts_three_rows_and_takes_them_back(): void
+    {
+        $this->artisan('webx:demo', ['--module' => ['{{ id }}'], '--force' => true])->assertSuccessful();
+        $this->assertSame(3, {{ Model }}::query()->count());
+
+        $this->artisan('webx:demo', ['--remove' => true])->assertSuccessful();
+        $this->assertSame(0, {{ Model }}::query()->count());
+    }
+}

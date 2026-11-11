@@ -13,6 +13,7 @@ import type {
   Manifest,
   NavEntry,
   NavGroup,
+  PickedFile,
   PickedImage,
 } from './types'
 
@@ -39,6 +40,13 @@ export interface AdminContext {
    * none does — and a field that needs one then does not offer to.
    */
   readonly pickImage: (() => Promise<PickedImage | null>) | null
+  /**
+   * How the panel picks a file of any kind, for a link to it. Optional on the context, so a
+   * hand-made one in a test needs none; `null` or absent — no file target is offered.
+   */
+  readonly pickFile?: (() => Promise<PickedFile | null>) | null
+  /** What a saved file key is called and where it is now; absent without a library. */
+  readonly describeFile?: ((path: string) => Promise<PickedFile | null>) | null
   /**
    * Where library keys live now, when a module installed here has a library; `null` when none
    * does, and a document is then shown with the addresses it was saved with.
@@ -253,6 +261,8 @@ export function createAdminContext(options: {
   // panel with two file managers has a bigger question to answer than which one this opens.
   const picker = options.modules.find((module) => module.pickImage !== undefined)
   const pickImage = picker?.pickImage
+  const filePicker = options.modules.find((module) => module.pickFile !== undefined)
+  const describe = options.modules.find((module) => module.describeFile !== undefined)?.describeFile
   const assetUrls = options.modules.find((module) => module.assetUrls !== undefined)?.assetUrls
   const blockLabelsOf = options.modules.find(
     (module) => module.blockLabels !== undefined,
@@ -465,6 +475,14 @@ export function createAdminContext(options: {
 
       return pickImage && allowed ? pickImage : null
     },
+    get pickFile() {
+      const allowed =
+        filePicker?.pickImageWith === undefined ||
+        filePicker.pickImageWith.some((permission) => context.can(permission))
+
+      return filePicker?.pickFile && allowed ? filePicker.pickFile : null
+    },
+    describeFile: describe ? (path: string) => describe(path, context) : null,
     assetUrls: assetUrls ? cachedAssetUrls : null,
     blockLabels() {
       // Once for the session, and a failure is not remembered: the next notice asks again.

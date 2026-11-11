@@ -7,6 +7,9 @@
     `checkout.js` keeps from reloading the page — the step and the column are redrawn; «Sign out»
     for a visitor comes back here. Both stand outside the step's form: a form is never in a form.
 
+    The extra fields of the place `contacts` stand before the button (WEBX_UI_ORDER_FIELDS.md §4.2): a
+    theme that copies this view keeps that line.
+
     Classes: webx-orders-checkout__form, __visitor, __sign-in, __sign-out, __recipient.
 --}}
 @if ($visitor !== null)
@@ -52,5 +55,6 @@
             <x-webx-field type="tel" name="recipient.phone" :label="__('webx-orders::checkout.fields.recipient-phone')" :value="$recipient['phone'] ?? null" />
         </fieldset>
     @endif
+    @include('webx-orders::checkout.parts.fields', ['place' => 'contacts'])
     <x-webx-form.submit>{{ __('webx-orders::checkout.steps.save') }}</x-webx-form.submit>
 </x-webx-form>

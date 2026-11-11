@@ -11,4 +11,5 @@ return [
     'captcha-unused' => 'El formulario :form (:slug) no tiene captcha y el sitio tiene claves para :providers',
     'spam-without-captcha' => 'El formulario :form (:slug) no tiene captcha y recibe spam. En :days días, marcados como spam: :spam, rechazados: :refused',
     'legacy-views' => 'El formulario de solicitudes está sustituido por una vista anterior al motor de formularios: :path',
+    'steps-in-old-view' => 'El formulario :form (:slug) tiene pasos, y la vista del sitio :path lo muestra en una sola página',
 ];

@@ -1,7 +1,7 @@
 import type { AdminContext } from './admin'
 
 /** What a link points at, said out loud rather than guessed from what is filled in. */
-export type LinkTarget = 'entity' | 'url' | 'none'
+export type LinkTarget = 'entity' | 'url' | 'file' | 'none'
 
 /** The three `rel` values an editor may choose. `noopener` is added by whoever renders. */
 export type LinkRel = 'nofollow' | 'sponsored' | 'ugc'
@@ -23,6 +23,13 @@ export interface LinkValue {
   hash: string | null
   new_tab: boolean
   rel: LinkRel[]
+  /**
+   * The library key of a `file` link. Only a file link carries it and {@link download}: every
+   * other link keeps the seven keys it always had, which are the menu's columns.
+   */
+  path?: string | null
+  /** A `file` link the browser saves, under the name the file was uploaded with. */
+  download?: boolean
 }
 
 /** One section of the picker: a kind of thing this administrator may link to. */

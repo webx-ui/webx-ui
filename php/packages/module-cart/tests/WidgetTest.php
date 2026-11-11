@@ -97,6 +97,21 @@ final class WidgetTest extends TestCase
     }
 
     #[Test]
+    public function without_the_trigger_it_is_the_main_view_alone(): void
+    {
+        // The checkout's minimal layout: no icon, no mini cart, no counter to count.
+        $html = Blade::render('<x-webx-cart :trigger="false" />');
+
+        $this->assertStringContainsString('class="webx-cart webx-cart--drawer"', $html);
+        $this->assertStringContainsString('data-webx-cart-panel="webx-cart"', $html);
+        $this->assertMatchesRegularExpression('~<dialog id="webx-cart"~', $html);
+        $this->assertStringNotContainsString('webx-cart__trigger', $html);
+        $this->assertStringNotContainsString('data-webx-cart-count', $html);
+        $this->assertStringNotContainsString('<details', $html);
+        $this->assertStringContainsString('<script type="module"', $html);
+    }
+
+    #[Test]
     public function an_unknown_mode_is_said_aloud(): void
     {
         // The dropdown is the mini cart now, not a mode of the main view.
