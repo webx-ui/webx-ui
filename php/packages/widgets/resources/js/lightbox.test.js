@@ -1,4 +1,5 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import PhotoSwipe from 'photoswipe'
 
 // jsdom lays nothing out; PhotoSwipe and Swiper read sizes and watch them.
 globalThis.ResizeObserver = class {
@@ -246,6 +247,51 @@ describe('lightbox', () => {
     pswp.prev()
     await vi.waitFor(() => expect(shown()).not.toBeNull())
     expect(shown().classList.contains('webx-lightbox__framed')).toBe(false)
+  })
+
+  it('gives the stand-in thumbnail the frame before the opening zoom, not after it', async () => {
+    const { show } = await start(link(1, 'g', 'data-webx-lightbox-ratio="4:3"'))
+    // In a browser the picture is appended only after the opening zoom, and the zoom animates the
+    // thumbnail: framed only then, it would land in the thumbnail's shape and jump to the frame's.
+    // jsdom appends at once, so the thumbnail is looked at the moment the picture comes in.
+    const seen = []
+    const dispatch = PhotoSwipe.prototype.dispatch
+    const spy = vi
+      .spyOn(PhotoSwipe.prototype, 'dispatch')
+      .mockImplementation(function (name, details) {
+        if (name === 'contentAppend') {
+          const placeholder = details.content.placeholder?.element
+          seen.push(placeholder?.classList.contains('webx-lightbox__framed'))
+        }
+        return dispatch.call(this, name, details)
+      })
+    try {
+      await show(document.querySelector('a'))
+    } finally {
+      spy.mockRestore()
+    }
+    expect(seen.length).toBeGreaterThan(0)
+    // The shape too — jsdom has no aspect-ratio, it is measured in a browser.
+    expect(seen.every(Boolean)).toBe(true)
+  })
+
+  it('zooms up a thumbnail of the shape of the picture only, not a cropped one', async () => {
+    const { thumbnail } = await start('')
+    const img = (w, h, src = '/t.jpg') => ({
+      currentSrc: src,
+      naturalWidth: w,
+      naturalHeight: h,
+      getAttribute: () => src,
+    })
+    // The same shape, give or take a pixel of rounding: zoomed up while the picture loads.
+    expect(thumbnail(img(360, 240), 1200, 800)).toBe('/t.jpg')
+    expect(thumbnail(img(359, 240), 1200, 800)).toBe('/t.jpg')
+    // A square crop of a 3:2 picture would grow square and jump to 3:2: a plain box instead.
+    expect(thumbnail(img(180, 180), 1200, 800)).toBeUndefined()
+    // Nothing to compare with: taken as it is.
+    expect(thumbnail(img(0, 0), 1200, 800)).toBe('/t.jpg')
+    expect(thumbnail(img(180, 180), 0, 0)).toBe('/t.jpg')
+    expect(thumbnail(null, 1200, 800)).toBeUndefined()
   })
 
   it('frames a picture measured on opening once its sizes are known', async () => {

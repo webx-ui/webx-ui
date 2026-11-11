@@ -85,6 +85,14 @@ function frame(data) {
   else data.width = Math.round(data.height * data.ratio)
 }
 
+/** The stand-in thumbnail of a framed picture, in the frame's shape. */
+export function framePlaceholder(content) {
+  const placeholder = content.placeholder?.element
+  if (!content.data.ratio || !placeholder) return
+  placeholder.classList.add('webx-lightbox__framed')
+  placeholder.style.aspectRatio = String(content.data.ratio)
+}
+
 /** The backdrop's opacity: the link's own, else the token's as the link sees it, else opaque. */
 function opacity(link) {
   const own = link.dataset.webxLightboxOpacity
@@ -93,14 +101,29 @@ function opacity(link) {
   return Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 1
 }
 
+/**
+ * The thumbnail PhotoSwipe zooms up into the picture while it loads, if it has the picture's
+ * shape. A cropped one — a square file a grid picks on a phone — would grow in its own shape and
+ * jump to the picture's when the picture comes in; without it the zoom grows a plain box of the
+ * picture's shape instead. A thumbnail not yet loaded has no shape to tell: it is taken.
+ */
+export function thumbnail(picture, width, height) {
+  const src = picture?.currentSrc || picture?.getAttribute('src') || undefined
+  const own = picture?.naturalWidth / picture?.naturalHeight
+  if (!src || !(width > 0 && height > 0) || !(own > 0)) return src
+  return Math.abs(own / (width / height) - 1) <= 0.02 ? src : undefined
+}
+
 function item(link) {
   const picture = link.querySelector('img')
+  const width = Number(link.dataset.width) || 0
+  const height = Number(link.dataset.height) || 0
   const data = {
     src: link.href,
-    width: Number(link.dataset.width) || 0,
-    height: Number(link.dataset.height) || 0,
+    width,
+    height,
     alt: picture?.alt ?? link.getAttribute('aria-label') ?? '',
-    msrc: picture?.currentSrc || picture?.getAttribute('src') || undefined,
+    msrc: thumbnail(picture, width, height),
     element: link,
     ratio: ratio(link.dataset.webxLightboxRatio),
   }
@@ -191,14 +214,13 @@ export async function show(link) {
   // A framed picture gets the frame's background; the rest stay as they are, a PNG's
   // transparency included.
   pswp.on('contentAppend', ({ content }) => {
-    if (!content.data.ratio) return
-    content.element?.classList.add('webx-lightbox__framed')
-    // The thumbnail standing in until the picture loads keeps its own shape (PhotoSwipe gives it
-    // `height: auto`) and would stick out of the frame for the second it stays: the frame's shape.
-    const placeholder = content.placeholder?.element
-    placeholder?.classList.add('webx-lightbox__framed')
-    if (placeholder) placeholder.style.aspectRatio = String(content.data.ratio)
+    if (content.data.ratio) content.element?.classList.add('webx-lightbox__framed')
   })
+  // The thumbnail standing in until the picture loads keeps its own shape (PhotoSwipe gives it
+  // `height: auto`) and would stick out of the frame. It gets the frame's shape as soon as it is
+  // made — `contentLoad` comes right after — not on `contentAppend`: that one comes after the
+  // opening zoom, which would then land on the thumbnail's shape and jump to the frame's.
+  pswp.on('contentLoad', ({ content }) => framePlaceholder(content))
 
   pswp.on('close', () => reveal(links[pswp.currIndex] ?? link))
   pswp.on('destroy', () => {
