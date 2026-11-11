@@ -43,7 +43,7 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
   in each language (`routing`), else its home page with `is-fallback`; `LanguageLinks::current()`.
 - **Slider** — `<x-webx-slider variant="cards|hero|gallery|logos" :per-view="['sm' => 1.2, 'lg' => 3]">`
   with `<x-webx-slide thumb>`; per view by its own width (`sm` 0, `md` 640, `lg` 960, `xl` 1280);
-  `options` for the rest of Swiper. Without JavaScript a strip that scrolls and snaps.
+  `pagination` true|false|`fraction` (counter "1/6", aria-hidden); `options` — Swiper. No JS: a snapping strip.
 - **Lightbox** — any `<a data-webx-lightbox="<group>" data-width data-height>` on the page, or
   `<x-webx-lightbox :image="$picture" group ratio="4:3" opacity>`: `ratio` a frame the picture fits into whole (`data-webx-lightbox-ratio`),
   the backdrop opaque unless `--webx-lightbox-backdrop-opacity` says less; closing keeps the page's scroll. **Zoom** — `<x-webx-zoom :image mode frame>` (`inner|side`,

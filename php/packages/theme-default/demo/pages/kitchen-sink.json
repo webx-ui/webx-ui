@@ -3936,6 +3936,61 @@
           }
         },
         {
+          "key": "showcase-slider-counter",
+          "type": "showcase-slider",
+          "values": {
+            "heading": {
+              "en": "Photos with a counter",
+              "ru": "Фото со счётчиком",
+              "pl": "Zdjęcia z licznikiem"
+            },
+            "note": {
+              "en": "pagination=\"fraction\": \"1/6\" between the arrows instead of the dots, for the photos of a flat or a product. It follows the slide in view, and a screen reader does not hear it twice — the slides are named \"2 / 6\" already.",
+              "ru": "pagination=\"fraction\": «1/6» между стрелками вместо точек — для фото квартиры или товара. Номер следует за слайдом в кадре, а экранный чтец не слышит его дважды: слайды и так названы «2 / 6».",
+              "pl": "pagination=\"fraction\": „1/6” między strzałkami zamiast kropek — do zdjęć mieszkania lub produktu. Numer idzie za slajdem na widoku, a czytnik ekranu nie słyszy go dwa razy: slajdy i tak nazywają się „2 / 6”."
+            },
+            "titles": {
+              "en": "Strategy\nDesign\nDevelopment\nSupport\nHosting\nAnalytics\nTraining\nAudit\nContent\nSearch\nMobile\nSecurity",
+              "ru": "Стратегия\nДизайн\nРазработка\nПоддержка\nХостинг\nАналитика\nОбучение\nАудит\nКонтент\nПоиск\nМобильная версия\nБезопасность",
+              "pl": "Strategia\nProjektowanie\nProgramowanie\nWsparcie\nHosting\nAnalityka\nSzkolenia\nAudyt\nTreści\nWyszukiwanie\nWersja mobilna\nBezpieczeństwo"
+            },
+            "hero": {
+              "en": ":word that lasts",
+              "ru": ":word надолго",
+              "pl": ":word na lata"
+            },
+            "slide": {
+              "en": "Slide :n of :count",
+              "ru": "Слайд :n из :count",
+              "pl": "Slajd :n z :count"
+            },
+            "photo": {
+              "en": "Photo :n of :count",
+              "ru": "Фото :n из :count",
+              "pl": "Zdjęcie :n z :count"
+            },
+            "card": {
+              "en": "Card :n of :count.",
+              "ru": "Карточка :n из :count.",
+              "pl": "Karta :n z :count."
+            },
+            "longer": {
+              "en": "A longer line of text, so that the cards of one strip differ in height and the strip shows whether they still line up.",
+              "ru": "Строка подлиннее, чтобы карточки одной ленты были разной высоты и было видно, выравниваются ли они.",
+              "pl": "Dłuższy wiersz tekstu, żeby karty jednego paska różniły się wysokością i było widać, czy nadal się wyrównują."
+            },
+            "more": {
+              "en": "More about :word",
+              "ru": "Подробнее: :word",
+              "pl": "Więcej: :word"
+            },
+            "variant": "gallery",
+            "pagination": "fraction",
+            "width": "full",
+            "slides": "6"
+          }
+        },
+        {
           "key": "showcase-slider-gallery",
           "type": "gallery",
           "values": {

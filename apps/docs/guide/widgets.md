@@ -220,6 +220,19 @@ Variants: `cards`, `hero` (fade and autoplay), `gallery` (thumbnails), `logos` (
 "Per view" counts by the slider's **own** width, so a slider in a narrow column behaves like one.
 Whatever moves by itself has a pause button. Swiper is built in; nothing to install.
 
+`pagination` is `true` (dots), `false`, or `"fraction"` — a counter "1/6" between the arrows in
+place of the dots, for the photos of a flat or a product:
+
+```blade
+<x-webx-slider variant="gallery" pagination="fraction">…</x-webx-slider>
+```
+
+The counter (`.webx-slider__count`, `__current`, `__total`) follows the slide in view — in a
+loop too, and a running strip's copies are not counted. A screen reader does not hear it: the
+slides are named "2 / 6" and Swiper announces the move already. Its colours and size are
+`--webx-slider-count-color`, `--webx-slider-count-current`, `--webx-slider-count-size`; one slide
+prints no controls at all. Kitchen sink › Slider › Photos with a counter shows it.
+
 The lightbox (PhotoSwipe) opens any link with `data-webx-lightbox`; links with the same value page
 together. `<x-webx-lightbox :image="$picture">` takes a picture of the media library and writes
 its size; a link by hand needs `data-width` and `data-height` — without them the picture is
