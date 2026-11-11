@@ -31,6 +31,19 @@ beforeEach(() => {
       show(...els) {
         this.callback(els.map((target) => ({ target, isIntersecting: true })))
       }
+      // What a real observer says of every element right after observe(): where it stands.
+      look() {
+        this.callback(
+          [...this.els].map((target) => {
+            const rect = target.getBoundingClientRect()
+            return {
+              target,
+              isIntersecting: rect.top < window.innerHeight && rect.bottom > 0,
+              boundingClientRect: rect,
+            }
+          }),
+        )
+      }
     },
   )
   vi.stubGlobal(
@@ -82,6 +95,9 @@ describe('reveal', () => {
     <p id="below" data-webx-reveal="scale">below</p>
     <ul id="list" data-webx-reveal="stagger" data-webx-reveal-effect="fade"><li>1</li><li>2</li><li>3</li></ul>`
 
+  // The observers' first word, as the browser gives it once the page is laid out.
+  const look = () => new Set(watched).forEach((observer) => observer.look())
+
   const place = () => {
     at(document.getElementById('above'), 100)
     at(document.getElementById('below'), 2000)
@@ -95,6 +111,7 @@ describe('reveal', () => {
     delete window.webx
     vi.resetModules()
     await import('./runtime.js')
+    look()
 
     const above = document.getElementById('above')
     const below = document.getElementById('below')
@@ -118,6 +135,7 @@ describe('reveal', () => {
     delete window.webx
     vi.resetModules()
     await import('./runtime.js')
+    look()
 
     const items = Array.from(document.querySelectorAll('#list li'))
     expect(document.getElementById('list').className).toBe('')
@@ -145,11 +163,13 @@ describe('reveal', () => {
     delete window.webx
     vi.resetModules()
     await import('./runtime.js')
+    look()
     expect(document.querySelectorAll('.is-pending').length).toBe(0)
 
     reduced = false
     window.webx.unmount()
     window.webx.mount()
+    look()
     expect(document.querySelectorAll('.is-pending').length).toBe(4)
     window.webx.unmount()
     expect(document.querySelectorAll('.webx-reveal, .is-pending').length).toBe(0)
@@ -161,6 +181,7 @@ describe('reveal', () => {
     delete window.webx
     vi.resetModules()
     await import('./runtime.js')
+    look()
     expect(document.querySelectorAll('.is-pending').length).toBe(4)
     window.dispatchEvent(new Event('beforeprint'))
     expect(document.querySelectorAll('.is-pending').length).toBe(0)
