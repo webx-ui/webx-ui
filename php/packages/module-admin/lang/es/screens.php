@@ -7,6 +7,8 @@ return [
     'row' => 'Fila :number: :message',
     'row-shape' => 'Esta fila no es un conjunto de campos.',
     'row-unknown-key' => 'Esta fila no tiene el campo «:key». Una fila admite: :keys.',
+    'icon-unknown' => 'Este conjunto no tiene el icono «:name». El conjunto tiene: :names.',
+    'icon-source-unknown' => 'Este sitio no tiene el conjunto de iconos «:source».',
     // The card a module's screen keeps for the fields a project patches in (`project-fields`).
     'project-fields' => 'Más',
     // The words of a list of records on a described screen; the core has English only.

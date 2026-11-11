@@ -269,7 +269,8 @@ list emptied to `[]` and a date cleared to `''` are kept as `null`:
 | `wx-time-picker`                              | `HH:mm`, or `HH:mm:ss` with `seconds`                                       |
 | `wx-date-time-picker`                         | ISO 8601 with the offset, moved into the application's timezone             |
 | `wx-tags-input`                               | a list of strings; only `props.suggestions` with `allowCreate: false`       |
-| `wx-autocomplete`, `wx-icon-picker`           | a string                                                                    |
+| `wx-autocomplete`                             | a string                                                                    |
+| `wx-icon-picker`                              | a name; a new one from the set the node names (`props.source`, `icons`)     |
 | `wx-code-editor`                              | a string                                                                    |
 
 `wx-date-time-picker` always writes the offset: the registry binds its `valueFormat`, because a
@@ -285,6 +286,46 @@ digits, spaces and `+ ( ) - .`, at least three digits. An empty value is still a
 ```json
 { "id": "email", "type": "wx-input", "name": "contacts.email", "props": { "type": "email" } }
 ```
+
+### Icons of the site's theme
+
+`wx-icon-picker` picks from the panel's set unless the node names another. What a site module
+keeps in an icon field is usually printed by the theme — `<x-theme::icon :name="$feature['icon']">`
+— and the theme's icons are not the panel's. `props.source: "theme"` gives the field the theme
+chain's icons:
+
+```json
+{
+  "id": "features",
+  "type": "wx-repeater",
+  "name": "features",
+  "children": [
+    {
+      "id": "feature-icon",
+      "type": "wx-icon-picker",
+      "name": "icon",
+      "props": { "source": "theme" }
+    },
+    { "id": "feature-label", "type": "wx-input", "name": "label", "localized": true }
+  ]
+}
+```
+
+- **Served:** `module-admin` replaces `source` with `icons` — `ThemeIcons::names()` — and `sprite`,
+  the address `webx:theme:sync` published the sprite at. The panel draws the grid and the preview
+  from the sprite; nothing is registered into the panel's own set. `Screens::tree()` keeps the node
+  as written, `Screens::render()` is what is spelled out.
+- **Saved:** a name the field did not hold before must be in the set — on the screen and in a
+  row of a repeater alike. A name it held is let through: a theme that dropped an icon does not
+  block the record, and the field marks the name as unknown until somebody picks another.
+- **Agents:** a repeater's `itemShape()` lists the names as the row field's `options`.
+- **Other sets:** `IconSets::register('<source>', fn () => new IconSet($names, $spriteUrl))` from a
+  provider; a list fixed in the screen is `props.icons` (with `sprite` to draw it) and needs no
+  registration. A source nobody registered is an empty grid and refuses every new name.
+- **No themes:** `theme` is registered only when `webx-ui/themes` is installed.
+
+Block schemas (`module-blocks`) are content edited in the panel, not served screens, so a
+`source` there is not spelled out: a block names its icons with `props.icons` and `sprite`.
 
 The panel's own frame comes with `module-admin` and is in every screen it draws:
 

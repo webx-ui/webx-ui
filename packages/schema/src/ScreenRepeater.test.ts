@@ -205,4 +205,50 @@ describe('wx-repeater', () => {
     expect(heads.map((head) => head.classes('is-invalid'))).toEqual([false, true])
     expect(heads.map((head) => head.attributes('aria-expanded'))).toEqual(['false', 'true'])
   })
+
+  /* A set of the site's theme, as module-admin hands it out for `source: "theme"`: each row
+     draws its icon from the sprite and picks only from its names. */
+  it('draws an icon picker in every row with the set the screen gives it', async () => {
+    const features: ScreenNode[] = [
+      {
+        id: 'features',
+        type: 'wx-repeater',
+        name: 'features',
+        label: 'Features',
+        children: [
+          {
+            id: 'feature-icon',
+            type: 'wx-icon-picker',
+            name: 'icon',
+            label: 'Icon',
+            props: { icons: ['area', 'bath', 'bed'], sprite: '/themes/icons/abc/icons.svg' },
+          },
+        ],
+      },
+    ]
+    const held: { wrapper?: VueWrapper } = {}
+    const wrapper = mount(WxScreenRenderer, {
+      attachTo: document.body,
+      props: {
+        root: features,
+        modelValue: { features: [{ icon: 'bed' }, { icon: 'search' }] },
+        'onUpdate:modelValue': (value: ScreenModel) =>
+          held.wrapper?.setProps({ modelValue: value }),
+      },
+    })
+    held.wrapper = wrapper
+
+    const previews = wrapper.findAll('.wx-icon-picker__preview')
+    expect(previews[0]!.get('use').attributes('href')).toBe('/themes/icons/abc/icons.svg#bed')
+    // A panel icon is not one of the theme's.
+    expect(previews[1]!.classes()).toContain('is-unknown')
+
+    const second = wrapper.findAll('.wx-icon-picker input')[1]!
+    await second.setValue('bat')
+    await second.trigger('keydown.enter')
+
+    const props = wrapper.props() as unknown as { modelValue: ScreenModel }
+    expect(props.modelValue.features).toEqual([{ icon: 'bed' }, { icon: 'bath' }])
+    wrapper.unmount()
+  })
 })

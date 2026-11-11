@@ -7,6 +7,8 @@ return [
     'row' => 'Wiersz :number: :message',
     'row-shape' => 'Ten wiersz nie jest zestawem pól.',
     'row-unknown-key' => 'Ten wiersz nie ma pola „:key”. Wiersz przyjmuje: :keys.',
+    'icon-unknown' => 'W tym zestawie nie ma ikony „:name”. Zestaw zawiera: :names.',
+    'icon-source-unknown' => 'Ta strona nie ma zestawu ikon „:source”.',
     // The card a module's screen keeps for the fields a project patches in (`project-fields`).
     'project-fields' => 'Więcej',
     // The words of a list of records on a described screen; the core has English only.

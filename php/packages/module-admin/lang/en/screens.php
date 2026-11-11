@@ -7,6 +7,8 @@ return [
     'row' => 'Row :number: :message',
     'row-shape' => 'This row is not a set of fields.',
     'row-unknown-key' => 'This row has no field ":key". A row takes: :keys.',
+    'icon-unknown' => 'There is no icon ":name" in this set. The set has: :names.',
+    'icon-source-unknown' => 'There is no icon set ":source" on this site.',
     // The card a module's screen keeps for the fields a project patches in (`project-fields`).
     'project-fields' => 'More',
     // The words of a list of records on a described screen; the core has English only.

@@ -91,4 +91,65 @@ describe('WxIconPicker', () => {
 
     expect(wrapper.find('.wx-icon-picker__clear').exists()).toBe(false)
   })
+
+  describe('with a set of its own', () => {
+    const theme = {
+      icons: ['area', 'bath', 'bed', 'terrace'],
+      sprite: '/themes/icons/abc/icons.svg',
+    }
+
+    async function openPicker(props: Record<string, unknown>) {
+      const wrapper = mountPicker(props)
+
+      await wrapper.get('input').trigger('focus')
+      await new Promise((resolve) => setTimeout(resolve))
+      await nextTick()
+
+      return wrapper
+    }
+
+    it("offers its names and none of the panel's", async () => {
+      await openPicker({ modelValue: null, ...theme })
+
+      expect([...options()].map((option) => option.getAttribute('title'))).toEqual(theme.icons)
+    })
+
+    /* The theme's icons are not registered into the panel's set, so the sprite draws them. */
+    it('draws each name from the sprite', async () => {
+      const wrapper = await openPicker({ modelValue: 'bed', ...theme })
+
+      expect(wrapper.get('.wx-icon-picker__preview use').attributes('href')).toBe(
+        '/themes/icons/abc/icons.svg#bed',
+      )
+      expect(
+        [...document.querySelectorAll('.wx-icon-picker__option use')].map((use) =>
+          use.getAttribute('href'),
+        ),
+      ).toContain('/themes/icons/abc/icons.svg#terrace')
+      expect(document.querySelector('.wx-icon-picker__option .wx-icon')).toBeNull()
+    })
+
+    it('searches only its names', async () => {
+      const wrapper = mountPicker({ modelValue: null, ...theme })
+
+      await wrapper.get('input').setValue('ba')
+
+      expect([...options()].map((option) => option.getAttribute('title'))).toEqual(['bath'])
+    })
+
+    /* A panel icon is not in a theme's set, however well the panel draws it. */
+    it('marks a name outside it as unknown', () => {
+      const wrapper = mountPicker({ modelValue: 'search', ...theme })
+
+      expect(wrapper.get('.wx-icon-picker__preview').classes()).toContain('is-unknown')
+    })
+
+    it("draws a list without a sprite with the panel's icons", async () => {
+      const wrapper = await openPicker({ modelValue: 'trash', icons: ['search', 'trash'] })
+
+      expect(options()).toHaveLength(2)
+      expect(wrapper.find('.wx-icon-picker__preview use').exists()).toBe(false)
+      expect(wrapper.get('.wx-icon-picker__preview').classes()).not.toContain('is-unknown')
+    })
+  })
 })

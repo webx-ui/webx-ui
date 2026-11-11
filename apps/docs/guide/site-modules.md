@@ -137,6 +137,15 @@ panel's CSS by themselves), and why `npm run dev` gives hot reload on the module
 second copy of Vue. A library the site does not have goes into the module's `dependencies`, and
 npm hoists it to the site.
 
+### An icon the theme prints
+
+A field whose icon the site's theme prints — the features of a flat, the advantages of a service —
+is a `wx-icon-picker` with `"props": { "source": "theme" }`, in the module's screen or a row of
+its `wx-repeater`. The panel gets the theme's names and sprite and shows exactly the icons
+`<x-theme::icon>` can draw; a new name outside them is refused on save. No `wx-select` over
+`ThemeIcons::names()` and no `registerIcons` of the theme's files in the panel — the latter would
+redraw the panel's own icons of the same names. Details: [Screens](./screens.md#icons-of-the-site-s-theme).
+
 ## Tests and languages
 
 The module's PHP tests run **on the site's application**, not on a Testbench of their own — they

@@ -7,6 +7,7 @@ namespace WebxUi\Admin\Screens\Types;
 use Closure;
 use Illuminate\Contracts\Validation\Factory as ValidationFactory;
 use WebxUi\Admin\Screens\ChecksItems;
+use WebxUi\Admin\Screens\ChecksNewValues;
 use WebxUi\Admin\Screens\FieldType;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenValues;
@@ -183,6 +184,13 @@ final class RepeaterType implements ChecksItems, FieldType
             }
 
             $options = OptionType::values($child);
+
+            // An icon picker with a set of its own takes only the set's names.
+            $fieldType = $this->types->get($type);
+
+            if ($fieldType instanceof IconType) {
+                $options = $fieldType->names($child) ?? [];
+            }
 
             if ($options !== []) {
                 $field['options'] = $options;
@@ -361,7 +369,7 @@ final class RepeaterType implements ChecksItems, FieldType
             : $this->validator->make(['value' => $value], ['value' => $rules], [], ['value' => $label]);
 
         if (! $validator->fails()) {
-            return [];
+            return $this->newValueMessages($type, $child, $value, $held);
         }
 
         $errors = [];
@@ -372,6 +380,36 @@ final class RepeaterType implements ChecksItems, FieldType
         }
 
         return $errors;
+    }
+
+    /**
+     * What a row's field has against a value no row of the field held before ({@see ChecksNewValues}),
+     * as the screen asks it of its own fields: an icon the theme has since dropped stays in the row
+     * it was in, a new one is refused. Rows move, so "held" is any row's value, not the same row's.
+     * Without `$held` nothing is asked, as for the screen.
+     *
+     * @param  Node  $child
+     * @param  array<array-key, mixed>  $held
+     * @return array<string, list<string>>
+     */
+    private function newValueMessages(?FieldType $type, array $child, mixed $value, ?array $held): array
+    {
+        if (! $type instanceof ChecksNewValues || $held === null || $value === null || $this->isMap($child, $value)) {
+            return [];
+        }
+
+        /** @var string $name */
+        $name = $child['name'];
+
+        foreach ($held as $row) {
+            if (is_array($row) && ($row[$name] ?? null) === $value) {
+                return [];
+            }
+        }
+
+        $problems = $type->newValueProblems($value, $child);
+
+        return $problems === [] ? [] : [$name => array_values(array_unique($problems))];
     }
 
     /**

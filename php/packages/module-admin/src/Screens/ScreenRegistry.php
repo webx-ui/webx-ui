@@ -261,6 +261,9 @@ final class ScreenRegistry
      * What one administrator gets to see: nodes without their permission cut out, and every
      * `trans::` string turned into words in their language.
      *
+     * A node whose type spells it out for the panel is handed to it last ({@see Presents}): an icon
+     * picker naming the theme's set gets the theme's names and sprite.
+     *
      * A field its rules always require is drawn with `required: true` — the asterisk at its label
      * ({@see Required}). A description may say so itself for a field its project checks; it is
      * never taken away here.
@@ -278,7 +281,7 @@ final class ScreenRegistry
             $root = Tree::translate($root, $translate);
         }
 
-        return $root;
+        return $this->present($root);
     }
 
     /**
@@ -311,6 +314,39 @@ final class ScreenRegistry
             if (isset($node['children']) && is_array($node['children'])) {
                 $nodes[$index]['children'] = $this->required($name, Tree::children($node));
             }
+        }
+
+        return $nodes;
+    }
+
+    /**
+     * Every node, a repeater's row fields included, through its type's {@see Presents}.
+     *
+     * @param  list<Node>  $nodes
+     * @return list<Node>
+     */
+    private function present(array $nodes): array
+    {
+        $container = Container::getInstance();
+
+        if (! $container->bound(FieldTypes::class)) {
+            return $nodes;
+        }
+
+        $types = $container->make(FieldTypes::class);
+
+        foreach ($nodes as $index => $node) {
+            $type = $types->get((string) ($node['type'] ?? ''));
+
+            if ($type instanceof Presents) {
+                $node = $type->present($node);
+            }
+
+            if (isset($node['children']) && is_array($node['children'])) {
+                $node['children'] = $this->present(Tree::children($node));
+            }
+
+            $nodes[$index] = $node;
         }
 
         return $nodes;

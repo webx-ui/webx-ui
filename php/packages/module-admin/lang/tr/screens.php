@@ -7,6 +7,8 @@ return [
     'row' => ':number. satır: :message',
     'row-shape' => 'Bu satır bir alan kümesi değil.',
     'row-unknown-key' => 'Bu satırda ":key" alanı yok. Bir satır şunları alır: :keys.',
+    'icon-unknown' => 'Bu sette ":name" simgesi yok. Sette şunlar var: :names.',
+    'icon-source-unknown' => 'Bu sitede ":source" simge seti yok.',
     // The card a module's screen keeps for the fields a project patches in (`project-fields`).
     'project-fields' => 'Diğer',
     // The words of a list of records on a described screen; the core has English only.
