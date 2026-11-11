@@ -1,5 +1,27 @@
 # @webx-ui/admin
 
+## 0.37.0
+
+### Minor Changes
+
+- 764d8dd: Every code somebody types is made, not refused (#125, stage 2). The trait `HasCodes` of `localization` brings a model's code columns to their shape on every save, and `Model::codeFor()` does the same for a request before its own check. That covers the panel, MCP, the import and a plain `save()`, and only an empty or a taken code is refused. `Slug::code()` takes `Slug::BOTH` / `Slug::BOTH_UNDERSCORED` for a key that takes `-` and `_`, and a `$lead` for a code that must start with a letter. `wx-code` and `WxCodeField` take `separator` `-_` / `_-`, `lead` and `localized`. Converted fields: label, property code and toggle slug, collection key, block slug, role slug, task project slug, menu key, banner place key, form slug, form field name, inbox status key, public order status code, checkout field key, user group code, delivery point kind, configurator key and the keys of its schema. «тормозные колодки» becomes `tormoznye-kolodki` in every one of them. `CodeCoverageTest` and `codeCoverage.test.ts` fail on a new code field that skips this.
+- 764d8dd: Codes are made, not refused (#125, stage 1). `Slug::code($text, $locale, $max, $separator)` of `localization` brings a typed code to the shape of its field — transliterated by the site's language, lower case, one separator between words, cut to length: «тормозные колодки» is `tormoznye-kolodki`. A new screen field type `wx-code` (`CodeType` on the server, `WxCodeField` and `codify()` in `@webx-ui/module-admin`) does it as the code is typed and as it is saved; `props.separator` (`-` or `_`) and `props.maxlength` are its shape. The code of a stock status uses it in the panel, and the catalogue's dictionaries (stock statuses, labels) bring a code to its shape on every save — the panel, MCP and the exchange — instead of refusing it; a code that leaves nothing is made of the name, a taken one is still refused. Address slugs are lower-cased by `HasLatinSlug`: `Foo` is saved as `foo` rather than refused.
+- 764d8dd: Links: `wx-link` takes a file of the media library — `{ "target": "file", "path": "media/…", "download": true }` — where the field says `props.files: true`; the picker gets a «File» tab with the library and «Download instead of opening». The site reads it with the file's address and `download`, the name it was uploaded under; `WebxUi\Admin\Links\LinkAttributes::of($link, $oldUrl)` prints `href`, `target="_blank"`, `rel` and `download` for any link. Every other link, the menu and every caller of the rules without `files` are unchanged.
+
+  theme-default: the buttons of `hero`, `cta`, `media-text` and `cards` are links — `button_link`, `second_link`, a card's `link` — with a page, an address, a new tab or a file to download. The old `button_url`, `second_url` and `link_url` stay with their type and are read while the link is empty, so saved blocks and theme overrides print what they printed. A site takes the new fields with `webx:blocks:import --theme --replace=<slug>`.
+
+  Blocks: `webx:blocks:import --theme` sees a field setting added empty — `"default": ""` — as a change; before, `null == ''` hid it and the type stayed `unchanged`.
+
+- 764d8dd: A map from Google Maps' "Embed a map", with no API key. `<x-webx-map embed="…">` takes Google's whole `<iframe …>` or its address, keeps only `https://www.google.com/maps/embed?pb=…` (and the older `maps.google.com/maps?…&output=embed`) and refuses any other frame; it is the same frame, notice, "Load" / "Always load maps" and consent to `media` as every map, and the script (`dist/map-embed.js`, no library) puts Google's `<iframe>` in — with its `title`, `loading="lazy"` and `referrerpolicy="no-referrer-when-downgrade"` — only after consent, in the height the server reserved. "Open in Google Maps" (its own words) is `link`, else read from the address (the centre of a `pb`, the search of an old one). Every map takes `height-narrow`, its height in a column narrower than 36em. The `map` block gets the place "Google Maps embed" with the fields "Map code or link" and "Link “Open in Google Maps”", and for every place "Name for screen readers", "Height on a phone" and "Width" (column / edge to edge); blocks saved before print as they did; a site takes the new type with `webx:blocks:import map --path=vendor/webx-ui/widgets/resources/blocks --replace=map --publish`. The panel gets the field type `wx-embed`: a frame pasted as code, kept by the server as its address alone, refused with the source's words when it is another site's — whoever writes it, the panel or an agent's `blocks_*`; sources are registered into `Screens\Embeds`, `google-maps` by the widgets.
+
+### Patch Changes
+
+- Updated dependencies [764d8dd]
+- Updated dependencies [764d8dd]
+- Updated dependencies [764d8dd]
+  - @webx-ui/core@0.48.0
+  - @webx-ui/schema@0.11.2
+
 ## 0.36.0
 
 ### Minor Changes

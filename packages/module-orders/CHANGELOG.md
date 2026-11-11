@@ -1,5 +1,28 @@
 # @webx-ui/module-orders
 
+## 0.5.0
+
+### Minor Changes
+
+- 764d8dd: Every code somebody types is made, not refused (#125, stage 2). The trait `HasCodes` of `localization` brings a model's code columns to their shape on every save, and `Model::codeFor()` does the same for a request before its own check. That covers the panel, MCP, the import and a plain `save()`, and only an empty or a taken code is refused. `Slug::code()` takes `Slug::BOTH` / `Slug::BOTH_UNDERSCORED` for a key that takes `-` and `_`, and a `$lead` for a code that must start with a letter. `wx-code` and `WxCodeField` take `separator` `-_` / `_-`, `lead` and `localized`. Converted fields: label, property code and toggle slug, collection key, block slug, role slug, task project slug, menu key, banner place key, form slug, form field name, inbox status key, public order status code, checkout field key, user group code, delivery point kind, configurator key and the keys of its schema. «тормозные колодки» becomes `tormoznye-kolodki` in every one of them. `CodeCoverageTest` and `codeCoverage.test.ts` fail on a new code field that skips this.
+- 764d8dd: Orders: the extra fields in the card of an order. The tab «Buyer» gets the card «Additional» (`wx-orders-fields`): the rows the order keeps, then every field switched on with no answer, «label — value»; whoever manages the order changes them with the pencil, saved on their own by `PUT /api/cms/orders/{id}/details` with `fields: {key: value | null}` — only the keys sent, null, an empty line or `false` clears a row. The type, the length and the option are checked as at the checkout, the requirement and the condition are not; an answer as it was keeps the order's words, a new one takes the field's words in the order's language. A field that is gone keeps its label: a line or a text still changes, a checkbox and a list only go. The edit is a line «Additional fields» of the order's timeline, «label: value; …» in the journal and `fields` in `OrderDetailsChanged`; the buyer gets no letter. `OrderDetails::fields()` does the same from code. An opened row of the list shows the filled rows beside the comment. `orders.view` reads the rows without the pencil.
+- 764d8dd: Orders: the extra fields of the checkout in the panel. The tab «Checkout» of the order settings gets the card «Extra fields» (`wx-orders-checkout-fields`): the fields grouped by the places of the checkout, the ones shown behind a checkbox under it, dragged inside their place, switched on and off from the row; a dialog writes the label and hint in every language, the key and the type (fixed once saved), the options of a list, the place and the checkbox it is shown behind. A change the buyer will feel — required now, switched off, moved, options taken away — is said before it is made, and deleting a checkbox with fields behind it is refused with their names. The API `/api/cms/orders/checkout-fields` (`orders.checkout.settings`, only while the checkout is on) answers a dry run in the panel's words and a refusal under the input it is about. On a site without the settings module the tab keeps this card alone. Nothing is asked on the checkout yet.
+
+### Patch Changes
+
+- 764d8dd: `WxDescriptions`: a label sizes to its content up to half its column and wraps past it, so a long label no longer takes a narrow card and leaves its value no room; `labelWidth` still overrides. The order fields card drops its own `fit-content(50%)`, now the default.
+- 764d8dd: The order's «Additional» card: a long field label (a sentence such as "Do not call back if everything is in stock — just send it") no longer takes the whole width of a narrow card and hides the values; the label column takes half the card at most and wraps.
+- Updated dependencies [764d8dd]
+- Updated dependencies [764d8dd]
+- Updated dependencies [764d8dd]
+- Updated dependencies [764d8dd]
+- Updated dependencies [764d8dd]
+- Updated dependencies [764d8dd]
+- Updated dependencies [764d8dd]
+  - @webx-ui/module-admin@0.37.0
+  - @webx-ui/core@0.48.0
+  - @webx-ui/schema@0.11.2
+
 ## 0.4.1
 
 ### Patch Changes
