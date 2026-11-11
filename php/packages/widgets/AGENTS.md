@@ -16,7 +16,7 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
 - **Behaviours by attribute** — `data-webx-disclosure="<id>"`, `data-webx-dialog="<id>"` (a modal
   `<dialog>`; `[data-webx-dialog-close]`, a URL ending in `#<id>` opens it),
   `data-webx-tabs` around `[data-webx-tab]` panels, `data-webx-accordion="single"` on `<details>`.
-  Components: `<x-webx-dialog id title description close sheet drawer>` (`sheet` — from the bottom below 40rem; `drawer` — at the inline end, the window's whole height), `<x-webx-tabs label>` + `<x-webx-tabs.panel title>`.
+  Components: `<x-webx-dialog id title description close sheet drawer>` (`sheet` — from the bottom below 40rem; `drawer` — at the inline end, the window's whole height), `<x-webx-tabs label transition>` + `<x-webx-tabs.panel title>` (`transition="fade"` — cross-fade, panels in one cell, the tallest sets the height; unselected ones get `is-hidden`, not `hidden`).
 - **Header** — `<x-webx-header>`: slots `topbar`, `brand`, default (navigation), `actions`,
   `mobile-bottom`, `mobile`, `trigger`; props `collapse` (`auto` measures, a width, `never`),
   `breakpoint` (960, without JavaScript), `sticky` (`none|sticky|hide-on-scroll`), `overlay`,
@@ -91,7 +91,7 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
   group. Events `webx:suggest:select` (cancelable), `webx:suggest:results`; the catalogue's `/catalog/suggest`.
 - **A list with a search** — `<x-webx-select name :options :value searchable :source>`: a `<select>` without
   JavaScript, with it the loaded options filtered and `source` asked (JSON `{options, more}`); `change` on the select. `:strict="false"` — text with suggestions.
-- **Blocks** — with `module-media`: `gallery` (grid; or slider: `per_view` 1–3, `effect`, `arrows`, `dots`, `thumbs`, `endless`, `autoplay` + `interval` s) `logos` `video` `map` `counters` `countdown` `compare` `toc` `tabs` (`webx:blocks:offered --install --module=widgets`).
+- **Blocks** — with `module-media`: `gallery` (grid; or slider: `per_view` 1–3, `effect`, `arrows`, `dots`, `thumbs`, `endless`, `autoplay` + `interval` s) `logos` `video` `map` `counters` `countdown` `compare` `toc` `tabs` (`transition` instant / fade) (`webx:blocks:offered --install --module=widgets`).
 - **Audit** (with `module-audit`) — `widgets.before_consent` (fix `widgets.wait-for-consent`),
   `widgets.banner_off` (fix `widgets.banner-on`), `lightbox_size`, `slider_pause`, `video_pause`,
   `counter_number`, `compare_range`, `toc_target`, `load_more_link`, `zoom_link`, `form_script`,

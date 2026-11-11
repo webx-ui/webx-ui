@@ -560,6 +560,15 @@ final class BlocksTest extends TestCase
         $this->assertStringContainsString('<section class="b-tabs b-tabs--top" data-wx-block="tabs">', $old);
         $this->assertStringContainsString('<h2 class="webx-tabs__title">Overview</h2>', $old);
         $this->assertStringNotContainsString('data-webx-tabs-label', $old);
+        $this->assertStringNotContainsString('data-webx-tabs-transition', $old, 'switching at once, as before the option');
+        $this->assertStringNotContainsString('data-webx-tabs-transition', $html);
+
+        // Fade: the component cross-fades; tabs with only a picture print the picture alone — no empty text, no gap for it.
+        $plan = $this->render('tabs', ['tabs' => [$tabs[1], ['title' => 'Floor 2', 'picture' => ['path' => $photo->path], 'text' => '']], 'transition' => 'fade']);
+        $this->assertStringContainsString('<div data-webx-tabs="" data-webx-tabs-transition="fade" class="webx-tabs b-tabs__tabs">', $plan);
+        $this->assertSame(2, substr_count($plan, '<div class="b-tabs__body">'));
+        $this->assertStringNotContainsString('b-tabs__text', $plan);
+        $this->assertStringNotContainsString('data-webx-tabs-transition', $this->render('tabs', ['tabs' => [$tabs[0]], 'transition' => 'instant']));
 
         foreach ([['tabs' => []], ['tabs' => [$tabs[3], $tabs[4]]], []] as $case => $values) {
             $this->assertStringNotContainsString('b-tabs', $this->render('tabs', $values), "case {$case}");
@@ -572,12 +581,14 @@ final class BlocksTest extends TestCase
         $type = json_decode((string) file_get_contents(__DIR__.'/../resources/blocks/tabs.json'), true);
         $fields = array_column($type['schema'], null, 'id');
 
-        $this->assertSame(['heading', 'tabs', 'picture_side', 'align'], array_keys($fields));
+        $this->assertSame(['heading', 'tabs', 'picture_side', 'align', 'transition'], array_keys($fields));
         $this->assertSame(['title', 'picture', 'text'], array_column($fields['tabs']['children'], 'id'));
         $this->assertSame('wx-rich-text', $fields['tabs']['children'][2]['type']);
         $this->assertTrue($fields['tabs']['children'][0]['localized'] && $fields['tabs']['children'][2]['localized']);
         $this->assertSame(array_keys($fields), array_keys($type['sample']), 'a value for every field');
         $this->assertCount(3, $type['sample']['tabs']);
+        $this->assertSame('instant', $fields['transition']['default'], 'a new block switches the way an old one does');
+        $this->assertSame(['instant', 'fade'], array_column($fields['transition']['props']['options'], 'value'));
     }
 
     /** A picture in the library, the way an upload leaves one — the bytes need not be there. */

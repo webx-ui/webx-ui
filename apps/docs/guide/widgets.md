@@ -66,6 +66,11 @@ No component needed — the attributes are enough, in a block template or in a t
 
 The components `<x-webx-dialog>` and `<x-webx-tabs>` print the same markup for you.
 
+`<x-webx-tabs transition="fade">` (`data-webx-tabs-transition="fade"`) cross-fades the panels
+instead of switching at once. All panels then share one cell, so the tabs are as tall as the
+tallest panel: pictures of different proportions do not make the page jump, at the price of space
+under a shorter one. Under reduced motion the change is instant.
+
 `<x-webx-dialog id="call" title="Call me back" description="We call within 15 minutes." sheet>` —
 `description` is a line under the title, the dialog's accessible description; `sheet` makes it a
 sheet from the bottom on a window narrower than 40rem: the whole width, rounded on top, scrolling
@@ -492,7 +497,7 @@ line, it does not run it). Installed, they belong to the site: an update never o
 | `countdown` | heading, text, a date and a time of the site's zone, at the end a text or hide                                                                                                                   | `<x-webx-countdown>`       |
 | `compare`   | heading, before, after, their labels, where the divider starts, caption                                                                                                                          | `<x-webx-compare>`         |
 | `toc`       | title, the whole page or a text of its own (a switch), side, depth                                                                                                                               | `<x-webx-toc>`             |
-| `tabs`      | heading, a title, a picture and a text each, picture above or beside, alignment                                                                                                                  | `<x-webx-tabs>`            |
+| `tabs`      | heading, a title, a picture and a text each, picture above or beside, alignment, change at once or fade                                                                                          | `<x-webx-tabs>`            |
 
 A block with nothing to show — no pictures, an unknown address, a deleted file — prints nothing.
 
