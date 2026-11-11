@@ -8,7 +8,9 @@
     out, «at carrier rates» — then not in the amount to pay — or «choose a method».
 
     «Order contents» only lists the lines (§23.5): the name, the quantity, the sum, what changed
-    and what can no longer be bought, in the cart's own words. «Edit» opens the cart's dialog
+    and what can no longer be bought, in the cart's own words. A line that cannot be bought has
+    no sum, as in the dialog of the cart: it is in neither «N items for» nor the amount beside it,
+    and when no line is left to buy that row says so instead of «0 items for 0.00». «Edit» opens the cart's dialog
     (`data-webx-cart-edit`, the widget the page prints), where the lines change; without
     JavaScript it is the link to `#webx-cart` of the widget.
 
@@ -21,8 +23,12 @@
     <h2 class="webx-orders-checkout__summary-title" tabindex="-1">{{ __('webx-orders::checkout.summary.title') }}</h2>
     <dl class="webx-orders-checkout__rows">
         <div class="webx-orders-checkout__row">
-            <dt>{{ trans_choice('webx-orders::checkout.summary.units', $units, ['count' => $units]) }}</dt>
-            <dd>{{ $subtotal }}</dd>
+            @if ($units > 0)
+                <dt>{{ trans_choice('webx-orders::checkout.summary.units', $units, ['count' => $units]) }}</dt>
+                <dd>{{ $subtotal }}</dd>
+            @else
+                <dt>{{ __('webx-orders::checkout.summary.nothing') }}</dt>
+            @endif
         </div>
         @if ($discount !== null)
             <div class="webx-orders-checkout__row webx-orders-checkout__row--discount">
@@ -83,7 +89,9 @@
             @foreach ($lines as $line)
                 <li @class(['webx-orders-checkout__line', 'is-unavailable' => ! ($line['available'] ?? true)]) data-line="{{ $line['id'] }}">
                     <span class="webx-orders-checkout__line-name">@if (($line['url'] ?? null) !== null)<a class="webx-orders-checkout__line-link" href="{{ $line['url'] }}">{{ $line['name'] }}</a>@else{{ $line['name'] }}@endif <span class="webx-orders-checkout__line-qty">× {{ $line['qty'] }}</span></span>
-                    <span class="webx-orders-checkout__line-total">{{ $line['line_total_formatted'] }}</span>
+                    @if ($line['available'] ?? true)
+                        <span class="webx-orders-checkout__line-total">{{ $line['line_total_formatted'] }}</span>
+                    @endif
                     @if ($line['gone'] ?? false)
                         <span class="webx-orders-checkout__gone">{{ __('webx-cart::widget.gone') }}</span>
                     @elseif (! ($line['available'] ?? true))

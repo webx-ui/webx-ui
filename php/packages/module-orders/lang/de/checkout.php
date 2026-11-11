@@ -49,6 +49,7 @@ return [
     'summary' => [
         'title' => 'Ihre Bestellung',
         'units' => ':count Artikel für|:count Artikel für',
+        'nothing' => 'Im Warenkorb ist derzeit nichts bestellbar',
         'discount' => 'Rabatt',
         'delivery' => 'Versandkosten',
         'delivery-free' => 'Kostenlos',

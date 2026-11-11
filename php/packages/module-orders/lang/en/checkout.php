@@ -49,6 +49,7 @@ return [
     'summary' => [
         'title' => 'Your order',
         'units' => ':count item for|:count items for',
+        'nothing' => 'Nothing in the cart can be bought now',
         'discount' => 'Discount',
         'delivery' => 'Delivery cost',
         'delivery-free' => 'Free',

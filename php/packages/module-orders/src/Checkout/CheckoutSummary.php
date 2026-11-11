@@ -39,7 +39,9 @@ final readonly class CheckoutSummary
         $currency = $state->currency;
 
         return [
-            'units' => $array['units'],
+            // What the order would be placed with, as the subtotal beside it (§23.1): not the
+            // header's count, which keeps the lines that cannot be bought.
+            'units' => $state->availableUnits(),
             'subtotal' => $array['subtotal_formatted'],
             'lines' => $array['lines'],
             'discount' => $discounts !== [] && $currency !== null ? $this->money->format($discount, $currency) : null,

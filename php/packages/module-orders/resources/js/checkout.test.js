@@ -378,6 +378,38 @@ describe('order contents and the dialog of the cart', () => {
     expect(root().querySelector('[name="contacts"]').value).toBe('typed')
   })
 
+  it('takes the count and the lines of the column as the server counts them', async () => {
+    // As the server prints it (CheckoutCartEditTest): a line that cannot be bought has no sum
+    // and is not in «N items for».
+    const units = (text, amount) =>
+      `<div class="webx-orders-checkout__row" data-units><dt>${text}</dt><dd>${amount}</dd></div>`
+    const unavailable = `
+      <li class="webx-orders-checkout__line is-unavailable" data-line="2">
+        <span class="webx-orders-checkout__line-name">Item 2 <span>× 2</span></span>
+        <span class="webx-orders-checkout__gone">Cannot be bought now</span>
+      </li>`
+    const withUnits = (html, row) => html.replace('<dl>', `<dl>${row}`)
+    await open(
+      withUnits(
+        pageOf(stepOf('contacts', 'A'), '€10.00', line(1, 1) + unavailable),
+        units('1 item for', '€10.00'),
+      ),
+    )
+    vi.spyOn(mod.server, 'fetch').mockResolvedValue(
+      withUnits(
+        pageOf(stepOf('contacts', 'A'), '€20.00', line(1, 2)),
+        units('2 items for', '€20.00'),
+      ),
+    )
+
+    change()
+    await settle()
+
+    expect(doc.querySelector('[data-units] dt').textContent).toBe('2 items for')
+    expect(doc.querySelector('[data-units] dd').textContent).toBe('€20.00')
+    expect(doc.querySelector('.webx-orders-checkout__line.is-unavailable')).toBeNull()
+  })
+
   it('reloads into the empty cart when the last line goes', async () => {
     await open(pageOf(stepOf('contacts', 'A'), '€10.00', line(1, 1)))
     vi.spyOn(mod.server, 'fetch').mockResolvedValue(

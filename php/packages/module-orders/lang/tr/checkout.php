@@ -49,6 +49,7 @@ return [
     'summary' => [
         'title' => 'Siparişiniz',
         'units' => ':count ürün, toplam|:count ürün, toplam',
+        'nothing' => 'Sepetteki ürünlerin hiçbiri şu anda satın alınamıyor',
         'discount' => 'İndirim',
         'delivery' => 'Teslimat ücreti',
         'delivery-free' => 'Ücretsiz',

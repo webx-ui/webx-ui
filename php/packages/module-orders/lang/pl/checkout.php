@@ -49,6 +49,7 @@ return [
     'summary' => [
         'title' => 'Twoje zamówienie',
         'units' => ':count produkt za|:count produkty za|:count produktów za',
+        'nothing' => 'Teraz nie można kupić niczego z koszyka',
         'discount' => 'Rabat',
         'delivery' => 'Koszt dostawy',
         'delivery-free' => 'Bezpłatnie',

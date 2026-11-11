@@ -49,6 +49,7 @@ return [
     'summary' => [
         'title' => 'Il tuo ordine',
         'units' => ':count articolo per|:count articoli per',
+        'nothing' => 'Al momento nulla nel carrello può essere acquistato',
         'discount' => 'Sconto',
         'delivery' => 'Costo di spedizione',
         'delivery-free' => 'Gratis',

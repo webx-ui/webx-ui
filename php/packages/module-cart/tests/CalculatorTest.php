@@ -121,6 +121,7 @@ final class CalculatorTest extends TestCase
         $this->assertSame(4999, $polish['subtotal']);
         $this->assertSame(['line.gone', 'line.gone'], self::codes($polish));
         $this->assertSame(3, $polish['units'], 'a gone line is still in the list, and in the counter');
+        $this->assertSame(1, $this->state($cart, 'pl')->availableUnits(), 'but not in the units an order would have');
 
         // A language the snapshot lacks falls back to the site's default.
         $this->assertSame('Item D', $this->state($cart, 'de')->toArray()['lines'][0]['name']);
@@ -217,6 +218,7 @@ final class CalculatorTest extends TestCase
         $this->assertSame('rule#2:0', $state['lines'][0]['children'][0]['id']);
         $this->assertSame(48000, $state['lines'][0]['children'][0]['price']);
         $this->assertSame(3, $state['units'], 'generated lines are not in the counter');
+        $this->assertSame(3, $result->availableUnits(), 'nor in the units an order would have');
 
         $subtotal = 9998 + 15000 + 1 + 48000;
         $this->assertSame($subtotal, $state['subtotal']);

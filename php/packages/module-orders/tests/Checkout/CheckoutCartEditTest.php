@@ -95,6 +95,46 @@ final class CheckoutCartEditTest extends CheckoutTestCase
     }
 
     #[Test]
+    public function a_line_that_cannot_be_bought_is_out_of_the_count_and_has_no_sum(): void
+    {
+        $this->products->lines[1] = self::product('Item A', 1000);
+        $this->products->lines[2] = self::product('Item B', 2000);
+        $cart = $this->cart([['type' => 'test.product', 'ref' => 1], ['type' => 'test.product', 'ref' => 2, 'qty' => 2]]);
+        $this->products->lines[2] = self::product('Item B', 2000, available: false);
+
+        // The page and the column the script puts in place after `webx:cart:change` say the same.
+        foreach (['/checkout', '/checkout/summary'] as $url) {
+            $html = (string) $this->visit($cart, $url)->assertOk()->getContent();
+
+            $this->assertStringContainsString('<dt>1 item for</dt>', $html, $url);
+            $this->assertStringNotContainsString('3 items for', $html, $url);
+            $this->assertMatchesRegularExpression('~<li class="webx-orders-checkout__line is-unavailable" data-line="\d+">(?:(?!</li>).)*Item B(?:(?!</li>).)*</li>~s', $html, $url);
+            preg_match('~<li class="webx-orders-checkout__line is-unavailable".*?</li>~s', $html, $line);
+            $this->assertStringNotContainsString('webx-orders-checkout__line-total', $line[0], $url);
+            $this->assertStringContainsString('Cannot be bought now', $line[0], $url);
+            $this->assertMatchesRegularExpression('~<li class="webx-orders-checkout__line" data-line="\d+">.*?Item A.*?<span class="webx-orders-checkout__line-total">~s', $html, $url);
+        }
+
+        // The header's counter keeps them: the cart still holds three units.
+        $this->assertSame(3, $this->app->make(CheckoutContexts::class)->current()->state->units());
+    }
+
+    #[Test]
+    public function a_cart_with_nothing_to_buy_says_so_instead_of_zero_items(): void
+    {
+        $this->products->lines[1] = self::product('Item A', 1000);
+        $cart = $this->cart();
+        $this->products->lines[1] = self::product('Item A', 1000, available: false);
+
+        $html = (string) $this->visit($cart, '/checkout/summary')->assertOk()->getContent();
+
+        $this->assertStringContainsString('<dt>Nothing in the cart can be bought now</dt>', $html);
+        $this->assertStringNotContainsString('items for', $html);
+        $this->assertStringNotContainsString('item for', $html);
+        $this->assertStringContainsString('Item A', $html);
+    }
+
+    #[Test]
     public function a_new_quantity_counts_the_column_and_the_delivery_again(): void
     {
         $this->products->lines[1] = self::product('Item A', 1000);

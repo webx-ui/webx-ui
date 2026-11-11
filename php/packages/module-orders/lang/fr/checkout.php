@@ -49,6 +49,7 @@ return [
     'summary' => [
         'title' => 'Votre commande',
         'units' => ':count article pour|:count articles pour',
+        'nothing' => 'Rien dans le panier ne peut être acheté pour le moment',
         'discount' => 'Remise',
         'delivery' => 'Frais de livraison',
         'delivery-free' => 'Gratuit',

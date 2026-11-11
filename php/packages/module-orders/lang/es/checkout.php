@@ -49,6 +49,7 @@ return [
     'summary' => [
         'title' => 'Tu pedido',
         'units' => ':count artículo por|:count artículos por',
+        'nothing' => 'Ahora no se puede comprar nada del carrito',
         'discount' => 'Descuento',
         'delivery' => 'Coste de envío',
         'delivery-free' => 'Gratis',

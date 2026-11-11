@@ -64,6 +64,24 @@ final class CartState
         return $units;
     }
 
+    /**
+     * Units of the stored lines that count in the sum — what an order would be placed with. The
+     * checkout's «N items for» says this one: the unavailable lines are in neither the count nor
+     * the amount beside it.
+     */
+    public function availableUnits(): int
+    {
+        $units = 0;
+
+        foreach ($this->lines as $line) {
+            if (! $line->generated() && $line->available) {
+                $units += $line->effectiveQty;
+            }
+        }
+
+        return $units;
+    }
+
     public function hasBenefit(string $key): bool
     {
         foreach ($this->benefits as $benefit) {
