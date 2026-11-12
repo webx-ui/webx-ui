@@ -785,12 +785,36 @@ final class BlocksTest extends TestCase
     }
 
     #[Test]
+    public function the_tabs_stand_in_rows_on_a_narrow_column_only_when_asked_and_never_show_a_scrollbar(): void
+    {
+        $photo = $this->picture('plan');
+        $tabs = [['title' => 'Phase 1', 'picture' => ['path' => $photo->path], 'text' => ''], ['title' => 'Phase 2', 'picture' => ['path' => $photo->path], 'text' => '']];
+
+        $this->assertStringContainsString('<section class="b-tabs b-tabs--top b-tabs--center b-tabs--wrap" data-wx-block="tabs">', $this->render('tabs', ['tabs' => $tabs, 'align' => 'center', 'wrap' => true]));
+        // Saved before the option, or with it off: the one scrolling row as before.
+        foreach ([['tabs' => $tabs], ['tabs' => $tabs, 'wrap' => false], ['tabs' => $tabs, 'wrap' => null]] as $case => $values) {
+            $this->assertStringContainsString('<section class="b-tabs b-tabs--top" data-wx-block="tabs">', $this->render('tabs', $values), "case {$case}");
+        }
+
+        $type = json_decode((string) file_get_contents(__DIR__.'/../resources/blocks/tabs.json'), true);
+        $this->assertSame(['id' => 'wrap', 'type' => 'wx-switch', 'label' => 'Tabs in rows on a narrow screen', 'default' => false], array_intersect_key(array_column($type['schema'], null, 'id')['wrap'], array_flip(['id', 'type', 'label', 'default'])));
+        $this->assertStringContainsString("@container (max-width: 39.99em) {\n    .b-tabs--wrap .webx-tabs__list {\n        flex-wrap: wrap;", (string) $type['styles']);
+
+        // The row still scrolls where it is wider than the column, without a bar under the tabs.
+        $css = (string) file_get_contents(__DIR__.'/../resources/css/tabs.css');
+        $this->assertStringContainsString('overflow-x: auto;', $css);
+        $this->assertStringContainsString('scrollbar-width: none;', $css);
+        $this->assertStringContainsString(".webx-tabs__list::-webkit-scrollbar {\n  display: none;\n}", $css);
+        $this->assertStringContainsString('scrollbar-width:none', (string) file_get_contents(__DIR__.'/../dist/runtime.css'), 'the built runtime carries it');
+    }
+
+    #[Test]
     public function the_tabs_type_reads_the_fields_its_template_uses(): void
     {
         $type = json_decode((string) file_get_contents(__DIR__.'/../resources/blocks/tabs.json'), true);
         $fields = array_column($type['schema'], null, 'id');
 
-        $this->assertSame(['eyebrow', 'heading', 'tabs', 'picture_side', 'align', 'transition', 'overlap', 'overlap_edge', 'overlap_edge_narrow'], array_keys($fields));
+        $this->assertSame(['eyebrow', 'heading', 'tabs', 'picture_side', 'align', 'wrap', 'transition', 'overlap', 'overlap_edge', 'overlap_edge_narrow'], array_keys($fields));
         $this->assertSame(['id' => 'eyebrow', 'type' => 'wx-input', 'label' => 'Above the heading', 'localized' => true, 'props' => ['maxlength' => 80]], $fields['eyebrow']);
         $this->assertSame('wx-switch', $fields['overlap']['type']);
         $this->assertFalse($fields['overlap']['default'], 'a new block stands after the one above, as an old one does');

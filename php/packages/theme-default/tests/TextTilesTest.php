@@ -60,6 +60,72 @@ final class TextTilesTest extends TestCase
     }
 
     #[Test]
+    public function a_block_saved_before_prints_what_it_printed_before(): void
+    {
+        $value = static fn (string $label): array => ['kind' => 'value', 'value' => '1', 'label' => $label];
+        $saved = [
+            'sample' => [],
+            'light, in the column' => ['shade' => 'light', 'width' => 'column'],
+            'one tile' => ['tiles' => [$value('One')]],
+            'three tiles, no words' => ['eyebrow' => '', 'heading' => '', 'text' => '', 'button_label' => '', 'tiles' => [$value('A'), $value('B'), $value('C')]],
+            'words alone, parallax' => ['tiles' => [], 'parallax' => true, 'parallax_strength' => 'soft'],
+            'sliding over' => ['overlap' => true],
+        ];
+
+        foreach ($saved as $case => $values) {
+            $before = Blade::render((string) file_get_contents(__DIR__.'/Fixtures/before/text-tiles.blade.php'), $this->data($values, saved: true), deleteCachedView: true);
+
+            $this->assertSame(self::tight($before), self::tight($this->render($values, saved: true)), $case);
+            // The new field at its default is the same block.
+            $this->assertSame(self::tight($before), self::tight($this->render($values)), "{$case}, defaults");
+        }
+
+        $this->assertSame('free', self::field('tile_shape')['default'] ?? null);
+        $this->assertSame('free', self::type()['sample']['tile_shape']);
+        $this->assertSame('dark', self::field('shade')['default'] ?? null);
+    }
+
+    #[Test]
+    public function square_tiles_stand_in_a_column_of_their_own(): void
+    {
+        $html = $this->render(['tile_shape' => 'square']);
+
+        $this->assertMatchesRegularExpression('~<section class="b-text-tiles b-text-tiles--dark b-text-tiles--4 b-text-tiles--words b-text-tiles--square site-bleed"~', $html);
+        $this->assertMatchesRegularExpression('~<div class="b-text-tiles__grid">\s*<ul class="b-text-tiles__tiles" role="list"[^>]*>.*</ul>\s*</div>~s', $html);
+        $this->assertSame(4, substr_count($html, '<li class="b-text-tiles__tile'));
+
+        foreach (['free', '"><script>', null] as $shape) {
+            $other = $this->render(['tile_shape' => $shape]);
+            $this->assertStringNotContainsString('b-text-tiles--square', $other);
+            $this->assertStringNotContainsString('b-text-tiles__grid', $other);
+        }
+        $this->assertSame(['free', 'square'], array_column(self::field('tile_shape')['props']['options'], 'value'));
+
+        $styles = (string) self::type()['styles'];
+        // A square two across only where two fit; it grows with its words, the row is one height.
+        $this->assertMatchesRegularExpression('~@container \(min-width: 30rem\) \{\s*\.b-text-tiles--square:not\(\.b-text-tiles--1\) \.b-text-tiles__tiles \{\s*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);~', $styles);
+        $this->assertStringContainsString("align-self: stretch;\n        justify-self: stretch;\n        aspect-ratio: 1;", $styles);
+        $this->assertStringContainsString('.b-text-tiles__grid {', $styles);
+        // The spacing of a tile: knobs of the site's theme over the block's own steps.
+        foreach (['var(--text-tiles-tile-padding, var(--site-space-4))', 'var(--text-tiles-tile-padding, var(--site-space-5))', 'var(--text-tiles-tile-gap, var(--site-space-2))', 'var(--text-tiles-tiles-gap, var(--site-space-3))'] as $knob) {
+            $this->assertStringContainsString($knob, $styles);
+        }
+    }
+
+    #[Test]
+    public function the_gradient_is_the_dark_shade_fading_away_from_the_words(): void
+    {
+        $this->assertStringContainsString('b-text-tiles--gradient', $this->render(['shade' => 'gradient']));
+        $this->assertSame(['dark', 'light', 'gradient'], array_column(self::field('shade')['props']['options'], 'value'));
+
+        $styles = (string) self::type()['styles'];
+        $this->assertStringContainsString(".b-text-tiles--gradient {\n    --text-tiles-fade: var(--text-tiles-shade);\n}", $styles);
+        // Beside the words only; at the middle still the even shade's veil (WCAG AA for the words).
+        $this->assertMatchesRegularExpression('~@container \(min-width: 56rem\) \{\s*\.b-text-tiles--gradient \.b-text-tiles__shade \{\s*background: linear-gradient\(\s*to right,\s*var\(--text-tiles-fade\) 0%,\s*color-mix\(in srgb, var\(--text-tiles-fade\) var\(--text-tiles-veil\), transparent\) 50%,\s*transparent 100%~', $styles);
+        $this->assertStringContainsString('.b-text-tiles--gradient:dir(rtl) .b-text-tiles__shade {', $styles);
+    }
+
+    #[Test]
     public function a_tile_shows_an_icon_or_a_figure_never_both(): void
     {
         $html = $this->render(['tiles' => [
@@ -180,7 +246,18 @@ final class TextTilesTest extends TestCase
      *
      * @param  array<string, mixed>  $values
      */
-    private function render(array $values = []): string
+    private function render(array $values = [], bool $saved = false): string
+    {
+        return Blade::render((string) self::type()['template'], $this->data($values, $saved), deleteCachedView: true);
+    }
+
+    /**
+     * Saved: the field of the square tiles is absent, as a block saved before it reads.
+     *
+     * @param  array<string, mixed>  $values
+     * @return array<string, mixed>
+     */
+    private function data(array $values, bool $saved = false): array
     {
         $type = self::type();
         $data = [
@@ -190,7 +267,29 @@ final class TextTilesTest extends TestCase
             ...$values,
         ];
 
-        return Blade::render((string) $type['template'], $data, deleteCachedView: true);
+        if ($saved) {
+            unset($data['tile_shape']);
+        }
+
+        return $data;
+    }
+
+    /** The indent a template line left out leaves before the next one, which the browser drops. */
+    private static function tight(string $html): string
+    {
+        return trim((string) preg_replace(['~\s+~', '~ >~'], [' ', '>'], $html));
+    }
+
+    /** @return array<string, mixed> */
+    private static function field(string $id): array
+    {
+        foreach (self::type()['schema'] as $node) {
+            if (($node['id'] ?? null) === $id) {
+                return $node;
+            }
+        }
+
+        return [];
     }
 
     /** @return array<string, mixed> */
