@@ -784,6 +784,232 @@
                 ]
               }
             }
+          ],
+          "children": [
+            {
+              "title": {
+                "en": "The first screen",
+                "ru": "Первый экран целиком",
+                "pl": "Pierwszy ekran"
+              },
+              "slug": {
+                "en": "first-screen",
+                "ru": "pervyy-ekran-tselikom",
+                "pl": "pierwszy-ekran"
+              },
+              "seo": {
+                "title": {
+                  "en": "The first screen",
+                  "ru": "Первый экран целиком",
+                  "pl": "Pierwszy ekran"
+                },
+                "description": {
+                  "en": "A hero as tall as the window, its words in the middle under an eyebrow, and the next section sliding over it.",
+                  "ru": "Первый экран высотой с окно: слова по центру под надзаголовком, следующая секция наезжает на него.",
+                  "pl": "Baner wysoki jak okno, słowa pośrodku pod nadtytułem, a następna sekcja nasuwa się na niego."
+                }
+              },
+              "blocks": [
+                {
+                  "key": "showcase-hero-screen",
+                  "type": "hero",
+                  "values": {
+                    "eyebrow": {
+                      "en": "A town by the sea",
+                      "ru": "Город у моря",
+                      "pl": "Miasto nad morzem"
+                    },
+                    "title": {
+                      "en": "Homes ==by the water==",
+                      "ru": "Дома ==у воды==",
+                      "pl": "Domy ==nad wodą=="
+                    },
+                    "subtitle": {
+                      "en": "The window’s height, the header included; the words in the middle, two buttons under them.",
+                      "ru": "Высота окна вместе с шапкой; слова по центру, под ними две кнопки.",
+                      "pl": "Wysokość okna razem z nagłówkiem; słowa pośrodku, pod nimi dwa przyciski."
+                    },
+                    "button_label": {
+                      "en": "See the homes",
+                      "ru": "Смотреть дома",
+                      "pl": "Zobacz domy"
+                    },
+                    "button_url": "/kitchen-sink/blocks/cards",
+                    "second_label": {
+                      "en": "Back to the hero",
+                      "ru": "Назад к первому экрану",
+                      "pl": "Wróć do banera"
+                    },
+                    "second_url": "/kitchen-sink/blocks/hero",
+                    "tone": "image",
+                    "image": {
+                      "path": "demo:showcase-photo-5",
+                      "alt": {
+                        "en": "A shore at dawn",
+                        "ru": "Берег на рассвете",
+                        "pl": "Brzeg o świcie"
+                      }
+                    },
+                    "align": "center",
+                    "width": "bleed",
+                    "height": "screen",
+                    "position": "center"
+                  }
+                },
+                {
+                  "key": "showcase-hero-screen-next",
+                  "type": "text",
+                  "values": {
+                    "heading": {
+                      "en": "The next section comes up over it",
+                      "ru": "Следующая секция наезжает на него",
+                      "pl": "Następna sekcja nasuwa się na niego"
+                    },
+                    "body": {
+                      "en": "This text has “Slide over the section above” on: scrolling, the hero stays and its words fade under it.",
+                      "ru": "У этого текста включено «Наезд на секцию выше»: при прокрутке первый экран стоит, а его слова гаснут под ним.",
+                      "pl": "Ten tekst ma włączone „Nasuń na sekcję wyżej”: przy przewijaniu baner stoi, a jego słowa gasną pod nim."
+                    },
+                    "width": "narrow",
+                    "overlap": true
+                  }
+                }
+              ]
+            },
+            {
+              "title": {
+                "en": "An inner page",
+                "ru": "Внутренняя страница",
+                "pl": "Strona wewnętrzna"
+              },
+              "slug": {
+                "en": "inner-page",
+                "ru": "vnutrennyaya-stranitsa",
+                "pl": "strona-wewnetrzna"
+              },
+              "seo": {
+                "title": {
+                  "en": "An inner page",
+                  "ru": "Внутренняя страница",
+                  "pl": "Strona wewnętrzna"
+                },
+                "description": {
+                  "en": "A hero as tall as the window with its words at the top and a badge under them, no buttons.",
+                  "ru": "Первый экран высотой с окно: слова сверху, под ними значок, без кнопок.",
+                  "pl": "Baner wysoki jak okno, słowa u góry i odznaka pod nimi, bez przycisków."
+                }
+              },
+              "blocks": [
+                {
+                  "key": "showcase-hero-top-badge",
+                  "type": "hero",
+                  "values": {
+                    "eyebrow": {
+                      "en": "About us",
+                      "ru": "О нас",
+                      "pl": "O nas"
+                    },
+                    "title": {
+                      "en": "Twenty years of building",
+                      "ru": "Двадцать лет строительства",
+                      "pl": "Dwadzieścia lat budowania"
+                    },
+                    "subtitle": {
+                      "en": "The words at the top, under the header; the badge in the middle under them, with no shade over it.",
+                      "ru": "Слова сверху, под шапкой; значок по центру под ними, без затенения.",
+                      "pl": "Słowa u góry, pod nagłówkiem; odznaka pośrodku pod nimi, bez cienia."
+                    },
+                    "tone": "image",
+                    "image": {
+                      "path": "demo:showcase-photo-6",
+                      "alt": {
+                        "en": "A courtyard in the evening",
+                        "ru": "Двор вечером",
+                        "pl": "Dziedziniec wieczorem"
+                      }
+                    },
+                    "align": "center",
+                    "width": "bleed",
+                    "height": "screen",
+                    "position": "top",
+                    "badge": {
+                      "path": "demo:showcase-badge",
+                      "alt": {
+                        "en": "Two award ribbons",
+                        "ru": "Две наградные ленты",
+                        "pl": "Dwie wstęgi nagród"
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "title": {
+                "en": "An inner page with a button",
+                "ru": "Внутренняя страница с кнопкой",
+                "pl": "Strona wewnętrzna z przyciskiem"
+              },
+              "slug": {
+                "en": "inner-page-button",
+                "ru": "vnutrennyaya-s-knopkoi",
+                "pl": "strona-z-przyciskiem"
+              },
+              "seo": {
+                "title": {
+                  "en": "An inner page with a button",
+                  "ru": "Внутренняя страница с кнопкой",
+                  "pl": "Strona wewnętrzna z przyciskiem"
+                },
+                "description": {
+                  "en": "A hero as tall as the window with its words at the top and one button.",
+                  "ru": "Первый экран высотой с окно: слова сверху и одна кнопка.",
+                  "pl": "Baner wysoki jak okno, słowa u góry i jeden przycisk."
+                }
+              },
+              "blocks": [
+                {
+                  "key": "showcase-hero-top-button",
+                  "type": "hero",
+                  "values": {
+                    "eyebrow": {
+                      "en": "Services",
+                      "ru": "Услуги",
+                      "pl": "Usługi"
+                    },
+                    "title": {
+                      "en": "What we do",
+                      "ru": "Что мы делаем",
+                      "pl": "Co robimy"
+                    },
+                    "subtitle": {
+                      "en": "The words at the top and one button under them.",
+                      "ru": "Слова сверху и одна кнопка под ними.",
+                      "pl": "Słowa u góry i jeden przycisk pod nimi."
+                    },
+                    "button_label": {
+                      "en": "Get in touch",
+                      "ru": "Связаться",
+                      "pl": "Napisz do nas"
+                    },
+                    "button_url": "/kitchen-sink/blocks/contact",
+                    "tone": "image",
+                    "image": {
+                      "path": "demo:showcase-photo-7",
+                      "alt": {
+                        "en": "A street in the rain",
+                        "ru": "Улица в дождь",
+                        "pl": "Ulica w deszczu"
+                      }
+                    },
+                    "align": "center",
+                    "width": "bleed",
+                    "height": "screen",
+                    "position": "top"
+                  }
+                }
+              ]
+            }
           ]
         },
         {
