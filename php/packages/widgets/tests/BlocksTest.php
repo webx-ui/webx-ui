@@ -809,12 +809,40 @@ final class BlocksTest extends TestCase
     }
 
     #[Test]
+    public function the_picture_of_a_tab_runs_to_the_edges_of_a_narrow_screen_only_when_asked(): void
+    {
+        $photo = $this->picture('plan');
+        $tabs = [['title' => 'Phase 1', 'picture' => ['path' => $photo->path], 'text' => ''], ['title' => 'Phase 2', 'picture' => ['path' => $photo->path], 'text' => '']];
+
+        // The section spans the page, its inner part keeps to the column; with the slide and the fade too.
+        $this->assertStringContainsString('<section class="b-tabs b-tabs--top b-tabs--bleed site-bleed" data-wx-block="tabs">', $this->render('tabs', ['tabs' => $tabs, 'media_bleed' => true]));
+        $this->assertMatchesRegularExpression(
+            '~<section class="b-tabs b-tabs--top b-tabs--wrap b-tabs--bleed site-bleed" data-wx-block="tabs" data-webx-overlap>.*<div data-webx-tabs=""[^>]* data-webx-tabs-transition="fade"~s',
+            $this->render('tabs', ['tabs' => $tabs, 'media_bleed' => true, 'wrap' => true, 'overlap' => true, 'transition' => 'fade']),
+        );
+        // Saved before the option, or with it off: in the column as before.
+        foreach ([['tabs' => $tabs], ['tabs' => $tabs, 'media_bleed' => false], ['tabs' => $tabs, 'media_bleed' => null]] as $case => $values) {
+            $this->assertStringContainsString('<section class="b-tabs b-tabs--top" data-wx-block="tabs">', $this->render('tabs', $values), "case {$case}");
+        }
+
+        $type = json_decode((string) file_get_contents(__DIR__.'/../resources/blocks/tabs.json'), true);
+        $field = array_column($type['schema'], null, 'id')['media_bleed'];
+        $this->assertSame(['wx-switch', 'Picture to the edges of the screen on a narrow screen', false], [$field['type'], $field['label'], $field['default']]);
+        $this->assertFalse($type['sample']['media_bleed']);
+        $styles = (string) $type['styles'];
+        // A direct child of the main column only, and the inner part measured as the column.
+        $this->assertStringContainsString(":where(.site-main) > .b-tabs--bleed > .b-tabs__inner {\n    container-type: inline-size;", $styles);
+        $this->assertStringContainsString("@container (max-width: 39.99em) {\n    :where(.site-main) > .b-tabs--bleed .b-tabs__picture {", $styles);
+        $this->assertStringContainsString('border-radius: 0;', $styles);
+    }
+
+    #[Test]
     public function the_tabs_type_reads_the_fields_its_template_uses(): void
     {
         $type = json_decode((string) file_get_contents(__DIR__.'/../resources/blocks/tabs.json'), true);
         $fields = array_column($type['schema'], null, 'id');
 
-        $this->assertSame(['eyebrow', 'heading', 'tabs', 'picture_side', 'align', 'wrap', 'transition', 'overlap', 'overlap_edge', 'overlap_edge_narrow'], array_keys($fields));
+        $this->assertSame(['eyebrow', 'heading', 'tabs', 'picture_side', 'align', 'wrap', 'media_bleed', 'transition', 'overlap', 'overlap_edge', 'overlap_edge_narrow'], array_keys($fields));
         $this->assertSame(['id' => 'eyebrow', 'type' => 'wx-input', 'label' => 'Above the heading', 'localized' => true, 'props' => ['maxlength' => 80]], $fields['eyebrow']);
         $this->assertSame('wx-switch', $fields['overlap']['type']);
         $this->assertFalse($fields['overlap']['default'], 'a new block stands after the one above, as an old one does');
