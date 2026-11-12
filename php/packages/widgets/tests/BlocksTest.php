@@ -742,12 +742,63 @@ final class BlocksTest extends TestCase
     }
 
     #[Test]
+    public function the_tabs_slide_over_the_section_above_and_carry_a_line_above_the_heading(): void
+    {
+        $photo = $this->picture('plan');
+        $fog = $this->picture('fog');
+        $phone = $this->picture('fog-phone');
+        $tabs = [['title' => 'Phase 1', 'picture' => ['path' => $photo->path], 'text' => ''], ['title' => 'Phase 2', 'picture' => ['path' => $photo->path], 'text' => '']];
+
+        $html = $this->render('tabs', [
+            'eyebrow' => 'Project introduction', 'heading' => 'The plan', 'tabs' => $tabs, 'transition' => 'fade',
+            'overlap' => true, 'overlap_edge' => ['path' => $fog->path], 'overlap_edge_narrow' => ['path' => $phone->path],
+        ]);
+
+        $this->assertMatchesRegularExpression(
+            '~<section class="b-tabs b-tabs--top" data-wx-block="tabs" data-webx-overlap>\s*<picture class="webx-overlap__edge" aria-hidden="true"><source media="\(max-width: 40rem\)" srcset="[^"]*fog-phone\.webp[^"]*"[^>]*>\s*<img class="webx-overlap__image" src="[^"]*fog\.webp~',
+            $html,
+            'the root marked, its edge first inside it',
+        );
+        $this->assertMatchesRegularExpression(
+            '~</picture>\s*(<!--.*?-->\s*)?<div class="b-tabs__inner" data-webx-overlap-fade>\s*<p class="b-tabs__eyebrow">Project introduction</p>\s*<h2 class="b-tabs__heading">The plan</h2>\s*<div data-webx-tabs=""[^>]* data-webx-tabs-transition="fade"~s',
+            $html,
+            'the words and the tabs fade under a section that slides over this one, the edge does not',
+        );
+        $this->assertSame(1, substr_count($html, 'data-webx-overlap>'));
+
+        // On, with no picture yet: the section slides on its own top.
+        $bare = $this->render('tabs', ['tabs' => $tabs, 'overlap' => true]);
+        $this->assertStringContainsString('data-wx-block="tabs" data-webx-overlap>', $bare);
+        $this->assertStringNotContainsString('webx-overlap__edge', $bare);
+
+        // Off, or saved before the fields: neither the mark, nor an edge, nor an empty line above the heading.
+        foreach ([['tabs' => $tabs, 'heading' => 'The plan'], ['tabs' => $tabs, 'heading' => 'The plan', 'eyebrow' => '', 'overlap' => false, 'overlap_edge' => ['path' => $fog->path]]] as $case => $values) {
+            $old = $this->render('tabs', $values);
+            $this->assertStringContainsString('<section class="b-tabs b-tabs--top" data-wx-block="tabs">', $old, "case {$case}");
+            $this->assertStringNotContainsString('webx-overlap__edge', $old, "case {$case}");
+            $this->assertStringNotContainsString('b-tabs__eyebrow', $old, "case {$case}");
+        }
+
+        $styles = (string) json_decode((string) file_get_contents(__DIR__.'/../resources/blocks/tabs.json'), true)['styles'];
+        $this->assertStringContainsString(".b-tabs[data-webx-overlap] {\n    position: relative;\n}", $styles, 'its edge placed from the section in any theme');
+        $this->assertStringContainsString('font-size: var(--site-font-size-6, 0.875em);', $styles, 'a size of its own where the theme has none');
+    }
+
+    #[Test]
     public function the_tabs_type_reads_the_fields_its_template_uses(): void
     {
         $type = json_decode((string) file_get_contents(__DIR__.'/../resources/blocks/tabs.json'), true);
         $fields = array_column($type['schema'], null, 'id');
 
-        $this->assertSame(['heading', 'tabs', 'picture_side', 'align', 'transition'], array_keys($fields));
+        $this->assertSame(['eyebrow', 'heading', 'tabs', 'picture_side', 'align', 'transition', 'overlap', 'overlap_edge', 'overlap_edge_narrow'], array_keys($fields));
+        $this->assertSame(['id' => 'eyebrow', 'type' => 'wx-input', 'label' => 'Above the heading', 'localized' => true, 'props' => ['maxlength' => 80]], $fields['eyebrow']);
+        $this->assertSame('wx-switch', $fields['overlap']['type']);
+        $this->assertFalse($fields['overlap']['default'], 'a new block stands after the one above, as an old one does');
+        $this->assertFalse($type['sample']['overlap']);
+        foreach (['overlap_edge', 'overlap_edge_narrow'] as $id) {
+            $this->assertSame('wx-media', $fields[$id]['type'], $id);
+            $this->assertSame(['when' => 'overlap', 'is' => true], $fields[$id]['visible'], $id);
+        }
         $this->assertSame(['title', 'picture', 'text'], array_column($fields['tabs']['children'], 'id'));
         $this->assertSame('wx-rich-text', $fields['tabs']['children'][2]['type']);
         $this->assertTrue($fields['tabs']['children'][0]['localized'] && $fields['tabs']['children'][2]['localized']);

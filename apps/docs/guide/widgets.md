@@ -662,7 +662,7 @@ line, it does not run it). Installed, they belong to the site: an update never o
 | `countdown` | heading, text, a date and a time of the site's zone, at the end a text or hide                                                                                                                                                                      | `<x-webx-countdown>`       |
 | `compare`   | heading, before, after, their labels, where the divider starts, caption                                                                                                                                                                             | `<x-webx-compare>`         |
 | `toc`       | title, the whole page or a text of its own (a switch), side, depth                                                                                                                                                                                  | `<x-webx-toc>`             |
-| `tabs`      | heading, a title, a picture and a text each, picture above or beside, alignment, change at once or fade                                                                                                                                             | `<x-webx-tabs>`            |
+| `tabs`      | a line above the heading, heading, a title, a picture and a text each, picture above or beside, alignment, change at once or fade, slide over the section above                                                                                     | `<x-webx-tabs>`            |
 
 **The mosaic** of `gallery` is one large picture and two smaller ones: the large on the left and the
 two one above the other beside it, or — in a column narrower than 36em — the large on top and the

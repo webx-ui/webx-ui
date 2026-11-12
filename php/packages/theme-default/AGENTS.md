@@ -49,7 +49,7 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
     `plain|surface|accent|image` (+ `image`), `align` `start|center`, `width` `column|bleed`;
   - `text` — `heading`, `body` (rich text, under `site-prose`; a body of plain lines prints as paragraphs), `width` `narrow|wide`;
   - `media-text` — `image`, `logo` (a small picture above the heading, at most 4rem × 12rem), `heading`, `body`, one button, `side` `start|end`, `tone` `plain|surface`;
-  - `cards` — `heading`, `intro`, `columns` `2|3|4` (at most; the container decides), `pictures`
+  - `cards` — `eyebrow`, `heading`, `intro`, `columns` `2|3|4` (at most; the container decides), `pictures`
     `photo|icon`, `view` `grid|slider` (carousel: `arrows`, `dots`, `endless`, `autoplay`, `interval` s), repeater `cards` (`image`, `photos` — 2+ turn in `<x-webx-photos>`, `title`, `chips` — labels under it, `text`, `link_label`, `link`, `link_url`: the whole card is the link; `link_label` ends in the `arrow-right` icon, `b-cards__arrow`);
   - `cta` — `eyebrow`, `heading`, `text`, two buttons, `tone` `accent|surface|plain|image` (+ `image` under `shade` `dark|light`, `height` `auto|screen|ratio` + `ratio`; a picture with no words is `b-cta--bare`, §9.9), `width` `column|bleed`;
   - `text-tiles` («Text and tiles on a photo», §9.7) — `eyebrow`, `heading`, `text`, one button, `image` under `shade` `dark|light`, `width` `bleed|column`, repeater `tiles` (≤4: `kind` `icon|value`, `icon` — an SVG is masked in the words' colour — or `value` + `unit`, `label`, `note`); glass on the block's own `--text-tiles-glass|glass-solid|blur|veil`;

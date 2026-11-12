@@ -31,7 +31,7 @@ final class CardsTest extends TestCase
     private const array LINK = ['target' => 'url', 'entity_type' => null, 'entity_id' => null, 'url' => '/flats/12', 'hash' => null, 'new_tab' => false, 'rel' => []];
 
     /** The fields a block saved before this stage did not have. */
-    private const array NEW = ['view', 'arrows', 'dots', 'endless', 'autoplay', 'interval'];
+    private const array NEW = ['eyebrow', 'view', 'arrows', 'dots', 'endless', 'autoplay', 'interval'];
 
     /**
      * @param  Application  $app
@@ -79,6 +79,27 @@ final class CardsTest extends TestCase
         }
 
         $this->assertSame([], app(Widgets::class)->claimed(), 'A grid of one photo a card claims no script.');
+    }
+
+    #[Test]
+    public function the_line_above_the_heading_stands_first_in_the_head_and_empty_prints_nothing(): void
+    {
+        $this->assertSame(['id' => 'eyebrow', 'type' => 'wx-input', 'label' => 'Above the heading', 'localized' => true, 'props' => ['maxlength' => 80]], self::field('eyebrow'));
+        $this->assertSame('eyebrow', self::type()['schema'][0]['id'], 'above the heading in the form too');
+        $this->assertSame('', self::type()['sample']['eyebrow']);
+
+        $html = $this->render(['eyebrow' => 'Residences & resort', 'heading' => 'Homes ==by the river==']);
+        $this->assertMatchesRegularExpression('~<div class="b-cards__head"[^>]*>\s*<p class="b-cards__eyebrow">Residences &amp; resort</p>\s*<h2 class="b-cards__heading">~', $html);
+        $this->assertStringContainsString(".b-cards__eyebrow {\n", (string) self::type()['styles']);
+
+        // On its own, with no heading and no cards, it is still a head of its own.
+        $alone = $this->render(['eyebrow' => 'Soon', 'heading' => '', 'intro' => '', 'cards' => []]);
+        $this->assertStringContainsString('<p class="b-cards__eyebrow">Soon</p>', $alone);
+
+        foreach (['', null] as $empty) {
+            $this->assertStringNotContainsString('b-cards__eyebrow', $this->render(['eyebrow' => $empty]));
+        }
+        $this->assertStringNotContainsString('b-cards', $this->render(['eyebrow' => '', 'heading' => '', 'cards' => []]));
     }
 
     #[Test]

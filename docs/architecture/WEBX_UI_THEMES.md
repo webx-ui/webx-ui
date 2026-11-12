@@ -797,6 +797,9 @@ picture on a phone» (`overlap_edge_narrow`), оба `wx-media`. Включён 
 - **Позиция.** `base.css` темы: `:where([data-webx-overlap]) { position: relative }` — край ставится
   от секции и без скрипта.
 - Выключено — разметка прежняя (`RevealTest`: «off — what it printed before», `OverlapTest` темы).
+- **Блок `tabs` пакета widgets** (WIDGETS §15.1) — те же три поля и та же разметка; его
+  `b-tabs__inner` (надзаголовок, заголовок, табы) помечен `data-webx-overlap-fade`, `position:
+relative` у корня — в стилях самого блока, он живёт и без этой темы.
   Существующий сайт получает поля с `webx:blocks:import --theme --replace=<slug>`.
 
 ### 9.9 Призыв на картинке

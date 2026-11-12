@@ -11,6 +11,15 @@
   "is_enabled": true,
   "schema": [
     {
+      "id": "eyebrow",
+      "type": "wx-input",
+      "label": "Above the heading",
+      "localized": true,
+      "props": {
+        "maxlength": 80
+      }
+    },
+    {
       "id": "heading",
       "type": "wx-input",
       "label": "Heading",
@@ -113,12 +122,46 @@
           }
         ]
       }
+    },
+    {
+      "id": "overlap",
+      "type": "wx-switch",
+      "label": "Slide over the section above",
+      "default": false,
+      "help": "The section above stays in place while this one comes up over it, and its words fade. The edge pictures stand over this section's top. Visitors who ask for less motion see the sections one after another."
+    },
+    {
+      "id": "overlap_edge",
+      "type": "wx-media",
+      "label": "Edge picture",
+      "props": {
+        "accept": "image"
+      },
+      "help": "Over the top of this section, as wide as the page: fog or clouds in a PNG or WebP with transparency, its bottom row in the colour of this section.",
+      "visible": {
+        "when": "overlap",
+        "is": true
+      }
+    },
+    {
+      "id": "overlap_edge_narrow",
+      "type": "wx-media",
+      "label": "Edge picture on a phone",
+      "props": {
+        "accept": "image"
+      },
+      "help": "The same edge for a narrow screen. Without it the edge picture above is used there too.",
+      "visible": {
+        "when": "overlap",
+        "is": true
+      }
     }
   ],
-  "template": "@php\n    // A tab needs its title — it is the tab — and something to show under it; a picture deleted\n    // from the library resolves without an address and is left out, not printed broken.\n    $shown = [];\n    foreach (is_array($tabs) ? $tabs : [] as $item) {\n        if (! is_array($item)) {\n            continue;\n        }\n        $title = wx_text($item['title'] ?? null)->plain();\n        $image = is_array($item['picture'] ?? null) && ! empty($item['picture']['url']) ? $item['picture'] : null;\n        $body = is_string($item['text'] ?? null) ? trim($item['text']) : '';\n        if ($title === '' || ($image === null && $body === '')) {\n            continue;\n        }\n        $shown[] = ['title' => $title, 'picture' => $image, 'text' => $body];\n    }\n    $label = $heading ? wx_text($heading)->plain() : null;\n    // A block saved before a field had a value looks as a new one does.\n    $place = in_array($picture_side ?? null, ['top', 'start', 'end'], true) ? $picture_side : 'top';\n    $centred = ($align ?? null) === 'center';\n    $fade = ($transition ?? null) === 'fade';\n@endphp\n@if ($shown)\n<section @class(['b-tabs', 'b-tabs--'.$place, 'b-tabs--center' => $centred]) data-wx-block=\"tabs\">\n    @if ($heading)\n        <h2 class=\"b-tabs__heading\">{{ $heading }}</h2>\n    @endif\n    <x-webx-tabs class=\"b-tabs__tabs\" :label=\"$label\" :transition=\"$fade ? 'fade' : null\">\n        @foreach ($shown as $item)\n            {{-- Without JavaScript every panel stands under its title; the runtime makes the titles tabs. --}}\n            <x-webx-tabs.panel :title=\"$item['title']\" :level=\"$heading ? 3 : 2\">\n                <div @class(['b-tabs__body', 'b-tabs__body--picture' => $item['picture'] && $item['text'] !== ''])>\n                    @if ($item['picture'])\n                        <img class=\"b-tabs__picture\" src=\"{{ $item['picture']['url'] }}\" alt=\"{{ $item['picture']['alt'] ?? '' }}\" @if ($item['picture']['width']) width=\"{{ $item['picture']['width'] }}\" height=\"{{ $item['picture']['height'] }}\" @endif @unless ($loop->first) loading=\"lazy\" @endunless>\n                    @endif\n                    @if ($item['text'] !== '')\n                        <div class=\"b-tabs__text\">{!! $item['text'] !!}</div>\n                    @endif\n                </div>\n            </x-webx-tabs.panel>\n        @endforeach\n    </x-webx-tabs>\n</section>\n@endif\n",
-  "styles": ".b-tabs {\n    container-type: inline-size;\n}\n\n.b-tabs__heading {\n    margin: 0 0 1em;\n}\n\n.b-tabs--center .b-tabs__heading {\n    text-align: center;\n}\n\n/* Centred by the margins of the end tabs, not by justify-content: a row wider than the column\n   then still scrolls from its first tab instead of cutting it off on the left. */\n.b-tabs--center .webx-tabs__tab:first-child {\n    margin-inline-start: auto;\n}\n\n.b-tabs--center .webx-tabs__tab:last-child {\n    margin-inline-end: auto;\n}\n\n.b-tabs__body {\n    display: grid;\n    gap: 1em;\n    align-items: start;\n}\n\n.b-tabs__picture {\n    display: block;\n    width: 100%;\n    height: auto;\n    border-radius: 0.25em;\n}\n\n.b-tabs__text {\n    min-width: 0;\n}\n\n.b-tabs__text > :first-child {\n    margin-top: 0;\n}\n\n.b-tabs__text > :last-child {\n    margin-bottom: 0;\n}\n\n/* Beside the text where the column has room for both, above it where it has not: the width of\n   the column the block stands in decides, not the window. */\n@container (min-width: 40em) {\n    .b-tabs--start .b-tabs__body--picture,\n    .b-tabs--end .b-tabs__body--picture {\n        grid-template-columns: repeat(2, minmax(0, 1fr));\n        gap: 2em;\n    }\n\n    .b-tabs--end .b-tabs__body--picture .b-tabs__picture {\n        order: 1;\n    }\n}\n",
+  "template": "@php\n    // A tab needs its title — it is the tab — and something to show under it; a picture deleted\n    // from the library resolves without an address and is left out, not printed broken.\n    $shown = [];\n    foreach (is_array($tabs) ? $tabs : [] as $item) {\n        if (! is_array($item)) {\n            continue;\n        }\n        $title = wx_text($item['title'] ?? null)->plain();\n        $image = is_array($item['picture'] ?? null) && ! empty($item['picture']['url']) ? $item['picture'] : null;\n        $body = is_string($item['text'] ?? null) ? trim($item['text']) : '';\n        if ($title === '' || ($image === null && $body === '')) {\n            continue;\n        }\n        $shown[] = ['title' => $title, 'picture' => $image, 'text' => $body];\n    }\n    $label = $heading ? wx_text($heading)->plain() : null;\n    // A block saved before a field had a value looks as a new one does.\n    $place = in_array($picture_side ?? null, ['top', 'start', 'end'], true) ? $picture_side : 'top';\n    $centred = ($align ?? null) === 'center';\n    $fade = ($transition ?? null) === 'fade';\n@endphp\n@if ($shown)\n<section @class(['b-tabs', 'b-tabs--'.$place, 'b-tabs--center' => $centred]) data-wx-block=\"tabs\"@webxOverlap($overlap ?? false)>\n    @webxOverlapEdge($overlap ?? false, $overlap_edge ?? null, $overlap_edge_narrow ?? null)\n    {{-- What fades when the next section slides over this one; the edge above stays whole. --}}\n    <div class=\"b-tabs__inner\" data-webx-overlap-fade>\n    @if ($eyebrow ?? null)\n        <p class=\"b-tabs__eyebrow\">{{ $eyebrow }}</p>\n    @endif\n    @if ($heading)\n        <h2 class=\"b-tabs__heading\">{{ $heading }}</h2>\n    @endif\n    <x-webx-tabs class=\"b-tabs__tabs\" :label=\"$label\" :transition=\"$fade ? 'fade' : null\">\n        @foreach ($shown as $item)\n            {{-- Without JavaScript every panel stands under its title; the runtime makes the titles tabs. --}}\n            <x-webx-tabs.panel :title=\"$item['title']\" :level=\"$heading ? 3 : 2\">\n                <div @class(['b-tabs__body', 'b-tabs__body--picture' => $item['picture'] && $item['text'] !== ''])>\n                    @if ($item['picture'])\n                        <img class=\"b-tabs__picture\" src=\"{{ $item['picture']['url'] }}\" alt=\"{{ $item['picture']['alt'] ?? '' }}\" @if ($item['picture']['width']) width=\"{{ $item['picture']['width'] }}\" height=\"{{ $item['picture']['height'] }}\" @endif @unless ($loop->first) loading=\"lazy\" @endunless>\n                    @endif\n                    @if ($item['text'] !== '')\n                        <div class=\"b-tabs__text\">{!! $item['text'] !!}</div>\n                    @endif\n                </div>\n            </x-webx-tabs.panel>\n        @endforeach\n    </x-webx-tabs>\n    </div>\n</section>\n@endif\n",
+  "styles": ".b-tabs {\n    container-type: inline-size;\n}\n\n/* Its edge picture stands over its top, placed from the section — in a theme that does not\n   position such sections itself too. */\n.b-tabs[data-webx-overlap] {\n    position: relative;\n}\n\n/* In the theme's smaller size where it has one; the block has no words of a theme of its own. */\n.b-tabs__eyebrow {\n    margin: 0 0 0.5em;\n    font-size: var(--site-font-size-6, 0.875em);\n    font-weight: 600;\n    letter-spacing: 0.08em;\n    text-transform: uppercase;\n}\n\n.b-tabs__heading {\n    margin: 0 0 1em;\n}\n\n.b-tabs--center .b-tabs__eyebrow,\n.b-tabs--center .b-tabs__heading {\n    text-align: center;\n}\n\n/* Centred by the margins of the end tabs, not by justify-content: a row wider than the column\n   then still scrolls from its first tab instead of cutting it off on the left. */\n.b-tabs--center .webx-tabs__tab:first-child {\n    margin-inline-start: auto;\n}\n\n.b-tabs--center .webx-tabs__tab:last-child {\n    margin-inline-end: auto;\n}\n\n.b-tabs__body {\n    display: grid;\n    gap: 1em;\n    align-items: start;\n}\n\n.b-tabs__picture {\n    display: block;\n    width: 100%;\n    height: auto;\n    border-radius: 0.25em;\n}\n\n.b-tabs__text {\n    min-width: 0;\n}\n\n.b-tabs__text > :first-child {\n    margin-top: 0;\n}\n\n.b-tabs__text > :last-child {\n    margin-bottom: 0;\n}\n\n/* Beside the text where the column has room for both, above it where it has not: the width of\n   the column the block stands in decides, not the window. */\n@container (min-width: 40em) {\n    .b-tabs--start .b-tabs__body--picture,\n    .b-tabs--end .b-tabs__body--picture {\n        grid-template-columns: repeat(2, minmax(0, 1fr));\n        gap: 2em;\n    }\n\n    .b-tabs--end .b-tabs__body--picture .b-tabs__picture {\n        order: 1;\n    }\n}\n",
   "script": null,
   "sample": {
+    "eyebrow": "",
     "heading": "About the place",
     "tabs": [
       {
@@ -139,6 +182,9 @@
     ],
     "picture_side": "top",
     "align": "start",
-    "transition": "instant"
+    "transition": "instant",
+    "overlap": false,
+    "overlap_edge": null,
+    "overlap_edge_narrow": null
   }
 }
