@@ -2962,6 +2962,152 @@
                 ]
               }
             }
+          ],
+          "children": [
+            {
+              "title": {
+                "en": "A brochure beside the words",
+                "ru": "Брошюра рядом со словами",
+                "pl": "Broszura obok słów"
+              },
+              "slug": {
+                "en": "brochure",
+                "ru": "broshyura",
+                "pl": "broszura"
+              },
+              "seo": {
+                "title": {
+                  "en": "A brochure beside the words",
+                  "ru": "Брошюра рядом со словами",
+                  "pl": "Broszura obok słów"
+                },
+                "description": {
+                  "en": "A call to action on a photo under a gradient from the side: the words on the left, a brochure in front on the right, an outlined button.",
+                  "ru": "Призыв на фото под градиентом сбоку: слова слева, брошюра поверх справа, кнопка-контур.",
+                  "pl": "Wezwanie na zdjęciu pod gradientem z boku: słowa po lewej, broszura z przodu po prawej, przycisk z obrysem."
+                }
+              },
+              "blocks": [
+                {
+                  "key": "showcase-cta-brochure",
+                  "type": "cta",
+                  "values": {
+                    "heading": {
+                      "en": "Download the brochure",
+                      "ru": "Скачайте брошюру",
+                      "pl": "Pobierz broszurę"
+                    },
+                    "text": {
+                      "en": "The gradient darkens the photo behind the words only; the brochure stands over it and is never darkened. On a phone it comes under the words, and the button runs across.",
+                      "ru": "Градиент затемняет фото только за словами; брошюра стоит поверх и не затемняется. На телефоне она под словами, а кнопка — во всю ширину.",
+                      "pl": "Gradient przyciemnia zdjęcie tylko za słowami; broszura stoi nad nim i nie jest przyciemniana. Na telefonie jest pod słowami, a przycisk ma całą szerokość."
+                    },
+                    "button_label": {
+                      "en": "Download",
+                      "ru": "Скачать",
+                      "pl": "Pobierz"
+                    },
+                    "button_link": {
+                      "target": "file",
+                      "path": "demo:showcase-brochure",
+                      "download": true
+                    },
+                    "button_look": "outline",
+                    "tone": "image",
+                    "image": {
+                      "path": "demo:showcase-photo-1",
+                      "alt": {
+                        "en": "A quiet street with trees",
+                        "ru": "Тихая улица с деревьями",
+                        "pl": "Cicha ulica z drzewami"
+                      }
+                    },
+                    "foreground": {
+                      "path": "demo:showcase-brochure",
+                      "alt": {
+                        "en": "The brochure",
+                        "ru": "Брошюра",
+                        "pl": "Broszura"
+                      }
+                    },
+                    "shade": "gradient-start",
+                    "layout": "split",
+                    "width": "bleed"
+                  }
+                }
+              ]
+            },
+            {
+              "title": {
+                "en": "Words at the top of a sketch",
+                "ru": "Слова над скетчем",
+                "pl": "Słowa nad szkicem"
+              },
+              "slug": {
+                "en": "sketch",
+                "ru": "sketch",
+                "pl": "szkic"
+              },
+              "seo": {
+                "title": {
+                  "en": "Words at the top of a sketch",
+                  "ru": "Слова над скетчем",
+                  "pl": "Słowa nad szkicem"
+                },
+                "description": {
+                  "en": "A call to action on a sketch with no veil: the colour of the page at the top under the words, centred, and a dark button.",
+                  "ru": "Призыв на скетче без пелены: сверху цвет страницы под словами по центру и тёмная кнопка.",
+                  "pl": "Wezwanie na szkicu bez zasłony: u góry kolor strony pod wyśrodkowanymi słowami i ciemny przycisk."
+                }
+              },
+              "blocks": [
+                {
+                  "key": "showcase-cta-sketch",
+                  "type": "cta",
+                  "values": {
+                    "eyebrow": {
+                      "en": "Any questions?",
+                      "ru": "Остались вопросы?",
+                      "pl": "Masz pytania?"
+                    },
+                    "heading": {
+                      "en": "Get in touch with us",
+                      "ru": "Свяжитесь с нами",
+                      "pl": "Skontaktuj się z nami"
+                    },
+                    "text": {
+                      "en": "The top of the band is the colour of the page, and the sketch comes clear below it. The words stand in a column in the middle.",
+                      "ru": "Верх полосы — цвета страницы, ниже проступает скетч. Слова — колонкой по центру.",
+                      "pl": "Góra pasa ma kolor strony, niżej wyłania się szkic. Słowa stoją kolumną pośrodku."
+                    },
+                    "button_label": {
+                      "en": "Write to us",
+                      "ru": "Написать нам",
+                      "pl": "Napisz do nas"
+                    },
+                    "button_link": {
+                      "target": "url",
+                      "url": "#webx-form-contact"
+                    },
+                    "button_look": "primary-dark",
+                    "tone": "image",
+                    "image": {
+                      "path": "demo:showcase-sketch",
+                      "alt": {
+                        "en": "A pencil sketch of houses",
+                        "ru": "Карандашный скетч домов",
+                        "pl": "Ołówkowy szkic domów"
+                      }
+                    },
+                    "shade": "gradient-top",
+                    "layout": "top-center",
+                    "height": "ratio",
+                    "ratio": "16-9",
+                    "width": "bleed"
+                  }
+                }
+              ]
+            }
           ]
         },
         {
