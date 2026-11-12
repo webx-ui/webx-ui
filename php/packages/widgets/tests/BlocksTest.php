@@ -326,7 +326,7 @@ final class BlocksTest extends TestCase
         /** @var array{schema: list<array<string, mixed>>, sample: array<string, mixed>} $type */
         $type = json_decode((string) file_get_contents(__DIR__.'/../resources/blocks/gallery.json'), true);
         $nodes = array_column($type['schema'], null, 'id');
-        $this->assertSame(['grid', 'slider', 'mosaic'], array_column($nodes['view']['props']['options'], 'value'));
+        $this->assertSame(['grid', 'slider', 'mosaic', 'ribbon'], array_column($nodes['view']['props']['options'], 'value'));
         $this->assertSame('grid', $nodes['view']['default']);
         $this->assertSame('still', $nodes['mosaic']['default']);
         $this->assertSame(['still', 'slider'], array_column($nodes['mosaic']['props']['options'], 'value'));
