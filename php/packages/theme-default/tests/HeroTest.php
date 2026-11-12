@@ -123,7 +123,7 @@ final class HeroTest extends TestCase
         $this->assertStringContainsString('min-height: calc(100svh - var(--hero-above, 0px));', $styles);
         $this->assertStringContainsString('.b-hero.b-hero--screen.b-hero--at-top {', $styles);
         $this->assertStringContainsString('var(--hero-top-space, var(--site-space-8))', $styles);
-        $this->assertStringContainsString('.b-hero--screen:first-child:where(.site-main > *):where(.site:has(.webx-header--overlay) *) {', $styles);
+        $this->assertStringContainsString('.b-hero--screen:first-of-type:where(.site-main > *):where(.site:has(.webx-header--overlay) *) {', $styles);
     }
 
     #[Test]
