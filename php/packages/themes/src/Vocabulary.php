@@ -21,6 +21,34 @@ use WebxUi\Themes\Exceptions\ThemeException;
 final readonly class Vocabulary
 {
     /**
+     * The tokens of the section's rhythm and of its head (§7.2, "Optional tokens"): no theme owes
+     * them a value, the page prints them only when one is given, and the blocks read them with a
+     * fallback — each block its own spacing and type of today, which no single default could be.
+     * Unset, every block looks as it did; set once, every block follows.
+     *
+     * @var array<string, TokenType>
+     */
+    public const array OPTIONAL = [
+        'section-space' => TokenType::Length,
+        'section-head-space' => TokenType::Length,
+        'eyebrow-space' => TokenType::Length,
+        'section-title-space' => TokenType::Length,
+        'section-actions-space' => TokenType::Length,
+        'section-gutter' => TokenType::Length,
+        'frame-gutter' => TokenType::Length,
+        'section-title-font' => TokenType::Font,
+        'section-title-size' => TokenType::Length,
+        'section-title-line-height' => TokenType::LineHeight,
+        'section-title-case' => TokenType::LetterCase,
+        'eyebrow-font' => TokenType::Font,
+        'eyebrow-size' => TokenType::Length,
+        'eyebrow-line-height' => TokenType::LineHeight,
+        'eyebrow-letter-spacing' => TokenType::Length,
+        'eyebrow-weight' => TokenType::Number,
+        'eyebrow-case' => TokenType::LetterCase,
+    ];
+
+    /**
      * @param  array<string, TokenType>  $tokens  In the order the page prints them.
      */
     public function __construct(public array $tokens) {}
@@ -59,7 +87,7 @@ final readonly class Vocabulary
         $tokens['duration'] = TokenType::Time;
         $tokens['easing'] = TokenType::Easing;
 
-        return new self($tokens);
+        return new self([...$tokens, ...self::OPTIONAL]);
     }
 
     /**
@@ -93,6 +121,25 @@ final readonly class Vocabulary
     public function has(string $name): bool
     {
         return isset($this->tokens[$name]);
+    }
+
+    /**
+     * One of the engine's optional tokens: no theme owes it a value, and a stylesheet reads it
+     * with a fallback, `var(--site-section-space, var(--site-space-6))`.
+     */
+    public function optional(string $name): bool
+    {
+        return isset(self::OPTIONAL[$name]);
+    }
+
+    /**
+     * The names a theme at the bottom of the chain owes a value: all but the optional ones.
+     *
+     * @return list<string>
+     */
+    public function required(): array
+    {
+        return array_values(array_filter($this->names(), fn (string $name): bool => ! $this->optional($name)));
     }
 
     public function type(string $name): ?TokenType

@@ -18,7 +18,11 @@ const tokens = [
 ]
 
 const found = (css: string) =>
-  cssFindings(css, tokens).map((finding) => [finding.problem, finding.line, finding.subject])
+  cssFindings(css, [...tokens, 'section-space'], ['section-space']).map((finding) => [
+    finding.problem,
+    finding.line,
+    finding.subject,
+  ])
 
 /** The same cases as `CssCheckTest` of the engine: the two have to agree. */
 describe('CSS knows only tokens', () => {
@@ -100,6 +104,17 @@ describe('CSS knows only tokens', () => {
       ['token-fallback', 4, 'var(--site-color-border, …)'],
       ['literal-color', 4, '#ccc'],
     ])
+  })
+
+  it('lets an optional token keep its fallback, but not a colour in it', () => {
+    const css = [
+      '.a {',
+      '  padding-block: var(--site-section-space, var(--site-space-4));',
+      '  margin: var(--site-section-space, #fff);',
+      '}',
+    ].join('\n')
+
+    expect(found(css)).toEqual([['literal-color', 3, '#fff']])
   })
 
   it('reads neither comments nor font faces, and reads nested rules', () => {

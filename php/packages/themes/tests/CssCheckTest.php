@@ -118,6 +118,20 @@ final class CssCheckTest extends PlainTestCase
     }
 
     #[Test]
+    public function an_optional_token_keeps_its_fallback_but_not_a_colour_in_it(): void
+    {
+        $css = <<<'CSS'
+            .a {
+              padding-block: var(--site-section-space, var(--site-space-6));
+              text-transform: var(--site-eyebrow-case, uppercase);
+              margin: var(--site-section-head-space, #fff);
+            }
+            CSS;
+
+        $this->assertSame([[CssProblem::LiteralColor, 4, '#fff']], self::found($css));
+    }
+
+    #[Test]
     public function only_a_media_query_by_width_or_by_colour_scheme_is_a_finding(): void
     {
         $css = <<<'CSS'

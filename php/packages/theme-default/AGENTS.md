@@ -7,7 +7,7 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
 
 ## What it owns
 
-- **`tokens.json`** — `defaults` for all forty tokens of the vocabulary, each a `--site-<name>`:
+- **`tokens.json`** — `defaults` for all forty required tokens of the vocabulary, each a `--site-<name>`:
   `color-bg`, `color-surface`, `color-surface-muted`, `color-text`, `color-text-muted`,
   `color-border`, `color-accent`, `color-accent-contrast`, `color-accent-2`, `color-highlight`,
   `color-danger`, `color-success`; `font-body`, `font-heading`, `font-size-base`,
@@ -15,6 +15,7 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
   `radius-lg`, `radius-full`; `shadow-sm`, `shadow-md`; `container-width`, `gutter`, `duration`,
   `easing`. The presets `warm` and `night`; a site draws in one by naming it in its manifest
   (`"preset": "night"` in `theme/theme.json`). Its test is `Testing\ThemeContract` first.
+- **Optional tokens** (THEMES §7.2) — no value here, printed only when a site sets one; every block reads them with its own look as the fallback, `var(--site-section-space, var(--site-space-6))`. Rhythm: `section-space` (a section's top and bottom), `section-head-space` (head → content), `eyebrow-space` (eyebrow → H2), `section-title-space` (H2 → text), `section-actions-space` (text → buttons), `section-gutter` (the sides of the main column and of a bleeding section's words), `frame-gutter` (the sides of the header and the footer). The section's H2: `section-title-font`, `section-title-size`, `section-title-line-height`, `section-title-case`. The `__eyebrow`: `eyebrow-font`, `eyebrow-size`, `eyebrow-line-height`, `eyebrow-letter-spacing`, `eyebrow-weight`, `eyebrow-case`.
 - **`views/components/layout`** — the document every module page is printed in (`<x-layout>`), the
   dispatcher of the composition `layout` (`compositions/layout/default.json`; also `layout.minimal`,
   `layout.blank`, and `layout.account` — the grid of a visitor's account, `account.menu` beside `account.body`, for `webx-ui/module-users`): `@webxTheme`, `@webxThemeColor`, the page's `head` slot (or `@webxSeo` + `@webxBlocks`), `@stack('head')`,
@@ -127,8 +128,7 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
   overridden layout: pages lose their tokens, metatags or header without an error.
 - Do not print `@webxSeo` or `@webxBlocks` unconditionally in an overridden layout: module views
   already send both in the `head` slot, and twice means two `<title>` tags.
-- Do not write a literal colour, a font name or `var(--site-x, fallback)` in CSS; do not use
-  `@media` for width — `@container`.
+- Do not write a literal colour, a font name or `var(--site-x, fallback)` (but for an optional token) in CSS; no width `@media` — `@container`.
 - Do not write `var(`, a class or a literal colour into a letter: the mail client paints nothing
   there, or the letter stops repainting with the site; `webx:theme:check` names both (rule 25).
 - Do not raise specificity or add `!important` to beat this theme: its rules have none.

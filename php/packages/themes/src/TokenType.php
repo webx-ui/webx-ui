@@ -23,6 +23,12 @@ enum TokenType: string
     case Time = 'time';
     case Easing = 'easing';
 
+    /** A `line-height`: a number of the font's size, or a length — `1.2`, `clamp(2.25rem, …, 4rem)`. */
+    case LineHeight = 'line-height';
+
+    /** A `text-transform` of a heading or an eyebrow: capitals or not. */
+    case LetterCase = 'case';
+
     /** Long enough for a font stack or a two-layer shadow; nothing legitimate needs more. */
     private const int MAX_LENGTH = 200;
 
@@ -56,6 +62,8 @@ enum TokenType: string
             self::Shadow => preg_match('/^[a-z0-9#.,%\/\s()+-]+$/i', $value) === 1,
             self::Number => preg_match("/^{$number}$/", $value) === 1,
             self::Time => preg_match('/^(?:\d+\.?\d*|\.\d+)(?:ms|s)$/i', $value) === 1,
+            self::LineHeight => self::Number->accepts($value) || self::Length->accepts($value),
+            self::LetterCase => in_array($value, ['none', 'uppercase', 'lowercase', 'capitalize'], true),
             self::Easing => preg_match('/^(?:linear|ease|ease-in|ease-out|ease-in-out|step-start|step-end)$/', $value) === 1
                 || preg_match('/^(?:cubic-bezier|steps|linear)\([a-z0-9.,%\s-]*\)$/i', $value) === 1,
         };

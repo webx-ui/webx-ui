@@ -96,6 +96,7 @@ final class BlockResource extends JsonResource
 
             // The theme's vocabulary for the editor's live token lints; null without a theme.
             $payload['tokens'] = SiteTokens::names();
+            $payload['optional_tokens'] = SiteTokens::optional();
 
             // What the editor of a component shows under the template: the module's place, when
             // one declared it, and the fields of every data shape its input names.

@@ -60,7 +60,9 @@ trait ModuleThemeContract
                     $this->assertContains($variable, $declared[1], "{$name}: {$variable} is declared nowhere in the stylesheet.");
                 } else {
                     $this->assertStringStartsWith('--site-', $variable, "{$name}: {$variable} is neither a site token nor the module's own --webx-* (§7.2).");
-                    $this->assertSame(')', $after, "{$name}: var({$variable}, …) has a fallback.");
+                    if (! Vocabulary::base()->optional(substr($variable, 7))) {
+                        $this->assertSame(')', $after, "{$name}: var({$variable}, …) has a fallback.");
+                    }
                 }
             }
         }

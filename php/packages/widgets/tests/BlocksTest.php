@@ -781,7 +781,7 @@ final class BlocksTest extends TestCase
 
         $styles = (string) json_decode((string) file_get_contents(__DIR__.'/../resources/blocks/tabs.json'), true)['styles'];
         $this->assertStringContainsString(".b-tabs[data-webx-overlap] {\n    position: relative;\n}", $styles, 'its edge placed from the section in any theme');
-        $this->assertStringContainsString('font-size: var(--site-font-size-6, 0.875em);', $styles, 'a size of its own where the theme has none');
+        $this->assertStringContainsString('font-size: var(--site-eyebrow-size, var(--site-font-size-6, 0.875em));', $styles, 'a size of its own where the theme has none');
     }
 
     #[Test]

@@ -26,6 +26,7 @@ export function lintBlock(
   content: { template: string; styles: string; schema: ScreenNode[] },
   t: Translate,
   tokens: string[] | null = null,
+  optional: string[] = [],
 ): Lint[] {
   const lints: Lint[] = []
 
@@ -108,15 +109,21 @@ export function lintBlock(
     })
   }
 
-  return [...lints, ...tokenLints(content.styles, tokens, t)]
+  return [...lints, ...tokenLints(content.styles, tokens, t, optional)]
 }
 
 /**
  * CSS knows only tokens (THEMES §8), as warnings: a literal colour or font, a `--site-*` the
  * theme does not have, a fallback inside one — one line per kind, on the first place it stands.
- * Only on a site with a theme (`tokens` is its vocabulary, null without one). `Lints::tokens()`.
+ * Only on a site with a theme (`tokens` is its vocabulary, null without one); an optional token
+ * (`optional`, THEMES §7.2) keeps its fallback. `Lints::tokens()`.
  */
-export function tokenLints(styles: string, tokens: string[] | null, t: Translate): Lint[] {
+export function tokenLints(
+  styles: string,
+  tokens: string[] | null,
+  t: Translate,
+  optional: string[] = [],
+): Lint[] {
   if (tokens === null || styles.trim() === '') return []
 
   const codes: Record<CssProblem, [string, 'values' | 'tokens']> = {
@@ -127,7 +134,7 @@ export function tokenLints(styles: string, tokens: string[] | null, t: Translate
   }
   const grouped = new Map<CssProblem, [string, number][]>()
 
-  for (const finding of cssFindings(styles, tokens)) {
+  for (const finding of cssFindings(styles, tokens, optional)) {
     grouped.set(finding.problem, [
       ...(grouped.get(finding.problem) ?? []),
       [finding.subject, finding.line],

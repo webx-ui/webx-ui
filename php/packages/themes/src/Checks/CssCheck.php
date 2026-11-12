@@ -15,7 +15,8 @@ use WebxUi\Themes\Vocabulary;
  *  - no literal family in `font-family` / `font`: the generic ones are allowed;
  *  - no `var(--site-…)` the vocabulary does not have — it is silently empty;
  *  - no fallback inside `var(--site-…)`: it is a literal value again, only quieter (a block's own
- *    variable, `var(--team-columns, 3)`, keeps its default);
+ *    variable, `var(--team-columns, 3)`, keeps its default; so does an optional token of §7.2,
+ *    `var(--site-section-space, var(--site-space-6))`, which has no value until a site gives one);
  *  - no `@media` by width: the container decides.
  *  - no `@media` by `prefers-color-scheme`: the engine prints the dark scheme from tokens.json.
  *
@@ -139,7 +140,9 @@ final class CssCheck
                 $found[] = [CssProblem::UnknownToken, (int) $reference[0][1], "--{$name}"];
             }
 
-            if ($reference[2][0] === ',') {
+            // The optional tokens (§7.2) have no value until a site gives one, and a fallback is
+            // how a block keeps its own look until then.
+            if ($reference[2][0] === ',' && ! $vocabulary->optional(substr($name, 5))) {
                 $found[] = [CssProblem::Fallback, (int) $reference[0][1], "var(--{$name}, …)"];
             }
         }

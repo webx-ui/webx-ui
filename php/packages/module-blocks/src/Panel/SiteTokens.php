@@ -47,4 +47,16 @@ final class SiteTokens
     {
         return self::vocabulary()?->names();
     }
+
+    /**
+     * Of those, the optional ones (THEMES §7.2): a block reads them with a fallback.
+     *
+     * @return list<string>|null
+     */
+    public static function optional(): ?array
+    {
+        $vocabulary = self::vocabulary();
+
+        return $vocabulary === null ? null : array_values(array_filter($vocabulary->names(), $vocabulary->optional(...)));
+    }
 }
