@@ -45,6 +45,19 @@ use WebxUi\Widgets\Facades\Widgets;
 Widgets::need('slider'); // dist/slider.js and slider.css on this page
 ```
 
+What a visitor does not see before they act — a form in a closed dialog, a banner a script shows
+later — is rendered inside `Widgets::later(fn () => …)`, in Blade `@webxLater(<when>)` …
+`@endwebxLater`. What it claims gets a stylesheet that does not block the first paint
+(`media="print"`, switched on once loaded, and a `<noscript>` copy). If the page also shows the same
+widget straight away, its stylesheet blocks as usual. The dialogs of `module-inbox` forms are
+already rendered this way.
+
+```blade
+@webxLater(! $shownByTheServer)
+    <x-webx-form :action="$url">…</x-webx-form>
+@endwebxLater
+```
+
 - **The cookie banner** (`consent.js|css`) is on every page: the package prints it before `</body>`
   by itself — there is no component to place and none to forget.
 - A lightbox link and a link to a form in a dialog are found in the finished page: a link written

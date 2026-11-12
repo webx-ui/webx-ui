@@ -169,6 +169,11 @@ class WidgetsServiceProvider extends ServiceProvider
         // whose forms should still send in place. Under a theme it adds nothing.
         Blade::directive('webxWidgets', static fn (): string => Widgets::SCRIPTS);
 
+        // What a visitor does not see before they act — a banner a script shows later — claims its
+        // widgets without holding the first paint (§4): `@webxLater(<when>)` … `@endwebxLater`.
+        Blade::directive('webxLater', static fn (string $when = ''): string => sprintf('<?php app(\\%s::class)->hold(%s); try { ?>', Widgets::class, trim($when) !== '' ? '(bool) ('.$when.')' : 'true'));
+        Blade::directive('endwebxLater', static fn (): string => sprintf('<?php } finally { app(\\%s::class)->release(); } ?>', Widgets::class));
+
         // A section that slides over the one above it (§14.1): the attribute on its root, the edge picture inside.
         Blade::directive('webxOverlap', static fn (string $arguments = ''): string => sprintf('<?php echo \\%s::attributes(%s); ?>', Overlap::class, trim($arguments) !== '' ? trim($arguments) : 'false'));
         Blade::directive('webxOverlapEdge', static fn (string $arguments = ''): string => sprintf('<?php echo \\%s::edge(%s); ?>', Overlap::class, trim($arguments) !== '' ? trim($arguments) : 'false'));

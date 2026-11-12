@@ -24,9 +24,12 @@
             {{ __('webx-users::auth.verify.banner') }}
             <span class="webx-users-verify__email" data-webx-users-email>{{ $visitor !== null ? \WebxUi\Users\Emails\Mask::email($visitor->email) : '' }}</span>
         </p>
+        {{-- Hidden until the script shows it: its form's stylesheet need not hold the first paint. --}}
+        @webxLater(! $private)
         <x-webx-form :action="$urls->to('verify.resend')" class="webx-users-verify__form" data-webx-users-sent="{{ __('webx-users::auth.verify.sent_short') }}">
             <x-webx-form.submit>{{ __('webx-users::auth.verify.resend') }}</x-webx-form.submit>
         </x-webx-form>
+        @endwebxLater
         <button type="button" class="webx-users-verify__close" data-webx-users-close aria-label="{{ __('webx-users::auth.verify.close') }}">&times;</button>
     </div>
     @once

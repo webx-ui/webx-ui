@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Route;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Compositions\Compositions;
 use WebxUi\Users\Http\ScriptController;
+use WebxUi\Widgets\Facades\Widgets;
 
 /**
  * «Confirm your e-mail» (spec §8.3, §11.6). A page cached for everybody prints the banner hidden
@@ -44,6 +45,16 @@ final class BannerTest extends TestCase
         $this->assertStringContainsString('action="http://localhost/account/verify/resend"', $html);
         $this->assertMatchesRegularExpression('~<script type="module" src="http://localhost/webx/users/users\.js\?v=[0-9a-f]{16}"></script>~', $html);
         $this->assertStringNotContainsString('@example', $html);
+    }
+
+    #[Test]
+    public function the_hidden_banners_form_does_not_hold_the_first_paint(): void
+    {
+        // Hidden until `users.js` shows it: the form's stylesheet is not waited for (widgets spec §4).
+        Blade::render('@include(\'webx-users::components.verify-banner\')');
+
+        $this->assertContains('form', Widgets::claimed());
+        $this->assertContains('form', Widgets::claimedLater());
     }
 
     #[Test]
