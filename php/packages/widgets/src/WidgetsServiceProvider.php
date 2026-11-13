@@ -125,6 +125,8 @@ class WidgetsServiceProvider extends ServiceProvider
         $this->app->scoped(HeaderNavigation::class);
         $this->app->scoped(Sliders::class);
         $this->app->scoped(FormDialogs::class);
+        // Scoped: the first hero of one page is not the first of the next.
+        $this->app->scoped(FirstScreen::class);
         // Scoped too: the answer is read once from the request it came with.
         $this->app->scoped(Consent::class);
         // Scoped: a request puts off the fetch of each missing poster once.

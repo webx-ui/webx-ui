@@ -921,7 +921,10 @@ sink › Blocks › Call to action: на картинке 21:9 во всё ок�
   `height` `auto`/`screen` (по умолчанию `auto`), при `screen` — `position` `center`/`top` (по
   умолчанию `center`). `badge` (`wx-media`, PNG или SVG с прозрачностью) — последним в `__inner`,
   под словами и кнопками, по центру (`align-self: center`), без тени поверх: тень лежит под словами.
-  Первый экран, поэтому без `loading="lazy"`.
+  Первый экран, поэтому без `loading="lazy"`. У **первого** `hero` страницы `b-hero__picture` и
+  `b-hero__badge` — с `fetchpriority="high"` (правило 38: значок часто и есть LCP): кто первый,
+  решает `WebxUi\Widgets\FirstScreen::claim('hero')` — scoped на запрос, пустой `hero` (ничего не
+  печатает) не спрашивает. Второй `hero` страницы — без приоритета.
 - **Классы.** `b-hero--screen` и `b-hero--at-middle` / `b-hero--at-top`, `b-hero__eyebrow`,
   `b-hero__badge`. Высота экрана — `min-height: calc(100svh - var(--hero-above, 0px))`, наименьшая:
   слова, которым мало, растягивают блок; слова — по вертикали flex'ом (`align-items`).

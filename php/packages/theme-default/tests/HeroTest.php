@@ -10,6 +10,7 @@ use Orchestra\Testbench\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Themes\ThemeLocator;
 use WebxUi\Themes\ThemeServiceProvider;
+use WebxUi\Widgets\FirstScreen;
 use WebxUi\Widgets\WidgetsServiceProvider;
 
 /**
@@ -61,6 +62,9 @@ final class HeroTest extends TestCase
             'a line alone' => ['title' => '', 'button_label' => ''],
             'nothing to say' => ['title' => '', 'subtitle' => ''],
         ];
+
+        // A hero after the first: the first screen's priority is the one thing the first adds.
+        FirstScreen::claim('hero');
 
         foreach ($saved as $case => $values) {
             $before = Blade::render((string) file_get_contents(__DIR__.'/Fixtures/before/hero.blade.php'), $this->data($values, saved: true), deleteCachedView: true);
@@ -131,7 +135,7 @@ final class HeroTest extends TestCase
     {
         $html = $this->render(['tone' => 'image', 'image' => self::PICTURE, 'height' => 'screen', 'position' => 'top', 'button_label' => '', 'badge' => self::BADGE]);
 
-        $this->assertMatchesRegularExpression('~<p class="b-hero__subtitle">[^<]*</p>\s*<img class="b-hero__badge" src="/media/ribbons\.png" alt="Two award ribbons"\s+width="169" height="362"\s*>\s*</div>\s*</section>~', $html);
+        $this->assertMatchesRegularExpression('~<p class="b-hero__subtitle">[^<]*</p>\s*<img class="b-hero__badge" src="/media/ribbons\.png" alt="Two award ribbons"\s+width="169" height="362"\s*fetchpriority="high">\s*</div>\s*</section>~', $html);
         // Inside the words, not under the shade; and the first screen is never lazy.
         $this->assertSame(1, substr_count($html, 'b-hero__shade'));
         $this->assertLessThan(strpos($html, 'b-hero__badge'), strpos($html, 'b-hero__shade'));
@@ -140,6 +144,29 @@ final class HeroTest extends TestCase
         $this->assertMatchesRegularExpression('~</div>\s*<img class="b-hero__badge"~', $this->render(['badge' => self::BADGE]));
         $this->assertStringNotContainsString('b-hero__badge', $this->render(['badge' => ['url' => '', 'alt' => '']]));
         $this->assertStringContainsString('b-hero__badge', $this->render(['title' => '', 'subtitle' => '', 'badge' => self::BADGE]));
+    }
+
+    #[Test]
+    public function the_first_hero_of_the_page_fetches_its_pictures_first(): void
+    {
+        $values = ['tone' => 'image', 'image' => self::PICTURE, 'height' => 'screen', 'badge' => self::BADGE];
+
+        // An empty hero prints nothing and leaves the first screen to the next one.
+        $this->assertSame('', trim($this->render(['title' => '', 'subtitle' => ''])));
+
+        $first = $this->render($values);
+        $this->assertMatchesRegularExpression('~<img class="b-hero__picture" [^>]*height="1080"\s*fetchpriority="high">~', $first);
+        $this->assertMatchesRegularExpression('~<img class="b-hero__badge" [^>]*height="362"\s*fetchpriority="high">~', $first);
+        $this->assertStringNotContainsString('loading=', $first);
+
+        // A second hero of the same page waits its turn.
+        $second = $this->render($values);
+        $this->assertStringContainsString('b-hero__badge', $second);
+        $this->assertStringNotContainsString('fetchpriority', $second);
+
+        // The next request is a page of its own.
+        $this->app->forgetScopedInstances();
+        $this->assertSame(2, substr_count($this->render($values), 'fetchpriority="high"'));
     }
 
     /**

@@ -40,6 +40,9 @@ final class GalleryTest extends TestCase
     /** The fields of this stage; a block saved before it has none of them. */
     private const array NEW = ['eyebrow', 'intro', 'align', 'frames', 'gap', 'captions', 'narrow', 'arrows_at'];
 
+    /** What a mosaic's picture says to the browser: fetched near the screen, decoded off the main thread. */
+    private const string LATER = ' loading="lazy" decoding="async"';
+
     /** Each render a block of its own key, as on a page. */
     private int $rendered = 0;
 
@@ -117,8 +120,9 @@ final class GalleryTest extends TestCase
             $then = $this->render($values, 'k-now');
             $this->after();
 
-            $this->assertSame(self::tight($then), self::tight($now), $case);
-            $this->assertSame(self::tight($then), self::tight($defaults), "{$case}, the new fields at their defaults");
+            // The mosaic's pictures wait until they near the screen: the one thing it adds.
+            $this->assertSame(self::earlier($then), self::earlier($now), $case);
+            $this->assertSame(self::earlier($then), self::earlier($defaults), "{$case}, the new fields at their defaults");
         }
     }
 
@@ -240,6 +244,23 @@ final class GalleryTest extends TestCase
     }
 
     #[Test]
+    public function the_mosaic_still_and_turning_fetches_its_pictures_near_the_screen(): void
+    {
+        $pictures = $this->pictures(6);
+
+        foreach (['still' => 3, 'slider' => 6] as $mosaic => $count) {
+            foreach ([true, false] as $zoom) {
+                $html = $this->render(['pictures' => $pictures, 'view' => 'mosaic', 'mosaic' => $mosaic, 'zoom' => $zoom]);
+                $case = $mosaic.($zoom ? ', with zoom' : ', without zoom');
+
+                $this->assertSame($count, substr_count($html, '<img class="b-gallery__image"'), $case);
+                $this->assertSame($count, preg_match_all('~<img class="b-gallery__image"[^>]*height="1200"\s*loading="lazy" decoding="async">~', $html), $case);
+                $this->assertStringNotContainsString('fetchpriority', $html, $case);
+            }
+        }
+    }
+
+    #[Test]
     public function the_ribbon_links_each_frame_to_its_post_in_a_new_tab_with_its_badge(): void
     {
         $link = static fn (string $url): array => ['target' => 'url', 'entity_type' => null, 'entity_id' => null, 'url' => $url, 'hash' => null, 'new_tab' => false, 'rel' => []];
@@ -338,6 +359,15 @@ final class GalleryTest extends TestCase
     private static function tight(string $html): string
     {
         return trim((string) preg_replace(['~\s+~', '~ >~'], [' ', '>'], $html));
+    }
+
+    /**
+     * The markup without what the mosaic's pictures say since: a carousel's slides past the first
+     * were lazy by the slider's hand, and its id is a hash of its slides, so both go too.
+     */
+    private static function earlier(string $html): string
+    {
+        return self::tight((string) preg_replace(['~webx-slider-[0-9a-f]{8}~', '~<img loading="lazy" ~'], ['webx-slider-*', '<img '], str_replace(self::LATER, '', $html)));
     }
 
     /** @return array<string, array<string, mixed>> */
