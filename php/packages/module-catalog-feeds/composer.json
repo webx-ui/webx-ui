@@ -37,11 +37,11 @@
         "illuminate/support": "^13.0",
         "illuminate/validation": "^13.0",
         "seld/jsonlint": "^1.11",
-        "webx-ui/localization": "^0.95.0",
-        "webx-ui/mcp": "^0.95.0",
-        "webx-ui/module-admin": "^0.95.0",
-        "webx-ui/module-catalog": "^0.95.0",
-        "webx-ui/templates": "^0.95.0"
+        "webx-ui/localization": "^0.95.1",
+        "webx-ui/mcp": "^0.95.1",
+        "webx-ui/module-admin": "^0.95.1",
+        "webx-ui/module-catalog": "^0.95.1",
+        "webx-ui/templates": "^0.95.1"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
