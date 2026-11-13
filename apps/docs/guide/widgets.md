@@ -246,6 +246,38 @@ slides are named "2 / 6" and Swiper announces the move already. Its colours and 
 `--webx-slider-count-color`, `--webx-slider-count-current`, `--webx-slider-count-size`; one slide
 prints no controls at all. Kitchen sink › Slider › Photos with a counter shows it.
 
+A pane that stands still over the slides — the words of each slide fading one into the next while
+the pictures move under it — is the `overlay` slot. It is printed hidden and shown by the script;
+its `.webx-slider__caption` elements, one per slide in order inside a `.webx-slider__captions`,
+follow the slide in view: the current one has `is-current`, the others are `inert` and hidden
+from a screen reader. The crossfade lasts `--webx-slider-caption-fade` (none with reduced motion).
+`pagination-in` names an element of the overlay that takes the dots, each saying "Slide 2 of 4":
+
+```blade
+<x-webx-slider :arrows="false" :autoplay="5000" :pause="false" pagination-in=".plate__dots">
+    <x-webx-slide>…</x-webx-slide>
+    <x-slot:overlay>
+        <div class="plate">
+            <div class="webx-slider__captions" aria-live="polite">
+                <div class="webx-slider__caption is-current">…</div>
+                <div class="webx-slider__caption" inert aria-hidden="true">…</div>
+            </div>
+            <div class="plate__dots"></div>
+        </div>
+    </x-slot:overlay>
+</x-webx-slider>
+```
+
+`:pause="false"` leaves the pause button out; the slider still stops under the pointer and with
+the focus inside, and the site audit does not count it as a lost button. Every change of the slide
+is an event on the slider's root, for whatever a theme draws around it:
+
+```js
+slider.addEventListener('webx:slide', (event) => {
+  const { index, count, auto } = event.detail // index from 0; auto — autoplay moved it
+})
+```
+
 The lightbox (PhotoSwipe) opens any link with `data-webx-lightbox`; links with the same value page
 together. `<x-webx-lightbox :image="$picture">` takes a picture of the media library and writes
 its size; a link by hand needs `data-width` and `data-height` — without them the picture is

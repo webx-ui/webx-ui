@@ -315,12 +315,14 @@ final class CardsTest extends TestCase
         $this->assertSame(['when' => 'view', 'is' => 'slider'], self::field('dots')['visible']);
         $this->assertStringContainsString('{"when":"view","is":"split"}', (string) json_encode(self::field('interval')['visible']));
 
-        $html = $this->render(['view' => 'split', 'pictures' => 'overlay', 'columns' => '4', 'arrows' => true, 'dots' => false, 'autoplay' => true, 'interval' => 6, 'heading' => 'Homes', 'button_label' => 'All flats', 'button_link' => self::LINK, 'cards' => [
+        // The photo across the card; under the words it is the pane over the carousel, below.
+        $html = $this->render(['view' => 'split', 'pictures' => 'photo', 'columns' => '4', 'arrows' => true, 'dots' => false, 'autoplay' => true, 'interval' => 6, 'heading' => 'Homes', 'button_label' => 'All flats', 'button_link' => self::LINK, 'cards' => [
             ['image' => self::HALL, 'title' => 'One'],
             ['image' => self::KITCHEN, 'title' => 'Two'],
         ]]);
 
-        $this->assertStringContainsString('class="b-cards b-cards--4 b-cards--overlay b-cards--carousel b-cards--split"', $html);
+        $this->assertStringContainsString('class="b-cards b-cards--4 b-cards--photo b-cards--carousel b-cards--split"', $html);
+        $this->assertStringNotContainsString('b-cards__plate', $html);
         $this->assertMatchesRegularExpression('~</div>\s*<div class="b-cards__carousel"[^>]*>\s*<section id="webx-slider-[\w-]+" data-webx-slider=~', $html);
         // One card at every width, no arrows, the pagination always, turning every six seconds.
         $this->assertMatchesRegularExpression('~--webx-slider-per-view: 1; \}</style>~', $html);
@@ -335,6 +337,46 @@ final class CardsTest extends TestCase
         $this->assertStringContainsString('height: 3px', $styles['.b-cards--split .webx-slider__bullet::before']);
         // On a narrow screen the carousel covers the gutters of the main column.
         $this->assertStringContainsString('margin-inline: calc(-1 * var(--site-section-gutter, var(--site-gutter)))', $styles['.b-cards--split:where(.site-main > *) > .b-cards__carousel, .b-cards--overlay:where(.site-main > *) > .b-cards__carousel, .b-cards--overlay:where(.site-main > *) > .b-cards__grid']);
+    }
+
+    #[Test]
+    public function split_with_the_photo_under_the_words_is_one_pane_over_the_carousel_with_the_lines_in_it(): void
+    {
+        $html = $this->render(['view' => 'split', 'pictures' => 'overlay', 'autoplay' => true, 'interval' => 5, 'heading' => 'Places', 'cards' => [
+            ['image' => self::HALL, 'title' => 'One', 'text' => 'Short.', 'link_label' => 'More', 'link' => self::LINK],
+            ['image' => self::KITCHEN, 'title' => 'Two', 'text' => 'A longer text that wraps.'],
+            ['image' => self::VIEW, 'title' => 'Three'],
+        ]]);
+
+        $this->assertStringContainsString('class="b-cards b-cards--3 b-cards--overlay b-cards--carousel b-cards--split b-cards--plated"', $html);
+        // The pane is the slider's overlay, out of the track, printed hidden for the script to show.
+        $this->assertMatchesRegularExpression('~webx-slider--overlaid"~', $html);
+        $this->assertMatchesRegularExpression('~<div class="webx-slider__overlay" hidden><div class="b-cards__plate">\s*<div class="b-cards__plate-items webx-slider__captions" aria-live="polite">~', $html);
+        $this->assertSame(3, substr_count($html, 'class="b-cards__plate-item webx-slider__caption'));
+        $this->assertSame(1, substr_count($html, 'webx-slider__caption is-current'));
+        $this->assertSame(2, substr_count($html, 'inert aria-hidden="true"'));
+        // Every card keeps its words in its slide too: that is what shows without the script.
+        $this->assertSame(6, substr_count($html, '<div class="b-cards__body">'));
+        $this->assertSame(2, substr_count($html, 'href="/flats/12"'));
+        // The lines are in the pane, under the words; no pause button, no controls under the slider.
+        $this->assertMatchesRegularExpression('~</div>\s*<div class="b-cards__bars"></div>\s*</div></div>~', $html);
+        $this->assertStringContainsString('&quot;paginationIn&quot;:&quot;.b-cards__bars&quot;', $html);
+        $this->assertStringContainsString('&quot;pause&quot;:false', $html);
+        $this->assertStringNotContainsString('webx-slider__pause', $html);
+        $this->assertStringNotContainsString('webx-slider__controls', $html);
+        $this->assertStringContainsString('&quot;autoplay&quot;:5000', $html);
+
+        // One card: nothing to choose, no lines.
+        $this->app->forgetInstance(Sliders::class);
+        $this->assertStringNotContainsString('<div class="b-cards__bars">', $this->render(['view' => 'split', 'pictures' => 'overlay', 'cards' => [['image' => self::HALL, 'title' => 'One']]]));
+
+        $styles = self::rules((string) self::type()['styles']);
+        foreach (['--cards-plate-fade: 400ms', '--cards-bar-width: 32px', '--cards-bar-height: 3px', '--cards-bar-gap', '--cards-bar-color', '--cards-bar-current', '--cards-bars-space'] as $knob) {
+            $this->assertStringContainsString($knob, $styles['.b-cards--plated']);
+        }
+        $this->assertStringContainsString('--webx-slider-caption-fade: var(--cards-plate-fade)', $styles['.b-cards--plated .webx-slider']);
+        $this->assertStringContainsString('display: none', $styles['.b-cards--plated .webx-slider.is-ready .webx-slider__slide .b-cards__body']);
+        $this->assertStringContainsString('position: relative', $styles['.b-cards__plate']);
     }
 
     /**

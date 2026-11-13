@@ -41,9 +41,9 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
   `contact_button => false`), `<x-webx-contact-bar form breakpoint>`, `<x-webx-socials>`, `<x-webx-icon name>`.
 - **Language switcher** — `<x-webx-language-switcher layout="dropdown|list" codes>`: the same page
   in each language (`routing`), else its home page with `is-fallback`; `LanguageLinks::current()`.
-- **Slider** — `<x-webx-slider variant="cards|hero|gallery|logos" :per-view="['sm' => 1.2, 'lg' => 3]">`
-  with `<x-webx-slide thumb>`; per view by its own width (`sm` 0, `md` 640, `lg` 960, `xl` 1280);
-  `pagination` true|false|`fraction` (counter "1/6", aria-hidden); `options` — Swiper. No JS: a snapping strip.
+- **Slider** — `<x-webx-slider variant="cards|hero|gallery|logos" :per-view="['sm' => 1.2, 'lg' => 3]">` with `<x-webx-slide thumb>`; per view by its own width (`sm` 0, `md` 640, `lg` 960, `xl` 1280);
+  `pagination` true|false|`fraction` (counter "1/6", aria-hidden); `options` — Swiper. No JS: a snapping strip. `<x-slot:overlay>` — a still pane over the slides (hidden until ready): its `.webx-slider__caption`s follow the slide (`is-current`, the rest `inert`), `pagination-in=".sel"` puts the dots in it ("Slide 2 of 4");
+  `:pause="false"` — no pause button (hover/focus still hold; the audit leaves it). Event `webx:slide` on the root, `detail: { index, count, auto }` — index from 0, a loop's copies not counted.
 - **Lightbox** — any `<a data-webx-lightbox="<group>" data-width data-height>` on the page, or
   `<x-webx-lightbox :image="$picture" group ratio="4:3" opacity>`: `ratio` a frame the picture fits into whole (`data-webx-lightbox-ratio`),
   the backdrop opaque unless `--webx-lightbox-backdrop-opacity` says less; closing keeps the page's scroll. **Zoom** — `<x-webx-zoom :image mode frame>` (`inner|side`,
