@@ -206,7 +206,9 @@ final class GalleryTest extends TestCase
         $this->assertSame(1, substr_count($three, 'b-gallery__mosaic--3'));
 
         $styles = (string) self::type()['styles'];
-        $this->assertMatchesRegularExpression('~\.b-gallery--arrows-head \.webx-slider__controls \{\s*order: -1;~', $styles);
+        $this->assertMatchesRegularExpression('~\.b-gallery--arrows-head \.webx-slider__controls \{\s*order: -1;\s*grid-row: 1;~', $styles);
+        // The slider names its first cell for the slides (an overlay shares it): `order` alone would leave the arrows under them.
+        $this->assertMatchesRegularExpression('~\.b-gallery--arrows-head \.webx-slider__viewport,\s*\.b-gallery--arrows-head \.webx-slider__overlay \{\s*grid-row: 2;~', $styles);
         $this->assertStringContainsString('--gallery-arrow-size: 52px;', $styles);
         $this->assertStringContainsString('--gallery-head-space: var(--site-space-6, 2rem);', $styles);
         $this->assertStringContainsString('--gallery-arrows-space: calc(var(--site-space-6, 2rem) + var(--site-space-2, 0.5rem));', $styles);
