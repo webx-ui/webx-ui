@@ -47,7 +47,9 @@
   --webx-slider-easing: linear;
 }
 
+/* The first cell, named: the overlay shares it, and the controls and thumbnails come after. */
 .webx-slider__viewport {
+  grid-area: 1 / 1;
   position: relative;
   overflow: hidden;
   min-width: 0;
@@ -107,13 +109,10 @@
 }
 
 /* The overlay: a pane in the slides' own cell, over them, that does not move with them. Printed
-   `hidden` and shown by the script; the slot's content says where in the cell it stands. */
-.webx-slider--overlaid > .webx-slider__viewport,
-.webx-slider--overlaid > .webx-slider__overlay {
-  grid-area: 1 / 1;
-}
-
+   `hidden` and shown by the script; the slot's content says where in the cell it stands. The
+   slider says it has one with `webx-slider--overlaid`, for a theme. */
 .webx-slider__overlay {
+  grid-area: 1 / 1;
   position: relative;
   z-index: 2;
   min-width: 0;
