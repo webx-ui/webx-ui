@@ -9,14 +9,22 @@
  * edge (as wide as the page) — under reduced motion too, which pins nothing.
  *
  * The pin and the fading are the script's classes only (behaviours/overlap.js): `webx-overlap-pinned`
- * on the section above, `webx-overlap-fade` on its marked words and layers, `webx-overlap-pinned--script`
- * and `webx-overlap-fade--script` where the browser has no scroll-driven animations. With reduced
- * motion or in print nothing is pinned.
+ * on the section above, `webx-overlap-fade` on its marked words and layers, `webx-overlap--rising`
+ * on this section (it comes up faster than the page) and `webx-overlap__edge--whole` on its edge (not
+ * clipped), and the `--script` ones where the browser has no scroll-driven animations. With reduced motion or in print nothing is pinned.
+ *
+ * At rest only the lowest `--webx-overlap-peek` of the screen's height of the edge stands over the
+ * section above: a picture as tall as half the screen would hide its words before anything moved.
+ * The rest of it shows only while this section comes up.
  */
 
 :where(:root) {
   /* Under the section where its block has no background of its own, and beside it to the page's edges. */
   --webx-overlap-bg: var(--site-color-bg);
+  /* Parts of the screen's height: how much of the edge stands over the section above at rest, and
+     the tallest the edge gets — a picture as wide as the page grows with the page, not the screen. */
+  --webx-overlap-peek: 0.18;
+  --webx-overlap-edge-max: 0.6;
   /* The script measures and writes the rest on the section above (behaviours/overlap.js says how). */
   --webx-overlap-timeline: none;
   --webx-overlap-top: 0px;
@@ -26,6 +34,10 @@
   /* The fallback script's: how far the words have faded, 0 to 1, and how far the section has gone up. */
   --webx-overlap-progress: 0;
   --webx-overlap-lift: 0px;
+  /* This section's own: how far below its place it waits, over how much of the way it comes back. */
+  --webx-overlap-sink: 0px;
+  --webx-overlap-rise: 1px;
+  --webx-overlap-sunk: 0px;
 }
 
 /* The script's, even under reduced motion: the section stands over the one above, on a
@@ -69,6 +81,10 @@
   width: 100%;
   max-width: none;
   pointer-events: none;
+  /* At rest: its lowest part only. A clip, not a height: the box stays as tall when the script
+     shows all of it — no layout shift. */
+  clip-path: inset(max(0px, calc(100% - var(--webx-overlap-peek) * 100vh)) 0 0 0);
+  clip-path: inset(max(0px, calc(100% - var(--webx-overlap-peek) * 100svh)) 0 0 0);
 }
 
 .webx-overlap__edge--page {
@@ -77,12 +93,20 @@
   translate: -50% 0;
 }
 
+/* No taller than a part of the screen: cut from the top, so its bottom row still meets the section.
+   Its top fades in, so a cut through a cloud is not a straight line; a fog's top is clear anyway. */
 .webx-overlap__image {
   display: block;
   width: 100%;
   max-width: none;
   height: auto;
+  max-height: calc(var(--webx-overlap-edge-max) * 100vh);
+  max-height: calc(var(--webx-overlap-edge-max) * 100svh);
   border-radius: 0;
+  object-fit: cover;
+  object-position: center bottom;
+  /* A mask reads only the alpha: the colour of the words is opaque, and no literal colour is needed. */
+  mask-image: linear-gradient(to bottom, transparent, currentColor 15%);
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -102,6 +126,25 @@
     animation-timeline: var(--webx-overlap-timeline);
     animation-range: cover var(--webx-overlap-start) cover
       calc(var(--webx-overlap-start) + var(--webx-overlap-hold));
+  }
+
+  /* This section waits `sink` below its place, its edge whole and as high as at rest, and comes back
+     over `rise` — faster than the page: the edge climbs over the section above. A `translate`, so
+     its place and its view timeline stay where they are. */
+  .webx-overlap.webx-overlap--rising {
+    animation: webx-overlap-rise linear both;
+    animation-timeline: var(--webx-overlap-timeline);
+    animation-range: cover var(--webx-overlap-start) cover
+      calc(var(--webx-overlap-start) + var(--webx-overlap-rise));
+  }
+
+  .webx-overlap__edge.webx-overlap__edge--whole {
+    clip-path: none;
+  }
+
+  .webx-overlap.webx-overlap--rising-script {
+    translate: 0 var(--webx-overlap-sunk);
+    animation: none;
   }
 
   .webx-overlap-pinned.webx-overlap-pinned--script {
@@ -125,6 +168,16 @@
   }
 }
 
+@keyframes webx-overlap-rise {
+  from {
+    translate: 0 var(--webx-overlap-sink);
+  }
+
+  to {
+    translate: none;
+  }
+}
+
 @keyframes webx-overlap-fade {
   to {
     opacity: 0;
@@ -141,5 +194,15 @@
   .webx-overlap-fade {
     opacity: 1;
     animation: none;
+  }
+
+  .webx-overlap.webx-overlap--rising,
+  .webx-overlap.webx-overlap--rising-script {
+    translate: none;
+    animation: none;
+  }
+
+  .webx-overlap__edge.webx-overlap__edge--whole {
+    clip-path: inset(max(0px, calc(100% - var(--webx-overlap-peek) * 100vh)) 0 0 0);
   }
 }
