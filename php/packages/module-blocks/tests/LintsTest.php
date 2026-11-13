@@ -6,6 +6,7 @@ namespace WebxUi\Blocks\Tests;
 
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Blocks\Panel\Lints;
+use WebxUi\Blocks\Panel\SiteTokens;
 use WebxUi\Themes\ThemeChain;
 use WebxUi\Themes\ThemeManifest;
 use WebxUi\Themes\Tokens;
@@ -79,6 +80,11 @@ final class LintsTest extends TestCase
 
         // Clean on the theme's tokens: nothing more to say.
         $this->assertSame([], Lints::check('hero', '<div data-wx-block="hero"></div>', '.b-hero { color: var(--site-color-text); font: inherit; }'));
+
+        // An optional token (THEMES §7.2) keeps its fallback: unset, the block keeps its own look.
+        $this->assertSame([], Lints::check('hero', '<div data-wx-block="hero"></div>', '.b-hero { padding-block: var(--site-section-space, var(--site-space-6)); }'));
+        $this->assertContains('section-space', SiteTokens::optional() ?? []);
+        $this->assertNotContains('space-6', SiteTokens::optional() ?? []);
     }
 
     #[Test]

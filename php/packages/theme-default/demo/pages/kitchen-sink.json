@@ -784,6 +784,232 @@
                 ]
               }
             }
+          ],
+          "children": [
+            {
+              "title": {
+                "en": "The first screen",
+                "ru": "Первый экран целиком",
+                "pl": "Pierwszy ekran"
+              },
+              "slug": {
+                "en": "first-screen",
+                "ru": "pervyy-ekran-tselikom",
+                "pl": "pierwszy-ekran"
+              },
+              "seo": {
+                "title": {
+                  "en": "The first screen",
+                  "ru": "Первый экран целиком",
+                  "pl": "Pierwszy ekran"
+                },
+                "description": {
+                  "en": "A hero as tall as the window, its words in the middle under an eyebrow, and the next section sliding over it.",
+                  "ru": "Первый экран высотой с окно: слова по центру под надзаголовком, следующая секция наезжает на него.",
+                  "pl": "Baner wysoki jak okno, słowa pośrodku pod nadtytułem, a następna sekcja nasuwa się na niego."
+                }
+              },
+              "blocks": [
+                {
+                  "key": "showcase-hero-screen",
+                  "type": "hero",
+                  "values": {
+                    "eyebrow": {
+                      "en": "A town by the sea",
+                      "ru": "Город у моря",
+                      "pl": "Miasto nad morzem"
+                    },
+                    "title": {
+                      "en": "Homes ==by the water==",
+                      "ru": "Дома ==у воды==",
+                      "pl": "Domy ==nad wodą=="
+                    },
+                    "subtitle": {
+                      "en": "The window’s height, the header included; the words in the middle, two buttons under them.",
+                      "ru": "Высота окна вместе с шапкой; слова по центру, под ними две кнопки.",
+                      "pl": "Wysokość okna razem z nagłówkiem; słowa pośrodku, pod nimi dwa przyciski."
+                    },
+                    "button_label": {
+                      "en": "See the homes",
+                      "ru": "Смотреть дома",
+                      "pl": "Zobacz domy"
+                    },
+                    "button_url": "/kitchen-sink/blocks/cards",
+                    "second_label": {
+                      "en": "Back to the hero",
+                      "ru": "Назад к первому экрану",
+                      "pl": "Wróć do banera"
+                    },
+                    "second_url": "/kitchen-sink/blocks/hero",
+                    "tone": "image",
+                    "image": {
+                      "path": "demo:showcase-photo-5",
+                      "alt": {
+                        "en": "A shore at dawn",
+                        "ru": "Берег на рассвете",
+                        "pl": "Brzeg o świcie"
+                      }
+                    },
+                    "align": "center",
+                    "width": "bleed",
+                    "height": "screen",
+                    "position": "center"
+                  }
+                },
+                {
+                  "key": "showcase-hero-screen-next",
+                  "type": "text",
+                  "values": {
+                    "heading": {
+                      "en": "The next section comes up over it",
+                      "ru": "Следующая секция наезжает на него",
+                      "pl": "Następna sekcja nasuwa się na niego"
+                    },
+                    "body": {
+                      "en": "This text has “Slide over the section above” on: scrolling, the hero stays and its words fade under it.",
+                      "ru": "У этого текста включено «Наезд на секцию выше»: при прокрутке первый экран стоит, а его слова гаснут под ним.",
+                      "pl": "Ten tekst ma włączone „Nasuń na sekcję wyżej”: przy przewijaniu baner stoi, a jego słowa gasną pod nim."
+                    },
+                    "width": "narrow",
+                    "overlap": true
+                  }
+                }
+              ]
+            },
+            {
+              "title": {
+                "en": "An inner page",
+                "ru": "Внутренняя страница",
+                "pl": "Strona wewnętrzna"
+              },
+              "slug": {
+                "en": "inner-page",
+                "ru": "vnutrennyaya-stranitsa",
+                "pl": "strona-wewnetrzna"
+              },
+              "seo": {
+                "title": {
+                  "en": "An inner page",
+                  "ru": "Внутренняя страница",
+                  "pl": "Strona wewnętrzna"
+                },
+                "description": {
+                  "en": "A hero as tall as the window with its words at the top and a badge under them, no buttons.",
+                  "ru": "Первый экран высотой с окно: слова сверху, под ними значок, без кнопок.",
+                  "pl": "Baner wysoki jak okno, słowa u góry i odznaka pod nimi, bez przycisków."
+                }
+              },
+              "blocks": [
+                {
+                  "key": "showcase-hero-top-badge",
+                  "type": "hero",
+                  "values": {
+                    "eyebrow": {
+                      "en": "About us",
+                      "ru": "О нас",
+                      "pl": "O nas"
+                    },
+                    "title": {
+                      "en": "Twenty years of building",
+                      "ru": "Двадцать лет строительства",
+                      "pl": "Dwadzieścia lat budowania"
+                    },
+                    "subtitle": {
+                      "en": "The words at the top, under the header; the badge in the middle under them, with no shade over it.",
+                      "ru": "Слова сверху, под шапкой; значок по центру под ними, без затенения.",
+                      "pl": "Słowa u góry, pod nagłówkiem; odznaka pośrodku pod nimi, bez cienia."
+                    },
+                    "tone": "image",
+                    "image": {
+                      "path": "demo:showcase-photo-6",
+                      "alt": {
+                        "en": "A courtyard in the evening",
+                        "ru": "Двор вечером",
+                        "pl": "Dziedziniec wieczorem"
+                      }
+                    },
+                    "align": "center",
+                    "width": "bleed",
+                    "height": "screen",
+                    "position": "top",
+                    "badge": {
+                      "path": "demo:showcase-badge",
+                      "alt": {
+                        "en": "Two award ribbons",
+                        "ru": "Две наградные ленты",
+                        "pl": "Dwie wstęgi nagród"
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "title": {
+                "en": "An inner page with a button",
+                "ru": "Внутренняя страница с кнопкой",
+                "pl": "Strona wewnętrzna z przyciskiem"
+              },
+              "slug": {
+                "en": "inner-page-button",
+                "ru": "vnutrennyaya-s-knopkoi",
+                "pl": "strona-z-przyciskiem"
+              },
+              "seo": {
+                "title": {
+                  "en": "An inner page with a button",
+                  "ru": "Внутренняя страница с кнопкой",
+                  "pl": "Strona wewnętrzna z przyciskiem"
+                },
+                "description": {
+                  "en": "A hero as tall as the window with its words at the top and one button.",
+                  "ru": "Первый экран высотой с окно: слова сверху и одна кнопка.",
+                  "pl": "Baner wysoki jak okno, słowa u góry i jeden przycisk."
+                }
+              },
+              "blocks": [
+                {
+                  "key": "showcase-hero-top-button",
+                  "type": "hero",
+                  "values": {
+                    "eyebrow": {
+                      "en": "Services",
+                      "ru": "Услуги",
+                      "pl": "Usługi"
+                    },
+                    "title": {
+                      "en": "What we do",
+                      "ru": "Что мы делаем",
+                      "pl": "Co robimy"
+                    },
+                    "subtitle": {
+                      "en": "The words at the top and one button under them.",
+                      "ru": "Слова сверху и одна кнопка под ними.",
+                      "pl": "Słowa u góry i jeden przycisk pod nimi."
+                    },
+                    "button_label": {
+                      "en": "Get in touch",
+                      "ru": "Связаться",
+                      "pl": "Napisz do nas"
+                    },
+                    "button_url": "/kitchen-sink/blocks/contact",
+                    "tone": "image",
+                    "image": {
+                      "path": "demo:showcase-photo-7",
+                      "alt": {
+                        "en": "A street in the rain",
+                        "ru": "Улица в дождь",
+                        "pl": "Ulica w deszczu"
+                      }
+                    },
+                    "align": "center",
+                    "width": "bleed",
+                    "height": "screen",
+                    "position": "top"
+                  }
+                }
+              ]
+            }
           ]
         },
         {
@@ -1142,9 +1368,9 @@
               "pl": "Karty"
             },
             "description": {
-              "en": "The cards block of the default theme: photos, icons and words alone, two to four across.",
-              "ru": "Блок карточек темы по умолчанию: фото, иконки и одни слова, от двух до четырёх в ряд.",
-              "pl": "Blok kart domyślnego motywu: zdjęcia, ikony i same słowa, od dwóch do czterech w rzędzie."
+              "en": "The cards block of the default theme: photos, icons and words alone, two to four across, the photo under the words, and the words beside a carousel.",
+              "ru": "Блок карточек темы по умолчанию: фото, иконки и одни слова, от двух до четырёх в ряд, фото под словами и слова рядом с каруселью.",
+              "pl": "Blok kart domyślnego motywu: zdjęcia, ikony i same słowa, od dwóch do czterech w rzędzie, zdjęcie pod słowami i słowa obok karuzeli."
             }
           },
           "blocks": [
@@ -1883,6 +2109,301 @@
                       "pl": "Dokumenty, reklamacje i zwrot palet."
                     },
                     "link_label": "",
+                    "link_url": ""
+                  }
+                ]
+              }
+            },
+            {
+              "key": "showcase-cards-overlay",
+              "type": "cards",
+              "values": {
+                "eyebrow": {
+                  "en": "Two tall cards",
+                  "ru": "Две высокие карточки",
+                  "pl": "Dwie wysokie karty"
+                },
+                "heading": {
+                  "en": "The photo under the words",
+                  "ru": "Фото под словами",
+                  "pl": "Zdjęcie pod słowami"
+                },
+                "intro": {
+                  "en": "The words stand on glass over the photo. The lines at the foot of the glass turn the photos; a click on a line does not open the card.",
+                  "ru": "Слова стоят на стекле поверх фото. Полоски внизу стекла переключают фото; клик по полоске не открывает карточку.",
+                  "pl": "Słowa stoją na szkle nad zdjęciem. Paski u dołu szkła zmieniają zdjęcia; kliknięcie paska nie otwiera karty."
+                },
+                "columns": "2",
+                "pictures": "overlay",
+                "view": "grid",
+                "cards": [
+                  {
+                    "image": {
+                      "path": "demo:showcase-photo-1",
+                      "alt": {
+                        "en": "A living room with a big window",
+                        "ru": "Гостиная с большим окном",
+                        "pl": "Salon z dużym oknem"
+                      }
+                    },
+                    "photos": [
+                      {
+                        "path": "demo:showcase-photo-2",
+                        "alt": {
+                          "en": "A kitchen",
+                          "ru": "Кухня",
+                          "pl": "Kuchnia"
+                        }
+                      },
+                      {
+                        "path": "demo:showcase-photo-3",
+                        "alt": {
+                          "en": "A bedroom",
+                          "ru": "Спальня",
+                          "pl": "Sypialnia"
+                        }
+                      }
+                    ],
+                    "title": {
+                      "en": "Homes by the park",
+                      "ru": "Дома у парка",
+                      "pl": "Domy przy parku"
+                    },
+                    "chips": [],
+                    "text": {
+                      "en": "Two and three rooms, a terrace on the top floor, the park across the road.",
+                      "ru": "Две и три комнаты, терраса на верхнем этаже, парк через дорогу.",
+                      "pl": "Dwa i trzy pokoje, taras na ostatnim piętrze, park po drugiej stronie ulicy."
+                    },
+                    "link_label": {
+                      "en": "See the rooms",
+                      "ru": "Посмотреть комнаты",
+                      "pl": "Zobacz pokoje"
+                    },
+                    "link": {
+                      "target": "url",
+                      "entity_type": null,
+                      "entity_id": null,
+                      "url": "/kitchen-sink/blocks/media-text",
+                      "hash": null,
+                      "new_tab": false,
+                      "rel": []
+                    },
+                    "link_url": ""
+                  },
+                  {
+                    "image": {
+                      "path": "demo:showcase-photo-4",
+                      "alt": {
+                        "en": "A bright hall",
+                        "ru": "Светлый холл",
+                        "pl": "Jasny hol"
+                      }
+                    },
+                    "photos": [
+                      {
+                        "path": "demo:showcase-photo-5",
+                        "alt": {
+                          "en": "A balcony",
+                          "ru": "Балкон",
+                          "pl": "Balkon"
+                        }
+                      },
+                      {
+                        "path": "demo:showcase-photo-6",
+                        "alt": {
+                          "en": "A study",
+                          "ru": "Кабинет",
+                          "pl": "Gabinet"
+                        }
+                      },
+                      {
+                        "path": "demo:showcase-photo-7",
+                        "alt": {
+                          "en": "A bathroom",
+                          "ru": "Ванная",
+                          "pl": "Łazienka"
+                        }
+                      }
+                    ],
+                    "title": {
+                      "en": "Flats by the river",
+                      "ru": "Квартиры у реки",
+                      "pl": "Mieszkania nad rzeką"
+                    },
+                    "chips": [],
+                    "text": {
+                      "en": "Quiet courtyards, a walk along the water, a school five minutes away.",
+                      "ru": "Тихие дворы, прогулка вдоль воды, школа в пяти минутах.",
+                      "pl": "Ciche podwórka, spacer wzdłuż wody, szkoła pięć minut stąd."
+                    },
+                    "link_label": {
+                      "en": "See the rooms",
+                      "ru": "Посмотреть комнаты",
+                      "pl": "Zobacz pokoje"
+                    },
+                    "link": {
+                      "target": "url",
+                      "entity_type": null,
+                      "entity_id": null,
+                      "url": "/kitchen-sink/blocks/cta",
+                      "hash": null,
+                      "new_tab": false,
+                      "rel": []
+                    },
+                    "link_url": ""
+                  }
+                ]
+              }
+            },
+            {
+              "key": "showcase-cards-split",
+              "type": "cards",
+              "values": {
+                "eyebrow": {
+                  "en": "Words beside a carousel",
+                  "ru": "Слова рядом с каруселью",
+                  "pl": "Słowa obok karuzeli"
+                },
+                "heading": {
+                  "en": "Life ==around the house==",
+                  "ru": "Жизнь ==вокруг дома==",
+                  "pl": "Życie ==wokół domu=="
+                },
+                "intro": {
+                  "en": "One card at a time, turning on its own every six seconds; the lines under it choose a card by hand. Visitors who ask for less motion turn them themselves.",
+                  "ru": "Одна карточка за раз, сама меняется каждые шесть секунд; полоски под ней выбирают карточку вручную. Тем, кто просит меньше движения, карточки сами не меняются.",
+                  "pl": "Jedna karta naraz, zmienia się sama co sześć sekund; paski pod nią wybierają kartę ręcznie. Kto prosi o mniej ruchu, przewija sam."
+                },
+                "button_label": {
+                  "en": "All the places",
+                  "ru": "Все места",
+                  "pl": "Wszystkie miejsca"
+                },
+                "button_link": {
+                  "target": "url",
+                  "entity_type": null,
+                  "entity_id": null,
+                  "url": "/kitchen-sink/blocks/text-tiles",
+                  "hash": null,
+                  "new_tab": false,
+                  "rel": []
+                },
+                "pictures": "overlay",
+                "view": "split",
+                "endless": true,
+                "autoplay": true,
+                "interval": 6,
+                "cards": [
+                  {
+                    "image": {
+                      "path": "demo:showcase-photo-5",
+                      "alt": {
+                        "en": "A garden",
+                        "ru": "Сад",
+                        "pl": "Ogród"
+                      }
+                    },
+                    "photos": [],
+                    "title": {
+                      "en": "The garden",
+                      "ru": "Сад",
+                      "pl": "Ogród"
+                    },
+                    "chips": [],
+                    "text": {
+                      "en": "Paths, benches and a lawn for the whole street.",
+                      "ru": "Дорожки, скамейки и газон на всю улицу.",
+                      "pl": "Ścieżki, ławki i trawnik dla całej ulicy."
+                    },
+                    "link_label": {
+                      "en": "Read more",
+                      "ru": "Подробнее",
+                      "pl": "Więcej"
+                    },
+                    "link": {
+                      "target": "url",
+                      "entity_type": null,
+                      "entity_id": null,
+                      "url": "/kitchen-sink/blocks/text",
+                      "hash": null,
+                      "new_tab": false,
+                      "rel": []
+                    },
+                    "link_url": ""
+                  },
+                  {
+                    "image": {
+                      "path": "demo:showcase-photo-6",
+                      "alt": {
+                        "en": "A playground",
+                        "ru": "Детская площадка",
+                        "pl": "Plac zabaw"
+                      }
+                    },
+                    "photos": [],
+                    "title": {
+                      "en": "The playground",
+                      "ru": "Площадка",
+                      "pl": "Plac zabaw"
+                    },
+                    "chips": [],
+                    "text": {
+                      "en": "Swings, a sandpit and shade in the afternoon.",
+                      "ru": "Качели, песочница и тень после обеда.",
+                      "pl": "Huśtawki, piaskownica i cień po południu."
+                    },
+                    "link_label": {
+                      "en": "Read more",
+                      "ru": "Подробнее",
+                      "pl": "Więcej"
+                    },
+                    "link": {
+                      "target": "url",
+                      "entity_type": null,
+                      "entity_id": null,
+                      "url": "/kitchen-sink/blocks/hero",
+                      "hash": null,
+                      "new_tab": false,
+                      "rel": []
+                    },
+                    "link_url": ""
+                  },
+                  {
+                    "image": {
+                      "path": "demo:showcase-photo-7",
+                      "alt": {
+                        "en": "A cafe",
+                        "ru": "Кафе",
+                        "pl": "Kawiarnia"
+                      }
+                    },
+                    "photos": [],
+                    "title": {
+                      "en": "The cafe",
+                      "ru": "Кафе",
+                      "pl": "Kawiarnia"
+                    },
+                    "chips": [],
+                    "text": {
+                      "en": "Breakfast from eight, on the ground floor.",
+                      "ru": "Завтраки с восьми, на первом этаже.",
+                      "pl": "Śniadania od ósmej, na parterze."
+                    },
+                    "link_label": {
+                      "en": "Read more",
+                      "ru": "Подробнее",
+                      "pl": "Więcej"
+                    },
+                    "link": {
+                      "target": "url",
+                      "entity_type": null,
+                      "entity_id": null,
+                      "url": "/kitchen-sink/blocks/contact",
+                      "hash": null,
+                      "new_tab": false,
+                      "rel": []
+                    },
                     "link_url": ""
                   }
                 ]
@@ -2735,6 +3256,152 @@
                   }
                 ]
               }
+            }
+          ],
+          "children": [
+            {
+              "title": {
+                "en": "A brochure beside the words",
+                "ru": "Брошюра рядом со словами",
+                "pl": "Broszura obok słów"
+              },
+              "slug": {
+                "en": "brochure",
+                "ru": "broshyura",
+                "pl": "broszura"
+              },
+              "seo": {
+                "title": {
+                  "en": "A brochure beside the words",
+                  "ru": "Брошюра рядом со словами",
+                  "pl": "Broszura obok słów"
+                },
+                "description": {
+                  "en": "A call to action on a photo under a gradient from the side: the words on the left, a brochure in front on the right, an outlined button.",
+                  "ru": "Призыв на фото под градиентом сбоку: слова слева, брошюра поверх справа, кнопка-контур.",
+                  "pl": "Wezwanie na zdjęciu pod gradientem z boku: słowa po lewej, broszura z przodu po prawej, przycisk z obrysem."
+                }
+              },
+              "blocks": [
+                {
+                  "key": "showcase-cta-brochure",
+                  "type": "cta",
+                  "values": {
+                    "heading": {
+                      "en": "Download the brochure",
+                      "ru": "Скачайте брошюру",
+                      "pl": "Pobierz broszurę"
+                    },
+                    "text": {
+                      "en": "The gradient darkens the photo behind the words only; the brochure stands over it and is never darkened. On a phone it comes under the words, and the button runs across.",
+                      "ru": "Градиент затемняет фото только за словами; брошюра стоит поверх и не затемняется. На телефоне она под словами, а кнопка — во всю ширину.",
+                      "pl": "Gradient przyciemnia zdjęcie tylko za słowami; broszura stoi nad nim i nie jest przyciemniana. Na telefonie jest pod słowami, a przycisk ma całą szerokość."
+                    },
+                    "button_label": {
+                      "en": "Download",
+                      "ru": "Скачать",
+                      "pl": "Pobierz"
+                    },
+                    "button_link": {
+                      "target": "file",
+                      "path": "demo:showcase-brochure",
+                      "download": true
+                    },
+                    "button_look": "outline",
+                    "tone": "image",
+                    "image": {
+                      "path": "demo:showcase-photo-1",
+                      "alt": {
+                        "en": "A quiet street with trees",
+                        "ru": "Тихая улица с деревьями",
+                        "pl": "Cicha ulica z drzewami"
+                      }
+                    },
+                    "foreground": {
+                      "path": "demo:showcase-brochure",
+                      "alt": {
+                        "en": "The brochure",
+                        "ru": "Брошюра",
+                        "pl": "Broszura"
+                      }
+                    },
+                    "shade": "gradient-start",
+                    "layout": "split",
+                    "width": "bleed"
+                  }
+                }
+              ]
+            },
+            {
+              "title": {
+                "en": "Words at the top of a sketch",
+                "ru": "Слова над скетчем",
+                "pl": "Słowa nad szkicem"
+              },
+              "slug": {
+                "en": "sketch",
+                "ru": "sketch",
+                "pl": "szkic"
+              },
+              "seo": {
+                "title": {
+                  "en": "Words at the top of a sketch",
+                  "ru": "Слова над скетчем",
+                  "pl": "Słowa nad szkicem"
+                },
+                "description": {
+                  "en": "A call to action on a sketch with no veil: the colour of the page at the top under the words, centred, and a dark button.",
+                  "ru": "Призыв на скетче без пелены: сверху цвет страницы под словами по центру и тёмная кнопка.",
+                  "pl": "Wezwanie na szkicu bez zasłony: u góry kolor strony pod wyśrodkowanymi słowami i ciemny przycisk."
+                }
+              },
+              "blocks": [
+                {
+                  "key": "showcase-cta-sketch",
+                  "type": "cta",
+                  "values": {
+                    "eyebrow": {
+                      "en": "Any questions?",
+                      "ru": "Остались вопросы?",
+                      "pl": "Masz pytania?"
+                    },
+                    "heading": {
+                      "en": "Get in touch with us",
+                      "ru": "Свяжитесь с нами",
+                      "pl": "Skontaktuj się z nami"
+                    },
+                    "text": {
+                      "en": "The top of the band is the colour of the page, and the sketch comes clear below it. The words stand in a column in the middle.",
+                      "ru": "Верх полосы — цвета страницы, ниже проступает скетч. Слова — колонкой по центру.",
+                      "pl": "Góra pasa ma kolor strony, niżej wyłania się szkic. Słowa stoją kolumną pośrodku."
+                    },
+                    "button_label": {
+                      "en": "Write to us",
+                      "ru": "Написать нам",
+                      "pl": "Napisz do nas"
+                    },
+                    "button_link": {
+                      "target": "url",
+                      "url": "#webx-form-contact"
+                    },
+                    "button_look": "primary-dark",
+                    "tone": "image",
+                    "image": {
+                      "path": "demo:showcase-sketch",
+                      "alt": {
+                        "en": "A pencil sketch of houses",
+                        "ru": "Карандашный скетч домов",
+                        "pl": "Ołówkowy szkic domów"
+                      }
+                    },
+                    "shade": "gradient-top",
+                    "layout": "top-center",
+                    "height": "ratio",
+                    "ratio": "16-9",
+                    "width": "bleed"
+                  }
+                }
+              ]
             }
           ]
         },

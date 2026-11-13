@@ -176,7 +176,15 @@ const stage = reactive({
 const current = computed(() => JSON.stringify({ settings, content }))
 const dirty = computed(() => snapshot.value !== '' && current.value !== snapshot.value)
 
-const lints = computed(() => lintBlock(settings.slug, content, t, block.value?.tokens ?? null))
+const lints = computed(() =>
+  lintBlock(
+    settings.slug,
+    content,
+    t,
+    block.value?.tokens ?? null,
+    block.value?.optional_tokens ?? [],
+  ),
+)
 
 /**
  * What a tag in this template can call: every type, and every place a module declared and the

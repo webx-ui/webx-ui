@@ -148,6 +148,8 @@ export interface BlockType {
    * site without a theme. Only in `GET /blocks/{id}`.
    */
   tokens?: string[] | null
+  /** Of those, the optional ones (THEMES §7.2), which a block reads with a fallback. */
+  optional_tokens?: string[] | null
   /** What publishing the draft converts on pages, when it changes a field's `localized`. */
   language_changes?: LanguageChanges
   /** Only in the answer to a save that renamed the type. */

@@ -45,6 +45,19 @@ use WebxUi\Widgets\Facades\Widgets;
 Widgets::need('slider'); // dist/slider.js and slider.css on this page
 ```
 
+What a visitor does not see before they act — a form in a closed dialog, a banner a script shows
+later — is rendered inside `Widgets::later(fn () => …)`, in Blade `@webxLater(<when>)` …
+`@endwebxLater`. What it claims gets a stylesheet that does not block the first paint
+(`media="print"`, switched on once loaded, and a `<noscript>` copy). If the page also shows the same
+widget straight away, its stylesheet blocks as usual. The dialogs of `module-inbox` forms are
+already rendered this way.
+
+```blade
+@webxLater(! $shownByTheServer)
+    <x-webx-form :action="$url">…</x-webx-form>
+@endwebxLater
+```
+
 - **The cookie banner** (`consent.js|css`) is on every page: the package prints it before `</body>`
   by itself — there is no component to place and none to forget.
 - A lightbox link and a link to a form in a dialog are found in the finished page: a link written
@@ -232,6 +245,38 @@ loop too, and a running strip's copies are not counted. A screen reader does not
 slides are named "2 / 6" and Swiper announces the move already. Its colours and size are
 `--webx-slider-count-color`, `--webx-slider-count-current`, `--webx-slider-count-size`; one slide
 prints no controls at all. Kitchen sink › Slider › Photos with a counter shows it.
+
+A pane that stands still over the slides — the words of each slide fading one into the next while
+the pictures move under it — is the `overlay` slot. It is printed hidden and shown by the script;
+its `.webx-slider__caption` elements, one per slide in order inside a `.webx-slider__captions`,
+follow the slide in view: the current one has `is-current`, the others are `inert` and hidden
+from a screen reader. The crossfade lasts `--webx-slider-caption-fade` (none with reduced motion).
+`pagination-in` names an element of the overlay that takes the dots, each saying "Slide 2 of 4":
+
+```blade
+<x-webx-slider :arrows="false" :autoplay="5000" :pause="false" pagination-in=".plate__dots">
+    <x-webx-slide>…</x-webx-slide>
+    <x-slot:overlay>
+        <div class="plate">
+            <div class="webx-slider__captions" aria-live="polite">
+                <div class="webx-slider__caption is-current">…</div>
+                <div class="webx-slider__caption" inert aria-hidden="true">…</div>
+            </div>
+            <div class="plate__dots"></div>
+        </div>
+    </x-slot:overlay>
+</x-webx-slider>
+```
+
+`:pause="false"` leaves the pause button out; the slider still stops under the pointer and with
+the focus inside, and the site audit does not count it as a lost button. Every change of the slide
+is an event on the slider's root, for whatever a theme draws around it:
+
+```js
+slider.addEventListener('webx:slide', (event) => {
+  const { index, count, auto } = event.detail // index from 0; auto — autoplay moved it
+})
+```
 
 The lightbox (PhotoSwipe) opens any link with `data-webx-lightbox`; links with the same value page
 together. `<x-webx-lightbox :image="$picture">` takes a picture of the media library and writes
@@ -662,7 +707,7 @@ line, it does not run it). Installed, they belong to the site: an update never o
 | `countdown` | heading, text, a date and a time of the site's zone, at the end a text or hide                                                                                                                                                                      | `<x-webx-countdown>`       |
 | `compare`   | heading, before, after, their labels, where the divider starts, caption                                                                                                                                                                             | `<x-webx-compare>`         |
 | `toc`       | title, the whole page or a text of its own (a switch), side, depth                                                                                                                                                                                  | `<x-webx-toc>`             |
-| `tabs`      | heading, a title, a picture and a text each, picture above or beside, alignment, change at once or fade                                                                                                                                             | `<x-webx-tabs>`            |
+| `tabs`      | a line above the heading, heading, a title, a picture and a text each, picture above or beside, alignment, tabs in rows on a narrow column, the picture to the edges of a narrow screen, change at once or fade, slide over the section above       | `<x-webx-tabs>`            |
 
 **The mosaic** of `gallery` is one large picture and two smaller ones: the large on the left and the
 two one above the other beside it, or — in a column narrower than 36em — the large on top and the

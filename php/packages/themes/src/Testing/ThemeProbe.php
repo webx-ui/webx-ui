@@ -78,7 +78,8 @@ final class ThemeProbe
 
     /**
      * The tokens of the vocabulary — the engine's and every layer's own — that no layer gives a
-     * value: the page would print a `var()` that resolves to nothing.
+     * value: the page would print a `var()` that resolves to nothing. The optional ones (§7.2) are
+     * not owed: unset, the blocks fall back to their own look.
      *
      * @return list<string>
      */
@@ -86,7 +87,7 @@ final class ThemeProbe
     {
         $values = (new Tokens($this->chain()))->values();
 
-        return array_values(array_diff(Vocabulary::forChain($this->chain())->names(), array_keys($values)));
+        return array_values(array_diff(Vocabulary::forChain($this->chain())->required(), array_keys($values)));
     }
 
     /**

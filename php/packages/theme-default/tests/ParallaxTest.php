@@ -112,6 +112,8 @@ final class ParallaxTest extends TestCase
     {
         $type = self::type();
         $template = (string) $type['template'];
+        // Each render a page of its own: the hero is its first, whichever render comes first.
+        $this->app->forgetScopedInstances();
 
         if ($unmarked) {
             $template = (string) preg_replace('~@if \(\$parallax\) data-webx-parallax.*? @endif~', '', $template);

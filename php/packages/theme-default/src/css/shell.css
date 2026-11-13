@@ -90,8 +90,12 @@
   padding-block: var(--site-space-6) var(--site-space-8);
 }
 
+/* The sides of the sections: the gutter, or the optional `section-gutter` a site sets (§7.2). */
 :where(.site-main) > :where(*) {
-  width: min(100% - 2 * var(--site-gutter), var(--site-container-width) - 2 * var(--site-gutter));
+  width: min(
+    100% - 2 * var(--site-section-gutter, var(--site-gutter)),
+    var(--site-container-width) - 2 * var(--site-section-gutter, var(--site-gutter))
+  );
   margin-inline: auto;
 }
 
@@ -107,6 +111,12 @@
   background: var(--site-color-surface);
   color: var(--site-color-text-muted);
   font-size: var(--site-font-size-6);
+}
+
+/* The sides of the footer: the gutter, or the optional `frame-gutter` a site sets (§7.2), as
+   the header's bar does. */
+:where(.site-footer) :where(.site-container) {
+  padding-inline: var(--site-frame-gutter, var(--site-gutter));
 }
 
 :where(.site-footer__inner) {

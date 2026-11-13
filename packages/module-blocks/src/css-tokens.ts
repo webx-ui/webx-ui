@@ -224,9 +224,16 @@ const NOT_PAINT =
 
 /**
  * @param tokens The chain's vocabulary, names without `--site-`.
+ * @param optional The engine's optional tokens (THEMES §7.2): a fallback is how a block keeps its
+ *   own look until a site gives them a value, so it is not a finding.
  */
-export function cssFindings(css: string, tokens: Iterable<string>): CssFinding[] {
+export function cssFindings(
+  css: string,
+  tokens: Iterable<string>,
+  optional: Iterable<string> = [],
+): CssFinding[] {
   const vocabulary = new Set(tokens)
+  const unset = new Set(optional)
   const source = css.replace(/\/\*[\s\S]*?\*\//g, (comment) => comment.replace(/[^\n]/g, ' '))
   const findings: CssFinding[] = []
 
@@ -237,7 +244,12 @@ export function cssFindings(css: string, tokens: Iterable<string>): CssFinding[]
     const property = text.slice(0, colon).trim().toLowerCase()
     const start = offset + colon + 1
 
-    for (const [problem, at, subject] of declaration(property, text.slice(colon + 1), vocabulary)) {
+    for (const [problem, at, subject] of declaration(
+      property,
+      text.slice(colon + 1),
+      vocabulary,
+      unset,
+    )) {
       findings.push({ problem, line: lineAt(source, start + at), subject })
     }
   }
@@ -249,6 +261,7 @@ function declaration(
   property: string,
   value: string,
   vocabulary: Set<string>,
+  optional: Set<string>,
 ): [CssProblem, number, string][] {
   const found: [CssProblem, number, string][] = []
 
@@ -259,7 +272,9 @@ function declaration(
     if (!name.startsWith('site-')) continue
 
     if (!vocabulary.has(name.slice(5))) found.push(['unknown-token', reference.index, `--${name}`])
-    if (reference[2] === ',') found.push(['token-fallback', reference.index, `var(--${name}, …)`])
+    if (reference[2] === ',' && !optional.has(name.slice(5))) {
+      found.push(['token-fallback', reference.index, `var(--${name}, …)`])
+    }
   }
 
   const paint = value.replace(

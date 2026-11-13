@@ -1,0 +1,6 @@
+---
+'@webx-ui/php': patch
+'@webx-ui/module-blocks': patch
+---
+
+Themes: seventeen optional site tokens for the rhythm and the head of a section (THEMES §7.2) — `section-space`, `section-head-space`, `eyebrow-space`, `section-title-space`, `section-actions-space`, `section-gutter`, `frame-gutter`, the section's H2 (`section-title-font|size|line-height|case`) and its eyebrow (`eyebrow-font|size|line-height|letter-spacing|weight|case`), with the new token types `line-height` and `case`. No theme owes them a value and the page prints them only when a site sets one in `tokens.json`; every block of theme-default (`hero`, `text`, `media-text`, `cards`, `cta`, `contact`, `text-tiles`) and of the widgets (`tabs`, `gallery`, `counters`, `logos`, `video`, `map`, `compare`, `countdown`), the main column, the header and the footer read them with their own look of today as the fallback, so nothing moves until a site sets them. `CssCheck`, the panel's lints and the block editor let an optional token keep its fallback. An existing site takes the new block styles with `webx:blocks:import --theme --replace=hero,text,media-text,cards,cta,contact,text-tiles` and `webx:blocks:import --path=vendor/webx-ui/widgets/resources/blocks --replace=tabs,gallery,counters,logos,video,map,compare,countdown`.

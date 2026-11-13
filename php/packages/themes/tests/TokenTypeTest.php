@@ -34,6 +34,10 @@ class TokenTypeTest extends PHPUnitTestCase
         yield 'time' => [TokenType::Time, '180ms'];
         yield 'easing keyword' => [TokenType::Easing, 'ease-out'];
         yield 'cubic bezier' => [TokenType::Easing, 'cubic-bezier(0.2, 0, 0, 1)'];
+        yield 'line height as a number' => [TokenType::LineHeight, '1.2'];
+        yield 'line height as a fluid length' => [TokenType::LineHeight, 'clamp(2.25rem, 1.9rem + 1.6vw, 4rem)'];
+        yield 'capitals' => [TokenType::LetterCase, 'uppercase'];
+        yield 'no capitals' => [TokenType::LetterCase, 'none'];
     }
 
     /**
@@ -59,6 +63,8 @@ class TokenTypeTest extends PHPUnitTestCase
         yield 'time without a unit' => [TokenType::Time, '200'];
         yield 'number with a unit' => [TokenType::Number, '1.5em'];
         yield 'easing made up' => [TokenType::Easing, 'bouncy'];
+        yield 'line height in words' => [TokenType::LineHeight, 'tall'];
+        yield 'case made up' => [TokenType::LetterCase, 'small-caps'];
         yield 'reference outside the site' => [TokenType::Color, 'var(--wx-color-primary)'];
         yield 'too long' => [TokenType::Font, str_repeat('a', 201)];
     }
@@ -82,7 +88,12 @@ class TokenTypeTest extends PHPUnitTestCase
     {
         $vocabulary = Vocabulary::base();
 
-        $this->assertCount(40, $vocabulary->tokens);
+        $this->assertCount(57, $vocabulary->tokens);
+        $this->assertCount(40, $vocabulary->required(), 'theme-default owes a value to these and to no other.');
+        $this->assertTrue($vocabulary->optional('section-space'));
+        $this->assertFalse($vocabulary->optional('space-6'));
+        $this->assertSame(TokenType::LetterCase, $vocabulary->type('eyebrow-case'));
+        $this->assertSame(TokenType::LineHeight, $vocabulary->type('section-title-line-height'));
         $this->assertSame(TokenType::Color, $vocabulary->type('color-accent-2'));
         $this->assertSame(TokenType::Length, $vocabulary->type('font-size-6'));
         $this->assertSame(TokenType::Number, $vocabulary->type('line-height-base'));

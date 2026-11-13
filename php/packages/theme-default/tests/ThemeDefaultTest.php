@@ -90,7 +90,8 @@ class ThemeDefaultTest extends TestCase
         $defaults = $this->manifest()->tokens()->defaults;
         $vocabulary = Vocabulary::base();
 
-        $this->assertEqualsCanonicalizing($vocabulary->names(), array_keys($defaults));
+        // The optional tokens (THEMES §7.2) have no value here: unset, each block keeps its own look.
+        $this->assertEqualsCanonicalizing($vocabulary->required(), array_keys($defaults));
 
         foreach ($defaults as $name => $value) {
             $this->assertTrue($vocabulary->accepts($name, $value), "{$name}: \"{$value}\" is not a {$vocabulary->type($name)?->value}.");
@@ -287,7 +288,8 @@ class ThemeDefaultTest extends TestCase
                 $head = substr($rule, 0, (int) strrpos($rule, '{'));
                 $selector = trim(substr($head, str_contains($head, '{') ? (int) strrpos($head, '{') + 1 : 0));
 
-                foreach ($selector === '' ? [] : explode(',', $selector) as $one) {
+                // A comma inside :where(…) is not one between selectors.
+                foreach ($selector === '' ? [] : (array) preg_split('/,(?![^()]*\))/', $selector) as $one) {
                     $this->assertStringStartsWith(".b-{$slug}", trim($one), "{$file}: \"{$one}\" is outside the block");
                 }
             }

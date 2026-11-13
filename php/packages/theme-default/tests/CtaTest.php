@@ -28,6 +28,11 @@ final class CtaTest extends TestCase
     /** A link as `LinkType::resolve()` hands it to the template. */
     private const array FILE = ['target' => 'file', 'url' => '/media/plan.pdf', 'available' => true, 'new_tab' => false, 'rel' => null, 'download' => 'Plan.pdf'];
 
+    private const array BROCHURE = ['url' => '/media/brochure.png', 'alt' => 'The brochure', 'width' => 640, 'height' => 820];
+
+    /** The fields of the front picture, the gradients and the layouts (THEMES §9.11). */
+    private const array NEW = ['foreground', 'layout', 'button_look'];
+
     private const array FORM = ['target' => 'url', 'url' => '#webx-form-viewing', 'available' => true, 'new_tab' => false, 'rel' => null, 'download' => null];
 
     /**
@@ -202,28 +207,129 @@ final class CtaTest extends TestCase
         $this->assertStringContainsString('.b-cta.site-bleed .b-cta__inner {', (string) self::type()['styles']);
     }
 
+    #[Test]
+    public function a_block_saved_with_a_picture_prints_byte_for_byte_what_it_printed(): void
+    {
+        $saved = [
+            'sample' => [],
+            'two buttons, a file and a form' => ['second_label' => 'Book', 'second_link' => self::FORM, 'button_link' => self::FILE],
+            'a dark picture 21:9 edge to edge' => ['tone' => 'image', 'image' => self::PICTURE, 'height' => 'ratio', 'ratio' => '21-9', 'width' => 'bleed', 'eyebrow' => 'Open house'],
+            'a light shade on the screen with parallax' => ['tone' => 'image', 'image' => self::PICTURE, 'shade' => 'light', 'height' => 'screen', 'parallax' => true, 'parallax_strength' => 'strong'],
+            'the picture alone' => ['tone' => 'image', 'image' => self::PICTURE, 'heading' => '', 'text' => '', 'button_label' => ''],
+            'a shade with no picture, sliding over' => ['tone' => 'image', 'overlap' => true],
+            'a tint, without animation' => ['tone' => 'surface', 'no_reveal' => true],
+            'nothing to say' => ['heading' => '', 'button_label' => ''],
+        ];
+
+        foreach ($saved as $case => $values) {
+            $before = Blade::render((string) file_get_contents(__DIR__.'/Fixtures/before/cta-picture.blade.php'), $this->data($values, saved: true, only: self::NEW), deleteCachedView: true);
+
+            // Byte for byte: no character added to a block that has none of the new fields.
+            $this->assertSame($before, $this->render($values, saved: true, only: self::NEW), $case);
+            $this->assertSame($before, $this->render($values), "{$case}, defaults");
+        }
+    }
+
+    #[Test]
+    public function the_front_picture_the_gradients_and_the_layouts_default_to_the_band_it_was(): void
+    {
+        foreach (['foreground' => null, 'layout' => 'bottom', 'button_look' => 'filled'] as $id => $default) {
+            $this->assertSame($default, self::type()['sample'][$id], "{$id} of the sample");
+        }
+
+        $this->assertSame('bottom', self::field('layout')['default']);
+        $this->assertSame(['bottom', 'split', 'top-center'], array_column(self::field('layout')['props']['options'], 'value'));
+        $this->assertSame(['dark', 'light', 'gradient-start', 'gradient-top'], array_column(self::field('shade')['props']['options'], 'value'));
+        $this->assertSame('filled', self::field('button_look')['default']);
+        $this->assertSame(['filled', 'outline', 'primary-dark'], array_column(self::field('button_look')['props']['options'], 'value'));
+        $this->assertArrayNotHasKey('visible', self::field('button_look'));
+        $this->assertSame('wx-media', self::field('foreground')['type']);
+
+        foreach (['foreground', 'layout'] as $id) {
+            $this->assertSame(['when' => 'tone', 'is' => 'image'], self::field($id)['visible'], $id);
+        }
+    }
+
+    #[Test]
+    public function the_front_picture_stands_over_the_shade_beside_the_words(): void
+    {
+        $html = $this->render(['tone' => 'image', 'image' => self::PICTURE, 'shade' => 'gradient-start', 'layout' => 'split', 'foreground' => self::BROCHURE, 'button_look' => 'outline']);
+
+        $this->assertStringContainsString('<section class="b-cta b-cta--image b-cta--gradient-start b-cta--split b-cta--with-foreground" data-wx-block="cta">', $html);
+        // After the shade and the words, before the buttons: nothing lies over it.
+        $this->assertMatchesRegularExpression('~<div class="b-cta__shade"></div>.*</div>\s*<img class="b-cta__foreground" src="/media/brochure\.png" alt="The brochure" loading="lazy"\s+width="640" height="820"\s*>\s*<div class="b-cta__actions">~s', $html);
+        $this->assertStringContainsString('<a class="b-cta__button b-cta__button--outline"', $html);
+
+        // The front picture alone is something to show, and not the bare picture.
+        $alone = $this->render(['tone' => 'image', 'image' => self::PICTURE, 'foreground' => self::BROCHURE, 'heading' => '', 'text' => '', 'button_label' => '']);
+        $this->assertStringContainsString('b-cta__foreground', $alone);
+        $this->assertStringNotContainsString('b-cta--bare', $alone);
+        $this->assertStringContainsString('<section', $this->render(['tone' => 'image', 'foreground' => self::BROCHURE, 'heading' => '', 'button_label' => '']));
+
+        // A picture's fields: another tone prints none of them.
+        $accent = $this->render(['foreground' => self::BROCHURE, 'layout' => 'split', 'shade' => 'gradient-top']);
+        $this->assertStringNotContainsString('b-cta__foreground', $accent);
+        $this->assertStringNotContainsString('b-cta--split', $accent);
+        $this->assertStringNotContainsString('gradient', $accent);
+    }
+
+    #[Test]
+    public function at_the_top_in_the_middle_under_a_gradient_from_the_top(): void
+    {
+        $html = $this->render(['tone' => 'image', 'image' => self::PICTURE, 'shade' => 'gradient-top', 'layout' => 'top-center', 'button_look' => 'primary-dark']);
+
+        $this->assertStringContainsString('<section class="b-cta b-cta--image b-cta--gradient-top b-cta--top-center" data-wx-block="cta">', $html);
+        $this->assertStringContainsString('<a class="b-cta__button b-cta__button--primary-dark"', $html);
+        // What nobody offered is the band it was.
+        $odd = $this->render(['tone' => 'image', 'image' => self::PICTURE, 'shade' => 'gradient', 'layout' => '"><b>', 'button_look' => 'neon']);
+        $this->assertStringContainsString('<section class="b-cta b-cta--image b-cta--dark" data-wx-block="cta">', $odd);
+        $this->assertStringContainsString('<a class="b-cta__button" ', $odd);
+        // The look of the button is for every tone.
+        $this->assertStringContainsString('b-cta__button b-cta__button--outline', $this->render(['button_look' => 'outline']));
+
+        $styles = (string) self::type()['styles'];
+        foreach ([
+            '.b-cta--gradient-start .b-cta__shade {',
+            '.b-cta--gradient-top .b-cta__shade {',
+            'linear-gradient(to bottom, var(--cta-shade) var(--cta-gradient-hold, 38%)',
+            '.b-cta--image.b-cta--split .b-cta__inner {',
+            '.b-cta--image.b-cta--top-center .b-cta__inner {',
+            'padding-block-start: var(--cta-top-space, var(--site-space-8));',
+            'max-width: var(--cta-column-width, 46.75rem);',
+            'border-radius: var(--cta-foreground-radius, var(--site-radius-lg));',
+            'padding-block: var(--cta-space, var(--site-space-8));',
+            '.b-cta .b-cta__button.b-cta__button--outline {',
+            '.b-cta .b-cta__button.b-cta__button--primary-dark {',
+        ] as $rule) {
+            $this->assertStringContainsString($rule, $styles);
+        }
+    }
+
     /**
      * @param  array<string, mixed>  $values
+     * @param  list<string>|null  $only
      */
-    private function render(array $values = [], bool $saved = false): string
+    private function render(array $values = [], bool $saved = false, ?array $only = null): string
     {
-        return Blade::render((string) self::type()['template'], $this->data($values, $saved), deleteCachedView: true);
+        return Blade::render((string) self::type()['template'], $this->data($values, $saved, $only), deleteCachedView: true);
     }
 
     /**
      * Every field of the schema a variable as the renderer makes it, over the sample. Saved: a
-     * block from before the picture — none of the new fields are there.
+     * block from before the picture — none of the new fields are there; or, with `$only`, a block
+     * from before those fields alone.
      *
      * @param  array<string, mixed>  $values
+     * @param  list<string>|null  $only
      * @return array<string, mixed>
      */
-    private function data(array $values, bool $saved = false): array
+    private function data(array $values, bool $saved = false, ?array $only = null): array
     {
         $type = self::type();
         $data = [...array_fill_keys(array_column($type['schema'], 'id'), null), ...$type['sample'], ...$values];
 
         if ($saved) {
-            foreach (['eyebrow', 'image', 'shade', 'parallax', 'parallax_strength', 'height', 'ratio', 'width'] as $id) {
+            foreach ($only ?? ['eyebrow', 'image', 'shade', 'parallax', 'parallax_strength', 'height', 'ratio', 'width', ...self::NEW] as $id) {
                 unset($data[$id]);
             }
         }

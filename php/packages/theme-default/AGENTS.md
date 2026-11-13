@@ -7,7 +7,7 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
 
 ## What it owns
 
-- **`tokens.json`** — `defaults` for all forty tokens of the vocabulary, each a `--site-<name>`:
+- **`tokens.json`** — `defaults` for all forty required tokens of the vocabulary, each a `--site-<name>`:
   `color-bg`, `color-surface`, `color-surface-muted`, `color-text`, `color-text-muted`,
   `color-border`, `color-accent`, `color-accent-contrast`, `color-accent-2`, `color-highlight`,
   `color-danger`, `color-success`; `font-body`, `font-heading`, `font-size-base`,
@@ -15,6 +15,7 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
   `radius-lg`, `radius-full`; `shadow-sm`, `shadow-md`; `container-width`, `gutter`, `duration`,
   `easing`. The presets `warm` and `night`; a site draws in one by naming it in its manifest
   (`"preset": "night"` in `theme/theme.json`). Its test is `Testing\ThemeContract` first.
+- **Optional tokens** (THEMES §7.2) — no value here, printed only when a site sets one; every block reads them with its own look as the fallback, `var(--site-section-space, var(--site-space-6))`. Rhythm: `section-space` (a section's top and bottom), `section-head-space` (head → content), `eyebrow-space` (eyebrow → H2), `section-title-space` (H2 → text), `section-actions-space` (text → buttons), `section-gutter` (the sides of the main column and of a bleeding section's words), `frame-gutter` (the sides of the header and the footer). The section's H2: `section-title-font`, `section-title-size`, `section-title-line-height`, `section-title-case`. The `__eyebrow`: `eyebrow-font`, `eyebrow-size`, `eyebrow-line-height`, `eyebrow-letter-spacing`, `eyebrow-weight`, `eyebrow-case`.
 - **`views/components/layout`** — the document every module page is printed in (`<x-layout>`), the
   dispatcher of the composition `layout` (`compositions/layout/default.json`; also `layout.minimal`,
   `layout.blank`, and `layout.account` — the grid of a visitor's account, `account.menu` beside `account.body`, for `webx-ui/module-users`): `@webxTheme`, `@webxThemeColor`, the page's `head` slot (or `@webxSeo` + `@webxBlocks`), `@stack('head')`,
@@ -45,14 +46,14 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
 - **`blocks/`** — the seven block types `webx:blocks:import --theme` puts on a site (`webx:setup` only prints it)
   (THEMES §9.1), as `webx:blocks:export` writes them; CSS on the tokens and `@container` only; each has `no_reveal` («Without animation») and `@webxReveal` on its words and lists — they come in on scroll only with `"reveal": true` in the manifest (§9.3, off by default); a heading prints through `@webxAccent`, its `==words==` as `<span class="site-accent">` in `color-accent` (`base.css`; leaning on the accent and over a photo; §9.4); `hero` and `cta` over a picture and `text-tiles` have `parallax` («Parallax», off) and `parallax_strength` (soft/medium/strong; `data-webx-parallax` on the picture, §9.5); every block has `overlap` («Slide over the section above», off) + `overlap_edge`/`overlap_edge_narrow` (`@webxOverlap`/`@webxOverlapEdge`, §9.8; hero and text-tiles then crop in `__media`, their `__inner` is `data-webx-overlap-fade`):
   - buttons are `wx-link` with files (`button_link`, `second_link`, a card’s `link`); the old `*_url` stay `wx-input`, read while the link is empty;
-  - `hero` — `title`, `subtitle`, two buttons (`button_*`, `second_*`), `tone`
-    `plain|surface|accent|image` (+ `image`), `align` `start|center`, `width` `column|bleed`;
+  - `hero` — `eyebrow`, `title`, `subtitle`, two buttons (`button_*`, `second_*`), `badge` (under the words, centred, unshaded), `tone`
+    `plain|surface|accent|image` (+ `image`), `align` `start|center`, `width` `column|bleed`, `height` `auto|screen` + `position` `center|top` (§9.10: the window less a header in the flow, words under an overlay header; the block's own `--hero-top-space|badge-space|badge-height|badge-width`);
   - `text` — `heading`, `body` (rich text, under `site-prose`; a body of plain lines prints as paragraphs), `width` `narrow|wide`;
   - `media-text` — `image`, `logo` (a small picture above the heading, at most 4rem × 12rem), `heading`, `body`, one button, `side` `start|end`, `tone` `plain|surface`;
-  - `cards` — `heading`, `intro`, `columns` `2|3|4` (at most; the container decides), `pictures`
-    `photo|icon`, `view` `grid|slider` (carousel: `arrows`, `dots`, `endless`, `autoplay`, `interval` s), repeater `cards` (`image`, `photos` — 2+ turn in `<x-webx-photos>`, `title`, `chips` — labels under it, `text`, `link_label`, `link`, `link_url`: the whole card is the link; `link_label` ends in the `arrow-right` icon, `b-cards__arrow`);
-  - `cta` — `eyebrow`, `heading`, `text`, two buttons, `tone` `accent|surface|plain|image` (+ `image` under `shade` `dark|light`, `height` `auto|screen|ratio` + `ratio`; a picture with no words is `b-cta--bare`, §9.9), `width` `column|bleed`;
-  - `text-tiles` («Text and tiles on a photo», §9.7) — `eyebrow`, `heading`, `text`, one button, `image` under `shade` `dark|light`, `width` `bleed|column`, repeater `tiles` (≤4: `kind` `icon|value`, `icon` — an SVG is masked in the words' colour — or `value` + `unit`, `label`, `note`); glass on the block's own `--text-tiles-glass|glass-solid|blur|veil`;
+  - `cards` — `eyebrow`, `heading`, `intro`, a button (`button_label`, `button_link`), `columns` `2|3|4` (at most; the container decides), `pictures`
+    `photo|icon|overlay` (overlay: the photo under the card, the words on glass, its bars over the link; `--cards-ratio|plate-*`), `view` `grid|slider|split` (carousel: `arrows`, `dots`, `endless`, `autoplay`, `interval` s; split: the head beside one card at a time, lines for pagination; overlay and split to the screen's sides under 40em, §9.12), repeater `cards` (`image`, `photos` — 2+ turn in `<x-webx-photos>`, `title`, `chips` — labels under it, `text`, `link_label`, `link`, `link_url`: the whole card is the link; `link_label` ends in the `arrow-right` icon, `b-cards__arrow`);
+  - `cta` — `eyebrow`, `heading`, `text`, two buttons + `button_look` `filled|outline|primary-dark`, `tone` `accent|surface|plain|image` (+ `image` under `shade` `dark|light|gradient-start|gradient-top`, `foreground` unshaded over it, `layout` `bottom|split|top-center`, `height` `auto|screen|ratio` + `ratio`; a picture with no words is `b-cta--bare`, §9.9; the block's own `--cta-space|top-space|column-width|foreground-*|gradient-*|button-dark`, §9.11), `width` `column|bleed`;
+  - `text-tiles` («Text and tiles on a photo», §9.7) — `eyebrow`, `heading`, `text`, one button, `image` under `shade` `dark|light|gradient` (gradient from 56rem, `--text-tiles-fade`), `width` `bleed|column`, repeater `tiles` (≤4: `kind` `icon|value`, `icon` — an SVG is masked in the words' colour — or `value` + `unit`, `label`, `note`), `tile_shape` `free|square` (square: `__grid` container, 2×2 from 30rem, else one by content; saved blocks unchanged); glass on the block's own `--text-tiles-glass|glass-solid|blur|veil`, spacing `--text-tiles-tile-padding|tile-gap|tiles-gap`;
   - `contact` — `heading`, `text`, `show_contacts`/`show_hours` (Settings › Contacts through
     `contacts()` and the phones, hours and socials widgets), `form` (an Inbox form's slug),
     `form_heading` and `show_form_description` (off: the headings say what the form is for); labels `theme::theme.blocks.contact.*`, each after its icon (`b-contact__icon`).
@@ -127,8 +128,7 @@ vocabulary, `@webxTheme`, `webx:theme:sync`) is `webx-ui/themes`.
   overridden layout: pages lose their tokens, metatags or header without an error.
 - Do not print `@webxSeo` or `@webxBlocks` unconditionally in an overridden layout: module views
   already send both in the `head` slot, and twice means two `<title>` tags.
-- Do not write a literal colour, a font name or `var(--site-x, fallback)` in CSS; do not use
-  `@media` for width — `@container`.
+- Do not write a literal colour, a font name or `var(--site-x, fallback)` (but for an optional token) in CSS; no width `@media` — `@container`.
 - Do not write `var(`, a class or a literal colour into a letter: the mail client paints nothing
   there, or the letter stops repainting with the site; `webx:theme:check` names both (rule 25).
 - Do not raise specificity or add `!important` to beat this theme: its rules have none.
