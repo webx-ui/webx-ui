@@ -709,6 +709,12 @@ describe('overlap', () => {
     expect(over.style.getPropertyValue('--webx-overlap-start')).toBe('300px')
     expect(over.style.getPropertyValue('--webx-overlap-sink')).toBe('256px')
     expect(over.style.getPropertyValue('--webx-overlap-rise')).toBe('300px')
+    // The edge runs ahead: 1.4 times as fast at first over 300 + 256 on the screen, 56 ahead halfway.
+    expect(over.style.getPropertyValue('--webx-overlap-lead')).toBe('56px')
+    over.style.setProperty('--webx-overlap-edge-speed', '1')
+    resized.forEach((observer) => observer.callback([]))
+    expect(over.style.getPropertyValue('--webx-overlap-lead')).toBe('0px')
+    over.style.removeProperty('--webx-overlap-edge-speed')
 
     // A section shorter than what is left of the screen under the hero: its bottom is seen at
     // once, so it does not wait — what follows it would be covered.
@@ -735,18 +741,22 @@ describe('overlap', () => {
     at(over, 500, 600)
     run()
     expect(over.style.getPropertyValue('--webx-overlap-sunk')).toBe('256.0px')
+    expect(over.style.getPropertyValue('--webx-overlap-ahead')).toBe('0.0000')
 
     // Its place at 350, drawn 256 lower: half the way back.
     at(over, 350 + 256, 600)
     window.dispatchEvent(new Event('scroll'))
     run()
     expect(over.style.getPropertyValue('--webx-overlap-sunk')).toBe('128.0px')
+    // Halfway the edge is furthest ahead of its section.
+    expect(over.style.getPropertyValue('--webx-overlap-ahead')).toBe('1.0000')
 
     // Its place at 200: back where it stands.
     at(over, 200 + 128, 600)
     window.dispatchEvent(new Event('scroll'))
     run()
     expect(over.style.getPropertyValue('--webx-overlap-sunk')).toBe('0.0px')
+    expect(over.style.getPropertyValue('--webx-overlap-ahead')).toBe('0.0000')
   })
 
   it('brings the words back when focus comes into the section above', async () => {

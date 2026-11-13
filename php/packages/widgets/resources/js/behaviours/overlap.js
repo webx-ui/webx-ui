@@ -32,6 +32,13 @@
  *            section's bottom to come into the screen: what follows it is never seen covered.
  * A `translate`, written on this section: its place, its view timeline and the sizes above stay.
  *
+ * The edge runs ahead of its section over the same `rise`, so that the fog reaches the words above
+ * before the section does: a `transform` of its own, 4u(1 − u) of `lead` at u of the way — it
+ * starts `--webx-overlap-edge-speed` (k) times as fast as the section, is furthest halfway and
+ * meets it again at the end. The section goes D = rise + sink on the screen meanwhile, so
+ *   - lead = (k − 1) × D / 4, no more than the edge is tall.
+ * The gap under the edge is filled with the section's background (`--webx-overlap-fill`, read here).
+ *
  * Where the browser has scroll-driven animations the stylesheet does both on this section's view
  * timeline, named per pair and lifted to the parent of the pinned section (`timeline-scope`):
  * the pinned section is not inside this one. Otherwise an IntersectionObserver and one frame per
@@ -121,7 +128,7 @@ export function overlap(el) {
   const edges = edgesOf(el)
   const name = `--webx-overlap-${++count}`
   const scope = pinned.parentElement
-  let sizes = { start: 0, hold: 1, leave: 1, sink: 0, rise: 1 }
+  let sizes = { start: 0, hold: 1, leave: 1, sink: 0, rise: 1, lead: 0 }
   // Where this section is now, below its place: the script's path writes it, the focus reads it.
   let sunk = 0
 
@@ -135,12 +142,15 @@ export function overlap(el) {
     const edge = Math.max(0, ...edges.map((picture) => picture.offsetHeight))
     const peek = Math.min(edge, screen * part(el, '--webx-overlap-peek', 0.18))
     const rise = Math.min(hold, own - start)
+    const sink = rise >= 1 ? Math.round(Math.max(0, edge - peek)) : 0
+    const speed = Math.min(3, Math.max(1, part(el, '--webx-overlap-edge-speed', 1.4)))
     sizes = {
       start,
       hold,
       leave: Math.max(1, Math.min(high, screen)),
-      sink: rise >= 1 ? Math.round(Math.max(0, edge - peek)) : 0,
+      sink,
       rise: Math.max(1, rise),
+      lead: rise >= 1 ? Math.round(Math.min(edge, ((speed - 1) * (rise + sink)) / 4)) : 0,
     }
     pinned.style.setProperty('--webx-overlap-top', `${Math.min(0, screen - high)}px`)
     pinned.style.setProperty('--webx-overlap-start', `${sizes.start}px`)
@@ -149,6 +159,7 @@ export function overlap(el) {
     el.style.setProperty('--webx-overlap-start', `${sizes.start}px`)
     el.style.setProperty('--webx-overlap-sink', `${sizes.sink}px`)
     el.style.setProperty('--webx-overlap-rise', `${sizes.rise}px`)
+    el.style.setProperty('--webx-overlap-lead', `${sizes.lead}px`)
   }
 
   measure()
@@ -156,7 +167,13 @@ export function overlap(el) {
   el.style.setProperty('--webx-overlap-timeline', name)
   pinned.classList.add('webx-overlap-pinned', 'webx-overlap-pinned--held')
   el.classList.add('webx-overlap--rising')
-  edges.forEach((picture) => picture.classList.add('webx-overlap__edge--whole'))
+  edges.forEach((picture) =>
+    picture.classList.add('webx-overlap__edge--whole', 'webx-overlap__edge--ahead'),
+  )
+  // The section's own colour under the edge that runs ahead; a section with none takes the token.
+  const colour = getComputedStyle(el).backgroundColor
+  if (colour && !/^(transparent|rgba\(.*,\s*0\))$/.test(colour))
+    el.style.setProperty('--webx-overlap-fill', colour)
   fading.forEach((target) => target.classList.add('webx-overlap-fade'))
 
   // This section's top in its place: without the `translate` it comes up with.
@@ -172,7 +189,10 @@ export function overlap(el) {
     const screen = document.documentElement.clientHeight || window.innerHeight
     const travelled = screen - placeTop()
     if (travelled <= sizes.start) return
-    window.scrollTo({ top: window.scrollY - (travelled - sizes.start), behavior: 'instant' })
+    const top = window.scrollY - (travelled - sizes.start)
+    // The smooth scroll's own jump, when it glides the page: it would otherwise glide back.
+    if (typeof window.webx?.scrollTo === 'function') window.webx.scrollTo(top, { immediate: true })
+    else window.scrollTo({ top, behavior: 'instant' })
   })
 
   const resizing = typeof ResizeObserver === 'function' ? new ResizeObserver(() => measure()) : null
@@ -194,6 +214,7 @@ export function overlap(el) {
   } else {
     pinned.classList.add('webx-overlap-pinned--script')
     el.classList.add('webx-overlap--rising-script')
+    edges.forEach((picture) => picture.classList.add('webx-overlap__edge--ahead-script'))
     fading.forEach((target) => target.classList.add('webx-overlap-fade--script'))
     let seen = false
 
@@ -206,6 +227,7 @@ export function overlap(el) {
       const lift = Math.min(sizes.leave, Math.max(0, travelled - sizes.start - sizes.hold))
       const back = Math.min(1, Math.max(0, (travelled - sizes.start) / sizes.rise))
       sunk = sizes.sink * (1 - back)
+      el.style.setProperty('--webx-overlap-ahead', (4 * back * (1 - back)).toFixed(4))
       pinned.style.setProperty('--webx-overlap-progress', fade.toFixed(4))
       pinned.style.setProperty('--webx-overlap-lift', `${lift.toFixed(1)}px`)
       el.style.setProperty('--webx-overlap-sunk', `${sunk.toFixed(1)}px`)
@@ -247,8 +269,14 @@ export function overlap(el) {
     sit()
     el.style.removeProperty('view-timeline')
     el.classList.remove('webx-overlap--rising', 'webx-overlap--rising-script')
-    edges.forEach((picture) => picture.classList.remove('webx-overlap__edge--whole'))
-    for (const property of ['timeline', 'start', 'sink', 'rise', 'sunk'])
+    edges.forEach((picture) =>
+      picture.classList.remove(
+        'webx-overlap__edge--whole',
+        'webx-overlap__edge--ahead',
+        'webx-overlap__edge--ahead-script',
+      ),
+    )
+    for (const property of ['timeline', 'start', 'sink', 'rise', 'sunk', 'lead', 'ahead', 'fill'])
       el.style.removeProperty(`--webx-overlap-${property}`)
     fading.forEach((target) =>
       target.classList.remove('webx-overlap-fade', 'webx-overlap-fade--script'),
