@@ -709,8 +709,12 @@ describe('overlap', () => {
     expect(over.style.getPropertyValue('--webx-overlap-start')).toBe('300px')
     expect(over.style.getPropertyValue('--webx-overlap-sink')).toBe('256px')
     expect(over.style.getPropertyValue('--webx-overlap-rise')).toBe('300px')
-    // The edge runs ahead: 1.4 times as fast at first over 300 + 256 on the screen, 56 ahead halfway.
-    expect(over.style.getPropertyValue('--webx-overlap-lead')).toBe('56px')
+    // The edge runs ahead: 1.5 times as fast at first over 300 + 256 on the screen, 139 ahead at the end.
+    expect(over.style.getPropertyValue('--webx-overlap-lead')).toBe('139px')
+    // A strong one stops at half the screen.
+    over.style.setProperty('--webx-overlap-edge-speed', '3')
+    resized.forEach((observer) => observer.callback([]))
+    expect(over.style.getPropertyValue('--webx-overlap-lead')).toBe('400px')
     over.style.setProperty('--webx-overlap-edge-speed', '1')
     resized.forEach((observer) => observer.callback([]))
     expect(over.style.getPropertyValue('--webx-overlap-lead')).toBe('0px')
@@ -748,15 +752,16 @@ describe('overlap', () => {
     window.dispatchEvent(new Event('scroll'))
     run()
     expect(over.style.getPropertyValue('--webx-overlap-sunk')).toBe('128.0px')
-    // Halfway the edge is furthest ahead of its section.
-    expect(over.style.getPropertyValue('--webx-overlap-ahead')).toBe('1.0000')
+    // Halfway the edge is three quarters of its lead ahead of its section.
+    expect(over.style.getPropertyValue('--webx-overlap-ahead')).toBe('0.7500')
 
     // Its place at 200: back where it stands.
     at(over, 200 + 128, 600)
     window.dispatchEvent(new Event('scroll'))
     run()
     expect(over.style.getPropertyValue('--webx-overlap-sunk')).toBe('0.0px')
-    expect(over.style.getPropertyValue('--webx-overlap-ahead')).toBe('0.0000')
+    // And it stays ahead: it never comes back over the section's words.
+    expect(over.style.getPropertyValue('--webx-overlap-ahead')).toBe('1.0000')
   })
 
   it('brings the words back when focus comes into the section above', async () => {

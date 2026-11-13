@@ -32,12 +32,19 @@
  *            section's bottom to come into the screen: what follows it is never seen covered.
  * A `translate`, written on this section: its place, its view timeline and the sizes above stay.
  *
- * The edge runs ahead of its section over the same `rise`, so that the fog reaches the words above
- * before the section does: a `transform` of its own, 4u(1 − u) of `lead` at u of the way — it
- * starts `--webx-overlap-edge-speed` (k) times as fast as the section, is furthest halfway and
- * meets it again at the end. The section goes D = rise + sink on the screen meanwhile, so
- *   - lead = (k − 1) × D / 4, no more than the edge is tall.
- * The gap under the edge is filled with the section's background (`--webx-overlap-fill`, read here).
+ * The edge runs ahead of its section over the same `rise`, so that the fog covers the words above
+ * while the section's own words are still low on the screen: a `transform` of its own, u(2 − u) of
+ * `lead` at u of the way — it starts `--webx-overlap-edge-speed` (k) times as fast as the section,
+ * slows down, and stays `lead` ahead at the end and after it. It never comes back to the section:
+ * meeting it again would take the second half of the way slower than the section, and the two would
+ * read as one slab again. The section goes D = rise + sink on the screen meanwhile, so
+ *   - lead = (k − 1) × D / 2, no more than half the screen.
+ * The gap under the edge is filled with the section's background (`--webx-overlap-fill`, read here):
+ * the section seems to start that much higher, and its words come after.
+ *
+ * Chrome keeps the ranges it resolved first when a size changes a frame after the animations
+ * start (a second measure as the header or a picture comes): the pinned section's words then fade
+ * before it is pinned. A moment's `webx-overlap-settle` after each measure makes it read them again.
  *
  * Where the browser has scroll-driven animations the stylesheet does both on this section's view
  * timeline, named per pair and lifted to the parent of the pinned section (`timeline-scope`):
@@ -143,14 +150,14 @@ export function overlap(el) {
     const peek = Math.min(edge, screen * part(el, '--webx-overlap-peek', 0.18))
     const rise = Math.min(hold, own - start)
     const sink = rise >= 1 ? Math.round(Math.max(0, edge - peek)) : 0
-    const speed = Math.min(3, Math.max(1, part(el, '--webx-overlap-edge-speed', 1.4)))
+    const speed = Math.min(3, Math.max(1, part(el, '--webx-overlap-edge-speed', 1.5)))
     sizes = {
       start,
       hold,
       leave: Math.max(1, Math.min(high, screen)),
       sink,
       rise: Math.max(1, rise),
-      lead: rise >= 1 ? Math.round(Math.min(edge, ((speed - 1) * (rise + sink)) / 4)) : 0,
+      lead: rise >= 1 ? Math.round(Math.min(screen / 2, ((speed - 1) * (rise + sink)) / 2)) : 0,
     }
     pinned.style.setProperty('--webx-overlap-top', `${Math.min(0, screen - high)}px`)
     pinned.style.setProperty('--webx-overlap-start', `${sizes.start}px`)
@@ -160,6 +167,20 @@ export function overlap(el) {
     el.style.setProperty('--webx-overlap-sink', `${sizes.sink}px`)
     el.style.setProperty('--webx-overlap-rise', `${sizes.rise}px`)
     el.style.setProperty('--webx-overlap-lead', `${sizes.lead}px`)
+    if (!settling && typeof requestAnimationFrame === 'function')
+      settling = requestAnimationFrame(settle)
+  }
+
+  // The ranges read again (see above), on the frame after the sizes: a class for a moment, a read
+  // of the style in between.
+  let settling = 0
+  const settle = () => {
+    settling = 0
+    if (!pinned.classList.contains('webx-overlap-pinned')) return
+    const moving = [pinned, el, ...fading, ...edges]
+    moving.forEach((target) => target.classList.add('webx-overlap-settle'))
+    void getComputedStyle(el).animationRangeStart
+    moving.forEach((target) => target.classList.remove('webx-overlap-settle'))
   }
 
   measure()
@@ -227,7 +248,7 @@ export function overlap(el) {
       const lift = Math.min(sizes.leave, Math.max(0, travelled - sizes.start - sizes.hold))
       const back = Math.min(1, Math.max(0, (travelled - sizes.start) / sizes.rise))
       sunk = sizes.sink * (1 - back)
-      el.style.setProperty('--webx-overlap-ahead', (4 * back * (1 - back)).toFixed(4))
+      el.style.setProperty('--webx-overlap-ahead', (back * (2 - back)).toFixed(4))
       pinned.style.setProperty('--webx-overlap-progress', fade.toFixed(4))
       pinned.style.setProperty('--webx-overlap-lift', `${lift.toFixed(1)}px`)
       el.style.setProperty('--webx-overlap-sunk', `${sunk.toFixed(1)}px`)
@@ -266,6 +287,7 @@ export function overlap(el) {
     resizing?.disconnect()
     on.off()
     if (asked) cancelAnimationFrame(asked)
+    if (settling) cancelAnimationFrame(settling)
     sit()
     el.style.removeProperty('view-timeline')
     el.classList.remove('webx-overlap--rising', 'webx-overlap--rising-script')
