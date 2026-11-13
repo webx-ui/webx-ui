@@ -33,12 +33,14 @@
  * A `translate`, written on this section: its place, its view timeline and the sizes above stay.
  *
  * The edge runs ahead of its section over the same `rise`, so that the fog covers the words above
- * while the section's own words are still low on the screen: a `transform` of its own, u(2 − u) of
- * `lead` at u of the way — it starts `--webx-overlap-edge-speed` (k) times as fast as the section,
- * slows down, and stays `lead` ahead at the end and after it. It never comes back to the section:
- * meeting it again would take the second half of the way slower than the section, and the two would
- * read as one slab again. The section goes D = rise + sink on the screen meanwhile, so
- *   - lead = (k − 1) × D / 2, no more than half the screen.
+ * while the section's own words are still low on the screen: a `transform` of its own, furthest
+ * ahead halfway and a little ahead at the end and after it (the curve is the stylesheet's,
+ * `ahead()` below is the same). The section goes D = rise + sink on the screen meanwhile; with
+ * `--webx-overlap-edge-peak` (p) and `--webx-overlap-edge-rest` (r) parts of the screen:
+ *   - rest = min(r × V, lead): how far ahead it stays — the section's words close under the fog;
+ *   - lead = min(p × V, V / 2, rest + 0.3 × D): how far ahead it is halfway. On the way back the edge
+ *            goes at most 1.5 × (lead − rest) over D / 2, so it still climbs on the screen, slower
+ *            than the section, and never uncovers what it has covered.
  * The gap under the edge is filled with the section's background (`--webx-overlap-fill`, read here):
  * the section seems to start that much higher, and its words come after.
  *
@@ -93,6 +95,14 @@ const clipped = new WeakMap()
 const edgesOf = (el) => Array.from(el.querySelectorAll(':scope > .webx-overlap__edge'))
 
 // A part of the screen's height from the stylesheet (`--webx-overlap-peek`).
+// How far ahead the edge is at u of the way, a part of `lead` (the stylesheet's keyframes, smooth).
+const ahead = (u, share) => {
+  if (u <= 0.5) return 4 * u * (1 - u)
+  const t = (u - 0.5) / 0.5
+  const s = t * t * (3 - 2 * t)
+  return 1 - s + share * s
+}
+
 const part = (el, name, fallback) => {
   const value = parseFloat(getComputedStyle(el).getPropertyValue(name))
   return Number.isFinite(value) && value >= 0 ? value : fallback
@@ -135,7 +145,7 @@ export function overlap(el) {
   const edges = edgesOf(el)
   const name = `--webx-overlap-${++count}`
   const scope = pinned.parentElement
-  let sizes = { start: 0, hold: 1, leave: 1, sink: 0, rise: 1, lead: 0 }
+  let sizes = { start: 0, hold: 1, leave: 1, sink: 0, rise: 1, lead: 0, rest: 0, share: 0 }
   // Where this section is now, below its place: the script's path writes it, the focus reads it.
   let sunk = 0
 
@@ -150,14 +160,27 @@ export function overlap(el) {
     const peek = Math.min(edge, screen * part(el, '--webx-overlap-peek', 0.18))
     const rise = Math.min(hold, own - start)
     const sink = rise >= 1 ? Math.round(Math.max(0, edge - peek)) : 0
-    const speed = Math.min(3, Math.max(1, part(el, '--webx-overlap-edge-speed', 1.5)))
+    const travel = rise + sink
+    const lead =
+      rise >= 1
+        ? Math.round(
+            Math.min(
+              screen * part(el, '--webx-overlap-edge-peak', 0.33),
+              screen / 2,
+              screen * part(el, '--webx-overlap-edge-rest', 0.03) + 0.3 * travel,
+            ),
+          )
+        : 0
+    const rest = Math.round(Math.min(lead, screen * part(el, '--webx-overlap-edge-rest', 0.03)))
     sizes = {
       start,
       hold,
       leave: Math.max(1, Math.min(high, screen)),
       sink,
       rise: Math.max(1, rise),
-      lead: rise >= 1 ? Math.round(Math.min(screen / 2, ((speed - 1) * (rise + sink)) / 2)) : 0,
+      lead,
+      rest,
+      share: lead > 0 ? rest / lead : 0,
     }
     pinned.style.setProperty('--webx-overlap-top', `${Math.min(0, screen - high)}px`)
     pinned.style.setProperty('--webx-overlap-start', `${sizes.start}px`)
@@ -167,6 +190,8 @@ export function overlap(el) {
     el.style.setProperty('--webx-overlap-sink', `${sizes.sink}px`)
     el.style.setProperty('--webx-overlap-rise', `${sizes.rise}px`)
     el.style.setProperty('--webx-overlap-lead', `${sizes.lead}px`)
+    el.style.setProperty('--webx-overlap-rest', `${sizes.rest}px`)
+    el.style.setProperty('--webx-overlap-rest-share', sizes.share.toFixed(4))
     if (!settling && typeof requestAnimationFrame === 'function')
       settling = requestAnimationFrame(settle)
   }
@@ -248,7 +273,7 @@ export function overlap(el) {
       const lift = Math.min(sizes.leave, Math.max(0, travelled - sizes.start - sizes.hold))
       const back = Math.min(1, Math.max(0, (travelled - sizes.start) / sizes.rise))
       sunk = sizes.sink * (1 - back)
-      el.style.setProperty('--webx-overlap-ahead', (back * (2 - back)).toFixed(4))
+      el.style.setProperty('--webx-overlap-ahead', ahead(back, sizes.share).toFixed(4))
       pinned.style.setProperty('--webx-overlap-progress', fade.toFixed(4))
       pinned.style.setProperty('--webx-overlap-lift', `${lift.toFixed(1)}px`)
       el.style.setProperty('--webx-overlap-sunk', `${sunk.toFixed(1)}px`)
@@ -298,7 +323,18 @@ export function overlap(el) {
         'webx-overlap__edge--ahead-script',
       ),
     )
-    for (const property of ['timeline', 'start', 'sink', 'rise', 'sunk', 'lead', 'ahead', 'fill'])
+    for (const property of [
+      'timeline',
+      'start',
+      'sink',
+      'rise',
+      'sunk',
+      'lead',
+      'rest',
+      'rest-share',
+      'ahead',
+      'fill',
+    ])
       el.style.removeProperty(`--webx-overlap-${property}`)
     fading.forEach((target) =>
       target.classList.remove('webx-overlap-fade', 'webx-overlap-fade--script'),
