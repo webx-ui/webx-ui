@@ -145,6 +145,19 @@ final class LightboxTest extends TestCase
     }
 
     #[Test]
+    public function the_script_is_told_the_windows_layout_of_the_config(): void
+    {
+        $layout = $this->settings()['layout'];
+
+        $this->assertSame(768, $layout['narrow']);
+        $this->assertSame(['side' => 100, 'max' => 1600, 'height' => 0.84, 'below' => false], $layout['wide']);
+        $this->assertSame(['side' => 12, 'max' => 0, 'height' => 0.75, 'below' => true], $layout['phone']);
+
+        config(['webx-widgets.lightbox.phone.below' => false]);
+        $this->assertFalse($this->settings()['layout']['phone']['below']);
+    }
+
+    #[Test]
     public function the_attribute_is_found_on_a_link_only(): void
     {
         $this->assertTrue(Lightbox::wanted('<a class="x" data-webx-lightbox href="/a.jpg">'));
@@ -154,7 +167,7 @@ final class LightboxTest extends TestCase
     }
 
     /**
-     * @return array{words: array<string, string>, icons: array<string, string>}
+     * @return array{words: array<string, string>, icons: array<string, string>, layout: array<string, mixed>}
      */
     private function settings(): array
     {
@@ -163,7 +176,7 @@ final class LightboxTest extends TestCase
         $settings = json_decode($match[1] ?? '', true);
         $this->assertIsArray($settings);
 
-        /** @var array{words: array<string, string>, icons: array<string, string>} $settings */
+        /** @var array{words: array<string, string>, icons: array<string, string>, layout: array<string, mixed>} $settings */
         return $settings;
     }
 }

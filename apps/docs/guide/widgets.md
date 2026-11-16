@@ -233,6 +233,23 @@ Variants: `cards`, `hero` (fade and autoplay), `gallery` (thumbnails), `logos` (
 "Per view" counts by the slider's **own** width, so a slider in a narrow column behaves like one.
 Whatever moves by itself has a pause button. Swiper is built in; nothing to install.
 
+A finger, a mouse and a touchpad page it. A drag let go pages past **15%** of a slide, or at any
+length when it is a flick — faster than **0.4 px/ms**; past the first or the last slide it gives way.
+A touchpad's sideways scroll pages one slide a gesture. The feel is the package's, one for every
+slider and the photos of every card — `webx-widgets.swipe` in the config:
+
+| Key          | Default | What it is                                                                           |
+| ------------ | ------- | ------------------------------------------------------------------------------------ |
+| `threshold`  | `0.15`  | the share of the width a slow drag must pass to page                                 |
+| `velocity`   | `0.4`   | px/ms: a drag faster than this is a flick and pages at any length                    |
+| `resistance` | `0.3`   | how far a drag past the first or the last follows the finger                         |
+| `wheel`      | `60`    | px of a touchpad's sideways scroll that make one step                                |
+| `pause`      | `400`   | ms of quiet after a step before the next gesture counts (its momentum is waited out) |
+
+A theme sets them in its service provider — `config(['webx-widgets.swipe.threshold' => 0.2])` — a
+site in its published config; a key left out keeps the default. One slider's own Swiper settings
+(`longSwipesRatio` and the rest) are still its `options` prop, over everything.
+
 `pagination` is `true` (dots), `false`, or `"fraction"` — a counter "1/6" between the arrows in
 place of the dots, for the photos of a flat or a product:
 
@@ -288,6 +305,14 @@ downloaded first to be measured, and the audit says so.
   on `--webx-lightbox-frame`. Nothing — the picture as it is.
 - **The backdrop** is opaque; `--webx-lightbox-backdrop-opacity` lowers it for a theme or a
   section, `opacity` (`data-webx-lightbox-opacity`) for one link's group.
+- **The window** fits the picture whole, in its own shape: wide, into min(100vw − 200px, 1600px) ×
+  84vh; on a phone (a window up to 768px) into 100vw − 24px × 75vh, with the two arrows side by side
+  right under the picture — PhotoSwipe alone hides them on a touch screen. The picture grows out of
+  its thumbnail and goes back into it. The margins are `webx-widgets.lightbox` in the config, set
+  the way `swipe` is: `narrow` (768), and for `wide` and `phone` each `side` (100 / 12 px, the
+  least margin left and right), `max` (1600 / 0 — no limit), `height` (0.84 / 0.75 of the window)
+  and `below` (false / true — the arrows under the picture). Their look:
+  `--webx-lightbox-arrow-size`, `--webx-lightbox-arrows-gap`.
 - **Closing leaves the page where it stood**, whichever picture of the group it closed on; the focus
   goes to that picture's link without scrolling to it — or to the opener, when that link is hidden.
 
@@ -566,7 +591,11 @@ Inertial scrolling is this widget only: a theme does not bring Lenis or another 
 ```
 
 - Several photos in one frame turn on their own — every 5 seconds by default — with a bar under
-  each that fills while its photo is shown and shows it on a click; a finger swipes sideways. The
+  each that fills while its photo is shown and shows it on a click. A finger or a mouse drags the
+  photo, the next one coming in beside it; let go, it pages past 15% of the frame or by a flick, and
+  gives way (0.3) past the first and the last — a drag does not go round, the time does. A touchpad
+  pages a photo a gesture (60px of sideways scroll, then 400 ms of quiet); the click a drag ends in
+  opens nothing. The feel is `webx-widgets.swipe`, as for the slider. The
   pointer over it, the focus inside it or the page scrolled past stop the time, and the pause button
   stops it for good. With reduced motion nothing turns until the button is pressed.
 - `images` takes what a template has: values of a media field, objects with `url()`, addresses —

@@ -375,6 +375,77 @@ describe('slider', () => {
     expect([...items].map((item) => item.inert)).toEqual([false, true, true])
   })
 
+  it('pages past 15% of a slide, and gives way at the edge by the package resistance', async () => {
+    const { swiper } = await start(slider())
+    expect(swiper.params.longSwipesRatio).toBe(0.15)
+    expect(swiper.params.resistanceRatio).toBe(0.3)
+    expect(swiper.params.shortSwipes).toBe(true)
+
+    // The site's own, from the package's config.
+    const own = await start(slider({ swipe: { threshold: 0.25, resistance: 0.5 } }))
+    expect(own.swiper.params.longSwipesRatio).toBe(0.25)
+    expect(own.swiper.params.resistanceRatio).toBe(0.5)
+  })
+
+  it('pages by a flick: a drag faster than 0.4 px/ms is a short swipe, a slower one goes by its length', async () => {
+    const { swiper } = await start(slider())
+    const release = (diff, ms) => {
+      swiper.touchEventsData.touchStartTime = Date.now() - ms
+      swiper.touches.diff = diff
+      swiper.emit('touchEnd', new Event('pointerup'))
+      return swiper.params.longSwipesMs
+    }
+
+    // 40 px in 50 ms: a flick — Swiper's short swipe, which pages whatever the length.
+    expect(release(-40, 50)).toBe(Number.POSITIVE_INFINITY)
+    // 40 px in a second: a long swipe, paged only past 15% of the slide.
+    expect(release(-40, 1000)).toBe(0)
+    expect(release(30, 20)).toBe(Number.POSITIVE_INFINITY)
+  })
+
+  it('pages by a touchpad: a sideways wheel of 60px is one step, and its momentum no more', async () => {
+    let time = 1000
+    vi.spyOn(performance, 'now').mockImplementation(() => time)
+    const { root, swiper } = await start(slider())
+    const viewport = root.querySelector('.webx-slider__viewport')
+    const wheel = (deltaX, deltaY = 0) => {
+      time += 16
+      const event = new WheelEvent('wheel', { deltaX, deltaY, bubbles: true, cancelable: true })
+      viewport.dispatchEvent(event)
+      return event
+    }
+
+    wheel(30)
+    expect(swiper.activeIndex).toBe(0)
+    expect(wheel(35).defaultPrevented).toBe(true)
+    expect(swiper.activeIndex).toBe(1)
+    for (let at = 0; at < 10; at++) wheel(40)
+    expect(swiper.activeIndex).toBe(1)
+
+    time += 500
+    wheel(-70)
+    expect(swiper.activeIndex).toBe(0)
+
+    // Down the page: the page scrolls, the slider stands.
+    const down = wheel(10, 80)
+    expect(down.defaultPrevented).toBe(false)
+    expect(swiper.activeIndex).toBe(0)
+    vi.restoreAllMocks()
+  })
+
+  it('leaves the wheel of a running strip alone', async () => {
+    const { root, swiper } = await start(
+      slider(
+        { variant: 'logos', continuous: true, loop: true },
+        { arrows: false, pagination: false },
+      ),
+    )
+    const event = new WheelEvent('wheel', { deltaX: 200, bubbles: true, cancelable: true })
+    root.querySelector('.webx-slider__viewport').dispatchEvent(event)
+    expect(event.defaultPrevented).toBe(false)
+    expect(swiper.destroyed).toBeFalsy()
+  })
+
   it('lets go of Swiper and gives the strip back on unmount', async () => {
     const { root, swiper } = await start(slider({ thumbs: true }))
 
