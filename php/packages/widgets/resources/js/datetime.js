@@ -18,7 +18,7 @@
  *  - the times as a group of radios (`fieldset`/`legend` «Times on 12 December»), described by the zone;
  *  - `data-webx-answer` on the field — the day and the time in words, what the summary says.
  *
- * The options of §6.6, each off unless the page says so:
+ * The options of §6.7, each off unless the page says so:
  *
  *  - `visitor` — the zone is the browser's: the grid, «today» and «now» in it, the zone sent as
  *    `<name>[timezone]` and named under the times («Time zone: Europe/…»); a browser that names
@@ -96,7 +96,7 @@ export function datetime(root) {
   const { weekdays, times, words } = config
   const ahead = Math.max(0, Number(config.lead) || 0)
   const panel = Boolean(config.panel)
-  // The visitor's zone (§6.6): the browser's, sent with the answer; the site's without one.
+  // The visitor's zone (§6.7): the browser's, sent with the answer; the site's without one.
   const zone = (config.visitor && browserZone()) || config.zone
   const printedZone = zoneInput?.value
   const printedLine = zoneLine?.textContent

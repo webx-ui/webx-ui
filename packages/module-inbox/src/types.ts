@@ -63,7 +63,7 @@ export interface FieldOptions {
   'time-to'?: string
   weekdays?: number[]
   'timezone-label'?: LocalizedValue | string
-  /** FORM_STEPS §6.6: the visitor's zone, days ahead, times skipped, the panel, the first day chosen. */
+  /** FORM_STEPS §6.7: the visitor's zone, days ahead, times skipped, the panel, the first day chosen. */
   timezone?: 'visitor' | ''
   'lead-days'?: number
   'time-skip'?: string[]

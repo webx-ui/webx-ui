@@ -141,7 +141,7 @@ final class Form extends Component
             'submitText' => $this->submitText($form),
             // «Next» held until the step is answered (FORM_STEPS §3.6).
             'holdNext' => (bool) $form->option(FormOptions::HOLD_NEXT),
-            // The button under the thank-you in a dialog (FORM_STEPS §11.2): its words and where it
+            // The button under the thank-you in a dialog (FORM_STEPS §16.2): its words and where it
             // leads — null for both is the widgets' «Close».
             'doneText' => $this->translated($form, 'thank-you.button'),
             'doneHref' => FormLinks::href(FormOptions::redirect($form->option(FormOptions::BUTTON_LINK)), app(LinkUrls::class), app(Locales::class)),
@@ -240,7 +240,7 @@ final class Form extends Component
     /**
      * What `<x-webx-field type="datetime">` takes of a field: the grid, the days of the week, the zone.
      *
-     * The options of §6.6 too: the visitor's zone (the site's stays the zone of a page without
+     * The options of §6.7 too: the visitor's zone (the site's stays the zone of a page without
      * JavaScript), the days ahead, the times skipped, the panel of slots and the first day chosen.
      *
      * @return array{step: int, from: string, to: string, weekdays: list<int>, timezone: string, timezone_label: ?string, visitor: bool, lead: int, skip: list<string>, slots: string, first: bool}
@@ -455,7 +455,7 @@ final class Form extends Component
     }
 
     /**
-     * Where the form stands, when that is a name (§11.2).
+     * Where the form stands, when that is a name (§16.2).
      *
      * Anything else is dropped with a line in the log rather than an exception: the form on
      * the page matters more than a typo in one of its attributes.

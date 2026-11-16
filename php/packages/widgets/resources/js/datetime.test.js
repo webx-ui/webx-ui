@@ -239,7 +239,7 @@ describe('datetime', () => {
     expect(document.querySelector('.webx-datetime__plain').hidden).toBe(false)
   })
 
-  describe('the options of FORM_STEPS §6.6', () => {
+  describe('the options of FORM_STEPS §6.7', () => {
     const zoneInput = () => document.querySelector('[data-webx-timezone]')
     const legend = () => document.querySelector('.webx-datetime__legend')
 

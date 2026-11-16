@@ -13,7 +13,7 @@
     them back — a link to this page without JavaScript, `fresh()` and the focus on the first field
     with it. Hidden until the form is sent.
 
-    `done-href` (FORM_STEPS §11.2): __done is a link there instead of a button that closes the dialog;
+    `done-href` (FORM_STEPS §16.2): __done is a link there instead of a button that closes the dialog;
     to the page the dialog stands on, it closes the dialog and scrolls to the top (form.js).
 
     `steps` (FORM_STEPS §3): the fields stand in <x-webx-form.step>s; __body begins with the

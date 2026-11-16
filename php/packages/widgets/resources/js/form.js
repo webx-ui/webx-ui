@@ -17,7 +17,7 @@
  *  - the answer of FormResponse: off to `redirect`, `html` in place of the fields, `message`
  *    under them in a live region — in a dialog in place of them, with a button that closes it;
  *    `heading_html` (a heading with the visitor's answers in it) as HTML, `heading` as text; that
- *    button a link (`done-href`, FORM_STEPS §11.2) goes where it leads — to the page the dialog is
+ *    button a link (`done-href`, FORM_STEPS §16.2) goes where it leads — to the page the dialog is
  *    on, it closes the dialog and brings the page to its top instead of loading it again;
  *  - `again` (`.webx-form__again`): the thank-you in place of the fields and a button that brings
  *    them back empty, the focus on the first — the link to the page itself it is without this;

@@ -272,7 +272,7 @@ const timesPreview = computed(() => {
 })
 
 /*
- * The options of FORM_STEPS §6.6, each off by default — a field saved before them reads the same:
+ * The options of FORM_STEPS §6.7, each off by default — a field saved before them reads the same:
  * the visitor's zone, days ahead, times skipped (a lunch break), the panel of slots, the first day
  * chosen at once.
  */

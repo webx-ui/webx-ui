@@ -16,7 +16,7 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
 - **Behaviours by attribute** — `data-webx-disclosure="<id>"`, `data-webx-dialog="<id>"` (a modal
   `<dialog>`; `[data-webx-dialog-close]`, a URL ending in `#<id>` opens it),
   `data-webx-tabs` around `[data-webx-tab]` panels, `data-webx-accordion="single"` on `<details>`.
-  Components: `<x-webx-dialog id title description close sheet drawer>` (`sheet` — from the bottom below 40rem; `drawer` — at the inline end, the window's whole height), `<x-webx-tabs label transition>` + `<x-webx-tabs.panel title>` (`transition="fade"` — cross-fade, panels in one cell, the tallest sets the height; unselected ones get `is-hidden`, not `hidden`).
+  Components: `<x-webx-dialog id title description close sheet drawer page>` (`sheet` — from the bottom below 40rem; `drawer` — at the inline end, the window's whole height; `page` — scrolls as a whole with its backdrop, box `__window`, a click outside it closes), `<x-webx-tabs label transition>` + `<x-webx-tabs.panel title>` (`transition="fade"` — cross-fade, panels in one cell, the tallest sets the height; unselected ones get `is-hidden`, not `hidden`).
 - **Header** — `<x-webx-header>`: slots `topbar`, `brand`, default (navigation), `actions`,
   `mobile-bottom`, `mobile`, `trigger`; props `collapse` (`auto` measures, a width, `never`),
   `breakpoint` (960, without JavaScript), `sticky` (`none|sticky|hide-on-scroll`), `overlay`,
@@ -28,7 +28,7 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
   `<details>` without JavaScript, a popover turned over at the window's edge with it; one open.
 - **Form in a dialog** — a link to `#webx-form-<slug>` or `data-webx-form="<slug>"` opens that
   `module-inbox` form in a dialog printed once per slug; `data-webx-form-value-<field>` fills a
-  hidden field; `Widgets::form('<slug>')` for an opener the server does not print. `data-webx-sheet` on an opener, `Widgets::form($slug, sheet: true)` or `form_dialog.sheet` — a sheet on a phone.
+  hidden field; `Widgets::form('<slug>')` for an opener the server does not print. `data-webx-sheet` on an opener, `Widgets::form($slug, sheet: true)` or `form_dialog.sheet` — a sheet on a phone; the form's `dialog.scroll: page` — `webx-dialog--page` (never a sheet).
 - **Cookie consent** — the package prints the banner on every themed page; the footer has
   `<x-webx-consent-link />`. Categories: necessary, preferences, statistics, marketing, media.
   Third-party code waits: `<script type="text/plain" data-webx-consent="statistics">`,
@@ -72,7 +72,7 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
   POST, each error back under its field. With it: sent in place, `X-XSRF-TOKEN`, one retry on 419,
   a 422 by field, no second submission, files with progress. `:csrf="false"` only for a door
   guarded otherwise (inbox's intake). `again` (off by default) — «Send another» (`webx-form__again`)
-  in place of the fields after the thank-you: them back empty, focus on the first; no JS — a link. `steps` + `<x-webx-form.step name title :when>` — one step at a time (`steps.js`): an indicator, «Next» checks the step (`:check` — the site's door, `webx_step`; 204 or 422), «Back» nothing; an error behind brings its step back; event `webx:form:step`; no JS — fieldsets on one page. `<x-webx-form.summary :fields>` — the answers so far with «Edit» (`summary.js`); hidden without JS. `<x-webx-field type="datetime" :step from to :weekdays timezone>` — a day and a time in the site's zone, sends `[date]` and `[time]`: `datetime.js` draws a calendar (APG grid) and the times, no JS — `date` + `select`; `data-webx-answer` for the summary, `data-webx-focus` for an error.
+  in place of the fields after the thank-you: them back empty, focus on the first; no JS — a link. `steps` + `<x-webx-form.step name title :when>` — one step at a time (`steps.js`): an indicator, «Next» checks the step (`:check` — the site's door, `webx_step`; 204 or 422), «Back» nothing; an error behind brings its step back; event `webx:form:step`; no JS — fieldsets on one page. `<x-webx-form.summary :fields>` — the answers so far with «Edit» (`summary.js`); hidden without JS. `<x-webx-form steps hold-next>` — «Next» `aria-disabled` until the step is answered; `close-label`, `done-href` — the button under the thank-you in a dialog (to the page itself: closes, scrolls up). `<x-webx-field type="datetime" :step from to :weekdays timezone visitor-timezone lead-days :skip slots="panel" first-day>` — a day and a time in the site's zone (or the browser's, `[timezone]` sent), sends `[date]` and `[time]`: `datetime.js` draws a calendar (APG grid) and the times, no JS — `date` + `select`; `data-webx-answer` for the summary, `data-webx-focus` for an error.
 - **The answer** — `WebxUi\Widgets\Forms\FormResponse`: `FormResponse::message($heading, $html)`,
   `FormResponse::redirect($url)`, `FormResponse::html($view)` (a next step in place of the fields),
   `FormResponse::ok()` (only the event); JSON to the script, a redirect with flash to a plain POST;

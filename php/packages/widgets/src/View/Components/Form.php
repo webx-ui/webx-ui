@@ -40,7 +40,7 @@ use WebxUi\Widgets\Forms\FormRules;
  * `hold-next` — «Next» is `aria-disabled` and does nothing until every required question of the
  * step is answered (FORM_STEPS §3.6).
  *
- * `close-label`, `done-href` — the button under the thank-you in a dialog (FORM_STEPS §11.2): its
+ * `close-label`, `done-href` — the button under the thank-you in a dialog (FORM_STEPS §16.2): its
  * words, and where it leads instead of closing the dialog; a link to the page the dialog is on
  * closes it and scrolls the page to the top.
  */

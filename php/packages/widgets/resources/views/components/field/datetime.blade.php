@@ -3,7 +3,7 @@
      under them; a day of the week not offered and a time of today already gone are the server's to
      refuse. With it, datetime.js hides both and draws a calendar and the times of the chosen day,
      writing every choice back into them — the checks, the errors and what is sent stay theirs.
-     `visitor-timezone` (§6.6): `<name>[timezone]` goes with the answer — the site's zone as printed,
+     `visitor-timezone` (§6.7): `<name>[timezone]` goes with the answer — the site's zone as printed,
      the browser's once the script has counted the grid in it. `lead-days`: `min` is that many days on.
      Classes: webx-datetime, __plain, __part, __label, __zone; the script's — see datetime.css. --}}
 @php

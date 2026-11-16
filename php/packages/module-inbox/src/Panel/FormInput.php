@@ -96,7 +96,7 @@ final class FormInput
             // the site does not have, an address that would run script. A plain string is an
             // address, as forms saved before the choice kept it.
             'options.redirect' => ['nullable', self::link('webx-inbox::panel.redirect')],
-            // The button under the thank-you (FORM_STEPS §11.2): the same link, for the same reasons.
+            // The button under the thank-you (FORM_STEPS §16.2): the same link, for the same reasons.
             // The dot inside the key is literal, escaped for the validator (CLAUDE.md §4).
             'options.thank-you\.button-link' => ['nullable', self::link('webx-inbox::panel.thank-you-button-link')],
             'options.steps\.hold-next' => ['nullable', 'boolean'],

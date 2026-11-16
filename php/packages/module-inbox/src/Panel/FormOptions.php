@@ -27,13 +27,13 @@ final class FormOptions
     /** Words, in every language the site publishes in. */
     public const TRANSLATED = ['description', 'thank-you.heading', 'thank-you.text', 'thank-you.button', 'design.submit-text'];
 
-    /** Where the button under the thank-you leads (FORM_STEPS §11.2): a link of the panel, as `redirect`. */
+    /** Where the button under the thank-you leads (FORM_STEPS §16.2): a link of the panel, as `redirect`. */
     public const string BUTTON_LINK = 'thank-you.button-link';
 
     /** «Next» held until the step is answered (FORM_STEPS §3.6). */
     public const string HOLD_NEXT = 'steps.hold-next';
 
-    /** How the form's dialog scrolls (FORM_STEPS §11.1): `page` — the dialog as a whole, the page still. */
+    /** How the form's dialog scrolls (FORM_STEPS §16.1): `page` — the dialog as a whole, the page still. */
     public const string DIALOG_SCROLL = 'dialog.scroll';
 
     /** Plain strings. */

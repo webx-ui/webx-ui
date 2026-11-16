@@ -120,6 +120,28 @@ underscores. Any other name stays on the page as you wrote it.
 The same answers sent again within 15 minutes update the first submission instead of adding a new one,
 unless the site is set up otherwise. For a second test, change an answer.
 
+## How to book a meeting in the visitor's time
+
+1. Open the «Date and time» field and set «Time zone of the times» to «The visitor's». The hours are
+   counted in the zone of the visitor's browser, the form names it — «Time zone: Europe/Madrid» — and
+   the submission keeps the time with that zone. Without JavaScript the site's zone stands in.
+2. In «Days ahead», write 1 to start the calendar tomorrow. In «Times to skip», add a break: 13:30.
+3. For a calendar with the day on top of its times, choose «A panel» in «Times shown as», and tick
+   «Choose the nearest day at once».
+4. Press «Save». The site refuses an earlier day, a skipped time and a time zone it does not know,
+   even from a page without JavaScript.
+
+## How to set up a form that opens in a window
+
+1. On the «General» tab, under «On the site», turn on ««Next» waits for the answers»: the button of
+   a step stays inactive until its required questions are answered.
+2. Turn on «The dialog scrolls as a whole» for a long form: the window scrolls with its backdrop,
+   like a page.
+3. Under «After sending», write «Words of the button under the thank-you» — «Back to Homepage» — and
+   choose where «The button leads to». On that page itself the button closes the window and scrolls
+   to the top.
+4. Press «Save».
+
 # fields
 
 ## Address
@@ -233,3 +255,50 @@ The form cannot be sent without this answer, and a «Consent» field has to be t
 
 Changing it does not touch the answers already received. What stops working is whatever calls the
 field by its old name: `{{field.name}}` in the thank-you and `:values` in a tag on a page.
+
+## Time zone of the times
+
+«The site's» — the hours of the office, the same for everyone, named under the calendar. «The
+visitor's» — the same hours in the zone of the visitor's browser, for a call or a meeting online. The
+submission keeps the zone the visitor chose in either way.
+
+## Days ahead
+
+How many days from today the calendar starts: 0 — today, 1 — tomorrow. The days before are grey, and
+the site refuses them even from a page without JavaScript.
+
+## Times to skip
+
+Times of the list that are not offered, as HH:MM: a break, a meeting of the team. Skipping every time
+of a day is refused, since nobody could send the form then.
+
+## Times shown as
+
+«A list» — the times under the calendar, as before. «A panel» — the chosen day heads the times, with
+its day of the week, and the time zone is said inside; the days of the week of the calendar are two
+letters.
+
+## Choose the nearest day at once
+
+The calendar opens with the first free day chosen and its times in sight, so nobody looks for a day.
+The time is still the visitor's to choose.
+
+## Words of the button under the thank-you
+
+In a window, the thank-you has one button under it. Empty — «Close», in the visitor's language.
+
+## The button leads to
+
+Nowhere — the button closes the window. A page or an address — the visitor goes there; on that very
+page the window closes and the page scrolls to the top instead.
+
+## «Next» waits for the answers
+
+Only in a form of steps. The button stays inactive until every required question of the step is
+answered, and nothing is said under the questions meanwhile. Without JavaScript the steps stand on one
+page and this changes nothing.
+
+## The dialog scrolls as a whole
+
+For a long form in a window: the window and its backdrop scroll together, the page under them stays.
+A short window stays in the middle. Off — the window keeps its own scroll, as before.

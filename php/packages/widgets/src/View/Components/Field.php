@@ -145,7 +145,7 @@ final class Field extends Component
         public ?string $noTimesLabel = null,
         public ?string $unavailableLabel = null,
         public ?string $timesLabel = null,
-        // FORM_STEPS §6.6. `visitor-timezone` — the times are the visitor's: the grid and «today» in the
+        // FORM_STEPS §6.7. `visitor-timezone` — the times are the visitor's: the grid and «today» in the
         // browser's zone, sent as `<name>[timezone]`; `timezone` stays the zone of a page without
         // JavaScript. `lead-days` — days from today before the first that may be chosen (1 — from
         // tomorrow). `skip` — times of the grid not offered (`HH:MM`). `slots="panel"` — the times in a

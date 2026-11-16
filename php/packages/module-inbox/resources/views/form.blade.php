@@ -30,10 +30,10 @@
         so far with «Edit»; `$controls` never has one, a view without it simply shows no summary,
       · `$control['datetime']` on a field of type `datetime` — `:step`, `:from`, `:to`, `:weekdays`, `:timezone`,
         `:timezone-label` (FORM_STEPS §6.4) and `:visitor-timezone`, `:lead-days`, `:skip`, `:slots`,
-        `:first-day` (§6.6): the grid of the day; a view without them shows the widgets' defaults in the
+        `:first-day` (§6.7): the grid of the day; a view without them shows the widgets' defaults in the
         site's zone, and the intake still checks the field's own grid,
       · `:hold-next`, `:close-label`, `:done-href` on the form — «Next» held until a step is answered
-        (§3.6) and the button under the thank-you in a dialog (§11.2); a view without them has the
+        (§3.6) and the button under the thank-you in a dialog (§16.2); a view without them has the
         widgets' «Next» and «Close»,
       · `data-webx-attribution` — the widgets' attribution.js posts the campaign, the referrer and the
         landing page (`webx-inbox.attribution`, FORM_STEPS §8); a view without it sends none of them.

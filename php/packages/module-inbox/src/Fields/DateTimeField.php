@@ -79,7 +79,7 @@ final class DateTimeField
             'time-to' => self::clock($input['time-to'] ?? null) ?? '',
             'weekdays' => $weekdays,
             'timezone-label' => self::words($input['timezone-label'] ?? null) ?? '',
-            // The options of FORM_STEPS §6.6, each absent at its default — which is how a form saved
+            // The options of FORM_STEPS §6.7, each absent at its default — which is how a form saved
             // before them reads.
             'timezone' => ($input['timezone'] ?? null) === self::VISITOR ? self::VISITOR : '',
             'lead-days' => is_numeric($input['lead-days'] ?? null) && (int) $input['lead-days'] > 0 ? min(self::LEAD_MAX, (int) $input['lead-days']) : '',
@@ -201,7 +201,7 @@ final class DateTimeField
         ];
     }
 
-    /** Whether the times are the visitor's own (§6.6): counted in the browser's zone, sent with it. */
+    /** Whether the times are the visitor's own (§6.7): counted in the browser's zone, sent with it. */
     public static function visitor(?array $options): bool
     {
         return ($options['timezone'] ?? null) === self::VISITOR;
@@ -344,7 +344,7 @@ final class DateTimeField
             return ['webx-inbox::form.datetime-time', []];
         }
 
-        // The visitor's zone (§6.6): one that exists, or the answer is refused — a page that sends
+        // The visitor's zone (§6.7): one that exists, or the answer is refused — a page that sends
         // none (no JavaScript) is read in the site's.
         if (self::visitor($options) && is_array($value) && array_key_exists('timezone', $value)) {
             $sent = is_string($value['timezone']) ? trim($value['timezone']) : '';

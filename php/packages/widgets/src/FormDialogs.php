@@ -118,7 +118,7 @@ final class FormDialogs
                     'title' => trim((string) $form->title) !== '' ? trim((string) $form->title) : $form->slug,
                     'body' => new HtmlString($body),
                     'description' => InboxForm::descriptionHtml($form),
-                    // The form's `dialog.scroll` (FORM_STEPS §11.1): the dialog scrolls as a whole with
+                    // The form's `dialog.scroll` (FORM_STEPS §16.1): the dialog scrolls as a whole with
                     // its backdrop, the page under it stays. A sheet it is not: it has a box of its own.
                     'page' => $form->option('dialog.scroll') === 'page',
                     'sheet' => $form->option('dialog.scroll') !== 'page' && ($always || in_array($slug, $sheets, true)),

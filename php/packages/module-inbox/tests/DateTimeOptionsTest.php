@@ -14,7 +14,7 @@ use WebxUi\Inbox\Models\Form;
 use WebxUi\Inbox\Models\Submission;
 
 /**
- * The options of a «Date and time» (FORM_STEPS §6.6): the visitor's zone, the days ahead, the times
+ * The options of a «Date and time» (FORM_STEPS §6.7): the visitor's zone, the days ahead, the times
  * skipped — each checked by the intake as the page offers it — and the panel of slots and the first
  * day chosen, which are the page's alone. Every one is off by default.
  */

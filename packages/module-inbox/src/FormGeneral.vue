@@ -43,7 +43,7 @@ const submit = option<LocalizedValue>(options, 'design.submit-text', {})
 const stored = option<LinkValue | string | null>(options, 'redirect', null)
 
 /*
- * The button under the thank-you in a dialog (FORM_STEPS §11.2): its words — «Close» when empty —
+ * The button under the thank-you in a dialog (FORM_STEPS §16.2): its words — «Close» when empty —
  * and where it leads; nowhere chosen, it closes the dialog.
  */
 const buttonText = option<LocalizedValue>(options, 'thank-you.button', {})
@@ -55,7 +55,7 @@ const buttonLink = computed<LinkValue | null>({
   },
 })
 
-/* «Next» held until the step is answered (§3.6), and the dialog scrolled as a whole (§11.1). */
+/* «Next» held until the step is answered (§3.6), and the dialog scrolled as a whole (§16.1). */
 const holdNext = option<boolean>(options, 'steps.hold-next', false)
 const dialogScroll = option<string | null>(options, 'dialog.scroll', null)
 const dialogPage = computed<boolean>({

@@ -12,7 +12,7 @@
 
     `$description` — the form's line under its title (inbox §5), HTML; null without one. `$sheet` —
     a sheet from the bottom on a narrow screen (`data-webx-sheet` on an opener). `$page` — the form's
-    `dialog.scroll: page` (FORM_STEPS §11.1): the dialog is the whole window and scrolls with its
+    `dialog.scroll: page` (FORM_STEPS §16.1): the dialog is the whole window and scrolls with its
     backdrop, its box (__window) inside; the page under it stays.
 
     Classes: webx-dialog (+ --sheet, --page, __window) and webx-form-dialog, __header, __heading, __title,
