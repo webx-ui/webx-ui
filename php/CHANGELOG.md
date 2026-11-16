@@ -1,5 +1,13 @@
 # @webx-ui/php
 
+## 0.96.0
+
+### Minor Changes
+
+- e2c0a75: widgets: the `gallery` grid and mosaic fetch only the first screen at once — the first row and the first three of the block that opens the page; every other picture is `loading="lazy" decoding="async"`. Their `srcset` lists the media library's copies by width (640, 1280 — one not cut yet is cut after the response) and `sizes` the share of the block a cell really takes (a grid by the columns a phone shows, one column `100vw`; the mosaic's large tile two thirds, the small ones a third). A lightbox link around a picture without an alt is named "Open picture N of M" in the page's language (`<x-webx-lightbox :index :total>`). blocks: `$block->index` — the block's place among its neighbours. media: `Thumbnails::existing()` — a cut variant's key without cutting it.
+- e2c0a75: widgets: the parallax of the first screen — `data-webx-parallax="screen"` moves the picture down k · scrollY and zooms it to 1 + z from the top of the page until its frame is gone, also while a section slides over it and pins it (`overlap` now writes `--webx-overlap-gone` and tells `webx:overlap`); its overscan is above the frame, never short of the way. Knobs `--webx-parallax-screen-rate`, `-rate-narrow`, `-zoom`, `-overscan`. theme-default: the page's first hero with `height: screen` prints `screen` before the strength.
+- e2c0a75: widgets: one feel of a swipe for every slider and the photos of every card — a drag pages past 15% of the width or by a flick faster than 0.4 px/ms, gives way by 0.3 at the edge, and a touchpad's sideways scroll pages a step a gesture (60px, then 400 ms of quiet); the photos of a card follow the finger and the mouse, and a drag's click opens nothing. The lightbox fits the picture whole into min(100vw − 200px, 1600px) × 84vh, on a phone into 100vw − 24px × 75vh with the arrows as a pair right under it. New config keys `webx-widgets.swipe` and `webx-widgets.lightbox`.
+
 ## 0.95.1
 
 ### Patch Changes
