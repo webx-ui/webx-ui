@@ -296,6 +296,101 @@ describe('slider', () => {
     expect(counter2.querySelector('.webx-slider__current').textContent).toBe('1')
   })
 
+  it('goes round by rewinding when a loop has too few slides for Swiper to bring round', async () => {
+    // A mosaic of two pages: a loop asked for, too few slides for one.
+    const { root, swiper } = await start(slider({ loop: true }, { slides: 2 }))
+    const prev = root.querySelector('.webx-slider__prev')
+    const next = root.querySelector('.webx-slider__next')
+
+    expect(swiper.params.loop).toBe(false)
+    expect(swiper.params.rewind).toBe(true)
+    // Both arrows on from the start: there is no edge to stop at.
+    expect(prev.classList.contains('is-disabled')).toBe(false)
+    expect(prev.hasAttribute('aria-disabled')).toBe(false)
+    expect(next.classList.contains('is-disabled')).toBe(false)
+
+    prev.click()
+    expect(swiper.realIndex).toBe(1)
+    expect(next.classList.contains('is-disabled')).toBe(false)
+    expect(next.hasAttribute('aria-disabled')).toBe(false)
+    next.click()
+    expect(swiper.realIndex).toBe(0)
+
+    // The keys go round too.
+    const link = root.querySelector('a')
+    link.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }))
+    expect(swiper.realIndex).toBe(1)
+    link.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }))
+    expect(swiper.realIndex).toBe(0)
+
+    expect(root.querySelector('.webx-slider__notice').textContent).not.toMatch(/first|last/)
+  })
+
+  it('says where a rewinding arrow goes, never that this is the first or the last slide', async () => {
+    // Swiper speaks only for arrows that are not buttons — a theme may draw them so; it reads the
+    // old `keyCode`, which jsdom leaves at 0.
+    const html = slider({ loop: true }, { slides: 2 }).replace(
+      /<button type="button" class="webx-slider__button webx-slider__(prev|next)"><\/button>/g,
+      '<div class="webx-slider__button webx-slider__$1"></div>',
+    )
+    const { root, swiper } = await start(html)
+    const notice = root.querySelector('.webx-slider__notice')
+    const enter = () => {
+      const event = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })
+      Object.defineProperty(event, 'keyCode', { value: 13 })
+      return event
+    }
+
+    root.querySelector('.webx-slider__prev').dispatchEvent(enter())
+    expect(notice.textContent).toBe('Previous slide')
+    swiper.slideTo(1, 0)
+    root.querySelector('.webx-slider__next').dispatchEvent(enter())
+    expect(notice.textContent).toBe('Next slide')
+  })
+
+  it('autoplays a rewinding slider from the last slide to the first, at once with reduced motion', async () => {
+    const { swiper } = await start(slider({ loop: true, autoplay: 3000 }, { slides: 2 }))
+    expect(swiper.autoplay.running).toBe(true)
+    vi.useFakeTimers()
+    try {
+      swiper.autoplay.stop()
+      swiper.slideTo(1, 0)
+      swiper.autoplay.start()
+      vi.advanceTimersByTime(3100)
+      expect(swiper.realIndex).toBe(0)
+      expect(swiper.autoplay.running).toBe(true)
+    } finally {
+      swiper.autoplay.stop()
+      vi.useRealTimers()
+    }
+
+    reduced = true
+    const still = await start(slider({ loop: true, speed: 600 }, { slides: 2 }))
+    expect(still.swiper.params.speed).toBe(0)
+    still.swiper.slideTo(1)
+    still.swiper.slideNext()
+    expect(still.swiper.realIndex).toBe(0)
+    expect(still.swiper.animating).toBe(false)
+  })
+
+  it('keeps the loop with enough slides, the edges without a loop, and no arrows for one slide', async () => {
+    const looped = await start(slider({ loop: true }, { slides: 4 }))
+    expect(looped.swiper.params.loop).toBe(true)
+    expect(looped.swiper.params.rewind).toBe(false)
+
+    const edged = await start(slider({ loop: false }, { slides: 2 }))
+    expect(edged.swiper.params.rewind).toBe(false)
+    expect(edged.root.querySelector('.webx-slider__prev').classList.contains('is-disabled')).toBe(
+      true,
+    )
+    edged.root.querySelector('.webx-slider__prev').click()
+    expect(edged.swiper.realIndex).toBe(0)
+
+    const single = await start(slider({ loop: true }, { slides: 1 }))
+    expect(single.swiper.params.rewind).toBe(false)
+    expect(single.swiper.isLocked).toBe(true)
+  })
+
   it('counts only the slides of a running strip, not its copies', async () => {
     const { root, swiper } = await start(
       slider(

@@ -172,6 +172,10 @@ export function slider(root) {
 
   const count = slides.length + copies.length
   const loop = config.loop === true && count > Math.ceil(perView) + 1
+  // Too few slides for Swiper to bring round (a mosaic of two pages): the arrows, the keys and
+  // autoplay go from the last back to the first instead, and from the first to the last. One
+  // slide has nowhere to go — no arrows, as without a loop.
+  const rewind = config.loop === true && !loop && count > 1
   const group = () => (fade ? 1 : Math.max(1, Math.floor(perView)))
 
   const swiper = new Swiper(viewport, {
@@ -190,6 +194,7 @@ export function slider(root) {
     spaceBetween: fade ? 0 : gap,
     speed: reduced ? 0 : config.speed,
     loop,
+    rewind,
     loopAddBlankSlides: false,
     watchSlidesProgress: true,
     effect: fade ? 'fade' : 'slide',
@@ -239,8 +244,9 @@ export function slider(root) {
       notificationClass: 'webx-slider__notice',
       prevSlideMessage: text.prev,
       nextSlideMessage: text.next,
-      firstSlideMessage: text.first,
-      lastSlideMessage: text.last,
+      // Going round, there is no first or last slide to hit: the arrow says where it goes.
+      firstSlideMessage: rewind ? text.prev : text.first,
+      lastSlideMessage: rewind ? text.next : text.last,
       // Dots away from the slides say which slide they are of how many: "Slide 2 of 4".
       paginationBulletMessage:
         outside && text.show
