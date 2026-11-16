@@ -233,6 +233,23 @@ Variants: `cards`, `hero` (fade and autoplay), `gallery` (thumbnails), `logos` (
 "Per view" counts by the slider's **own** width, so a slider in a narrow column behaves like one.
 Whatever moves by itself has a pause button. Swiper is built in; nothing to install.
 
+A finger, a mouse and a touchpad page it. A drag let go pages past **15%** of a slide, or at any
+length when it is a flick — faster than **0.4 px/ms**; past the first or the last slide it gives way.
+A touchpad's sideways scroll pages one slide a gesture. The feel is the package's, one for every
+slider and the photos of every card — `webx-widgets.swipe` in the config:
+
+| Key          | Default | What it is                                                                           |
+| ------------ | ------- | ------------------------------------------------------------------------------------ |
+| `threshold`  | `0.15`  | the share of the width a slow drag must pass to page                                 |
+| `velocity`   | `0.4`   | px/ms: a drag faster than this is a flick and pages at any length                    |
+| `resistance` | `0.3`   | how far a drag past the first or the last follows the finger                         |
+| `wheel`      | `60`    | px of a touchpad's sideways scroll that make one step                                |
+| `pause`      | `400`   | ms of quiet after a step before the next gesture counts (its momentum is waited out) |
+
+A theme sets them in its service provider — `config(['webx-widgets.swipe.threshold' => 0.2])` — a
+site in its published config; a key left out keeps the default. One slider's own Swiper settings
+(`longSwipesRatio` and the rest) are still its `options` prop, over everything.
+
 `pagination` is `true` (dots), `false`, or `"fraction"` — a counter "1/6" between the arrows in
 place of the dots, for the photos of a flat or a product:
 
@@ -283,11 +300,23 @@ together. `<x-webx-lightbox :image="$picture">` takes a picture of the media lib
 its size; a link by hand needs `data-width` and `data-height` — without them the picture is
 downloaded first to be measured, and the audit says so.
 
+- **A name** — a picture without an alt leaves its link nameless, so the link is named for what it
+  does, in the page's language: "Open picture 2 of 5" with `:index` and `:total` (its place in the
+  group — the `gallery` block passes them), "Open the picture" without. An `aria-label` of yours,
+  words or a described picture in the slot win.
 - **A frame** — `ratio="4:3"` (`data-webx-lightbox-ratio` on a link, "Frame over the page" in the
   `gallery` block): the picture opens in a frame of that shape, whole and undistorted inside it,
   on `--webx-lightbox-frame`. Nothing — the picture as it is.
 - **The backdrop** is opaque; `--webx-lightbox-backdrop-opacity` lowers it for a theme or a
   section, `opacity` (`data-webx-lightbox-opacity`) for one link's group.
+- **The window** fits the picture whole, in its own shape: wide, into min(100vw − 200px, 1600px) ×
+  84vh; on a phone (a window up to 768px) into 100vw − 24px × 75vh, with the two arrows side by side
+  right under the picture — PhotoSwipe alone hides them on a touch screen. The picture grows out of
+  its thumbnail and goes back into it. The margins are `webx-widgets.lightbox` in the config, set
+  the way `swipe` is: `narrow` (768), and for `wide` and `phone` each `side` (100 / 12 px, the
+  least margin left and right), `max` (1600 / 0 — no limit), `height` (0.84 / 0.75 of the window)
+  and `below` (false / true — the arrows under the picture). Their look:
+  `--webx-lightbox-arrow-size`, `--webx-lightbox-arrows-gap`.
 - **Closing leaves the page where it stood**, whichever picture of the group it closed on; the focus
   goes to that picture's link without scrolling to it — or to the opener, when that link is hidden.
 
@@ -466,6 +495,12 @@ What a long page needs, each loading only where it stands:
   `--webx-parallax-strong` 1.5). A picture placed absolutely is made taller rather than scaled, so
   it stays sharp; one in the flow is scaled. Without JavaScript, with reduced motion and in print
   the picture simply stands there.
+  With `screen` among its words (`screen`, `screen soft`) it is the picture of the first screen: it
+  goes down k · scrollY and grows to 1 + z from the top of the page until its frame is gone from
+  the screen — also while the next section slides over it and the frame is pinned. Its knobs:
+  `--webx-parallax-screen-rate` (k, 0.2), `--webx-parallax-screen-rate-narrow` (0.1),
+  `--webx-parallax-screen-zoom` (z in percent, 3) and `--webx-parallax-screen-overscan` (the room
+  above the frame in percent of its height, 20 — never less than how far the picture goes).
 - **A section that slides over the one above** — `data-webx-overlap` on a section: the section
   before it (a hero banner, any block) stays where it is, `position: sticky`, while this one comes
   up over it; the elements of that section marked `data-webx-overlap-fade` fade out as they are
@@ -566,7 +601,12 @@ Inertial scrolling is this widget only: a theme does not bring Lenis or another 
 ```
 
 - Several photos in one frame turn on their own — every 5 seconds by default — with a bar under
-  each that fills while its photo is shown and shows it on a click; a finger swipes sideways. The
+  each that fills while its photo is shown and shows it on a click. A finger or a mouse drags the
+  photo, the next one coming in beside it; let go, it pages past 15% of the frame or by a flick, and
+  gives way (0.3) past the first and the last — a drag does not go round, the time does. A touchpad
+  pages a photo a gesture (60px of sideways scroll, then 400 ms of quiet). In a slider of cards the
+  gesture over the photos is theirs alone — the slider stands; one that starts past the first or the
+  last photo is the slider's and pages the cards instead. The click a drag ends in opens nothing. The feel is `webx-widgets.swipe`, as for the slider. The
   pointer over it, the focus inside it or the page scrolled past stop the time, and the pause button
   stops it for good. With reduced motion nothing turns until the button is pressed.
 - `images` takes what a template has: values of a media field, objects with `url()`, addresses —
@@ -716,6 +756,15 @@ stands under it. "Still" shows the first three, and the lightbox still pages thr
 the rest are links without a picture in a hidden box. "Carousel of threes" puts three on each
 slide with the slider's arrows, dots, loop and autoplay; three pictures or fewer stay still. The
 last slide holds what is left, one or two pictures at the height of three.
+
+**Loading** of the grid and the mosaic: only the block that opens the page fetches its first
+pictures at once — the first row of the grid, the first three of the mosaic; every other picture
+waits until it nears the screen (`loading="lazy"`), and all decode off the main thread. Each one
+offers the media library's copies by width (640 and 1280 px, the ones narrower than the picture) and
+says how wide it stands: a grid's cell by the columns the block really shows — two on a phone, the
+whole width with one column — the mosaic's large picture two thirds of the block and the small ones
+a third. A copy not cut yet is cut after the page has gone out, and the next page offers it. A
+picture without an alt leaves its lightbox link named "Open picture 2 of 5".
 
 A block with nothing to show — no pictures, an unknown address, a deleted file — prints nothing.
 

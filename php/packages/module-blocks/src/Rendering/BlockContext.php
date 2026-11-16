@@ -23,6 +23,10 @@ final readonly class BlockContext
         public array $values,
         public ?object $entity,
         public int $depth,
+        // Where it stands among the blocks around it, from 0: a template whose pictures are the
+        // first screen only when it opens the page (`depth` and `index` both 0) fetches them
+        // first, and leaves them for later anywhere else.
+        public int $index = 0,
     ) {}
 
     public function value(string $name, mixed $default = null): mixed

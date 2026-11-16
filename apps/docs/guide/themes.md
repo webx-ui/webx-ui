@@ -278,7 +278,7 @@ still.
 
 The `hero` and the `cta` of `theme-default` over a picture, and its `text-tiles`, have the switch «Parallax», off by default: on, the
 picture behind the words moves slower than the page while the words and the shade stay put.
-«Parallax strength» under it — soft, medium (the default) or strong — says how far behind it falls. It is the widgets' `data-webx-parallax` ([Widgets](./widgets.md)), so a block of your own takes
+«Parallax strength» under it — soft, medium (the default) or strong — says how far behind it falls. The page's first hero, as tall as the screen, is its first screen: there the picture goes down with the scroll and grows a little until the screen is gone (the widgets' `screen` parallax; a theme sets k, the zoom and the room above with `--webx-parallax-screen-*`). It is the widgets' `data-webx-parallax` ([Widgets](./widgets.md)), so a block of your own takes
 part by putting the attribute on a picture that fills its frame:
 
 ```blade

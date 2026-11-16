@@ -530,6 +530,7 @@ final class Renderer
             values: $this->values->resolve($type, $values, $entity),
             entity: $entity,
             depth: $depth,
+            index: $index,
         );
 
         $path = $this->compiler->path($type);
