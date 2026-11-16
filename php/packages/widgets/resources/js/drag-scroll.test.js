@@ -28,7 +28,9 @@ async function start(frames = 10) {
     scrollLeft: {
       configurable: true,
       get: () => left,
-      set: (value) => (left = Math.max(0, Math.min(most, value))),
+      set: (value) => {
+        left = Math.max(0, Math.min(most, value))
+      },
     },
   })
   strip.getBoundingClientRect = () => ({ left: 0, right: 1000, top: 0, bottom: 400 })
