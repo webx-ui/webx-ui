@@ -491,6 +491,12 @@ What a long page needs, each loading only where it stands:
   `--webx-parallax-strong` 1.5). A picture placed absolutely is made taller rather than scaled, so
   it stays sharp; one in the flow is scaled. Without JavaScript, with reduced motion and in print
   the picture simply stands there.
+  With `screen` among its words (`screen`, `screen soft`) it is the picture of the first screen: it
+  goes down k · scrollY and grows to 1 + z from the top of the page until its frame is gone from
+  the screen — also while the next section slides over it and the frame is pinned. Its knobs:
+  `--webx-parallax-screen-rate` (k, 0.2), `--webx-parallax-screen-rate-narrow` (0.1),
+  `--webx-parallax-screen-zoom` (z in percent, 3) and `--webx-parallax-screen-overscan` (the room
+  above the frame in percent of its height, 20 — never less than how far the picture goes).
 - **A section that slides over the one above** — `data-webx-overlap` on a section: the section
   before it (a hero banner, any block) stays where it is, `position: sticky`, while this one comes
   up over it; the elements of that section marked `data-webx-overlap-fade` fade out as they are

@@ -10,6 +10,7 @@ use Orchestra\Testbench\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Themes\ThemeLocator;
 use WebxUi\Themes\ThemeServiceProvider;
+use WebxUi\Widgets\FirstScreen;
 use WebxUi\Widgets\WidgetsServiceProvider;
 
 /**
@@ -96,6 +97,20 @@ final class ParallaxTest extends TestCase
     }
 
     #[Test]
+    public function the_first_screen_is_the_widgets_screen_parallax(): void
+    {
+        // The page's first hero, as tall as the screen: `screen`, the strength after it.
+        $this->assertMatchesRegularExpression('~data-webx-parallax="screen"\s+src=~', $this->render(['parallax' => true, 'height' => 'screen']));
+        $this->assertMatchesRegularExpression('~data-webx-parallax="screen soft"\s+src=~', $this->render(['parallax' => true, 'height' => 'screen', 'parallax_strength' => 'soft']));
+        $this->assertMatchesRegularExpression('~data-webx-parallax="screen strong"\s+src=~', $this->render(['parallax' => true, 'height' => 'screen', 'parallax_strength' => 'strong']));
+        // Not as tall as the screen, or not the first hero of the page: the parallax across the screen.
+        $this->assertMatchesRegularExpression('~data-webx-parallax\s+src=~', $this->render(['parallax' => true, 'height' => 'ratio']));
+        $this->assertMatchesRegularExpression('~data-webx-parallax\s+src=~', $this->render(['parallax' => true, 'height' => 'screen'], second: true));
+        // Off, the first screen prints what it printed before.
+        $this->assertStringNotContainsString('data-webx-parallax', $this->render(['height' => 'screen']));
+    }
+
+    #[Test]
     public function without_a_picture_there_is_nothing_to_move(): void
     {
         $this->assertStringNotContainsString('data-webx-parallax', $this->render(['parallax' => true, 'tone' => 'accent']));
@@ -108,12 +123,16 @@ final class ParallaxTest extends TestCase
      *
      * @param  array<string, mixed>  $values
      */
-    private function render(array $values = [], bool $unmarked = false): string
+    private function render(array $values = [], bool $unmarked = false, bool $second = false): string
     {
         $type = self::type();
         $template = (string) $type['template'];
         // Each render a page of its own: the hero is its first, whichever render comes first.
         $this->app->forgetScopedInstances();
+        // Unless a hero above it has taken the first screen.
+        if ($second) {
+            FirstScreen::claim('hero');
+        }
 
         if ($unmarked) {
             $template = (string) preg_replace('~@if \(\$parallax\) data-webx-parallax.*? @endif~', '', $template);
