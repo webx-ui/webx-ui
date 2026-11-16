@@ -201,7 +201,11 @@ final class DateTimeField
         ];
     }
 
-    /** Whether the times are the visitor's own (§6.7): counted in the browser's zone, sent with it. */
+    /**
+     * Whether the times are the visitor's own (§6.7): counted in the browser's zone, sent with it.
+     *
+     * @param  array<string, mixed>|null  $options
+     */
     public static function visitor(?array $options): bool
     {
         return ($options['timezone'] ?? null) === self::VISITOR;

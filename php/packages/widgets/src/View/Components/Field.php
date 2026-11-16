@@ -77,6 +77,7 @@ final class Field extends Component
      * @param  array<string, list<string>>|null  $when
      * @param  array<string, list<string>>|null  $unless
      * @param  list<int|string>|null  $weekdays
+     * @param  list<string>|null  $skip
      */
     public function __construct(
         public string $name,
