@@ -160,6 +160,7 @@ final class HeroPictureTest extends TestCase
     }
 
     /**
+     * @param  array<string, mixed>  $picture
      * @param  array<string, mixed>  $values
      */
     private function hero(array $picture, array $values = []): string
