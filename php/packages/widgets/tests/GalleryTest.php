@@ -26,6 +26,7 @@ use WebxUi\Routing\RoutingServiceProvider;
 use WebxUi\Seo\SeoServiceProvider;
 use WebxUi\Settings\SettingsServiceProvider;
 use WebxUi\Themes\ThemeServiceProvider;
+use WebxUi\Widgets\Pictures;
 use WebxUi\Widgets\View\Sliders;
 use WebxUi\Widgets\WidgetsServiceProvider;
 
@@ -299,7 +300,7 @@ final class GalleryTest extends TestCase
         // folds the grid into one, is asked for the whole width — 640w and up at 2x, not the preview.
         $two = $this->render(['pictures' => array_slice($pictures, 0, 2), 'columns' => 2], second: true);
         $this->assertSame(2, substr_count($two, 'sizes="(min-width: 21.75em) 50vw, 100vw"'));
-        $this->assertSame('(min-width: 60.75em) 17vw, (min-width: 51em) 20vw, (min-width: 41.25em) 25vw, (min-width: 31.5em) 34vw, (min-width: 21.75em) 50vw, 100vw', \WebxUi\Widgets\Pictures::gridSizes(6));
+        $this->assertSame('(min-width: 60.75em) 17vw, (min-width: 51em) 20vw, (min-width: 41.25em) 25vw, (min-width: 31.5em) 34vw, (min-width: 21.75em) 50vw, 100vw', Pictures::gridSizes(6));
 
         // A copy as wide as the picture or wider is no copy: a picture of 1000 px lists 640 and itself.
         $small = $this->picture('photo-small');
