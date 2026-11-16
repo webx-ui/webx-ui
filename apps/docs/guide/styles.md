@@ -294,6 +294,14 @@ browser downloads after the HTML — pictures, fonts, scripts — is the theme's
   library gives its preview and its file to `srcset`, with `sizes` saying how wide the cell is —
   the gallery of `webx-ui/widgets` does exactly that. A library of old JPEGs and PNGs is converted
   once with `php artisan webx:media:webp`, which rewrites every reference to the files.
+- **Formats and widths.** A site of photos on the whole screen cuts the library's copies in AVIF
+  and WebP too (`WEBX_MEDIA_THUMB_FORMATS=avif,webp`) on a ladder that reaches the screen
+  (`WEBX_MEDIA_THUMB_WIDTHS=160,320,480,768,1080,1440,1920,2560`). A block template wraps its
+  `<img>` in `@webxPicture($picture, $sizes)` … `@endwebxPicture`: with formats it becomes a
+  `<picture>` with a `<source>` per format; without them it stays the same `<img>`, byte for byte.
+  `['lead' => true]` preloads the first screen's picture from the `<head>`, `['mobile' => $upright]`
+  gives a phone its own upright cut (the hero's «Picture for the phone»). The slides, photos and
+  tabs nobody sees yet get their addresses when the widget shows them (`webx-widgets.pictures.defer`).
 - **Their size.** Every `<img>` carries `width` and `height` — of the file, or the size the layout
   draws it at — so the page keeps its place before the file arrives and the text below does not
   jump. A picture of the library knows its size; one whose size is unknown may say it under a

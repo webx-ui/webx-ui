@@ -925,7 +925,10 @@ sink › Blocks › Call to action: на картинке 21:9 во всё ок�
   Первый экран, поэтому без `loading="lazy"`. У **первого** `hero` страницы `b-hero__picture` и
   `b-hero__badge` — с `fetchpriority="high"` (правило 38: значок часто и есть LCP): кто первый,
   решает `WebxUi\Widgets\FirstScreen::claim('hero')` — scoped на запрос, пустой `hero` (ничего не
-  печатает) не спрашивает. Второй `hero` страницы — без приоритета.
+  печатает) не спрашивает. Второй `hero` страницы — без приоритета. С форматами сайта
+  (`webx-media.thumbs.formats`) картинка — `<picture>` с AVIF/WebP по ширинам, у первого — preload в
+  `<head>`; `image_mobile` («Picture for the phone») — портретный кадр для телефона в `<source media>`
+  (WIDGETS §14.2). Картинки cta, text-tiles, media-text и cards — через тот же `@webxPicture`.
 - **Классы.** `b-hero--screen` и `b-hero--at-middle` / `b-hero--at-top`, `b-hero__eyebrow`,
   `b-hero__badge`. Высота экрана — `min-height: calc(100svh - var(--hero-above, 0px))`, наименьшая:
   слова, которым мало, растягивают блок; слова — по вертикали flex'ом (`align-items`).

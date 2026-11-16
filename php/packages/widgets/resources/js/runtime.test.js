@@ -121,6 +121,24 @@ describe('tabs', () => {
     expect(document.querySelectorAll('[data-webx-tab]')[1].hidden).toBe(false)
   })
 
+  it('gives a panel its held pictures when it is selected, and the next one ahead (§14.2)', async () => {
+    await start(`
+      <div data-webx-tabs>
+        <section data-webx-tab="A"><img src="/a.jpg" alt=""></section>
+        <section data-webx-tab="B"><img data-webx-src="/b.jpg" alt=""></section>
+        <section data-webx-tab="C"><img data-webx-src="/c.jpg" alt=""></section>
+        <section data-webx-tab="D"><img data-webx-src="/d.jpg" alt=""></section>
+      </div>`)
+    const images = () =>
+      [...document.querySelectorAll('[data-webx-tab] img')].map((image) =>
+        image.getAttribute('src'),
+      )
+
+    expect(images()).toEqual(['/a.jpg', '/b.jpg', null, null])
+
+    document.querySelectorAll('[role="tab"]')[2].click()
+    expect(images()).toEqual(['/a.jpg', '/b.jpg', '/c.jpg', '/d.jpg'])
+  })
   it('opens on the panel the address points into', async () => {
     history.replaceState(null, '', '/#cards')
     await start(markup)

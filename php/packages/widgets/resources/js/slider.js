@@ -22,11 +22,15 @@
  * of the slide is told on the root as `webx:slide` — `detail.index` (the slide's own number from 0,
  * a loop's copies not counted), `detail.count` and `detail.auto` (autoplay moved it) — for what a
  * theme draws around the slider.
+ *
+ * A slide past the first in view may come with its pictures held back (§14.2): the slides in view,
+ * the one before them and the next ones get theirs on start and on every move.
  */
 
 import '../css/slider.css'
 import Swiper from 'swiper'
 import { A11y, Autoplay, EffectFade, Navigation, Pagination, Thumbs } from 'swiper/modules'
+import { unhold } from './held.js'
 import { swipeSettings, wheelSteps } from './swipe.js'
 
 const webx = (window.webx ??= {})
@@ -62,7 +66,11 @@ function thumbnails(slides, text) {
     button.setAttribute('aria-label', words(text.thumb, { ':index': index + 1 }))
 
     const picture = slide.querySelector('img')
-    const src = slide.dataset.thumb || picture?.currentSrc || picture?.getAttribute('src')
+    const src =
+      slide.dataset.thumb ||
+      picture?.currentSrc ||
+      picture?.getAttribute('src') ||
+      picture?.dataset.webxSrc
     if (src) {
       const image = document.createElement('img')
       image.className = 'webx-slider__thumb-image'
@@ -257,6 +265,21 @@ export function slider(root) {
     const fast = Math.abs(instance.touches.diff ?? 0) / Math.max(1, ms) > swipe.velocity
     instance.params.longSwipesMs = fast ? Number.POSITIVE_INFINITY : 0
   })
+
+  // The slides in view, the one before them and the next ones: their held pictures, before they slide in.
+  const near = () => {
+    const all = swiper.slides ?? []
+    const at = swiper.activeIndex ?? 0
+    const ahead = Math.ceil(fade ? 1 : perView)
+    for (let index = Math.max(0, at - 1); index <= at + ahead && index < all.length; index++) {
+      unhold(all[index])
+    }
+    // The first slide's neighbour behind is the last one, a loop or an arrow away.
+    if (at === 0 && all.length > 0) unhold(all[all.length - 1])
+  }
+  swiper.on('slideChange', near)
+  swiper.on('resize', near)
+  near()
 
   root.classList.add('is-ready')
   track.classList.add('is-ready')

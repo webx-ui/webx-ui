@@ -133,11 +133,27 @@ return [
     | are allowed — an open parameter would let one request ask the server to
     | resize anything to anything.
     |
+    | A page's picture lists the variants from `srcset_from` up and narrower
+    | than the picture (widgets' Pictures): a site of photos on the whole
+    | screen gives itself the ladder 480/768/1080/1440/1920/2560 beside the
+    | panel's 160 and 320 (`WEBX_MEDIA_THUMB_WIDTHS`).
+    |
+    | `formats` cuts the same widths in other formats as well — `['avif',
+    | 'webp']` (`WEBX_MEDIA_THUMB_FORMATS=avif,webp`) — and a block prints its
+    | picture as `<picture>` with a `<source>` per format before the `<img>`.
+    | Empty, as by default, a variant keeps the picture's own format and a block
+    | prints what it always did. `quality` is a format's own, over
+    | `image.quality`: AVIF at 52 looks as WebP does at 76 (`'webp' => 76`
+    | squeezes WebP that far too; left out, it keeps `image.quality`).
+    |
     */
 
     'thumbs' => [
-        'widths' => [160, 320, 640, 1280],
+        'widths' => array_values(array_filter(array_map(intval(...), explode(',', (string) env('WEBX_MEDIA_THUMB_WIDTHS', '160,320,640,1280'))))),
         'fits' => ['cover', 'contain'],
+        'srcset_from' => 480,
+        'formats' => array_values(array_filter(array_map(trim(...), explode(',', strtolower((string) env('WEBX_MEDIA_THUMB_FORMATS', '')))))),
+        'quality' => ['avif' => 52],
     ],
 
     /*

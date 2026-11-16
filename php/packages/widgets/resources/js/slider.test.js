@@ -535,4 +535,29 @@ describe('slider', () => {
     expect(again.destroyed).toBeFalsy()
     expect(root.classList.contains('is-ready')).toBe(true)
   })
+
+  it('gives a held slide its pictures as it nears the view, and not before (§14.2)', async () => {
+    // What the server prints with `pictures.defer`: the slides past the first in view hold their addresses.
+    const html = slider({}, { slides: 6 }).replace(
+      /<img src="\/p([2-6])\.jpg" alt="">/g,
+      '<picture class="webx-picture"><source type="image/avif" data-webx-srcset="/p$1-480.avif 480w"><img data-webx-src="/p$1.jpg" alt=""></picture>',
+    )
+    const { root } = await start(html)
+    const image = (n) => root.querySelectorAll('.webx-slider__slide img')[n - 1]
+    const source = (n) => root.querySelectorAll('.webx-slider__slide source')[n - 2]
+
+    // The slide in view, the next one and the last (the one an arrow back goes to) — not the rest.
+    expect(image(2).getAttribute('src')).toBe('/p2.jpg')
+    expect(source(2).getAttribute('srcset')).toBe('/p2-480.avif 480w')
+    expect(image(6).getAttribute('src')).toBe('/p6.jpg')
+    expect(image(3).hasAttribute('src')).toBe(false)
+    expect(source(3).hasAttribute('srcset')).toBe(false)
+    expect(image(4).hasAttribute('src')).toBe(false)
+
+    root.querySelector('.webx-slider__next').click()
+    expect(image(3).getAttribute('src')).toBe('/p3.jpg')
+    expect(source(3).getAttribute('srcset')).toBe('/p3-480.avif 480w')
+    expect(image(3).hasAttribute('data-webx-src')).toBe(false)
+    expect(image(4).hasAttribute('src')).toBe(false)
+  })
 })
