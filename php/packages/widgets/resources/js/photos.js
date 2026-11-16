@@ -140,14 +140,9 @@ export function photos(root) {
   // A drag over the frame, read where the press lands: on the frame, or on the card's link over it.
   let start = null
   let swallow = false
-  const over = (event) => {
+  const over = ({ clientX: x, clientY: y }) => {
     const box = frame.getBoundingClientRect()
-    return (
-      event.clientX >= box.left &&
-      event.clientX <= box.right &&
-      event.clientY >= box.top &&
-      event.clientY <= box.bottom
-    )
+    return x >= box.left && x <= box.right && y >= box.top && y <= box.bottom
   }
   const rtl = () => getComputedStyle(root).direction === 'rtl'
   // The photo a step away, or none past the first and the last: a drag does not go round.
@@ -160,14 +155,18 @@ export function photos(root) {
   // and the one coming in `side` pixels beside it.
   let moved = []
   let side = 0
+  const slide = (at, x, state) => {
+    pictures[at].classList.add(state)
+    pictures[at].style.transform = `translateX(${x}px)`
+  }
   const release = (at) => {
-    const picture = pictures[at]
+    const { style, classList } = pictures[at]
     // Back in the crossfade at once: a photo that slid out does not fade out over the one in.
-    picture.style.transition = 'none'
-    picture.classList.remove('is-dragged', 'is-gliding')
-    picture.style.transform = ''
-    void picture.offsetWidth
-    picture.style.transition = ''
+    style.transition = 'none'
+    classList.remove('is-dragged', 'is-gliding')
+    style.transform = ''
+    void pictures[at].offsetWidth
+    style.transition = ''
   }
   const place = (dx, width) => {
     const next = beside((dx < 0 ? 1 : -1) * (rtl() ? -1 : 1))
@@ -176,11 +175,8 @@ export function photos(root) {
     moved.filter((at) => !now.includes(at)).forEach(release)
     moved = now
     side = dx < 0 ? width : -width
-    pictures[index].classList.add('is-dragged')
-    pictures[index].style.transform = `translateX(${shift}px)`
-    if (next === -1) return
-    pictures[next].classList.add('is-dragged')
-    pictures[next].style.transform = `translateX(${shift + side}px)`
+    slide(index, shift, 'is-dragged')
+    if (next !== -1) slide(next, shift + side, 'is-dragged')
   }
   // Let go: the photos glide to where they rest — the one coming in to the middle and the shown
   // one out, or both back — then are the crossfade's again. With reduced motion, at once.
@@ -193,17 +189,10 @@ export function photos(root) {
       done.forEach(release)
       return
     }
-    done.forEach((at) => {
-      const rest = at === to ? 0 : to === from ? side : -side
-      pictures[at].classList.add('is-gliding')
-      pictures[at].style.transform = `translateX(${rest}px)`
-    })
-    let ended = false
-    const end = () => {
-      if (ended) return
-      ended = true
-      done.forEach(release)
-    }
+    done.forEach((at) => slide(at, at === to ? 0 : to === from ? side : -side, 'is-gliding'))
+    // Once there — the glide is the stylesheet's, its end the photo's `transitionend` — unless a
+    // new drag took the photo meanwhile.
+    const end = () => done.filter((at) => !moved.includes(at)).forEach(release)
     pictures[to].addEventListener('transitionend', end, { once: true })
     setTimeout(end, 1000)
   }
@@ -239,7 +228,7 @@ export function photos(root) {
     event.preventDefault()
     place(dx, frame.getBoundingClientRect().width)
   })
-  const up = (event) => {
+  const up = (event, cancel) => {
     if (!start || event.pointerId !== start.id) return
     const dx = event.clientX - start.x
     const dy = event.clientY - start.y
@@ -247,7 +236,7 @@ export function photos(root) {
     const axis = start.axis ?? (Math.abs(dx) > LOCK && Math.abs(dx) > Math.abs(dy) ? 'x' : 'y')
     start = null
     root.classList.remove('is-dragging')
-    if (axis !== 'x') {
+    if (cancel || axis !== 'x') {
       settle(index)
       return
     }
@@ -261,11 +250,8 @@ export function photos(root) {
     settle(to === -1 ? index : to)
   }
   listen(surface, 'pointerup', up)
-  listen(surface, 'pointercancel', () => {
-    start = null
-    root.classList.remove('is-dragging')
-    settle(index)
-  })
+  // Taken by the browser (a scroll after all): back where it was.
+  listen(surface, 'pointercancel', (event) => up(event, true))
 
   // A touchpad: a step a gesture, no further than the first and the last.
   const steps = wheelSteps((step) => {

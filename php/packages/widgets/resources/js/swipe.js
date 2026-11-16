@@ -18,14 +18,12 @@ export const SWIPE = Object.freeze({
   pause: 400,
 })
 
-/** The settings the server sent, over the defaults; anything not a number at or above 0 is the default. */
+/** The settings the server sent (JSON numbers), over the defaults; anything but a number at or above 0 is the default. */
 export function swipeSettings(own) {
   const settings = { ...SWIPE }
-  for (const key of Object.keys(SWIPE)) {
-    const value = Number(own?.[key])
-    if (own?.[key] !== null && own?.[key] !== undefined && Number.isFinite(value) && value >= 0) {
-      settings[key] = value
-    }
+  for (const key in SWIPE) {
+    const value = own?.[key]
+    if (typeof value === 'number' && value >= 0) settings[key] = value
   }
   return settings
 }
