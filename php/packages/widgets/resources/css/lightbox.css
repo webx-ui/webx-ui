@@ -105,15 +105,16 @@
   text-align: start;
   opacity: 0;
   pointer-events: none;
+}
+
+/* Fades in once the picture is still; leaves at once as it starts to zoom back. */
+.webx-lightbox__caption.is-shown {
+  opacity: 1;
   transition: opacity var(--site-duration) ease;
 }
 
-.webx-lightbox__caption.is-shown {
-  opacity: 1;
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .webx-lightbox__caption {
+  .webx-lightbox__caption.is-shown {
     transition: none;
   }
 }
