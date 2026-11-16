@@ -594,8 +594,9 @@ Inertial scrolling is this widget only: a theme does not bring Lenis or another 
   each that fills while its photo is shown and shows it on a click. A finger or a mouse drags the
   photo, the next one coming in beside it; let go, it pages past 15% of the frame or by a flick, and
   gives way (0.3) past the first and the last — a drag does not go round, the time does. A touchpad
-  pages a photo a gesture (60px of sideways scroll, then 400 ms of quiet); the click a drag ends in
-  opens nothing. The feel is `webx-widgets.swipe`, as for the slider. The
+  pages a photo a gesture (60px of sideways scroll, then 400 ms of quiet). In a slider of cards the
+  gesture over the photos is theirs alone — the slider stands; one that starts past the first or the
+  last photo is the slider's and pages the cards instead. The click a drag ends in opens nothing. The feel is `webx-widgets.swipe`, as for the slider. The
   pointer over it, the focus inside it or the page scrolled past stop the time, and the pause button
   stops it for good. With reduced motion nothing turns until the button is pressed.
 - `images` takes what a template has: values of a media field, objects with `url()`, addresses —

@@ -404,8 +404,12 @@ export function slider(root) {
       if (step > 0 !== rtl) swiper.slideNext()
       else swiper.slidePrev()
     }, swipe)
-    viewport.addEventListener('wheel', steps, { passive: false })
-    on.push(() => viewport.removeEventListener('wheel', steps, { passive: false }))
+    // A wheel something inside already took (the photos of a card) is not this slider's.
+    const wheel = (event) => {
+      if (!event.defaultPrevented) steps(event)
+    }
+    viewport.addEventListener('wheel', wheel, { passive: false })
+    on.push(() => viewport.removeEventListener('wheel', wheel, { passive: false }))
   }
 
   // Per view by the slider's own width: crossing a container breakpoint changes the property.

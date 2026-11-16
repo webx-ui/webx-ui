@@ -253,16 +253,23 @@ export function photos(root) {
   // Taken by the browser (a scroll after all): back where it was.
   listen(surface, 'pointercancel', (event) => up(event, true))
 
-  // A touchpad: a step a gesture, no further than the first and the last.
-  const steps = wheelSteps((step) => {
-    const to = beside(step * (rtl() ? -1 : 1))
-    if (to !== -1) show(to)
-  }, swipe)
+  // A touchpad: a step a gesture. A gesture the photos take stops here, so a slider of cards
+  // around the card does not page with it; one past the first or the last is not theirs and
+  // goes on to that slider, as it would over the card's text.
+  const steps = wheelSteps(
+    (step) => {
+      const to = beside(step * (rtl() ? -1 : 1))
+      if (to !== -1) show(to)
+    },
+    swipe,
+    undefined,
+    (step) => beside(step * (rtl() ? -1 : 1)) !== -1,
+  )
   listen(
     surface,
     'wheel',
     (event) => {
-      if (over(event)) steps(event)
+      if (over(event) && steps(event)) event.stopPropagation()
     },
     { passive: false },
   )

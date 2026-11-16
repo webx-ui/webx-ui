@@ -433,6 +433,76 @@ describe('slider', () => {
     vi.restoreAllMocks()
   })
 
+  it('leaves a touchpad gesture over the photos of a card to them, and past their last to itself', async () => {
+    let time = 1000
+    vi.spyOn(performance, 'now').mockImplementation(() => time)
+    // A slider of cards, the first card with three photos of its own.
+    document.body.innerHTML = slider()
+    const photos = Array.from(
+      { length: 3 },
+      (_, at) =>
+        `<img class="webx-photos__photo${at === 0 ? ' is-active' : ''}" src="/c${at + 1}.jpg" alt="">`,
+    ).join('')
+    document.querySelector('.webx-slider__slide').insertAdjacentHTML(
+      'afterbegin',
+      `<div class="webx-photos" data-webx-photos='${JSON.stringify({ autoplay: 0, words: { pause: 'Pause', play: 'Play' } })}'>
+        <div class="webx-photos__frame">${photos}</div>
+      </div>`,
+    )
+    delete window.webx
+    vi.resetModules()
+    await import('./runtime.js')
+    await import('./slider.js')
+    await import('./photos.js')
+    const root = document.querySelector('.webx-slider')
+    const swiper = root.querySelector('.webx-slider__viewport').swiper
+    const card = root.querySelector('.webx-photos')
+    const frame = card.querySelector('.webx-photos__frame')
+    frame.getBoundingClientRect = () => ({
+      top: 0,
+      left: 0,
+      width: 300,
+      height: 200,
+      bottom: 200,
+      right: 300,
+    })
+    const shown = () =>
+      Array.from(card.querySelectorAll('.webx-photos__photo')).findIndex((photo) =>
+        photo.classList.contains('is-active'),
+      )
+    const wheel = (deltaX) => {
+      time += 16
+      const event = new WheelEvent('wheel', {
+        deltaX,
+        clientX: 100,
+        clientY: 100,
+        bubbles: true,
+        cancelable: true,
+      })
+      frame.dispatchEvent(event)
+      return event
+    }
+
+    // One gesture of 61px over the photos: the second photo, the slider where it was.
+    wheel(61)
+    expect(shown()).toBe(1)
+    expect(swiper.activeIndex).toBe(0)
+    // Its momentum, onto the last photo and past it: still the photos', the slider stands.
+    time += 500
+    wheel(61)
+    for (let at = 0; at < 10; at++) wheel(40)
+    expect(shown()).toBe(2)
+    expect(swiper.activeIndex).toBe(0)
+
+    // A gesture of its own past the last photo is not theirs: the slider of cards pages, once.
+    time += 500
+    wheel(61)
+    for (let at = 0; at < 10; at++) wheel(40)
+    expect(shown()).toBe(2)
+    expect(swiper.activeIndex).toBe(1)
+    vi.restoreAllMocks()
+  })
+
   it('leaves the wheel of a running strip alone', async () => {
     const { root, swiper } = await start(
       slider(

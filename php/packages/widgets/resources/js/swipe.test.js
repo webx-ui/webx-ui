@@ -82,6 +82,42 @@ describe('swipe', () => {
     expect(down.defaultPrevented).toBe(false)
   })
 
+  it('leaves a gesture it cannot page untouched, but keeps one it took to its end', () => {
+    let time = 0
+    let edge = false
+    const steps = []
+    const listen = wheelSteps(
+      (step) => {
+        steps.push(step)
+        edge = true
+      },
+      SWIPE,
+      () => time,
+      (direction) => !(edge && direction > 0),
+    )
+
+    time += 16
+    const first = wheel(70)
+    expect(listen(first)).toBe(true)
+    expect(steps).toEqual([1])
+    // At the edge now, but the momentum is this gesture's: still taken.
+    time += 16
+    const momentum = wheel(40)
+    expect(listen(momentum)).toBe(true)
+    expect(momentum.defaultPrevented).toBe(true)
+
+    // A new gesture on past the edge: not this one's, not even prevented.
+    time += 500
+    const past = wheel(70)
+    expect(listen(past)).toBe(false)
+    expect(past.defaultPrevented).toBe(false)
+    expect(steps).toEqual([1])
+    // Back from the edge is.
+    time += 500
+    listen(wheel(-70))
+    expect(steps).toEqual([1, -1])
+  })
+
   it('forgets a sideways nudge after a pause', () => {
     let time = 0
     const steps = []

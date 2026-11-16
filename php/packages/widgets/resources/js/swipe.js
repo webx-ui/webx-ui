@@ -43,28 +43,41 @@ export function flick(dx, ms, width, settings = SWIPE) {
 /**
  * A touchpad's sideways scroll as steps: the listener for `wheel` (not passive), calling
  * `step(1)` or `step(-1)`. A wheel more down than sideways is the page's and is left alone.
+ *
+ * `can(direction)` says whether a gesture starting that way is this one's to page; one that is
+ * not (the last photo of a card, scrolled on) is left untouched to whatever pages around it.
+ * A gesture once taken stays taken to its end, momentum and all: one gesture moves one level.
+ * The listener answers whether it took the event.
  */
-export function wheelSteps(step, settings = SWIPE, now = () => performance.now()) {
+export function wheelSteps(
+  step,
+  settings = SWIPE,
+  now = () => performance.now(),
+  can = () => true,
+) {
   let sum = 0
   let last = -Infinity
   let quiet = -Infinity
 
   return (event) => {
-    if (Math.abs(event.deltaX) <= Math.abs(event.deltaY)) return
-    event.preventDefault()
+    if (Math.abs(event.deltaX) <= Math.abs(event.deltaY)) return false
     const at = now()
+    const fresh = at >= quiet && at - last > settings.pause
+    if (fresh && !can(event.deltaX > 0 ? 1 : -1)) return false
+    event.preventDefault()
     // The momentum of a gesture that already paged: waited out, however long it runs.
     if (at < quiet) {
       quiet = at + settings.pause
-      return
+      return true
     }
-    if (at - last > settings.pause) sum = 0
+    if (fresh) sum = 0
     last = at
     sum += event.deltaX
-    if (Math.abs(sum) < settings.wheel) return
+    if (Math.abs(sum) < settings.wheel) return true
     const direction = sum > 0 ? 1 : -1
     sum = 0
     quiet = at + settings.pause
     step(direction)
+    return true
   }
 }
