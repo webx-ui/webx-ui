@@ -37,6 +37,21 @@ final class DateTimeField
 
     public const string WEEKDAYS = 'datetime.weekdays';
 
+    public const string LEAD = 'datetime.lead';
+
+    public const string SKIP = 'datetime.skip';
+
+    public const string ZONE_PROBLEM = 'datetime.zone';
+
+    /** `timezone` of a field: the site's (the default, not written down) or the visitor's browser's. */
+    public const string VISITOR = 'visitor';
+
+    /** The longest `lead-days`: a year ahead. */
+    public const int LEAD_MAX = 365;
+
+    /** How the slots are drawn: a list under the calendar (default) or a panel headed by the day. */
+    public const array SLOTS = ['list', 'panel'];
+
     /** The site's own setting of the zone (`module-settings`, the Contacts tab). */
     public const string SETTING = 'contacts.timezone';
 
@@ -64,6 +79,13 @@ final class DateTimeField
             'time-to' => self::clock($input['time-to'] ?? null) ?? '',
             'weekdays' => $weekdays,
             'timezone-label' => self::words($input['timezone-label'] ?? null) ?? '',
+            // The options of FORM_STEPS §6.7, each absent at its default — which is how a form saved
+            // before them reads.
+            'timezone' => ($input['timezone'] ?? null) === self::VISITOR ? self::VISITOR : '',
+            'lead-days' => is_numeric($input['lead-days'] ?? null) && (int) $input['lead-days'] > 0 ? min(self::LEAD_MAX, (int) $input['lead-days']) : '',
+            'time-skip' => self::skipOf($input['time-skip'] ?? null),
+            'slots' => ($input['slots'] ?? null) === 'panel' ? 'panel' : '',
+            'first-day' => filter_var($input['first-day'] ?? false, FILTER_VALIDATE_BOOL) ? true : '',
         ];
     }
 
@@ -112,6 +134,35 @@ final class DateTimeField
             }
         }
 
+        $lead = $input['lead-days'] ?? null;
+
+        if ($lead !== null && $lead !== '' && (! is_numeric($lead) || (int) $lead != $lead || (int) $lead < 0 || (int) $lead > self::LEAD_MAX)) {
+            $problems['lead-days'] = self::LEAD;
+        }
+
+        $skip = $input['time-skip'] ?? null;
+
+        if ($skip !== null && $skip !== '' && $skip !== []) {
+            foreach (is_array($skip) ? $skip : [$skip] as $one) {
+                if (self::clock($one) === null) {
+                    $problems['time-skip'] = self::SKIP;
+
+                    break;
+                }
+            }
+
+            // Skipping every time of the day leaves a field nobody can answer.
+            if (! isset($problems['time-skip']) && ! isset($problems['time-from']) && ! isset($problems['time-step']) && self::times(self::clean($input)) === []) {
+                $problems['time-skip'] = self::SKIP;
+            }
+        }
+
+        $zone = $input['timezone'] ?? null;
+
+        if ($zone !== null && $zone !== '' && $zone !== self::VISITOR && $zone !== 'site') {
+            $problems['timezone'] = self::ZONE_PROBLEM;
+        }
+
         return $problems;
     }
 
@@ -125,7 +176,7 @@ final class DateTimeField
      * The grid of a field with its defaults filled in: minutes from midnight, ISO days.
      *
      * @param  array<string, mixed>|null  $options
-     * @return array{step: int, from: int, to: int, weekdays: list<int>}
+     * @return array{step: int, from: int, to: int, weekdays: list<int>, lead: int, skip: list<string>}
      */
     public static function grid(?array $options): array
     {
@@ -143,7 +194,36 @@ final class DateTimeField
             'to' => self::minutes(self::clock($options['time-to'] ?? null) ?? self::TO),
             // None written down is every day.
             'weekdays' => $weekdays === [] ? [1, 2, 3, 4, 5, 6, 7] : $weekdays,
+            // Days from today before the first that may be chosen: 1 — from tomorrow on.
+            'lead' => is_numeric($options['lead-days'] ?? null) ? max(0, min(self::LEAD_MAX, (int) $options['lead-days'])) : 0,
+            // Times of the grid not offered — a lunch break.
+            'skip' => self::skipOf($options['time-skip'] ?? null),
         ];
+    }
+
+    /**
+     * Whether the times are the visitor's own (§6.7): counted in the browser's zone, sent with it.
+     *
+     * @param  array<string, mixed>|null  $options
+     */
+    public static function visitor(?array $options): bool
+    {
+        return ($options['timezone'] ?? null) === self::VISITOR;
+    }
+
+    /**
+     * The zone an answer is read in: the one the visitor's browser sent, for a field of the
+     * visitor's zone that got one; the site's for every other — and for a page without JavaScript,
+     * which sends none. A zone that does not exist is {@see refusal()}'s to refuse; here it is the site's.
+     *
+     * @param  array<string, mixed>|null  $options
+     */
+    public static function zoneOf(?array $options, mixed $value, ?string $site = null): string
+    {
+        $site ??= self::zone();
+        $sent = is_array($value) && is_string($value['timezone'] ?? null) ? trim($value['timezone']) : '';
+
+        return self::visitor($options) && $sent !== '' && self::known($sent) ? $sent : $site;
     }
 
     /**
@@ -158,7 +238,11 @@ final class DateTimeField
         $times = [];
 
         for ($at = $grid['from']; $at + $grid['step'] <= $grid['to']; $at += $grid['step']) {
-            $times[] = sprintf('%02d:%02d', intdiv($at, 60), $at % 60);
+            $time = sprintf('%02d:%02d', intdiv($at, 60), $at % 60);
+
+            if (! in_array($time, $grid['skip'], true)) {
+                $times[] = $time;
+            }
         }
 
         return $times;
@@ -264,6 +348,18 @@ final class DateTimeField
             return ['webx-inbox::form.datetime-time', []];
         }
 
+        // The visitor's zone (§6.7): one that exists, or the answer is refused — a page that sends
+        // none (no JavaScript) is read in the site's.
+        if (self::visitor($options) && is_array($value) && array_key_exists('timezone', $value)) {
+            $sent = is_string($value['timezone']) ? trim($value['timezone']) : '';
+
+            if ($sent !== '' && ! self::known($sent)) {
+                return ['webx-inbox::form.datetime-zone', []];
+            }
+
+            $zone = $sent !== '' ? $sent : $zone;
+        }
+
         $day = self::day($date, $zone);
 
         if ($day === null || self::clock($time) === null) {
@@ -278,12 +374,20 @@ final class DateTimeField
 
         $minutes = self::minutes($time);
 
-        if ($minutes < $grid['from'] || $minutes + $grid['step'] > $grid['to'] || ($minutes - $grid['from']) % $grid['step'] !== 0) {
+        if ($minutes < $grid['from'] || $minutes + $grid['step'] > $grid['to'] || ($minutes - $grid['from']) % $grid['step'] !== 0
+            || in_array(sprintf('%02d:%02d', intdiv($minutes, 60), $minutes % 60), $grid['skip'], true)) {
             return ['webx-inbox::form.datetime-grid', []];
         }
 
-        if ($day->setTime(intdiv($minutes, 60), $minutes % 60)->lessThan(($now ?? CarbonImmutable::now())->setTimezone($zone))) {
+        $now = ($now ?? CarbonImmutable::now())->setTimezone($zone);
+
+        if ($day->setTime(intdiv($minutes, 60), $minutes % 60)->lessThan($now)) {
             return ['webx-inbox::form.datetime-past', []];
+        }
+
+        // `lead-days`: the first day that may be chosen is that many days after today, in the zone.
+        if ($grid['lead'] > 0 && $day->lessThan($now->startOfDay()->addDays($grid['lead']))) {
+            return ['webx-inbox::form.datetime-lead', ['date' => $now->startOfDay()->addDays($grid['lead'])->locale(app()->getLocale())->isoFormat('LL')]];
         }
 
         return null;
@@ -347,6 +451,32 @@ final class DateTimeField
         $day = CarbonImmutable::createFromFormat('!Y-m-d', $date, $zone);
 
         return $day instanceof CarbonImmutable && $day->format('Y-m-d') === $date ? $day : null;
+    }
+
+    /**
+     * `time-skip` as kept: `HH:MM` each, once, in order; a line «13:30, 14:00» is read as a list.
+     *
+     * @return list<string>
+     */
+    public static function skipOf(mixed $input): array
+    {
+        if (is_string($input)) {
+            $input = preg_split('/[\s,;]+/', $input, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        }
+
+        $times = [];
+
+        foreach (is_array($input) ? $input : [] as $one) {
+            $clock = self::clock($one);
+
+            if ($clock !== null) {
+                $times[$clock] = $clock;
+            }
+        }
+
+        ksort($times);
+
+        return array_values($times);
     }
 
     /** `HH:MM` of 00:00–24:00, or null; `9:30` is written `09:30`. */

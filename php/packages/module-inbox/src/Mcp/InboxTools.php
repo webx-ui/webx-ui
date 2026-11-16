@@ -153,7 +153,12 @@ final class InboxTools
                         .'`redirect` — where the visitor goes after sending, the same link a menu item holds: '
                         .'{ "target": "entity", "entity_type": "page", "entity_id": 12 } — a record of the site (the kinds of record a menu link takes: page, article …), opened in the language the form was sent in, or in the main one when it has no translation; '
                         .'{ "target": "url", "url": "/thank-you" } — an address, a path of this site gets the visitor\'s language prefix; '
-                        .'null or { "target": "none" } — the thank-you in place of the form.'],
+                        .'null or { "target": "none" } — the thank-you in place of the form. '
+                        .'`thank-you.button` — the words of the button under the thank-you in a dialog (one language or all; absent — «Close»); '
+                        .'`thank-you.button-link` — where that button leads, the same link as `redirect` (absent — it closes the dialog; '
+                        .'a link to the page the dialog is on closes it and scrolls to the top). '
+                        .'`steps.hold-next` — true: in a form of steps «Next» waits until every required question of the step is answered. '
+                        .'`dialog.scroll` — "page": the form\'s dialog scrolls as a whole with its backdrop, the page under it stays; absent — the dialog scrolls inside.'],
                     'order' => [
                         'type' => 'array',
                         'items' => ['type' => 'string'],

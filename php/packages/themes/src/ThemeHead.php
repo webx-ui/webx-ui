@@ -13,14 +13,18 @@ use WebxUi\Themes\Contracts\HeadPart;
  * What `@webxTheme` prints in `<head>` (spec §7.3, §13.2):
  *
  *     <style>:root { --site-…: … }</style>     the merged tokens, inline
- *     <style>@font-face { … }</style>           the fonts of the layers, a face per script (§15.3)
+ *     <link rel="preload" as="font">            the files of the faces with "preload", in the page's script (§15.3)
+ *     <style>@font-face { … }</style>           the fonts of the layers, a face per script, and their fallbacks (§15.3)
+ *     <style data-webx-critical>                the first screen's CSS, when the site has the file (§13.3)
  *     each Contracts\HeadPart                   the packages below the themes: widgets
  *     <link rel="stylesheet" href="/themes/modules/…">  the modules' base look (§10.2), one file
  *     <link rel="stylesheet" href="/themes/…">  each packaged layer's theme.css (and theme.js if built), bottom first
  *     Vite tags                                 each local layer's src/css/theme.css and src/js/theme.js
  *
  * The tokens are inline so that a change of tokens.json or of the preset needs no build. The
- * stylesheets go bottom up so the higher layer wins the cascade. Without a theme it prints
+ * stylesheets go bottom up so the higher layer wins the cascade. With the critical CSS printed,
+ * the response's stylesheets stop holding the first paint ({@see ThemeCritical::defer()}, applied
+ * by the provider once the whole page is rendered). Without a theme it prints
  * nothing at all: a site that has not adopted themes keeps the head it had.
  *
  * Nothing here throws on a page. A packaged layer that was not synced and a local layer that was
@@ -39,6 +43,7 @@ class ThemeHead
         private readonly ThemeAssets $assets,
         private readonly ModuleStyles $modules,
         private readonly ThemeFonts $fonts,
+        private readonly ThemeCritical $critical,
     ) {}
 
     public function render(): string
@@ -55,6 +60,7 @@ class ThemeHead
         }
 
         $html[] = $this->fonts();
+        $html[] = $this->critical->style();
 
         foreach ($this->app->tagged(HeadPart::TAG) as $part) {
             if ($part instanceof HeadPart) {
@@ -73,19 +79,23 @@ class ThemeHead
 
     /**
      * The fonts of the chain (§15.3): a face per script, each with its `unicode-range`, so the
-     * browser downloads only the files the letters on this page need. No `<link rel=preload>`:
-     * preloading a file is downloading it whatever the page says.
+     * browser downloads only the files the letters on this page need. A `<link rel=preload>`
+     * only for a face that asks for it, and only for the script of the page's language: a
+     * preload is a download whatever the page says. The fallbacks' faces follow the fonts.
      */
     private function fonts(): string
     {
         $missing = [];
-        $css = $this->fonts->css($this->app->make(UrlGenerator::class), function (string $file) use (&$missing): void {
+        $urls = $this->app->make(UrlGenerator::class);
+        $css = $this->fonts->css($urls, function (string $file) use (&$missing): void {
             $missing[] = $file;
         });
+        $css = trim($css."\n".$this->fonts->fallbackCss());
+        $preloads = implode("\n", $this->fonts->preloads($urls, $this->app->getLocale()));
 
         $hint = $missing === [] ? '' : $this->hint('fonts are not published ('.implode(', ', $missing).'): php artisan webx:theme:sync');
 
-        return $css === '' ? $hint : trim("<style data-webx-fonts>\n{$css}\n</style>\n{$hint}");
+        return trim($preloads."\n".($css === '' ? $hint : "<style data-webx-fonts>\n{$css}\n</style>\n{$hint}"));
     }
 
     /** The base look of the installed modules (§10.2): under every theme layer, so any of them restyles it. */

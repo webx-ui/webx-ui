@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Exceptions\RuntimeException as ImageException;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Media\Images\Thumbnails;
+use WebxUi\Media\Models\MediaDirectory;
+use WebxUi\Media\Storage\FileStore;
 
 /**
  * Previews of a picture that is not in the library — a product photo on a disk of its own — cut
@@ -70,5 +72,31 @@ final class ThumbnailsTest extends TestCase
         }
 
         Storage::disk('products')->assertMissing('catalog/0/1/thumbs/logo/160x160-cover.jpg');
+    }
+
+    #[Test]
+    public function a_library_picture_is_cut_in_a_format_of_its_own_beside_its_own(): void
+    {
+        Storage::fake('public');
+        config(['webx-media.optimize.enabled' => false]);
+        $root = MediaDirectory::query()->whereNull('parent_id')->firstOrFail();
+        $file = $this->app->make(FileStore::class)->store(UploadedFile::fake()->image('coast.jpg', 1200, 800), $root);
+        $thumbnails = $this->app->make(Thumbnails::class);
+
+        // Not cut yet: nothing, and asking does not cut it.
+        $this->assertNull($thumbnails->existing($file, 480, null, 'cover', 'avif'));
+
+        $avif = $thumbnails->variant($file, 480, null, 'cover', 'avif');
+        $own = $thumbnails->variant($file, 480, null, 'cover');
+
+        $this->assertStringEndsWith('/480.avif', $avif);
+        $this->assertStringEndsWith('/480.jpg', $own);
+        $this->assertSame($avif, $thumbnails->existing($file, 480, null, 'cover', 'avif'));
+        $this->assertStringContainsString('ftypavif', (string) Storage::disk('public')->get($avif));
+        $this->assertSame([480, 320], array_slice((array) getimagesizefromstring((string) Storage::disk('public')->get($own)), 0, 2));
+
+        // An edit forgets every variant, in every format.
+        $thumbnails->forget($file);
+        Storage::disk('public')->assertMissing($avif);
     }
 }

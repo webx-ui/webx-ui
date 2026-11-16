@@ -35,4 +35,7 @@ return [
     'datetime-range' => 'O dia não tem lugar para nenhum horário: «De» e «Até» como HH:MM, e «De» pelo menos um passo antes de «Até».',
     'datetime-step' => 'O passo dos horários é de 15, 20, 30, 60, 90 ou 120 minutos.',
     'datetime-weekdays' => 'Cada dia da semana uma vez, de 1 (segunda-feira) a 7 (domingo).',
+    'datetime-lead' => 'Os dias de antecedência são um número inteiro de 0 a 365.',
+    'datetime-skip' => 'Os horários a omitir são HH:MM, e fica pelo menos um horário do dia.',
+    'datetime-zone' => 'O fuso horário é o do site ou o do visitante.',
 ];

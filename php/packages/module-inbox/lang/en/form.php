@@ -18,4 +18,6 @@ return [
     'datetime-weekday' => 'Choose a weekday: :days.',
     'datetime-grid' => 'Choose one of the times offered.',
     'datetime-past' => 'This time has already passed. Choose a later one.',
+    'datetime-lead' => 'Choose a day from :date on.',
+    'datetime-zone' => 'Your time zone was not recognised. Reload the page and choose the time again.',
 ];

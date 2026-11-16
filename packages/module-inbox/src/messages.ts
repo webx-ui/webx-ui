@@ -59,6 +59,18 @@ export const inboxMessages: Record<string, Messages> = {
     redirect: 'Instead of the thank-you, go to',
     'redirect-help':
       'A page of the site opens in the language the form was sent in, or in the main one when it has no translation. Nowhere — the thank-you takes the form’s place.',
+    'thank-you-button': 'Words of the button under the thank-you',
+    'thank-you-button-help': 'In a dialog the thank-you has a button under it. Empty — «Close».',
+    'thank-you-button-link': 'The button leads to',
+    'thank-you-button-link-help':
+      'Nowhere — it closes the dialog. On the page it leads to, it closes the dialog and scrolls up instead of opening the page again.',
+    'on-the-site': 'On the site',
+    'hold-next': '«Next» waits for the answers',
+    'hold-next-help':
+      'In a form of steps the button stays inactive until every required question of the step is answered.',
+    'dialog-page': 'The dialog scrolls as a whole',
+    'dialog-page-help':
+      'A long form in a dialog scrolls with its backdrop, like a page, and the page under it stays. Off — it scrolls inside the dialog.',
     recipients: 'Who is written to',
     'recipients-help': 'Nobody here means nobody is told. The submission is kept either way.',
     'mail-route': 'Letters leave through',
@@ -362,6 +374,25 @@ export const inboxMessages: Record<string, Messages> = {
       'Empty — the site says it itself in the visitor’s language, by the name of the zone: :label.',
     'timezone-site': 'Time zone of the site: :zone — changed in Settings › Contacts.',
     'times-preview': 'Times of a day: :times',
+    'time-skip': 'Times to skip',
+    'time-skip-help':
+      'Times of the list not offered, as HH:MM — a lunch break: 13:30. The site refuses them too.',
+    'lead-days': 'Days ahead',
+    'lead-days-help':
+      '0 — from today, 1 — from tomorrow. The days before are grey in the calendar, and the site refuses them.',
+    timezone: 'Time zone of the times',
+    'timezone-help':
+      'The visitor’s: the hours are counted in the zone of their browser and the submission keeps it. Without JavaScript — the site’s.',
+    'timezone-site-option': 'The site’s',
+    'timezone-visitor-option': 'The visitor’s',
+    slots: 'Times shown as',
+    'slots-help':
+      'A panel is headed by the chosen day, «Tuesday, November 17», with the time zone inside it.',
+    'slots-list': 'A list',
+    'slots-panel': 'A panel',
+    'first-day': 'Choose the nearest day at once',
+    'first-day-help':
+      'The calendar opens with the first free day chosen and its times shown; the time is still the visitor’s to pick.',
   },
 
   relations: {

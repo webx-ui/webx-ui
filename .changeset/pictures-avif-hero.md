@@ -1,0 +1,5 @@
+---
+'@webx-ui/php': minor
+---
+
+media, widgets, theme-default: library pictures in AVIF and WebP (WIDGETS §14.2), off until a site turns them on. `webx-media.thumbs.formats` (`WEBX_MEDIA_THUMB_FORMATS=avif,webp`) cuts the copies by width in those formats too, after the response as before; `thumbs.quality.<format>` (AVIF 52), `thumbs.srcset_from` and `WEBX_MEDIA_THUMB_WIDTHS` for a ladder up to 2560. `@webxPicture($picture, $sizes, ['mobile', 'lead', 'preview'])` … `@endwebxPicture` wraps a block's `<img>` into `<picture>` with a `<source>` per format, the phone's picture as `<source media>` and the first screen's preload in the head — and prints the `<img>` byte for byte without formats. hero, cta, text-tiles, media-text, cards, gallery and tabs use it with `sizes` of the block; hero gets «Picture for the phone» (`image_mobile`). `webx-widgets.pictures.defer` (null: with the formats) holds back the pictures of hidden slides, a card's photos past the first and tabs past the first until the widget shows them.

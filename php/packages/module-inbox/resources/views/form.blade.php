@@ -29,8 +29,12 @@
       · `type` `summary` among the controls of a step — <x-webx-form.summary> (FORM_STEPS §7): the answers
         so far with «Edit»; `$controls` never has one, a view without it simply shows no summary,
       · `$control['datetime']` on a field of type `datetime` — `:step`, `:from`, `:to`, `:weekdays`, `:timezone`,
-        `:timezone-label` (FORM_STEPS §6.4): the grid of the day in the site's zone; a view without them
-        shows the widgets' defaults, and the intake still checks the field's own grid,
+        `:timezone-label` (FORM_STEPS §6.4) and `:visitor-timezone`, `:lead-days`, `:skip`, `:slots`,
+        `:first-day` (§6.7): the grid of the day; a view without them shows the widgets' defaults in the
+        site's zone, and the intake still checks the field's own grid,
+      · `:hold-next`, `:close-label`, `:done-href` on the form — «Next» held until a step is answered
+        (§3.6) and the button under the thank-you in a dialog (§16.2); a view without them has the
+        widgets' «Next» and «Close»,
       · `data-webx-attribution` — the widgets' attribution.js posts the campaign, the referrer and the
         landing page (`webx-inbox.attribution`, FORM_STEPS §8); a view without it sends none of them.
 
@@ -48,6 +52,9 @@
     :again="$again"
     :steps="($steps ?? []) !== []"
     :check="$check ?? null"
+    :hold-next="$holdNext ?? false"
+    :close-label="$doneText ?? null"
+    :done-href="$doneHref ?? null"
     data-webx-form="{{ $form->slug }}"
     :data-webx-attribution="($attribution ?? false) ? '' : null"
     {{ $attributes->class(['webx-inbox-form', 'webx-inbox-form--'.$placement => $placement !== null]) }}
@@ -104,18 +111,17 @@
                         :when="$control['when'] ?? null"
                         :unless="$control['unless'] ?? null"
                         :condition="$control['condition'] ?? null"
-                :step="$control['datetime']['step'] ?? null"
-                :from="$control['datetime']['from'] ?? null"
-                :to="$control['datetime']['to'] ?? null"
-                :weekdays="$control['datetime']['weekdays'] ?? null"
-                :timezone="$control['datetime']['timezone'] ?? null"
-                :timezone-label="$control['datetime']['timezone_label'] ?? null"
                         :step="$control['datetime']['step'] ?? null"
                         :from="$control['datetime']['from'] ?? null"
                         :to="$control['datetime']['to'] ?? null"
                         :weekdays="$control['datetime']['weekdays'] ?? null"
                         :timezone="$control['datetime']['timezone'] ?? null"
                         :timezone-label="$control['datetime']['timezone_label'] ?? null"
+                        :visitor-timezone="$control['datetime']['visitor'] ?? false"
+                        :lead-days="$control['datetime']['lead'] ?? null"
+                        :skip="$control['datetime']['skip'] ?? null"
+                        :slots="$control['datetime']['slots'] ?? null"
+                        :first-day="$control['datetime']['first'] ?? false"
                         :class="'webx-inbox-form__field'.($control['half'] ? ' webx-inbox-form__field--half' : '')"
                     >@if ($control['consent'] !== null){!! $control['consent'] !!}@endif</x-webx-field>
                     @endif
@@ -152,6 +158,11 @@
                 :weekdays="$control['datetime']['weekdays'] ?? null"
                 :timezone="$control['datetime']['timezone'] ?? null"
                 :timezone-label="$control['datetime']['timezone_label'] ?? null"
+                :visitor-timezone="$control['datetime']['visitor'] ?? false"
+                :lead-days="$control['datetime']['lead'] ?? null"
+                :skip="$control['datetime']['skip'] ?? null"
+                :slots="$control['datetime']['slots'] ?? null"
+                :first-day="$control['datetime']['first'] ?? false"
                 :class="'webx-inbox-form__field'.($control['half'] ? ' webx-inbox-form__field--half' : '')"
             >@if ($control['consent'] !== null){!! $control['consent'] !!}@endif</x-webx-field>
         @endforeach

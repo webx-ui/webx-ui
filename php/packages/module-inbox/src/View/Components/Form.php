@@ -14,6 +14,7 @@ use Illuminate\Support\HtmlString;
 use Illuminate\Support\MessageBag;
 use Illuminate\Support\ViewErrorBag;
 use Illuminate\View\Component;
+use WebxUi\Admin\Links\LinkUrls;
 use WebxUi\Admin\Shortcodes\Shortcodes;
 use WebxUi\Inbox\Antispam\Captcha;
 use WebxUi\Inbox\Antispam\Guard;
@@ -23,17 +24,20 @@ use WebxUi\Inbox\Fields\DateTimeField;
 use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\Fields\Steps;
 use WebxUi\Inbox\Fields\Summary;
-use WebxUi\Inbox\Models\Field;
 // The component and the model are both called a form, and here the component wins the name:
 // `componentNamespace` looks up the class by what is written after `::`, so `<x-webx-inbox::form>`
 // can only be `View\Components\Form`.
+use WebxUi\Inbox\Models\Field;
 use WebxUi\Inbox\Models\Form as FormModel;
+use WebxUi\Inbox\Panel\FormOptions;
 use WebxUi\Inbox\Rendering\Assets;
 use WebxUi\Inbox\Rendering\LegacyAssets;
 use WebxUi\Inbox\Storage\FileStore;
 use WebxUi\Inbox\Submissions\Rules;
+use WebxUi\Inbox\Support\FormLinks;
 use WebxUi\Inbox\Support\Forms;
 use WebxUi\Inbox\Support\Placement;
+use WebxUi\Localization\Locales;
 use WebxUi\Widgets\Forms\FormResponse;
 use WebxUi\Widgets\Forms\FormRules;
 
@@ -135,6 +139,12 @@ final class Form extends Component
             'captchaErrors' => $this->sent($formId) ? ($this->errors()['captcha'] ?? []) : [],
             'assets' => $legacy ? new LegacyAssets($this->assets) : $this->assets,
             'submitText' => $this->submitText($form),
+            // «Next» held until the step is answered (FORM_STEPS §3.6).
+            'holdNext' => (bool) $form->option(FormOptions::HOLD_NEXT),
+            // The button under the thank-you in a dialog (FORM_STEPS §16.2): its words and where it
+            // leads — null for both is the widgets' «Close».
+            'doneText' => $this->translated($form, 'thank-you.button'),
+            'doneHref' => FormLinks::href(FormOptions::redirect($form->option(FormOptions::BUTTON_LINK)), app(LinkUrls::class), app(Locales::class)),
             'description' => $this->description ? self::descriptionHtml($form) : null,
             'placement' => $placement,
             // What a view of before W6.4 reads (an alias period): the engine's view needs none of it.
@@ -230,7 +240,10 @@ final class Form extends Component
     /**
      * What `<x-webx-field type="datetime">` takes of a field: the grid, the days of the week, the zone.
      *
-     * @return array{step: int, from: string, to: string, weekdays: list<int>, timezone: string, timezone_label: ?string}
+     * The options of §6.7 too: the visitor's zone (the site's stays the zone of a page without
+     * JavaScript), the days ahead, the times skipped, the panel of slots and the first day chosen.
+     *
+     * @return array{step: int, from: string, to: string, weekdays: list<int>, timezone: string, timezone_label: ?string, visitor: bool, lead: int, skip: list<string>, slots: string, first: bool}
      */
     private static function moment(Field $field, string $zone): array
     {
@@ -245,6 +258,11 @@ final class Form extends Component
             'weekdays' => $grid['weekdays'],
             'timezone' => $zone,
             'timezone_label' => $label !== '' ? $label : null,
+            'visitor' => DateTimeField::visitor($field->options),
+            'lead' => $grid['lead'],
+            'skip' => $grid['skip'],
+            'slots' => $field->option('slots') === 'panel' ? 'panel' : 'list',
+            'first' => (bool) $field->option('first-day'),
         ];
     }
 
@@ -437,7 +455,7 @@ final class Form extends Component
     }
 
     /**
-     * Where the form stands, when that is a name (§11.2).
+     * Where the form stands, when that is a name (§16.2).
      *
      * Anything else is dropped with a line in the log rather than an exception: the form on
      * the page matters more than a typo in one of its attributes.
@@ -628,15 +646,19 @@ final class Form extends Component
 
     private function submitText(FormModel $form): string
     {
-        $text = $form->option('design.submit-text');
+        return $this->translated($form, 'design.submit-text') ?? (string) trans('webx-inbox::form.submit');
+    }
+
+    /** One of the translated settings, in the language of the page; null for none written. */
+    private function translated(FormModel $form, string $key): ?string
+    {
+        $text = $form->option($key);
 
         if (is_array($text)) {
             $locale = app()->getLocale();
             $text = $text[$locale] ?? $text[(string) config('app.fallback_locale')] ?? reset($text);
         }
 
-        return is_string($text) && trim($text) !== ''
-            ? trim($text)
-            : (string) trans('webx-inbox::form.submit');
+        return is_string($text) && trim($text) !== '' ? trim($text) : null;
     }
 }

@@ -18,4 +18,6 @@ return [
     'datetime-weekday' => 'Scegli un giorno della settimana: :days.',
     'datetime-grid' => 'Scegli uno degli orari proposti.',
     'datetime-past' => 'Questo orario è già passato. Scegline uno più tardi.',
+    'datetime-lead' => 'Scegli un giorno a partire dal :date.',
+    'datetime-zone' => 'Il tuo fuso orario non è stato riconosciuto. Ricarica la pagina e scegli di nuovo l’orario.',
 ];

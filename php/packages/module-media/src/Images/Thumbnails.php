@@ -38,11 +38,13 @@ final class Thumbnails
     ) {}
 
     /**
-     * The key of the variant of a library file, cutting it first if it is not there yet.
+     * The key of the variant of a library file, cutting it first if it is not there yet. `$format`
+     * names a format of its own (`avif`, `webp` — `webx-media.thumbs.formats`); null keeps the
+     * picture's, as a variant always did.
      */
-    public function variant(MediaFile $file, int $width, ?int $height, string $fit): string
+    public function variant(MediaFile $file, int $width, ?int $height, string $fit, ?string $format = null): string
     {
-        return $this->cut($file->disk, $file->path, $this->libraryDirectory($file), $this->format($file->extension), $width, $height, $fit);
+        return $this->cut($file->disk, $file->path, $this->libraryDirectory($file), $this->format($format ?? $file->extension), $width, $height, $fit);
     }
 
     /**
@@ -58,9 +60,9 @@ final class Thumbnails
      * A page that prints a `srcset` asks this on every render: the bytes are read only by the
      * cut, which it puts off until its response has gone.
      */
-    public function existing(MediaFile $file, int $width, ?int $height = null, string $fit = 'cover'): ?string
+    public function existing(MediaFile $file, int $width, ?int $height = null, string $fit = 'cover', ?string $format = null): ?string
     {
-        $path = $this->pathOf($this->libraryDirectory($file), $this->format($file->extension), $width, $height, $fit);
+        $path = $this->pathOf($this->libraryDirectory($file), $this->format($format ?? $file->extension), $width, $height, $fit);
 
         return $this->files->disk($file->disk)->exists($path) ? $path : null;
     }
@@ -108,7 +110,7 @@ final class Thumbnails
             $image->cover($width, $height);
         }
 
-        $quality = (int) $this->config->get('webx-media.image.quality', 85);
+        $quality = $this->quality($extension);
 
         $disk->put($path, (string) $image->encodeByExtension($extension, quality: $quality));
 
@@ -165,7 +167,18 @@ final class Thumbnails
     {
         $extension = strtolower((string) $extension);
 
-        return in_array($extension, ['jpg', 'jpeg', 'png', 'webp', 'gif'], true) ? $extension : 'jpg';
+        return in_array($extension, ['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif'], true) ? $extension : 'jpg';
+    }
+
+    /**
+     * How hard a variant is squeezed: a format's own (`thumbs.quality.avif`) — AVIF looks at 52
+     * as WebP does at 76 and JPEG at 85 — else the library's one for every format.
+     */
+    private function quality(string $extension): int
+    {
+        $own = $this->config->get("webx-media.thumbs.quality.{$extension}");
+
+        return is_numeric($own) ? (int) $own : (int) $this->config->get('webx-media.image.quality', 85);
     }
 
     private function manager(): ImageManager

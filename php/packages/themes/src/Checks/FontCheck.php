@@ -99,6 +99,14 @@ final class FontCheck
             $problems[] = '"scripts" is not read — the scripts are the keys of "files": { "latin": "fonts/….woff2" }';
         }
 
+        if (array_key_exists('preload', $entry) && ! is_bool($entry['preload'])) {
+            $problems[] = '"preload" is true or false: true preloads the files of the script of the page\'s language';
+        }
+
+        if (array_key_exists('fallback', $entry) && ThemeFonts::fallback($entry['fallback']) === null) {
+            $problems[] = '"fallback" is { "local": ["Arial"], "size-adjust": "101.45%", "ascent-override": "93.64%", "descent-override": "24.64%", "line-gap-override": "0%" } — percentages, and no other keys';
+        }
+
         $files = $entry['files'] ?? null;
 
         if (! is_array($files) || $files === [] || array_is_list($files)) {

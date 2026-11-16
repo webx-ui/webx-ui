@@ -35,4 +35,7 @@ return [
     'datetime-range' => 'La journée n’a la place pour aucun horaire : « De » et « À » au format HH:MM, et « De » au moins un pas avant « À ».',
     'datetime-step' => 'Le pas des horaires est de 15, 20, 30, 60, 90 ou 120 minutes.',
     'datetime-weekdays' => 'Chaque jour de la semaine une seule fois, de 1 (lundi) à 7 (dimanche).',
+    'datetime-lead' => 'Les jours d’avance sont un nombre entier de 0 à 365.',
+    'datetime-skip' => 'Les horaires à sauter sont au format HH:MM, et au moins un horaire de la journée reste.',
+    'datetime-zone' => 'Le fuseau horaire est celui du site ou celui du visiteur.',
 ];

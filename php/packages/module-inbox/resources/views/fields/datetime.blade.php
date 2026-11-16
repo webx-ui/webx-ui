@@ -11,7 +11,7 @@
     id="{{ $id }}"
     name="{{ $name }}[date]"
     value="{{ is_string($chosen['date'] ?? null) ? $chosen['date'] : '' }}"
-    min="{{ now($zone)->format('Y-m-d') }}"
+    min="{{ now($zone)->addDays(\WebxUi\Inbox\Fields\DateTimeField::grid($field->options)['lead'])->format('Y-m-d') }}"
     @if ($field->is_required) required @endif
     @if ($describedBy !== null) aria-describedby="{{ $describedBy }}" @endif
     @if ($messages !== []) aria-invalid="true" @endif

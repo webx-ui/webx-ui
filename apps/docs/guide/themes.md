@@ -374,6 +374,7 @@ and the test name a rule by its number.
 | `webx:theme:check [path]`                | the rules a machine can hold; a line per finding (file:line, what, why), non-zero exit                                            |
 | `webx:composition:show [name]`           | the compositions, or the final tree of one with who added, moved, replaced or removed each node (`--origin`, `--json`, `--blade`) |
 | `webx:theme:sync [--dry-run]`            | publishes `dist/`, `assets/`, the sprite and the modules' base look; never writes a block type                                    |
+| `webx:theme:critical [--check]`          | the critical CSS of the first screen of the pages `critical` names; `--check` compares it pixel by pixel with the full CSS        |
 | `webx:theme:make theme --local --uses=…` | the local theme `webx:setup` gives every new site                                                                                 |
 | `webx:theme:make vendor/name [--uses=…]` | a packaged theme in `packages/<name>`, over `webx-ui/theme-default` unless told otherwise                                         |
 | `webx:theme:extract vendor/name`         | the site's local theme becomes a package the site then stands on                                                                  |
@@ -381,6 +382,46 @@ and the test name a rule by its number.
 
 `show` is what to read before a change: it says which layer owns the value you are about to
 change. `check` is what to run before saying the change is done.
+
+## The first screen: critical CSS and fonts
+
+Every stylesheet of the head holds the first paint until it arrives. A site that wants the first
+screen at once names a page of each template its visitors land on, in `theme/theme.json`:
+
+```json
+{ "theme": { "uses": ["webx-ui/theme-default"], "critical": ["/", "/blog/first-article"] } }
+```
+
+and, with `playwright` and `lightningcss` in its `package.json` (`npx playwright install chromium`),
+runs `php artisan webx:theme:critical`. It opens the pages at 1440×900 and 390×844, keeps the rules
+the first screen draws with and writes them, minified and prefixed, to `theme/critical.css`.
+`@webxTheme` then prints them inline, and every stylesheet of the head loads without blocking.
+`php artisan webx:theme:critical --check` draws each first screen with the critical CSS alone and
+with the full CSS and says where a pixel differs — run both after a change of the look, a sync or
+a build. Without the file the head is what it always was.
+
+A face in `fonts` takes two options. `"preload": true` preloads its files of the page language's
+script — Latin on an English page, Cyrillic on a Ukrainian one, never both. `"fallback"` gives the
+local font the text is drawn in until the file arrives the font's metrics, so nothing moves on the
+swap:
+
+```json
+{
+  "family": "Inter",
+  "weight": "100 900",
+  "preload": true,
+  "fallback": {
+    "local": ["Arial"],
+    "size-adjust": "107.4%",
+    "ascent-override": "90.2%",
+    "descent-override": "22.5%",
+    "line-gap-override": "0%"
+  },
+  "files": { "latin": "fonts/inter-latin.woff2", "cyrillic": "fonts/inter-cyrillic.woff2" }
+}
+```
+
+`"Inter Fallback"` then follows `Inter` in every font token of the site.
 
 ## The test of a theme
 

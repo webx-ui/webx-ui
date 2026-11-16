@@ -94,6 +94,10 @@ final class FieldInput
             'options.time-from' => [self::datetime('time-from')],
             'options.time-to' => [self::datetime('time-to')],
             'options.weekdays' => [self::datetime('weekdays')],
+            // And its options of §6.7.
+            'options.lead-days' => [self::datetime('lead-days')],
+            'options.time-skip' => [self::datetime('time-skip')],
+            'options.timezone' => [self::datetime('timezone')],
             'is_enabled' => ['nullable', 'boolean'],
             'is_required' => ['nullable', 'boolean'],
             'is_fullsize' => ['nullable', 'boolean'],

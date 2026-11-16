@@ -81,6 +81,18 @@ final class ThemeFonts
     /** The formats a browser is told about; anything else is not a web font. */
     public const array FORMATS = ['woff2' => 'woff2', 'woff' => 'woff'];
 
+    /** The metric overrides a `fallback` may set, in CSS's own names. */
+    public const array OVERRIDES = ['size-adjust', 'ascent-override', 'descent-override', 'line-gap-override'];
+
+    /** A percentage of an override: `101.45%`, `0%`. */
+    public const string PERCENT_PATTERN = '/^\d{1,3}(?:\.\d{1,4})?%$/';
+
+    /** The family a `fallback` draws with until the file arrives, when the theme names none. */
+    public const array FALLBACK_LOCAL = ['Arial'];
+
+    /** The scripts that are an alphabet of their own: a page in it preloads that file, not latin. */
+    private const array ALPHABETS = ['cyrillic', 'greek'];
+
     public function __construct(
         private readonly ThemeChain $chain,
         private readonly ThemeAssets $assets,
@@ -90,7 +102,7 @@ final class ThemeFonts
      * The faces the site uses: every well-formed entry of every layer, a family of a higher layer
      * replacing the same family below.
      *
-     * @return list<array{family: string, weight: string, style: string, files: array<string, string>, layer: ThemeManifest}>
+     * @return list<array{family: string, weight: string, style: string, files: array<string, string>, preload: bool, fallback: array<string, string|list<string>>|null, layer: ThemeManifest}>
      */
     public static function faces(ThemeChain $chain): array
     {
@@ -119,10 +131,12 @@ final class ThemeFonts
 
     /**
      * One entry of `fonts`, or null when it is not a face the page can print: no family, a
-     * family that would need escaping, no file of a known script.
+     * family that would need escaping, no file of a known script. A `preload` that is not `true`
+     * and a `fallback` that is not well formed are dropped rather than the face: the page keeps
+     * its letters, `webx:theme:check` names the mistake.
      *
      * @param  array<string, mixed>  $entry
-     * @return array{family: string, weight: string, style: string, files: array<string, string>}|null
+     * @return array{family: string, weight: string, style: string, files: array<string, string>, preload: bool, fallback: array<string, string|list<string>>|null}|null
      */
     public static function face(array $entry): ?array
     {
@@ -154,7 +168,194 @@ final class ThemeFonts
         // In the order of SCRIPTS, whatever order the manifest wrote them in.
         $ordered = array_intersect_key(array_replace(self::SCRIPTS, $known), $known);
 
-        return ['family' => trim($family), 'weight' => $weight, 'style' => $style, 'files' => $ordered];
+        return [
+            'family' => trim($family),
+            'weight' => $weight,
+            'style' => $style,
+            'files' => $ordered,
+            'preload' => ($entry['preload'] ?? false) === true,
+            'fallback' => self::fallback($entry['fallback'] ?? null),
+        ];
+    }
+
+    /**
+     * A `fallback` of a face: the local family the page draws with until the file arrives,
+     * stretched to the font's metrics so the text does not move when it swaps (rule 39) —
+     *
+     *     "fallback": { "local": ["Arial", "Helvetica"], "size-adjust": "101.45%",
+     *                   "ascent-override": "93.64%", "descent-override": "24.64%", "line-gap-override": "0%" }
+     *
+     * Null when there is none or it is not well formed: an unknown key, a value that is not a
+     * percentage, a local name that would need escaping.
+     *
+     * @return array<string, string|list<string>>|null `local` → the families, each override → its value.
+     */
+    public static function fallback(mixed $value): ?array
+    {
+        if (! is_array($value) || array_is_list($value) && $value !== []) {
+            return null;
+        }
+
+        $local = $value['local'] ?? self::FALLBACK_LOCAL;
+        $local = is_string($local) ? [$local] : $local;
+
+        if (! is_array($local) || $local === [] || ! array_is_list($local)) {
+            return null;
+        }
+
+        foreach ($local as $name) {
+            if (! is_string($name) || preg_match(self::FAMILY_PATTERN, trim($name)) !== 1) {
+                return null;
+            }
+        }
+
+        $fallback = ['local' => array_values(array_map(static fn (string $name): string => trim($name), $local))];
+
+        foreach ($value as $key => $setting) {
+            if ($key === 'local') {
+                continue;
+            }
+
+            if (! in_array($key, self::OVERRIDES, true) || ! is_string($setting) || preg_match(self::PERCENT_PATTERN, $setting) !== 1) {
+                return null;
+            }
+
+            $fallback[$key] = $setting;
+        }
+
+        return $fallback;
+    }
+
+    /** `"Inter Fallback"`: the family a `fallback` is printed under, after its font in the stack. */
+    public static function fallbackFamily(string $family): string
+    {
+        return $family.' Fallback';
+    }
+
+    /**
+     * The families that have a fallback, lower-cased → the fallback's family — what `Tokens`
+     * puts after each in a font stack. The first face of a family with a fallback decides.
+     *
+     * @return array<string, string>
+     */
+    public static function fallbacks(ThemeChain $chain): array
+    {
+        $families = [];
+
+        foreach (self::faces($chain) as $face) {
+            $key = mb_strtolower($face['family']);
+
+            if ($face['fallback'] !== null && ! isset($families[$key])) {
+                $families[$key] = self::fallbackFamily($face['family']);
+            }
+        }
+
+        return $families;
+    }
+
+    /**
+     * A font stack with each family that has a fallback followed by it: `Inter, Arial` becomes
+     * `Inter, "Inter Fallback", Arial`. A stack that already names the fallback, or names no such
+     * family, comes back as it was.
+     *
+     * @param  array<string, string>  $fallbacks  {@see fallbacks()}
+     */
+    public static function withFallbacks(string $stack, array $fallbacks): string
+    {
+        if ($fallbacks === [] || str_contains($stack, 'var(')) {
+            return $stack;
+        }
+
+        $items = array_map('trim', explode(',', $stack));
+        $named = array_map(static fn (string $item): string => mb_strtolower(trim($item, "\"' ")), $items);
+        $out = [];
+
+        foreach ($items as $i => $item) {
+            $out[] = $item;
+            $fallback = $fallbacks[$named[$i]] ?? null;
+
+            if ($fallback !== null && ! in_array(mb_strtolower($fallback), $named, true)) {
+                $out[] = '"'.$fallback.'"';
+            }
+        }
+
+        return count($out) === count($items) ? $stack : implode(', ', $out);
+    }
+
+    /**
+     * The scripts whose files a page in this language preloads: the language's own alphabet —
+     * `cyrillic` for `uk`, `greek` for `el` — and `latin` for every language written in it.
+     * Not the `-ext` files: they draw a few letters of a page, which `unicode-range` fetches
+     * when a letter asks. An unknown language is read as latin.
+     *
+     * @return list<string>
+     */
+    public static function preloaded(string $locale): array
+    {
+        $alphabets = array_values(array_intersect(self::needs($locale) ?? ['latin'], self::ALPHABETS));
+
+        return $alphabets === [] ? ['latin'] : $alphabets;
+    }
+
+    /**
+     * `<link rel="preload">` for the files of the faces that ask for it (`"preload": true`), only
+     * of the scripts the page's language is written in ({@see preloaded()}): a preload is a
+     * download whatever the page shows, so an English page never preloads Cyrillic. A file sync
+     * has not published is left out, as in {@see css()}.
+     *
+     * @return list<string>
+     */
+    public function preloads(UrlGenerator $urls, string $locale): array
+    {
+        $scripts = self::preloaded($locale);
+        $links = [];
+
+        foreach (self::faces($this->chain) as $face) {
+            if (! $face['preload']) {
+                continue;
+            }
+
+            foreach (array_intersect_key($face['files'], array_flip($scripts)) as $path) {
+                $url = $this->assets->url($face['layer'], 'assets/'.$path, $urls);
+
+                if ($url !== null) {
+                    $links[$url] = '<link rel="preload" href="'.e($url).'" as="font" type="font/'.self::format($path).'" crossorigin>';
+                }
+            }
+        }
+
+        return array_values($links);
+    }
+
+    /**
+     * The `@font-face` of each fallback: a local family under the font's name plus ` Fallback`,
+     * with the overrides that give it the font's size and line — so the swap moves nothing.
+     */
+    public function fallbackCss(): string
+    {
+        $rules = [];
+
+        foreach (self::faces($this->chain) as $face) {
+            $family = self::fallbackFamily($face['family']);
+
+            if ($face['fallback'] === null || isset($rules[$family])) {
+                continue;
+            }
+
+            $lines = ['@font-face {', '  font-family: "'.$family.'";'];
+            $lines[] = '  src: '.implode(', ', array_map(static fn (string $name): string => 'local("'.$name.'")', (array) $face['fallback']['local'])).';';
+
+            foreach (self::OVERRIDES as $override) {
+                if (isset($face['fallback'][$override]) && is_string($face['fallback'][$override])) {
+                    $lines[] = "  {$override}: {$face['fallback'][$override]};";
+                }
+            }
+
+            $lines[] = '}';
+            $rules[$family] = implode("\n", $lines);
+        }
+
+        return implode("\n", $rules);
     }
 
     /** `woff2` for `fonts/inter-latin.woff2`; null for a file a browser would not take as a web font. */

@@ -182,7 +182,7 @@ final class Intake
     }
 
     /**
-     * Where on the site the form stood, as its hidden `webx_placement` says (§11.2).
+     * Where on the site the form stood, as its hidden `webx_placement` says (§16.2).
      *
      * Checked again here and not trusted: the component printed a name, but what arrives is
      * whatever the visitor's browser sent, and it goes into a column of 32. Something else is
@@ -312,7 +312,8 @@ final class Intake
         // A day and a time (FORM_STEPS §6.3): the line with the zone, and what the visitor saw beside
         // the same moment in UTC — the zone kept, so that a site changing its own later changes nothing.
         if ($field->type === FieldType::DateTime && is_array($value)) {
-            return DateTimeField::snapshot($value, DateTimeField::zone());
+            // The visitor's zone, for a field that asks for it and got one (§6.7).
+            return DateTimeField::snapshot($value, DateTimeField::zoneOf($field->options, $value));
         }
 
         $choices = $field->choices();

@@ -35,4 +35,7 @@ return [
     'datetime-range' => 'Il giorno non ha posto per alcun orario: «Dalle» e «Alle» come HH:MM, e «Dalle» almeno un passo prima di «Alle».',
     'datetime-step' => 'Il passo degli orari è di 15, 20, 30, 60, 90 o 120 minuti.',
     'datetime-weekdays' => 'Ogni giorno della settimana una volta, da 1 (lunedì) a 7 (domenica).',
+    'datetime-lead' => 'I giorni di anticipo sono un numero intero da 0 a 365.',
+    'datetime-skip' => 'Gli orari da saltare sono HH:MM, e almeno un orario della giornata resta.',
+    'datetime-zone' => 'Il fuso orario è quello del sito o quello del visitatore.',
 ];

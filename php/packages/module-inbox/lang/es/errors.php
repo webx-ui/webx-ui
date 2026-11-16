@@ -35,4 +35,7 @@ return [
     'datetime-range' => 'El día no tiene lugar para ninguna hora: «Desde» y «Hasta» como HH:MM, y «Desde» al menos un paso antes que «Hasta».',
     'datetime-step' => 'El paso de las horas es de 15, 20, 30, 60, 90 o 120 minutos.',
     'datetime-weekdays' => 'Cada día de la semana una vez, del 1 (lunes) al 7 (domingo).',
+    'datetime-lead' => 'Los días de antelación son un número entero de 0 a 365.',
+    'datetime-skip' => 'Las horas que se omiten son HH:MM, y queda al menos una hora del día.',
+    'datetime-zone' => 'La zona horaria es la del sitio o la del visitante.',
 ];

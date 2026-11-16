@@ -35,4 +35,7 @@ return [
     'datetime-range' => 'Günde hiçbir saate yer yok: «Başlangıç» ve «Bitiş» SS:DD biçiminde olmalı ve «Başlangıç», «Bitiş»ten en az bir adım önce gelmeli.',
     'datetime-step' => 'Saatlerin adımı 15, 20, 30, 60, 90 veya 120 dakikadır.',
     'datetime-weekdays' => 'Haftanın her günü bir kez, 1 (pazartesi) ile 7 (pazar) arasında.',
+    'datetime-lead' => 'Önceden gün sayısı 0 ile 365 arasında bir tam sayıdır.',
+    'datetime-skip' => 'Atlanan saatler SS:DD biçimindedir ve günün en az bir saati kalır.',
+    'datetime-zone' => 'Saat dilimi sitenin ya da ziyaretçinin dilimidir.',
 ];

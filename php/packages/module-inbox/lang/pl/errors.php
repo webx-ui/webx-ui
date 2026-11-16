@@ -35,4 +35,7 @@ return [
     'datetime-range' => 'W dniu nie ma miejsca na żadną godzinę: «Od» i «Do» w postaci GG:MM, a «Od» co najmniej jeden krok przed «Do».',
     'datetime-step' => 'Krok godzin to 15, 20, 30, 60, 90 lub 120 minut.',
     'datetime-weekdays' => 'Każdy dzień tygodnia raz, od 1 (poniedziałek) do 7 (niedziela).',
+    'datetime-lead' => 'Dni wyprzedzenia to liczba całkowita od 0 do 365.',
+    'datetime-skip' => 'Pomijane godziny mają postać GG:MM i zostaje co najmniej jedna godzina dnia.',
+    'datetime-zone' => 'Strefa czasowa to strefa witryny albo odwiedzającego.',
 ];

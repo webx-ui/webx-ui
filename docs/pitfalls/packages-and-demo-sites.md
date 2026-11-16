@@ -275,6 +275,11 @@ import "@site/module-<x>"`.** `Dockerfile` сайта, заведённого д
   применяет, это делает `lab_environment`, а её зовёт только сборка. Лечится `scripts/lab-site.sh
 create`: на готовом сайте он ничего не пересоздаёт. Проверка — имя ключа в строке «.lab-env over
   .env» вывода.
+- **Правка шаблона блока (`blocks/*.json` темы, `resources/blocks/*.json` модуля) на lab не видна
+  после `refresh`, PHP вокруг — уже новый.** Тип блока живёт в базе сайта; `refresh` его не
+  переписывает. Лечится `php artisan webx:blocks:import --theme --replace=<slug> --publish <slug>`
+  (типы тем) или `--path=vendor/webx-ui/<пакет>/resources/blocks` (типы модулей), затем
+  `webx:blocks:clear`. Проверка — сначала `--dry-run`: печатает `template differs` ровно на твою правку.
 
 ## Гейт и проверки локально
 

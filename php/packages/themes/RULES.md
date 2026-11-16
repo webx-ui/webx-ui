@@ -144,9 +144,11 @@ Specification: https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WE
     first screen lazy: its picture then arrives last.
 39. **Do** ship fonts as `.woff2`, one file per script (rule 27 gives each its `unicode-range`), as
     few faces as the design needs — a variable font is one file for every weight; `@webxTheme`
-    prints `font-display: swap`. **Do not** add a `<link rel="preload">` for a font: a preload
-    downloads it on every page, whatever its language. (check: a font that is not `.woff2` —
-    a note)
+    prints `font-display: swap`. Give the faces of the first screen `"preload": true` — the page
+    preloads only the files of its language's script — and a `"fallback"` with the font's metrics,
+    so the text does not move when the file arrives. **Do not** write a `<link rel="preload">` for
+    a font yourself: it downloads the file on every page, whatever its language. (check: a font
+    that is not `.woff2` — a note; a malformed `preload` or `fallback` — a finding)
 40. **Do** let a page load only what it shows: a widget's script and style come with its component
     (`Widgets::need()`), the map, the video and anything heavy start when they come near the
     screen. **Do not** put a library into the theme's own bundle for one page.
