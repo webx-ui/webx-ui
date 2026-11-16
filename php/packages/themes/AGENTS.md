@@ -45,9 +45,7 @@ and the site's `theme/`). **The rules every theme keeps, numbered as the check n
   `assets/` to `public/themes/`, the modules' base look as one file, the icons as one sprite, then
   the steps tagged `webx-themes.sync` (`Contracts\SyncStep`, files only; `--force` copies again).
   It never writes a block type: the layers' types are `webx:blocks:import --theme`, run by a person.
-  A refused line exits non-zero. Without a theme it publishes only the
-  packages below the themes (`BottomLayers`: the widgets' scripts, which `@webxWidgets` links).
-  A real sync moves the `theme` cache group (`webx-ui/cache`, `CacheGroups::THEME`), which this package declares.
+  A refused line exits non-zero. Without a theme it publishes only the packages below the themes (`BottomLayers`: the widgets' scripts, which `@webxWidgets` links). A real sync moves the `theme` cache group (`CacheGroups::THEME`), which this package declares.
 - **`webx:theme:make <name> --local [--uses=…]`** — the local theme `webx:setup` gives every site:
   `theme.json`, empty `tokens.json`, `src/css/theme.css`, `src/js/theme.js`, a test.
   **`webx:theme:make <vendor/name> [--uses=…] [--path=…]`** — a packaged theme (over
@@ -78,9 +76,8 @@ and the site's `theme/`). **The rules every theme keeps, numbered as the check n
   winning by name; `<x-theme::icon name="phone" />` (`label="…"` makes it `role="img"`).
 - **Assets**: `theme_asset('img/wave.svg')` — the URL of the highest layer's `assets/…` as sync
   published it; a path no layer has is `''`.
-- **Fonts**: `fonts` in the manifest — `{ "family", "weight", "style", "files": { "<script>":
-"fonts/….woff2" } }` under `assets/`; an `@font-face` per script with its `unicode-range`. The
-  check and `webx:doctor` compare the scripts with the site's languages (`--locales=pl,ru`).
+- **Fonts**: `fonts` — `{ "family", "weight", "style", "files": { "<script>": "fonts/….woff2" } }` under `assets/`, an `@font-face` per script with its `unicode-range`; `"preload": true` preloads the files of the page language's script only; `"fallback": {"local": ["Arial"], "size-adjust": "…%", "ascent-override", "descent-override", "line-gap-override"}` prints `"<Family> Fallback"`, put after the family in every font token. The check and `webx:doctor` compare the scripts with the site's languages.
+- **`critical`** — `["/", "/blog/first-article"]`; **`webx:theme:critical [--url=] [--check]`** reads their first screen in Chromium (1440, 390) into `theme/critical.css` (`webx-themes.critical`; the site's `playwright`, `lightningcss`). With it `@webxTheme` prints it inline and no stylesheet of the head blocks (`ThemeCritical::defer()`); `--check` — the first screen with it alone, pixel by pixel against the full CSS.
 
 ## Change it without forking
 
@@ -123,8 +120,7 @@ and the site's `theme/`). **The rules every theme keeps, numbered as the check n
   `currentColor` and `<x-theme::icon>`, or no layer above redraws it and no preset repaints it.
 - Do not write a word a visitor reads into a template — text, `aria-label`, `alt`, `title`:
   `{{ __('theme::theme.<key>') }}`, or it stays English in every other language.
-- Do not load a font from a CDN nor preload one: files in `assets/fonts/` (a CDN hands every
-  visitor's address to a third party; a preload downloads a script whatever the language).
+- Do not load a font from a CDN nor write a font's `<link rel="preload">`: files in `assets/fonts/` and `"preload": true` (a CDN hands the visitor's address to a third party). Do not write a `-webkit-` prefix: lightningcss writes them.
 - Do not write `var(` or a literal colour into a letter: `theme_token()` (mail reads no CSS variable).
 - Do not make two themes `use` each other (the site refuses to boot), and do not call
   `View::prependNamespace()` for a theme yourself: it puts the theme above the site's overrides.

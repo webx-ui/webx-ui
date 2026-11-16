@@ -8,12 +8,14 @@ use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Route;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Themes\BottomLayers;
 use WebxUi\Themes\Contracts\HeadPart;
 use WebxUi\Themes\ModuleStyles;
 use WebxUi\Themes\ThemeAssets;
 use WebxUi\Themes\ThemeChain;
+use WebxUi\Themes\ThemeCritical;
 use WebxUi\Themes\ThemeManifest;
 
 class ThemeHeadTest extends TestCase
@@ -215,6 +217,82 @@ class ThemeHeadTest extends TestCase
 
         $this->assertStringNotContainsString('<!--', Blade::render('@webxTheme'));
     }
+
+    #[Test]
+    public function without_the_critical_file_the_head_and_the_page_stay_as_they_were(): void
+    {
+        $this->app['config']->set('webx-themes.critical', $this->public.'/critical.css');
+        $this->artisan('webx:theme:sync')->assertSuccessful();
+
+        $html = Blade::render('@webxTheme');
+        $this->assertStringNotContainsString('data-webx-critical', $html);
+        $this->assertStringNotContainsString('media="print"', $html);
+
+        Route::get('/page', fn () => Blade::render(self::PAGE));
+        $page = (string) $this->get('/page')->getContent();
+
+        $this->assertStringContainsString('<link rel="stylesheet" href="/late.css">', $page);
+        $this->assertStringNotContainsString('onload=', $page);
+    }
+
+    #[Test]
+    public function with_the_critical_file_it_is_inline_and_no_stylesheet_of_the_head_blocks(): void
+    {
+        file_put_contents($this->public.'/critical.css', ".hero{color:red}\n");
+        $this->app['config']->set('webx-themes.critical', $this->public.'/critical.css');
+        $this->artisan('webx:theme:sync')->assertSuccessful();
+
+        $html = Blade::render('@webxTheme');
+        $this->assertStringContainsString('<style data-webx-critical>.hero{color:red}</style>', $html);
+        $this->assertLessThan(strpos($html, '<style data-webx-critical>'), (int) strpos($html, '<style data-webx-theme>'));
+        $this->assertLessThan(strpos($html, '<link rel="stylesheet"'), (int) strpos($html, '<style data-webx-critical>'), 'before every stylesheet');
+
+        Route::get('/page', fn () => Blade::render(self::PAGE));
+        $page = (string) $this->get('/page')->getContent();
+        $hash = (string) app(ThemeAssets::class)->current($this->package());
+        $theme = "http://localhost/themes/webx-ui/theme-fixture/{$hash}/theme.css";
+
+        // The layer's stylesheet, printed by @webxTheme.
+        $this->assertStringContainsString(
+            "<link rel=\"preload\" href=\"{$theme}\" as=\"style\"><link rel=\"stylesheet\" href=\"{$theme}\" media=\"print\" onload=\"this.media='all'\"><noscript><link rel=\"stylesheet\" href=\"{$theme}\"></noscript>",
+            $page,
+        );
+        // Any other stylesheet of the head — the blocks', Vite's — the same way; a preload already there is not repeated.
+        $this->assertStringContainsString("<link rel=\"stylesheet\" href=\"/late.css\" media=\"print\" onload=\"this.media='all'\"><noscript><link rel=\"stylesheet\" href=\"/late.css\"></noscript>", $page);
+        $this->assertSame(1, substr_count($page, '<link rel="preload" href="/late.css"'));
+        // One held for later already, and one in the body, are left alone.
+        $this->assertStringContainsString('<link rel="stylesheet" href="/print.css" media="print">', $page);
+        $this->assertStringContainsString('<body><link rel="stylesheet" href="/body.css"></body>', $page);
+        $this->assertStringNotContainsString('<noscript><link rel="stylesheet" href="/print.css">', $page);
+    }
+
+    #[Test]
+    public function defer_leaves_a_noscript_and_a_page_without_a_head_alone(): void
+    {
+        $this->assertSame('<p>no head</p>', ThemeCritical::defer('<p>no head</p>'));
+
+        $head = '<head><noscript><link rel="stylesheet" href="/a.css"></noscript><link rel="icon" href="/i.svg"></head>';
+        $this->assertSame($head, ThemeCritical::defer($head));
+    }
+
+    #[Test]
+    public function the_critical_command_needs_the_pages_named_in_the_theme(): void
+    {
+        $this->artisan('webx:theme:critical')
+            ->expectsOutputToContain('"critical": ["/", "/blog/first-article"]')
+            ->assertFailed();
+
+        $this->app['config']->set('webx-themes.theme', self::fixture('font-options-theme'));
+        $this->app->forgetInstance(ThemeChain::class);
+        $this->assertSame(['/', '/about'], $this->app->make(ThemeChain::class)->critical());
+
+        $this->app['config']->set('webx-themes.critical', $this->public.'/critical.css');
+        $this->artisan('webx:theme:critical', ['--check' => true])
+            ->expectsOutputToContain('There is no critical CSS to check')
+            ->assertFailed();
+    }
+
+    private const string PAGE = '<html><head>@webxTheme<link rel="preload" href="/late.css" as="style"><link rel="stylesheet" href="/late.css"><link rel="stylesheet" href="/print.css" media="print"></head><body><link rel="stylesheet" href="/body.css"></body></html>';
 
     private function package(): ThemeManifest
     {

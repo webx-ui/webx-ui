@@ -1,0 +1,25 @@
+{
+  "theme": {
+    "title": "Font options",
+    "uses": ["webx-ui/theme-fixture"],
+    "critical": ["/", "/about"],
+    "fonts": [
+      {
+        "family": "Options Sans",
+        "weight": "100 900",
+        "preload": true,
+        "fallback": {
+          "local": ["Arial", "Helvetica"],
+          "size-adjust": "101.45%",
+          "ascent-override": "93.64%",
+          "descent-override": "24.64%",
+          "line-gap-override": "0%"
+        },
+        "files": {
+          "latin": "fonts/options-latin.woff2",
+          "cyrillic": "fonts/options-cyrillic.woff2"
+        }
+      }
+    ]
+  }
+}

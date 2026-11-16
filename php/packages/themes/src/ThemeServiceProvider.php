@@ -5,14 +5,19 @@ declare(strict_types=1);
 namespace WebxUi\Themes;
 
 use Illuminate\Contracts\Debug\ExceptionHandler;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Translation\Loader;
 use Illuminate\Foundation\Exceptions\Handler;
+use Illuminate\Foundation\Http\Events\RequestHandled;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\View\Factory;
 use Illuminate\View\FileViewFinder;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Cache\CacheGroups;
@@ -21,6 +26,7 @@ use WebxUi\Compositions\Compositions;
 use WebxUi\Compositions\CompositionsServiceProvider;
 use WebxUi\Themes\Checks\CompositionCheck;
 use WebxUi\Themes\Console\CheckCommand;
+use WebxUi\Themes\Console\CriticalCommand;
 use WebxUi\Themes\Console\EjectCommand;
 use WebxUi\Themes\Console\ExtractCommand;
 use WebxUi\Themes\Console\MakeCommand;
@@ -78,6 +84,9 @@ class ThemeServiceProvider extends ServiceProvider
 
         $this->app->singleton(ThemeAssets::class, fn (Application $app) => new ThemeAssets($app->publicPath()));
 
+        // Scoped: it remembers the file it read, and a long-lived worker should see a new one.
+        $this->app->scoped(ThemeCritical::class, fn (Application $app) => new ThemeCritical($app));
+
         // If: a test points it at fixtures instead of what Composer installed.
         $this->app->singletonIf(ModuleStyles::class, fn (Application $app) => new ModuleStyles($app->make(ThemeAssets::class)));
 
@@ -104,7 +113,7 @@ class ThemeServiceProvider extends ServiceProvider
                 __DIR__.'/../config/webx-themes.php' => config_path('webx-themes.php'),
             ], 'webx-themes-config');
 
-            $this->commands([CheckCommand::class, EjectCommand::class, ExtractCommand::class, MakeCommand::class, ShowCommand::class, SyncCommand::class]);
+            $this->commands([CheckCommand::class, CriticalCommand::class, EjectCommand::class, ExtractCommand::class, MakeCommand::class, ShowCommand::class, SyncCommand::class]);
         }
 
         // `var_export` rather than a literal class name: the compiled string has to carry the
@@ -151,6 +160,24 @@ class ThemeServiceProvider extends ServiceProvider
         // whole application is the one way to see every module's namespace, whatever the order.
         $this->app->booted(function (): void {
             $this->arrangeViews($this->app->make(ThemeChain::class));
+
+            // Booted too, so the listener comes after every other one on the event: the widgets
+            // write their stylesheets into the head when the page is handled, and those have to
+            // be there before they can stop blocking (§13.3).
+            $this->app->make(Dispatcher::class)->listen(RequestHandled::class, static function (RequestHandled $event): void {
+                $response = $event->response;
+
+                if ($response instanceof StreamedResponse || $response instanceof BinaryFileResponse || $response instanceof JsonResponse) {
+                    return;
+                }
+
+                $content = $response->getContent();
+                $type = (string) $response->headers->get('Content-Type', '');
+
+                if (is_string($content) && ($type === '' || str_contains($type, 'html')) && ThemeCritical::printed($content)) {
+                    $response->setContent(ThemeCritical::defer($content));
+                }
+            });
         });
 
         $this->callAfterResolving(ExceptionHandler::class, function (ExceptionHandler $handler): void {

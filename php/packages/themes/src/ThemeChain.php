@@ -128,6 +128,23 @@ final readonly class ThemeChain
     }
 
     /**
+     * The addresses whose first screen makes the critical CSS (§13.3): the nearest layer that
+     * names them decides, as with the preset. Empty when no layer does.
+     *
+     * @return list<string>
+     */
+    public function critical(): array
+    {
+        foreach ($this->layers as $layer) {
+            if ($layer->critical !== null) {
+                return $layer->critical;
+            }
+        }
+
+        return [];
+    }
+
+    /**
      * The tabs of the site's settings the theme prints. Unlike `requires`, a tab is not summed
      * down the chain: the layer nearest to the site that names it decides — a child theme that
      * lists its own sections replaces its parent's list, one that leaves the tab out inherits it.

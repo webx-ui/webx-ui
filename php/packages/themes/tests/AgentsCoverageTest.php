@@ -17,7 +17,7 @@ use WebxUi\Themes\Vocabulary;
 final class AgentsCoverageTest extends TestCase
 {
     /** The keys of a theme's manifest, `extra.webx.theme` or `theme` in theme.json (§5). */
-    private const array MANIFEST_KEYS = ['title', 'uses', 'requires', 'locales', 'fonts', 'preset', 'settings'];
+    private const array MANIFEST_KEYS = ['title', 'uses', 'requires', 'locales', 'fonts', 'preset', 'settings', 'critical'];
 
     #[Test]
     public function the_engines_guide_names_every_command_and_every_key_of_the_manifest(): void
@@ -25,7 +25,7 @@ final class AgentsCoverageTest extends TestCase
         $guide = (string) file_get_contents(dirname(__DIR__).'/AGENTS.md');
         $commands = array_values(array_filter(array_keys(Artisan::all()), static fn (string $name): bool => str_starts_with($name, 'webx:theme:')));
 
-        $this->assertCount(6, $commands, 'make, extract, eject, show, check, sync');
+        $this->assertCount(7, $commands, 'make, extract, eject, show, check, sync, critical');
 
         foreach ($commands as $command) {
             $this->assertStringContainsString("`{$command}", $guide, "{$command} is not in AGENTS.md");

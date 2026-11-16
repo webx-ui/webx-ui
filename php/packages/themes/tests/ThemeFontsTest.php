@@ -14,6 +14,7 @@ use WebxUi\Themes\Doctor\FontsCheck;
 use WebxUi\Themes\ThemeChain;
 use WebxUi\Themes\ThemeFonts;
 use WebxUi\Themes\ThemeLocator;
+use WebxUi\Themes\Tokens;
 
 /**
  * The fonts of the chain (spec §15.3): `@font-face` per script with its `unicode-range`, a family
@@ -177,6 +178,117 @@ final class ThemeFontsTest extends TestCase
         $this->assertCount(1, $warned);
         $this->assertSame(Diagnosis::WARN, $warned[0]->state);
         $this->assertStringContainsString('Fixture Sans (normal, of webx-ui/theme-fixture) has no latin-ext file, and the site publishes in pl', $warned[0]->detail);
+    }
+
+    #[Test]
+    public function without_the_options_the_head_has_no_preload_and_no_fallback(): void
+    {
+        $this->artisan('webx:theme:sync')->assertSuccessful();
+
+        $html = Blade::render('@webxTheme');
+
+        $this->assertStringNotContainsString('rel="preload"', $html);
+        $this->assertStringNotContainsString('Fallback', $html);
+        $this->assertStringContainsString('--site-font-heading: "Inter", sans-serif;', $html);
+    }
+
+    #[Test]
+    public function a_face_with_preload_preloads_the_files_of_the_page_language_only(): void
+    {
+        $this->useTheme(self::fixture('font-options-theme'));
+        $this->artisan('webx:theme:sync')->assertSuccessful();
+
+        $this->app->setLocale('en');
+        $html = Blade::render('@webxTheme');
+        $this->assertMatchesRegularExpression('~<link rel="preload" href="http://localhost/themes/[^"]+/assets/fonts/options-latin\.woff2" as="font" type="font/woff2" crossorigin>~', $html);
+        $this->assertStringNotContainsString('options-cyrillic.woff2" as="font"', $html);
+        // The fixture's own face does not ask for it.
+        $this->assertStringNotContainsString('sans-latin.woff2" as="font"', $html);
+        $this->assertLessThan(strpos($html, '<style data-webx-fonts>'), (int) strpos($html, 'rel="preload"'));
+
+        $this->app->setLocale('uk');
+        $html = Blade::render('@webxTheme');
+        $this->assertStringContainsString('options-cyrillic.woff2" as="font"', $html);
+        $this->assertStringNotContainsString('options-latin.woff2" as="font"', $html);
+    }
+
+    #[Test]
+    public function the_scripts_a_page_preloads_are_its_alphabet(): void
+    {
+        $this->assertSame(['latin'], ThemeFonts::preloaded('en'));
+        $this->assertSame(['latin'], ThemeFonts::preloaded('pl'));
+        $this->assertSame(['cyrillic'], ThemeFonts::preloaded('ru'));
+        $this->assertSame(['cyrillic'], ThemeFonts::preloaded('kk'));
+        $this->assertSame(['greek'], ThemeFonts::preloaded('el'));
+        $this->assertSame(['latin'], ThemeFonts::preloaded('ja'));
+    }
+
+    #[Test]
+    public function a_fallback_is_a_local_face_with_the_metrics_and_follows_its_font_in_the_stack(): void
+    {
+        $this->useTheme(self::fixture('font-options-theme'));
+
+        $html = Blade::render('@webxTheme');
+
+        $this->assertStringContainsString(implode("\n", [
+            '@font-face {',
+            '  font-family: "Options Sans Fallback";',
+            '  src: local("Arial"), local("Helvetica");',
+            '  size-adjust: 101.45%;',
+            '  ascent-override: 93.64%;',
+            '  descent-override: 24.64%;',
+            '  line-gap-override: 0%;',
+            '}',
+        ]), $html);
+        $this->assertStringContainsString('--site-font-body: "Options Sans", "Options Sans Fallback", system-ui, sans-serif;', $html);
+        // A stack that does not name the font keeps its own.
+        $this->assertStringContainsString('--site-font-heading: "Inter", sans-serif;', $html);
+    }
+
+    #[Test]
+    public function a_stack_gets_the_fallback_once_and_only_after_its_font(): void
+    {
+        $fallbacks = ['inter' => 'Inter Fallback'];
+
+        $this->assertSame('Inter, "Inter Fallback", Arial', ThemeFonts::withFallbacks('Inter, Arial', $fallbacks));
+        $this->assertSame('"Inter", "Inter Fallback", sans-serif', ThemeFonts::withFallbacks('"Inter", sans-serif', $fallbacks));
+        $this->assertSame('Inter, "Inter Fallback", Arial', ThemeFonts::withFallbacks('Inter, "Inter Fallback", Arial', $fallbacks));
+        $this->assertSame('Roboto, Arial', ThemeFonts::withFallbacks('Roboto, Arial', $fallbacks));
+        $this->assertSame('var(--site-font-body)', ThemeFonts::withFallbacks('var(--site-font-body)', $fallbacks));
+    }
+
+    #[Test]
+    public function a_malformed_option_is_dropped_on_the_page_and_named_by_the_check(): void
+    {
+        $face = ThemeFonts::face(['family' => 'A', 'preload' => 'yes', 'fallback' => ['size-adjust' => '101'], 'files' => ['latin' => 'fonts/a.woff2']]);
+
+        $this->assertNotNull($face);
+        $this->assertFalse($face['preload']);
+        $this->assertNull($face['fallback']);
+        $this->assertNull(ThemeFonts::fallback(['local' => 'Ar"ial']));
+        $this->assertNull(ThemeFonts::fallback(['font' => 'Arial']));
+        $this->assertSame(['local' => ['Arial']], ThemeFonts::fallback([]));
+
+        $directory = $this->localTheme([
+            ['family' => 'Bad', 'preload' => 'yes', 'fallback' => ['size' => '1'], 'files' => ['latin' => 'fonts/bad.woff2']],
+        ]);
+
+        try {
+            $this->artisan('webx:theme:check', ['path' => $directory, '--locales' => 'en'])
+                ->expectsOutputToContain('fonts[0]: "preload" is true or false')
+                ->expectsOutputToContain('fonts[0]: "fallback" is {')
+                ->assertFailed();
+        } finally {
+            (new Filesystem)->deleteDirectory($directory);
+        }
+    }
+
+    /** The chain on another theme for the rest of the test: what reads the chain is made again. */
+    private function useTheme(string $directory): void
+    {
+        $this->app['config']->set('webx-themes.theme', $directory);
+        $this->app->forgetInstance(ThemeChain::class);
+        $this->app->forgetInstance(Tokens::class);
     }
 
     /**

@@ -272,8 +272,17 @@ class Tokens
     private function declarations(array $values): array
     {
         $lines = [];
+        $fallbacks = ThemeFonts::fallbacks($this->chain);
 
         foreach ($values as $name => $value) {
+            // A font with a `fallback` (§15.3) is followed by it in every stack that names it, so
+            // the text keeps its place while the file is on its way. Only where the longer stack
+            // still passes as a value: one that would not keeps the theme's own.
+            if ($fallbacks !== [] && $this->vocabulary()->type($name) === TokenType::Font) {
+                $stacked = ThemeFonts::withFallbacks($value, $fallbacks);
+                $value = $this->vocabulary()->accepts($name, $stacked) ? $stacked : $value;
+            }
+
             if ($this->vocabulary()->accepts($name, $value)) {
                 $lines[] = "  --site-{$name}: {$value};";
             }

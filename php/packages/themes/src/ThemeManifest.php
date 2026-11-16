@@ -26,6 +26,8 @@ final readonly class ThemeManifest
      *                                                           null when the manifest says nothing about them.
      * @param  string|null  $reveal  How the theme's blocks come in as the page scrolls (§9.3): `up`, `fade`,
      *                               `scale`, or `off`; null when the manifest says nothing — the layer below decides.
+     * @param  list<string>|null  $critical  The addresses of the site whose first screen `webx:theme:critical` reads
+     *                                       (§13.3); null when the manifest says nothing — the layer below decides.
      */
     public function __construct(
         public string $name,
@@ -39,6 +41,7 @@ final readonly class ThemeManifest
         public ?string $preset = null,
         public ?array $settings = null,
         public ?string $reveal = null,
+        public ?array $critical = null,
     ) {}
 
     /** A packaged theme: a directory with a composer.json of `"type": "webx-theme"`. */
@@ -227,7 +230,32 @@ final readonly class ThemeManifest
             preset: $preset === null ? null : trim($preset),
             settings: self::settings($theme, $file),
             reveal: self::reveal($theme, $file),
+            critical: self::critical($theme, $file),
         );
+    }
+
+    /**
+     * `critical`: the addresses of the site whose first screen makes the critical CSS — a page of
+     * each template the site's visitors land on: `["/", "/blog/first-article"]`. A path of the
+     * site, not a URL: the command asks the site it runs for.
+     *
+     * @param  array<mixed>  $theme
+     * @return list<string>|null
+     */
+    private static function critical(array $theme, string $file): ?array
+    {
+        if (! array_key_exists('critical', $theme)) {
+            return null;
+        }
+
+        $value = $theme['critical'];
+
+        if (! is_array($value) || ! array_is_list($value) || array_filter($value, static fn ($path): bool => ! is_string($path) || preg_match('~^/(?!/)\S*$~', $path) !== 1) !== []) {
+            throw ThemeException::invalidManifest($file, '"critical" is a list of the site\'s paths: ["/", "/blog/first-article"].');
+        }
+
+        /** @var list<string> $value */
+        return array_values(array_unique($value));
     }
 
     /**
