@@ -45,6 +45,13 @@ final class Pictures
 
     private const float GAP_EM = 0.75;
 
+    /**
+     * The page's gutters on both sides of the column a `sizes` query does not see: it asks of the
+     * window, the grid counts its columns by the block. Taken a little wide, a screen just past the
+     * width of N columns is asked for N - 1 — a copy larger than the cell, never a smaller one.
+     */
+    private const float GUTTERS_EM = 3.0;
+
     /** The mosaic's large picture stands beside the two small ones from this width of the block. */
     private const string MOSAIC_WIDE = '(min-width: 36em)';
 
@@ -251,6 +258,8 @@ final class Pictures
     /**
      * `sizes` of a grid's cell: up to `$across` columns, fewer where a cell would be narrower than
      * 9em — the number of columns a phone really shows, not half of the screen whatever it holds.
+     * The window holds the page's gutters too (`GUTTERS_EM`): a phone whose column folds the grid
+     * into one is asked for the whole width, not for half of it.
      */
     public static function gridSizes(int $across): string
     {
@@ -258,7 +267,7 @@ final class Pictures
         $sizes = [];
 
         for ($columns = $across; $columns > 1; $columns--) {
-            $from = $columns * self::CELL_EM + ($columns - 1) * self::GAP_EM;
+            $from = $columns * self::CELL_EM + ($columns - 1) * self::GAP_EM + self::GUTTERS_EM;
             $sizes[] = '(min-width: '.self::number($from).'em) '.(int) ceil(100 / $columns).'vw';
         }
 

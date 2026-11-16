@@ -289,11 +289,17 @@ final class GalleryTest extends TestCase
         }
 
         $grid = $this->render(['pictures' => $pictures, 'columns' => 3], second: true);
-        $this->assertSame(3, preg_match_all('~<img class="b-gallery__image" src="[^"]+/320x320-cover\.webp\?v=\w+" srcset="[^"]+/320x320-cover\.webp\?v=\w+ 320w, [^"]+/640\.webp\?v=\w+ 640w, [^"]+/1280\.webp\?v=\w+ 1280w, [^"]+/photo-\d\.webp\?v=\w+ 1800w" sizes="\(min-width: 28\.5em\) 34vw, \(min-width: 18\.75em\) 50vw, 100vw"[^>]* loading="lazy" decoding="async">~', $grid));
+        $this->assertSame(3, preg_match_all('~<img class="b-gallery__image" src="[^"]+/320x320-cover\.webp\?v=\w+" srcset="[^"]+/320x320-cover\.webp\?v=\w+ 320w, [^"]+/640\.webp\?v=\w+ 640w, [^"]+/1280\.webp\?v=\w+ 1280w, [^"]+/photo-\d\.webp\?v=\w+ 1800w" sizes="\(min-width: 31\.5em\) 34vw, \(min-width: 21\.75em\) 50vw, 100vw"[^>]* loading="lazy" decoding="async">~', $grid));
 
         // One picture across the column: the whole of it.
         $one = $this->render(['pictures' => array_slice($pictures, 0, 1), 'columns' => 1], second: true);
         $this->assertStringContainsString('sizes="100vw"', $one);
+
+        // Two columns only past two cells and the page's gutters: a phone of 320 px, whose column
+        // folds the grid into one, is asked for the whole width — 640w and up at 2x, not the preview.
+        $two = $this->render(['pictures' => array_slice($pictures, 0, 2), 'columns' => 2], second: true);
+        $this->assertSame(2, substr_count($two, 'sizes="(min-width: 21.75em) 50vw, 100vw"'));
+        $this->assertSame('(min-width: 60.75em) 17vw, (min-width: 51em) 20vw, (min-width: 41.25em) 25vw, (min-width: 31.5em) 34vw, (min-width: 21.75em) 50vw, 100vw', \WebxUi\Widgets\Pictures::gridSizes(6));
 
         // A copy as wide as the picture or wider is no copy: a picture of 1000 px lists 640 and itself.
         $small = $this->picture('photo-small');
@@ -345,6 +351,22 @@ final class GalleryTest extends TestCase
 
         // Under another block: every one waits until it nears the screen.
         $this->assertSame(6, substr_count($this->render(['pictures' => $pictures, 'columns' => 3], second: true), 'loading="lazy" decoding="async"'));
+    }
+
+    #[Test]
+    public function the_lightbox_link_is_as_wide_as_its_cell_whatever_copy_the_browser_picked(): void
+    {
+        foreach (['grid' => [], 'mosaic' => ['view' => 'mosaic'], 'slider' => ['view' => 'slider']] as $case => $values) {
+            $html = $this->render(['pictures' => $this->pictures(3), 'zoom' => true] + $values, second: true);
+            $this->assertMatchesRegularExpression('~<figure class="b-gallery__figure">\s*(<div class="b-gallery__shot">\s*)?<a [^>]*class="webx-lightbox-link[^"]*"[^>]*><img class="b-gallery__image"~', $html, $case);
+        }
+
+        // The lightbox's own link is an inline-block shrunk to what it holds: in the block it is a
+        // block, or the picture's `width: 100%` is that of the copy the browser picked (WIDGETS §14).
+        $styles = (string) self::type()['styles'];
+        $this->assertMatchesRegularExpression('~\n\.b-gallery \.webx-lightbox-link \{\s*display: block;\s*\}~', $styles);
+        $this->assertMatchesRegularExpression('~\n\.b-gallery__image \{\s*display: block;\s*width: 100%;~', $styles);
+        $this->assertStringContainsString('.webx-lightbox-link {'."\n".'  display: inline-block;', (string) file_get_contents(__DIR__.'/../resources/css/lightbox.css'));
     }
 
     #[Test]
