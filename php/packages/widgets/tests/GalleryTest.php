@@ -385,7 +385,7 @@ final class GalleryTest extends TestCase
 
         $this->assertStringContainsString('class="b-gallery b-gallery--ribbon site-bleed"', $html);
         $this->assertStringContainsString('<div class="b-gallery__head">', $html);
-        $this->assertMatchesRegularExpression('~<ul class="b-gallery__ribbon" role="list" tabindex="0"\s+aria-label="In the feed"\s*>~', $html);
+        $this->assertMatchesRegularExpression('~<ul class="b-gallery__ribbon" role="list" tabindex="0" data-webx-drag-scroll\s+aria-label="In the feed"\s*>~', $html);
         $this->assertSame(3, substr_count($html, 'class="b-gallery__frame"'), 'a picture gone from the library is left out');
         $this->assertSame(2, preg_match_all('~<a class="b-gallery__post" href="https://social\.example/p/[12]" target="_blank" rel="noopener"~', $html));
         $this->assertStringContainsString('<span class="b-gallery__post">', $html, 'a frame without a link is a picture');

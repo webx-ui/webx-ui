@@ -148,6 +148,8 @@ export default {
         'language-offer': join(root, 'resources/js/language-offer.js'),
         // A picture magnified under the mouse or two fingers; the keyboard's way in is the lightbox.
         zoom: join(root, 'resources/js/zoom.js'),
+        // A strip dragged with the mouse — a gallery's ribbon: only where `data-webx-drag-scroll` stands.
+        'drag-scroll': join(root, 'resources/js/drag-scroll.js'),
         // The fields of a form: Show on a password, the line beside a file — the rest is HTML.
         field: join(root, 'resources/js/field.js'),
         // The shell of a form: sending in place, the errors of a 422 by field, the answer.
