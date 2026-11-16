@@ -25,7 +25,16 @@ use WebxUi\Inbox\Notifications\Channels;
 final class FormOptions
 {
     /** Words, in every language the site publishes in. */
-    public const TRANSLATED = ['description', 'thank-you.heading', 'thank-you.text', 'design.submit-text'];
+    public const TRANSLATED = ['description', 'thank-you.heading', 'thank-you.text', 'thank-you.button', 'design.submit-text'];
+
+    /** Where the button under the thank-you leads (FORM_STEPS §11.2): a link of the panel, as `redirect`. */
+    public const string BUTTON_LINK = 'thank-you.button-link';
+
+    /** «Next» held until the step is answered (FORM_STEPS §3.6). */
+    public const string HOLD_NEXT = 'steps.hold-next';
+
+    /** How the form's dialog scrolls (FORM_STEPS §11.1): `page` — the dialog as a whole, the page still. */
+    public const string DIALOG_SCROLL = 'dialog.scroll';
 
     /** Plain strings. */
     public const TEXT = ['email_field'];
@@ -66,6 +75,21 @@ final class FormOptions
 
         if ($redirect !== null) {
             $options['redirect'] = $redirect->toArray();
+        }
+
+        $button = self::redirect($input[self::BUTTON_LINK] ?? null);
+
+        if ($button !== null) {
+            $options[self::BUTTON_LINK] = $button->toArray();
+        }
+
+        // Off is the default and is not written down: a form saved before reads the same.
+        if (self::boolean($input[self::HOLD_NEXT] ?? false)) {
+            $options[self::HOLD_NEXT] = true;
+        }
+
+        if (($input[self::DIALOG_SCROLL] ?? null) === 'page') {
+            $options[self::DIALOG_SCROLL] = 'page';
         }
 
         // Kept for both ways and switched between: the addresses stay on a form told through

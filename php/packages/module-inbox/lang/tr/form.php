@@ -18,4 +18,6 @@ return [
     'datetime-weekday' => 'Bir hafta günü seçin: :days.',
     'datetime-grid' => 'Sunulan saatlerden birini seçin.',
     'datetime-past' => 'Bu saat geçti. Daha geç bir saat seçin.',
+    'datetime-lead' => ':date tarihinden itibaren bir gün seçin.',
+    'datetime-zone' => 'Saat diliminiz tanınmadı. Sayfayı yenileyip saati yeniden seçin.',
 ];

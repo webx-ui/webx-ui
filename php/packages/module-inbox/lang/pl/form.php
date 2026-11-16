@@ -18,4 +18,6 @@ return [
     'datetime-weekday' => 'Wybierz dzień tygodnia: :days.',
     'datetime-grid' => 'Wybierz jedną z proponowanych godzin.',
     'datetime-past' => 'Ta godzina już minęła. Wybierz późniejszą.',
+    'datetime-lead' => 'Wybierz dzień od :date.',
+    'datetime-zone' => 'Nie rozpoznano Twojej strefy czasowej. Odśwież stronę i wybierz godzinę ponownie.',
 ];

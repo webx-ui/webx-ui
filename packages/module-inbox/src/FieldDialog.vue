@@ -262,13 +262,36 @@ const timesPreview = computed(() => {
     at + timeStep.value <= to && times.length < 200;
     at += timeStep.value
   )
-    times.push(clockOf(at))
+    if (!skip.value.includes(clockOf(at))) times.push(clockOf(at))
 
   if (times.length === 0) return '—'
 
   return times.length > 3
     ? `${times[0]}, ${times[1]} … ${times[times.length - 1]}`
     : times.join(', ')
+})
+
+/*
+ * The options of FORM_STEPS §6.6, each off by default — a field saved before them reads the same:
+ * the visitor's zone, days ahead, times skipped (a lunch break), the panel of slots, the first day
+ * chosen at once.
+ */
+const zoneOptions = computed(() => [
+  { value: 'site', label: t('fields.timezone-site-option') },
+  { value: 'visitor', label: t('fields.timezone-visitor-option') },
+])
+const slotOptions = computed(() => [
+  { value: 'list', label: t('fields.slots-list') },
+  { value: 'panel', label: t('fields.slots-panel') },
+])
+const skip = computed({
+  get: (): string[] =>
+    Array.isArray(options.value['time-skip']) ? options.value['time-skip'].map(String) : [],
+  set: (value: string[]) =>
+    set(
+      'time-skip',
+      value.map((one) => one.trim()).filter((one) => one !== ''),
+    ),
 })
 
 /** The zone the site names when the field has no words of its own. */
@@ -521,6 +544,60 @@ async function save(): Promise<void> {
             :model-value="(options['timezone-label'] as LocalizedValue) ?? {}"
             localized
             @update:model-value="(value) => set('timezone-label', value)"
+          />
+        </wx-form-item>
+
+        <wx-form-item
+          :label="t('fields.time-skip')"
+          :help="t('fields.time-skip-help')"
+          :error="errorOf('options.time-skip')"
+        >
+          <wx-tags-input v-model="skip" placeholder="13:30" />
+        </wx-form-item>
+
+        <div class="wx-inbox-field-form__row">
+          <wx-form-item
+            :label="t('fields.lead-days')"
+            :help="t('fields.lead-days-help')"
+            :error="errorOf('options.lead-days')"
+          >
+            <wx-input-number
+              :model-value="Number(options['lead-days'] ?? 0)"
+              :min="0"
+              :max="365"
+              @update:model-value="(value) => set('lead-days', value ?? 0)"
+            />
+          </wx-form-item>
+          <wx-form-item
+            :label="t('fields.timezone')"
+            :help="t('fields.timezone-help')"
+            :error="errorOf('options.timezone')"
+          >
+            <wx-segmented
+              :model-value="options.timezone === 'visitor' ? 'visitor' : 'site'"
+              :options="zoneOptions"
+              size="sm"
+              :aria-label="t('fields.timezone')"
+              @update:model-value="(value) => set('timezone', value === 'visitor' ? 'visitor' : '')"
+            />
+          </wx-form-item>
+        </div>
+
+        <wx-form-item :label="t('fields.slots')" :help="t('fields.slots-help')">
+          <wx-segmented
+            :model-value="options.slots === 'panel' ? 'panel' : 'list'"
+            :options="slotOptions"
+            size="sm"
+            :aria-label="t('fields.slots')"
+            @update:model-value="(value) => set('slots', value === 'panel' ? 'panel' : '')"
+          />
+        </wx-form-item>
+
+        <wx-form-item :help="t('fields.first-day-help')">
+          <wx-checkbox
+            :model-value="Boolean(options['first-day'])"
+            :label="t('fields.first-day')"
+            @update:model-value="(on) => set('first-day', Boolean(on))"
           />
         </wx-form-item>
 

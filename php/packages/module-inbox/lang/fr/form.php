@@ -18,4 +18,6 @@ return [
     'datetime-weekday' => 'Choisissez un jour de semaine : :days.',
     'datetime-grid' => 'Choisissez l’un des horaires proposés.',
     'datetime-past' => 'Cet horaire est déjà passé. Choisissez-en un plus tard.',
+    'datetime-lead' => 'Choisissez un jour à partir du :date.',
+    'datetime-zone' => 'Votre fuseau horaire n’a pas été reconnu. Rechargez la page et choisissez à nouveau l’horaire.',
 ];

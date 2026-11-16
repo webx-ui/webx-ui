@@ -42,6 +42,29 @@ const submit = option<LocalizedValue>(options, 'design.submit-text', {})
  */
 const stored = option<LinkValue | string | null>(options, 'redirect', null)
 
+/*
+ * The button under the thank-you in a dialog (FORM_STEPS §11.2): its words — «Close» when empty —
+ * and where it leads; nowhere chosen, it closes the dialog.
+ */
+const buttonText = option<LocalizedValue>(options, 'thank-you.button', {})
+const buttonStored = option<LinkValue | null>(options, 'thank-you.button-link', null)
+const buttonLink = computed<LinkValue | null>({
+  get: (): LinkValue => buttonStored.value ?? { ...emptyLink(), target: 'none' },
+  set: (value: LinkValue | null) => {
+    buttonStored.value = value === null || value.target === 'none' ? null : value
+  },
+})
+
+/* «Next» held until the step is answered (§3.6), and the dialog scrolled as a whole (§11.1). */
+const holdNext = option<boolean>(options, 'steps.hold-next', false)
+const dialogScroll = option<string | null>(options, 'dialog.scroll', null)
+const dialogPage = computed<boolean>({
+  get: () => dialogScroll.value === 'page',
+  set: (on: boolean) => {
+    dialogScroll.value = on ? 'page' : null
+  },
+})
+
 const redirect = computed<LinkValue | null>({
   get: (): LinkValue => {
     const value = stored.value
@@ -102,6 +125,28 @@ const redirect = computed<LinkValue | null>({
       >
         <!-- A redirect is not clicked: a new tab and rel mean nothing for it. -->
         <wx-link-picker v-model="redirect" :attributes="false" />
+      </wx-form-item>
+
+      <wx-form-item :label="t('panel.thank-you-button')" :help="t('panel.thank-you-button-help')">
+        <wx-input v-model="buttonText" localized />
+      </wx-form-item>
+
+      <wx-form-item
+        :label="t('panel.thank-you-button-link')"
+        :help="t('panel.thank-you-button-link-help')"
+        :error="errors['options.thank-you.button-link']?.[0]"
+      >
+        <wx-link-picker v-model="buttonLink" :attributes="false" />
+      </wx-form-item>
+    </wx-card>
+
+    <wx-card :title="t('panel.on-the-site')">
+      <wx-form-item :help="t('panel.hold-next-help')">
+        <wx-switch v-model="holdNext" :label="t('panel.hold-next')" />
+      </wx-form-item>
+
+      <wx-form-item :help="t('panel.dialog-page-help')">
+        <wx-switch v-model="dialogPage" :label="t('panel.dialog-page')" />
       </wx-form-item>
     </wx-card>
   </div>

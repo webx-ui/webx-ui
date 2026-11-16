@@ -12,7 +12,6 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use WebxUi\Admin\Links\LinkTarget;
 use WebxUi\Admin\Links\LinkUrls;
 use WebxUi\Inbox\Antispam\Captcha;
 use WebxUi\Inbox\Antispam\Guard;
@@ -29,6 +28,7 @@ use WebxUi\Inbox\Submissions\Enclosures;
 use WebxUi\Inbox\Submissions\Intake;
 use WebxUi\Inbox\Submissions\Rules;
 use WebxUi\Inbox\Submissions\ThankYou;
+use WebxUi\Inbox\Support\FormLinks;
 use WebxUi\Inbox\Support\Forms;
 use WebxUi\Localization\Locales;
 use WebxUi\Widgets\Forms\FormResponse;
@@ -265,24 +265,6 @@ final class SubmitController
      */
     private function redirect(Form $form): ?string
     {
-        $link = FormOptions::redirect($form->option('redirect'));
-
-        if ($link === null) {
-            return null;
-        }
-
-        if ($link->target !== LinkTarget::Entity) {
-            return $this->urls->href($link, app()->getLocale());
-        }
-
-        foreach (array_unique([app()->getLocale(), $this->locales->defaultCode()]) as $locale) {
-            $candidate = $this->urls->candidate($link, $locale);
-
-            if ($candidate !== null && $candidate->available && $candidate->url !== null) {
-                return $this->urls->hrefWith($link, $candidate, $locale);
-            }
-        }
-
-        return null;
+        return FormLinks::href(FormOptions::redirect($form->option('redirect')), $this->urls, $this->locales);
     }
 }

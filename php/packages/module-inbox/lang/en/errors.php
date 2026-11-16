@@ -35,4 +35,7 @@ return [
     'datetime-range' => 'The day has no room for a time: «From» and «To» are HH:MM, and «From» is at least one step earlier than «To».',
     'datetime-step' => 'The step of the times is 15, 20, 30, 60, 90 or 120 minutes.',
     'datetime-weekdays' => 'Each day of the week once, from 1 (Monday) to 7 (Sunday).',
+    'datetime-lead' => 'Days ahead is a whole number from 0 to 365.',
+    'datetime-skip' => 'Times to skip are HH:MM, and at least one time of the day stays.',
+    'datetime-zone' => 'The time zone is the site’s or the visitor’s.',
 ];

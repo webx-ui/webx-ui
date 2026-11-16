@@ -35,4 +35,7 @@ return [
     'datetime-range' => 'Der Tag hat keinen Platz für eine Uhrzeit: «Von» und «Bis» als HH:MM, und «Von» mindestens einen Schritt vor «Bis».',
     'datetime-step' => 'Der Schritt der Uhrzeiten ist 15, 20, 30, 60, 90 oder 120 Minuten.',
     'datetime-weekdays' => 'Jeder Wochentag einmal, von 1 (Montag) bis 7 (Sonntag).',
+    'datetime-lead' => 'Tage Vorlauf ist eine ganze Zahl von 0 bis 365.',
+    'datetime-skip' => 'Ausgelassene Uhrzeiten sind HH:MM, und mindestens eine Uhrzeit des Tages bleibt.',
+    'datetime-zone' => 'Die Zeitzone ist die der Website oder die des Besuchers.',
 ];

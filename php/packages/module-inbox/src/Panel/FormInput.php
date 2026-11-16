@@ -95,19 +95,30 @@ final class FormInput
             // The same link a menu item holds, refused for the same reasons: a record of a section
             // the site does not have, an address that would run script. A plain string is an
             // address, as forms saved before the choice kept it.
-            'options.redirect' => ['nullable', static function (string $attribute, mixed $value, Closure $fail): void {
-                if (is_string($value)) {
-                    $value = ['target' => 'url', 'url' => $value];
-                }
-
-                $rules = app(FieldTypes::class)->get('wx-link')?->rules([]) ?? [];
-                $check = Validator::make(['redirect' => $value], ['redirect' => $rules], [], ['redirect' => (string) trans('webx-inbox::panel.redirect')]);
-
-                if ($check->fails()) {
-                    $fail((string) $check->errors()->first('redirect'));
-                }
-            }],
+            'options.redirect' => ['nullable', self::link('webx-inbox::panel.redirect')],
+            // The button under the thank-you (FORM_STEPS §11.2): the same link, for the same reasons.
+            // The dot inside the key is literal, escaped for the validator (CLAUDE.md §4).
+            'options.thank-you\.button-link' => ['nullable', self::link('webx-inbox::panel.thank-you-button-link')],
+            'options.steps\.hold-next' => ['nullable', 'boolean'],
+            'options.dialog\.scroll' => ['nullable', Rule::in(['box', 'page'])],
         ];
+    }
+
+    /** A link of the panel (`wx-link`) checked as a menu item's is, named by its label. */
+    private static function link(string $label): Closure
+    {
+        return static function (string $attribute, mixed $value, Closure $fail) use ($label): void {
+            if (is_string($value)) {
+                $value = ['target' => 'url', 'url' => $value];
+            }
+
+            $rules = app(FieldTypes::class)->get('wx-link')?->rules([]) ?? [];
+            $check = Validator::make(['link' => $value], ['link' => $rules], [], ['link' => (string) trans($label)]);
+
+            if ($check->fails()) {
+                $fail((string) $check->errors()->first('link'));
+            }
+        };
     }
 
     /**
