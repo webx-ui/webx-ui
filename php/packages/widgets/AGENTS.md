@@ -45,7 +45,7 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
   `pagination` true|false|`fraction` (counter "1/6", aria-hidden); `options` — Swiper. No JS: a snapping strip. `<x-slot:overlay>` — a still pane over the slides (hidden until ready): its `.webx-slider__caption`s follow the slide (`is-current`, the rest `inert`), `pagination-in=".sel"` puts the dots in it ("Slide 2 of 4");
   `:pause="false"` — no pause button (hover/focus still hold; the audit leaves it). Event `webx:slide` on the root, `detail: { index, count, auto }` — index from 0, a loop's copies not counted.
 - **Lightbox** — any `<a data-webx-lightbox="<group>" data-width data-height>` on the page, or
-  `<x-webx-lightbox :image="$picture" group ratio="4:3" opacity>`: `ratio` a frame the picture fits into whole (`data-webx-lightbox-ratio`),
+  `<x-webx-lightbox :image="$picture" group ratio="4:3" opacity :index :total>`: `ratio` a frame the picture fits into whole (`data-webx-lightbox-ratio`), no alt — `aria-label` "Open picture N of M",
   the backdrop opaque unless `--webx-lightbox-backdrop-opacity` says less; closing keeps the page's scroll. **Zoom** — `<x-webx-zoom :image mode frame>` (`inner|side`,
   `picture|container`) or `data-webx-zoom` on an element with a picture and a link (its way in).
 - **Video** — `<x-webx-video src="<YouTube|Vimeo>" :poster title ratio>`: a poster, the player only

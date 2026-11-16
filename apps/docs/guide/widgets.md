@@ -300,6 +300,10 @@ together. `<x-webx-lightbox :image="$picture">` takes a picture of the media lib
 its size; a link by hand needs `data-width` and `data-height` — without them the picture is
 downloaded first to be measured, and the audit says so.
 
+- **A name** — a picture without an alt leaves its link nameless, so the link is named for what it
+  does, in the page's language: "Open picture 2 of 5" with `:index` and `:total` (its place in the
+  group — the `gallery` block passes them), "Open the picture" without. An `aria-label` of yours,
+  words or a described picture in the slot win.
 - **A frame** — `ratio="4:3"` (`data-webx-lightbox-ratio` on a link, "Frame over the page" in the
   `gallery` block): the picture opens in a frame of that shape, whole and undistorted inside it,
   on `--webx-lightbox-frame`. Nothing — the picture as it is.
@@ -752,6 +756,15 @@ stands under it. "Still" shows the first three, and the lightbox still pages thr
 the rest are links without a picture in a hidden box. "Carousel of threes" puts three on each
 slide with the slider's arrows, dots, loop and autoplay; three pictures or fewer stay still. The
 last slide holds what is left, one or two pictures at the height of three.
+
+**Loading** of the grid and the mosaic: only the block that opens the page fetches its first
+pictures at once — the first row of the grid, the first three of the mosaic; every other picture
+waits until it nears the screen (`loading="lazy"`), and all decode off the main thread. Each one
+offers the media library's copies by width (640 and 1280 px, the ones narrower than the picture) and
+says how wide it stands: a grid's cell by the columns the block really shows — two on a phone, the
+whole width with one column — the mosaic's large picture two thirds of the block and the small ones
+a third. A copy not cut yet is cut after the page has gone out, and the next page offers it. A
+picture without an alt leaves its lightbox link named "Open picture 2 of 5".
 
 A block with nothing to show — no pictures, an unknown address, a deleted file — prints nothing.
 

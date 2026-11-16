@@ -53,6 +53,18 @@ final class Thumbnails
         return $this->cut($disk, $path, $this->directoryOf($path), $this->format(pathinfo($path, PATHINFO_EXTENSION)), $width, $height, $fit);
     }
 
+    /**
+     * The key of a variant of a library file that is already cut, or null — without cutting it.
+     * A page that prints a `srcset` asks this on every render: the bytes are read only by the
+     * cut, which it puts off until its response has gone.
+     */
+    public function existing(MediaFile $file, int $width, ?int $height = null, string $fit = 'cover'): ?string
+    {
+        $path = $this->pathOf($this->libraryDirectory($file), $this->format($file->extension), $width, $height, $fit);
+
+        return $this->files->disk($file->disk)->exists($path) ? $path : null;
+    }
+
     /** Every variant of one library file, which is what an edit invalidates. */
     public function forget(MediaFile $file): void
     {
@@ -67,8 +79,7 @@ final class Thumbnails
 
     private function cut(?string $diskName, string $source, string $directory, string $extension, int $width, ?int $height, string $fit): string
     {
-        $size = $height === null ? (string) $width : "{$width}x{$height}-{$fit}";
-        $path = "{$directory}/{$size}.{$extension}";
+        $path = $this->pathOf($directory, $extension, $width, $height, $fit);
         $disk = $this->files->disk($diskName);
 
         if ($disk->exists($path)) {
@@ -102,6 +113,14 @@ final class Thumbnails
         $disk->put($path, (string) $image->encodeByExtension($extension, quality: $quality));
 
         return $path;
+    }
+
+    /** `media/thumbs/<name>/640.webp`, `…/320x320-cover.webp`. */
+    private function pathOf(string $directory, string $extension, int $width, ?int $height, string $fit): string
+    {
+        $size = $height === null ? (string) $width : "{$width}x{$height}-{$fit}";
+
+        return "{$directory}/{$size}.{$extension}";
     }
 
     /**
