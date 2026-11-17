@@ -8,7 +8,10 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Blade;
 use Orchestra\Testbench\TestCase;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Themes\ThemeChain;
 use WebxUi\Themes\ThemeLocator;
+use WebxUi\Themes\ThemeManifest;
+use WebxUi\Themes\ThemeReveal;
 use WebxUi\Themes\ThemeServiceProvider;
 use WebxUi\Widgets\FirstScreen;
 use WebxUi\Widgets\WidgetsServiceProvider;
@@ -27,7 +30,7 @@ final class HeroTest extends TestCase
     private const array BADGE = ['url' => '/media/ribbons.png', 'alt' => 'Two award ribbons', 'width' => 169, 'height' => 362];
 
     /** The fields this stage added: a block saved before has none of them. */
-    private const array NEW = ['eyebrow', 'badge', 'height', 'position'];
+    private const array NEW = ['eyebrow', 'badge', 'height', 'position', 'reveal'];
 
     /**
      * @param  Application  $app
@@ -98,6 +101,37 @@ final class HeroTest extends TestCase
     }
 
     #[Test]
+    public function the_words_come_in_as_one_or_one_after_another(): void
+    {
+        $field = self::field('reveal');
+        $this->assertSame('wx-segmented', $field['type']);
+        $this->assertSame('block', $field['default']);
+        $this->assertSame(['block', 'stagger'], array_column($field['props']['options'], 'value'));
+        $this->assertSame(['when' => 'no_reveal', 'not' => true], $field['visible']);
+        $this->assertSame('block', self::type()['sample']['reveal']);
+
+        // Where the theme brings its blocks in: a block saved before, and one left as one, come in
+        // as the template before printed them, byte for byte.
+        $chain = new ThemeChain([new ThemeManifest('theme', '/theme', true, reveal: 'up'), ThemeManifest::fromPackage(self::path())]);
+        $this->app->instance(ThemeReveal::class, new ThemeReveal($chain));
+        $values = ['second_label' => 'Later', 'second_url' => '/later'];
+        $before = Blade::render((string) file_get_contents(__DIR__.'/Fixtures/before/hero.blade.php'), $this->data($values, saved: true), deleteCachedView: true);
+
+        $this->assertStringContainsString('<div class="b-hero__inner" data-webx-overlap-fade  data-webx-reveal="up">', $before);
+        $this->assertSame($before, $this->render($values, saved: true));
+        $this->assertSame($before, $this->render([...$values, 'reveal' => 'block']));
+        $this->assertSame($before, $this->render([...$values, 'reveal' => 'sideways']));
+
+        // One after another: the inner's children — eyebrow, headline, line, buttons, badge — in turn.
+        $stagger = $this->render([...$values, 'eyebrow' => 'A coastal town', 'badge' => self::BADGE, 'reveal' => 'stagger']);
+        $this->assertStringContainsString('<div class="b-hero__inner" data-webx-overlap-fade  data-webx-reveal="stagger" data-webx-reveal-effect="up">', $stagger);
+        $this->assertSame(1, substr_count($stagger, 'data-webx-reveal="'));
+
+        // Without animation is without it, whichever way the words would have come.
+        $this->assertStringNotContainsString('data-webx-reveal', $this->render([...$values, 'reveal' => 'stagger', 'no_reveal' => true]));
+    }
+
+    #[Test]
     public function the_eyebrow_stands_over_the_headline_and_an_empty_one_is_not_printed(): void
     {
         $html = $this->render(['eyebrow' => 'A coastal town']);
@@ -128,6 +162,18 @@ final class HeroTest extends TestCase
         $this->assertStringContainsString('.b-hero.b-hero--screen.b-hero--at-top {', $styles);
         $this->assertStringContainsString('var(--hero-top-space, var(--site-space-8))', $styles);
         $this->assertStringContainsString('.b-hero--screen:first-of-type:where(.site-main > *):where(.site:has(.webx-header--overlay) *) {', $styles);
+        // The header's rest height: a header a theme makes lower once scrolled does not move the first screen.
+        $this->assertSame(2, substr_count($styles, 'calc(var(--webx-header-rest-height, var(--webx-header-height, 0px)) + var(--webx-header-topbar-height, 0px))'));
+    }
+
+    #[Test]
+    public function in_the_panels_preview_the_first_screen_is_the_devices_height_and_not_the_frames(): void
+    {
+        // The frame there is as tall as its page: 100svh of it would grow the page, and the frame with it, for good.
+        $css = (string) file_get_contents(dirname(__DIR__).'/dist/theme.css');
+
+        $this->assertStringContainsString(':root[data-webx-preview] .b-hero.b-hero--screen{min-height:calc(var(--webx-screen-height, 100svh) - var(--hero-above, 0px))}', $css);
+        $this->assertStringContainsString('min-height:var(--webx-screen-height, 100dvh)', $css);
     }
 
     #[Test]

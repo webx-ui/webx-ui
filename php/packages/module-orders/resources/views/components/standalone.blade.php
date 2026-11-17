@@ -16,7 +16,7 @@
     @stack('head')
 </head>
 <body>
-<main id="content">
+<main id="site-content">
 {{ $slot }}
 </main>
 @stack('scripts')

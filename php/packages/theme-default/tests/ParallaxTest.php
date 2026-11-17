@@ -111,6 +111,35 @@ final class ParallaxTest extends TestCase
     }
 
     #[Test]
+    public function under_a_first_screen_slid_over_by_tiles_each_picture_moves_its_own_way(): void
+    {
+        // A page as a site makes it: the hero of the first screen, then text-tiles that slide over it
+        // with the fog edge and a parallax of their own (a gradient, the whole width, square tiles).
+        $this->app->forgetScopedInstances();
+        $hero = $this->block('hero', ['parallax' => true, 'height' => 'screen']);
+        $tiles = $this->block('text-tiles', [
+            'parallax' => true,
+            'shade' => 'gradient',
+            'width' => 'bleed',
+            'tile_shape' => 'square',
+            'overlap' => true,
+            'overlap_edge' => ['url' => '/media/fog.png', 'alt' => '', 'width' => 1600, 'height' => 300],
+        ]);
+
+        // The hero's picture runs on the page's scroll; the tiles' across the screen — not `screen`:
+        // the first screen is the hero's, the runtime tells the two apart by the word.
+        $this->assertMatchesRegularExpression('~<img class="b-hero__picture"\s+data-webx-parallax="screen"\s+src=~', $hero);
+        $this->assertMatchesRegularExpression('~<img class="b-text-tiles__picture"\s+data-webx-parallax\s+src=~', $tiles);
+        $this->assertStringNotContainsString('screen', (string) preg_replace('~^.*?(<img class="b-text-tiles__picture"[^>]*>).*$~s', '$1', $tiles));
+        // The tiles slide over the hero: the attribute on their section, the edge printed in it.
+        $this->assertMatchesRegularExpression('~<section class="b-text-tiles[^"]*b-text-tiles--gradient[^"]*b-text-tiles--square[^"]*site-bleed"[^>]*data-webx-overlap~', $tiles);
+        $this->assertStringContainsString('webx-overlap__edge', $tiles);
+        // Each picture is a child of its own section, the frame its parallax measures.
+        $this->assertSame(1, substr_count($hero, 'data-webx-parallax'));
+        $this->assertSame(1, substr_count($tiles, 'data-webx-parallax'));
+    }
+
+    #[Test]
     public function without_a_picture_there_is_nothing_to_move(): void
     {
         $this->assertStringNotContainsString('data-webx-parallax', $this->render(['parallax' => true, 'tone' => 'accent']));
@@ -149,6 +178,26 @@ final class ParallaxTest extends TestCase
         ];
 
         return Blade::render($template, $data, deleteCachedView: true);
+    }
+
+    /**
+     * A block of this theme on its sample over a picture, in the page the test has open: the first
+     * screen is claimed by the first hero rendered in it.
+     *
+     * @param  array<string, mixed>  $values
+     */
+    private function block(string $slug, array $values): string
+    {
+        $type = json_decode((string) file_get_contents(self::path()."/blocks/{$slug}.json"), true, 512, JSON_THROW_ON_ERROR);
+        $data = [
+            ...array_fill_keys(array_column($type['schema'], 'id'), null),
+            ...$type['sample'],
+            'tone' => 'image',
+            'image' => ['url' => "/media/{$slug}.jpg", 'alt' => '', 'width' => 1600, 'height' => 900],
+            ...$values,
+        ];
+
+        return Blade::render((string) $type['template'], $data, deleteCachedView: true);
     }
 
     /** @return array<string, mixed> */

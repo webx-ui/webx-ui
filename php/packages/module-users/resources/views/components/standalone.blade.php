@@ -18,7 +18,7 @@
     @stack('head')
 </head>
 <body>
-<main id="content">
+<main id="site-content">
 <x-webx-users::verify-banner />
 {{ $slot }}
 </main>

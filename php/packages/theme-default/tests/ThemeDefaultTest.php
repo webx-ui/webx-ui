@@ -431,7 +431,7 @@ class ThemeDefaultTest extends TestCase
         $this->assertStringContainsString('--site-color-accent: #1f5fbf;', $html);
         $this->assertStringContainsString('<!-- seo:null -->', $html);
         $this->assertStringContainsString('<!-- blocks -->', $html);
-        $this->assertMatchesRegularExpression('~<main id="content" class="site-main">\s*<p>Body of the page</p>\s*</main>~', $html);
+        $this->assertMatchesRegularExpression('~<main id="site-content" class="site-main">\s*<p>Body of the page</p>\s*</main>~', $html);
 
         // The regions' fallbacks are looked up through the chain, so the site's own files win.
         $this->assertStringContainsString("<header class=\"site-header\">The site's own header</header>", $html);
@@ -451,7 +451,7 @@ class ThemeDefaultTest extends TestCase
         $html = Blade::render('<x-layout><p>Body of the page</p></x-layout>');
 
         $this->assertMatchesRegularExpression(
-            '~<main id="content" class="site-main">\s*<p>Body of the page</p>\s*<section class="webx-faq">FAQ of the page</section>\s*<nav class="webx-links">Links of the page</nav>\s*</main>~',
+            '~<main id="site-content" class="site-main">\s*<p>Body of the page</p>\s*<section class="webx-faq">FAQ of the page</section>\s*<nav class="webx-links">Links of the page</nav>\s*</main>~',
             $html,
         );
     }
@@ -611,7 +611,7 @@ class ThemeDefaultTest extends TestCase
 
         $minimal = Blade::render('<x-layout.minimal><p>Checkout</p></x-layout.minimal>');
 
-        $this->assertStringContainsString('<a class="site-skip" href="#content">', $minimal);
+        $this->assertStringContainsString('<a class="site-skip" href="#site-content">', $minimal);
         $this->assertStringContainsString('<a class="site-header__title" href="http://localhost">Harbor Logistics</a>', $minimal);
         $this->assertStringNotContainsString("The site's own header", $minimal);
         $this->assertStringNotContainsString('site-footer', $minimal);
@@ -619,7 +619,7 @@ class ThemeDefaultTest extends TestCase
 
         $blank = Blade::render('<x-layout.blank><p>Promo</p></x-layout.blank>');
 
-        $this->assertMatchesRegularExpression('~<body class="site site--blank">\s*<!-- place:body_start -->\s*<main id="content" class="site-main">\s*<p>Promo</p>\s*</main>~', $blank);
+        $this->assertMatchesRegularExpression('~<body class="site site--blank">\s*<!-- place:body_start -->\s*<main id="site-content" class="site-main">\s*<p>Promo</p>\s*</main>~', $blank);
         $this->assertStringNotContainsString('site-skip', $blank);
         $this->assertStringNotContainsString('site-header', $blank);
     }
@@ -636,7 +636,7 @@ class ThemeDefaultTest extends TestCase
         $html = Blade::render('<x-layout.account handle="users.account"><p>Profile</p></x-layout.account>');
 
         $this->assertMatchesRegularExpression(
-            '~<main id="content" class="site-main">\\s*<div class="site-account">\\s*<nav class="site-account__menu" aria-label="Account">\\s*</nav>\\s*<div class="site-account__body">\\s*<p>Profile</p>~',
+            '~<main id="site-content" class="site-main">\\s*<div class="site-account">\\s*<nav class="site-account__menu" aria-label="Account">\\s*</nav>\\s*<div class="site-account__body">\\s*<p>Profile</p>~',
             $html,
         );
         $this->assertStringContainsString('site-header', $html);
@@ -788,7 +788,7 @@ class ThemeDefaultTest extends TestCase
             $this->app->setLocale($locale);
             $html = Blade::render('<x-layout><p>Body</p></x-layout>');
 
-            $this->assertStringContainsString("<a class=\"site-skip\" href=\"#content\">{$skip}</a>", $html, $locale);
+            $this->assertStringContainsString("<a class=\"site-skip\" href=\"#site-content\">{$skip}</a>", $html, $locale);
             $this->assertStringNotContainsString('theme.shell', $html, $locale);
         }
     }

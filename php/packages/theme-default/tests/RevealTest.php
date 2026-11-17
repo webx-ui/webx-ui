@@ -145,7 +145,7 @@ final class RevealTest extends TestCase
         $template = (string) $type['template'];
 
         if ($unmarked) {
-            $template = (string) preg_replace("~ @webxReveal\\('[a-z]*', \\\$no_reveal\\)~", '', $template);
+            $template = (string) preg_replace("~ @webxReveal\\(('[a-z]*'|\\\$entrance), \\\$no_reveal\\)~", '', $template);
             $this->assertStringNotContainsString('@webxReveal', $template, $slug);
             // And without the section sliding over the one above (OverlapTest), off by default.
             $template = str_replace([' data-webx-overlap-fade', '@webxOverlap($overlap ?? false)'], '', $template);

@@ -66,7 +66,7 @@ html                       <html lang="…">                          protected
     skip-link              Skip to content
     notice-bar             the announcement bar of widgets (its stack: notice.stack)
     header                 region header, fallback components.header
-    main                   <main id="content" class="site-main">    protected
+    main                   <main id="site-content" class="site-main">    protected
       content              the page                                 protected
       seo.faq              the page's FAQ                           module-seo
       seo.links            the interlinking block                   module-seo
@@ -205,7 +205,7 @@ the keys: `add` → `move` → `replace` → `attrs` → `props` → `remove`.
 
 `true` is an attribute without a value, `false` or `null` takes one off. `class` is added to, not
 replaced: `{"body": {"class": "is-dark"}}` gives `class="site is-dark"`; to take a class off,
-`{"class": {"remove": "site"}}`. `lang` on `<html>` is the page's language and `id="content"` on
+`{"class": {"remove": "site"}}`. `lang` on `<html>` is the page's language and `id="site-content"` on
 `main` is where Skip to content leads: neither is a patch's to change. Values are literals and
 `trans::<key>`; data and conditions belong in a leaf view.
 
@@ -332,7 +332,7 @@ not a refusal — it is a door you may take on purpose. To keep your markup and 
 modules add with releases, place the containers' pieces:
 
 ```blade
-<main id="content" class="my-main">
+<main id="site-content" class="my-main">
     {{ $slot }}
     <x-webx-composition::place id="main" :handle="$attributes->get('handle')" only="added" />
 </main>
@@ -376,7 +376,7 @@ html                       <html data-webx-smooth-scroll>       webx-ui/theme-de
     header                 region header (fallback components.header)  webx-ui/theme-default
     reading-progress       view components.reading-progress     theme
     notice-bar             <x-webx-notice-bar>                  webx-ui/theme-default; move ← theme/compositions/layout/default.json
-    main                   <main id="content" class="site-main">  webx-ui/theme-default
+    main                   <main id="site-content" class="site-main">  webx-ui/theme-default
       content              slot default                         webx-ui/theme-default
       seo.faq              <x-webx-seo::faq>                    module-seo
 

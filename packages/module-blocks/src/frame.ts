@@ -696,3 +696,91 @@ function findMarker(doc: Document, text: string): Comment | null {
 function escapeAttribute(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
 }
+
+/** The attribute the panel's frames carry, on the `<iframe>` and on the page's `<html>`. */
+export const PREVIEW_ATTRIBUTE = 'data-webx-preview'
+
+/** The CSS variable a page reads its screen height from while it is a preview. */
+export const SCREEN_VARIABLE = '--webx-screen-height'
+
+/*
+ * The screens the preview draws, as a device of that width would show them: a laptop, a tablet
+ * held upright, a phone. Only the height is made up here — the width is the one picked.
+ */
+const SCREENS: Record<number, number> = { 1280: 800, 834: 1194, 390: 844 }
+
+/**
+ * How tall "the window" is for a page drawn at this width.
+ *
+ * Not the frame's own height, which is what `100vh` and `100svh` would say inside it: the frame
+ * is made as tall as its page, so a first screen sized to the window is sized to the page, the
+ * page grows by it, the frame grows to follow — and so on for as long as anyone watches. The
+ * height of the device the width stands for breaks that ring: it does not move with the page.
+ */
+export function screenHeight(width: number): number {
+  return SCREENS[width] ?? Math.round(width >= 1024 ? width * 0.625 : width * 1.6)
+}
+
+/**
+ * Tell the page it is a preview, and how tall its screen is.
+ *
+ * The site reads both: its stylesheet sizes a first screen by the variable rather than the
+ * frame's window, and its runtime leaves out what a preview is better without — the glide of
+ * smooth scrolling, the parallax that a frame which never scrolls has nothing to drive with.
+ */
+export function markPreview(doc: Document, height: number): void {
+  const root = doc.documentElement
+
+  if (!root) return
+
+  if (!root.hasAttribute(PREVIEW_ATTRIBUTE)) root.setAttribute(PREVIEW_ATTRIBUTE, '')
+
+  const value = `${height}px`
+
+  if (root.style.getPropertyValue(SCREEN_VARIABLE) !== value) {
+    root.style.setProperty(SCREEN_VARIABLE, value)
+  }
+}
+
+/**
+ * The guard on a frame that follows the height of its page: whether a measured height is to be
+ * taken.
+ *
+ * The variable above settles the first screens the site knows of, and only those: a block of a
+ * site's own with `min-height: 100vh` is sized to the frame all the same, and the frame and the
+ * page then chase each other. What gives such a ring away is that the page grows by exactly what
+ * the frame just grew by, right after it did — content that is still arriving (a font, a
+ * picture) grows by its own amount, and not within a frame of the last resize every time. A few
+ * such echoes in a row and the frame stops following that one growth; any other height is taken
+ * again as it comes.
+ */
+export function followHeight(
+  options: { echoes?: number; within?: number; now?: () => number } = {},
+): (height: number) => boolean {
+  const limit = options.echoes ?? 3
+  const within = options.within ?? 250
+  const now = options.now ?? (() => Date.now())
+
+  let applied = 0
+  let grew = 0
+  let at = -Infinity
+  let echoes = 0
+
+  return (height) => {
+    if (height === applied) return false
+
+    const growth = height - applied
+    const time = now()
+    const echo = applied > 0 && growth > 0 && Math.abs(growth - grew) <= 1 && time - at < within
+
+    echoes = echo ? echoes + 1 : 0
+
+    if (echoes >= limit) return false
+
+    applied = height
+    grew = growth
+    at = time
+
+    return true
+  }
+}

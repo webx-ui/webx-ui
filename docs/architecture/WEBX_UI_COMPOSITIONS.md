@@ -253,7 +253,7 @@
 **Зарезервированные атрибуты** — патч их не меняет (находка, операция пропускается):
 
 - `lang` у `html` — его считает компилятор из языка страницы (`app()->getLocale()`);
-- `id` у `main` — `content`: на него ведёт ссылка «Перейти к содержимому» (WCAG 2.4.1);
+- `id` у `main` — `site-content`: на него ведёт ссылка «Перейти к содержимому» (WCAG 2.4.1);
 - `name` у `region` и `slot`/`stack` — это вид узла, а не атрибут; поменять — `replace`.
 
 ### 3.2 `props`
@@ -411,7 +411,7 @@ add → move → replace → attrs → props → remove
           {
             "id": "main",
             "tag": "main",
-            "attrs": { "id": "content", "class": "site-main" },
+            "attrs": { "id": "site-content", "class": "site-main" },
             "protected": true,
             "children": [{ "id": "content", "slot": "default", "protected": true }]
           },
@@ -625,7 +625,7 @@ overrides the composition layout; compositions/layout/*.json of theme are not ap
 **Гибрид** — разметка своя, куски модулей приходят с релизами:
 
 ```blade
-<main id="content" class="my-main">
+<main id="site-content" class="my-main">
     {{ $slot }}
     <x-webx-composition::place id="main" :handle="$attributes->get('handle')" only="added" />
 </main>
@@ -1056,7 +1056,7 @@ header.logo`, свой узел — `add` в `header.actions` или `header.top
           {
             "id": "main",
             "tag": "main",
-            "attrs": { "id": "content", "class": "site-main" },
+            "attrs": { "id": "site-content", "class": "site-main" },
             "protected": true,
             "children": [{ "id": "content", "slot": "default", "protected": true }]
           },
@@ -1185,7 +1185,7 @@ header.logo`, свой узел — `add` в `header.actions` или `header.top
     <x-webx-blocks::region name="header" fallback="components.header" />
     @include('components.reading-progress')
     <x-webx-notice-bar>@stack('notice')</x-webx-notice-bar>
-    <main id="content" class="site-main">
+    <main id="site-content" class="site-main">
         {{ $slot }}
         <x-webx-seo::faq />
     </main>

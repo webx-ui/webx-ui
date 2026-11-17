@@ -6,11 +6,15 @@ import {
   addAssets,
   bindFrame,
   blockElement,
+  followHeight,
   frameRegion,
   highlightBlock,
   markHidden,
+  markPreview,
+  PREVIEW_ATTRIBUTE,
   regionRect,
   replaceBlock,
+  screenHeight,
   type BlockAssets,
   type FrameBinding,
 } from './frame'
@@ -118,6 +122,12 @@ const width = computed(() => {
   return boxWidth.value > 0 && boxWidth.value < 560 ? 390 : 834
 })
 
+/** The height of the device the width stands for: what a first screen in the page is as tall as. */
+const screen = computed(() => screenHeight(width.value))
+
+/* Whether a measured height is followed; made anew with every document, which starts over. */
+let follow = followHeight()
+
 const scale = computed(() => {
   if (boxWidth.value === 0) return 1
 
@@ -213,7 +223,7 @@ function measure(): void {
      a width that changed moves it as surely as a height. */
   if (props.region) frameRegion(page, props.region)
 
-  if (height === contentHeight.value) return
+  if (height === contentHeight.value || !follow(height)) return
 
   contentHeight.value = height
 
@@ -228,6 +238,10 @@ function watch_(page: Document): void {
   const view = page.defaultView
 
   if (!view || !page.body) return
+
+  /* Before the first measurement: a first screen sized by the frame grows with it. */
+  markPreview(page, screen.value)
+  follow = followHeight()
 
   /* The frame's own `ResizeObserver`, not ours: an observer belongs to the window whose
      elements it watches, and one made out here never fires for a document in there. */
@@ -433,6 +447,15 @@ watch(
 )
 
 watch(() => props.reload, refresh)
+/* Another device, another screen: the page is told before the frame takes its new width. */
+watch(screen, (height) => {
+  const page = doc()
+
+  if (!page || !ready.value) return
+
+  markPreview(page, height)
+  follow = followHeight()
+})
 watch(
   () => props.hidden,
   (keys) => {
@@ -517,6 +540,7 @@ defineExpose({ replace, refresh, open: () => (fullscreen.value = true) })
           :src="url"
           :style="frameStyle"
           :title="t('field.preview')"
+          v-bind="{ [PREVIEW_ATTRIBUTE]: '', 'data-webx-screen': screen }"
           @load="onLoad"
         />
       </div>
