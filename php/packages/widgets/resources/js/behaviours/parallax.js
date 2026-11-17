@@ -159,8 +159,29 @@ function screen(el) {
   }
 }
 
+/*
+ * What is measured at the start is measured again once the page has loaded. A site with critical
+ * CSS loads the stylesheets of its blocks without waiting for them (`media="print"`, then `all`),
+ * and the runtime starts before they come: a block's picture is not yet placed absolutely (it would
+ * be scaled, not made taller) and its frame not yet as tall as it will be (the timeline would be
+ * named on the wrong element, or on none). On `load` they have all come: it starts once more.
+ */
 export function parallax(el) {
   if (reduced()) return
+  let stop = start(el)
+  if (document.readyState === 'complete') return stop
+  const again = () => {
+    stop?.()
+    stop = start(el)
+  }
+  window.addEventListener('load', again, { once: true })
+  return () => {
+    window.removeEventListener('load', again)
+    stop?.()
+  }
+}
+
+function start(el) {
   if ((el.getAttribute('data-webx-parallax') ?? '').split(/\s+/).includes('screen'))
     return screen(el)
 

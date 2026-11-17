@@ -407,6 +407,35 @@ describe('parallax', () => {
     expect(picture.className).toBe('webx-parallax webx-parallax--grown')
   })
 
+  it('measures again once the page has loaded: a stylesheet that came late places the picture', async () => {
+    // A site with critical CSS: the block's stylesheet comes after the runtime has started.
+    Object.defineProperty(document, 'readyState', { value: 'interactive', configurable: true })
+    try {
+      vi.stubGlobal('CSS', { supports: () => false })
+      vi.stubGlobal('requestAnimationFrame', (callback) => frames.push(callback))
+      vi.stubGlobal('cancelAnimationFrame', () => {})
+      await start(formats.replace(' style="position: absolute"', ''))
+      const picture = document.getElementById('picture')
+      // Not yet placed: it would be scaled.
+      expect(picture.className).toBe('webx-parallax webx-parallax--script')
+
+      picture.style.position = 'absolute'
+      window.dispatchEvent(new Event('load'))
+      expect(picture.className).toBe('webx-parallax webx-parallax--grown webx-parallax--script')
+      // One observer for the frame now, the first one let go.
+      expect(watched.filter((o) => o.els.size).length).toBe(1)
+
+      // Once only.
+      picture.style.position = ''
+      window.dispatchEvent(new Event('load'))
+      expect(picture.className).toBe('webx-parallax webx-parallax--grown webx-parallax--script')
+      window.webx.unmount()
+      expect(picture.className).toBe('')
+    } finally {
+      delete document.readyState
+    }
+  })
+
   it('moves nothing in a <picture> with reduced motion either', async () => {
     reduced = true
     vi.stubGlobal('CSS', { supports: () => false })
@@ -724,11 +753,147 @@ describe('parallax of the first screen', () => {
     expect(frames.length).toBe(0)
   })
 
+  it('goes k · scrollY smoothly, past a <picture> without a box, not all the way at the first pixel', async () => {
+    // What `@webxPicture` prints: the <img> in a <picture> that has no box — measured, it stands
+    // nowhere. The frame is the section; measured on the <picture>, the end was 1px.
+    frames = []
+    vi.stubGlobal('CSS', { supports: () => false })
+    vi.stubGlobal('requestAnimationFrame', (callback) => frames.push(callback))
+    vi.stubGlobal('cancelAnimationFrame', () => {})
+    vi.stubGlobal('innerHeight', 900)
+    vi.stubGlobal('scrollY', 0)
+    document.body.innerHTML = page.replace(
+      /<img id="picture"[^>]*>/,
+      (img) =>
+        `<picture style="display: contents"><source type="image/avif" srcset="/a.avif">${img}</picture>`,
+    )
+    const frame = document.getElementById('frame')
+    at(frame, 0, 900)
+    Object.defineProperty(frame, 'offsetHeight', { configurable: true, value: 900 })
+    delete window.webx
+    vi.resetModules()
+    await import('./runtime.js')
+    const picture = document.getElementById('picture')
+    expect(value(picture, 'end')).toBe('900px')
+
+    // The stylesheet's translate: progress · reach − over. Each point on the line k · scrollY.
+    const reach = parseFloat(value(picture, 'reach'))
+    const over = parseFloat(value(picture, 'over'))
+    const shift = () => parseFloat(value(picture, 'progress')) * reach - over
+    const start = shift()
+    for (const y of [50, 150, 300]) {
+      vi.stubGlobal('scrollY', y)
+      window.dispatchEvent(new Event('scroll'))
+      run()
+      expect(shift() - start).toBeCloseTo(0.3 * y, 0)
+    }
+  })
+
   it('moves nothing for a visitor who asked for less motion', async () => {
     reduced = true
     const { picture } = await load(true)
     expect(picture.className).toBe('')
     expect(value(picture, 'end')).toBe('')
+  })
+})
+
+describe('parallax of the first screen and of a block below it, on one page', () => {
+  // The page of a site: a hero of the first screen, its picture in a <picture> without a box, then
+  // text-tiles that slide over it (the fog edge) with a parallax of their own, and more tiles below.
+  const picture = (id, moves) =>
+    `<picture style="display: contents"><source type="image/avif" srcset="/${id}.avif"><img id="${id}" style="position: absolute; --webx-parallax-screen-rate: 0.3; --webx-parallax-screen-overscan: 30" data-webx-parallax${moves ? `="${moves}"` : ''} src="/${id}.jpg" alt=""></picture>`
+  const page = `<main id="main"><section id="hero" style="overflow-y: hidden">${picture('a', 'screen')}<div data-webx-overlap-fade>Words</div></section><section id="tiles" style="overflow-y: hidden" data-webx-overlap><picture class="webx-overlap__edge"><img class="webx-overlap__image" src="/fog.png" alt=""></picture>${picture('b')}</section><section id="more" style="overflow-y: hidden">${picture('c')}</section></main>`
+  let frames = []
+
+  const run = () => {
+    const queued = frames
+    frames = []
+    queued.forEach((callback) => callback())
+  }
+  const value = (el, name) => el.style.getPropertyValue(`--webx-parallax-${name}`)
+  const tall = (el, top, height) => {
+    at(el, top, height)
+    Object.defineProperty(el, 'offsetHeight', { configurable: true, value: height })
+  }
+
+  async function load(supports) {
+    frames = []
+    vi.stubGlobal('CSS', { supports: () => supports })
+    vi.stubGlobal('requestAnimationFrame', (callback) => frames.push(callback))
+    vi.stubGlobal('cancelAnimationFrame', () => {})
+    vi.stubGlobal('innerHeight', 800)
+    vi.stubGlobal('scrollY', 0)
+    document.body.innerHTML = page
+    const els = Object.fromEntries(
+      ['main', 'hero', 'tiles', 'more', 'a', 'b', 'c'].map((id) => [
+        id,
+        document.getElementById(id),
+      ]),
+    )
+    tall(els.hero, 0, 800)
+    tall(els.tiles, 800, 700)
+    tall(els.more, 2400, 700)
+    delete window.webx
+    vi.resetModules()
+    await import('./runtime.js')
+    return els
+  }
+
+  it('with scroll-driven animations: the hero runs until the overlap lets it go, the tiles on their own timelines', async () => {
+    const { hero, tiles, more, a, b, c } = await load(true)
+
+    expect(hero.classList.contains('webx-overlap-pinned')).toBe(true)
+    expect(a.className).toBe('webx-parallax webx-parallax--screen')
+    // The overlap's measure, not 1px of a <picture> without a box.
+    expect(value(a, 'end')).toBe(hero.style.getPropertyValue('--webx-overlap-gone'))
+    expect(parseFloat(value(a, 'end'))).toBeGreaterThan(1)
+
+    // The tiles that slide over the hero and those below: each named on its section.
+    for (const [frame, img] of [
+      [tiles, b],
+      [more, c],
+    ]) {
+      expect(frame.classList.contains('webx-parallax-frame')).toBe(true)
+      expect(img.className).toBe('webx-parallax webx-parallax--grown')
+    }
+    expect(a.parentElement.className).toBe('')
+    expect(b.parentElement.className).toBe('')
+  })
+
+  it('without them: the hero k · scrollY, the tiles across the screen — each on its own measure', async () => {
+    const { hero, tiles, more, a, b, c } = await load(false)
+    const end = parseFloat(value(a, 'end'))
+    expect(end).toBeGreaterThan(1)
+    expect(end).toBe(parseFloat(hero.style.getPropertyValue('--webx-overlap-gone')))
+    expect(b.className).toBe('webx-parallax webx-parallax--grown webx-parallax--script')
+    expect(c.className).toBe('webx-parallax webx-parallax--grown webx-parallax--script')
+
+    // The sections are watched, not their pictures.
+    const seen = (frame) => watched.find((o) => o.els.has(frame))
+    expect(seen(tiles)).toBeTruthy()
+    expect(seen(more)).toBeTruthy()
+    expect(watched.some((o) => o.els.has(b.parentElement) || o.els.has(c.parentElement))).toBe(
+      false,
+    )
+
+    seen(tiles).callback([{ target: tiles, isIntersecting: true }])
+    seen(more).callback([{ target: more, isIntersecting: false }])
+    const reach = parseFloat(value(a, 'reach'))
+    const over = parseFloat(value(a, 'over'))
+    const shift = () => parseFloat(value(a, 'progress')) * reach - over
+    const first = shift()
+    for (const y of [50, 150, 300]) {
+      vi.stubGlobal('scrollY', y)
+      at(tiles, 800 - y, 700)
+      window.dispatchEvent(new Event('scroll'))
+      run()
+      // The hero: on the line k · scrollY, k = 0.3.
+      expect(shift() - first).toBeCloseTo(0.3 * y, 0)
+      // The tiles: where their section is on its way across the screen of 800.
+      expect(value(b, 'progress')).toBe((y / 1500).toFixed(4))
+    }
+    // The tiles below are not on the screen yet: nothing written for them.
+    expect(value(c, 'progress')).toBe('')
   })
 })
 
