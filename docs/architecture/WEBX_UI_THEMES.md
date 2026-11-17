@@ -1081,6 +1081,15 @@ Kitchen sink › Blocks › Cards: «The photo under the words» и «Life aroun
 публичном сайте с панелью не пересекается. `module-pages` классов не несёт: страница — это блоки и
 проза темы.
 
+**В публичной разметке — только префиксные id и классы** (`site-*`, `webx-*`, `wx-*`), и у
+слоя, и у модуля, и у виджета, и у блока. Расширения браузера вставляют в страницу свой `<style>`
+с общими селекторами (`#content`, `#main`, `#header`, `.container`, `.wrapper`, `.content`,
+`.row`) — и сужают или перекрашивают сайт только у тех посетителей, у кого стоит расширение. Поэтому
+`<main>` лейаута — `id="site-content"` (на него ведёт «Перейти к содержимому»), а не `content`.
+Теги и роли (`<main>`, `<header>`, `role="banner"`) не трогаются: это элементы, а не селекторы.
+Проверка темы или блока — `grep -rnE 'id="(content|main|header|footer|wrapper|container|page|app|nav|sidebar)"|class="([^"]* )?(container|wrapper|content|header|footer|main|row|col)( [^"]*)?"'`
+по её вьюхам, композициям и шаблонам блоков: пусто.
+
 ### 10.2 Базовый вид
 
 Модуль несёт `resources/theme/<module>.css` — свой базовый вид на токенах словаря (§7.2), под

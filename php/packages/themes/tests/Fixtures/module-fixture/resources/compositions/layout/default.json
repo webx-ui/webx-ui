@@ -21,7 +21,7 @@
           {
             "id": "main",
             "tag": "main",
-            "attrs": { "id": "content" },
+            "attrs": { "id": "site-content" },
             "protected": true,
             "children": [{ "id": "content", "slot": "default", "protected": true }]
           },

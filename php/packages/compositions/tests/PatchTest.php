@@ -38,7 +38,7 @@ final class PatchTest extends TestCase
 
         $this->assertStringContainsString('<html lang="en" data-webx-smooth-scroll>', $html);
         $this->assertStringContainsString('<body class="site is-wide">', $html);
-        $this->assertStringContainsString('<main id="content">', $html);
+        $this->assertStringContainsString('<main id="site-content">', $html);
     }
 
     #[Test]
@@ -57,7 +57,7 @@ final class PatchTest extends TestCase
         $this->assertStringContainsString("<body>\n", $this->page());
     }
 
-    /** §3.1: lang is the page's, id="content" is where "Skip to content" leads. */
+    /** §3.1: lang is the page's, id="site-content" is where "Skip to content" leads. */
     #[Test]
     public function the_reserved_attributes_stay_and_are_said(): void
     {
@@ -66,7 +66,7 @@ final class PatchTest extends TestCase
         $html = $this->page();
 
         $this->assertStringContainsString('<html lang="en">', $html);
-        $this->assertStringContainsString('<main id="content" class="site-main">', $html);
+        $this->assertStringContainsString('<main id="site-content" class="site-main">', $html);
         $this->assertCount(2, $this->findings($this->tree()));
         $this->assertStringContainsString('attrs html.lang — lang is the language of the page', $this->findings($this->tree())[0]);
     }

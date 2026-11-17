@@ -49,7 +49,7 @@ final class LayoutTest extends TestCase
         $html = (string) $this->get('/account/sign-in')->getContent();
 
         $this->assertStringStartsWith('<!doctype html>', $html);
-        $this->assertStringContainsString('<main id="content">', $html);
+        $this->assertStringContainsString('<main id="site-content">', $html);
         $this->assertStringNotContainsString('data-layout', $html);
     }
 

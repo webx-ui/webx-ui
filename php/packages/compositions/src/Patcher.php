@@ -215,7 +215,7 @@ final class Patcher
             }
 
             if ($node->protected && $node->value === 'main' && $name === 'id') {
-                $tree->note($file, $operation, 'the main keeps id="content": "Skip to content" leads there');
+                $tree->note($file, $operation, 'the main keeps id="site-content": "Skip to content" leads there');
 
                 continue;
             }

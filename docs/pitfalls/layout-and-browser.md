@@ -486,6 +486,14 @@ margin-top }` — в гриде отступ получают все ячейк�
 
 ## Цвета и темы
 
+- **У части посетителей сайт сужается до ~460 px, шрифт становится «Segoe UI», сверху лишний отступ;
+  в инкогнито всё в порядке.** Расширение браузера вставило свой `<style>` с правилами по общим
+  селекторам (`#content{width:460px}`, `#feature`, `.container`), и они совпали с разметкой сайта.
+  Лечится только своими именами: в публичной разметке — префиксные id и классы (THEMES §10.1),
+  `<main>` лейаута — `#site-content`. Проверка — вставить в страницу
+  `<style>#content,#main,#header,#footer,.container,.wrapper,.content,.main{width:460px!important;margin:95px!important;font-family:serif!important}</style>`
+  и сравнить `getBoundingClientRect()` у `main` и шрифт `body` до и после: не меняются.
+
 - **Playwright снимает панель в светлой теме, хотя в `localStorage` лежит `webx.theme = dark`.** Панель
   берёт выбор из записи администратора (`adopt()`), и «как у машины» там — тоже ответ: он сильнее
   браузера. Лечится `colorScheme: 'dark'` в контексте Playwright. Проверка — смотреть снимок: у

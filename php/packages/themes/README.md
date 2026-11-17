@@ -147,7 +147,7 @@ print rather than take from a field — live in `lang/<locale>/theme.php` of a l
 `theme::theme.<key>`:
 
 ```blade
-<a class="site-skip" href="#content">{{ __('theme::theme.shell.skip') }}</a>
+<a class="site-skip" href="#site-content">{{ __('theme::theme.shell.skip') }}</a>
 ```
 
 A key is looked up through the chain: each layer's file bottom up, then the site's
