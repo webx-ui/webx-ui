@@ -5,13 +5,18 @@ import {
   blockElement,
   fillStage,
   findRange,
+  followHeight,
   frameRegion,
   freezeFrame,
   highlightBlock,
   keyAt,
+  markPreview,
+  PREVIEW_ATTRIBUTE,
   REGION_FRAME_ID,
   regionRect,
   replaceBlock,
+  SCREEN_VARIABLE,
+  screenHeight,
   SELECTED_CLASS,
   siteShell,
   stageDocument,
@@ -392,5 +397,83 @@ describe('the site around a thumbnail', () => {
 
   it('gives up on a page without a place for the block', () => {
     expect(siteShell('<html><body><p>No slot</p></body></html>', '/stage')).toBeNull()
+  })
+})
+
+describe('the screen of a preview', () => {
+  it('is the height of the device the width stands for, not of the frame', () => {
+    expect(screenHeight(1280)).toBe(800)
+    expect(screenHeight(834)).toBe(1194)
+    expect(screenHeight(390)).toBe(844)
+  })
+
+  it('is told to the page on its <html>, once', () => {
+    const doc = document.implementation.createHTMLDocument('site')
+
+    markPreview(doc, 800)
+    markPreview(doc, 800)
+
+    expect(doc.documentElement.hasAttribute(PREVIEW_ATTRIBUTE)).toBe(true)
+    expect(doc.documentElement.style.getPropertyValue(SCREEN_VARIABLE)).toBe('800px')
+
+    markPreview(doc, 844)
+    expect(doc.documentElement.style.getPropertyValue(SCREEN_VARIABLE)).toBe('844px')
+  })
+})
+
+describe('following the height of the page', () => {
+  /*
+   * The ring of the first screen: a block as tall as the frame's window, and the rest of the
+   * page under it — every height the frame takes makes the page that much taller again.
+   */
+  function ring(follow: (height: number) => boolean, rest = 600, rounds = 100) {
+    let frame = 700
+    let taken = 0
+
+    for (let round = 0; round < rounds; round++) {
+      const page = frame + rest
+
+      if (page === frame || !follow(page)) break
+
+      frame = page
+      taken++
+    }
+
+    return { frame, taken }
+  }
+
+  it('stops following a page that grows by whatever the frame grew by', () => {
+    const { frame, taken } = ring(followHeight({ now: () => 0 }))
+
+    expect(taken).toBeLessThan(5)
+    expect(frame).toBeLessThan(700 + 600 * 5)
+  })
+
+  it('follows a page that settles: a font, then a picture, then a shorter block', () => {
+    const follow = followHeight({ now: () => 0 })
+
+    expect(follow(1200)).toBe(true)
+    expect(follow(1260)).toBe(true)
+    expect(follow(1660)).toBe(true)
+    expect(follow(1660)).toBe(false)
+    expect(follow(1400)).toBe(true)
+  })
+
+  it('follows the same growth again when it does not come right after the last', () => {
+    let time = 0
+    const follow = followHeight({ now: () => time })
+
+    for (let picture = 1; picture <= 6; picture++) {
+      time += 1000
+      expect(follow(1000 + picture * 300)).toBe(true)
+    }
+  })
+
+  it('takes another height after the ring was broken', () => {
+    const follow = followHeight({ now: () => 0 })
+
+    ring(follow)
+
+    expect(follow(500)).toBe(true)
   })
 })

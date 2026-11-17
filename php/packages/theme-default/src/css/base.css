@@ -7,7 +7,7 @@
 :where(.site) {
   margin: 0;
   min-height: 100vh;
-  min-height: 100dvh;
+  min-height: var(--webx-screen-height, 100dvh);
   display: flex;
   flex-direction: column;
   font-family: var(--site-font-body);
@@ -18,6 +18,18 @@
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
   overflow-wrap: break-word;
+}
+
+/*
+ * In a preview of the panel (`data-webx-preview`) the frame is as tall as its page, so the window
+ * is the page: a first screen of `100svh` would grow the page, the frame would follow, and the two
+ * would chase each other for good. The panel says how tall the device it draws is
+ * (`--webx-screen-height`) and the first screen is that tall instead. Here and not in the hero's own
+ * styles, which a site keeps in its database as it imported them: a stylesheet of the theme reaches
+ * every site at once.
+ */
+:root[data-webx-preview] .b-hero.b-hero--screen {
+  min-height: calc(var(--webx-screen-height, 100svh) - var(--hero-above, 0px));
 }
 
 :where(.site) :where(img, picture, video, canvas, svg) {

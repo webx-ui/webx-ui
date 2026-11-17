@@ -5,8 +5,12 @@ import { useElementWidth, WxSegmented, WxSkeleton } from '@webx-ui/core'
 import {
   addAssets,
   fillStage,
+  followHeight,
   freezeFrame,
+  markPreview,
   mountScript,
+  PREVIEW_ATTRIBUTE,
+  screenHeight,
   stageDocument,
   type BlockAssets,
   type FrameBinding,
@@ -130,8 +134,17 @@ function measure(): void {
   const margin = view ? parseFloat(view.getComputedStyle(body).marginBottom) || 0 : 0
   const bottom = body.getBoundingClientRect().bottom + margin + (view?.scrollY ?? 0)
 
-  contentHeight.value = Math.max(120, Math.ceil(Math.max(body.scrollHeight, bottom)))
+  const height = Math.max(120, Math.ceil(Math.max(body.scrollHeight, bottom)))
+
+  if (height !== contentHeight.value && follow(height)) contentHeight.value = height
 }
+
+/* Whether a measured height is followed — a block sized to the window is sized to the frame,
+   and the frame to it (see `followHeight`); made anew with every document. */
+let follow = followHeight()
+
+/** The height of the device the width stands for: what a first screen in the block is as tall as. */
+const screen = computed(() => screenHeight(width.value))
 
 let binding: FrameBinding | null = null
 let observer: ResizeObserver | null = null
@@ -162,6 +175,9 @@ function onLoad(): void {
   const doc = frame.value?.contentDocument
 
   if (!doc?.body) return
+
+  markPreview(doc, screen.value)
+  follow = followHeight()
 
   if (props.stage) {
     loadedScript = null
@@ -197,7 +213,13 @@ watch(boxWidth, (now, before) => {
   if (now > 0 && before === 0) setTimeout(measure, 50)
 })
 
-watch(width, () => setTimeout(measure, 50))
+watch(width, () => {
+  const doc = frame.value?.contentDocument
+
+  if (doc) markPreview(doc, screen.value)
+  follow = followHeight()
+  setTimeout(measure, 50)
+})
 
 onBeforeUnmount(release)
 
@@ -236,6 +258,7 @@ const clipStyle = computed(() => ({
           :style="frameStyle"
           sandbox="allow-same-origin allow-scripts"
           :title="t('page.preview')"
+          v-bind="{ [PREVIEW_ATTRIBUTE]: '', 'data-webx-screen': screen }"
           @load="onLoad"
         />
       </div>

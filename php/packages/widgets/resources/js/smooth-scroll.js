@@ -6,7 +6,8 @@
  * Lenis moves the window's own scroll, so `position: sticky`, the header's `--webx-header-height`
  * and `data-webx-reveal` see what they always see. It stays out of the way:
  *
- * - with reduced motion, on a touch screen (no hover, a coarse pointer: the finger has its own
+ * - in a preview of the panel (`data-webx-preview`: a frame as tall as its page has nothing to
+ *   glide), with reduced motion, on a touch screen (no hover, a coarse pointer: the finger has its own
  *   inertia), and without JavaScript the page scrolls natively — with the theme's own
  *   `scroll-behavior: smooth` for anchors, which `.webx-smooth-scroll` sets aside while it glides;
  * - a modal of the runtime (`html.webx-scroll-locked`: a dialog, the mobile menu, a form in a
@@ -33,6 +34,7 @@
 
 import '../css/smooth-scroll.css'
 import Lenis from 'lenis'
+import { inPreview } from './preview.js'
 
 const webx = (window.webx ??= {})
 
@@ -65,7 +67,7 @@ const media = (query) => window.matchMedia?.(query).matches ?? false
 
 /** Whether this visitor gets the glide: a mouse or a touchpad, and motion not reduced. */
 export function wanted() {
-  if (media('(prefers-reduced-motion: reduce)')) return false
+  if (inPreview() || media('(prefers-reduced-motion: reduce)')) return false
   return media('(hover: hover) and (pointer: fine)')
 }
 

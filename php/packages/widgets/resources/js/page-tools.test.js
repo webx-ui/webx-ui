@@ -280,6 +280,18 @@ describe('parallax', () => {
     expect(frame.className).toBe('')
   })
 
+  it('stands still in a preview of the panel: its frame never scrolls', async () => {
+    document.documentElement.setAttribute('data-webx-preview', '')
+    try {
+      const picture = await load(true)
+
+      expect(picture.className).toBe('')
+      expect(document.getElementById('frame').className).toBe('')
+    } finally {
+      document.documentElement.removeAttribute('data-webx-preview')
+    }
+  })
+
   it('makes a picture placed absolutely taller for its overscan, and leaves one in the flow to be scaled', async () => {
     vi.stubGlobal('CSS', { supports: () => false })
     vi.stubGlobal('requestAnimationFrame', (callback) => frames.push(callback))

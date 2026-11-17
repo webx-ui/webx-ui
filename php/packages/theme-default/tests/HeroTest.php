@@ -133,6 +133,16 @@ final class HeroTest extends TestCase
     }
 
     #[Test]
+    public function in_the_panels_preview_the_first_screen_is_the_devices_height_and_not_the_frames(): void
+    {
+        // The frame there is as tall as its page: 100svh of it would grow the page, and the frame with it, for good.
+        $css = (string) file_get_contents(dirname(__DIR__).'/dist/theme.css');
+
+        $this->assertStringContainsString(':root[data-webx-preview] .b-hero.b-hero--screen{min-height:calc(var(--webx-screen-height, 100svh) - var(--hero-above, 0px))}', $css);
+        $this->assertStringContainsString('min-height:var(--webx-screen-height, 100dvh)', $css);
+    }
+
+    #[Test]
     public function the_badge_stands_under_the_words_and_the_buttons_unshaded(): void
     {
         $html = $this->render(['tone' => 'image', 'image' => self::PICTURE, 'height' => 'screen', 'position' => 'top', 'button_label' => '', 'badge' => self::BADGE]);

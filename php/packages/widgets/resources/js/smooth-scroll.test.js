@@ -122,6 +122,20 @@ describe('smooth scrolling', () => {
     expect(seconds('fast')).toBeNull()
   })
 
+  it('stays native in a preview of the panel: a frame as tall as its page glides nowhere', async () => {
+    await start('', { 'data-webx-smooth-scroll': '', 'data-webx-preview': '' })
+    expect(instances).toHaveLength(0)
+  })
+
+  it("stays native in the panel's frame before the panel has reached the page", async () => {
+    const frame = document.createElement('iframe')
+    frame.setAttribute('data-webx-preview', '')
+    vi.spyOn(window, 'frameElement', 'get').mockReturnValue(frame)
+    await start('', { 'data-webx-smooth-scroll': '' })
+    expect(instances).toHaveLength(0)
+    vi.restoreAllMocks()
+  })
+
   it('stays native with reduced motion and on a touch screen', async () => {
     media.reduce = true
     await start('', { 'data-webx-smooth-scroll': '' })

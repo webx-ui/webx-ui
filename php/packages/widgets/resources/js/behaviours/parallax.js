@@ -25,6 +25,7 @@
  */
 
 import { listeners } from '../core.js'
+import { inPreview } from '../preview.js'
 
 const reduced = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
 
@@ -167,7 +168,7 @@ function screen(el) {
  * named on the wrong element, or on none). On `load` they have all come: it starts once more.
  */
 export function parallax(el) {
-  if (reduced()) return
+  if (reduced() || inPreview()) return
   let stop = start(el)
   if (document.readyState === 'complete') return stop
   const again = () => {
