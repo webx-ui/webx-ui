@@ -12,8 +12,9 @@ use Illuminate\Contracts\Foundation\Application;
  *
  * With the file there, `@webxTheme` prints it inline and every stylesheet of the head — the
  * widgets', the modules', the layers', Vite's, the blocks' — stops holding the first paint: it
- * is preloaded and applied once it arrives (`media="print"` + `onload`), with a `<noscript>`
- * link for a browser without scripts ({@see defer()}). Without the file nothing changes: the
+ * is fetched at the lowest priority, without a preload, and applied once it arrives
+ * (`media="print"` + `onload`), with a `<noscript>` link for a browser without scripts
+ * ({@see defer()}). Without the file nothing changes: the
  * page links its stylesheets as it always did.
  *
  * The file belongs to the site, not to a theme: it is made of everything the site's pages load,
@@ -75,13 +76,19 @@ final class ThemeCritical
     /**
      * The page with every blocking stylesheet of its `<head>` turned into one that does not block:
      *
-     *     <link rel="preload" href="…" as="style">
      *     <link rel="stylesheet" href="…" media="print" onload="this.media='all'">
      *     <noscript><link rel="stylesheet" href="…"></noscript>
      *
+     * No `<link rel="preload" as="style">` for them, and one already in the head (Vite prints
+     * its own) is dropped: a preload is fetched at the highest priority and shares the channel
+     * with the document, the fonts and the picture of the first screen — the very things the
+     * critical CSS is there to hurry. A `media="print"` sheet is fetched at the lowest priority,
+     * still at once, and `fetchpriority="low"` on a preload only gets it down to "High", the
+     * priority of the pictures (measured, §13.3).
+     *
      * A link that already has a `media` (a widget held for later, a print sheet) and the links
-     * inside a `<noscript>` are left as they are. Only the head: a stylesheet in the body is the
-     * page's own business.
+     * inside a `<noscript>` are left as they are, and so is a preload of anything else. Only the
+     * head: a stylesheet in the body is the page's own business.
      */
     public static function defer(string $html): string
     {
@@ -92,34 +99,50 @@ final class ThemeCritical
         }
 
         $head = substr($html, 0, $end);
-        $preloaded = [];
+        $deferred = [];
 
-        preg_match_all('~<link\b[^>]*\brel=["\']?preload\b[^>]*>~i', $head, $preloads);
+        preg_match_all('~<noscript\b.*?</noscript>|<link\b[^>]*>~is', $head, $tags);
 
-        foreach ($preloads[0] as $tag) {
-            if (($href = self::attribute($tag, 'href')) !== null) {
-                $preloaded[$href] = true;
+        foreach ($tags[0] as $tag) {
+            if (self::deferrable($tag)) {
+                $deferred[(string) self::attribute($tag, 'href')] = true;
             }
         }
 
-        $head = (string) preg_replace_callback('~<noscript\b.*?</noscript>|<link\b[^>]*>~is', static function (array $match) use (&$preloaded): string {
+        if ($deferred === []) {
+            return $html;
+        }
+
+        $head = (string) preg_replace_callback('~<noscript\b.*?</noscript>|<link\b[^>]*>~is', static function (array $match) use ($deferred): string {
             $tag = $match[0];
 
-            if (stripos($tag, '<noscript') === 0
-                || strtolower((string) self::attribute($tag, 'rel')) !== 'stylesheet'
-                || self::attribute($tag, 'media') !== null
-                || ($href = self::attribute($tag, 'href')) === null) {
+            if (stripos($tag, '<noscript') === 0) {
                 return $tag;
             }
 
-            $deferred = (string) preg_replace('~\s*/?>$~', ' media="print" onload="this.media=\'all\'">', $tag);
-            $preload = isset($preloaded[$href]) ? '' : '<link rel="preload" href="'.e($href).'" as="style">';
-            $preloaded[$href] = true;
+            if (strtolower((string) self::attribute($tag, 'rel')) === 'preload'
+                && strtolower((string) self::attribute($tag, 'as')) === 'style'
+                && isset($deferred[(string) self::attribute($tag, 'href')])) {
+                return '';
+            }
 
-            return $preload.$deferred.'<noscript>'.$tag.'</noscript>';
+            if (! self::deferrable($tag)) {
+                return $tag;
+            }
+
+            return (string) preg_replace('~\s*/?>$~', ' media="print" onload="this.media=\'all\'">', $tag).'<noscript>'.$tag.'</noscript>';
         }, $head);
 
         return $head.substr($html, $end);
+    }
+
+    /** A blocking stylesheet of the head: `rel="stylesheet"`, an `href`, no `media` of its own. */
+    private static function deferrable(string $tag): bool
+    {
+        return stripos($tag, '<link') === 0
+            && strtolower((string) self::attribute($tag, 'rel')) === 'stylesheet'
+            && self::attribute($tag, 'media') === null
+            && self::attribute($tag, 'href') !== null;
     }
 
     private static function attribute(string $tag, string $name): ?string

@@ -1298,9 +1298,18 @@ cookie» в подвале, вид баннера согласия.
 - **Страница.** Файл есть — `@webxTheme` печатает `<style data-webx-critical>` после токенов и
   шрифтов, а когда страница отрисована целиком (после виджетов), каждый `<link rel="stylesheet">`
   в `<head>` без `media` становится
-  `<link rel="preload" as="style">` + `<link rel="stylesheet" media="print" onload="this.media='all'">`
-  - `<noscript>`-ссылка (`ThemeCritical::defer()`). Ссылки с `media` (виджет «на потом»), внутри
-    `<noscript>` и в `<body>` не трогаются. Файла нет — вывод прежний.
+  `<link rel="stylesheet" media="print" onload="this.media='all'">` + `<noscript>`-ссылка
+  (`ThemeCritical::defer()`). Ссылки с `media` (виджет «на потом»), внутри `<noscript>` и в
+  `<body>` не трогаются. Файла нет — вывод прежний, байт в байт.
+- **Без preload.** `<link rel="preload" as="style">` для отложенных таблиц не печатается, а
+  такой же уже в `<head>` (его ставит `@vite`) снимается: preload стиля браузер грузит с
+  приоритетом VeryHigh, и полтора десятка таблиц делят канал с документом, шрифтами и картинкой
+  первого экрана — LCP и FCP с critical CSS выходили хуже, чем без него. Таблица `media="print"`
+  грузится сразу, но с приоритетом VeryLow; `fetchpriority="low"` на preload опускает её только
+  до High — наравне с картинками (замер Lighthouse mobile на lab-витрине товара: приоритеты
+  VeryHigh → VeryLow, FCP/LCP не хуже прежнего, CLS тот же). Применяется таблица так же, по
+  `onload`: мигания после загрузки не прибавилось. Preload других файлов (шрифты, картинки,
+  `modulepreload`) не трогается.
 - **Проверка** — `webx:theme:critical --check`: первый экран каждого адреса на обоих экранах снят
   дважды — с полным CSS и с отказанными стилями (остаётся только инлайн) — и сравнен попиксельно;
   отличие — код 1 и снимки в `storage/framework/webx-critical/`. Пересобирать после правки вида,

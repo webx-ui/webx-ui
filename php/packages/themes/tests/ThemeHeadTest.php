@@ -233,6 +233,9 @@ class ThemeHeadTest extends TestCase
 
         $this->assertStringContainsString('<link rel="stylesheet" href="/late.css">', $page);
         $this->assertStringNotContainsString('onload=', $page);
+        // Byte for byte what the view printed: its preloads stay too.
+        $this->assertSame(Blade::render(self::PAGE), $page);
+        $this->assertStringContainsString('<link rel="preload" href="/late.css" as="style">', $page);
     }
 
     #[Test]
@@ -254,12 +257,18 @@ class ThemeHeadTest extends TestCase
 
         // The layer's stylesheet, printed by @webxTheme.
         $this->assertStringContainsString(
-            "<link rel=\"preload\" href=\"{$theme}\" as=\"style\"><link rel=\"stylesheet\" href=\"{$theme}\" media=\"print\" onload=\"this.media='all'\"><noscript><link rel=\"stylesheet\" href=\"{$theme}\"></noscript>",
+            "<link rel=\"stylesheet\" href=\"{$theme}\" media=\"print\" onload=\"this.media='all'\"><noscript><link rel=\"stylesheet\" href=\"{$theme}\"></noscript>",
             $page,
         );
-        // Any other stylesheet of the head — the blocks', Vite's — the same way; a preload already there is not repeated.
+        // Any other stylesheet of the head — the blocks', Vite's — the same way.
         $this->assertStringContainsString("<link rel=\"stylesheet\" href=\"/late.css\" media=\"print\" onload=\"this.media='all'\"><noscript><link rel=\"stylesheet\" href=\"/late.css\"></noscript>", $page);
-        $this->assertSame(1, substr_count($page, '<link rel="preload" href="/late.css"'));
+        // No preload of a deferred stylesheet, not even the one Vite printed: it would fetch it at
+        // the highest priority, against the document, the fonts and the first screen's picture.
+        $this->assertSame(1, substr_count($page, 'as="style"'), 'only the one of the sheet held for later');
+        $this->assertStringNotContainsString('rel="preload" href="/late.css"', $page);
+        // A preload of anything else — a font, a stylesheet held for later — is not touched.
+        $this->assertStringContainsString('<link rel="preload" href="/f.woff2" as="font" type="font/woff2" crossorigin>', $page);
+        $this->assertStringContainsString('<link rel="preload" href="/print.css" as="style">', $page);
         // One held for later already, and one in the body, are left alone.
         $this->assertStringContainsString('<link rel="stylesheet" href="/print.css" media="print">', $page);
         $this->assertStringContainsString('<body><link rel="stylesheet" href="/body.css"></body>', $page);
@@ -292,7 +301,7 @@ class ThemeHeadTest extends TestCase
             ->assertFailed();
     }
 
-    private const string PAGE = '<html><head>@webxTheme<link rel="preload" href="/late.css" as="style"><link rel="stylesheet" href="/late.css"><link rel="stylesheet" href="/print.css" media="print"></head><body><link rel="stylesheet" href="/body.css"></body></html>';
+    private const string PAGE = '<html><head>@webxTheme<link rel="preload" href="/f.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/late.css" as="style"><link rel="stylesheet" href="/late.css"><link rel="preload" href="/print.css" as="style"><link rel="stylesheet" href="/print.css" media="print"></head><body><link rel="stylesheet" href="/body.css"></body></html>';
 
     private function package(): ThemeManifest
     {
