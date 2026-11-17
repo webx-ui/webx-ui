@@ -128,6 +128,12 @@ final class CriticalCommand extends Command
         $this->laravel->make(CacheGroups::class)->bump(CacheGroups::THEME);
 
         $this->components->info("Written {$this->relative($path)}: {$size}, from {$pages} pages × ".count(ThemeCritical::VIEWPORTS).' screens.');
+
+        // Two pages that apply a pair of rules in opposite orders cannot share one file faithfully.
+        $conflicts = is_int($answer['conflicts'] ?? null) ? $answer['conflicts'] : 0;
+        if ($conflicts > 0) {
+            $this->components->warn("{$conflicts} rules come in opposite orders on different pages: one of those pages may draw differently.");
+        }
         $this->line('  Check it: php artisan webx:theme:critical --check');
 
         return self::SUCCESS;

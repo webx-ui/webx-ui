@@ -17,6 +17,7 @@
 import { createRequire } from 'node:module'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { mergeRules, serializeRules, splitSelectors } from './rules.mjs'
 
 const job = JSON.parse(readFileSync(process.argv[2], 'utf8'))
 const require = createRequire(join(job.root, 'package.json'))
@@ -35,7 +36,8 @@ function answer(value) {
 }
 
 // Runs in the page: the rules of every linked stylesheet the first screen needs, by sheet.
-const COLLECT = (below) => {
+// `split` is splitSelectors of rules.mjs, handed over as source (see collect()).
+const COLLECT = (below, split) => {
   const bottom = innerHeight * below
   const dynamic =
     /::?(hover|focus|focus-visible|focus-within|active|visited|before|after|placeholder|marker|selection|backdrop|file-selector-button|-webkit-[a-z-]+|-moz-[a-z-]+)(\([^)]*\))?/g
@@ -62,8 +64,8 @@ const COLLECT = (below) => {
     }
   }
   const matches = (selectorText) => {
-    for (const part of selectorText.split(',')) {
-      let elements = query(part.trim())
+    for (const part of split(selectorText)) {
+      let elements = query(part)
       if (!elements || !elements.length) elements = query(part.replace(dynamic, '').trim() || '*')
       for (const element of elements ?? []) if (seen(element)) return true
     }
@@ -146,11 +148,6 @@ const COMPARE = async ([a, b]) => {
   return differ
 }
 
-const compareIds = (a, b) => {
-  for (let i = 0; i < Math.min(a.length, b.length); i++) if (a[i] !== b[i]) return a[i] - b[i]
-  return a.length - b.length
-}
-
 async function open(browser, url, viewport, cssOff = false) {
   const context = await browser.newContext({
     viewport: { width: viewport[0], height: viewport[1] },
@@ -170,48 +167,25 @@ async function open(browser, url, viewport, cssOff = false) {
 }
 
 async function extract(browser) {
-  const order = []
-  const sheets = new Map()
+  const screens = []
+  const hrefs = new Set()
   for (const path of job.pages) {
     for (const viewport of job.viewports) {
       const { context, page } = await open(browser, job.base + path, viewport)
-      const found = await page.evaluate(COLLECT, job.below)
-      await context.close()
-      // The sheets in the order the pages link them: one a page adds goes after the sheet
-      // it follows there, so the cascade of every page stays as it was.
-      let after = -1
-      for (const sheet of found) {
-        let at = order.indexOf(sheet.href)
-        if (at === -1) {
-          order.splice(after + 1, 0, sheet.href)
-          at = after + 1
-          sheets.set(sheet.href, new Map())
-        }
-        after = at
-        for (const rule of sheet.rules) sheets.get(sheet.href).set(rule.id.join('.'), rule)
-      }
-    }
-  }
-  let css = ''
-  for (const href of order) {
-    const rules = [...sheets.get(href).values()].sort((a, b) => compareIds(a.id, b.id))
-    let open = []
-    for (const rule of rules) {
-      // Consecutive rules of one @media share it; the wrappers are closed only when they change.
-      let common = 0
-      while (
-        common < open.length &&
-        common < rule.wrappers.length &&
-        open[common] === rule.wrappers[common]
+      // A string, not a function: splitSelectors goes in as source, and a page's
+      // Content-Security-Policy, which refuses `new Function`, does not apply to it.
+      const found = await page.evaluate(
+        `(${COLLECT})(${JSON.stringify(job.below)}, ${splitSelectors})`,
       )
-        common++
-      css += '}'.repeat(open.length - common)
-      for (const wrapper of rule.wrappers.slice(common)) css += `${wrapper}{`
-      open = rule.wrappers
-      css += rule.text
+      await context.close()
+      // The kept rules of the screen in the order it applies them: its sheets as it links them.
+      screens.push(found.flatMap((sheet) => sheet.rules))
+      for (const sheet of found) hrefs.add(sheet.href)
     }
-    css += '}'.repeat(open.length)
   }
+  // Every page's cascade as it was: one page's block bundle must not land after another's.
+  const { rules, conflicts } = mergeRules(screens)
+  const css = serializeRules(rules)
   const lightning = load('lightningcss')
   let targets = job.targets
   try {
@@ -225,7 +199,7 @@ async function extract(browser) {
     minify: true,
     targets,
   })
-  return { css: code.toString(), sheets: order.length }
+  return { css: code.toString(), sheets: hrefs.size, conflicts }
 }
 
 async function check(browser) {
