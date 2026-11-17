@@ -48,7 +48,7 @@
     "resources/js/back-to-top.js": "2b29a49db20ee2e8b42e630d950a3aff918a1606c4cd58237e9422d243e0e60b",
     "resources/js/behaviours/accordion.js": "dbaa803462d843a07713df1367d7bea3d0b526a32da80e255e9f8f3c1daaff94",
     "resources/js/behaviours/corridor.js": "bfb52d7fcc48846ee8cbf32afe0450b5971f060d24d84f9d57d5c49494c7dd2d",
-    "resources/js/behaviours/dialog.js": "cd7103412f4cdeb7115e02531fca4db42e01ffcae70e9adb328b341c5508c6da",
+    "resources/js/behaviours/dialog.js": "79662c78e422d0c5c3049392fe10af0c422c4645ca4d1745751546195a942e93",
     "resources/js/behaviours/disclosure.js": "601db646c7c5575d8d888541adb369bced13ed624f193aa85efbe448cdf2ffbc",
     "resources/js/behaviours/dropdown.js": "702a32d9d0cb652b64b309ef425e62b870e8e0c37f7a9cbff36f437014ac384b",
     "resources/js/behaviours/form-dialog.js": "d7ccbb69b1ab7a62edbf3f7f4bb1f13595ee542328a56917025b6c5bec23f609",
