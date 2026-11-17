@@ -13,8 +13,8 @@
  * Otherwise, and where the browser has no such timelines, this script is the fallback: an
  * IntersectionObserver says when the frame is on screen, and only then each scroll asks for one
  * frame that reads where the frame stands and writes one custom property — a read, then a write,
- * never a read after a write. The frame is the element's parent: the element's own box carries the
- * shift, and measuring it would measure the shift.
+ * never a read after a write. The frame is the element's parent (past a <picture> without a box, see
+ * `frameOf`): the element's own box carries the shift, and measuring it would measure the shift.
  *
  * The value of the attribute is the strength (`soft`, `medium` or empty, `strong`): the stylesheet
  * reads it, this script does not. With `screen` among its words (`screen`, `screen soft`) it is the
@@ -47,6 +47,18 @@ function subjectOf(frame) {
   return Math.abs(a.top - b.top) <= 1 && Math.abs(a.height - b.height) <= 1 ? subject : null
 }
 
+/*
+ * The frame: the element's parent, or the first ancestor with a box of its own. A <picture> the
+ * library's formats wrap the <img> in is `display: contents` — it has no box: measured it stands
+ * nowhere, and an IntersectionObserver never sees it on screen, so the picture never moved.
+ */
+function frameOf(el) {
+  let frame = el.parentElement
+  while (frame && frame !== document.body && getComputedStyle(frame).display === 'contents')
+    frame = frame.parentElement
+  return frame ?? el
+}
+
 const number = (style, name, fallback) => {
   const value = parseFloat(style.getPropertyValue(name))
   return Number.isFinite(value) ? value : fallback
@@ -74,7 +86,7 @@ function screen(el) {
   const driven = window.CSS?.supports?.('animation-timeline: scroll()') ?? false
   if (!driven && typeof requestAnimationFrame !== 'function') return
 
-  const frame = el.parentElement ?? el
+  const frame = frameOf(el)
   const marks = driven
     ? ['webx-parallax', 'webx-parallax--screen']
     : ['webx-parallax', 'webx-parallax--screen', 'webx-parallax--script']
@@ -152,7 +164,7 @@ export function parallax(el) {
   if ((el.getAttribute('data-webx-parallax') ?? '').split(/\s+/).includes('screen'))
     return screen(el)
 
-  const frame = el.parentElement ?? el
+  const frame = frameOf(el)
   const subject = scrollDriven() ? subjectOf(frame) : null
   // Placed absolutely in its frame, the picture is made taller for its overscan; in the flow, larger.
   const marks =

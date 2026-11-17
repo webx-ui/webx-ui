@@ -376,6 +376,45 @@ describe('parallax', () => {
     expect(picture.className).toBe('')
     expect(watched.length).toBe(0)
   })
+
+  // What `@webxPicture` prints around a picture with formats: a wrapper without a box of its own.
+  const formats = `<section id="frame" style="overflow-y: hidden"><picture style="display: contents"><source type="image/avif" srcset="/a.avif"><img id="picture" style="position: absolute" data-webx-parallax src="/a.jpg" alt=""></picture></section>`
+
+  it('measures the frame past a <picture> without a box, with and without scroll-driven animations', async () => {
+    vi.stubGlobal('CSS', { supports: () => false })
+    vi.stubGlobal('requestAnimationFrame', (callback) => frames.push(callback))
+    vi.stubGlobal('cancelAnimationFrame', () => {})
+    vi.stubGlobal('innerHeight', 800)
+    await start(formats)
+    const picture = document.getElementById('picture')
+    const frame = document.getElementById('frame')
+
+    // Watched is the section: the <picture> never intersects anything.
+    expect(watched.some((o) => o.els.has(frame))).toBe(true)
+    expect(watched.some((o) => o.els.has(picture.parentElement))).toBe(false)
+    expect(picture.className).toBe('webx-parallax webx-parallax--grown webx-parallax--script')
+    at(frame, 200, 400)
+    watched.find((o) => o.els.has(frame)).callback([{ target: frame, isIntersecting: true }])
+    run()
+    expect(picture.style.getPropertyValue('--webx-parallax-progress')).toBe('0.5000')
+
+    // With them, the timeline is named on the section, which crops and spans the frame.
+    window.webx.unmount()
+    vi.stubGlobal('CSS', { supports: () => true })
+    window.webx.mount()
+    expect(frame.className).toBe('webx-parallax-frame')
+    expect(picture.parentElement.className).toBe('')
+    expect(picture.className).toBe('webx-parallax webx-parallax--grown')
+  })
+
+  it('moves nothing in a <picture> with reduced motion either', async () => {
+    reduced = true
+    vi.stubGlobal('CSS', { supports: () => false })
+    await start(formats)
+
+    expect(document.getElementById('picture').className).toBe('')
+    expect(watched.length).toBe(0)
+  })
 })
 
 describe('table', () => {

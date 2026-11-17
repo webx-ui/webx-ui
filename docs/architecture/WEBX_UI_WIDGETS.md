@@ -1691,7 +1691,9 @@ variant="gallery">` по слайду на три картинки, без ми�
     (`--gallery-plate-inset` `space-5`, padding `space-2`/`space-3`, 0.875em), `pointer-events: none`
     — клик идёт в ссылку лайтбокса. Подпись, повторяющая `alt`, — `aria-hidden`: не читается дважды.
   - `view: ribbon` — повторитель `frames` (картинка, `wx-link`, значок `none|pin|video`, иконки
-    `pin`/`video` пакета). Ссылка всегда в новой вкладке (`rel="noopener"`), без лайтбокса. Секция
+    `pin`/`video` пакета). Ссылка всегда в новой вкладке (`rel="noopener"`). Кадр без ссылки при `zoom` — ссылка
+    лайтбокса (одна группа на ленту, номер среди таких кадров, подпись `data-caption` — `alt`, иначе `title`),
+    без `zoom` — `<span>`; перетаскивание мышью глотает свой клик — не открывает ни пост, ни лупу. Секция
     `site-bleed`, начало ленты и шапка — по колонке (`--gallery-ribbon-start` из
     `--site-container-width` и `--site-section-gutter`, только прямой ребёнок `.site-main`), конец — край
     окна. Кадры 3:4, `--gallery-ribbon-across` 4.25 / 2.5 от 40em / 1.5 уже — на ленточке, не на секции
