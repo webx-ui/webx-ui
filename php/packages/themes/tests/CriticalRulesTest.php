@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase as BaseTestCase;
 use Symfony\Component\Process\ExecutableFinder;
 use Symfony\Component\Process\Process;
+use WebxUi\Themes\Console\CriticalCommand;
 
 /**
  * The pure half of `webx:theme:critical` — `resources/critical/rules.mjs`, run in Node: how a
@@ -58,7 +59,7 @@ class CriticalRulesTest extends BaseTestCase
 
         $answer = $this->rules('merge', array_values($screens));
 
-        $this->assertSame(0, $answer['conflicts']);
+        $this->assertSame([], $answer['conflicts']);
         // Every rule once — the same rule of two bundles is one rule.
         $this->assertCount(6, $answer['rules']);
         foreach ($screens as $name => $rules) {
@@ -83,7 +84,7 @@ class CriticalRulesTest extends BaseTestCase
 
         $answer = $this->rules('merge', [[$a, $b, $a], [$b]]);
 
-        $this->assertSame(0, $answer['conflicts']);
+        $this->assertSame([], $answer['conflicts']);
         $this->assertSame('.a{color:blue}.a{color:red}', $answer['css']);
     }
 
@@ -93,10 +94,51 @@ class CriticalRulesTest extends BaseTestCase
         $a = $this->rule('.a{color:red}');
         $b = $this->rule('.b{color:blue}');
 
-        $answer = $this->rules('merge', [[$a, $b], [$b, $a]]);
+        $answer = $this->rules('merge', [[$a, $b], [$b, $a]], ['/ at 1440×900', '/about at 390×844']);
 
-        $this->assertSame(1, $answer['conflicts']);
+        $this->assertSame([[
+            'rule' => $a,
+            'other' => $b,
+            'against' => ['/about at 390×844'],
+            'with' => ['/ at 1440×900'],
+        ]], $answer['conflicts']);
         $this->assertSame('.a{color:red}.b{color:blue}', $answer['css']);
+    }
+
+    #[Test]
+    public function a_conflict_through_a_third_rule_names_the_screens_it_goes_against(): void
+    {
+        $a = $this->rule('.a{color:red}');
+        $b = $this->rule('.b{color:blue}');
+        $c = $this->rule('.c{color:green}');
+
+        $answer = $this->rules('merge', [[$a, $b], [$b, $c], [$c, $a]], ['one', 'two', 'three']);
+
+        $this->assertSame([[
+            'rule' => $a,
+            'other' => $c,
+            'against' => ['three'],
+            'with' => [],
+        ]], $answer['conflicts']);
+    }
+
+    #[Test]
+    public function the_warning_names_the_rules_and_the_pages(): void
+    {
+        $lines = CriticalCommand::conflictLines([[
+            'rule' => $this->rule('.b-text{padding-block:64px}', ['@media (min-width: 600px)']),
+            'other' => $this->rule('.b-text--page{padding-block:24px}'),
+            'against' => ['/about at 1440×900', '/about at 390×844'],
+            'with' => ['/ at 1440×900'],
+        ]]);
+
+        $this->assertSame([
+            '1 rules come in opposite orders on different pages: those pages may draw differently.',
+            '  `@media (min-width: 600px) .b-text{padding-block:64px}` is put before `.b-text--page{padding-block:24px}`',
+            '    the other way round on: /about at 1440×900, /about at 390×844',
+            '    in this order on: / at 1440×900',
+        ], $lines);
+        $this->assertSame([], CriticalCommand::conflictLines([]));
     }
 
     /**
@@ -108,7 +150,10 @@ class CriticalRulesTest extends BaseTestCase
         return ['wrappers' => $wrappers, 'text' => $text];
     }
 
-    private function rules(string $mode, mixed $input): mixed
+    /**
+     * @param  list<string>|null  $names
+     */
+    private function rules(string $mode, mixed $input, ?array $names = null): mixed
     {
         $node = (new ExecutableFinder)->find('node');
         $this->assertNotNull($node, 'Node is needed: the critical CSS is read by a script Node runs.');
@@ -120,13 +165,13 @@ class CriticalRulesTest extends BaseTestCase
             let output
             if (process.argv[1] === 'split') output = input.map(splitSelectors)
             else {
-              const { rules, conflicts } = mergeRules(input)
+              const { rules, conflicts } = mergeRules(input, ...(process.argv[3] ? [JSON.parse(process.argv[3])] : []))
               output = { rules, conflicts, css: serializeRules(rules) }
             }
             process.stdout.write(JSON.stringify(output))
             JS;
 
-        $process = new Process([$node, '--input-type=module', '-e', $script, $mode, json_encode($input, JSON_THROW_ON_ERROR)]);
+        $process = new Process([$node, '--input-type=module', '-e', $script, $mode, json_encode($input, JSON_THROW_ON_ERROR), $names === null ? '' : json_encode($names, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE)]);
         $process->mustRun();
 
         return json_decode($process->getOutput(), true, 512, JSON_THROW_ON_ERROR);
