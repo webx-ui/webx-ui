@@ -248,6 +248,37 @@ describe('smooth scrolling', () => {
     expect(click(links[0], { ctrlKey: true }) && instances[0].calls).toHaveLength(0)
   })
 
+  it('leaves the wheel to the browser until the page has loaded, then glides from where it stands', async () => {
+    const frames = []
+    vi.stubGlobal('requestAnimationFrame', (callback) => frames.push(callback))
+    vi.stubGlobal('cancelAnimationFrame', () => {})
+    const state = vi.spyOn(document, 'readyState', 'get').mockReturnValue('loading')
+    await start('<p>Text</p>', { 'data-webx-smooth-scroll': '' })
+    const [lenis] = instances
+
+    // A reload restoring the place, an address with #anchor: the browser's jumps, natively.
+    expect(lenis.options.virtualScroll()).toBe(false)
+    state.mockReturnValue('complete')
+    window.dispatchEvent(new Event('load'))
+    expect(lenis.options.virtualScroll()).toBe(false)
+    expect(lenis.calls).toHaveLength(0)
+
+    // A frame on: the glide starts from the place the browser put the page in, with no way to go.
+    frames.forEach((frame) => frame(0))
+    expect(lenis.options.virtualScroll()).toBe(true)
+    expect(lenis.calls).toEqual([['reset']])
+
+    // Back from the cache: the same.
+    window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }))
+    expect(lenis.calls).toEqual([['reset'], ['reset']])
+    state.mockRestore()
+  })
+
+  it('glides at once on a page that has loaded before it starts', async () => {
+    await start('<p>Text</p>', { 'data-webx-smooth-scroll': '' })
+    expect(instances[0].options.virtualScroll()).toBe(true)
+  })
+
   it('lets go when unmounted', async () => {
     await start('', { 'data-webx-smooth-scroll': '' })
     window.webx.unmount()
