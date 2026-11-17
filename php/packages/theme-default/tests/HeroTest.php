@@ -128,6 +128,8 @@ final class HeroTest extends TestCase
         $this->assertStringContainsString('.b-hero.b-hero--screen.b-hero--at-top {', $styles);
         $this->assertStringContainsString('var(--hero-top-space, var(--site-space-8))', $styles);
         $this->assertStringContainsString('.b-hero--screen:first-of-type:where(.site-main > *):where(.site:has(.webx-header--overlay) *) {', $styles);
+        // The header's rest height: a header a theme makes lower once scrolled does not move the first screen.
+        $this->assertSame(2, substr_count($styles, 'calc(var(--webx-header-rest-height, var(--webx-header-height, 0px)) + var(--webx-header-topbar-height, 0px))'));
     }
 
     #[Test]

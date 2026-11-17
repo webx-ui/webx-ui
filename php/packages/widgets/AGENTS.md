@@ -102,7 +102,7 @@ bottom layer of the theme chain, like a module, and needs `webx-ui/themes`.
   each component's view lists its own. `html.webx-js` once the runtime runs,
   `html.webx-scroll-locked` under a modal, `html.webx-header-sticky` while the header sticks.
 - **Tokens and words** — `--webx-<name>-*` per widget on `:root` from `--site-*`; `--webx-header-height`
-  is kept live — the `top` of anything sticky. Words `webx-widgets::widgets.*` in en ru uk de pl fr es it pt tr; each also a prop.
+  is kept live — the `top` of anything sticky; `--webx-header-rest-height` (not scrolled) is what the page lays out by. Words `webx-widgets::widgets.*` in en ru uk de pl fr es it pt tr; each also a prop.
 
 ## Change it without forking
 

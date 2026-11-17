@@ -789,6 +789,72 @@ describe('parallax of the first screen', () => {
     }
   })
 
+  // An overlay header a theme makes lower once scrolled (128 → 96), easing into it: the first
+  // screen lays out by its rest height, and the picture keeps going k · scrollY across the switch.
+  for (const supports of [true, false]) {
+    it(`keeps its pace as the header gets lower past its height (${supports ? 'CSS timeline' : 'script'})`, async () => {
+      frames = []
+      vi.stubGlobal('CSS', { supports: (query) => supports && query.includes('scroll()') })
+      vi.stubGlobal('requestAnimationFrame', (callback) => frames.push(callback))
+      vi.stubGlobal('cancelAnimationFrame', () => {})
+      vi.stubGlobal('innerHeight', 900)
+      vi.stubGlobal('scrollY', 0)
+      document.body.innerHTML =
+        '<header id="h" class="webx-header webx-header--overlay webx-header--sticky" data-webx-header data-collapse="never" data-sticky="sticky"><div class="webx-header__bar"></div></header>' +
+        page
+      const el = document.getElementById('h')
+      // Its height eases between the two over a few frames, the way a theme's `transition` does.
+      let height = 128
+      Object.defineProperty(el, 'offsetHeight', { configurable: true, get: () => height })
+      const frame = document.getElementById('frame')
+      // On the screen where the scroll puts it: measured again as the header changes, it is still gone at 900.
+      frame.getBoundingClientRect = () => ({
+        top: -scrollY,
+        bottom: 900 - scrollY,
+        height: 900,
+        left: 0,
+        right: 0,
+        width: 0,
+      })
+      Object.defineProperty(frame, 'offsetHeight', { configurable: true, value: 900 })
+      delete window.webx
+      vi.resetModules()
+      await import('./runtime.js')
+      const root = document.documentElement.style
+      const picture = document.getElementById('picture')
+      const measured = () => ['end', 'reach', 'over'].map((name) => value(picture, name))
+      const before = measured()
+      expect(root.getPropertyValue('--webx-header-rest-height')).toBe('128px')
+
+      const shift = () => parseFloat(value(picture, 'progress')) * 270 - 270
+      for (const y of [100, 126, 130, 134, 138, 141, 144, 200, 300]) {
+        vi.stubGlobal('scrollY', y)
+        window.dispatchEvent(new Event('scroll'))
+        run()
+        if (el.classList.contains('is-scrolled') && height > 96) height = Math.max(96, height - 8)
+        resized.forEach((observer) => observer.callback([]))
+        run()
+        // What the page lays out by stays: the hero's room under the header, the parallax's way.
+        expect(root.getPropertyValue('--webx-header-rest-height')).toBe('128px')
+        expect(measured()).toEqual(before)
+        if (!supports) expect(shift() + 270).toBeCloseTo(0.3 * y, 0)
+      }
+      expect(el.classList.contains('is-scrolled')).toBe(true)
+      expect(root.getPropertyValue('--webx-header-height')).toBe('96px')
+
+      // A resize while scrolled measures the rest height again — without `is-scrolled`, at once.
+      Object.defineProperty(el, 'offsetHeight', {
+        configurable: true,
+        get: () => (el.classList.contains('is-scrolled') ? 64 : 80),
+      })
+      window.dispatchEvent(new Event('resize'))
+      run()
+      expect(root.getPropertyValue('--webx-header-rest-height')).toBe('80px')
+      expect(root.getPropertyValue('--webx-header-height')).toBe('64px')
+      expect(el.className).toBe('webx-header webx-header--overlay webx-header--sticky is-scrolled')
+    })
+  }
+
   it('moves nothing for a visitor who asked for less motion', async () => {
     reduced = true
     const { picture } = await load(true)

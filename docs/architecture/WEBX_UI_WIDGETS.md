@@ -397,6 +397,14 @@ selected level>`.
   шапка стоит с `top: calc(-1 * topbar)`. Якоря — `scroll-padding-top` на `html.webx-header-sticky`:
   переход по якорю не прячет заголовок под липкой шапкой. Этот же токен берут другие липкие вещи
   (оглавление, фильтры каталога) для `top`.
+- **Высота в покое — `--webx-header-rest-height`**: шапка без `is-scrolled`. Тема может сделать
+  шапку ниже после порога прокрутки (и сгладить transition'ом) — раскладка страницы от этого не
+  двигается: шапка в потоке держит место высоты в покое (`margin-block-end` = покой − текущая, одним
+  классом `.webx-header` — свой отступ темы после него сильнее), первый экран `hero` отступает и считает окно от неё же
+  (`--hero-under` / `--hero-above`). Шапка поверх (`--overlay`) места не занимает: её отступ —
+  текущая высота, ResizeObserver пишет её до отрисовки кадра. Покой мерится, пока шапка не прокручена
+  и в ней не идёт transition; прокрученную (resize, шрифты, сворачивание) — одним чтением без
+  `is-scrolled` с выключенными transition'ами.
 - **Ссылка «К содержимому»** первой в документе, видна при фокусе с клавиатуры; ведёт на `<main>`.
 - **Выпадающие меню навигации** (`<x-webx-header.nav>` рисует дерево `menu()`; ссылка пункта ведёт
   куда ведёт, рядом кнопка-переключатель, у пункта без адреса переключатель — сам пункт):
@@ -435,7 +443,7 @@ selected level>`.
 **Классы и токены:** `webx-header`, `__topbar`, `__bar`, `__brand`, `__nav`, `__actions`,
 `__trigger`, `__skip`; навигация — `webx-header-nav`, `__item`, `__link`, `__toggle`, `__dropdown`,
 `__mega`, `__sublink`, `is-open`, `is-current`, `is-flipped`. Локальные токены:
-`--webx-header-height` и `--webx-header-topbar-height` (считаются), `--webx-header-bg`,
+`--webx-header-height`, `--webx-header-rest-height` и `--webx-header-topbar-height` (считаются), `--webx-header-bg`,
 `--webx-header-overlay-color`, `--webx-header-gap`.
 
 **Зона `header`.** Шапка сайта — зона лейаута (`WEBX_UI_LAYOUT_REGIONS.md`): пока зона пуста,
