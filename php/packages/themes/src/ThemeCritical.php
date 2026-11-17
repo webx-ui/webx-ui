@@ -12,10 +12,10 @@ use Illuminate\Contracts\Foundation\Application;
  *
  * With the file there, `@webxTheme` prints it inline and every stylesheet of the head — the
  * widgets', the modules', the layers', Vite's, the blocks' — stops holding the first paint: it
- * is fetched at the lowest priority, without a preload, and applied once it arrives
- * (`media="print"` + `onload`), with a `<noscript>` link for a browser without scripts
- * ({@see defer()}). Without the file nothing changes: the
- * page links its stylesheets as it always did.
+ * is fetched at the lowest priority, without a preload (`media="print"`), and all of them are
+ * applied together, in document order, once the last one arrives, with a `<noscript>` link for
+ * a browser without scripts ({@see defer()}). Without the file nothing changes: the page links
+ * its stylesheets as it always did.
  *
  * The file belongs to the site, not to a theme: it is made of everything the site's pages load,
  * its blocks and modules too. It lives at `webx-themes.critical` (`theme/critical.css` by
@@ -32,6 +32,21 @@ final class ThemeCritical
 
     /** How far below the screen a rule still counts as the first screen's: a quarter of it. */
     public const float BELOW = 1.25;
+
+    /** The attribute of a deferred stylesheet: what the script below switches on, all at once. */
+    public const string DEFERRED = 'data-webx-deferred';
+
+    /**
+     * The script printed right before the first deferred stylesheet. Each sheet calls it once,
+     * loaded or failed; the last one switches every deferred sheet to `media="all"` in one go, so
+     * the page goes from the critical CSS straight to the full cascade, in document order. One
+     * sheet on its own would apply over the critical rules while a later one — the site's theme —
+     * is still on its way, and its rule would beat the theme's for a while (a header pushing the
+     * first screen down, then a carousel jumping to its height: CLS up to 1). `%d` — how many.
+     */
+    public const string SCRIPT = 'webxCss=function(l){l.onload=l.onerror=null;if(++webxCss.k<webxCss.n)return;'
+        ."var a=document.querySelectorAll('link[data-webx-deferred]');for(var i=0;i<a.length;i++)a[i].media='all'};"
+        .'webxCss.k=0;webxCss.n=%d';
 
     private ?string $css = null;
 
@@ -76,8 +91,14 @@ final class ThemeCritical
     /**
      * The page with every blocking stylesheet of its `<head>` turned into one that does not block:
      *
-     *     <link rel="stylesheet" href="…" media="print" onload="this.media='all'">
+     *     <script>webxCss=…;webxCss.n=3</script>           (once, before the first one)
+     *     <link rel="stylesheet" href="…" data-webx-deferred media="print"
+     *           onload="webxCss(this)" onerror="webxCss(this)">
      *     <noscript><link rel="stylesheet" href="…"></noscript>
+     *
+     * None of them applies on its own: when the last one has loaded (or failed), all of them
+     * switch to `media="all"` in the same task ({@see SCRIPT}). Until then the page is exactly
+     * the critical CSS, then the whole cascade in document order — never a part of it.
      *
      * No `<link rel="preload" as="style">` for them, and one already in the head (Vite prints
      * its own) is dropped: a preload is fetched at the highest priority and shares the channel
@@ -100,12 +121,14 @@ final class ThemeCritical
 
         $head = substr($html, 0, $end);
         $deferred = [];
+        $count = 0;
 
         preg_match_all('~<noscript\b.*?</noscript>|<link\b[^>]*>~is', $head, $tags);
 
         foreach ($tags[0] as $tag) {
             if (self::deferrable($tag)) {
                 $deferred[(string) self::attribute($tag, 'href')] = true;
+                $count++;
             }
         }
 
@@ -113,7 +136,10 @@ final class ThemeCritical
             return $html;
         }
 
-        $head = (string) preg_replace_callback('~<noscript\b.*?</noscript>|<link\b[^>]*>~is', static function (array $match) use ($deferred): string {
+        $first = true;
+        $script = '<script>'.sprintf(self::SCRIPT, $count).'</script>';
+
+        $head = (string) preg_replace_callback('~<noscript\b.*?</noscript>|<link\b[^>]*>~is', static function (array $match) use ($deferred, $script, &$first): string {
             $tag = $match[0];
 
             if (stripos($tag, '<noscript') === 0) {
@@ -130,7 +156,10 @@ final class ThemeCritical
                 return $tag;
             }
 
-            return (string) preg_replace('~\s*/?>$~', ' media="print" onload="this.media=\'all\'">', $tag).'<noscript>'.$tag.'</noscript>';
+            $lead = $first ? $script : '';
+            $first = false;
+
+            return $lead.(string) preg_replace('~\s*/?>$~', ' '.self::DEFERRED.' media="print" onload="webxCss(this)" onerror="webxCss(this)">', $tag).'<noscript>'.$tag.'</noscript>';
         }, $head);
 
         return $head.substr($html, $end);
