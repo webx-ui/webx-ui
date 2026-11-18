@@ -1,5 +1,14 @@
 # @webx-ui/php
 
+## 0.98.1
+
+### Patch Changes
+
+- a1bf25c: themes: with critical CSS the deferred stylesheets of the head apply together and in document order — when the last one has loaded (or failed), one small script switches all of them to `media="all"` at once. Each used to switch itself on when it arrived, so an early package sheet applied over the critical CSS before the site's theme and beat its rules for a while (layout shift up to 1 on a throttled phone). The `<noscript>` links stay; without the critical file the page is unchanged.
+- a1bf25c: themes: `webx:theme:critical` keeps the rules of the children of a block the edge of the first screen cuts when that block is drawn by its whole height — a texture `inset: 0; object-fit: cover` held to its bottom, a background `cover` or set off the top. A footer that starts in the first screen with its bottom row below it no longer comes out shorter with the critical CSS alone, and `--check` draws it pixel for pixel. The warning about rules in opposite orders on different pages names both rules and the screens that apply each order.
+- a1bf25c: themes: with critical CSS the deferred stylesheets of the head are no longer preloaded — no `<link rel="preload" as="style">` for them, and the one `@vite` prints is dropped. A preload fetched them at the highest priority, against the document, the fonts and the first screen's picture; a `media="print"` sheet is fetched at the lowest. Without the critical file the page is unchanged.
+- a1bf25c: widgets: `data-webx-overlap` without scroll-driven animations (Safari before `timeline-scope`, Firefox) no longer shows a band of the pinned section under the one sliding over it while the page is scrolled by touch. The pinned section used to go up by a `translate` written after each `scroll` — a frame behind the compositor's scroll, so its bottom stood under the covering section's bottom by a frame's scroll (30 px per gesture step, more with inertia). Now its `position: sticky` ends by itself: a `margin-bottom` reaching from where it is let go to the end of its parent, and the covering section's `margin-top` pulled back by as much, so nothing moves on the page. Written with the sizes, never on scroll; where the margins do not cancel out, the written `translate` stays. Scroll-driven path, reduced motion, print and no-JS are unchanged. The runtime's gzip budget goes from 16 to 16.25 KB for it.
+
 ## 0.98.0
 
 ### Minor Changes
