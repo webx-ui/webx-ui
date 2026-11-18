@@ -36,13 +36,14 @@ export const ruleKey = (rule) => `${rule.wrappers.join('\u0001')}\u0000${rule.te
 // The rules of every screen, in an order that keeps the cascade of each of them.
 //
 // `screens` — for every page on every screen, its kept rules in the order the page applies them
-// (its stylesheets in the order it links them, each in its own order). Laying the stylesheets
-// one after another would not do: the bundle of another page's blocks would come after this
-// page's `.b-text--page` with its own `.b-text`, and the modifier would lose. So the rules are
-// merged instead: a rule comes after every rule it follows on some screen. Two screens that
-// order a pair of rules the other way round are a conflict; the rule seen first goes first then,
-// and `conflicts` counts them.
-export function mergeRules(screens) {
+// (its stylesheets in the order it links them, each in its own order); `names` — what to call
+// each screen in a conflict. Laying the stylesheets one after another would not do: the bundle
+// of another page's blocks would come after this page's `.b-text--page` with its own `.b-text`,
+// and the modifier would lose. So the rules are merged instead: a rule comes after every rule it
+// follows on some screen. Screens that order rules the other way round are a conflict: the rule
+// seen first goes first then, before a rule it follows on some screens — `conflicts` names both
+// rules and those screens (`against`), and the screens that apply them in the order kept (`with`).
+export function mergeRules(screens, names = screens.map((rules, at) => String(at + 1))) {
   const nodes = new Map()
   const sequences = screens.map((rules) => {
     // A rule a screen repeats counts where it is last: the earlier copy changes nothing.
@@ -52,7 +53,8 @@ export function mergeRules(screens) {
       .filter((rule, at) => last.get(ruleKey(rule)) === at)
       .map((rule) => {
         const key = ruleKey(rule)
-        if (!nodes.has(key)) nodes.set(key, { rule, order: nodes.size, next: new Set(), before: 0 })
+        if (!nodes.has(key))
+          nodes.set(key, { rule, order: nodes.size, next: new Set(), prev: new Set(), before: 0 })
         return nodes.get(key)
       })
   })
@@ -61,22 +63,39 @@ export function mergeRules(screens) {
       const [from, to] = [sequence[i - 1], sequence[i]]
       if (!from.next.has(to)) {
         from.next.add(to)
+        to.prev.add(from)
         to.before++
       }
     }
   }
+  // The screens that apply `first` before `second`.
+  const ordering = (first, second) =>
+    names.filter((name, at) => {
+      const a = sequences[at].indexOf(first)
+      const b = sequences[at].indexOf(second)
+      return a !== -1 && b !== -1 && a < b
+    })
 
   const left = [...nodes.values()]
+  const out = new Set()
   const rules = []
-  let conflicts = 0
+  const conflicts = []
   while (left.length) {
     // The rule seen first of those whose every predecessor is out; none — a conflict.
     let at = left.findIndex((node) => node.before <= 0)
     if (at === -1) {
       at = 0
-      conflicts++
+      const node = left[0]
+      const other = [...node.prev].find((prev) => !out.has(prev))
+      conflicts.push({
+        rule: node.rule,
+        other: other.rule,
+        against: ordering(other, node),
+        with: ordering(node, other),
+      })
     }
     const [node] = left.splice(at, 1)
+    out.add(node)
     rules.push(node.rule)
     for (const next of node.next) next.before--
   }

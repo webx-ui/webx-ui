@@ -44,6 +44,9 @@ final class CriticalCommand extends Command
 
     private const string BROWSERS = '>= 0.5%, last 2 versions, not dead';
 
+    /** How many conflicting rules the warning names; the rest are counted. */
+    private const int CONFLICTS_SHOWN = 5;
+
     public function handle(ThemeChain $chain, ThemeCritical $critical): int
     {
         if ($chain->isEmpty()) {
@@ -129,14 +132,77 @@ final class CriticalCommand extends Command
 
         $this->components->info("Written {$this->relative($path)}: {$size}, from {$pages} pages × ".count(ThemeCritical::VIEWPORTS).' screens.');
 
-        // Two pages that apply a pair of rules in opposite orders cannot share one file faithfully.
-        $conflicts = is_int($answer['conflicts'] ?? null) ? $answer['conflicts'] : 0;
-        if ($conflicts > 0) {
-            $this->components->warn("{$conflicts} rules come in opposite orders on different pages: one of those pages may draw differently.");
-        }
+        $this->conflicts(is_array($answer['conflicts'] ?? null) ? $answer['conflicts'] : []);
         $this->line('  Check it: php artisan webx:theme:critical --check');
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Two pages that apply a pair of rules in opposite orders cannot share one file faithfully:
+     * which rules and which pages, so the theme can settle the order (or one rule's specificity).
+     *
+     * @param  array<mixed>  $conflicts
+     */
+    private function conflicts(array $conflicts): void
+    {
+        $lines = self::conflictLines($conflicts);
+
+        if ($lines === []) {
+            return;
+        }
+
+        $this->components->warn(array_shift($lines));
+
+        foreach ($lines as $line) {
+            $this->line($line);
+        }
+    }
+
+    /**
+     * The warning about the conflicts of the browser half's answer, line by line; none — no lines.
+     *
+     * @param  array<mixed>  $conflicts
+     * @return list<string>
+     */
+    public static function conflictLines(array $conflicts): array
+    {
+        $conflicts = array_values(array_filter($conflicts, 'is_array'));
+
+        if ($conflicts === []) {
+            return [];
+        }
+
+        $lines = [count($conflicts).' rules come in opposite orders on different pages: those pages may draw differently.'];
+
+        foreach (array_slice($conflicts, 0, self::CONFLICTS_SHOWN) as $conflict) {
+            $lines[] = '  '.self::ruleText($conflict['rule'] ?? null).' is put before '.self::ruleText($conflict['other'] ?? null);
+            $lines[] = '    the other way round on: '.self::screens($conflict['against'] ?? null);
+            $lines[] = '    in this order on: '.self::screens($conflict['with'] ?? null);
+        }
+
+        if (count($conflicts) > self::CONFLICTS_SHOWN) {
+            $lines[] = '  … and '.(count($conflicts) - self::CONFLICTS_SHOWN).' more.';
+        }
+
+        return $lines;
+    }
+
+    private static function ruleText(mixed $rule): string
+    {
+        $wrappers = is_array($rule) && is_array($rule['wrappers'] ?? null) ? array_filter($rule['wrappers'], 'is_string') : [];
+        $text = is_array($rule) && is_string($rule['text'] ?? null) ? $rule['text'] : '?';
+        $text = implode(' ', [...$wrappers, $text]);
+
+        return '`'.(mb_strlen($text) > 120 ? mb_substr($text, 0, 119).'…' : $text).'`';
+    }
+
+    private static function screens(mixed $screens): string
+    {
+        $screens = is_array($screens) ? array_values(array_filter($screens, 'is_string')) : [];
+
+        // A cycle through a third rule: no screen holds this very pair in the order kept.
+        return $screens === [] ? 'none directly (through other rules)' : implode(', ', $screens);
     }
 
     /**

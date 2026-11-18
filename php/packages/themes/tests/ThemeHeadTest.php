@@ -233,6 +233,9 @@ class ThemeHeadTest extends TestCase
 
         $this->assertStringContainsString('<link rel="stylesheet" href="/late.css">', $page);
         $this->assertStringNotContainsString('onload=', $page);
+        // Byte for byte what the view printed: its preloads stay too.
+        $this->assertSame(Blade::render(self::PAGE), $page);
+        $this->assertStringContainsString('<link rel="preload" href="/late.css" as="style">', $page);
     }
 
     #[Test]
@@ -254,16 +257,90 @@ class ThemeHeadTest extends TestCase
 
         // The layer's stylesheet, printed by @webxTheme.
         $this->assertStringContainsString(
-            "<link rel=\"preload\" href=\"{$theme}\" as=\"style\"><link rel=\"stylesheet\" href=\"{$theme}\" media=\"print\" onload=\"this.media='all'\"><noscript><link rel=\"stylesheet\" href=\"{$theme}\"></noscript>",
+            "<link rel=\"stylesheet\" href=\"{$theme}\" data-webx-deferred media=\"print\" onload=\"webxCss(this)\" onerror=\"webxCss(this)\"><noscript><link rel=\"stylesheet\" href=\"{$theme}\"></noscript>",
             $page,
         );
-        // Any other stylesheet of the head — the blocks', Vite's — the same way; a preload already there is not repeated.
-        $this->assertStringContainsString("<link rel=\"stylesheet\" href=\"/late.css\" media=\"print\" onload=\"this.media='all'\"><noscript><link rel=\"stylesheet\" href=\"/late.css\"></noscript>", $page);
-        $this->assertSame(1, substr_count($page, '<link rel="preload" href="/late.css"'));
+        // Any other stylesheet of the head — the blocks', Vite's — the same way.
+        $this->assertStringContainsString('<link rel="stylesheet" href="/late.css" data-webx-deferred media="print" onload="webxCss(this)" onerror="webxCss(this)"><noscript><link rel="stylesheet" href="/late.css"></noscript>', $page);
+        // No preload of a deferred stylesheet, not even the one Vite printed: it would fetch it at
+        // the highest priority, against the document, the fonts and the first screen's picture.
+        $this->assertSame(1, substr_count($page, 'as="style"'), 'only the one of the sheet held for later');
+        $this->assertStringNotContainsString('rel="preload" href="/late.css"', $page);
+        // A preload of anything else — a font, a stylesheet held for later — is not touched.
+        $this->assertStringContainsString('<link rel="preload" href="/f.woff2" as="font" type="font/woff2" crossorigin>', $page);
+        $this->assertStringContainsString('<link rel="preload" href="/print.css" as="style">', $page);
         // One held for later already, and one in the body, are left alone.
         $this->assertStringContainsString('<link rel="stylesheet" href="/print.css" media="print">', $page);
         $this->assertStringContainsString('<body><link rel="stylesheet" href="/body.css"></body>', $page);
         $this->assertStringNotContainsString('<noscript><link rel="stylesheet" href="/print.css">', $page);
+    }
+
+    #[Test]
+    public function the_deferred_stylesheets_apply_together_in_document_order_never_one_by_one(): void
+    {
+        $page = ThemeCritical::defer('<html><head><style data-webx-critical>.a{}</style>'
+            .'<link rel="preload" href="/f.woff2" as="font" crossorigin>'
+            .'<link rel="stylesheet" href="/widgets.css"><link rel="stylesheet" href="/print.css" media="print">'
+            .'<link rel="stylesheet" href="/theme.css"><link rel="stylesheet" href="/blocks.css"></head>'
+            .'<body><link rel="stylesheet" href="/body.css"></body></html>');
+
+        // One script, before the first deferred sheet, that knows how many there are.
+        $script = '<script>'.sprintf(ThemeCritical::SCRIPT, 3).'</script>';
+        $this->assertSame(1, substr_count($page, '<script>'));
+        $this->assertStringContainsString($script.'<link rel="stylesheet" href="/widgets.css" data-webx-deferred', $page);
+
+        // Every deferred sheet waits for the others: no handler of its own switches it on, and a
+        // failed one counts as arrived, or the page would stay on the critical CSS for good.
+        $this->assertStringNotContainsString("this.media='all'", $page);
+        preg_match_all('~<link\b[^>]*data-webx-deferred[^>]*>~', $page, $links);
+        $this->assertCount(3, $links[0]);
+        foreach ($links[0] as $link) {
+            $this->assertStringContainsString(' media="print" onload="webxCss(this)" onerror="webxCss(this)"', $link);
+        }
+
+        // In document order, and each still has its <noscript> link.
+        $this->assertLessThan(strpos($page, 'href="/theme.css" data-webx'), (int) strpos($page, 'href="/widgets.css" data-webx'));
+        $this->assertLessThan(strpos($page, 'href="/blocks.css" data-webx'), (int) strpos($page, 'href="/theme.css" data-webx'));
+        foreach (['/widgets.css', '/theme.css', '/blocks.css'] as $href) {
+            $this->assertStringContainsString("<noscript><link rel=\"stylesheet\" href=\"{$href}\"></noscript>", $page);
+        }
+
+        // The script switches on only the deferred ones — a sheet held for later and one in the
+        // body are not its business — and all of them in one loop, once the count is reached.
+        $this->assertStringContainsString("querySelectorAll('link[".ThemeCritical::DEFERRED."]')", ThemeCritical::SCRIPT);
+        $this->assertStringContainsString('if(++webxCss.k<webxCss.n)return;', ThemeCritical::SCRIPT);
+        $this->assertStringContainsString('<link rel="stylesheet" href="/print.css" media="print">', $page);
+        $this->assertStringContainsString('<body><link rel="stylesheet" href="/body.css"></body>', $page);
+    }
+
+    #[Test]
+    public function the_deferred_script_switches_every_sheet_on_with_the_last_one_only(): void
+    {
+        // The script itself, run in Node against stand-in links: nothing applies after the first
+        // two, all three at once after the third; a failed sheet counts as arrived.
+        $node = trim((string) shell_exec('command -v node'));
+
+        if ($node === '') {
+            $this->markTestSkipped('node is not installed');
+        }
+
+        $js = 'var links=[{media:"print"},{media:"print"},{media:"print"}];'
+            .'var window=globalThis;var document={querySelectorAll:function(s){if(s!=="link['.ThemeCritical::DEFERRED.']")throw s;return links}};'
+            .sprintf(ThemeCritical::SCRIPT, 3).';'
+            .'var seen=[];webxCss(links[2]);seen.push(links.map(function(l){return l.media}).join());'
+            .'webxCss(links[0]);seen.push(links.map(function(l){return l.media}).join());'
+            .'links[1].onerror=1;webxCss(links[1]);seen.push(links.map(function(l){return l.media}).join());'
+            .'process.stdout.write(JSON.stringify(seen))';
+        $file = tempnam(sys_get_temp_dir(), 'webx-css').'.js';
+        file_put_contents($file, $js);
+
+        try {
+            $out = (string) shell_exec(escapeshellarg($node).' '.escapeshellarg($file));
+        } finally {
+            @unlink($file);
+        }
+
+        $this->assertSame(['print,print,print', 'print,print,print', 'all,all,all'], json_decode($out, true));
     }
 
     #[Test]
@@ -292,7 +369,7 @@ class ThemeHeadTest extends TestCase
             ->assertFailed();
     }
 
-    private const string PAGE = '<html><head>@webxTheme<link rel="preload" href="/late.css" as="style"><link rel="stylesheet" href="/late.css"><link rel="stylesheet" href="/print.css" media="print"></head><body><link rel="stylesheet" href="/body.css"></body></html>';
+    private const string PAGE = '<html><head>@webxTheme<link rel="preload" href="/f.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/late.css" as="style"><link rel="stylesheet" href="/late.css"><link rel="preload" href="/print.css" as="style"><link rel="stylesheet" href="/print.css" media="print"></head><body><link rel="stylesheet" href="/body.css"></body></html>';
 
     private function package(): ThemeManifest
     {
