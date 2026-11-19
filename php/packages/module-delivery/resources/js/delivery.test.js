@@ -93,6 +93,23 @@ describe('delivery step', () => {
     expect(slot.mock.calls[0][0].detail).toMatchObject({ slot: 'delivery', method: 2 })
   })
 
+  it('says the language of the page, so the step comes back drawn in it', async () => {
+    document.documentElement.lang = 'uk'
+    try {
+      const { put, root } = await load(step())
+      root.querySelector('#m-2').checked = true
+      change(root.querySelector('#m-2'))
+      await vi.waitFor(() => expect(put).toHaveBeenCalledTimes(1))
+
+      expect(put.mock.calls[0][2]).toMatchObject({
+        'X-Webx-Locale': 'uk',
+        'X-Webx-Delivery-View': 'step',
+      })
+    } finally {
+      document.documentElement.lang = ''
+    }
+  })
+
   it('chooses a town in the dialog — the search or a popular one — and closes it', async () => {
     const { put, root } = await load(step())
     const dialog = root.querySelector('dialog')

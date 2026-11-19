@@ -356,6 +356,15 @@ MCP-сервер, движок Manticore, загрузки файлов. Всё 
 
 ## Middleware, маршруты, конфиг
 
+- **HTML из JSON-ответа публичного API — на английском (или на языке `APP_LOCALE`), хотя страница
+  на другом.** В адресе API (`/api/cart`, `/api/delivery/…`) нет языка: `webx.locale` там либо не
+  стоит, либо читает `api` и падает на основной, а `__()` в Blade берёт язык приложения. Суммы при
+  этом верные — их язык передан параметром, — поэтому похоже на нехватку перевода. Лечение —
+  middleware `WebxUi\Cart\Http\SpeakTheLanguageOfThePage` на маршрутах API (`X-Webx-Locale` или
+  `?locale=`, иначе основной язык сайта), скрипт шлёт `X-Webx-Locale` = `<html lang>`, ссылки внутри
+  такого HTML — через `.localised`-копию маршрута. Проверка — тест с `app.locale` = `en` и
+  языками сайта без `en` (`module-cart/tests/PageLanguageTest.php`).
+
 - **Сообщение валидации приходит ключом (`validation.array`) на сайте не на английском.** У сайта
   нет `lang/<язык>/validation.php`, Laravel носит строки только на английском, а при
   `fallback_locale` = язык сайта нет и английских. Строки на 10 языков приносит `localization`

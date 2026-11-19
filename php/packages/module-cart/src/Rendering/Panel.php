@@ -10,6 +10,8 @@ use Illuminate\Contracts\View\Factory as Views;
 use Illuminate\Routing\Router;
 use InvalidArgumentException;
 use WebxUi\Cart\Totals\CartState;
+use WebxUi\Localization\Http\Middleware\OneSpellingPerAddress;
+use WebxUi\Localization\Locales;
 
 /**
  * What the widget's panel holds (§9.2): the lines, the chain of totals and the checkout button, or
@@ -39,6 +41,7 @@ final class Panel
         private readonly Config $config,
         private readonly Router $router,
         private readonly UrlGenerator $url,
+        private readonly Locales $locales,
     ) {}
 
     /** A mode the widget knows; anything else is a typo in a theme, said aloud. */
@@ -85,7 +88,7 @@ final class Panel
             'mode' => $mini ? $view : self::mode($view),
             'controls' => $controls && ! $mini,
             'edit' => $mini,
-            'checkout' => $this->checkout(),
+            'checkout' => $this->checkout($state->locale),
             'warnings' => $warnings,
         ])->render();
     }
@@ -116,8 +119,13 @@ final class Panel
     /**
      * Where the checkout button leads: the setting, else the site's route named `checkout` — the
      * checkout module will take it — else nowhere, and there is no button.
+     *
+     * In the language of the cart's page (`$locale`, the request's by default): where the site puts
+     * the language in the path and this one needs the prefix, the route's copy behind it,
+     * `checkout.localised`, as the checkout declares it. Without the copy — the plain route: a
+     * Ukrainian page sent to `/checkout` was the main language's checkout.
      */
-    public function checkout(): ?string
+    public function checkout(?string $locale = null): ?string
     {
         $url = $this->config->get('webx-cart.checkout_url');
 
@@ -125,7 +133,27 @@ final class Panel
             return $url;
         }
 
-        return $this->router->has('checkout') ? $this->url->route('checkout') : null;
+        if (! $this->router->has('checkout')) {
+            return null;
+        }
+
+        $locale ??= $this->locales->current();
+
+        if ($this->prefixed($locale) && $this->router->has('checkout.localised')) {
+            return $this->url->route('checkout.localised', [OneSpellingPerAddress::PARAMETER => $locale]);
+        }
+
+        return $this->url->route('checkout');
+    }
+
+    /** Whether an address in this language carries it in the path, as the checkout decides it. */
+    private function prefixed(string $locale): bool
+    {
+        if ((string) $this->config->get('webx-localization.strategy', 'prefix') !== 'prefix' || ! $this->locales->has($locale)) {
+            return false;
+        }
+
+        return $locale !== $this->locales->defaultCode() || (bool) $this->config->get('webx-localization.prefix_default', false);
     }
 
     /**

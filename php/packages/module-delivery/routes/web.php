@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use WebxUi\Cart\Http\KeepPrivate;
+use WebxUi\Cart\Http\SpeakTheLanguageOfThePage;
 use WebxUi\Delivery\Http\DeliveryController;
 use WebxUi\Delivery\Http\ScriptController;
 
@@ -17,6 +18,9 @@ use WebxUi\Delivery\Http\ScriptController;
  *   group: the cart's cookie is encrypted, CSRF guards the write, and a form without JavaScript
  *   comes back through the session. No cache keeps it (`KeepPrivate` of the cart).
  *
+ * Both answer in the language of the page (`SpeakTheLanguageOfThePage`): the script says it in
+ * `X-Webx-Locale`, a list fetched by a ready address of the step carries `?locale=`.
+ *
  * `webx_service`: none of them is a page a visitor opens.
  */
 $path = trim((string) config('webx-delivery.path', 'api/delivery'), '/');
@@ -24,7 +28,7 @@ $path = trim((string) config('webx-delivery.path', 'api/delivery'), '/');
 Route::group(['webx_service' => true], static function () use ($path): void {
     Route::prefix($path)
         ->name('webx-delivery.')
-        ->middleware('throttle:webx-delivery')
+        ->middleware(['throttle:webx-delivery', SpeakTheLanguageOfThePage::class])
         ->group(static function (): void {
             Route::get('countries', [DeliveryController::class, 'countries'])->name('countries');
             Route::get('localities', [DeliveryController::class, 'localities'])->name('localities');
@@ -34,7 +38,7 @@ Route::group(['webx_service' => true], static function () use ($path): void {
             Route::get('streets', [DeliveryController::class, 'streets'])->name('streets');
         });
 
-    Route::middleware(['web', KeepPrivate::class])
+    Route::middleware(['web', KeepPrivate::class, SpeakTheLanguageOfThePage::class])
         ->prefix($path)
         ->name('webx-delivery.')
         ->group(static function (): void {
