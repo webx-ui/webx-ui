@@ -187,9 +187,28 @@ function announce(text) {
   setTimeout(() => (status.textContent = text), 50)
 }
 
+const trigger = () => root()?.querySelector('.webx-cart__trigger') ?? null
+
+/**
+ * The opener left the page while the panel was open — a buy button of a list drawn anew: the focus
+ * goes to the icon, not to <body>. Checked after the dialog's own observer has given the focus
+ * back to the opener, which does nothing for a node out of the document.
+ */
+function fallBack(dialog, opener) {
+  const observer = new MutationObserver(() => {
+    if (dialog.open) return
+    observer.disconnect()
+    queueMicrotask(() => {
+      if (!opener.isConnected) trigger()?.focus()
+    })
+  })
+  observer.observe(dialog, { attributes: true, attributeFilter: ['open'] })
+}
+
 /**
  * The main view, whatever the icon opens: the mini cart closes first. `fresh` — just drawn;
- * `opener` gets the focus back, the icon when none (a page's own `data-webx-cart-edit`).
+ * `opener` gets the focus back — the buy button pressed, a page's own `data-webx-cart-edit` —
+ * the icon when none or when it is gone by the time the panel closes.
  */
 function open(fresh = false, opener = null) {
   const el = root()
@@ -199,7 +218,11 @@ function open(fresh = false, opener = null) {
   const dialog = document.getElementById(el.getAttribute('data-webx-cart-panel') ?? '')
   drawn = fresh && !!dialog && !dialog.open
   if (dialog instanceof HTMLDialogElement && typeof webx.openDialog === 'function') {
-    webx.openDialog(dialog, opener ?? el.querySelector('.webx-cart__trigger'))
+    const icon = trigger()
+    const back = opener instanceof HTMLElement ? opener : icon
+    const shut = !dialog.open
+    webx.openDialog(dialog, back)
+    if (shut && dialog.open && back && back !== icon) fallBack(dialog, back)
   } else if (dialog) {
     location.hash = dialog.id
   }
@@ -209,7 +232,7 @@ const cart = {
   add: (items) => write('POST', '/items', { items }),
   remove: (id) => write('DELETE', `/items/${encodeURIComponent(id)}`),
   setQty: (id, qty) => write('PATCH', `/items/${encodeURIComponent(id)}`, { qty }),
-  open: () => open(),
+  open: (opener) => open(false, opener ?? null),
   state: () => (last ? Promise.resolve(last) : load()),
 }
 
@@ -233,13 +256,13 @@ async function buy(button) {
     button.classList.add('is-added')
     setTimeout(() => button.classList.remove('is-added'), 2000)
     announce(button.getAttribute('data-webx-cart-added') ?? data('added') ?? 'Added to cart')
-    if (button.getAttribute('data-webx-cart-open') !== 'false') open(true)
+    if (button.getAttribute('data-webx-cart-open') !== 'false') open(true, button)
   } catch (error) {
     const text = error.status === 422 ? error.message : (data('error') ?? error.message)
     if (error.status === 422 && Array.isArray(error.answer?.lines) && root()) {
       // The cart is there and says why in its panel — the line at its maximum, where it can change.
       apply(error.answer, false)
-      open(true)
+      open(true, button)
     } else if (alert) {
       alert.textContent = text
       alert.hidden = false
@@ -372,7 +395,7 @@ function setup(el) {
   // The page came back from a buy button without the script: the open panel becomes a modal.
   if (dialog.open && dialog.querySelector('[data-webx-returned]') && webx.openDialog) {
     dialog.close()
-    webx.openDialog(dialog, el.querySelector('.webx-cart__trigger'))
+    webx.openDialog(dialog, trigger())
   } else if (dialog.open) {
     load().catch(() => {})
   }

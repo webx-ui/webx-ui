@@ -104,7 +104,9 @@ and the mini cart under the icon, all drawn by the server:
 
 A buy button and `webx.cart.open()` always open the main view; «Edit cart» in the mini cart does
 too. An item already at its maximum is not an error under the button: the cart opens with a
-notice on that line.
+notice on that line. Closed, the cart gives the focus back to what opened it — the buy button
+pressed, or the element passed to `webx.cart.open(opener)` — and to the icon when there was none
+or it has left the page meanwhile.
 
 Its script (`dist/cart.js`, committed) comes with the first widget or button on the page and
 gives the page `window.webx.cart` — `add(items)` takes a bundle as one batch — and the
