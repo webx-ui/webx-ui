@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use WebxUi\Cart\Http\KeepPrivate;
+use WebxUi\Cart\Http\SpeakTheLanguageOfThePage;
 use WebxUi\Payments\Http\MarkController;
 use WebxUi\Payments\Http\PayController;
 use WebxUi\Payments\Http\ScriptController;
@@ -12,14 +13,15 @@ use WebxUi\Payments\Http\StepController;
 /*
  * The JSON API of the payment step (spec §10.2): the visitor's own methods and choice, in the
  * `web` group — the cart's cookie is encrypted, CSRF guards the write, a form without JavaScript
- * comes back through the session. No cache keeps it (`KeepPrivate` of the cart).
+ * comes back through the session. No cache keeps it (`KeepPrivate` of the cart). The step drawn
+ * again is in the language of the page that asked (`SpeakTheLanguageOfThePage`).
  *
  * `webx_service`: none of them is a page a visitor opens.
  */
 $path = trim((string) config('webx-payments.api_path', 'api/payments'), '/');
 
 Route::group(['webx_service' => true], static function () use ($path): void {
-    Route::middleware(['web', KeepPrivate::class])
+    Route::middleware(['web', KeepPrivate::class, SpeakTheLanguageOfThePage::class])
         ->prefix($path)
         ->name('webx-payments.')
         ->group(static function (): void {

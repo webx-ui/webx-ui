@@ -92,10 +92,12 @@ final class StepView
             'name' => $name,
             'field' => $field,
             'locale' => $locale,
+            // The lists a widget fetches by these addresses cannot send a header: the language rides in
+            // the query, which also keeps the browser's five minutes of a list apart per language.
             'urls' => [
                 'selection' => $this->url->route('webx-delivery.selection.update'),
-                'localities' => $country !== null ? $this->url->route('webx-delivery.localities', ['country' => $country]) : null,
-                'popular' => $country !== null ? $this->url->route('webx-delivery.localities.popular', ['country' => $country]) : null,
+                'localities' => $country !== null ? $this->url->route('webx-delivery.localities', ['country' => $country, 'locale' => $locale]) : null,
+                'popular' => $country !== null ? $this->url->route('webx-delivery.localities.popular', ['country' => $country, 'locale' => $locale]) : null,
             ],
             'countries' => $countries,
             'country' => $country,
@@ -132,7 +134,7 @@ final class StepView
                 $page = $this->points->page($carrier, $kind, $locality->id, '', 1, $locale);
                 $pointId = $old('point', $selection?->point_id);
                 $step['points'] = [
-                    'source' => $this->url->route('webx-delivery.points', ['method' => $option->method->key, 'locality' => $locality->id]),
+                    'source' => $this->url->route('webx-delivery.points', ['method' => $option->method->key, 'locality' => $locality->id, 'locale' => $locale]),
                     'options' => array_map(self::pointOption(...), $page['points']),
                     'more' => $page['more'],
                     'total' => $page['total'],
@@ -158,7 +160,7 @@ final class StepView
                     : [];
                 $step['address'] = [
                     'strict' => $strict,
-                    'source' => $this->url->route('webx-delivery.streets', ['method' => $option->method->key, 'locality' => $locality->id]),
+                    'source' => $this->url->route('webx-delivery.streets', ['method' => $option->method->key, 'locality' => $locality->id, 'locale' => $locale]),
                     'streets' => array_map(static fn ($street): array => ['value' => $street->streetId ?? $street->name, 'label' => $street->name], $streets),
                     'street' => (string) $old('address.street', $stored['street'] ?? ''),
                     'street_id' => (string) $old('address.street_id', $stored['street_id'] ?? ''),

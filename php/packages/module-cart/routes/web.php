@@ -6,18 +6,20 @@ use Illuminate\Support\Facades\Route;
 use WebxUi\Cart\Http\CartController;
 use WebxUi\Cart\Http\KeepPrivate;
 use WebxUi\Cart\Http\ScriptController;
+use WebxUi\Cart\Http\SpeakTheLanguageOfThePage;
 
 /*
  * The cart's JSON API (spec §6). The `web` group: the token lives in an encrypted cookie, a form
  * without JavaScript comes back through the session, and CSRF guards every write. Writes are
- * throttled per IP; reading is not — it writes nothing.
+ * throttled per IP; reading is not — it writes nothing. The panel it draws is in the language of
+ * the page that asked (`SpeakTheLanguageOfThePage`), not the application's.
  *
  * `webx_service`: none of them is a page a visitor opens, so a link field of the panel does not
  * offer them as an address of the site (`WebxUi\Admin\Links\SiteRoutes::SERVICE`). Being routes,
  * `routing` never gives the address to a page either (`Reserved` asks the router).
  */
 Route::group(['webx_service' => true], static function (): void {
-    Route::middleware(['web', KeepPrivate::class])
+    Route::middleware(['web', KeepPrivate::class, SpeakTheLanguageOfThePage::class])
         ->prefix(trim((string) config('webx-cart.path', 'api/cart'), '/'))
         ->name('webx-cart.')
         ->group(static function (): void {

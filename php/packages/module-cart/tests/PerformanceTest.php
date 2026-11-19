@@ -9,6 +9,7 @@ use WebxUi\Admin\Testing\CountsQueries;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Cart\CartService;
 use WebxUi\Cart\Models\Cart;
+use WebxUi\Localization\Locales;
 use WebxUi\Mcp\Registry\ToolRegistry;
 use WebxUi\Mcp\Server\RegistryTool;
 use WebxUi\Mcp\Server\WebxServer;
@@ -43,6 +44,9 @@ final class PerformanceTest extends McpTestCase
         foreach ([10, 40] as $count) {
             $token = $this->cartOf($count);
             $read = fn () => $this->withCookie('webx_cart', $token)->getJson('/api/cart')->assertOk()->assertJsonPath('units', $count);
+            // The site's languages, which the API asks for the language of the page: on a site from
+            // the cache group `locales`, here without the cache's registry — read once, as a worker would.
+            $this->app->make(Locales::class)->all();
 
             // The cart by the hash of its token, then its lines.
             $this->assertQueriesWithin(2, $read, "{$count} lines");

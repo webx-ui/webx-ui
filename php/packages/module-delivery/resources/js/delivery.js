@@ -15,6 +15,8 @@
 // - The step is a widget of the runtime (`webx.widget`): whoever puts a step drawn again in place
 //   — the checkout after a sign-in redraws all its steps — starts it with `webx.mount`. Started
 //   only at load, such a step stayed dead: no popular town, no search answered.
+// - Every request says the page's language in `X-Webx-Locale` (`<html lang>`), as the cart's
+//   script does: the address of the API has none, and the step came back in the application's.
 
 const STEP = '[data-webx-delivery]'
 const ADDRESS_PAUSE = 600
@@ -109,6 +111,9 @@ export function start(root) {
     busy = busy.then(async () => {
       root.classList.add('is-loading')
       const headers = { 'X-CSRF-TOKEN': token(root) }
+      // The step comes back drawn in the language of this page, not the application's (as the cart).
+      const lang = document.documentElement.lang
+      if (lang) headers['X-Webx-Locale'] = lang
       if (redraw) headers['X-Webx-Delivery-View'] = 'step'
       const event = root.getAttribute('data-checkout-event')
       if (event) headers['X-Webx-Delivery-Event'] = event

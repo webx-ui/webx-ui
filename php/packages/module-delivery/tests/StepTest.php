@@ -56,7 +56,7 @@ final class StepTest extends StepTestCase
 
         // The dialog: the server's search and the popular towns in the administrator's order.
         $this->assertStringContainsString('<h2 class="webx-dialog__title" id="webx-delivery-where-title">Where to deliver the order?</h2>', $html);
-        $this->assertStringContainsString('data-webx-select="http://localhost/api/delivery/localities?country=XX"', $html);
+        $this->assertStringContainsString('data-webx-select="http://localhost/api/delivery/localities?country=XX&amp;locale=en"', $html);
         $this->assertMatchesRegularExpression('~data-delivery-town="'.$this->townB->id.'".*?>Town B</button>.*?data-delivery-town="'.$this->townA->id.'"~s', $html);
         // Outside the form: the dialog's list is not sent with the form without JavaScript.
         $this->assertGreaterThan(strpos($html, '</form>'), strpos($html, '<dialog'));
@@ -98,7 +98,7 @@ final class StepTest extends StepTestCase
         $this->assertMatchesRegularExpression('~<div class="webx-delivery__method is-chosen">.*?Pick up at a store.*?webx-delivery__price--free">\s*Free~s', $html);
         $this->assertMatchesRegularExpression("~Our courier</span>.*?webx-delivery__price--fixed\">\\s*5,00\u{a0}€~s", $html);
         // The pick-up opens a list with a search of its points; the first page is loaded.
-        $this->assertMatchesRegularExpression('~data-webx-select="http://localhost/api/delivery/points\?method=store-pickup&amp;locality='.$this->townA->id.'"~', $html);
+        $this->assertMatchesRegularExpression('~data-webx-select="http://localhost/api/delivery/points\?method=store-pickup&amp;locality='.$this->townA->id.'&amp;locale=en"~', $html);
         $this->assertMatchesRegularExpression('~<option value="\d+"\s+data-hint="1 Example street"\s*>Store A</option>~', $html);
         $this->assertStringContainsString('Store B', $html);
         $this->assertMatchesRegularExpression('~<p class="webx-delivery__summary" data-delivery-cost="free">.*?Delivery cost.*?Free~s', $html);

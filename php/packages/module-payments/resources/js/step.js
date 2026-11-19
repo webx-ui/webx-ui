@@ -22,6 +22,10 @@ async function save(root, key, redraw = false) {
         'Content-Type': 'application/json',
         Accept: 'application/json',
         'X-CSRF-TOKEN': token(form),
+        // The answer speaks the page's language, not the application's: the address has none.
+        ...(document.documentElement.lang
+          ? { 'X-Webx-Locale': document.documentElement.lang }
+          : {}),
       },
       body: key === null ? undefined : JSON.stringify({ method: key }),
     })

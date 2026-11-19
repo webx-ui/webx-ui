@@ -1,4 +1,17 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { openDialog } from '../../../widgets/resources/js/behaviours/dialog.js'
+
+// jsdom has <dialog> but not its modal half; enough of it for the focus to be observable.
+if (!HTMLDialogElement.prototype.showModal) {
+  HTMLDialogElement.prototype.showModal = function () {
+    this.setAttribute('open', '')
+  }
+  HTMLDialogElement.prototype.close = function () {
+    if (!this.hasAttribute('open')) return
+    this.removeAttribute('open')
+    this.dispatchEvent(new Event('close'))
+  }
+}
 
 /*
  * The widget's script (§9.4) over the markup the server prints: the buy button sent in place, the
@@ -25,7 +38,7 @@ const line = (id, ref, qty = 1) => ({
   children: [],
 })
 
-function page(preview = false) {
+function page(preview = false, mode = 'drawer') {
   const trigger = preview
     ? `<details class="webx-dropdown"><summary class="webx-cart__trigger"><span data-webx-cart-count>0</span></summary>
         <div class="webx-dropdown__panel"><div class="webx-cart__panel" data-webx-cart-body="preview"></div></div></details>`
@@ -34,7 +47,7 @@ function page(preview = false) {
       </a>`
   document.body.innerHTML = `
     <header class="webx-header">
-    <div class="webx-cart webx-cart--drawer" data-webx-cart="drawer" data-webx-cart-panel="webx-cart"
+    <div class="webx-cart webx-cart--${mode}" data-webx-cart="${mode}" data-webx-cart-panel="webx-cart"
          ${preview ? 'data-webx-cart-preview="dropdown"' : ''}
          data-webx-cart-api="/api/cart" data-webx-cart-csrf="/webx/widgets/csrf" data-webx-cart-added="Added">
       ${trigger}
@@ -120,11 +133,78 @@ describe('cart widget', () => {
     expect(changed).toHaveBeenCalledTimes(1)
     expect(changed.mock.calls[0][0].detail.state.units).toBe(2)
     expect(changed.mock.calls[0][0].detail.state.html).toBeUndefined()
-    // The main view opens after a buy.
+    // The main view opens after a buy, and gives the focus back to the button pressed.
     expect(window.webx.openDialog).toHaveBeenCalledWith(
       document.getElementById('webx-cart'),
-      document.querySelector('.webx-cart__trigger'),
+      button,
     )
+  })
+
+  describe.each(['dialog', 'drawer'])('the focus after the %s closes', (mode) => {
+    const settle = async () => {
+      await flush()
+      await flush()
+    }
+
+    beforeEach(() => {
+      page(false, mode)
+      window.webx.openDialog = openDialog
+    })
+
+    it('goes back to the buy button pressed', async () => {
+      fetch.mockReturnValueOnce(answer(state(1, [line(1, 42)], '<p>lines</p>')))
+      const button = document.querySelector('.webx-cart-add')
+      button.focus()
+      button.click()
+      await flush()
+
+      const dialog = document.getElementById('webx-cart')
+      expect(dialog.open).toBe(true)
+      dialog.querySelector('.webx-cart__panel').setAttribute('tabindex', '-1')
+      dialog.querySelector('.webx-cart__panel').focus()
+      dialog.close()
+      await settle()
+
+      expect(document.activeElement).toBe(button)
+    })
+
+    it('goes to the icon when the button has left the page', async () => {
+      fetch.mockReturnValueOnce(answer(state(1, [line(1, 42)], '<p>lines</p>')))
+      const button = document.querySelector('.webx-cart-add')
+      button.click()
+      await flush()
+
+      // The list is drawn anew while the cart is open: the button pressed is not there any more.
+      button.closest('form').remove()
+      document.getElementById('webx-cart').close()
+      await settle()
+
+      expect(document.activeElement).toBe(document.querySelector('.webx-cart__trigger'))
+    })
+
+    it('goes back to the icon when the icon opened it', async () => {
+      const icon = document.querySelector('.webx-cart__trigger')
+      fetch.mockReturnValue(answer(state(0)))
+      window.webx.cart.open()
+      expect(document.getElementById('webx-cart').open).toBe(true)
+
+      document.getElementById('webx-cart').close()
+      await settle()
+
+      expect(document.activeElement).toBe(icon)
+    })
+
+    it('goes back to the element passed to webx.cart.open()', async () => {
+      document.body.insertAdjacentHTML('beforeend', '<button type="button" id="own">Cart</button>')
+      const own = document.getElementById('own')
+      fetch.mockReturnValue(answer(state(0)))
+      window.webx.cart.open(own)
+
+      document.getElementById('webx-cart').close()
+      await settle()
+
+      expect(document.activeElement).toBe(own)
+    })
   })
 
   it('opens the main view after a buy even with the mini cart, and fills both panels', async () => {

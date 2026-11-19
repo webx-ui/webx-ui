@@ -6,6 +6,7 @@ namespace WebxUi\Delivery\Tests;
 
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Cart\Http\SpeakTheLanguageOfThePage;
 use WebxUi\Delivery\Models\DeliverySelection;
 use WebxUi\Delivery\Points;
 
@@ -260,7 +261,7 @@ final class ApiTest extends StepTestCase
         // CSRF and the session come with the web group; Laravel lets tests through, so the group is what is held.
         $this->assertContains('web', $routes->getByName('webx-delivery.selection.update')?->middleware() ?? []);
         $this->assertContains('throttle:webx-delivery-write', $routes->getByName('webx-delivery.selection.update')?->middleware() ?? []);
-        $this->assertSame(['throttle:webx-delivery'], $routes->getByName('webx-delivery.localities')?->middleware());
+        $this->assertSame(['throttle:webx-delivery', SpeakTheLanguageOfThePage::class], $routes->getByName('webx-delivery.localities')?->middleware());
 
         config()->set('webx-delivery.throttle.suggest', 2);
         $this->getJson('/api/delivery/countries')->assertOk();
