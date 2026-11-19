@@ -84,6 +84,9 @@ them under any theme. Nothing drops down: that is the widgets' header. Renaming 
 - Do not write `menu_items` with SQL, mass `update` or an import without flushing the cache:
   those raise no model events, so the site keeps the old menu for up to `cache.ttl`. Call
   `MenuCache::flush()` afterwards, or use the panel and the MCP tools.
+- Do not write a menu's tree outside `Menus::writing($key, fn (Menu $menu) => …)`: it holds the
+  menu's row for the write, so parallel calls (an agent sends `menu_add_link` side by side) line
+  up instead of deadlocking, and reads the item and the parent inside, after the wait.
 - Do not declare a function `menu()` in the site: the helper is guarded and quietly steps aside,
   and every `menu('header')` then calls yours.
 

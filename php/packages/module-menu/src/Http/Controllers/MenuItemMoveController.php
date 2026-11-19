@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use WebxUi\Admin\Http\ApiResponse;
+use WebxUi\Menu\Menus;
 use WebxUi\Menu\Models\Menu;
 use WebxUi\Menu\Models\MenuItem;
 use WebxUi\Menu\Tree\Placement;
@@ -26,6 +27,8 @@ use WebxUi\Menu\Tree\Placement;
  */
 final class MenuItemMoveController
 {
+    public function __construct(private readonly Menus $menus) {}
+
     public function __invoke(Request $request, string $key, int $item): JsonResponse
     {
         $validated = $request->validate([
@@ -39,19 +42,24 @@ final class MenuItemMoveController
             throw new NotFoundHttpException;
         }
 
-        $moved = $this->of($menu, $item);
         $parentId = isset($validated['parent_id']) ? (int) $validated['parent_id'] : null;
-        $parent = $parentId === null ? null : $this->of($menu, $parentId);
 
-        // Into its own subtree: the tree would have no root, and the nested set would be a set
-        // of two disconnected halves. Refused rather than corrected — nobody meant it.
-        if (Placement::loops($moved, $parent)) {
-            throw new NotFoundHttpException;
-        }
+        // Held while it moves, and everything read again under the hold: the item and its
+        // parent may have been moved by the write this one waited for (see `Menus::writing()`).
+        $this->menus->writing($menu->key, function (Menu $menu) use ($item, $parentId, $validated): void {
+            $moved = $this->of($menu, $item);
+            $parent = $parentId === null ? null : $this->of($menu, $parentId);
 
-        Placement::apply($menu, $moved, $parent, (int) $validated['index']);
+            // Into its own subtree: the tree would have no root, and the nested set would be a
+            // set of two disconnected halves. Refused rather than corrected — nobody meant it.
+            if (Placement::loops($moved, $parent)) {
+                throw new NotFoundHttpException;
+            }
 
-        return ApiResponse::data(['id' => (int) $moved->refresh()->getKey()]);
+            Placement::apply($menu, $moved, $parent, (int) $validated['index']);
+        });
+
+        return ApiResponse::data(['id' => $item]);
     }
 
     private function of(Menu $menu, int $id): MenuItem

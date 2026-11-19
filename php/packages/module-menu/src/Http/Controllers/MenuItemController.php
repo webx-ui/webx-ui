@@ -56,20 +56,23 @@ final class MenuItemController
      */
     public function store(MenuItemRequest $request, string $key): JsonResponse
     {
-        $menu = $this->menus->ensure($this->known($key));
+        // Held while it is written, like every change to a tree (see `Menus::writing()`).
+        $item = $this->menus->writing($this->known($key), function (Menu $menu) use ($request): MenuItem {
+            $item = new MenuItem(['menu_id' => $menu->getKey()]);
+            $this->fill($item, $request);
 
-        $item = new MenuItem(['menu_id' => $menu->getKey()]);
-        $this->fill($item, $request);
+            $parent = $this->parent($menu, $request->parentId());
 
-        $parent = $this->parent($menu, $request->parentId());
+            if ($parent instanceof MenuItem) {
+                $item->appendTo($parent);
+            } else {
+                $item->saveAsRoot();
+            }
 
-        if ($parent instanceof MenuItem) {
-            $item->appendTo($parent);
-        } else {
-            $item->saveAsRoot();
-        }
+            return $item->refresh();
+        });
 
-        return ApiResponse::data($this->one($item->refresh(), $request), 201);
+        return ApiResponse::data($this->one($item, $request), 201);
     }
 
     public function update(MenuItemRequest $request, string $key, int $item): JsonResponse
@@ -92,11 +95,17 @@ final class MenuItemController
      */
     public function destroy(string $key, int $item): JsonResponse
     {
-        $found = $this->item($this->known($key), $item);
+        $key = $this->known($key);
+        $this->item($key, $item);
 
-        $count = $found->descendants()->count() + 1;
+        $count = $this->menus->writing($key, function () use ($key, $item): int {
+            $found = $this->item($key, $item);
+            $count = $found->descendants()->count() + 1;
 
-        $found->delete();
+            $found->delete();
+
+            return $count;
+        });
 
         return ApiResponse::data(['deleted' => $count]);
     }

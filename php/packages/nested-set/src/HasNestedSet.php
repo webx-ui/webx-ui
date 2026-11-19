@@ -28,6 +28,15 @@ trait HasNestedSet
     private const PLACE_ROOT = 'root';
 
     /**
+     * How many times a placement that lost a race is run again, when it is a transaction of its
+     * own. Placements in one tree wait for each other ({@see lockTree()}), but the hold is a
+     * range of an index, and on MariaDB and MySQL that range reaches the first row of the next
+     * tree in the table — two trees written at one moment can still deadlock, and the loser
+     * simply goes again. Inside somebody else's transaction the retry is theirs to make.
+     */
+    private const PLACE_ATTEMPTS = 3;
+
+    /**
      * A move rewrites bounds with one update per pass rather than by saving models — that is
      * what keeps a thousand-node branch cheap — so nothing that listens for `updated` ever
      * hears about it. Anything that mirrors the tree elsewhere (an address registry, a cached
@@ -581,6 +590,27 @@ trait HasNestedSet
         return $prototype->softDeletesInTree() ? $query->withoutGlobalScope(SoftDeletingScope::class) : $query;
     }
 
+    /**
+     * Hold this node's tree — every row of its scope — until the transaction ends.
+     *
+     * Every placement rewrites the bounds of everything to its right, so two of them in one tree
+     * at one moment compute their positions from bounds the other is about to change: one of
+     * them deadlocks, and the one that does not can leave bounds that no longer add up. Each
+     * placement takes this first and they line up instead. A caller that reads the tree before
+     * placing — the siblings to count a position over — takes it at the start of its own
+     * transaction, before that read, or the read sees the tree as it was before the wait.
+     *
+     * sqlite has a single writer for the whole file, so there is nothing to hold there.
+     */
+    public function lockTree(): void
+    {
+        if ($this->getConnection()->getDriverName() === 'sqlite') {
+            return;
+        }
+
+        $this->newStructuralQuery()->lockForUpdate()->pluck($this->getKeyName());
+    }
+
     private function place(?self $target, string $mode): bool
     {
         if ($target !== null && ! $target->exists) {
@@ -591,7 +621,24 @@ trait HasNestedSet
             throw NestedSetException::targetDetached();
         }
 
-        return (bool) $this->getConnection()->transaction(function () use ($target, $mode): bool {
+        // What the node was before the first try, for the next one: a try that inserted the row
+        // and was then rolled back leaves an instance that believes it exists.
+        $existed = $this->exists;
+        $attributes = $this->getAttributes();
+        $original = $this->getRawOriginal();
+
+        return (bool) $this->getConnection()->transaction(function () use ($target, $mode, $existed, $attributes, $original): bool {
+            $this->setRawAttributes($original, true);
+            $this->setRawAttributes($attributes);
+            $this->exists = $existed;
+
+            // The scope decides which tree is held, and a node appended to a parent learns its
+            // scope from that parent.
+            if ($target !== null) {
+                $this->copyScopeFrom($target);
+            }
+
+            $this->lockTree();
             $target = $this->syncTarget($target);
 
             // A detached node that exists is still placed for the first time: there is no
@@ -599,7 +646,7 @@ trait HasNestedSet
             return $this->exists && ! $this->isDetached()
                 ? $this->moveNode($target, $mode)
                 : $this->insertNode($target, $mode);
-        });
+        }, self::PLACE_ATTEMPTS);
     }
 
     /**
@@ -615,7 +662,7 @@ trait HasNestedSet
             return null;
         }
 
-        $fresh = $target->fresh();
+        $fresh = $target->currentRow();
 
         if ($fresh === null) {
             throw NestedSetException::targetMissing();
@@ -624,6 +671,23 @@ trait HasNestedSet
         $target->setRawAttributes($fresh->getAttributes(), true);
 
         return $target;
+    }
+
+    /**
+     * The row as it is now, read with a lock rather than from the transaction's snapshot.
+     *
+     * On MariaDB and MySQL a plain read inside a transaction answers from the moment of its
+     * first read, and a caller that read anything before it placed a node would get the bounds
+     * from before somebody else's placement — and write the tree from those.
+     *
+     * @return static|null
+     */
+    private function currentRow(): ?self
+    {
+        /** @var static|null $row */
+        $row = $this->newQueryWithoutScopes()->whereKey($this->getKey())->lockForUpdate()->first();
+
+        return $row;
     }
 
     private function insertNode(?self $target, string $mode): bool
@@ -656,7 +720,13 @@ trait HasNestedSet
      */
     private function moveNode(?self $target, string $mode): bool
     {
-        $this->refresh();
+        $current = $this->currentRow();
+
+        if ($current === null) {
+            throw NestedSetException::targetMissing();
+        }
+
+        $this->setRawAttributes($current->getAttributes(), true);
 
         $lftName = $this->getLftName();
         $rgtName = $this->getRgtName();
@@ -745,7 +815,9 @@ trait HasNestedSet
 
     private function nextRootPosition(): int
     {
-        $highest = $this->newStructuralQuery()->max($this->getRgtName());
+        // Locked for the reason {@see currentRow()} is: the snapshot's highest bound may be one
+        // somebody else has already moved past.
+        $highest = $this->newStructuralQuery()->lockForUpdate()->max($this->getRgtName());
 
         return $highest === null ? 1 : ((int) $highest) + 1;
     }

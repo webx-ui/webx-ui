@@ -20,7 +20,10 @@ categories, the menu items and the media folders are built on it. An address tha
   - reading: `parent`, `children`, `ancestors()`, `descendants()`, `siblings()`,
     `pathFromRoot()`, `isRoot()`, `isLeaf()`, `isChildOf()`, `isDescendantOf()`, scopes
     `roots()` / `ordered()`, `toTree()` for the shape `<wx-tree>` expects;
-  - maintenance: `checkTreeIntegrity()`, `fixTree()` (both take a scope array).
+  - maintenance: `checkTreeIntegrity()`, `fixTree()` (both take a scope array);
+  - one writer per tree: every placement holds its tree (`lockTree()`, every row of the scope,
+    `FOR UPDATE`) before it reads a bound, reads bounds with a lock rather than from the
+    transaction's snapshot, and as a transaction of its own runs again after a deadlock.
 - **`NestedSetException`**: moving into its own subtree, a missing / unsaved / detached target,
   placing across scopes, a soft delete the model did not opt into.
 
@@ -51,6 +54,10 @@ categories, the menu items and the media folders are built on it. An address tha
 - Do not add `SoftDeletes` to a tree model alone: a soft delete is refused unless the model says
   `softDeletesInTree()`, because reclaimed bounds would strand the children.
 - Do not place a node next to one from another scope: it throws rather than merging two trees.
+- Do not read the siblings of a level and then place a node in your own transaction without
+  `$node->lockTree()` (or a lock of your own that every writer of the tree takes) as its first
+  statement: on MariaDB the read answers from before a concurrent placement, and the position
+  counted over it is wrong or ends in `1020 Record has changed since last read`.
 
 ## Check your work
 
