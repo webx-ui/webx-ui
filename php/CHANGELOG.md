@@ -1,5 +1,12 @@
 # @webx-ui/php
 
+## 0.98.2
+
+### Patch Changes
+
+- 116edf3: module-cart, module-delivery, module-payments: the HTML their JSON APIs draw for the page to put in place speaks the language of the page that asked, not the application's (`APP_LOCALE`). The cart's panel (`X-Webx-Cart-View`), the delivery step drawn again (`X-Webx-Delivery-View`), the delivery methods and the payment step came back in English on a site whose own languages were others, because the APIs' addresses carry no language. A new middleware of the cart, `SpeakTheLanguageOfThePage`, on the cart's, the delivery's and the payment step's routes takes `X-Webx-Locale` (or `?locale=` on a ready address) when the site has that language, otherwise the site's main language. The cart's checkout button leads to the checkout of the same language (`checkout.localised` behind the prefix). `dist/delivery.js` and the payment step's `step.js` send `X-Webx-Locale` from `<html lang>`, as `cart.js` does; the step's ready addresses of towns, points and streets carry `locale=`, so the browser's cache of a list is kept per language.
+- 116edf3: module-cart: closed, the cart's drawer or dialog gives the focus back to the buy button that opened it, not to the cart's icon in the header. `webx.cart.open(opener?)` takes the element to come back to, the icon when none; when the opener has left the page by the time the cart closes (a list drawn anew), the focus goes to the icon instead of `<body>`. `dist/cart.js` rebuilt.
+
 ## 0.98.1
 
 ### Patch Changes
