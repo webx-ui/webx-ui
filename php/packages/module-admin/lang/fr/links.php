@@ -43,4 +43,9 @@ return [
     'files-off' => 'Ce champ ne pointe pas vers des fichiers.',
     'download' => 'Le téléchargement est activé ou désactivé.',
     'path' => 'Choisissez un fichier de la médiathèque.',
+    'field-placeholder' => 'Choisir une page ou saisir une adresse',
+    'field-none' => 'Aucun lien',
+    'field-hint' => 'Échap ou un clic à côté pour fermer',
+    'field-done' => 'Terminé',
+    'field-panel' => 'Où mène le lien',
 ];

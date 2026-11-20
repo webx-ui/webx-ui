@@ -13,7 +13,7 @@ import {
   WxSwitch,
   type SelectOption,
 } from '@webx-ui/core'
-import { emptyLink, useTranslate, WxLinkPicker, type LinkValue } from '@webx-ui/module-admin'
+import { emptyLink, useTranslate, WxLinkField, type LinkValue } from '@webx-ui/module-admin'
 import { useMenuMessages } from './i18n'
 import type { LocalizedText, MenuItemInput, MenuItemRow, MenuRow } from './types'
 
@@ -24,9 +24,10 @@ import type { LocalizedText, MenuItemInput, MenuItemRow, MenuRow } from './types
  * while looking at the tree it sits in: what somebody is deciding is where this one goes
  * relative to the others, and a screen that replaced the tree would take that away.
  *
- * Where it points is `WxLinkPicker` and nothing of this package's own — a menu item and a link
+ * Where it points is `WxLinkField` and nothing of this package's own — a menu item and a link
  * field of a block are the same choice, and the day they stop looking alike is the day one of
- * them grows a second way of saying `nofollow`.
+ * them grows a second way of saying `nofollow`. The field is one row and the picker opens under
+ * it: most items point at a page, and the picker's controls would otherwise fill the dialog.
  */
 defineOptions({ name: 'WxMenuItemDialog' })
 
@@ -98,7 +99,7 @@ function submit(): void {
 <template>
   <wx-dialog v-model:open="open" :title="t('menu.item-title')" :width="520">
     <wx-form-item :label="t('menu.field-where')">
-      <wx-link-picker v-model="link" />
+      <wx-link-field v-model="link" :label="t('menu.field-where')" />
     </wx-form-item>
 
     <wx-form-item :label="t('menu.field-label')" :help="t('menu.label-help')">

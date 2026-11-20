@@ -43,4 +43,9 @@ return [
     'files-off' => 'This field does not link to files.',
     'download' => 'Download is either on or off.',
     'path' => 'Choose a file from the media library.',
+    'field-placeholder' => 'Choose a page or enter an address',
+    'field-none' => 'No link',
+    'field-hint' => 'Esc or a click outside closes it',
+    'field-done' => 'Done',
+    'field-panel' => 'Where the link goes',
 ];

@@ -43,4 +43,9 @@ return [
     'files-off' => 'To pole nie linkuje do plików.',
     'download' => 'Pobieranie jest albo włączone, albo wyłączone.',
     'path' => 'Wybierz plik z biblioteki mediów.',
+    'field-placeholder' => 'Wybierz stronę lub wpisz adres',
+    'field-none' => 'Bez linku',
+    'field-hint' => 'Esc lub kliknięcie obok zamyka',
+    'field-done' => 'Gotowe',
+    'field-panel' => 'Dokąd prowadzi link',
 ];

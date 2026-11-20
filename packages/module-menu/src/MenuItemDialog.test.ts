@@ -88,7 +88,7 @@ function open(row: MenuItemRow | null) {
 }
 
 /**
- * What the dialog hands back. Where the link points is `WxLinkPicker`'s own business and is
+ * What the dialog hands back. Where the link points is `WxLinkField`'s own business and is
  * tested with it; what is checked here is that the form opens on what was saved and gives it
  * back unchanged, which is the failure a form full of defaults produces silently.
  */

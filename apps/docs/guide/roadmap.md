@@ -203,6 +203,8 @@ into, `wx-file` and `wx-files` for documents. See [Media fields](/guide/media).
 
 LinkPicker ✅ — `WxLinkPicker` and the `wx-link` field in the panel: pick a page, an article or
 any other entity that has an address, or type your own. It came with the [menus](/guide/menu).
+`WxLinkField` is the same picker behind one row that says where the link goes; the row opens
+the picker in a panel under it.
 
 BlockPicker ✅ — choosing a block type to insert, in the [block constructor](/guide/blocks).
 

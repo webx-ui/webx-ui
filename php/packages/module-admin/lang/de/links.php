@@ -43,4 +43,9 @@ return [
     'files-off' => 'Dieses Feld verlinkt keine Dateien.',
     'download' => 'Herunterladen ist entweder an oder aus.',
     'path' => 'Wählen Sie eine Datei aus der Mediathek.',
+    'field-placeholder' => 'Seite wählen oder Adresse eingeben',
+    'field-none' => 'Kein Link',
+    'field-hint' => 'Esc oder ein Klick daneben schließt',
+    'field-done' => 'Fertig',
+    'field-panel' => 'Wohin der Link führt',
 ];
