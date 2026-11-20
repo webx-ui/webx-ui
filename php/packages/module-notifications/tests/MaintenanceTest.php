@@ -64,6 +64,33 @@ final class MaintenanceTest extends TestCase
         $this->assertStringContainsString('its mailer is "log"', $words);
     }
 
+    /**
+     * A closed prototype on `APP_ENV=production` whose mail goes to Mailpit on purpose: the
+     * deploy's check must not fail on it, and nothing may call those letters delivered.
+     */
+    #[Test]
+    public function doctor_notes_a_channel_into_a_trap_the_site_keeps_on_purpose(): void
+    {
+        $this->app['env'] = 'production';
+        config()->set('mail.default', 'smtp');
+        config()->set('mail.mailers.smtp', ['transport' => 'smtp', 'host' => 'mailpit', 'port' => 1025]);
+        $this->email();
+        $this->email(['name' => 'Own sandbox', 'options' => ['mode' => 'smtp', 'host' => 'sandbox.smtp.mailtrap.io', 'port' => 2525]]);
+
+        $found = $this->diagnose();
+        $this->assertSame([Diagnosis::WARN, Diagnosis::WARN], array_column($found, 0));
+        $this->assertStringContainsString('WEBX_MAIL_TRAP_INTENDED=true', $found[0][1]);
+        $this->assertStringContainsString('give the channel a real server', $found[1][1]);
+        $this->assertStringNotContainsString('add it to', implode("\n", array_column($found, 1)));
+
+        config()->set('webx-admin.mail.trap_intended', true);
+
+        $found = $this->app->make(NotificationsCheck::class)->run();
+        $this->assertSame(['note', 'note'], array_map(static fn (Diagnosis $d): string => $d->level(), $found));
+        $this->assertStringContainsString('the letters go nowhere', $found[0]->detail);
+        $this->assertStringContainsString('on purpose', $found[0]->detail);
+    }
+
     #[Test]
     public function doctor_says_how_notifications_leave_without_a_worker(): void
     {

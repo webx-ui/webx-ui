@@ -135,6 +135,11 @@ return [
     | agent only stop calling such a letter delivered. Hosts are `Str::is`
     | masks against `host` and `host:port`.
     |
+    | A trap on production is a warning of `webx:doctor`, because there it is
+    | nobody's plan. A stand that keeps one on purpose — a closed prototype —
+    | says so with `trap_intended`: the doctor notes it instead. The panel and
+    | the agent still say that such letters reach nobody.
+    |
     */
 
     'mail' => [
@@ -142,6 +147,7 @@ return [
             'transports' => MailRoutes::TRAP_TRANSPORTS,
             'hosts' => MailRoutes::TRAP_HOSTS,
         ],
+        'trap_intended' => (bool) env('WEBX_MAIL_TRAP_INTENDED', false),
     ],
 
     /*

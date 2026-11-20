@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace WebxUi\Notifications\Doctor;
 
-use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Carbon;
 use WebxUi\Admin\Doctor\Check;
 use WebxUi\Admin\Doctor\Diagnosis;
 use WebxUi\Admin\Doctor\QueueBacklog;
+use WebxUi\Admin\Mail\MailRoutes;
 use WebxUi\Notifications\Contracts\HasMailRoute;
 use WebxUi\Notifications\Models\Channel;
 use WebxUi\Notifications\Models\Delivery;
@@ -30,7 +30,7 @@ final class NotificationsCheck implements Check
         private readonly Notifications $notifications,
         private readonly Providers $providers,
         private readonly NotificationEvents $events,
-        private readonly Application $app,
+        private readonly MailRoutes $routes,
     ) {}
 
     public function run(): array
@@ -97,14 +97,17 @@ final class NotificationsCheck implements Check
         $provider = $this->providers->find($channel->provider);
         $route = $provider instanceof HasMailRoute ? $provider->route($channel->options()) : null;
 
-        // A trap is what a staging site wants, and nobody's plan on production — the same line
-        // the site's own mail is held to (`Mail` of the frame's doctor).
+        // A trap is what a staging site wants, and nobody's plan on production unless the site
+        // keeps it on purpose — the same line the site's own mail is held to (`Mail` of the
+        // frame's doctor).
         if ($route !== null && $route->isTrap()) {
             $detail = $route->mailer === 'channel'
-                ? "{$name} sends through its own server {$route->label()}, a test mailbox: the letters reach nobody outside it. Give it the real server."
-                : "{$name} sends through the site's mail, and its mailer is \"{$route->label()}\": the letters go nowhere. Set MAIL_MAILER, or give the channel its own SMTP server.";
+                ? "{$name} sends through its own server {$route->label()}, a test mailbox: the letters reach nobody outside it. "
+                    .$this->routes->trapAdvice('give the channel a real server')
+                : "{$name} sends through the site's mail, and its mailer is \"{$route->label()}\": the letters go nowhere. "
+                    .$this->routes->trapAdvice('set MAIL_MAILER, MAIL_HOST and MAIL_PORT to a real server, or give the channel its own SMTP server');
 
-            $found[] = $this->app->environment('production')
+            $found[] = $this->routes->trapIsAlarming()
                 ? Diagnosis::warn(self::SUBJECT, $detail)
                 : Diagnosis::note(self::SUBJECT, $detail);
         }

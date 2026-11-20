@@ -547,6 +547,9 @@ The panel says the three things that make a working letter look lost:
   («Letters leave through `smtp — mail.example.com:587`»). A trap — the `log` or `array` mailer, a
   test sandbox, Mailpit or MailHog — is a warning there, and a letter it took is «test transport»,
   not «sent». The list is `webx-admin.mail.traps` in `config/webx-admin.php`; add your own hosts.
+  On production `webx:doctor` warns about a trap; a stand that keeps one on purpose sets
+  `WEBX_MAIL_TRAP_INTENDED=true`, and the doctor notes it instead — the panel still says the
+  letters reach nobody.
 - **Settings not in effect.** `.env` edited after the config was cached keeps the old mail working
   as if nothing changed. The tab, the card of a channel and `webx:doctor` say so; `php artisan
 webx:boot` rebuilds the cache.

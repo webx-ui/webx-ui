@@ -224,6 +224,11 @@ not «Sent», and a test sent into one says nobody received it. An agent reads t
 `warnings` of `notifications_channel_get`, `warnings` of `notifications_test`, and `trap` of each
 row of `notifications_deliveries`.
 
+On production `webx:doctor` warns about a channel into a trap. A stand that keeps one on purpose —
+a closed prototype whose mail goes to Mailpit — sets `WEBX_MAIL_TRAP_INTENDED=true`
+(`webx-admin.mail.trap_intended`): the doctor notes it instead, and the panel and the agent still
+say the letters reach nobody.
+
 ### The log
 
 **Log** is every line: when, which channel, to whom, the status — sent, queued, failed, skipped with

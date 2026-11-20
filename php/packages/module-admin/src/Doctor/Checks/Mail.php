@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace WebxUi\Admin\Doctor\Checks;
 
-use Illuminate\Contracts\Foundation\Application;
 use WebxUi\Admin\Doctor\Check;
 use WebxUi\Admin\Doctor\Diagnosis;
 use WebxUi\Admin\Mail\MailRoutes;
@@ -14,8 +13,10 @@ use WebxUi\Admin\Mail\MailRoutes;
  * `.env` says ({@see MailRoutes}).
  *
  * A trap — the `log` mailer, a test sandbox — is what a staging site wants, so there it is a note;
- * on production it is a warning, because there it is nobody's plan. A config cached before `.env`
- * was edited is a warning everywhere: the site sends by settings nobody can see any more.
+ * on production it is a warning, because there it is nobody's plan — unless the site said it keeps
+ * the trap on purpose (`webx-admin.mail.trap_intended`), and then it is a note. A config cached
+ * before `.env` was edited is a warning everywhere: the site sends by settings nobody can see any
+ * more.
  */
 final class Mail implements Check
 {
@@ -23,7 +24,6 @@ final class Mail implements Check
 
     public function __construct(
         private readonly MailRoutes $routes,
-        private readonly Application $app,
     ) {}
 
     /** @return list<Diagnosis> */
@@ -35,9 +35,9 @@ final class Mail implements Check
         if ($route->isTrap()) {
             $detail = "the site's mail goes through {$route->mailer} ({$route->label()}), which delivers to nobody — "
                 .'letters to the panel\'s people and the forms\' notifications are taken and never arrive. '
-                .'Set MAIL_MAILER and MAIL_HOST to a real server, or add it to `webx-admin.mail.traps` if this is not a trap.';
+                .$this->routes->trapAdvice();
 
-            $found[] = $this->app->environment('production')
+            $found[] = $this->routes->trapIsAlarming()
                 ? Diagnosis::warn(self::SUBJECT, $detail)
                 : Diagnosis::note(self::SUBJECT, $detail);
         }
