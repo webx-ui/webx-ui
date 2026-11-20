@@ -1,5 +1,14 @@
 # @webx-ui/module-press
 
+## 0.2.9
+
+### Patch Changes
+
+- Updated dependencies [8bc2392]
+  - @webx-ui/core@0.49.0
+  - @webx-ui/module-admin@0.38.0
+  - @webx-ui/schema@0.11.3
+
 ## 0.2.8
 
 ### Patch Changes
