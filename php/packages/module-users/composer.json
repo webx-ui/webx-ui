@@ -32,19 +32,19 @@
         "illuminate/validation": "^13.0",
         "illuminate/view": "^13.0",
         "laravel/socialite": "^5.31",
-        "webx-ui/compositions": "^0.98.2",
-        "webx-ui/localization": "^0.98.2",
-        "webx-ui/mcp": "^0.98.2",
-        "webx-ui/module-admin": "^0.98.2",
-        "webx-ui/widgets": "^0.98.2"
+        "webx-ui/compositions": "^0.98.3",
+        "webx-ui/localization": "^0.98.3",
+        "webx-ui/mcp": "^0.98.3",
+        "webx-ui/module-admin": "^0.98.3",
+        "webx-ui/widgets": "^0.98.3"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
         "phpunit/phpunit": "^12.0 || ^13.0",
-        "webx-ui/module-auth": "^0.98.2",
-        "webx-ui/module-settings": "^0.98.2",
-        "webx-ui/theme-default": "^0.98.2",
-        "webx-ui/themes": "^0.98.2"
+        "webx-ui/module-auth": "^0.98.3",
+        "webx-ui/module-settings": "^0.98.3",
+        "webx-ui/theme-default": "^0.98.3",
+        "webx-ui/themes": "^0.98.3"
     },
     "autoload": {
         "psr-4": {
@@ -68,7 +68,7 @@
         "webx": {
             "module": "users",
             "npm": {
-                "@webx-ui/module-users": "^0.2.0"
+                "@webx-ui/module-users": "^0.2.1"
             },
             "panel": {
                 "import": "import { users } from '@webx-ui/module-users'",

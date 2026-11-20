@@ -1,5 +1,16 @@
 # @webx-ui/php
 
+## 0.98.3
+
+### Patch Changes
+
+- 8bc2392: `WxLinkField` — the `wx-link` field of a described screen — is one row now: what the link points at in two lines (the entity's name, its section and today's address with the anchor; the host and the full address; "No link"), badges for a new tab and each `rel` that is on, and `WxLinkPicker` itself, unchanged, in a panel under the row. The panel is a `WxPopover`: teleported, as wide as the row, opening upwards when there is no room below, closed by Escape, a click outside or "Done". The value, its validation and what the server keeps are what they were. The menu item's "Where it points", the form's redirect and thank-you button link (inbox) and the configurator's page use it. New props: `placeholder`, `label`; events `open`, `close`. Core gets a `ban` icon; module-admin gets the field's five words in every language.
+
+  Escape in a popover of a block's form or of a site-bar screen — the link field's panel, a select — closes that popover only, not the block's form or the drawer.
+
+- 8bc2392: module-admin, module-notifications: a stand can keep its mail trap on production on purpose. `WEBX_MAIL_TRAP_INTENDED=true` (`webx-admin.mail.trap_intended`) turns the `webx:doctor` warning about a trap — the site's mail and a notification channel's alike — into a note, so a deploy's `--strict` check no longer fails on a closed prototype whose letters go to Mailpit; the panel and the agent still say that such letters reach nobody. The doctor's advice no longer says to add a delivering host to `webx-admin.mail.traps` (that list is what a trap is): it says how to point the mail at a real server and how to mark the trap as intended.
+- 8bc2392: nested-set, module-menu: parallel writes to one tree no longer end in a 500 and a broken tree. Every placement holds its tree (`lockTree()`) before it reads a bound, reads bounds with a lock rather than from the transaction's snapshot, and is run again after a deadlock. In the menu, `menu_add_link`, `menu_update_link`, `menu_move_link`, `menu_remove_link` and the panel's add, move and delete go through `Menus::writing()`: the menu's row is held for the whole write, the insert and the move to the asked position are one transaction, and a write that keeps losing the race answers "the menu is being changed by another request — send it again" instead of an internal server error.
+
 ## 0.98.2
 
 ### Patch Changes
