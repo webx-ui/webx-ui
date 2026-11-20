@@ -190,6 +190,17 @@ describe('the panel on the site', () => {
 
     expect(post).toHaveBeenCalledTimes(2)
     expect(post).toHaveBeenCalledWith({ wxBar: 1, type: 'close' }, window.location.origin)
+
+    // Escape in a popover of the form — a link field's panel — closes that popover, not the drawer.
+    const layer = document.createElement('div')
+    layer.setAttribute('data-dismissable-layer', '')
+    const input = document.createElement('input')
+    layer.append(input)
+    document.body.append(layer)
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    layer.remove()
+
+    expect(post).toHaveBeenCalledTimes(2)
   })
 
   it('offers to publish or discard a draft, counting what it changes', async () => {

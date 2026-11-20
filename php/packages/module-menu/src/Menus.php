@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace WebxUi\Menu;
 
+use Closure;
 use Illuminate\Contracts\Config\Repository as Config;
+use Illuminate\Database\UniqueConstraintViolationException;
 use WebxUi\Localization\Locales;
 use WebxUi\Menu\Models\Menu;
 use WebxUi\Menu\Rendering\Builder;
@@ -21,6 +23,14 @@ use WebxUi\Menu\Rendering\SitePath;
  */
 final class Menus
 {
+    /**
+     * How many times a write that lost a race is run again before the loser is told.
+     *
+     * With the menu held a race is rare, but a deadlock on the very first item of a menu — two
+     * writers creating its row at once — is still one, and the second run of it simply waits.
+     */
+    private const ATTEMPTS = 3;
+
     public function __construct(
         private readonly Config $config,
         private readonly Locales $locales,
@@ -142,8 +152,43 @@ final class Menus
             }
         }
 
-        $menu->save();
+        try {
+            $menu->save();
+        } catch (UniqueConstraintViolationException) {
+            // Two first items of one declared menu at one moment: the other request made the
+            // row a moment ago, and it is the same menu either of them meant.
+            return Menu::query()->where('key', $key)->firstOrFail();
+        }
 
         return $menu;
+    }
+
+    /**
+     * Change a menu's tree with nobody else changing it meanwhile.
+     *
+     * Every write to a tree rewrites the bounds of everything to its right, and two of them in
+     * one menu at one moment — an agent sends its calls side by side — either deadlock or leave
+     * bounds that no longer add up. So the menu's row is held for the length of the write and
+     * the writers line up behind it. The row is taken first, before anything is read: a read
+     * made earlier in the transaction would show the tree from before the wait.
+     *
+     * A write that still loses a race is run again, whole, a couple of times; that is why
+     * everything it reads — the item, the parent, the siblings — is read inside $work and not
+     * handed in from outside.
+     *
+     * @template TResult
+     *
+     * @param  Closure(Menu): TResult  $work
+     * @return TResult
+     */
+    public function writing(string $key, Closure $work): mixed
+    {
+        $menu = $this->ensure($key);
+
+        return $menu->getConnection()->transaction(static function () use ($menu, $work): mixed {
+            Menu::query()->whereKey($menu->getKey())->lockForUpdate()->first();
+
+            return $work($menu);
+        }, self::ATTEMPTS);
     }
 }

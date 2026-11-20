@@ -115,7 +115,47 @@ final class MailRoutesTest extends TestCase
         $this->assertStringContainsString('delivers to nobody', $found[0]->detail);
 
         $this->app['env'] = 'production';
-        $this->assertSame(Diagnosis::WARN, $this->app->make(Mail::class)->run()[0]->level());
+        $warned = $this->app->make(Mail::class)->run()[0];
+        $this->assertSame(Diagnosis::WARN, $warned->level());
+
+        // The advice says how to make the mail real and how to keep the trap on purpose — not
+        // «add it to the traps», which is the list of what a trap is.
+        $this->assertStringContainsString('MAIL_MAILER, MAIL_HOST and MAIL_PORT', $warned->detail);
+        $this->assertStringContainsString('WEBX_MAIL_TRAP_INTENDED=true', $warned->detail);
+        $this->assertStringNotContainsString('add it to', $warned->detail);
+    }
+
+    /**
+     * A closed prototype on `APP_ENV=production` sends to Mailpit on purpose: the doctor — and the
+     * deploy's check that reads it — keeps quiet, while the panel and the agent still say the
+     * letters reach nobody.
+     */
+    #[Test]
+    public function a_trap_kept_on_purpose_is_a_note_on_production_and_still_a_trap(): void
+    {
+        $this->app['env'] = 'production';
+        $this->mailer('smtp', ['transport' => 'smtp', 'host' => 'mailpit', 'port' => 1025]);
+        $this->assertFalse($this->routes()->trapIntended());
+        $this->assertTrue($this->routes()->trapIsAlarming());
+
+        $this->app['config']->set('webx-admin.mail.trap_intended', true);
+
+        $found = $this->app->make(Mail::class)->run();
+        $this->assertCount(1, $found);
+        $this->assertSame('note', $found[0]->level());
+        $this->assertFalse($found[0]->stops(strict: true));
+        $this->assertStringContainsString('delivers to nobody', $found[0]->detail);
+        $this->assertStringContainsString('on purpose', $found[0]->detail);
+
+        $route = $this->routes()->site();
+        $this->assertSame('mailpit:1025', $route->trap);
+        $this->assertTrue($route->toArray()['trap']);
+        $this->assertSame('trap', $this->routes()->warnings($route)[0]['code']);
+        $this->assertStringContainsString('nobody outside it receives them', $this->routes()->warnings($route)[0]['message']);
+
+        // A string from the environment, as `.env` gives it.
+        $this->app['config']->set('webx-admin.mail.trap_intended', 'false');
+        $this->assertTrue($this->routes()->trapIsAlarming());
     }
 
     #[Test]

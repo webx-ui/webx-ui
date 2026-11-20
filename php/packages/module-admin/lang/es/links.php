@@ -43,4 +43,9 @@ return [
     'files-off' => 'Este campo no enlaza a archivos.',
     'download' => 'La descarga está activada o desactivada.',
     'path' => 'Elige un archivo de la biblioteca de medios.',
+    'field-placeholder' => 'Elegir una página o escribir una dirección',
+    'field-none' => 'Sin enlace',
+    'field-hint' => 'Esc o un clic fuera lo cierra',
+    'field-done' => 'Listo',
+    'field-panel' => 'Adónde lleva el enlace',
 ];

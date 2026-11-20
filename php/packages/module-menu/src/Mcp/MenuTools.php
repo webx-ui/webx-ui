@@ -6,8 +6,10 @@ namespace WebxUi\Menu\Mcp;
 
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Contracts\Validation\Factory as ValidationFactory;
+use Illuminate\Database\DetectsConcurrencyErrors;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Validation\ValidationException;
+use PDOException;
 use WebxUi\Admin\Links\Link;
 use WebxUi\Admin\Links\LinkTarget;
 use WebxUi\Admin\Links\LinkUrls;
@@ -41,6 +43,8 @@ use WebxUi\Menu\Tree\Placement;
  */
 final class MenuTools
 {
+    use DetectsConcurrencyErrors;
+
     /** Past the size of any menu somebody would arrange by hand, and a stop for the one that is not. */
     private const ITEM_LIMIT = 500;
 
@@ -224,33 +228,38 @@ final class MenuTools
         $key = $this->key($arguments);
         $input = $this->validated($key, $arguments, new MenuItem(['target' => 'none']));
         $link = Link::fromArray($input['link']);
-        $parent = $this->parent($key, $arguments);
 
         if ($this->dryRun($arguments)) {
             return [
                 'dry_run' => true,
                 'would_add' => $this->describe($link, $input),
                 'to' => $key,
-                'under' => $parent?->getKey(),
+                'under' => $this->parent($key, $arguments)?->getKey(),
             ];
         }
 
-        $menu = $this->menus()->ensure($key);
+        // The insert and the move to the asked position are one write: an item that was added
+        // and then lost its race to a neighbour would otherwise stay at the end of its level.
+        $item = $this->menus()->writing($key, function (Menu $menu) use ($key, $input, $arguments): MenuItem {
+            $parent = $this->parent($key, $arguments);
 
-        $item = new MenuItem(['menu_id' => $menu->getKey()]);
-        $this->fill($item, $input, $arguments);
+            $item = new MenuItem(['menu_id' => $menu->getKey()]);
+            $this->fill($item, $input, $arguments);
 
-        if ($parent instanceof MenuItem) {
-            $item->appendTo($parent);
-        } else {
-            $item->saveAsRoot();
-        }
+            if ($parent instanceof MenuItem) {
+                $item->appendTo($parent);
+            } else {
+                $item->saveAsRoot();
+            }
 
-        if (isset($arguments['index'])) {
-            Placement::apply($menu, $item->refresh(), $parent, $this->index($arguments));
-        }
+            if (isset($arguments['index'])) {
+                Placement::apply($menu, $item->refresh(), $parent, $this->index($arguments));
+            }
 
-        return ['item' => $this->one($item->refresh(), $this->locale($arguments))];
+            return $item->refresh();
+        });
+
+        return ['item' => $this->one($item, $this->locale($arguments))];
     }
 
     /**
@@ -274,10 +283,16 @@ final class MenuTools
             ];
         }
 
-        $this->fill($found, $input, $arguments);
-        $found->save();
+        $found = $this->menus()->writing($key, function () use ($key, $input, $arguments): MenuItem {
+            $found = $this->item($key, $arguments);
 
-        return ['item' => $this->one($found->refresh(), $this->locale($arguments))];
+            $this->fill($found, $input, $arguments);
+            $found->save();
+
+            return $found->refresh();
+        });
+
+        return ['item' => $this->one($found, $this->locale($arguments))];
     }
 
     /**
@@ -305,9 +320,22 @@ final class MenuTools
             ];
         }
 
-        Placement::apply($this->menu($key), $moved, $parent, $index);
+        // Read again once the menu is held: the branch and the parent checked above may have
+        // been moved by the write this one waited for.
+        $moved = $this->menus()->writing($key, function (Menu $menu) use ($key, $arguments, $index): MenuItem {
+            $moved = $this->item($key, $arguments);
+            $parent = $this->parent($key, $arguments);
 
-        return ['item' => $this->one($moved->refresh(), $this->locale($arguments))];
+            if (Placement::loops($moved, $parent)) {
+                throw new ToolFailure('An item cannot be moved inside its own branch: the item you named as the parent is that item, or is under it.');
+            }
+
+            Placement::apply($menu, $moved, $parent, $index);
+
+            return $moved->refresh();
+        });
+
+        return ['item' => $this->one($moved, $this->locale($arguments))];
     }
 
     /**
@@ -328,7 +356,16 @@ final class MenuTools
             return ['dry_run' => true, 'would_remove' => $count, 'item' => (int) $found->getKey()];
         }
 
-        $found->delete();
+        // The count is taken again under the hold, so that it is the branch the delete takes
+        // and not the one there was before a neighbour's write landed in it.
+        $count = $this->menus()->writing($key, function () use ($key, $arguments): int {
+            $found = $this->item($key, $arguments);
+            $count = $found->descendants()->count() + 1;
+
+            $found->delete();
+
+            return $count;
+        });
 
         return ['removed' => $count, 'menu' => $key];
     }
@@ -522,6 +559,15 @@ final class MenuTools
             throw new ToolFailure('Not accepted — '.implode('; ', $lines));
         } catch (MenuException $refused) {
             throw new ToolFailure($refused->getMessage());
+        } catch (PDOException $failed) {
+            if (! $this->causedByConcurrencyError($failed)) {
+                throw $failed;
+            }
+
+            // Writes to one menu wait for each other and the one that still loses is run again,
+            // so this is a menu somebody keeps changing for longer than that. Nothing of this
+            // call was written: the whole of it is one transaction.
+            throw new ToolFailure('The menu is being changed by another request at this moment, and this change was not made. Send it again.');
         }
     }
 
@@ -546,11 +592,6 @@ final class MenuTools
         }
 
         return $key;
-    }
-
-    private function menu(string $key): Menu
-    {
-        return $this->menus()->ensure($key);
     }
 
     /**

@@ -27,6 +27,10 @@ use WebxUi\Admin\Doctor\QueueBacklog;
  * sandbox, Mailpit or MailHog on a developer's machine. The list is `webx-admin.mail.traps`, and a
  * site adds its own there. Sending through one is not an error — it is what a staging site wants
  * — but nobody should be told such a letter was delivered.
+ *
+ * A trap on production is nobody's plan, and the doctor warns — unless the site said it keeps one
+ * on purpose (`webx-admin.mail.trap_intended`, {@see trapIntended()}). That only quiets the doctor:
+ * the panel and the agent still say the letters reach nobody.
  */
 final class MailRoutes
 {
@@ -155,6 +159,38 @@ final class MailRoutes
     public function stalledWarning(): string
     {
         return $this->say('queue-stalled', ['minutes' => (string) QueueBacklog::MINUTES]);
+    }
+
+    /**
+     * Whether the site keeps its trap on purpose — a closed prototype on `APP_ENV=production`
+     * whose letters go to Mailpit. The doctor then notes the trap instead of warning about it.
+     */
+    public function trapIntended(): bool
+    {
+        return filter_var($this->config->get('webx-admin.mail.trap_intended', false), FILTER_VALIDATE_BOOLEAN);
+    }
+
+    /**
+     * How the doctor speaks of a trap: a warning on production, unless it is there on purpose;
+     * a note anywhere else. The site's own mail and a channel's are held to the same line.
+     */
+    public function trapIsAlarming(): bool
+    {
+        return $this->app->environment('production') && ! $this->trapIntended();
+    }
+
+    /**
+     * What the doctor advises about a trap, in its own words (the doctor speaks English): how to
+     * make the mail real — `$deliver` — and how to say the trap is there on purpose. Never «add
+     * it to the traps»: that list is what *is* a trap, and taking a host out of it only makes the
+     * panel call letters delivered that are not.
+     */
+    public function trapAdvice(string $deliver = 'set MAIL_MAILER, MAIL_HOST and MAIL_PORT to a real server'): string
+    {
+        return $this->trapIntended()
+            ? 'The site keeps this trap on purpose (`webx-admin.mail.trap_intended`).'
+            : "To deliver them, {$deliver}; if the trap is there on purpose, "
+                .'set WEBX_MAIL_TRAP_INTENDED=true (`webx-admin.mail.trap_intended`).';
     }
 
     /** The status of a letter a trap took: accepted, and delivered to nobody. */

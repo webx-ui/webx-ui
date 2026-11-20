@@ -83,6 +83,20 @@ $phones->saveAsRoot();      // lift a whole branch out to the top level
 The same calls move a node that already exists, subtree and all. Each one runs in a transaction;
 moving a node into its own subtree throws `NestedSetException`.
 
+Placements in one tree wait for each other: each holds the rows of its scope (`lockTree()`) before
+it reads a bound, so two requests that write one tree at one moment come out as if one had come
+after the other. A placement that is a transaction of its own is run again after a deadlock. Code
+that reads the tree and then places a node — counts the siblings to find a position — does both in
+one transaction that starts with `$node->lockTree()`:
+
+```php
+DB::transaction(function () use ($node, $parent, $index) {
+    $node->lockTree();
+    $before = $parent->children()->orderBy('lft')->skip($index)->first();
+    $before ? $node->insertBefore($before) : $node->appendTo($parent);
+}, 3);
+```
+
 ## Detached nodes
 
 A node can exist before anybody has decided where it goes:

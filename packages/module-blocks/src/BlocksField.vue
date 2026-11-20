@@ -713,7 +713,17 @@ const hiddenKeys = computed(() => {
 })
 
 function onKey(event: KeyboardEvent): void {
-  if (event.key === 'Escape' && selectedKey.value) done()
+  if (event.key !== 'Escape' || !selectedKey.value) return
+
+  // A popover the block's form opened (a link field's panel, a select) is a layer of its own,
+  // teleported out of the form: its Escape closes it, not the block. This listener is on the
+  // window before the layer's, so `defaultPrevented` cannot tell it yet.
+  const layer =
+    event.target instanceof Element ? event.target.closest('[data-dismissable-layer]') : null
+
+  if (layer && !(host.value && layer.contains(host.value))) return
+
+  done()
 }
 
 onMounted(async () => {

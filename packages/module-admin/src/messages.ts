@@ -473,6 +473,11 @@ export const adminMessages: Record<string, Messages> = {
     'files-off': 'This field does not link to files.',
     download: 'Download is either on or off.',
     path: 'Choose a file from the media library.',
+    'field-placeholder': 'Choose a page or enter an address',
+    'field-none': 'No link',
+    'field-hint': 'Esc or a click outside closes it',
+    'field-done': 'Done',
+    'field-panel': 'Where the link goes',
   },
   // The categories every module shares: the refusals the server says, and the words of the
   // shared screens under a module's own.

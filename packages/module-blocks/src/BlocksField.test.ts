@@ -385,6 +385,25 @@ describe('WxBlocks', () => {
 
     expect(wrapper.find('.wx-blocks__fields').exists()).toBe(false)
   })
+
+  it('leaves Escape in a popover of the form to the popover', async () => {
+    const wrapper = field()
+
+    await wrapper.findAll('.wx-blocks-tree__row')[0]!.trigger('click')
+
+    // A link field's panel: teleported out of the form, a dismissable layer of its own.
+    const layer = document.createElement('div')
+    layer.setAttribute('data-dismissable-layer', '')
+    const input = document.createElement('input')
+    layer.append(input)
+    document.body.append(layer)
+
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    await wrapper.vm.$nextTick()
+    expect(wrapper.find('.wx-blocks__fields').exists()).toBe(true)
+
+    layer.remove()
+  })
 })
 
 describe('WxBlocks shortcodes', () => {

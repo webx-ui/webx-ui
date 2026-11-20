@@ -43,4 +43,9 @@ return [
     'files-off' => 'Bu alan dosyalara bağlantı vermez.',
     'download' => 'İndirme ya açık ya kapalıdır.',
     'path' => 'Medya kütüphanesinden bir dosya seçin.',
+    'field-placeholder' => 'Bir sayfa seçin veya adres girin',
+    'field-none' => 'Bağlantı yok',
+    'field-hint' => 'Kapatmak için Esc veya dışarı tıklayın',
+    'field-done' => 'Tamam',
+    'field-panel' => 'Bağlantının gittiği yer',
 ];

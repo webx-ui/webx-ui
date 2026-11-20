@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace WebxUi\Menu\Tests;
 
+use Illuminate\Database\QueryException;
 use Illuminate\Testing\Fluent\AssertableJson;
 use Laravel\Mcp\Server\Testing\TestResponse;
+use PDOException;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Mcp\Registry\ToolRegistry;
@@ -310,6 +312,39 @@ final class McpTest extends TestCase
         $this->assertSame(['header', 'footer'], array_column($document['menus'], 'key'));
         $this->assertSame(['thing'], array_column($document['link_to'], 'entity_type'));
         $this->assertNotEmpty($document['rules']);
+    }
+
+    #[Test]
+    public function a_write_that_keeps_losing_a_race_is_a_refusal_to_send_again_and_writes_nothing(): void
+    {
+        $heading = $this->item(['target' => 'none', 'title' => ['en' => 'Catalog']]);
+        $tries = 0;
+
+        // What the server answers a write that collided with another one; a real collision is
+        // `RaceTest`'s, on a real server. Every try collides here, so the retries run out.
+        MenuItem::creating(static function () use (&$tries): void {
+            $tries++;
+
+            throw new QueryException('testing', 'insert into menu_items', [], new PDOException('SQLSTATE[40001]: Serialization failure: 1213 Deadlock found when trying to get lock; try restarting transaction'));
+        });
+
+        $this->agent('add_link', ['menu' => 'header', 'target' => 'none', 'title' => 'Shoes', 'parent' => $heading->getKey(), 'index' => 0])
+            ->assertHasErrors(['being changed by another request']);
+
+        $this->assertSame(3, $tries);
+        $this->assertSame([], MenuItem::checkTreeIntegrity(['menu_id' => $heading->menu_id]));
+        $this->assertSame(['Catalog'], $this->labels());
+    }
+
+    #[Test]
+    public function an_error_that_is_not_a_race_is_not_dressed_up_as_one(): void
+    {
+        MenuItem::creating(static function (): void {
+            throw new QueryException('testing', 'insert into menu_items', [], new PDOException('SQLSTATE[42S02]: Base table or view not found'));
+        });
+
+        $this->agent('add_link', ['menu' => 'header', 'target' => 'none', 'title' => 'Shoes'])
+            ->assertHasErrors(['internal server error']);
     }
 
     /**

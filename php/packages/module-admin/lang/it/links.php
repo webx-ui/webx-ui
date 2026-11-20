@@ -43,4 +43,9 @@ return [
     'files-off' => 'Questo campo non collega a file.',
     'download' => 'Il download è attivo o disattivo.',
     'path' => 'Scegli un file dalla libreria multimediale.',
+    'field-placeholder' => 'Scegli una pagina o inserisci un indirizzo',
+    'field-none' => 'Nessun link',
+    'field-hint' => 'Esc o un clic fuori per chiudere',
+    'field-done' => 'Fatto',
+    'field-panel' => 'Dove porta il link',
 ];

@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import {
   WxCodeField,
-  WxLinkPicker,
+  WxLinkField,
   createRelationsApi,
   useAdmin,
   useTranslate,
@@ -188,10 +188,11 @@ function setLabel(next: LocalizedValue | string | number | undefined): void {
           :help="t('configurator.field-page-help')"
           :error="serverErrors('page')"
         >
-          <wx-link-picker
+          <wx-link-field
             :model-value="values.page ?? null"
             :attributes="false"
             :disabled="disabled"
+            :label="t('configurator.field-page')"
             @update:model-value="setPage"
           />
         </wx-form-item>

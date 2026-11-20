@@ -217,9 +217,14 @@ function close(): void {
   tellSitePage('close')
 }
 
-// Esc inside the frame never reaches the page's own listener, so it is passed on.
+// Esc inside the frame never reaches the page's own listener, so it is passed on — unless it was
+// pressed in a popover of the form (a link field's panel, a select): that layer closes itself, and
+// this listener, added first, runs before the layer could mark the event as handled.
 function onKeydown(event: KeyboardEvent): void {
-  if (event.key === 'Escape' && !event.defaultPrevented) close()
+  if (event.key !== 'Escape' || event.defaultPrevented) return
+  if (event.target instanceof Element && event.target.closest('[data-dismissable-layer]')) return
+
+  close()
 }
 
 onMounted(() => {
