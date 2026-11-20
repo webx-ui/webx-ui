@@ -149,6 +149,10 @@ RouteLocationRaw | boolean` компилировался в `{ type: Boolean }`:
 - **Esc в тесте не уважает `preventDefault` вложенного обработчика.** `new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })`
   создаётся некэнселлабельным: `preventDefault()` молчит, `defaultPrevented` остаётся `false`, и
   внешний обработчик срабатывает, хотя в браузере не сработал бы. В тесте — `cancelable: true`.
+- **Esc в поповере формы закрывает всю форму (блок, панель на сайте).** Свой `keydown` на `window`
+  форма вешает при монтировании, раньше слоя Reka, — и видит Esc первой, когда
+  `defaultPrevented` ещё `false`. Проверять цель: `event.target.closest('[data-dismissable-layer]')`
+  — Esc нажат в слое, он закроется сам (`BlocksField`, `SiteBarScreen`).
 - **`wrapper.classes()` пуст у компонента с `<teleport>` в корне** (`WxRichText`): у обёртки нет
   своего элемента. Классы — у `wrapper.get('.wx-rich-text')`; перенесённое в `body` — через
   `document.querySelector`, `wrapper.find` его уже не видит.
