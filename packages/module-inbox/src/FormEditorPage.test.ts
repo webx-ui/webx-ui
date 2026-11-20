@@ -332,7 +332,7 @@ describe('WxInboxFormEditor', () => {
       options: { ...form.options, redirect: '/thank-you' },
     })
 
-    const picker = wrapper.getComponent({ name: 'WxLinkPicker' })
+    const picker = wrapper.getComponent({ name: 'WxLinkField' })
     expect(picker.props('modelValue')).toMatchObject({ target: 'url', url: '/thank-you' })
     // A redirect is not clicked: no new tab, no rel to choose.
     expect(picker.props('attributes')).toBe(false)
@@ -361,7 +361,7 @@ describe('WxInboxFormEditor', () => {
       new_tab: false,
       rel: [],
     }
-    wrapper.getComponent({ name: 'WxLinkPicker' }).vm.$emit('update:modelValue', page)
+    wrapper.getComponent({ name: 'WxLinkField' }).vm.$emit('update:modelValue', page)
     await flushPromises()
 
     await wrapper.get('.wx-action-bar button').trigger('click')

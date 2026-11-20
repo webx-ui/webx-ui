@@ -4,7 +4,7 @@ import {
   emptyLink,
   useTranslate,
   WxCodeField,
-  WxLinkPicker,
+  WxLinkField,
   type LinkValue,
 } from '@webx-ui/module-admin'
 import { WxCard, WxFormItem, WxInput, WxSwitch, type LocalizedValue } from '@webx-ui/core'
@@ -124,7 +124,7 @@ const redirect = computed<LinkValue | null>({
         :error="errors['options.redirect']?.[0]"
       >
         <!-- A redirect is not clicked: a new tab and rel mean nothing for it. -->
-        <wx-link-picker v-model="redirect" :attributes="false" />
+        <wx-link-field v-model="redirect" :attributes="false" :label="t('panel.redirect')" />
       </wx-form-item>
 
       <wx-form-item :label="t('panel.thank-you-button')" :help="t('panel.thank-you-button-help')">
@@ -136,7 +136,11 @@ const redirect = computed<LinkValue | null>({
         :help="t('panel.thank-you-button-link-help')"
         :error="errors['options.thank-you.button-link']?.[0]"
       >
-        <wx-link-picker v-model="buttonLink" :attributes="false" />
+        <wx-link-field
+          v-model="buttonLink"
+          :attributes="false"
+          :label="t('panel.thank-you-button-link')"
+        />
       </wx-form-item>
     </wx-card>
 
