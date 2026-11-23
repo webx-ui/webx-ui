@@ -11,4 +11,6 @@ return [
     'done' => 'The task is done. Stages accepted: :count',
     'result' => 'Result: :result',
     'test' => 'A test message from :site: notifications of the task queue will come here.',
+    'runner-silent' => 'The watcher «:runner» is silent: no heartbeat, minutes: :minutes',
+    'runner-windows' => 'Sessions it last reported: :count',
 ];

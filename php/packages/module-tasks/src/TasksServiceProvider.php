@@ -11,6 +11,8 @@ use WebxUi\Admin\Help\HelpRegistry;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Snapshots\SnapshotTables;
+use WebxUi\Tasks\Console\RunnerCommand;
+use WebxUi\Tasks\Console\RunnerWatchCommand;
 use WebxUi\Tasks\Console\StaleCommand;
 use WebxUi\Tasks\Events\StageMoved;
 use WebxUi\Tasks\Events\TaskStatusChanged;
@@ -19,6 +21,9 @@ use WebxUi\Tasks\Notifications\Notifier;
 use WebxUi\Tasks\Notifications\NotifyPeople;
 use WebxUi\Tasks\Notifications\TelegramNotifier;
 use WebxUi\Tasks\Panel\TasksModule;
+use WebxUi\Tasks\Runner\Heartbeats;
+use WebxUi\Tasks\Runner\RunnerSettings;
+use WebxUi\Tasks\Runner\SessionKeys;
 use WebxUi\Tasks\Workflow\ContextPackage;
 use WebxUi\Tasks\Workflow\Dispatcher;
 use WebxUi\Tasks\Workflow\Journal;
@@ -42,6 +47,9 @@ class TasksServiceProvider extends ServiceProvider
         $this->app->singleton(Dispatcher::class);
         $this->app->singleton(ContextPackage::class);
         $this->app->singleton(NotificationSettings::class);
+        $this->app->singleton(RunnerSettings::class);
+        $this->app->singleton(Heartbeats::class);
+        $this->app->singleton(SessionKeys::class);
 
         // Telegram unless the site said otherwise: a binding of its own wins, whichever provider
         // registers first.
@@ -74,18 +82,23 @@ class TasksServiceProvider extends ServiceProvider
         $events = $this->app->make(Events::class);
         $events->listen(StageMoved::class, [NotifyPeople::class, 'stageMoved']);
         $events->listen(TaskStatusChanged::class, [NotifyPeople::class, 'taskChanged']);
+        // In the transaction of the move, not on a queue: the next call with the key is refused
+        // however far behind the queue is, and a move rolled back revokes nothing.
+        $events->listen(StageMoved::class, [SessionKeys::class, 'stageMoved']);
 
         // Hung stages are found by the clock; every quarter of an hour is soon enough for a limit
         // counted in hours.
         $this->callAfterResolving(Schedule::class, static function (Schedule $schedule): void {
             $schedule->command('webx:tasks:stale')->everyFifteenMinutes()->withoutOverlapping();
+            // A watcher is silent after five minutes; a minute late is soon enough.
+            $schedule->command('webx:tasks:runner-watch')->everyMinute()->withoutOverlapping();
         });
 
         if (! $this->app->runningInConsole()) {
             return;
         }
 
-        $this->commands([StaleCommand::class]);
+        $this->commands([StaleCommand::class, RunnerCommand::class, RunnerWatchCommand::class]);
 
         $this->publishes([
             __DIR__.'/../config/webx-tasks.php' => config_path('webx-tasks.php'),

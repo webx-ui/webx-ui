@@ -18,6 +18,7 @@ use WebxUi\Tasks\Exceptions\TaskRefused;
 use WebxUi\Tasks\Models\Project;
 use WebxUi\Tasks\Models\Stage;
 use WebxUi\Tasks\Models\Task;
+use WebxUi\Tasks\Runner\RunnerSettings;
 use WebxUi\Tasks\Workflow\Actor;
 use WebxUi\Tasks\Workflow\Dispatcher;
 use WebxUi\Tasks\Workflow\Present;
@@ -54,10 +55,14 @@ final class TasksTools
 
     private const string REVIEW = 'tasks:review';
 
+    /** The watcher's (§14): it takes and gives back stages for the sessions it starts. */
+    private const string RUN = RunnerTools::RUN;
+
     public function __construct(
         private readonly Tasks $tasks,
         private readonly Dispatcher $dispatcher,
         private readonly Queue $queue,
+        private readonly RunnerSettings $runner,
     ) {}
 
     /**
@@ -242,20 +247,21 @@ final class TasksTools
                 .'sessions at once. Stages sent back come first, then by the task\'s priority and age. The answer is '
                 .'everything you need: the task and its criteria, the project\'s folder, branch and rules, the stage '
                 .'with its attempt, the remarks it was sent back with, the questions asked on it and their answers, '
-                .'and the reports of the stages before it. Nothing to take is an empty answer, not an error. Read '
-                .'tasks://rules before your first stage.',
-                fn (array $arguments, ?Authenticatable $user = null): array => $this->write($arguments, fn (): array => [
-                    'claimed' => $this->dispatcher->claimNext(
+                .'and the reports of the stages before it. Nothing to take is an empty answer, not an error; so is '
+                .'a queue paused in the panel, with the reason. Read tasks://rules before your first stage.',
+                fn (array $arguments, ?Authenticatable $user = null): array => $this->write($arguments, fn (): array => $this->runner->paused()
+                    ? ['claimed' => null, 'paused' => true, 'reason' => (string) __('webx-tasks::errors.paused')]
+                    : ['claimed' => $this->dispatcher->claimNext(
                         $this->agent($arguments, $user),
                         isset($arguments['project']) ? $this->project($arguments['project']) : null,
-                    ),
-                ]),
+                    )]),
                 ['properties' => [
                     'agent' => ['type' => 'string', 'description' => 'Your session name, e.g. "worker-7".'],
                     'project' => $project + ['description' => 'Only stages of this project: its slug or id.'],
                 ], 'required' => ['agent']],
-                scope: self::WORK,
-                permission: 'tasks.work',
+                // The watcher takes a stage for the session it is about to start, under that name.
+                scope: [self::WORK, self::RUN],
+                permission: ['tasks.work', 'tasks.run'],
             ),
 
             Tool::mutating(
@@ -328,9 +334,10 @@ final class TasksTools
                     'reason' => ['type' => 'string'],
                     'agent' => $agent,
                 ], 'required' => ['stage']],
-                // The planner gives a stage back too, as the panel lets them (§14.3 of the permissions spec).
-                scope: [self::WRITE, self::WORK],
-                permission: ['tasks.manage', 'tasks.work'],
+                // The planner gives a stage back too, as the panel lets them (§14.3 of the permissions spec),
+                // and so does the watcher, for a session that ended without a word.
+                scope: [self::WRITE, self::WORK, self::RUN],
+                permission: ['tasks.manage', 'tasks.work', 'tasks.run'],
             ),
 
             Tool::mutating(

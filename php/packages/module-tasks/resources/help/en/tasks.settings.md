@@ -38,6 +38,14 @@ A message comes to every chat, or the panel shows what Telegram refused and why.
 Nothing is sent any more, and work goes on as before. To start again, paste a token and press
 «Save».
 
+## How to stop agents taking new work
+
+1. Switch on «Pause the queue» under «Watcher».
+2. Press «Save».
+
+No stage is handed out from the next poll on, and a watcher asking for one is told the queue is
+paused. Sessions already running finish their stages. Switch it off and save to go on.
+
 # fields
 
 ## token
@@ -85,3 +93,52 @@ runs every 15 minutes, so the notice can come a little after the limit. On by de
 
 Counted from when the agent took the stage, from 1 to 168, and 6 unless changed. Set it above the
 time a long stage honestly takes, or the notice will come for nothing.
+
+## runner-silent
+
+The watcher sends a heartbeat every poll; five minutes without one is a silence, told once, and the
+next heartbeat ends it. The screen «Agents» shows it with or without this switch. On by default.
+
+## runner-paused
+
+A pause holds back new stages only: a session that has its stage keeps working, reports and is
+checked as usual. The watcher reads the pause at its next poll, within a minute or so.
+
+## max-workers
+
+The watcher has its own ceiling, set where it runs; a bigger number here is cut to it, and the
+screen «Agents» shows both. 2 unless changed.
+
+## per-project
+
+Sessions of one project work in the same folder and can get in each other's way. 1 unless changed.
+
+## daily-sessions
+
+Counted from midnight where the watcher runs. 0 is no limit. 40 unless changed.
+
+## max-attempts
+
+Counts every time the stage was sent back. A stage past the limit stays in the queue for a person to
+look at; the watcher starts no session for it. 3 unless changed.
+
+## claude-enabled
+
+With every runner off the watcher starts nothing, as if the queue were paused. On by default.
+
+## claude-args
+
+Added to every Claude Code session the watcher starts. Wrong arguments make each session fail at
+once, which the screen «Agents» shows as sessions that end in seconds.
+
+## agy-enabled
+
+A second runner, for trying it beside Claude Code. Off by default.
+
+## agy-model
+
+The model agy is started with; empty leaves agy's own default.
+
+## agy-args
+
+Added to every agy session, the way «Claude Code arguments» are.

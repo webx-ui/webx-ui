@@ -9,6 +9,7 @@ import type { Messages } from '@webx-ui/module-admin'
 export const tasksMessages: Record<string, Messages> = {
   module: {
     title: 'Tasks',
+    'runner-role': 'Task watcher',
   },
 
   panel: {
@@ -142,5 +143,26 @@ export const tasksMessages: Record<string, Messages> = {
     'token-not-set': 'No bot token yet: nothing is sent.',
     'forget-token': 'Forget the token',
     'token-forgotten': 'The token is forgotten.',
+    agents: 'Agents',
+    'agents-empty':
+      'No watcher has sent a heartbeat yet. It appears here once it polls with the key of webx:tasks:runner.',
+    'runner-alive': 'On the line',
+    'runner-silent': 'The watcher is silent',
+    'runner-silent-text':
+      'No heartbeat for longer than the limit, minutes: :minutes. Sessions it ran may have stopped with it.',
+    'runner-last-beat': 'Last heartbeat',
+    'runner-version': 'Version',
+    'runner-paused': 'Paused',
+    'runner-waiting': 'Waiting',
+    'runner-today': 'Sessions today',
+    'runner-workers': 'Sessions at once',
+    'runner-workers-value': ':applied (ceiling :hard)',
+    'runner-windows': 'Sessions running',
+    'runner-windows-empty': 'No sessions running.',
+    'window-agent': 'Agent',
+    'window-stage': 'Stage',
+    'window-runner': 'Runner',
+    'window-since': 'Since',
+    'queue-paused': 'The queue is paused in the settings: no stage is handed out.',
   },
 }

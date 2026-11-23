@@ -11,4 +11,6 @@ return [
     'done' => 'Görev tamamlandı. Kabul edilen aşamalar: :count',
     'result' => 'Sonuç: :result',
     'test' => ':site üzerinden bir test mesajı: görev kuyruğunun bildirimleri buraya gelecek.',
+    'runner-silent' => '«:runner» bekçisi sessiz: kalp atışı yok, dakika: :minutes',
+    'runner-windows' => 'Son bildirimdeki oturumlar: :count',
 ];

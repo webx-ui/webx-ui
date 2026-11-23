@@ -24,4 +24,7 @@ return [
     'stage-started-order' => 'Una fase iniziata o annullata resta al suo posto.',
     'stage-started' => 'La fase :stage è :status e non può più essere modificata.',
     'notify-not-configured' => 'Le notifiche non sono configurate: aggiungi il token del bot e almeno una chat, poi salva.',
+    'paused' => 'La coda è in pausa nel pannello: nessuna fase viene assegnata finché non la si riprende nelle impostazioni delle attività.',
+    'session-key-worker' => 'La chiave di chi esegue si rilascia per una fase in corso: prima prendi la fase.',
+    'session-key-reviewer' => 'La chiave di revisione si rilascia per una fase in revisione: prima la fase va rendicontata.',
 ];

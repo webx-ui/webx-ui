@@ -11,4 +11,6 @@ return [
     'done' => 'Die Aufgabe ist erledigt. Abgenommene Etappen: :count',
     'result' => 'Ergebnis: :result',
     'test' => 'Eine Testnachricht von :site: Hier kommen die Benachrichtigungen der Aufgabenwarteschlange an.',
+    'runner-silent' => 'Der Wächter «:runner» schweigt: kein Herzschlag, Minuten: :minutes',
+    'runner-windows' => 'Sitzungen in der letzten Meldung: :count',
 ];

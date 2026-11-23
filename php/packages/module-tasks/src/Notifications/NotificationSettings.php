@@ -37,6 +37,7 @@ final class NotificationSettings
         'stage.rework' => 'tasks.notify.rework',
         'stage.review_auto' => 'tasks.notify.review_auto',
         'stage.stale' => 'tasks.notify.stale',
+        'runner.silent' => 'tasks.notify.runner_silent',
     ];
 
     public function __construct(

@@ -14,6 +14,7 @@ use WebxUi\Tasks\Notifications\NoticeFailed;
 use WebxUi\Tasks\Notifications\Notices;
 use WebxUi\Tasks\Notifications\NotificationSettings;
 use WebxUi\Tasks\Notifications\Notifier;
+use WebxUi\Tasks\Runner\RunnerSettings;
 
 /**
  * The section's notification settings (§6a): the screen `tasks.settings`, saved into the site's
@@ -30,6 +31,7 @@ final class SettingsController
     public function __construct(
         private readonly Settings $settings,
         private readonly NotificationSettings $notifications,
+        private readonly RunnerSettings $runner,
     ) {}
 
     public function index(): JsonResponse
@@ -102,6 +104,6 @@ final class SettingsController
             $values[$key] = $this->notifications->enabled($event);
         }
 
-        return ['values' => $values, 'token_set' => $this->notifications->hasToken()];
+        return ['values' => [...$values, ...$this->runner->screenValues()], 'token_set' => $this->notifications->hasToken()];
     }
 }

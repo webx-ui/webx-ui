@@ -3,6 +3,7 @@ import type {
   NotificationSettings,
   Project,
   ProjectInput,
+  RunnerStatus,
   TaskDetail,
   TaskInput,
   TaskQuery,
@@ -36,6 +37,8 @@ export interface TasksApi {
   ): Promise<NotificationSettings>
   /** Sends one message now; refused with 422 and Telegram's own words when it does not get through. */
   testNotice(): Promise<string>
+  /** The watchers' last heartbeats and the settings they are told (§14.3). */
+  runner(): Promise<RunnerStatus>
 }
 
 /** The queue's endpoints under the panel's API path; every change answers the whole task. */
@@ -68,6 +71,8 @@ export function createTasksApi(admin: AdminContext): TasksApi {
       }),
 
     task: (id) => admin.http.get<{ data: TaskDetail }>(`${base}/tasks/${id}`).then(data),
+
+    runner: () => admin.http.get<{ data: RunnerStatus }>(`${base}/runner`).then(data),
 
     create: (input) => admin.http.post<{ data: TaskDetail }>(`${base}/tasks`, input).then(data),
 

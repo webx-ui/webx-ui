@@ -397,3 +397,76 @@ php artisan webx:doctor --strict
 ## 13. Как легло в код
 
 Свёрнуто: устройство — в §3–§7, этапы выпуска — в §11.
+
+## 14. Сторож: роль `runner`, настройки, сердцебиение, ключи этапа
+
+Сторож (taskd) — программа, которая под каждый этап открывает новую сессию агента. Он живёт в
+рабочем месте без доступа к Docker и без своих переменных окружения: настройки берёт из панели,
+о себе отчитывается в панель, а сессиям выдаёт ключи на один этап.
+
+### 14.1. Роль и учётка
+
+`php artisan webx:tasks:runner [--days=365] [--json]` (`Runner\RunnerAccount`): роль `runner`
+(«Сторож задач»), администратор `taskd` (`webx-tasks.runner.email`, по умолчанию
+`taskd@runner.invalid`, случайный пароль — входа в панель нет) и ключ `taskd`; повторный запуск
+отзывает прежний ключ. Роль держит `tasks.run`, `tasks.work`, `tasks.review` и права из
+`webx-tasks.runner.permissions` (только объявленные модулями); недостающие дописываются, добавленное
+человеком остаётся. Ключ сторожа несёт только `tasks:run` (+ `webx-tasks.runner.scopes`): этап
+ключом `runner` не исполняется — `tasks_stage_report`/`_block`/`_accept` вне его скоупов.
+
+| Инструмент               | Скоуп / право                             | Что делает                                                                |
+| ------------------------ | ----------------------------------------- | ------------------------------------------------------------------------- |
+| `tasks_claim_next`       | `tasks:work`/`tasks:run`, `.work/.run`    | взять этап под имя сессии; на паузе — `claimed: null`, `paused`, `reason` |
+| `tasks_stage_release`    | `+tasks:run`, `+tasks.run`                | вернуть этап сессии, которая кончилась молча                              |
+| `tasks_runner_config`    | `tasks:run`, `tasks.run`                  | настройки сторожа (§14.2)                                                 |
+| `tasks_runner_heartbeat` | `tasks:run`, `tasks.run`                  | сердцебиение (§14.3); ответ — сохранённое и настройки                     |
+| `tasks_session_key`      | `tasks:run`, `tasks.run`                  | ключ на один этап (§14.4)                                                 |
+| `tasks_runner_status`    | `tasks:read`/`tasks:run`, любое `tasks.*` | последние сердцебиения, молчание, настройки                               |
+
+`hosting_admission` — инструмент модуля хостинга: его право и скоуп сайт панели добавляет в
+`webx-tasks.runner.permissions` / `.scopes`.
+
+### 14.2. Настройки
+
+Карточка «Сторож» на экране `tasks.settings`, ключи `tasks.runner.*` поверх
+`config/webx-tasks.php` (`Runner\RunnerSettings`): `paused`, `max_workers` (≥1), `per_project`
+(≥1), `daily_sessions` (0 — без лимита), `max_attempts` (≥1), раннеры `claude` (`enabled`,
+`args`) и `agy` (`enabled` — **по умолчанию выключен**, `model`, `args`). Аргументы — одна строка,
+наружу — список слов (кавычки держат фразу). Пауза действует на `tasks_claim_next` любого вызова:
+выдачи нет, ответ пустой с причиной.
+
+### 14.3. Сердцебиение и экран «Агенты»
+
+`tasks_runner_heartbeat` раз в опрос: `windows[]` (`agent`, `stage`, `runner`, `since`),
+`paused`, `waiting` (почему не берёт: допуск сторожа памяти, суточный лимит), `daily_sessions`,
+`version`, `hard_max_workers`, `max_workers` (применённое). Таблица `tasks_runner_beats` — строка
+на сторожа (имя — аргумент `runner` или имя учётки ключа), перезаписывается; неизвестные поля
+отбрасываются. Нет сердцебиения дольше `webx-tasks.runner.silent_minutes` (5) — «сторож молчит»:
+в `tasks_runner_status`, на экране **Задачи → Агенты** (`/tasks/agents`, `GET tasks/runner`,
+справка `tasks.agents`) и уведомлением `runner.silent` — команда `webx:tasks:runner-watch` в
+планировщике раз в минуту, один раз на молчание (`silent_notified_at`, сбрасывается следующим
+сердцебиением), через очередь `SendNotice` и тот же `Notifier`. Канал ядра платформы
+(`POST /v1/notify`) — привязка `Notifier` на сайте панели, модуль его не знает.
+
+### 14.4. Ключи этапа
+
+`tasks_session_key {stage, role: worker|reviewer, agent?}` (`Runner\SessionKeys`) — ключ учётки
+сторожа (`KeyIssuer`, срок `webx-tasks.runner.session_days` = 2) со скоупами роли
+(`worker`: `tasks:read`, `tasks:work`; `reviewer`: `tasks:read`, `tasks:review`; плюс
+`webx-tasks.runner.session_scopes.<role>`) и строкой `tasks_session_keys` (ключ, этап, роль,
+агент). Выдаётся `worker` — на этап `in_progress` под имя, с которым его взяли; `reviewer` — на
+этап `review` под имя, не совпадающее с исполнителем. `dry_run` ничего не подписывает.
+
+Каждый инструмент модуля стоит за дверью `SessionKeys::guard()`: ключ этапа доходит только до
+инструментов своей роли (`worker` — `tasks_get`, `stage_report`, `stage_block`, `comment`;
+`reviewer` — `tasks_get`, `stage_accept`, `stage_rework`, `comment`), только до своего этапа и
+своей задачи (их можно не называть — подставляются), и действует под именем из ключа (чужое
+`agent` — отказ). Инструменты других модулей (`hosting_*`) ограничены скоупами ключа.
+
+**Отзыв** — слушатель `StageMoved` в транзакции хода, не в очереди: этап ушёл из `in_progress`
+(отчёт, вопрос, освобождение, отмена) — отзываются ключи `worker`, из `review` — `reviewer`.
+Следующий вызов — 401 от Passport; откатанный ход (`dry_run`) ничего не отзывает.
+
+Тесты: `RunnerTest` (настройки, пауза, сердцебиение, молчание через очередь `database` и
+`queue:work`), `SessionKeyTest` (настоящие ключи Passport по HTTP: чужой этап и чужая задача —
+отказ, после отчёта и освобождения — 401, ключ `runner` не отчитывается).

@@ -24,4 +24,7 @@ return [
     'stage-started-order' => 'Una etapa empezada o cancelada se queda donde está.',
     'stage-started' => 'La etapa :stage está :status y ya no se puede cambiar.',
     'notify-not-configured' => 'Las notificaciones no están configuradas: añade el token del bot y al menos un chat, y guarda.',
+    'paused' => 'La cola está en pausa en el panel: no se entrega ninguna etapa hasta reanudarla en los ajustes de Tareas.',
+    'session-key-worker' => 'La clave de quien ejecuta se emite para una etapa en curso: tome la etapa primero.',
+    'session-key-reviewer' => 'La clave de revisión se emite para una etapa en revisión: primero hay que informar de la etapa.',
 ];

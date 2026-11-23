@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use WebxUi\Tasks\Http\Controllers\ProjectController;
+use WebxUi\Tasks\Http\Controllers\RunnerController;
 use WebxUi\Tasks\Http\Controllers\SettingsController;
 use WebxUi\Tasks\Http\Controllers\StageController;
 use WebxUi\Tasks\Http\Controllers\TaskController;
@@ -22,6 +23,11 @@ Route::prefix((string) config('webx-admin.api_path'))
             Route::get('tasks/projects', [ProjectController::class, 'index'])->name('projects.index');
             Route::get('tasks/tasks', [TaskController::class, 'index'])->name('tasks.index');
             Route::get('tasks/tasks/{task}', [TaskController::class, 'show'])->whereNumber('task')->name('tasks.show');
+        });
+
+        // The screen «Agents» (§14.3): whoever reads the queue, and the watcher's account.
+        Route::middleware('cms.can:tasks.view,tasks.manage,tasks.work,tasks.review,tasks.run')->group(function (): void {
+            Route::get('tasks/runner', [RunnerController::class, 'show'])->name('runner.show');
         });
 
         Route::middleware('cms.can:tasks.manage')->group(function (): void {

@@ -24,4 +24,7 @@ return [
     'stage-started-order' => 'Une étape commencée ou annulée reste à sa place.',
     'stage-started' => 'L’étape :stage est :status et ne peut plus être modifiée.',
     'notify-not-configured' => 'Les notifications ne sont pas configurées : ajoutez le jeton du bot et au moins un chat, puis enregistrez.',
+    'paused' => 'La file est en pause dans le panneau : aucune étape n\'est confiée tant qu\'elle n\'est pas reprise dans les réglages des tâches.',
+    'session-key-worker' => 'La clé d\'exécution est émise pour une étape en cours : prenez d\'abord l\'étape.',
+    'session-key-reviewer' => 'La clé de vérification est émise pour une étape en revue : l\'étape doit d\'abord faire l\'objet d\'un rapport.',
 ];
