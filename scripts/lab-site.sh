@@ -1,28 +1,29 @@
 #!/usr/bin/env bash
 #
-# The lab: a permanent site in devbox wired to this checkout, so that what the day's branch
-# changes in the packages is seen on a real site before the release (docs/pitfalls/packages-and-demo-sites.md,
-# «Lab-сайт»). Every module of the catalogue, theme-default and the demo of every module; no git,
-# no hosting, no theme of its own. The database is disposable: `reset` builds it again.
+# The lab: a permanent dev site on the wxp platform wired to this checkout, so that what the day's
+# branch changes in the packages is seen on a real site before the release
+# (docs/pitfalls/packages-and-demo-sites.md, «Lab-сайт»). Every module of the catalogue,
+# theme-default and the demo of every module; no git, no stage, no theme of its own. The database
+# is disposable: `reset` builds it again.
 #
-#   scripts/lab-site.sh create     build what is missing (idempotent), then refresh
-#   scripts/lab-site.sh refresh    after changes here: new modules, Composer, npm builds, migrations,
+#   scripts/lab-site.sh refresh    after changes here: npm builds, new modules, Composer, migrations,
 #                                  the panel, the theme, caches, restart, doctor
-#   scripts/lab-site.sh reset      drop the lab's database and directory, then create
-#   scripts/lab-site.sh status     which commit of this checkout the lab was refreshed at, and whether it answers
+#   scripts/lab-site.sh reset      dev of the lab made again empty (wxp dev reset), then setup, demo, refresh
+#   scripts/lab-site.sh status     which commit the lab was refreshed at, what wxp says, whether it answers
 #
-# Composer reaches this checkout through a path repository (vendor/webx-ui/* are links into
-# php/packages), npm through `file:` specifiers (node_modules/@webx-ui/* are links into packages).
-# The site runs in devbox under the `site` CLI (template webx); this script talks to it as its owner.
+# The platform runs the site (container wxp-webx-lab-dev, code in ~/work/webx-lab) in live mode:
+# vendor/webx-ui/* are links into php/packages of this checkout, mounted read-only, and Composer is
+# the core's (`wxp live sync`: install by composer.live.json, migrations, caches) — the container has
+# none. artisan goes through `wxp exec`, npm through `wxp node`; nothing here calls docker.
 #
-#   LAB_NAME         webx-lab — the directory beside this checkout, the subdomain, the database
+#   LAB_NAME         webx-lab — the site of the platform, the directory beside this checkout
 #   LAB_ADMIN        admin@example.com; the password is made once and kept in <site>/.lab-admin
 #
 # What the lab keeps of its own beside the password, through reset and every rewrite of .env:
 #   <site>/.lab-env      lines of .env the skeleton has no say in (keys of services, switches);
-#                        written over the template's at the end of every environment step
+#                        written over the template's by every refresh and after setup
 #   <site>/.lab-config/  files of config/ the skeleton does not have (a carrier's own schedule);
-#                        copied into config/ after the site is made again, and by refresh when gone
+#                        copied into config/ after setup, and by refresh when gone
 # Neither is ever printed: names only, the values may be a client's keys.
 
 set -euo pipefail
@@ -32,24 +33,39 @@ PHP_BIN="${PHP_BIN:-php}"
 # shellcheck source=lib/linked-site.sh
 . "$MONOREPO/scripts/lib/linked-site.sh"
 
+command -v wxp > /dev/null 2>&1 || fail 'нужен wxp-клиент (docs/workspace.md §4.6 платформы)'
+
 NAME="${LAB_NAME:-webx-lab}"
 SITE="$(dirname "$MONOREPO")/$NAME"
 ID="${NAME//-/_}"
 ADMIN="${LAB_ADMIN:-admin@example.com}"
-DEV_DOMAIN="${DEV_DOMAIN:-$(sed -n 's/^DEV_DOMAIN=//p' /opt/devbox/.env 2> /dev/null || true)}"
-[ -n "$DEV_DOMAIN" ] || fail 'DEV_DOMAIN is not set and /opt/devbox/.env does not say it — this script is for devbox.'
-URL="https://$NAME.$DEV_DOMAIN"
 STATE="$SITE/.lab-state"
 SECRET="$SITE/.lab-admin"
 LAB_ENV="$SITE/.lab-env"
 LAB_CONFIG="$SITE/.lab-config"
-# What reset carries over and create-project finds waiting in the directory.
-KEPT=(.lab-admin .lab-env .lab-config)
-# Written once setup, the block types and the demo are through: a create that stopped halfway
-# runs them again, one that finished goes straight to refresh.
+# Written once setup, the block types and the demo are through: reset takes it away.
 BUILT="$SITE/.lab-built"
 
-artisan() { ( cd "$SITE" && "$PHP_BIN" artisan "$@" ); }
+# The address is the platform's: the host of dev as the core records it.
+lab_url() {
+    local host
+    host="$(wxp --json status "$NAME" 2> /dev/null | node -e '
+        let input = ""
+        process.stdin.on("data", (chunk) => (input += chunk)).on("end", () => {
+            try {
+                const site = (JSON.parse(input).sites ?? []).find((s) => s.site === process.argv[1])
+                process.stdout.write(site?.envs?.dev?.host ?? "")
+            } catch {}
+        })
+    ' "$NAME" || true)"
+    [ -n "$host" ] || [ -z "${DEV_DOMAIN:-}" ] || host="$NAME.$DEV_DOMAIN"
+    [ -n "$host" ] || fail "wxp does not know the site $NAME and DEV_DOMAIN is not set"
+    printf 'https://%s' "$host"
+}
+
+# Inside the dev container: the platform gives it the environment (database, Redis, APP_KEY).
+lab() { wxp exec "$NAME" dev -- "$@"; }
+artisan() { lab php artisan "$@"; }
 
 # The demo of the modules just installed. On a lab without a demo journal yet, all of it. With one,
 # a bare `webx:demo` refuses ("already installed"), so each new module by name — and a module
@@ -94,45 +110,29 @@ fi
 
 guard_site() {
     [ "$SITE" != "$MONOREPO" ] && [ "$(basename "$SITE")" = "$NAME" ] || fail "refusing to touch $SITE"
+    [ -f "$SITE/artisan" ] || fail "$SITE is not a site; the platform makes it (site-create, import-dev) — ask the person who runs it."
     if [ -e "$SITE/.git" ]; then
         fail "$SITE is a git checkout; the lab has no history of its own. Move it away or set LAB_NAME."
     fi
 }
 
-# Make sure the `site` CLI knows the lab. It creates the database and a user with rights on
-# that database only, writes them to .env and starts the containers.
-register_site() {
-    step "devbox site $NAME"
-    site create "$NAME" webx
-}
-
 lab_environment() {
-    # The shared Redis and Manticore of devbox are told apart by prefix alone: with the skeleton's
-    # default (the slug of APP_NAME) two sites of the same name read each other's cache.
+    # The platform says the database, Redis, APP_URL and APP_KEY to the container, over .env; what
+    # it does not say is the lab's. Two sites of the same name on one Redis read each other's cache
+    # with the skeleton's default prefix (the slug of APP_NAME).
     env_set CACHE_STORE redis
-    env_set REDIS_HOST redis
-    env_set REDIS_PASSWORD null
-    env_set REDIS_PREFIX "${ID}_"
     env_set CACHE_PREFIX "${ID}_cache_"
-    # The template says these to the containers; artisan here reads .env.
-    env_set MANTICORE_HOST manticore
-    env_set MANTICORE_PORT 9308
     env_set MANTICORE_TABLE_PREFIX "$ID"
-    env_set MAIL_MAILER log
     env_set APP_URL "$URL"
     # The demo catalogue sells through the cart: without a currency the cart refuses every write.
     [ -n "$(env_get WEBX_CATALOG_CURRENCY)" ] || env_set WEBX_CATALOG_CURRENCY EUR
     # The test social network of module-users (APP_ENV=local only): the sign-in through a network is
     # walked on the lab without the keys of a real console.
     [ -n "$(env_get WEBX_USERS_DEV_ENABLED)" ] || env_set WEBX_USERS_DEV_ENABLED true
-    [ -n "$(env_get APP_KEY)" ] || artisan key:generate --force --no-interaction
     apply_lab_env
 }
 
-# Keys lab_environment always writes: they follow LAB_NAME and the template, never .lab-env.
-LAB_OWN_KEYS='CACHE_STORE REDIS_HOST REDIS_PASSWORD REDIS_PREFIX CACHE_PREFIX MANTICORE_HOST MANTICORE_PORT MANTICORE_TABLE_PREFIX MAIL_MAILER APP_URL'
-
-# The lines of .lab-env over the template's, last, so that setup, build and the template lose to them.
+# The lines of .lab-env over the template's, last, so that setup and the template lose to them.
 apply_lab_env() {
     [ -f "$LAB_ENV" ] || return 0
     local line key names=()
@@ -145,46 +145,8 @@ apply_lab_env() {
     if [ ${#names[@]} -gt 0 ]; then note ".lab-env over .env: ${names[*]}"; fi
 }
 
-# Once: the lines of .env that the skeleton's .env.example does not name (set or commented out)
-# and lab_environment does not write go to .lab-env. Values move file to file, never to the console.
-migrate_lab_env() {
-    [ ! -e "$LAB_ENV" ] && [ -f "$SITE/.env" ] && [ -f "$SITE/.env.example" ] || return 0
-    ( umask 077 && OWN="$LAB_OWN_KEYS" awk '
-        BEGIN { n = split(ENVIRON["OWN"], own, " "); for (i = 1; i <= n; i++) skip[own[i]] = 1 }
-        FNR == NR {
-            line = $0
-            sub(/^#[ \t]*/, "", line)
-            if (match(line, /^[A-Za-z_][A-Za-z0-9_]*=/)) skip[substr(line, 1, RLENGTH - 1)] = 1
-            next
-        }
-        match($0, /^[A-Za-z_][A-Za-z0-9_]*=/) {
-            key = substr($0, 1, RLENGTH - 1)
-            if (key in skip) next
-            if (!(key in last)) order[++m] = key
-            last[key] = $0
-        }
-        END { for (i = 1; i <= m; i++) print last[order[i]] }' "$SITE/.env.example" "$SITE/.env" > "$LAB_ENV" )
-    chmod 600 "$LAB_ENV"
-    note ".lab-env made from .env: $(cut -d= -f1 "$LAB_ENV" | tr '\n' ' ')"
-}
-
-# Once: the carrier's own schedule (webx-ui#103) goes to .lab-config/. The other files of config/
-# the skeleton lacks are what setup publishes, not told apart from a hand edit — left where they are.
-migrate_lab_config() {
-    [ ! -e "$LAB_CONFIG" ] && [ -d "$SITE/config" ] || return 0
-    ( umask 077 && mkdir "$LAB_CONFIG" )
-    local name moved=()
-    for name in webx-delivery.php; do
-        if [ -f "$SITE/config/$name" ]; then
-            cp -p "$SITE/config/$name" "$LAB_CONFIG/$name"
-            moved+=("$name")
-        fi
-    done
-    note ".lab-config/ made: ${moved[*]:-empty}"
-}
-
-# The files of .lab-config/ into config/: every one after the site is made again (`all`), only the
-# missing ones otherwise — an edit made in config/ by hand is not taken back.
+# The files of .lab-config/ into config/: every one after setup (`all`), only the missing ones
+# otherwise — an edit made in config/ by hand is not taken back.
 apply_lab_config() {
     [ -d "$LAB_CONFIG" ] && [ -d "$SITE/config" ] || return 0
     local file name copied=()
@@ -199,93 +161,48 @@ apply_lab_config() {
     if [ ${#copied[@]} -gt 0 ]; then note ".lab-config/ into config/: ${copied[*]}"; fi
 }
 
-migrate_kept() {
-    migrate_lab_env
-    migrate_lab_config
-}
-
-# What reset keeps goes out of the directory and back: create-project wants none of it there.
-stash_kept() {
-    local stash="$1" name
-    for name in "${KEPT[@]}"; do
-        if [ -e "$SITE/$name" ]; then mv "$SITE/$name" "$stash/"; fi
-    done
-}
-
-unstash_kept() {
-    local stash="$1" name
-    mkdir -p "$SITE"
-    for name in "${KEPT[@]}"; do
-        if [ -e "$stash/$name" ]; then mv "$stash/$name" "$SITE/"; fi
-    done
-    rmdir "$stash"
-}
-
-admin_password() {
-    if [ -f "$SECRET" ]; then
-        sed -n 2p "$SECRET"
-    else
+admin_password_file() {
+    if [ ! -f "$SECRET" ]; then
         local password
         password="$(od -An -tx1 -N12 /dev/urandom | tr -d ' \n')"
         ( umask 077 && printf '%s\n%s\n' "$ADMIN" "$password" > "$SECRET" )
         chmod 600 "$SECRET"
-        printf '%s' "$password"
     fi
 }
 
-build() {
-    guard_site
+# Every webx-ui/* the site requires (and the modules given as `id package` lines) at the version
+# of this checkout, in composer.json and in the platform's composer.live.json alike: a release
+# raises the version of every package here, and the constraints setup wrote would hold the site on
+# the previous one. Rewrites the files only; `wxp live sync` installs.
+require_from_checkout() {
+    node -e '
+        const { readFileSync, writeFileSync, existsSync } = require("node:fs")
+        const [site, monorepo, wanted] = process.argv.slice(1)
+        const version = JSON.parse(readFileSync(monorepo + "/php/package.json", "utf8")).version
+        const added = wanted.split("\n").map((line) => line.split(" ")[1]).filter(Boolean)
+        for (const name of ["composer.json", "composer.live.json"]) {
+            const file = site + "/" + name
+            if (!existsSync(file)) continue
+            const composer = JSON.parse(readFileSync(file, "utf8"))
+            composer.require ??= {}
+            for (const pkg of added) composer.require[pkg] = "^" + version
+            for (const pkg of Object.keys(composer.require)) {
+                if (pkg.startsWith("webx-ui/")) composer.require[pkg] = "^" + version
+            }
+            writeFileSync(file, JSON.stringify(composer, null, 4) + "\n")
+        }
+    ' "$SITE" "$MONOREPO" "$1"
+}
 
-    local fresh=""
-    if [ ! -f "$SITE/artisan" ]; then
-        # Only what reset keeps may wait there: create-project wants no directory.
-        local stash=""
-        if [ -e "$SITE" ]; then
-            [ -z "$(ls -A "$SITE" | grep -vxF -e .lab-admin -e .lab-env -e .lab-config)" ] \
-                || fail "$SITE is there but is not a site; reset takes it away."
-            stash="$(mktemp -d "$(dirname "$SITE")/.$NAME-kept.XXXXXX")"
-            stash_kept "$stash"
-            rmdir "$SITE"
-        fi
-        step "Create the site from the skeleton (webx-ui/site $(monorepo_version), this checkout)"
-        create_skeleton "$SITE"
-        if [ -n "$stash" ]; then unstash_kept "$stash"; fi
-        fresh=1
-        point_composer "$SITE"
-        ( cd "$SITE" && composer_bin install --no-interaction )
-    else
-        note "$SITE is there"
-        migrate_kept
-    fi
-
-    register_site
-    lab_environment
-    # Before setup: what boots there (the schedule of a carrier among it) reads the lab's own.
-    if [ -n "$fresh" ]; then apply_lab_config all; else apply_lab_config missing; fi
-
-    if [ -f "$BUILT" ]; then
-        note 'setup, block types and demo were done before'
-        return
-    fi
-
-    step 'webx:setup — every module of the catalogue, theme-default'
-    local password
-    password="$(admin_password)"
-    WEBX_ADMIN_PASSWORD="$password" artisan webx:setup --no-interaction \
-        --name='WebX Lab' --domain="$URL" --locales=en,ru,pl --modules=all \
-        --db-connection=mariadb --db-host="$(env_get DB_HOST)" --db-port="$(env_get DB_PORT)" \
-        --db-username="$(env_get DB_USERNAME)" --db-password="$(env_get DB_PASSWORD)" --db="$(env_get DB_DATABASE)" \
-        --admin="$ADMIN" --admin-name='Lab admin' --no-build
-    # Setup writes the address it was given and publishes the configs of the modules; what it may
-    # rewrite of ours goes back.
-    lab_environment
-    apply_lab_config all
-
-    step 'Block types and the demo of every module'
-    artisan webx:blocks:import --theme --publish --no-interaction
-    artisan webx:blocks:offered --install --no-interaction
-    artisan webx:demo --no-interaction
-    date -u +%FT%TZ > "$BUILT"
+# Modules of the catalogue the lab does not have, as `id package` lines.
+missing_modules() {
+    artisan webx:modules --json | node -e '
+        let input = ""
+        process.stdin.on("data", (chunk) => (input += chunk)).on("end", () => {
+            const { modules } = JSON.parse(input)
+            process.stdout.write(modules.filter((module) => !module.installed).map((module) => module.id + " " + module.package).join("\n"))
+        })
+    '
 }
 
 # npm packages of this checkout whose sources are newer than their dist (or that have none).
@@ -309,9 +226,50 @@ stale_packages() {
     done
 }
 
+http_check() {
+    local path code
+    for path in / /cms; do
+        code="000"
+        for _ in $(seq 1 30); do
+            code="$(curl -s -o /dev/null -w '%{http_code}' "$URL$path" || true)"
+            [ "$code" = "000" ] || [ "$code" = "502" ] || [ "$code" = "503" ] || break
+            sleep 1
+        done
+        [ "$code" = "200" ] || fail "GET $URL$path answered $code"
+        note "GET $URL$path — 200"
+    done
+}
+
+# Setup on an empty database: every module of the catalogue, theme-default, block types, the demo.
+# The modules are in composer.json already, so setup asks Composer for nothing; the password goes
+# from .lab-admin to setup inside the container and never through the command line of wxp.
+build() {
+    guard_site
+    step "webx:setup — every module of the catalogue, theme-default"
+    admin_password_file
+    lab_environment
+    apply_lab_config all
+    # shellcheck disable=SC2016 # expanded in the container, with the platform's environment
+    lab sh -c 'WEBX_ADMIN_PASSWORD="$(sed -n 2p .lab-admin)" php artisan webx:setup --no-interaction \
+        --name="WebX Lab" --domain="$1" --locales=en,ru,pl --modules=all \
+        --db-connection=mariadb --db-host="$DB_HOST" --db-port="$DB_PORT" \
+        --db-username="$DB_USERNAME" --db-password="$DB_PASSWORD" --db="$DB_DATABASE" \
+        --admin="$2" --admin-name="Lab admin" --no-build' setup "$URL" "$ADMIN"
+    # Setup writes the address it was given and publishes the configs of the modules; what it may
+    # rewrite of ours goes back.
+    lab_environment
+    apply_lab_config all
+
+    step 'Block types and the demo of every module'
+    artisan webx:blocks:import --theme --publish --no-interaction
+    artisan webx:blocks:offered --install --no-interaction
+    artisan webx:demo --no-interaction
+    date -u +%FT%TZ > "$BUILT"
+}
+
 refresh() {
     guard_site
-    [ -f "$BUILT" ] || fail "the lab is not built yet — scripts/lab-site.sh create"
+    [ -f "$BUILT" ] || fail "the lab is not set up — scripts/lab-site.sh reset"
     local started=$SECONDS done=()
 
     local branch head
@@ -319,7 +277,7 @@ refresh() {
     head="$(git -C "$MONOREPO" rev-parse --short HEAD)"
 
     step 'What the lab keeps of its own (.lab-env, .lab-config/)'
-    migrate_kept
+    lab_environment
     apply_lab_config missing
 
     step "npm packages of this checkout ($branch @ $head)"
@@ -334,30 +292,20 @@ refresh() {
         note 'every dist is newer than its sources'
     fi
 
-    step 'Composer: webx-ui/* from this checkout'
-    # Before the first artisan: vendor/webx-ui/* are links, so a package here already calls a
-    # library it gained, and the lab cannot boot until the update has loaded that library. The
-    # registry is excluded for webx-ui/* (point_composer), so nothing of ours is downloaded; the
-    # update follows a version raised here and a requirement a package gained.
-    point_composer "$SITE"
-    ( cd "$SITE" && composer_bin update 'webx-ui/*' --no-interaction )
+    step 'Composer: webx-ui/* from this checkout (wxp live sync)'
+    # Before the first artisan of ours: vendor/webx-ui/* are links, so a package here already
+    # calls a library it gained, and the lab cannot boot until Composer has loaded that library.
+    # The sync is the core's: Composer by composer.live.json, migrations, caches, queue restart.
+    require_from_checkout ''
+    wxp live sync "$NAME"
 
     step 'Modules the catalogue has and the lab does not'
     local missing
-    missing="$(artisan webx:modules --json | node -e '
-        let input = ""
-        process.stdin.on("data", (chunk) => (input += chunk)).on("end", () => {
-            const { modules } = JSON.parse(input)
-            process.stdout.write(modules.filter((module) => !module.installed).map((module) => module.id + " " + module.package).join("\n"))
-        })
-    ')"
+    missing="$(missing_modules)"
     if [ -n "$missing" ]; then
-        # Two steps, not `composer require`: a partial update holds the neighbours to the lock
-        # (docs/pitfalls/packages-and-demo-sites.md).
-        local packages=()
-        while read -r _ package; do packages+=("$package:*"); done <<< "$missing"
-        ( cd "$SITE" && composer_bin require "${packages[@]}" --no-update --no-interaction )
-        ( cd "$SITE" && composer_bin update 'webx-ui/*' --no-interaction )
+        require_from_checkout "$missing"
+        wxp live sync "$NAME"
+        [ -z "$(missing_modules)" ] || fail "wxp live sync did not install $(missing_modules | cut -d' ' -f2 | tr '\n' ' ')"
         done+=("installed $(echo "$missing" | cut -d' ' -f1 | tr '\n' ' ')")
     else
         note 'none'
@@ -372,33 +320,23 @@ refresh() {
         seed_demo_of "$missing"
     fi
 
-    step 'Panel and the site build'
+    step 'Panel and the site build (wxp node)'
     # The lab keeps no entry of its own, so it is written over: `--sync` alone never adds a module
     # to an existing admin.ts (docs/pitfalls/packages-and-demo-sites.md).
     artisan webx:panel --sync --force --no-interaction
     point_npm "$SITE"
-    ( cd "$SITE" && npm install --no-audit --no-fund && npm run build )
+    wxp node "$NAME" -- sh -c 'npm install --no-audit --no-fund && npm run build'
 
     step 'Theme, caches, restart'
     artisan webx:theme:sync --no-interaction
     artisan optimize:clear --no-interaction
     artisan cache:clear --no-interaction
     artisan queue:restart --no-interaction
-    site restart "$NAME"
+    wxp env restart "$NAME" dev
 
     step 'Check'
     artisan webx:doctor || fail 'webx:doctor found what is listed above'
-    local path code
-    for path in / /cms; do
-        code="000"
-        for _ in $(seq 1 30); do
-            code="$(curl -s -o /dev/null -w '%{http_code}' "$URL$path" || true)"
-            [ "$code" = "000" ] || [ "$code" = "502" ] || break
-            sleep 1
-        done
-        [ "$code" = "200" ] || fail "GET $URL$path answered $code"
-        note "GET $URL$path — 200"
-    done
+    http_check
 
     local version dirty
     version="$(monorepo_version)"
@@ -412,32 +350,38 @@ refresh() {
     note "panel $URL/cms — $ADMIN, the password is in $SECRET"
 }
 
+# The core makes dev again empty and checks it answers over HTTP — which an empty database never
+# does (500 until setup). So the operation failing on the HTTP check of its last step, with every
+# step before done, is the reset we asked for; any other failure stops here.
+dev_reset() {
+    local output op
+    if output="$(wxp dev reset "$NAME" 2>&1)"; then
+        printf "%s\n" "$output"
+        return
+    fi
+    printf "%s\n" "$output" >&2
+    op="$(grep -o "op-[0-9]\{8\}-[0-9]\{6\}-[0-9a-f]\{6\}" <<< "$output" | head -n1)"
+    [ -n "$op" ] || fail "wxp dev reset $NAME failed"
+    wxp --json op get "$op" | node -e '
+        let input = ""
+        process.stdin.on("data", (chunk) => (input += chunk)).on("end", () => {
+            const op = JSON.parse(input)
+            const steps = op.steps ?? op.operation?.steps ?? []
+            const last = steps[steps.length - 1]
+            const before = steps.slice(0, -1).every((step) => step.status === "done")
+            process.exit(before && last?.name === "up" && /HTTP 5\d\d/.test(last.error ?? "") ? 0 : 1)
+        })
+    ' || fail "wxp dev reset $NAME failed ($op)"
+    note "$op: dev is up on an empty database; its 500 is what setup is for"
+}
+
 reset() {
     guard_site
-    step "Reset $NAME"
-    # A lab made before .lab-env and .lab-config/ hands its lines and files over first.
-    if [ -d "$SITE" ]; then migrate_kept; fi
-
-    if [ -f "$SITE/.env" ] && [ -n "$(env_get DB_DATABASE)" ]; then
-        DB_HOST="$(env_get DB_HOST)" DB_PORT="$(env_get DB_PORT)" DB_USERNAME="$(env_get DB_USERNAME)" \
-            DB_PASSWORD="$(env_get DB_PASSWORD)" DB_DATABASE="$(env_get DB_DATABASE)" database create
-        note "database $(env_get DB_DATABASE) dropped and made again empty"
-    fi
-
-    if docker ps -q --filter "label=devbox.site=$NAME" | grep -q .; then
-        site down "$NAME"
-    fi
-
-    if [ -d "$SITE" ]; then
-        local stash
-        stash="$(mktemp -d "$(dirname "$SITE")/.$NAME-kept.XXXXXX")"
-        stash_kept "$stash"
-        remove_site_tree "$SITE"
-        [ -f "$MONOREPO/packages/core/package.json" ] || fail "the removal reached this checkout: packages/core is gone"
-        unstash_kept "$stash"
-        note "kept: $(ls -A "$SITE" | tr '\n' ' ')"
-    fi
-
+    step "Reset $NAME: wxp dev reset (container, volumes, database; the code in ~/work stays)"
+    dev_reset
+    # vendor/ and node_modules/ are in the code and stay; the database is empty, setup comes first.
+    # The demo journal is in the code too and would say the empty database is seeded.
+    rm -f "$BUILT" "$STATE" "$SITE/storage/app/webx-demo.json"
     build
     refresh
 }
@@ -445,9 +389,8 @@ reset() {
 status() {
     printf '%s — %s\n' "$NAME" "$URL"
     if [ ! -f "$STATE" ]; then
-        printf '   never refreshed%s\n' "$([ -d "$SITE" ] && echo '' || echo "; no directory $SITE — scripts/lab-site.sh create")"
+        printf '   never refreshed%s\n' "$([ -f "$BUILT" ] && echo ' — scripts/lab-site.sh refresh' || echo '; not set up — scripts/lab-site.sh reset')"
     else
-        # shellcheck source=/dev/null
         local BRANCH HEAD VERSION DIRTY AT
         eval "$(grep -E '^(BRANCH|HEAD|VERSION|DIRTY|AT)=' "$STATE")"
         local now behind
@@ -463,17 +406,16 @@ status() {
                 "$(git -C "$MONOREPO" rev-parse --abbrev-ref HEAD)" "${now:0:8}"
         fi
     fi
-    local containers code
-    containers="$(docker ps --filter "label=devbox.site=$NAME" --format '{{.Names}}' | wc -l)"
-    code="$(curl -s -o /dev/null -w '%{http_code}' "$URL/" || true)"
-    printf '   containers up: %s; GET / — %s\n' "$containers" "$code"
+    wxp status "$NAME" | sed 's/^/   /'
+    # A sleeping dev wakes on the request, so a first answer may take the platform a few seconds.
+    local code
+    code="$(curl -s -o /dev/null -m 60 -w '%{http_code}' "$URL/" || true)"
+    printf '   GET / — %s\n' "$code"
 }
 
 case "${1:-}" in
-    # Not `build && refresh`: errexit is off on the left of &&, and a failing step would go unnoticed.
-    create) build; refresh ;;
-    refresh) refresh ;;
-    reset) reset ;;
-    status) status ;;
-    *) sed -n '8,12p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2 ;;
+    refresh) URL="$(lab_url)"; refresh ;;
+    reset) URL="$(lab_url)"; reset ;;
+    status) URL="$(lab_url)"; status ;;
+    *) sed -n '9,12p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2 ;;
 esac

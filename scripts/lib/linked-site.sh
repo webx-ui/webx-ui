@@ -1,7 +1,7 @@
 # shellcheck shell=bash
 #
 # What the scripts that build a site wired to this checkout share: scripts/starter-site.sh (the
-# throwaway starter) and scripts/lab-site.sh (the permanent lab in devbox). Sourced, not run.
+# throwaway starter) and scripts/lab-site.sh (the permanent lab on the wxp platform). Sourced, not run.
 #
 # Expects MONOREPO (this checkout) and PHP_BIN; COMPOSER_PHAR is optional. Every function that
 # takes a site takes its directory.
