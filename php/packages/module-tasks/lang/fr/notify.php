@@ -11,4 +11,6 @@ return [
     'done' => 'La tâche est terminée. Étapes acceptées : :count',
     'result' => 'Résultat : :result',
     'test' => 'Message de test de :site : les notifications de la file de tâches arriveront ici.',
+    'runner-silent' => 'Le veilleur «:runner» se tait : pas de battement, minutes : :minutes',
+    'runner-windows' => 'Sessions au dernier signalement : :count',
 ];

@@ -11,4 +11,6 @@ return [
     'done' => 'La tarea está hecha. Etapas aceptadas: :count',
     'result' => 'Resultado: :result',
     'test' => 'Mensaje de prueba de :site: aquí llegarán las notificaciones de la cola de tareas.',
+    'runner-silent' => 'El vigilante «:runner» calla: sin latido, minutos: :minutes',
+    'runner-windows' => 'Sesiones en el último aviso: :count',
 ];

@@ -43,6 +43,14 @@ an append-only journal. The panel shell, permissions and the module registry are
   system's comment). Settings screen `tasks.settings`, keys `tasks.notify.*` and
   `tasks.telegram.chats`; the bot token is encrypted under `tasks.telegram-token` and never read
   back. Command `webx:tasks:stale` (scheduled every 15 minutes). Config `config/webx-tasks.php`.
+- **The watcher** (§14 of the spec) — `WebxUi\Tasks\Runner`: `webx:tasks:runner` makes the role
+  `runner`, the account `taskd` and its key (scope `tasks:run`); tools `tasks_runner_config`,
+  `tasks_runner_heartbeat`, `tasks_runner_status`, `tasks_session_key` (`Mcp\RunnerTools`);
+  settings `tasks.runner.*` on `tasks.settings` (`RunnerSettings`); heartbeats in
+  `tasks_runner_beats` (`Heartbeats`), the screen «Agents» (`GET tasks/runner`), the notice
+  `runner.silent` from `webx:tasks:runner-watch` (every minute). Keys of one stage in
+  `tasks_session_keys` (`SessionKeys`): every tool is wrapped by `SessionKeys::guard()`, and a
+  `StageMoved` out of `in_progress`/`review` revokes them in the same transaction.
 - **Section** `tasks`.
 - **Refusals** — `WebxUi\Tasks\Exceptions\TaskRefused` with a `reason` key; bad values are a
   `ValidationException`.
@@ -54,6 +62,7 @@ an append-only journal. The panel shell, permissions and the module registry are
 | `tasks.view`   | projects and tasks, read-only (`GET projects`, `tasks`, `tasks/{id}`); `tasks_projects_list`, `tasks_list`, `tasks_get`, `tasks_queue`                                                                                                                                                                                                        |
 | `tasks.manage` | the reads, plus projects, tasks and their stages: create, edit, `ready`, cancel, unblock and cancel a stage, release, comment, the settings screen and its test send; `tasks_projects_create`, `tasks_projects_update`, `tasks_create`, `tasks_update`, `tasks_ready`, `tasks_stage_unblock`, `tasks_cancel`, `tasks_comment`; the menu badge |
 | `tasks.work`   | the reads, plus an agent's side: `tasks_claim_next`, `tasks_stage_report`, `tasks_stage_release`, `tasks_stage_block`, `tasks_comment`; release and comment in the panel                                                                                                                                                                      |
+| `tasks.run`    | the watcher's: `tasks_claim_next`, `tasks_stage_release`, `tasks_runner_config`, `tasks_runner_heartbeat`, `tasks_session_key`, `tasks_runner_status`; the screen «Agents»                                                                                                                                                                    |
 | `tasks.review` | the reads, plus accept or send back a stage (`stages/{id}/accept`, `rework`), comment; `tasks_stage_accept`, `tasks_stage_rework`, `tasks_comment`; the menu badge                                                                                                                                                                            |
 
 In no ready-made role. A route or screen node the site adds next to the module asks the same:
@@ -68,6 +77,8 @@ In no ready-made role. A route or screen node the site adds next to the module a
 | Rules agents get every time  | the project's `rules` field — it goes into every context package                                             |
 | An agent kept to a project   | `claimNext($agent, $project)` with the project                                                               |
 | A key for a worker agent     | `php artisan webx:mcp:token --name=worker --scopes=tasks:read,tasks:work` (+`tasks:review` for a dispatcher) |
+| The watcher's account        | `php artisan webx:tasks:runner` — the role, `taskd` and a key; again replaces the key                        |
+| More for the watcher's keys  | `webx-tasks.runner.permissions`, `.scopes`, `.session_scopes.worker` and `.reviewer` in config               |
 | A reaction to a change       | read `tasks_journal`; every move is a line with `meta.from`/`meta.to`                                        |
 
 ## Do not
@@ -79,6 +90,8 @@ In no ready-made role. A route or screen node the site adds next to the module a
 - Do not build an `Actor::admin()` for an agent to get past a rule: a stage marked `human` and an
   answer to a blocked stage are a person's decision.
 - Do not edit or delete journal lines; write a comment instead.
+- Do not give the watcher's own key `tasks:work` or `tasks:review`: a session does its stage with
+  the key of that stage, which `tasks_session_key` issues and a move of the stage revokes.
 - Do not put the bot token into `.env`, a setting a screen lists, or a log line: it is stored
   encrypted by `NotificationSettings::setToken()` and read nowhere else.
 - Do not put names of real projects, people or clients into this package; they are data on a site.

@@ -81,6 +81,35 @@ php artisan webx:mcp:token --name=dispatcher --scopes=tasks:read,tasks:work,task
 A stage marked for a person is accepted only over a person's connection. A key issued for a
 program is never taken for a person, whatever its scopes.
 
+## The watcher
+
+A watcher is the program that starts a fresh agent session for every stage. It works with an
+account of its own, which the server makes:
+
+```bash
+php artisan webx:tasks:runner   # the role «Task watcher», the account «taskd», and its key
+```
+
+Running it again replaces the key. The watcher's key carries `tasks:run` and nothing a session
+does: it takes and gives back stages (`tasks_claim_next`, `tasks_stage_release`), reads its
+settings (`tasks_runner_config`), says once a poll what it runs (`tasks_runner_heartbeat`) and
+hands each session a key for one stage (`tasks_session_key`):
+
+- **worker** — the stage it just took: `tasks_get`, `tasks_stage_report`, `tasks_stage_block`,
+  `tasks_comment` on that stage only, under the name the stage was taken with;
+- **reviewer** — a reported stage: `tasks_get`, `tasks_stage_accept`, `tasks_stage_rework`,
+  `tasks_comment`, under a name that is not the worker's.
+
+The key is revoked the moment the stage moves on — reported, released or cancelled for a worker,
+decided on for a reviewer — and the next call with it gets 401.
+
+**Tasks → Settings → Watcher** holds the limits (sessions at once, per project, a day; attempts
+per stage), the pause and the runners (Claude Code; `agy`, off by default). A paused queue hands
+out nothing, and `tasks_claim_next` says so. **Tasks → Agents** shows each watcher's last
+heartbeat; five minutes without one is «silent», and a person is told once (the scheduler runs
+`webx:tasks:runner-watch` every minute). A hosting module adds its own permissions and scopes to
+the role and the keys through `webx-tasks.runner.permissions`, `.scopes` and `.session_scopes`.
+
 ## Notifications
 
 In **Tasks → Settings**: the bot's token (from `@BotFather`, stored encrypted and never shown

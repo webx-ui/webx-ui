@@ -11,4 +11,6 @@ return [
     'done' => 'A tarefa foi concluída. Etapas aceitas: :count',
     'result' => 'Resultado: :result',
     'test' => 'Mensagem de teste de :site: as notificações da fila de tarefas chegarão aqui.',
+    'runner-silent' => 'O vigia «:runner» está calado: sem batimento, minutos: :minutes',
+    'runner-windows' => 'Sessões no último aviso: :count',
 ];

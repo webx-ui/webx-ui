@@ -391,6 +391,17 @@ const notify: Record<string, unknown> = {
   'tasks.notify.review_auto': false,
   'tasks.notify.stale': true,
   'tasks.notify.stale_hours': 6,
+  'tasks.notify.runner_silent': true,
+  'tasks.runner.paused': false,
+  'tasks.runner.max_workers': 2,
+  'tasks.runner.per_project': 1,
+  'tasks.runner.daily_sessions': 40,
+  'tasks.runner.max_attempts': 3,
+  'tasks.runner.claude.enabled': true,
+  'tasks.runner.claude.args': '',
+  'tasks.runner.agy.enabled': false,
+  'tasks.runner.agy.model': '',
+  'tasks.runner.agy.args': '',
 }
 let tokenSet = false
 
@@ -398,8 +409,64 @@ const settingsAnswer = () => ({
   data: { values: { ...notify, 'tasks.telegram.token': '' }, token_set: tokenSet },
 })
 
+/* The watcher (§14.3): one on the line, a minute ago, running one session. */
+const runnerAnswer = () => {
+  const minute = 60_000
+  const words = (line: unknown) =>
+    String(line ?? '')
+      .split(/\s+/)
+      .filter(Boolean)
+
+  return {
+    data: {
+      config: {
+        max_workers: Number(notify['tasks.runner.max_workers']),
+        per_project: Number(notify['tasks.runner.per_project']),
+        daily_sessions: Number(notify['tasks.runner.daily_sessions']),
+        max_attempts: Number(notify['tasks.runner.max_attempts']),
+        paused: notify['tasks.runner.paused'] === true,
+        runners: {
+          claude: {
+            enabled: notify['tasks.runner.claude.enabled'] === true,
+            args: words(notify['tasks.runner.claude.args']),
+          },
+          agy: {
+            enabled: notify['tasks.runner.agy.enabled'] === true,
+            model: String(notify['tasks.runner.agy.model'] ?? ''),
+            args: words(notify['tasks.runner.agy.args']),
+          },
+        },
+      },
+      silent_after_minutes: 5,
+      runners: [
+        {
+          runner: 'taskd',
+          beat_at: new Date(Date.now() - minute).toISOString(),
+          silent: false,
+          silent_notified_at: null,
+          windows: [
+            {
+              agent: 'worker-7',
+              stage: 2,
+              runner: 'claude',
+              since: new Date(Date.now() - 25 * minute).toISOString(),
+            },
+          ],
+          paused: notify['tasks.runner.paused'] === true,
+          waiting: null,
+          daily_sessions: 5,
+          version: '1.0.0',
+          hard_max_workers: 3,
+          max_workers: Math.min(3, Number(notify['tasks.runner.max_workers'])),
+        },
+      ],
+    },
+  }
+}
+
 export function registerTasks(on: On, fail: Fail, line: Line): void {
   on('GET', '/tasks/settings', settingsAnswer)
+  on('GET', '/tasks/runner', runnerAnswer)
 
   on('PUT', '/tasks/settings', ({ body }) => {
     const values = (body.values ?? {}) as Record<string, unknown>

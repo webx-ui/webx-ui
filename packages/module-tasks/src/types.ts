@@ -134,3 +134,42 @@ export interface NotificationSettings {
   values: Record<string, unknown>
   token_set: boolean
 }
+
+/** One session a watcher runs (§14.3). */
+export interface RunnerWindow {
+  agent: string | null
+  stage: number | null
+  runner: string | null
+  since: string | null
+}
+
+/** What a watcher said last, and whether it has gone silent since. */
+export interface RunnerBeat {
+  runner: string
+  beat_at: string
+  silent: boolean
+  silent_notified_at: string | null
+  windows: RunnerWindow[]
+  paused: boolean
+  waiting: string | null
+  daily_sessions: number | null
+  version: string | null
+  hard_max_workers: number | null
+  max_workers: number | null
+}
+
+/** What the watcher is told (§14.2). */
+export interface RunnerConfig {
+  max_workers: number
+  per_project: number
+  daily_sessions: number
+  max_attempts: number
+  paused: boolean
+  runners: Record<string, { enabled: boolean; args: string[]; model?: string }>
+}
+
+export interface RunnerStatus {
+  config: RunnerConfig
+  silent_after_minutes: number
+  runners: RunnerBeat[]
+}

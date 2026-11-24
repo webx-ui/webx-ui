@@ -37,7 +37,8 @@ final class McpTest extends TestCase
             'tasks_projects_list', 'tasks_projects_create', 'tasks_projects_update', 'tasks_list', 'tasks_get',
             'tasks_queue', 'tasks_create', 'tasks_update', 'tasks_ready', 'tasks_claim_next', 'tasks_stage_report',
             'tasks_stage_accept', 'tasks_stage_rework', 'tasks_stage_release', 'tasks_stage_block',
-            'tasks_stage_unblock', 'tasks_comment', 'tasks_cancel',
+            'tasks_stage_unblock', 'tasks_comment', 'tasks_cancel', 'tasks_runner_config', 'tasks_runner_heartbeat',
+            'tasks_runner_status', 'tasks_session_key',
         ], array_map(static fn ($tool): string => $tool->fullName(), $registry->toolsOf('tasks')));
 
         $scopes = [];
@@ -48,13 +49,13 @@ final class McpTest extends TestCase
 
         $this->assertSame(['tasks:read'], $scopes['tasks_queue']);
         $this->assertSame(['tasks:write'], $scopes['tasks_create']);
-        $this->assertSame(['tasks:work'], $scopes['tasks_claim_next']);
+        $this->assertSame(['tasks:work', 'tasks:run'], $scopes['tasks_claim_next']);
         $this->assertSame(['tasks:work'], $scopes['tasks_stage_block']);
         $this->assertSame(['tasks:review'], $scopes['tasks_stage_accept']);
         $this->assertSame(['tasks:review'], $scopes['tasks_stage_rework']);
         $this->assertSame(['tasks:write', 'tasks:work', 'tasks:review'], $scopes['tasks_comment']);
-        $this->assertSame(['tasks:write', 'tasks:work'], $scopes['tasks_stage_release']);
-        $this->assertSame(['tasks.manage', 'tasks.work'], $registry->tool('tasks_stage_release')->permissions());
+        $this->assertSame(['tasks:write', 'tasks:work', 'tasks:run'], $scopes['tasks_stage_release']);
+        $this->assertSame(['tasks.manage', 'tasks.work', 'tasks.run'], $registry->tool('tasks_stage_release')->permissions());
         $this->assertSame(['tasks.review'], $registry->tool('tasks_stage_accept')->permissions());
 
         $uris = array_map(static fn ($resource): string => $resource->uri, $registry->resources());

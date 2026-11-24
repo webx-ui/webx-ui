@@ -24,4 +24,7 @@ return [
     'stage-started-order' => 'Rozpoczęty lub anulowany etap zostaje na swoim miejscu.',
     'stage-started' => 'Etap :stage ma status :status i nie można go już zmienić.',
     'notify-not-configured' => 'Powiadomienia nie są skonfigurowane: dodaj token bota i co najmniej jeden czat, a następnie zapisz.',
+    'paused' => 'Kolejka jest wstrzymana w panelu: żaden etap nie zostanie przydzielony, dopóki nie zostanie wznowiona w ustawieniach zadań.',
+    'session-key-worker' => 'Klucz wykonawcy wydaje się dla etapu w toku: najpierw weź etap.',
+    'session-key-reviewer' => 'Klucz sprawdzającego wydaje się dla etapu w przeglądzie: najpierw trzeba zdać raport z etapu.',
 ];

@@ -7,13 +7,16 @@ namespace WebxUi\Tasks\Panel;
 use Illuminate\Contracts\Auth\Authenticatable;
 use WebxUi\Admin\AbstractModule;
 use WebxUi\Admin\Contracts\HasPermissions;
+use WebxUi\Mcp\Arguments;
 use WebxUi\Mcp\Contracts\ProvidesMcpTools;
 use WebxUi\Mcp\McpResource;
 use WebxUi\Mcp\ProvidesMcpDefaults;
 use WebxUi\Mcp\Tool;
+use WebxUi\Tasks\Mcp\RunnerTools;
 use WebxUi\Tasks\Mcp\TasksResources;
 use WebxUi\Tasks\Mcp\TasksTools;
 use WebxUi\Tasks\Models\Task;
+use WebxUi\Tasks\Runner\SessionKeys;
 
 /**
  * «Tasks»: the queue of work between people and agents (§6 of the spec).
@@ -22,6 +25,11 @@ use WebxUi\Tasks\Models\Task;
  * stage — taking it, reporting it, asking about it; and reviewing a reported stage. An agent that
  * does stages is given the third and not the fourth, so it cannot accept its own work; a stage a
  * person has to check is refused to every agent however it is authorised.
+ *
+ * The fifth, `tasks.run`, is the watcher's (§14): it takes and gives back stages for the sessions
+ * it starts, reads its settings, beats, and hands each session a key for its one stage — and does
+ * no stage itself. Every tool is behind the door of {@see SessionKeys}: a stage's key reaches only
+ * its own stage.
  */
 final class TasksModule extends AbstractModule implements ProvidesMcpTools
 {
@@ -34,6 +42,8 @@ final class TasksModule extends AbstractModule implements ProvidesMcpTools
 
     public function __construct(
         private readonly TasksTools $tools,
+        private readonly RunnerTools $runner,
+        private readonly SessionKeys $sessions,
         private readonly TasksResources $resources,
     ) {}
 
@@ -62,7 +72,7 @@ final class TasksModule extends AbstractModule implements ProvidesMcpTools
      */
     public function permissions(): array
     {
-        return ['tasks.view', 'tasks.manage', 'tasks.work', 'tasks.review'];
+        return ['tasks.view', 'tasks.manage', 'tasks.work', 'tasks.review', 'tasks.run'];
     }
 
     /**
@@ -89,7 +99,7 @@ final class TasksModule extends AbstractModule implements ProvidesMcpTools
      */
     public function mcpTools(): array
     {
-        return $this->tools->all();
+        return $this->sessions->guard([...$this->tools->all(), ...Arguments::strictAll($this->runner->all(), 'tasks_')]);
     }
 
     /**

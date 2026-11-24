@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Tasks\Notifications;
 
 use Illuminate\Contracts\Config\Repository as Config;
+use WebxUi\Tasks\Models\RunnerBeat;
 use WebxUi\Tasks\Models\Stage;
 use WebxUi\Tasks\Models\Task;
 
@@ -23,6 +24,7 @@ final class Notices
         'stage.rework' => '↩️',
         'stage.stale' => '🕒',
         'task.done' => '✅',
+        'runner.silent' => '🔇',
     ];
 
     /** How much of the report's «Done» goes into the message. */
@@ -79,6 +81,26 @@ final class Notices
         return new Notice($event, $task->id, null, implode("\n", $lines));
     }
 
+    /**
+     * A watcher that stopped beating: it belongs to no task, so the link goes to the screen
+     * «Agents», and a failed delivery reaches the log only.
+     */
+    public function forRunner(RunnerBeat $beat): Notice
+    {
+        $windows = $beat->payload['windows'] ?? [];
+
+        $lines = [
+            self::ICONS['runner.silent'].' '.$this->say('notify.runner-silent', [
+                'runner' => $beat->runner,
+                'minutes' => (int) $beat->beat_at->diffInMinutes(now(), true),
+            ]),
+            $this->say('notify.runner-windows', ['count' => is_array($windows) ? count($windows) : 0]),
+            $this->panel('tasks/agents'),
+        ];
+
+        return new Notice('runner.silent', 0, null, implode("\n", $lines));
+    }
+
     public function test(string $site): Notice
     {
         return new Notice('test', 0, null, $this->say('notify.test', ['site' => $site]));
@@ -118,9 +140,14 @@ final class Notices
 
     private function link(Task $task): string
     {
+        return $this->panel('tasks/'.$task->id);
+    }
+
+    private function panel(string $path): string
+    {
         // The site's own address rather than the request's: the same link from the panel, a queue
         // worker and the scheduler, which have no request to take a host from.
-        return rtrim((string) $this->config->get('app.url'), '/').'/'.trim((string) $this->config->get('webx-admin.path', 'cms'), '/').'/tasks/'.$task->id;
+        return rtrim((string) $this->config->get('app.url'), '/').'/'.trim((string) $this->config->get('webx-admin.path', 'cms'), '/').'/'.$path;
     }
 
     /**

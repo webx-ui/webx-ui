@@ -6,8 +6,8 @@ export interface TasksOptions {
 }
 
 /**
- * «Tasks» as a section of the panel (§6): the list, one task, its form, the projects, and the
- * notification settings (§6a).
+ * «Tasks» as a section of the panel (§6): the list, one task, its form, the projects, the
+ * notification and watcher settings (§6a, §14), and the watcher's «Agents» (§14.3).
  *
  * The id matches the module the server reports, which is what makes the entry appear in the
  * navigation — with the count of what waits for a person beside it.
@@ -33,6 +33,13 @@ export function tasks(options: TasksOptions = {}): AdminModule {
         name: 'webx.tasks.projects',
         meta: { help: 'tasks.projects' },
         component: () => import('./ProjectsPage.vue'),
+        props: base,
+      },
+      {
+        path: `${path}/agents`,
+        name: 'webx.tasks.agents',
+        meta: { help: 'tasks.agents' },
+        component: () => import('./AgentsPage.vue'),
         props: base,
       },
       {

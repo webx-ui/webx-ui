@@ -24,4 +24,7 @@ return [
     'stage-started-order' => 'Başlamış ya da iptal edilmiş bir aşama yerinde kalır.',
     'stage-started' => ':stage aşaması :status durumunda ve artık değiştirilemez.',
     'notify-not-configured' => 'Bildirimler ayarlanmadı: bot token\'ını ve en az bir sohbeti ekleyip kaydedin.',
+    'paused' => 'Kuyruk panelde duraklatıldı: Görevler ayarlarında sürdürülene kadar hiçbir aşama verilmez.',
+    'session-key-worker' => 'Yürütücü anahtarı devam eden bir aşama için verilir: önce aşamayı alın.',
+    'session-key-reviewer' => 'Denetçi anahtarı incelemedeki bir aşama için verilir: önce aşamanın raporlanması gerekir.',
 ];

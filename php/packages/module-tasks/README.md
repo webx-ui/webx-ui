@@ -75,6 +75,12 @@ php artisan webx:mcp:token --name=dispatcher --scopes=tasks:read,tasks:work,task
 A stage marked `human` is accepted only over a person's connection, never with a key — whatever its
 scopes. A key is issued in the panel under _Administrators → Keys_ or by `webx:mcp:token`.
 
+A watcher that starts the sessions has an account of its own: `php artisan webx:tasks:runner` makes
+the role `runner`, the administrator `taskd` and its key. That key takes stages, beats
+(`tasks_runner_heartbeat`, shown under **Tasks → Agents**) and hands each session a key for one
+stage (`tasks_session_key`), which is revoked as soon as the stage moves on. Its limits and the
+pause are in **Tasks → Settings**.
+
 ## Notifications
 
 A person learns what waits for them from Telegram: a stage to review, an agent's question, a task

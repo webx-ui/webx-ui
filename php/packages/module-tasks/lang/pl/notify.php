@@ -11,4 +11,6 @@ return [
     'done' => 'Zadanie wykonane. Zaakceptowane etapy: :count',
     'result' => 'Wynik: :result',
     'test' => 'Wiadomość testowa z :site: tutaj będą przychodzić powiadomienia kolejki zadań.',
+    'runner-silent' => 'Strażnik «:runner» milczy: brak sygnału, minut: :minutes',
+    'runner-windows' => 'Sesji w ostatnim zgłoszeniu: :count',
 ];

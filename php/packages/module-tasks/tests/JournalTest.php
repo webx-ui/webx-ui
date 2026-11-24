@@ -109,7 +109,7 @@ final class JournalTest extends TestCase
     {
         $module = $this->app->make(ModuleRegistry::class)->get('tasks');
 
-        $this->assertSame(['tasks.view', 'tasks.manage', 'tasks.work', 'tasks.review'], $module->permissions());
+        $this->assertSame(['tasks.view', 'tasks.manage', 'tasks.work', 'tasks.review', 'tasks.run'], $module->permissions());
         $this->assertSame('Tasks', $module->title());
 
         $tables = $this->app->make(SnapshotTables::class);

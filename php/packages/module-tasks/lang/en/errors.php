@@ -24,4 +24,7 @@ return [
     'stage-started-order' => 'A stage that has started or was cancelled stays where it is.',
     'stage-started' => 'Stage :stage is :status and can no longer be changed.',
     'notify-not-configured' => 'Notifications are not set up: add the bot token and at least one chat, and save.',
+    'paused' => 'The queue is paused in the panel: no stage is handed out until it is resumed on the settings screen of Tasks.',
+    'session-key-worker' => 'A worker\'s key is issued for a stage in progress: take the stage first.',
+    'session-key-reviewer' => 'A reviewer\'s key is issued for a stage in review: the stage has to be reported first.',
 ];

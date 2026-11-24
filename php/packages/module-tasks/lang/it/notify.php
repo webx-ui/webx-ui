@@ -11,4 +11,6 @@ return [
     'done' => 'L\'attività è completata. Fasi accettate: :count',
     'result' => 'Risultato: :result',
     'test' => 'Messaggio di prova da :site: qui arriveranno le notifiche della coda di attività.',
+    'runner-silent' => 'Il sorvegliante «:runner» tace: nessun battito, minuti: :minutes',
+    'runner-windows' => 'Sessioni nell\'ultimo segnale: :count',
 ];

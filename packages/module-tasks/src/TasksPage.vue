@@ -168,6 +168,13 @@ const actions = computed<ScreenAction[]>(() => [
     icon: 'folder',
     run: () => void router.push(`${props.base}/projects`),
   },
+  {
+    key: 'agents',
+    label: t('panel.agents'),
+    icon: 'monitor',
+    menu: true,
+    run: () => void router.push(`${props.base}/agents`),
+  },
   ...(canManage
     ? [
         {

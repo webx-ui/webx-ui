@@ -28,7 +28,7 @@ final class PanelTest extends TestCase
         $reviewer = $this->member(['tasks.view', 'tasks.review']);
         $section = $this->section($reviewer);
 
-        $this->assertSame(['tasks.view', 'tasks.manage', 'tasks.work', 'tasks.review'], $section['permissions']);
+        $this->assertSame(['tasks.view', 'tasks.manage', 'tasks.work', 'tasks.review', 'tasks.run'], $section['permissions']);
         $this->assertSame(1, $section['meta']['badge'] ?? null);
 
         // Somebody who may only look is not counted at: there is nothing for them to do about it.

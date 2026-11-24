@@ -24,4 +24,7 @@ return [
     'stage-started-order' => 'Eine begonnene oder abgebrochene Stufe bleibt an ihrem Platz.',
     'stage-started' => 'Stufe :stage ist :status und kann nicht mehr geändert werden.',
     'notify-not-configured' => 'Benachrichtigungen sind nicht eingerichtet: Fügen Sie den Bot-Token und mindestens einen Chat hinzu und speichern Sie.',
+    'paused' => 'Die Warteschlange ist im Panel pausiert: Bis sie in den Einstellungen der Aufgaben fortgesetzt wird, wird keine Etappe vergeben.',
+    'session-key-worker' => 'Ein Schlüssel für die Ausführung wird für eine Etappe in Arbeit ausgestellt: Nehmen Sie die Etappe zuerst.',
+    'session-key-reviewer' => 'Ein Prüfschlüssel wird für eine Etappe in Prüfung ausgestellt: Über die Etappe muss zuerst berichtet werden.',
 ];

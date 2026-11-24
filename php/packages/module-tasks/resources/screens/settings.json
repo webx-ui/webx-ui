@@ -91,6 +91,117 @@
             "min": 1,
             "max": 168
           }
+        },
+        {
+          "id": "runner-silent",
+          "type": "wx-switch",
+          "name": "tasks.notify.runner_silent",
+          "label": "trans::webx-tasks::screen.notify-runner-silent",
+          "help": "trans::webx-tasks::screen.notify-runner-silent-help"
+        }
+      ]
+    },
+    {
+      "id": "runner",
+      "type": "wx-card",
+      "label": "trans::webx-tasks::screen.runner",
+      "children": [
+        {
+          "id": "runner-paused",
+          "type": "wx-switch",
+          "name": "tasks.runner.paused",
+          "label": "trans::webx-tasks::screen.runner-paused",
+          "help": "trans::webx-tasks::screen.runner-paused-help"
+        },
+        {
+          "id": "max-workers",
+          "type": "wx-input-number",
+          "name": "tasks.runner.max_workers",
+          "label": "trans::webx-tasks::screen.max-workers",
+          "help": "trans::webx-tasks::screen.max-workers-help",
+          "props": {
+            "min": 1,
+            "max": 32
+          }
+        },
+        {
+          "id": "per-project",
+          "type": "wx-input-number",
+          "name": "tasks.runner.per_project",
+          "label": "trans::webx-tasks::screen.per-project",
+          "help": "trans::webx-tasks::screen.per-project-help",
+          "props": {
+            "min": 1,
+            "max": 32
+          }
+        },
+        {
+          "id": "daily-sessions",
+          "type": "wx-input-number",
+          "name": "tasks.runner.daily_sessions",
+          "label": "trans::webx-tasks::screen.daily-sessions",
+          "help": "trans::webx-tasks::screen.daily-sessions-help",
+          "props": {
+            "min": 0,
+            "max": 1000
+          }
+        },
+        {
+          "id": "max-attempts",
+          "type": "wx-input-number",
+          "name": "tasks.runner.max_attempts",
+          "label": "trans::webx-tasks::screen.max-attempts",
+          "help": "trans::webx-tasks::screen.max-attempts-help",
+          "props": {
+            "min": 1,
+            "max": 20
+          }
+        },
+        {
+          "id": "claude-enabled",
+          "type": "wx-switch",
+          "name": "tasks.runner.claude.enabled",
+          "label": "trans::webx-tasks::screen.claude-enabled",
+          "help": "trans::webx-tasks::screen.claude-enabled-help"
+        },
+        {
+          "id": "claude-args",
+          "type": "wx-input",
+          "name": "tasks.runner.claude.args",
+          "label": "trans::webx-tasks::screen.claude-args",
+          "help": "trans::webx-tasks::screen.args-help",
+          "visible": {
+            "when": "tasks.runner.claude.enabled",
+            "is": true
+          }
+        },
+        {
+          "id": "agy-enabled",
+          "type": "wx-switch",
+          "name": "tasks.runner.agy.enabled",
+          "label": "trans::webx-tasks::screen.agy-enabled",
+          "help": "trans::webx-tasks::screen.agy-enabled-help"
+        },
+        {
+          "id": "agy-model",
+          "type": "wx-input",
+          "name": "tasks.runner.agy.model",
+          "label": "trans::webx-tasks::screen.agy-model",
+          "visible": {
+            "when": "tasks.runner.agy.enabled",
+            "is": true
+          }
+        },
+        {
+          "id": "agy-args",
+          "type": "wx-input",
+          "name": "tasks.runner.agy.args",
+          "label": "trans::webx-tasks::screen.agy-args",
+          "help": "trans::webx-tasks::screen.args-help",
+          "visible": {
+            "when": "tasks.runner.agy.enabled",
+            "is": true
+          }
         }
       ]
     }
