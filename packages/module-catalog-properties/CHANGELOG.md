@@ -1,5 +1,16 @@
 # @webx-ui/module-catalog-properties
 
+## 0.2.11
+
+### Patch Changes
+
+- Updated dependencies [f85efda]
+- Updated dependencies [f85efda]
+  - @webx-ui/core@0.49.1
+  - @webx-ui/module-admin@0.39.0
+  - @webx-ui/module-media@0.14.0
+  - @webx-ui/module-catalog@0.11.3
+
 ## 0.2.10
 
 ### Patch Changes

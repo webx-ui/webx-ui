@@ -1,5 +1,14 @@
 # @webx-ui/module-orders
 
+## 0.5.2
+
+### Patch Changes
+
+- Updated dependencies [f85efda]
+- Updated dependencies [f85efda]
+  - @webx-ui/core@0.49.1
+  - @webx-ui/module-admin@0.39.0
+
 ## 0.5.1
 
 ### Patch Changes
