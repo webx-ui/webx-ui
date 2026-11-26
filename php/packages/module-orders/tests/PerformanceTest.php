@@ -29,6 +29,16 @@ final class PerformanceTest extends PlaceTestCase
 {
     use CountsQueries;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // The cart's `touch()` on emptying writes only when the second has moved on since the
+        // cart was filled, so a run that crossed a second counted one query more. A frozen clock
+        // keeps the budget about the queries the code chooses to run, not about the wall clock.
+        $this->freezeTime();
+    }
+
     #[Test]
     public function placing_costs_the_same_with_four_lines_and_with_forty(): void
     {
