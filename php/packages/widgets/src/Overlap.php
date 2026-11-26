@@ -52,7 +52,7 @@ final class Overlap
 
         // The phone's file first: its copies in the site's formats, then in its own.
         if ($wide !== null && $phone !== null) {
-            foreach ($pictures->formats() as $format) {
+            foreach ($pictures->formatsBesides($phone) as $format) {
                 if (($set = $pictures->sources($phone, false, $format)) !== null) {
                     $sources .= '<source media="'.self::NARROW.'" type="'.self::TYPES[$format].'" srcset="'.e($set).'" sizes="'.self::SIZES.'"'.self::size($phone).'>';
                 }
@@ -62,7 +62,7 @@ final class Overlap
             $sources .= '<source media="'.self::NARROW.'" srcset="'.e($own ?? $phone['url']).'"'.($own !== null ? ' sizes="'.self::SIZES.'"' : '').self::size($phone).'>';
         }
 
-        foreach ($pictures->formats() as $format) {
+        foreach ($pictures->formatsBesides($main) as $format) {
             if (($set = $pictures->sources($main, false, $format)) !== null) {
                 $sources .= '<source type="'.self::TYPES[$format].'" srcset="'.e($set).'" sizes="'.self::SIZES.'">';
             }

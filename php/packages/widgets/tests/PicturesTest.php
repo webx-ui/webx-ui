@@ -231,7 +231,8 @@ final class PicturesTest extends TestCase
     #[Test]
     public function the_overlap_edge_is_offered_by_width_in_the_formats_at_low_priority(): void
     {
-        config(['webx-media.thumbs.formats' => ['avif']]);
+        // WebP is the files' own format: no `<source>` of it besides their own.
+        config(['webx-media.thumbs.formats' => ['avif', 'webp']]);
         $this->cut('photo-1', 'avif', [480, 1080, 1800]);
         $this->cut('photo-1', 'webp', [480, 1080]);
         $this->cut('photo-2', 'avif', [480, 1080, 1800]);
