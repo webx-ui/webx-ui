@@ -1,5 +1,15 @@
 # @webx-ui/module-pages
 
+## 0.6.10
+
+### Patch Changes
+
+- Updated dependencies [f85efda]
+- Updated dependencies [f85efda]
+  - @webx-ui/core@0.49.1
+  - @webx-ui/module-admin@0.39.0
+  - @webx-ui/module-blocks@0.20.4
+
 ## 0.6.9
 
 ### Patch Changes

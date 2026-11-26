@@ -1,5 +1,14 @@
 # @webx-ui/module-press
 
+## 0.2.10
+
+### Patch Changes
+
+- Updated dependencies [f85efda]
+- Updated dependencies [f85efda]
+  - @webx-ui/core@0.49.1
+  - @webx-ui/module-admin@0.39.0
+
 ## 0.2.9
 
 ### Patch Changes
