@@ -332,10 +332,12 @@ defineExpose({ close, reset })
 
 <style>
 /* The panel is teleported, so its styles cannot be scoped to the component. */
+
+/* One layer with every floating panel, ranked by the order of opening — as `WxDialog` says. */
 .wx-drawer__overlay {
   position: fixed;
   inset: 0;
-  z-index: var(--wx-z-index-overlay);
+  z-index: var(--wx-z-index-popover);
   background: var(--wx-bg-overlay);
 }
 
@@ -353,7 +355,7 @@ defineExpose({ close, reset })
   --wx-drawer-pad-y: var(--wx-space-14);
   --wx-drawer-body-pad: var(--wx-gap, var(--wx-space-18));
   position: fixed;
-  z-index: var(--wx-z-index-dialog);
+  z-index: var(--wx-z-index-popover);
   box-sizing: border-box;
   display: flex;
   flex-direction: column;

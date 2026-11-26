@@ -127,10 +127,11 @@ defineExpose({ close })
 /* The panel is teleported, so its styles cannot be scoped to the component. */
 .wx-popover {
   /*
-   * Every floating panel of ours sits on this one layer — a select opened inside a
-   * popover has to cover it, and the panels are added to the document as they open, so
-   * the last one opened is the one on top. Separate layers would rank them by kind
-   * instead, and a list would disappear behind the panel it was opened from.
+   * Every floating panel of ours sits on this one layer, and so do dialogs, drawers and
+   * the lightbox — a select opened inside a popover has to cover it, and so does a dialog
+   * opened from one. What comes later in the document is on top. Separate layers would
+   * rank them by kind instead: a list would disappear behind the panel it was opened
+   * from, and the panel would stand over the dialog it opened.
    */
   z-index: var(--wx-z-index-popover);
   box-sizing: border-box;
