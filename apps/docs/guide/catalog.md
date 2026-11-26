@@ -664,7 +664,14 @@ MANTICORE_HOST=127.0.0.1
 MANTICORE_PORT=9308
 # Required, no default: two sites on one server must not share tables.
 MANTICORE_TABLE_PREFIX=shop
+# Only for a server with `auth = 1`: rights read, write and schema on 'shop_*'.
+MANTICORE_USERNAME=shop
+MANTICORE_PASSWORD=…
 ```
+
+A refused login is reported by `webx:doctor` and the log (never with the password) and is not
+taken for an outage: the next request asks again. A table the login has no right to looks missing
+— Manticore hides it — and is reported, not made again.
 
 `php artisan webx:catalog:index --rebuild` fills the index once. From there it keeps itself
 current: saving a product — from the form, an import, a satellite — marks it in a queue table, and

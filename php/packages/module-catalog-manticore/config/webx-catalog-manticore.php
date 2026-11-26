@@ -28,6 +28,26 @@ return [
 
     /*
     |---------------------------------------------------------------------------
+    | The login
+    |---------------------------------------------------------------------------
+    |
+    | A server with `auth = 1` answers nobody without one: every request then
+    | carries `Authorization: Basic`. The login needs `read`, `write` and
+    | `schema` on '{prefix}_*' and nothing more. Left empty, the requests go
+    | without a login, as to a server that asks for none.
+    |
+    | Manticore does not show a login the tables it has no right to: a refusal
+    | then reads «not exists». The engine never takes that for a reason to make
+    | the table again — it reports the rights instead.
+    |
+    */
+
+    'username' => env('MANTICORE_USERNAME'),
+
+    'password' => env('MANTICORE_PASSWORD'),
+
+    /*
+    |---------------------------------------------------------------------------
     | When it does not answer
     |---------------------------------------------------------------------------
     |

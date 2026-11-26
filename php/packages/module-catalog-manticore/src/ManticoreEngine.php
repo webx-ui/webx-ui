@@ -97,6 +97,8 @@ final class ManticoreEngine implements RebuildsAside
                 return $this->throughSwap(fn (): CatalogResult => $this->answer($query));
             } catch (ManticoreUnavailable) {
                 // Remembered by the server; the fallback below.
+            } catch (ManticoreDenied) {
+                // Logged by the server and asked again next time: a login fixed is used at once.
             }
         }
 
@@ -172,13 +174,36 @@ final class ManticoreEngine implements RebuildsAside
 
         // One after another: a table must be gone before it is made again.
         foreach ($statements as $statement) {
-            $this->server->sql($statement);
+            $this->made($statement);
         }
 
         $this->forgetLive();
 
         $this->rebuilding = $rebuild;
         $this->besideRebuild = ! $rebuild && array_filter($existing, static fn (string $name): bool => str_ends_with($name, '_next')) !== [];
+    }
+
+    /**
+     * One statement of {@see prepare()}. Manticore does not show a login the tables it has no right
+     * to, so a table missing from `SHOW TABLES` may be there all the same: `CREATE` then answers
+     * «already exists». That is a question of rights, never a reason to drop the table and make it
+     * again — it is reported, and the table is left as it is.
+     */
+    private function made(string $statement): void
+    {
+        try {
+            $this->server->sql($statement);
+        } catch (ManticoreError $error) {
+            if (! str_starts_with($statement, 'CREATE TABLE ') || ! str_contains($error->getMessage(), 'exists')) {
+                throw $error;
+            }
+
+            $login = $this->server->username() === null ? 'without a login' : 'the login ['.$this->server->username().']';
+
+            $table = explode(' ', $statement)[2] ?? '';
+
+            throw new ManticoreDenied("Manticore has the table [{$table}], and {$login} does not see it — grant read, write and schema on '{$this->server->prefix()}_*'. The table is left as it is.", previous: $error);
+        }
     }
 
     public function index(array $documents): void

@@ -72,6 +72,26 @@ connected to a catalogue that already has products, when the schema changes (a l
 morphology changed, a new version of a module that writes into the index), or when the server lost
 its data. `webx:doctor` reports a table that is out of date; when to rebuild is yours to choose.
 
+## A server that asks for a login
+
+A Manticore with `auth = 1` answers nobody without a login. Give the site one:
+
+```dotenv
+MANTICORE_USERNAME=my_shop
+MANTICORE_PASSWORD=…
+```
+
+Every request then carries `Authorization: Basic`. The login needs `read`, `write` and `schema`
+on `'{prefix}_*'` — `GRANT read ON 'my_shop_*' TO 'my_shop'` and the same for the other two — and
+nothing more. Without the two keys the requests go without a login, as before.
+
+A refused login is not an outage: the server is asked again on the next request, so a fixed
+password works at once, and the catalogue meanwhile answers as when the server is down (below).
+`webx:doctor` and the log say what to fix — a login to set, a wrong one, or the rights it lacks —
+once per `down_for`, and never with the password. Manticore does not show a login the tables it has
+no right to, so such a table looks missing; the package then reports the rights and never makes the
+table again or drops it.
+
 ## When the server does not answer
 
 The failure is remembered for `down_for` seconds (30), so nobody waits for it twice. Meanwhile the
@@ -87,7 +107,7 @@ never fails because of Manticore: the product waits in the queue.
 php artisan vendor:publish --tag=webx-catalog-manticore-config
 ```
 
-`connect_timeout`, `timeout`, `down_for`, `morphology`, `min_prefix_len`, `min_infix_len`,
+`username`, `password`, `connect_timeout`, `timeout`, `down_for`, `morphology`, `min_prefix_len`, `min_infix_len`,
 `weights`, `layouts`, `facet_values`, `relevance_sample` — see the comments in the file.
 
 ## License
