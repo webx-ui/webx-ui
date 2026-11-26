@@ -242,7 +242,7 @@ final class PicturesTest extends TestCase
         $html = Overlap::edge(true, $this->value('photo-1'), $phone);
 
         $this->assertMatchesRegularExpression(
-            '~^<picture class="webx-overlap__edge" aria-hidden="true">'
+            '~^<style data-webx-overlap-edge>[^<]+</style><picture class="webx-overlap__edge" aria-hidden="true">'
             // The phone's file, in AVIF and in its own format, each by width with its own size.
             .'<source media="\(max-width: 40rem\)" type="image/avif" srcset="[^"]+/photo-2/480\.avif\?v=\w+ 480w, [^"]+/1800\.avif\?v=\w+ 1800w" sizes="100vw" width="1800" height="600">'
             .'<source media="\(max-width: 40rem\)" srcset="[^"]+/photo-2/480\.webp\?v=\w+ 480w, [^"]+/1080\.webp\?v=\w+ 1080w, [^"]+/photo-2\.webp\?v=\w+ 1800w" sizes="100vw" width="1800" height="600">'
