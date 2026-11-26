@@ -71,10 +71,13 @@ final class Overlap
         $own = $pictures->sources($main);
         $choice = $own !== null ? ' srcset="'.e($own).'" sizes="'.self::SIZES.'"' : '';
 
-        // Low priority, not lazy: on a phone the edge may be in the first screen, but it is fog —
-        // the words of the page and its first picture come before it.
+        // Neither lazy nor of low priority: the browser's own. Under the first screen it fetches
+        // the edge late anyway; in it — a section right under a short hero, on a phone — the edge
+        // may be the largest thing painted, and `fetchpriority="low"` held it behind every script
+        // of the page: the largest paint came seconds late. The hero's picture keeps the lead:
+        // it is `high`, the edge is what the browser gives a picture it sees on the screen.
         return '<picture class="webx-overlap__edge" aria-hidden="true">'.$sources
-            .'<img class="webx-overlap__image" src="'.e($main['url']).'"'.$choice.' alt=""'.self::size($main).' decoding="async" fetchpriority="low"></picture>';
+            .'<img class="webx-overlap__image" src="'.e($main['url']).'"'.$choice.' alt=""'.self::size($main).' decoding="async"></picture>';
     }
 
     /** Whether the switch of the block is on: a stored `true`, or what a form sends for it. */

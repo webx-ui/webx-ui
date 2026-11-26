@@ -34,7 +34,7 @@ It is expanded at the end of the response: by then every component on the page �
 the footer too — has said what it needs, and only that is printed — `<link>`s in the head, a
 `<script type="module">` before `</body>`.
 
-- **The runtime** (`runtime.js|css`, under 16 KB gzip) is on every page of a site with a theme: the
+- **The runtime** (`runtime.js|css`, under 17 KB gzip) is on every page of a site with a theme: the
   behaviours by attribute, the header, the mobile menu, dropdowns and the form in a dialog.
 - **A widget's own files** load only when it is claimed. A component claims itself; code of your
   own claims with the facade:
@@ -56,6 +56,18 @@ already rendered this way.
 @webxLater(! $shownByTheServer)
     <x-webx-form :action="$url">…</x-webx-form>
 @endwebxLater
+```
+
+- **The scripts of the widgets that start on an element** — the slider, the lightbox, the map, the
+  form and its parts, and the like — wait until wanted. The page lists them for the runtime, and
+  the runtime fetches one when its element comes within 200px of the window or is touched first;
+  a click that comes before the script is held and given again. Their stylesheets are in the head
+  as usual, so nothing looks different meanwhile. A widget of the first screen that must not wait
+  is loaded at once with `data-webx-eager="slider"` on any element (several names separated by
+  spaces), or `Widgets::eager('slider')`.
+
+```blade
+<x-webx-slider data-webx-eager="slider" …>
 ```
 
 - **The cookie banner** (`consent.js|css`) is on every page: the package prints it before `</body>`
