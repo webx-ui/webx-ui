@@ -1,5 +1,15 @@
 # @webx-ui/module-catalog-collections
 
+## 0.2.2
+
+### Patch Changes
+
+- Updated dependencies [f85efda]
+- Updated dependencies [f85efda]
+  - @webx-ui/core@0.49.1
+  - @webx-ui/module-admin@0.39.0
+  - @webx-ui/module-catalog@0.11.3
+
 ## 0.2.1
 
 ### Patch Changes
