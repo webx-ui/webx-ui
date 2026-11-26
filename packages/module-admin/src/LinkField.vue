@@ -404,7 +404,9 @@ function onClose(): void {
 <style>
 /*
  * The panel is teleported, so it cannot be scoped. As wide as the row, whatever the popover's own
- * cap: the picker's search and section stand side by side only with the room the row has.
+ * cap: the picker's search and section stand side by side only with the room the row has. The
+ * row stops at the field's width like any other, and that is room enough: a wider panel than its
+ * row, in the narrow column of a block's fields, ran into the window's edge and flipped upwards.
  */
 .wx-popover.wx-link-field__panel {
   min-width: 280px;

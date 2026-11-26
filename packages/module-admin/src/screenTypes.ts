@@ -73,9 +73,9 @@ export const adminTypes: TypeRegistry = {
   // two hundred characters, which nobody writes or reads. A document longer than the column
   // leaves room for opens over the whole window from its toolbar instead.
   'wx-rich-text': { component: RichTextField, kind: 'field' },
-  // Wide as well: a row of the picker is a segmented switch, a section and a search box, and half
-  // a form's width leaves the search box too narrow to read a page title in.
-  'wx-link': { component: LinkField, kind: 'field', wide: true },
+  // A field like the others: the form holds one row, as with `wx-media`. The picker — a segmented
+  // switch, a section and a search box — opens in a popover that takes the room it needs itself.
+  'wx-link': { component: LinkField, kind: 'field' },
   'wx-categories': { component: CategoriesField, kind: 'field' },
   'wx-select': { component: SourceSelect, kind: 'field' },
   // Wide: four controls in a column, and half a line leaves the category chips one to a row.
