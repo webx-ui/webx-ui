@@ -179,10 +179,13 @@ scripts/                                # lab-site, link-panel, starter-site, sy
   видна сразу; `webx status`, `webx sync <сайт>` (после правки `composer.json`, миграций, ассетов),
   `webx logs <сайт>`. Подробности и стартовый сайт (`scripts/starter-site.sh`) —
   `docs/pitfalls/packages-and-demo-sites.md`.
-- **Lab-сайт** `https://webx-lab.$DEV_DOMAIN` — постоянный сайт devbox на этом чекауте: все модули,
-  демо, панель `/cms` (пароль — `~/work/webx-lab/.lab-admin`). `scripts/lab-site.sh refresh` после
-  правок, `status`, `reset` — если сломан; `rm` в его `vendor/webx-ui` сносит исходники монорепы.
-  Подробности — «Lab-сайт» в `docs/pitfalls/packages-and-demo-sites.md`.
+- **Lab-сайт** `https://webx-lab.$DEV_DOMAIN` — dev на платформе `wxp` (контейнер `wxp-webx-lab-dev`,
+  код — `~/work/webx-lab`, пакеты — live-ссылки на эту монорепу): все модули, демо. После правок —
+  `scripts/lab-site.sh refresh` (внутри — `wxp live sync webx-lab`, artisan через `wxp exec`, сборка
+  через `wxp node`); `wxp packages update` в live ядро не пускает. Сломан — `scripts/lab-site.sh reset`:
+  `wxp dev reset webx-lab` (MCP `hosting_dev_reset`), затем наполнение. `status` — коммит lab и
+  `wxp status`. Пароль панели `/cms` — `~/work/webx-lab/.lab-admin`. `rm` в его `vendor/webx-ui`
+  сносит исходники монорепы. Подробности — «Lab-сайт» в `docs/pitfalls/packages-and-demo-sites.md`.
 - **Хомлаб** `https://webx-cms.alexx.group` — на опубликованных пакетах; вёрстку и жесты проверяем
   там на настоящих устройствах. После релиза — обновить его (`composer update "webx-ui/*"` в его
   репозитории): ночной прогон свежий релиз не привозит.

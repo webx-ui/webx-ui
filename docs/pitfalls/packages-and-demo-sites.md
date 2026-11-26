@@ -16,8 +16,8 @@
 - **Сайт панели** переключается между монорепой и реестром `scripts/link-panel.sh` (обратно —
   `--registry`), путь к сайту — `APP_PATH` (здесь — `APP_PATH=~/work/webx-cms`, рабочая копия
   сайта хомлаба; у неё свой `scripts/packages.mjs`, которому скрипт и передаёт ход). **Стартовый сайт** пересобирается с нуля `scripts/starter-site.sh` (см. ниже).
-- **Lab-сайт** `webx-lab` — постоянный сайт devbox на текущей ветке этой монорепы: все модули
-  каталога, `theme-default`, демо. Обновляется `scripts/lab-site.sh refresh` (см. «Lab-сайт» ниже). `refresh` — 10–20 с.
+- **Lab-сайт** `webx-lab` — dev на платформе `wxp` в live-режиме на текущую ветку этой монорепы: все
+  модули каталога, `theme-default`, демо. Обновляется `scripts/lab-site.sh refresh` (см. «Lab-сайт» ниже). `refresh` — около 25 с.
 - **Хомлаб** — https://webx-cms.alexx.group на опубликованных пакетах, деплой при каждом пуше и
   ночью. Ветку без релиза туда везёт канал `next` (`docs/architecture/WEBX_UI_PHP_RELEASE.md`).
 
@@ -214,72 +214,84 @@ import "@site/module-<x>"`.** `Dockerfile` сайта, заведённого д
 
 ## Lab-сайт
 
-`scripts/lab-site.sh` держит `~/work/webx-lab` (https://webx-lab.$DEV_DOMAIN, панель `/cms`):
-все модули из `Setup\Catalogue`, `theme-default`, демо всех модулей, три языка. Composer — path-репозиторий
-на `php/packages/*` (`vendor/webx-ui/*` — ссылки), npm — `file:` на `packages/*`
-(`node_modules/@webx-ui/*` — ссылки). Git у сайта нет, база одноразовая. Общий код со
+Lab-сайт `https://webx-lab.$DEV_DOMAIN` — dev на платформе `wxp` (контейнер `wxp-webx-lab-dev`, код —
+`~/work/webx-lab`, панель `/cms`): все модули из `Setup\Catalogue`, `theme-default`, демо всех модулей,
+три языка. Сайт в live-режиме: `vendor/webx-ui/*` — ссылки на `php/packages/*` этой монорепы (в
+контейнере она смонтирована только на чтение), Composer — у ядра (`composer.live.json` и
+`composer.live.lock` сайта пишет платформа), npm — `file:` на `packages/*` (`node_modules/@webx-ui/*`
+— ссылки). Git у сайта нет, база одноразовая. `scripts/lab-site.sh` ходит только через клиент `wxp`:
+artisan — `wxp exec webx-lab dev`, npm — `wxp node webx-lab`, docker и `site` не нужны. Общий код со
 `starter-site.sh` — `scripts/lib/linked-site.sh`.
 
+- `refresh` — после правок здесь: `pnpm --filter … build` пакетов, чьи исходники новее `dist`;
+  строки `.lab-env` в `.env`; `wxp live sync webx-lab` (Composer по `composer.live.json`, миграции,
+  сброс кешей, `queue:restart`); модуль, появившийся в каталоге, дописывается в `composer.json` и
+  `composer.live.json` и ставится вторым `live sync` с демо; миграции; `webx:panel --sync --force`;
+  `npm install && npm run build` через `wxp node`; `webx:theme:sync`; кеши; `wxp env restart webx-lab
+dev`; `webx:doctor`; `/` и `/cms` отвечают 200. В конце — строка `refreshed in Ns: <ветка> @
+<коммит>` и `.lab-state`. Около 25 с.
+- `reset` — `wxp dev reset webx-lab` (операция ядра `dev-reset`, тот же MCP `hosting_dev_reset`:
+  контейнер, тома и база dev заново, код в `~/work` остаётся), затем `webx:setup --modules=all`, типы
+  блоков, демо и `refresh`. Около полутора минут. Пароль админа, `.lab-env` и `.lab-config/` — в коде,
+  их сброс не трогает. **Справочники в базе (пункты служб доставки, скачанные с ключом клиента)
+  `reset` стирает.**
+- `status` — на каком коммите lab обновлён, на сколько отстал от HEAD, `wxp status webx-lab` и код
+  ответа `/` (спящий dev просыпается на запросе).
+- Нет клиента `wxp` — скрипт отказывает сразу. Сайт заводит и переносит платформа (`site-create`,
+  `import-dev`) — это человек.
+- **`wxp packages update webx-lab` падает «live у webx-lab включён… composer update сломает симлинки
+  vendor».** Так задумано: в live Composer ведёт только `wxp live sync`. В контейнере dev composer нет
+  совсем — `wxp exec webx-lab dev -- composer …` отвечает «No such file or directory».
+- **`wxp dev reset webx-lab` заканчивается `failed` на шаге 4 `up` с «HTTP 500».** Ядро проверяет
+  ответ dev, а сайт на пустой базе до `webx:setup` иначе не отвечает. `reset` скрипта такой провал
+  принимает (все шаги до `up` — `done`, ошибка — HTTP 5xx) и идёт дальше; любой другой — стоп.
+  Проверка — строка «dev is up on an empty database» в выводе.
+- **После `wxp dev reset` руками `webx:demo` отвечает «Demo content is already installed».** Журнал
+  демо `storage/app/webx-demo.json` лежит в коде и пережил сброс базы. `scripts/lab-site.sh reset` его
+  убирает; после ручного `dev reset` — удалить файл и `webx:demo`.
 - **Сайт на ссылках не загружается, `Class … not found` в провайдере пакета.** Пакет монорепы начал
   звать новую библиотеку: `vendor/webx-ui/*` — ссылки, код уже новый, а автозагрузка сайта о библиотеке
-  не знает, поэтому падает любой `artisan`. Лечение — `composer update 'webx-ui/*'` на сайте до первого
-  `artisan`; `refresh` так и делает. Проверка — `/` и `/cms` отвечают 200.
+  не знает, поэтому падает любой `artisan`. Лечение — `wxp live sync webx-lab` до первого `artisan`;
+  `refresh` так и делает. Проверка — `/` и `/cms` отвечают 200.
 - **`refresh` падает на `webx:doctor`: «node_modules has @webx-ui/<пакет>@0.0.0, below the ^0.1.0».**
   У нового npm-пакета в чекауте версия `0.0.0`, а `extra.webx.npm` composer-половины заранее просит
   первую версию. До релиза там должно стоять `^0.0.0`: `scripts/sync-npm-pairs.mjs` сам перепишет
   диапазон в коммите версий. Проверка — `refresh` печатает «refreshed in».
-- `create` — достроить недостающее (скелет, `site create webx-lab webx`, `webx:setup --modules=all`,
-  типы блоков, демо) и `refresh`; повторный запуск ничего не пересоздаёт.
-- `refresh` — после правок здесь: `pnpm --filter … build` пакетов, чьи исходники новее `dist`;
-  модуль, появившийся в каталоге, ставится с демо; `composer update "webx-ui/*"` (реестр для
-  `webx-ui/*` исключён — ничего не скачивается); миграции; `webx:panel --sync --force`; сборка
-  сайта; `webx:theme:sync`; сброс кешей и `queue:restart`; `site restart`; `webx:doctor`; `/` и
-  `/cms` отвечают 200. В конце — сводка и `.lab-state` (ветка, коммит, версия).
-- `status` — на каком коммите lab обновлён, на сколько отстал от HEAD, живы ли контейнеры.
-- `reset` — снести базу и папку lab и собрать заново. Пароль админа, `.lab-env` и `.lab-config/`
-  сохраняются. **Справочники в базе (пункты служб доставки, скачанные с ключом клиента) `reset`
-  стирает** — на lab с такими данными его не запускать; проверять правку скрипта на копии
-  (`LAB_NAME=webx-lab-copy scripts/lab-site.sh create`, потом `site down`, папку и базу убрать).
 - **Свои строки `.env`** (ключи служб, `NOVAPOSHTA_READ_ONLY=true`, переключатели) — в
-  `~/work/webx-lab/.lab-env` (chmod 600), не в `.env`: `.env` переписывают шаблон, `webx:setup` и
-  `reset`. Настройка окружения lab дописывает строки `.lab-env` в `.env` последними. Ключи, которые
-  скрипт ставит сам (`APP_URL`, `REDIS_*`, `CACHE_*`, `MANTICORE_*`, `MAIL_MAILER`), туда не кладут.
+  `~/work/webx-lab/.lab-env` (chmod 600), не в `.env`: `.env` переписывает `webx:setup`. `refresh` и
+  `reset` дописывают строки `.lab-env` в `.env` последними. База, Redis, `APP_URL` и `APP_KEY` — из
+  окружения, которое контейнеру даёт платформа: оно сильнее `.env`, и такие ключи в `.lab-env` не кладут.
 - **Свои файлы `config/`** (ручное расписание службы — `webx-delivery.php`) — в
-  `~/work/webx-lab/.lab-config/`: после пересоздания сайта и после `webx:setup` копируются в `config/`
-  поверх, `refresh` возвращает пропавший. Правка — в `.lab-config/`, иначе следующий `reset` её потеряет.
-- **Миграция однократная**: нет `.lab-env` — `refresh`/`reset`/`create` переносят туда строки `.env`,
-  которых нет в `.env.example`; нет `.lab-config/` — переносят `config/webx-delivery.php`. Скрипт
-  печатает только имена ключей и файлов, значения — никогда; в отчёты их тоже не переписывать.
+  `~/work/webx-lab/.lab-config/`: после `webx:setup` копируются в `config/` поверх, `refresh` возвращает
+  пропавший. Правка — в `.lab-config/`, иначе следующий `reset` её потеряет. Скрипт печатает только
+  имена ключей и файлов, значения — никогда; в отчёты их тоже не переписывать.
 - **Вход** — `admin@example.com`, пароль во второй строке `~/work/webx-lab/.lab-admin` (chmod 600).
-  В отчёты и коммиты его не переписывать.
+  `webx:setup` берёт его из файла внутри контейнера — в командную строку `wxp` он не попадает. В
+  отчёты и коммиты его не переписывать.
 - **Lab показывает то, что лежит в чекауте, вместе с незакоммиченным** — это рабочая копия, а не
   ветка. Строка сводки «N uncommitted files» об этом. Чужая ветка в основном чекауте — и lab на ней.
 - **Не `rm -rf` внутри `~/work/webx-lab/vendor/webx-ui` и `node_modules/@webx-ui`** — это исходники
-  монорепы. Сносит сайт только `reset` (сначала снимает все ссылки, потом проверяет, что файлы
-  монорепы на месте). Из папки lab — `npm`, не `pnpm`.
+  монорепы. Из папки lab — `npm`, не `pnpm`.
 - **Из worktree скрипт отказывает**: lab живёт на основном чекауте.
 - **Правка демо-сидера не видна на lab, а `webx:demo --module=catalog` отвечает «already installed».**
   `refresh` демо не пересевает, а `reset` стирает справочники. Пересев — `webx:demo --remove` с модулем и
-  всеми зависимыми (команда сама их назовёт), затем `webx:demo` с теми же модулями. **Сидер каталога молчит,
-  если в каталоге что-то осталось**, а спутники пишут «The catalogue demo is not seeded»: журнал уносит только
-  своё, товар из панели остаётся. Проверка — число товаров после `--remove`; чужую строку не удалять, а
-  отложить на время сева и вернуть с тем же id.
-- **Сломалось непонятно (полупрошедший `create`, чужие руки в базе, правка lab руками)** — `reset`:
-  около минуты, ничего, кроме базы и папки lab, не трогает.
+  всеми зависимыми (команда сама их назовёт), затем `webx:demo` с теми же модулями (`wxp exec webx-lab
+dev -- php artisan …`). **Сидер каталога молчит, если в каталоге что-то осталось**, а спутники пишут
+  «The catalogue demo is not seeded»: журнал уносит только своё, товар из панели остаётся. Проверка —
+  число товаров после `--remove`; чужую строку не удалять, а отложить на время сева и вернуть с тем же id.
+- **Сломалось непонятно (полупрошедший `reset`, чужие руки в базе, правка lab руками)** — `reset`:
+  ничего, кроме dev lab и его базы, не трогает.
 
 - **Гейт падает на тестах `payment-liqpay` (`MethodFormTest` и другие, около 9 штук), хотя код не
   трогали.** В оболочке остались `WEBX_PAYMENTS_LIQPAY_*` из `.lab-env`: окружение сильнее настроек
   способа, и тест видит ключ, которого не задавал. Гейт — в чистой оболочке, `.lab-env` в ту же команду
   не подгружать; проверка — `env | grep -c WEBX_PAYMENTS` даёт 0.
-- **Строка, дописанная в `.lab-env`, до сайта не дошла.** `refresh` строки `.lab-env` в `.env` не
-  применяет, это делает `lab_environment`, а её зовёт только сборка. Лечится `scripts/lab-site.sh
-create`: на готовом сайте он ничего не пересоздаёт. Проверка — имя ключа в строке «.lab-env over
-  .env» вывода.
 - **Правка шаблона блока (`blocks/*.json` темы, `resources/blocks/*.json` модуля) на lab не видна
   после `refresh`, PHP вокруг — уже новый.** Тип блока живёт в базе сайта; `refresh` его не
   переписывает. Лечится `php artisan webx:blocks:import --theme --replace=<slug> --publish <slug>`
   (типы тем) или `--path=vendor/webx-ui/<пакет>/resources/blocks` (типы модулей), затем
-  `webx:blocks:clear`. Проверка — сначала `--dry-run`: печатает `template differs` ровно на твою правку.
+  `webx:blocks:clear` — через `wxp exec webx-lab dev -- …`. Проверка — сначала `--dry-run`: печатает
+  `template differs` ровно на твою правку.
 
 ## Гейт и проверки локально
 
