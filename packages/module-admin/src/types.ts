@@ -259,6 +259,10 @@ export interface PickedFile {
   path: string
   url: string
   name: string
+  /** In bytes, when the library said — what the row of a file says under its name. */
+  size?: number | null
+  /** A small picture of an image, for the row of a field that holds one. */
+  thumb?: string | null
 }
 
 export type AdminStatus = 'loading' | 'ready' | 'unauthenticated' | 'error'

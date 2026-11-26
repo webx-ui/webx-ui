@@ -10,6 +10,7 @@ use WebxUi\Admin\Links\Link;
 use WebxUi\Admin\Links\LinkCandidate;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\Links\LinkTarget;
+use WebxUi\Admin\Links\LinkUrls;
 use WebxUi\Menu\Models\Menu;
 use WebxUi\Menu\Models\MenuItem;
 
@@ -28,11 +29,13 @@ final readonly class Builder
 {
     /**
      * `$site` is null on a panel with no address registry, and a hand-written path then travels
-     * as it was written.
+     * as it was written. `$urls` answers for files of the library; without it an item that points
+     * at a file is left out, as on a site with no file manager.
      */
     public function __construct(
         private LinkSources $sources,
         private ?SiteUrls $site = null,
+        private ?LinkUrls $urls = null,
     ) {}
 
     /**
@@ -63,15 +66,28 @@ final readonly class Builder
     private function candidates(EloquentCollection $items, string $locale): array
     {
         $wanted = [];
+        $files = [];
 
         foreach ($items as $item) {
             $link = $item->link();
+
+            if ($link->target === LinkTarget::File) {
+                $files[] = $link;
+
+                continue;
+            }
 
             if ($link->target !== LinkTarget::Entity || $link->entityType === null || $link->entityId === null) {
                 continue;
             }
 
             $wanted[$link->entityType][$link->entityId] = $link->entityId;
+        }
+
+        // Every file of the menu asked of the library at once: it remembers the answer for the
+        // rest of the build, so the item-by-item look-up below is no further query.
+        if ($files !== [] && $this->urls !== null) {
+            $this->urls->candidates($files, $locale);
         }
 
         $candidates = [];
@@ -148,7 +164,19 @@ final readonly class Builder
             }
         }
 
-        $label = $this->label($item, $candidate, $locale);
+        $file = null;
+
+        if ($link->target === LinkTarget::File) {
+            $file = $this->urls?->file($link);
+
+            // A file the library no longer has, like a page taken off the site: the item is left
+            // out rather than printed as a link that answers 404. The audit names it.
+            if ($file === null) {
+                return null;
+            }
+        }
+
+        $label = $this->label($item, $candidate, $locale) ?? $this->fileLabel($file);
 
         // Nothing to write between the tags. An empty link in a header is worse than a missing
         // one, and this is what a half-translated site looks like from the render's side.
@@ -156,7 +184,7 @@ final readonly class Builder
             return null;
         }
 
-        $url = $this->url($link, $candidate, $locale);
+        $url = $file !== null ? $file['url'] : $this->url($link, $candidate, $locale);
 
         return [
             'label' => $label,
@@ -166,6 +194,9 @@ final readonly class Builder
             'variant' => $item->variant,
             'new_tab' => $item->new_tab,
             'rel' => $link->relAttribute(),
+            // The name the file was uploaded under, for `download=""`: the key is a hash, and that
+            // is what the browser would otherwise save it as.
+            'download' => $file !== null && $link->download ? $file['name'] : null,
         ];
     }
 
@@ -199,13 +230,25 @@ final readonly class Builder
         return null;
     }
 
+    /**
+     * A file with no label of its own is called what it was uploaded as, extension and all — the
+     * one name it has that a visitor would recognise in their downloads.
+     *
+     * @param  array{url: string, name: string}|null  $file
+     */
+    private function fileLabel(?array $file): ?string
+    {
+        $name = $file === null ? '' : trim($file['name']);
+
+        return $name === '' ? null : $name;
+    }
+
     private function url(Link $link, ?LinkCandidate $candidate, string $locale): ?string
     {
         $address = match ($link->target) {
             LinkTarget::Entity => $candidate?->url,
             LinkTarget::Url => $link->url === null ? null : ($this->site?->to($link->url, $locale) ?? $link->url),
-            // A menu item never holds one — its rules call the link type with no `files` — and a
-            // value written around them goes nowhere rather than somewhere wrong.
+            // A file is answered by the library before this is reached (see `node()`).
             LinkTarget::File, LinkTarget::None => null,
         };
 

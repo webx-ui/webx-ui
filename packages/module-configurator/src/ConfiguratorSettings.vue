@@ -191,6 +191,7 @@ function setLabel(next: LocalizedValue | string | number | undefined): void {
           <wx-link-field
             :model-value="values.page ?? null"
             :attributes="false"
+            :files="false"
             :disabled="disabled"
             :label="t('configurator.field-page')"
             @update:model-value="setPage"

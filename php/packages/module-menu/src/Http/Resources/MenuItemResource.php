@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Menu\Http\Resources;
 
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use WebxUi\Admin\Links\Link;
 use WebxUi\Admin\Links\LinkCandidate;
 use WebxUi\Admin\Links\LinkTarget;
 use WebxUi\Admin\Links\LinkUrls;
@@ -103,12 +104,16 @@ final readonly class MenuItemResource
             // What the row says when the item has no label of its own: the name of the thing it
             // points at, which is what the site would print and what the form offers as a
             // placeholder.
-            'label' => $this->label($candidate),
+            'label' => $this->label($candidate, $link),
             'target' => $item->target,
             'entity_type' => $item->entity_type,
             'entity_id' => $item->entity_id,
             'url' => $item->url,
             'hash' => $item->hash,
+            // A file of the library: its key and whether the browser saves it. The address is the
+            // library's answer in `href`, as for any other target.
+            'path' => $item->path,
+            'download' => (bool) $item->download,
             // The address as the site would print it, language prefix and anchor included. It is
             // the line under the label, so it is worked out here rather than in the browser.
             'href' => $this->urls->hrefWith($link, $candidate, $this->locale),
@@ -121,14 +126,18 @@ final readonly class MenuItemResource
             // Whether the site would show what this points at. A draft is a legitimate target —
             // menus are built before the pages in them are published — so the row is drawn
             // dimmed rather than left out of the panel.
-            'available' => $link->target !== LinkTarget::Entity
-                || ($candidate instanceof LinkCandidate && $candidate->available),
+            'available' => match ($link->target) {
+                LinkTarget::Entity => $candidate instanceof LinkCandidate && $candidate->available,
+                // A file the library no longer has is left out of the site the same way.
+                LinkTarget::File => $this->urls->file($link) !== null,
+                default => true,
+            },
             'resolved' => $candidate?->toArray(),
             'children' => array_map(static fn (self $child): array => $child->toArray(), $this->children),
         ];
     }
 
-    private function label(?LinkCandidate $candidate): string
+    private function label(?LinkCandidate $candidate, Link $link): string
     {
         $written = $this->item->getTranslation('title', $this->locale, false);
 
@@ -140,6 +149,7 @@ final readonly class MenuItemResource
             return trim($candidate->title);
         }
 
-        return '';
+        // A file is called what it was uploaded as, which is what the site prints too.
+        return trim($this->urls->file($link)['name'] ?? '');
     }
 }

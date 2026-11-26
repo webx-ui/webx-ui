@@ -37,6 +37,10 @@ export interface MenuItemRow {
   entity_id: number | null
   url: string | null
   hash: string | null
+  /** The library key of a `file` target. */
+  path?: string | null
+  /** A `file` target the browser saves rather than opens. */
+  download?: boolean
   /** The address as the site would print it — prefix and anchor included. */
   href: string | null
   variant: string

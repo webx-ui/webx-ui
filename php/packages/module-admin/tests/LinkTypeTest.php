@@ -59,6 +59,7 @@ final class LinkTypeTest extends TestCase
             ['id' => 'link', 'type' => 'wx-link', 'name' => 'cta.link'],
             ['id' => 'translated', 'type' => 'wx-link', 'name' => 'cta.translated', 'localized' => true],
             ['id' => 'file', 'type' => 'wx-link', 'name' => 'cta.file', 'props' => ['files' => true]],
+            ['id' => 'page', 'type' => 'wx-link', 'name' => 'cta.page', 'props' => ['files' => false]],
         ]);
     }
 
@@ -262,17 +263,33 @@ final class LinkTypeTest extends TestCase
     }
 
     /** The menu, a redirect after a form — every caller of the rules with no node — has no file target. */
+    /** Any link may hand over a file — a button, a menu item, the button after a form (webx-ui#210). */
     #[Test]
-    public function a_file_link_is_refused_where_the_field_did_not_ask_for_files(): void
+    public function a_file_link_is_taken_wherever_a_link_is(): void
+    {
+        $stored = $this->store(['target' => 'file', 'path' => 'media/ab/cd/f00d.pdf']);
+
+        $this->assertSame('file', $stored['target'] ?? null);
+        $this->assertSame('media/ab/cd/f00d.pdf', $stored['path'] ?? null);
+
+        // The menu, the inbox and the other callers with no node at all.
+        $rules = $this->app->make(LinkType::class)->rules([]);
+        $validator = validator(['link' => ['target' => 'file', 'path' => 'media/ab/cd/f00d.pdf']], ['link' => $rules]);
+
+        $this->assertFalse($validator->fails());
+    }
+
+    #[Test]
+    public function a_file_link_is_refused_where_the_field_has_to_be_a_page(): void
     {
         try {
-            $this->store(['target' => 'file', 'path' => 'media/ab/cd/f00d.pdf']);
-            $this->fail('A field without `files` took a file.');
+            $this->store(['target' => 'file', 'path' => 'media/ab/cd/f00d.pdf'], 'cta.page');
+            $this->fail('A field with `files: false` took a file.');
         } catch (ValidationException $refused) {
-            $this->assertSame(['This field does not link to files.'], $refused->errors()['cta.link']);
+            $this->assertSame(['This field does not link to files.'], $refused->errors()['cta.page']);
         }
 
-        $rules = $this->app->make(LinkType::class)->rules([]);
+        $rules = $this->app->make(LinkType::class)->rules(['props' => ['files' => false]]);
         $validator = validator(['link' => ['target' => 'file', 'path' => 'media/ab/cd/f00d.pdf']], ['link' => $rules]);
 
         $this->assertTrue($validator->fails());

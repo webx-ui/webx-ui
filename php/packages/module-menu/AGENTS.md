@@ -11,17 +11,17 @@ when the question is about one of those.
 ## What it owns
 
 - **Tables** `menus` (`WebxUi\Menu\Models\Menu`: `key`, translatable `title`) and `menu_items`
-  (`WebxUi\Menu\Models\MenuItem`: one nested set scoped by `menu_id`; `target` is `entity`, `url`
-  or `none`; translatable `title`, `hash`, `variant`, `is_heading`, `new_tab`, `rel`, `locales`,
+  (`WebxUi\Menu\Models\MenuItem`: one nested set scoped by `menu_id`; `target` is `entity`, `url`,
+  `file` (a library key in `path`, `download`) or `none`; translatable `title`, `hash`, `variant`, `is_heading`, `new_tab`, `rel`, `locales`,
   `visible`). One tree serves every language; `locales` limits an item to some of them.
 - **Config** `config/webx-menu.php`: `menus` (the declared menus and their `variants`), the
   fallback `variants`, `cache.enabled`, `cache.ttl`. A declared menu shows in the panel at once,
   empty; its `menus` row appears on the first save.
 - **Render** the helper `menu($key, locale: ...)` → `WebxUi\Menu\Rendering\MenuTree` of
-  `MenuLink` (`label`, `url`, `children`, `isActive()`, `isCurrent()`, `attrs()`); the component
+  `MenuLink` (`label`, `url`, `download`, `children`, `isActive()`, `isCurrent()`, `attrs()`); the component
   `<x-webx-menu::menu name="header" />` with views `webx-menu::menu` and `webx-menu::item`.
 - **Cache** `WebxUi\Menu\MenuCache`, per menu and language; saves, moves, deletes, address
-  changes and publishing an entity an item points at forget it on their own.
+  changes, publishing an entity an item points at and deleting a library file forget it on their own.
 - **Panel section** `menu` (order 400, requires `pages`); API under `config('webx-admin.api_path')` + `/menus`, a menu
   addressed by its key, with `cache/flush` for one menu or all.
 - **MCP** tools `menu_list_menus`, `menu_get_tree`, `menu_add_link`, `menu_update_link`,

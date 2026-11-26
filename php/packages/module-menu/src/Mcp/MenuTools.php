@@ -92,18 +92,20 @@ final class MenuTools
             Tool::mutating(
                 'add_link',
                 'Put an item into a menu: what it points at, what it is called, and where it goes. A target is one '
-                .'of three and you say which — an entity of this site by its kind and id, an address of your own, '
-                .'or nothing at all, which is what a group heading is. Leave the label out and the item is called '
+                .'of four and you say which — an entity of this site by its kind and id, an address of your own, '
+                .'a file of the media library by its key, or nothing at all, which is what a group heading is. Leave the label out and the item is called '
                 .'whatever the entity behind it is called, in every language at once, which is usually what you '
                 .'want. It goes at the end of its level unless you name a position.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->addLink($arguments)),
                 ['properties' => [
                     'menu' => $menu,
-                    'target' => ['type' => 'string', 'enum' => ['entity', 'url', 'none'], 'description' => 'entity — a record of this site · url — an address · none — a heading or a separator.'],
+                    'target' => ['type' => 'string', 'enum' => ['entity', 'url', 'file', 'none'], 'description' => 'entity — a record of this site · url — an address · file — a file of the media library · none — a heading or a separator.'],
                     'entity_type' => ['type' => 'string', 'description' => 'The kind of record, as menu://menus lists them: "page", "article".'],
                     'entity_id' => ['type' => 'integer', 'description' => 'Its id, from the tools of the module that owns it.'],
                     'url' => ['type' => 'string', 'description' => 'A path on this site — "/account" — or a full address somewhere else. A path gets the language prefix when it is printed; write it without one.'],
                     'hash' => ['type' => 'string', 'description' => 'An anchor on the page, without its #.'],
+                    'path' => ['type' => 'string', 'description' => 'With target file: the file\'s key, "media/…", as media_get_file and media_search_files report it. Without a title the item is called by the name the file was uploaded under.'],
+                    'download' => ['type' => 'boolean', 'description' => 'With target file: the browser saves the file under its own name instead of opening it.'],
                     'title' => ['type' => ['string', 'object'], 'description' => 'The label: one language as a string, or every language as { "en": "…", "ru": "…" }. Omit it to be called what the entity is called.'],
                     'parent' => ['type' => ['integer', 'null'], 'description' => 'The item this one goes under; a top-level item when omitted.'],
                     'index' => ['type' => 'integer', 'description' => 'Where in that level, counting from 0. At the end when omitted.'],
@@ -125,11 +127,13 @@ final class MenuTools
                 ['properties' => [
                     'menu' => $menu,
                     'item' => $item,
-                    'target' => ['type' => 'string', 'enum' => ['entity', 'url', 'none'], 'description' => 'Changing this changes what the item points at; send the target and the fields that go with it together.'],
+                    'target' => ['type' => 'string', 'enum' => ['entity', 'url', 'file', 'none'], 'description' => 'Changing this changes what the item points at; send the target and the fields that go with it together.'],
                     'entity_type' => ['type' => 'string'],
                     'entity_id' => ['type' => 'integer'],
                     'url' => ['type' => 'string'],
                     'hash' => ['type' => 'string'],
+                    'path' => ['type' => 'string', 'description' => 'With target file: the file\'s key, "media/…".'],
+                    'download' => ['type' => 'boolean'],
                     'title' => ['type' => ['string', 'object'], 'description' => 'The label in one language or in all of them; an empty string clears it in that language.'],
                     'variant' => ['type' => 'string'],
                     'is_heading' => ['type' => 'boolean'],
@@ -276,7 +280,7 @@ final class MenuTools
             return [
                 'dry_run' => true,
                 'would_change' => array_values(array_intersect(
-                    ['target', 'entity_type', 'entity_id', 'url', 'hash', 'title', 'variant', 'is_heading', 'new_tab', 'rel', 'locales', 'visible'],
+                    ['target', 'entity_type', 'entity_id', 'url', 'hash', 'path', 'download', 'title', 'variant', 'is_heading', 'new_tab', 'rel', 'locales', 'visible'],
                     array_keys($arguments),
                 )),
                 'item' => (int) $found->getKey(),
@@ -424,6 +428,18 @@ final class MenuTools
     {
         $wanted = Link::fromArray($link);
 
+        if ($wanted->target === LinkTarget::File && $wanted->path !== null) {
+            // A key is typed by an agent rather than picked, and one the library has never had is
+            // an item that is left out of the site from the moment it is saved.
+            $same = $item->exists && $item->link()->target === LinkTarget::File && $item->link()->path === $wanted->path;
+
+            if (! $same && $this->urls()->file($wanted) === null) {
+                throw new ToolFailure("There is no file {$wanted->path} in the media library. Find its key with media_search_files.");
+            }
+
+            return;
+        }
+
         if ($wanted->target !== LinkTarget::Entity || $wanted->entityType === null || $wanted->entityId === null) {
             return;
         }
@@ -458,7 +474,7 @@ final class MenuTools
             ? ['target' => $arguments['target'], 'new_tab' => $item->new_tab, 'rel' => $item->rel ?? []]
             : $item->link()->toArray();
 
-        foreach (['entity_type', 'entity_id', 'url', 'hash', 'new_tab', 'rel'] as $field) {
+        foreach (['entity_type', 'entity_id', 'url', 'hash', 'path', 'download', 'new_tab', 'rel'] as $field) {
             if (array_key_exists($field, $arguments)) {
                 $link[$field] = $arguments[$field];
             }
@@ -502,6 +518,7 @@ final class MenuTools
         $where = match ($link->target->value) {
             'entity' => $link->entityType.' #'.$link->entityId,
             'url' => (string) ($link->url ?? $link->fragment()),
+            'file' => 'file '.$link->path,
             default => 'nowhere',
         };
 

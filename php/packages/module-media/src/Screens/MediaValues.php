@@ -297,6 +297,17 @@ final class MediaValues
     }
 
     /**
+     * The name the file behind a key was uploaded under — what `download=""` saves it as — or
+     * null for a key the library does not have. The row is the one the resolve fetched already.
+     */
+    public function downloadName(string $path): ?string
+    {
+        $file = $this->files->find($path);
+
+        return $file instanceof MediaFile && $file->file_name !== '' ? $file->file_name : null;
+    }
+
+    /**
      * The rows behind these stored values — single pictures or lists of them — in one query of
      * the library, ahead of resolving any of them: a page of picture blocks asked once per block.
      *

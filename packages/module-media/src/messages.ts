@@ -116,6 +116,18 @@ export const mediaMessages: Record<string, Messages> = {
     count: ':count of :max',
     'at-least': 'At least :count',
     locked: 'The file library is not open to you',
+    'file-choose': 'Choose a file',
+    'file-library': 'Choose from the library',
+    'file-replace': 'Replace',
+    'file-upload': 'Upload',
+    'file-uploading': 'Uploading…',
+    'file-upload-failed': 'The upload failed — try again.',
+    'file-download': 'Download instead of opening',
+    'file-title': 'Caption',
+    'file-open': 'Open',
+    'file-done': 'Done',
+    'file-clear': 'Clear the field',
+    'file-panel': 'The file',
   },
   // The image editor is a component of the design system, so its words are props rather than
   // lines in the dictionary — the manager hands it these when it opens it.

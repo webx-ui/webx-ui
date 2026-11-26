@@ -8,12 +8,16 @@ use WebxUi\Admin\Screens\ChecksNewValues;
 use WebxUi\Admin\Screens\FieldType;
 
 /**
- * `wx-file`: one file, shown as a card rather than as a picture.
+ * `wx-file`: one file, a document more often than not.
  *
  * The same value as `wx-media`, kept and read the same way — what differs is that a document has
  * no `alt` worth asking for and no preview worth framing, so the field draws a glyph, a name and
- * a size instead. That is a decision about the field, which is why the server has nothing of its
- * own to say here.
+ * a size instead.
+ *
+ * One thing of its own: where the node says `props.download: true`, the value may carry
+ * `download: true`, and the site then reads `download` as the name the file was uploaded under —
+ * what `<a download="…">` takes, as a file link of `wx-link` does. Elsewhere the flag is not kept,
+ * and `download` reads null.
  */
 final class FileFieldType implements ChecksNewValues, FieldType
 {
@@ -33,7 +37,13 @@ final class FileFieldType implements ChecksNewValues, FieldType
      */
     public function store(mixed $value, array $node): mixed
     {
-        return $this->values->store($value);
+        $stored = $this->values->store($value);
+
+        if ($stored !== null && $this->offersDownload($node) && is_array($value) && filter_var($value['download'] ?? false, FILTER_VALIDATE_BOOL)) {
+            $stored['download'] = true;
+        }
+
+        return $stored;
     }
 
     /**
@@ -41,7 +51,24 @@ final class FileFieldType implements ChecksNewValues, FieldType
      */
     public function resolve(mixed $stored, array $node, ?string $locale = null): mixed
     {
-        return $this->values->resolve($stored, $locale);
+        $resolved = $this->values->resolve($stored, $locale);
+
+        if ($resolved === null) {
+            return null;
+        }
+
+        $wanted = is_array($stored) && ($stored['download'] ?? false) === true && $this->offersDownload($node);
+        $resolved['download'] = $wanted ? $this->values->downloadName((string) $resolved['path']) : null;
+
+        return $resolved;
+    }
+
+    /**
+     * @param  array<string, mixed>  $node
+     */
+    private function offersDownload(array $node): bool
+    {
+        return ($node['props']['download'] ?? false) === true;
     }
 
     /**

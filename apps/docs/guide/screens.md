@@ -347,10 +347,11 @@ of `webx-ui/localization`). A dialog of a module that is not a screen uses `<wx-
 
 `wx-link` keeps the target and never its address: a page of the site by its morph pair, a typed
 address, a file of the media library by its key, or nowhere. `props`: `allowNone` (off for a
-button), `attributes` (the new tab and `rel`) and `files` — on, the picker offers a file of the
-library and a switch that makes the browser save it rather than open it. A file is a target only
-where the node says `files: true`, on both sides: the menu and every other caller of the rules with
-no node keep the three targets their columns hold. The site reads the link resolved — `url`,
+button), `attributes` (the new tab and `rel`) and `files` — on by default: the picker offers a file
+of the library and a switch that makes the browser save it rather than open it. Every link takes a
+file, on both sides — a block's button, a menu item, the button after a form. A node that has to
+be a page (where a widget stands, which page to preview) says `files: false`, and so does a new
+caller of `WxLinkPicker`/`WxLinkField` or of `LinkType::rules()` that means a page and nothing else. The site reads the link resolved — `url`,
 `new_tab`, `rel` (with `noopener noreferrer` for a new tab), `available`, and `download`, the name
 the file was uploaded under — and a template prints all of it with
 `WebxUi\Admin\Links\LinkAttributes::of($link)` ([blocks](/guide/blocks#a-link-field)).
@@ -520,7 +521,7 @@ A module registers its own the same way — its `types` are merged into every pa
 | --------------- | --------------- | -------------------- | --------------------------------- |
 | `wx-media`      | `module-media`  | `MediaValue \| null` | one picture in a frame            |
 | `wx-gallery`    | `module-media`  | `MediaValue[]`       | a grid of thumbnails, in order    |
-| `wx-file`       | `module-media`  | `MediaValue \| null` | one file card: glyph, name, size  |
+| `wx-file`       | `module-media`  | `MediaValue \| null` | a row and a panel, as `wx-link`   |
 | `wx-files`      | `module-media`  | `MediaValue[]`       | those cards a line each, in order |
 | `wx-blocks`     | `module-blocks` | a list of blocks     | the constructor                   |
 | `wx-inbox-form` | `module-inbox`  | `string \| null`     | one form of the Inbox, by slug    |

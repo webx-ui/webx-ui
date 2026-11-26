@@ -13,6 +13,7 @@
            href="{{ $item->url }}"
            @if ($item->newTab) target="_blank" @endif
            @if ($item->rel !== null) rel="{{ $item->rel }}" @endif
+           @if ($item->download !== null) download="{{ $item->download }}" @endif
            @if ($item->isCurrent()) aria-current="page" @endif>{{ $item->label }}</a>
     @endif
 

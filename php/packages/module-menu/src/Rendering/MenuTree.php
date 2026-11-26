@@ -77,6 +77,7 @@ final class MenuTree extends Collection
                 rel: self::text($node['rel'] ?? null),
                 path: self::text($node['path'] ?? null),
                 current: $current,
+                download: self::text($node['download'] ?? null),
             );
         }
 

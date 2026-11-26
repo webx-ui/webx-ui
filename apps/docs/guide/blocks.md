@@ -297,7 +297,7 @@ the page.
 A `wx-link` field arrives resolved: `url` with the anchor on it, `new_tab`, `rel`, `available`
 (false for a draft or a file the library no longer has) and `download` — the name the file was
 uploaded under when the editor chose a file of the library and ticked «Download instead of opening»
-(`props.files: true` on the field offers the file target). `LinkAttributes::of()` turns all of it
+(every link field offers the file target; `props.files: false` turns it off). `LinkAttributes::of()` turns all of it
 into the attributes of an `<a>`, or `null` when there is nowhere to go:
 
 ```blade

@@ -47,14 +47,14 @@ const props = withDefaults(
     /** Off where the two attributes are somebody else's business, as in a menu item's own form. */
     attributes?: boolean
     /**
-     * A file of the media library as a fourth target. Off by default: a menu item keeps its link
-     * in columns with nowhere to put a file key, and the server refuses one unless the field asks.
-     * Offered only when a module installed here has a library to pick from.
+     * A file of the media library as a fourth target. On by default, as on the server: any
+     * button or menu item may be asked to download a price list. Off only where the link has to
+     * be a page. Offered only when a module installed here has a library to pick from.
      */
     files?: boolean
     disabled?: boolean
   }>(),
-  { allowNone: true, attributes: true, files: false, disabled: false },
+  { allowNone: true, attributes: true, files: true, disabled: false },
 )
 
 const value = defineModel<LinkValue | null>({ default: null })

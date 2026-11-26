@@ -51,6 +51,7 @@ class MenuServiceProvider extends ServiceProvider
         $this->app->bind(Builder::class, static fn ($app): Builder => new Builder(
             $app->make(LinkSources::class),
             $app->bound(SiteUrls::class) ? $app->make(SiteUrls::class) : null,
+            $app->make(LinkUrls::class),
         ));
     }
 

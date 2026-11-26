@@ -64,6 +64,8 @@ final class ValidationTest extends TestCase
                 ['id' => 'colour', 'type' => 'wx-color-picker'],
                 ['id' => 'link', 'type' => 'wx-link'],
                 ['id' => 'file', 'type' => 'wx-link', 'props' => ['files' => true]],
+                // A link that has to be a page: the one kind of field a file is refused by.
+                ['id' => 'page', 'type' => 'wx-link', 'props' => ['files' => false]],
                 ['id' => 'note', 'type' => 'wx-text', 'props' => ['text' => 'A note, not a field']],
             ],
         ]);
@@ -84,7 +86,7 @@ final class ValidationTest extends TestCase
         yield 'not a colour' => ['colour', 'red"><script>alert(1)</script>'];
         yield 'a javascript: link' => ['link', ['target' => 'url', 'url' => 'javascript:alert(1)']];
         yield 'a link without its target' => ['link', ['url' => '/contacts']];
-        yield 'a file where the field takes none' => ['link', ['target' => 'file', 'path' => 'media/ab/cd/f00d.pdf']];
+        yield 'a file where the field takes none' => ['page', ['target' => 'file', 'path' => 'media/ab/cd/f00d.pdf']];
         yield 'a download switch that is not one' => ['file', ['target' => 'file', 'path' => 'media/ab/cd/f00d.pdf', 'download' => 'yes']];
     }
 
@@ -197,8 +199,8 @@ final class ValidationTest extends TestCase
         $this->agent('set_content', ['force' => true,
             'entity' => 'note',
             'id' => $page->id,
-            'blocks' => [['key' => 'k-one', 'type' => 'every', 'values' => ['link' => ['target' => 'file', 'path' => 'media/ab/cd/f00d.pdf']]]],
-        ])->assertHasErrors(['every [k-one], field [link]', 'This field does not link to files.']);
+            'blocks' => [['key' => 'k-one', 'type' => 'every', 'values' => ['page' => ['target' => 'file', 'path' => 'media/ab/cd/f00d.pdf']]]],
+        ])->assertHasErrors(['every [k-one], field [page]', 'This field does not link to files.']);
 
         $this->assertNull($page->refresh()->draft, 'nothing was written');
     }

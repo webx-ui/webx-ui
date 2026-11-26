@@ -43,6 +43,23 @@ final class CacheSubscriber
         $this->subscribed = true;
 
         $this->linkedEntities();
+        $this->linkedFiles();
+    }
+
+    /**
+     * The files of the library an item may point at.
+     *
+     * A file deleted from the library takes its item out of the site (the build leaves it out),
+     * and a built menu would otherwise go on printing a link that answers 404 until it expired.
+     * Named by string: the library is another package, and a site without it never raises this.
+     * A key rewritten in place — a picture converted to WebP — is the provider's
+     * `StoredContentRewritten`.
+     */
+    private function linkedFiles(): void
+    {
+        $this->on('WebxUi\Media\Models\MediaFile', ['deleted'], function (): void {
+            $this->cache->flush();
+        });
     }
 
     /**

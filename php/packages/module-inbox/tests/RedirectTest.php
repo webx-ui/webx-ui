@@ -7,6 +7,7 @@ namespace WebxUi\Inbox\Tests;
 use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\HttpFoundation\Response;
+use WebxUi\Admin\Contracts\AssetDownloads;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Inbox\Tests\Fixtures\TranslatedPages;
 
@@ -19,6 +20,17 @@ final class RedirectTest extends TestCase
     protected function defineEnvironment($app): void
     {
         parent::defineEnvironment($app);
+
+        // The library, by its one contract: a price list it has, and nothing else.
+        $app->instance(AssetDownloads::class, new class implements AssetDownloads
+        {
+            public function downloads(array $paths): array
+            {
+                return array_combine($paths, array_map(static fn (string $path): ?array => $path === 'media/ab/cd/prices.pdf'
+                    ? ['url' => 'https://cdn.example.test/media/ab/cd/prices.pdf', 'name' => 'Prices.pdf']
+                    : null, $paths));
+            }
+        });
 
         $app['config']->set('webx-localization.locales', [
             ['code' => 'en', 'default' => true],
@@ -77,6 +89,15 @@ final class RedirectTest extends TestCase
 
         $this->postJson($this->intake('callback'), ['fields' => ['name' => 'Ada', 'email' => 'ada@site.test'], 'webx_locale' => 'ru'])
             ->assertJsonPath('redirect', 'https://elsewhere.test/done');
+    }
+
+    /** Any link may be a file of the library now (webx-ui#210) — the price list somebody asked for. */
+    #[Test]
+    public function a_file_of_the_library_is_where_the_visitor_goes(): void
+    {
+        $this->form('contact', [], ['redirect' => ['target' => 'file', 'path' => 'media/ab/cd/prices.pdf']]);
+
+        $this->send('en')->assertJsonPath('redirect', 'https://cdn.example.test/media/ab/cd/prices.pdf');
     }
 
     #[Test]
