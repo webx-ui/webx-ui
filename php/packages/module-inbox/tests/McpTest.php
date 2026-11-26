@@ -213,6 +213,88 @@ final class McpTest extends TestCase
     }
 
     #[Test]
+    public function the_settings_are_merged_by_key_and_null_takes_one_away(): void
+    {
+        $this->form(options: [
+            'dialog.scroll' => 'page',
+            'steps.hold-next' => true,
+            'thank-you.button' => ['en' => 'Home', 'de' => 'Startseite'],
+            'thank-you.button-link' => ['target' => 'url', 'url' => '/'],
+            'antispam.min_seconds' => 4,
+        ]);
+
+        // Translating the button alone, the way an agent translating a form sends it (#214).
+        $options = $this->content($this->agent('form_save', [
+            'form' => 'contact',
+            'options' => ['thank-you.button' => ['en' => 'Back home', 'fr' => 'Accueil']],
+        ])->assertOk())['form']['options'];
+
+        $this->assertSame('page', $options['dialog.scroll']);
+        $this->assertTrue($options['steps.hold-next']);
+        $this->assertSame('/', $options['thank-you.button-link']['url']);
+        $this->assertSame(4, $options['antispam.min_seconds']);
+        // A value in languages takes the key's place whole, as a title sent as a map does: the
+        // language left out of it is gone.
+        $this->assertSame(['en' => 'Back home', 'fr' => 'Accueil'], $options['thank-you.button']);
+
+        $options = $this->content($this->agent('form_save', [
+            'form' => 'contact',
+            'options' => ['steps.hold-next' => null, 'thank-you.button-link' => null],
+        ])->assertOk())['form']['options'];
+
+        $this->assertArrayNotHasKey('steps.hold-next', $options);
+        $this->assertArrayNotHasKey('thank-you.button-link', $options);
+        $this->assertSame('page', $options['dialog.scroll']);
+        $this->assertSame(['en' => 'Back home', 'fr' => 'Accueil'], $options['thank-you.button']);
+
+        // A dry run plans on the merged settings and writes nothing.
+        $this->agent('form_save', ['form' => 'contact', 'options' => ['dialog.scroll' => null], 'dry_run' => true])->assertOk();
+        $this->assertSame('page', Form::query()->where('slug', 'contact')->firstOrFail()->options['dialog.scroll']);
+    }
+
+    #[Test]
+    public function the_options_of_a_field_are_merged_by_key_unless_its_type_changes(): void
+    {
+        $form = $this->form();
+        $form->fields->firstWhere('name', 'message')->update(['options' => ['maxlength' => 500, 'rows' => 4]]);
+
+        $content = $this->content($this->agent('form_save', [
+            'form' => 'contact',
+            'fields' => [['name' => 'message', 'options' => ['rows' => 8]]],
+        ])->assertOk());
+
+        $this->assertSame(['maxlength' => 500, 'rows' => 8], $this->optionsOf($content, 'message'));
+
+        $content = $this->content($this->agent('form_save', [
+            'form' => 'contact',
+            'fields' => [['name' => 'message', 'options' => ['maxlength' => null]]],
+        ])->assertOk());
+
+        $this->assertSame(['rows' => 8], $this->optionsOf($content, 'message'));
+
+        // Another type starts from what was sent: rows mean nothing to a line of text.
+        $content = $this->content($this->agent('form_save', [
+            'form' => 'contact',
+            'fields' => [['name' => 'message', 'type' => 'text', 'options' => ['maxlength' => 80]]],
+        ])->assertOk());
+
+        $this->assertSame(['maxlength' => 80], $this->optionsOf($content, 'message'));
+    }
+
+    /**
+     * The options of one field of an answer of `inbox_form_get`, by its machine name.
+     *
+     * @param  array<string, mixed>  $content
+     * @return array<string, mixed>
+     */
+    private function optionsOf(array $content, string $name): array
+    {
+        $fields = array_column($content['fields'], 'options', 'name');
+
+        return $fields[$name];
+    }
+
+    #[Test]
     public function a_new_question_sent_without_a_name_is_named_after_its_title(): void
     {
         $this->form();

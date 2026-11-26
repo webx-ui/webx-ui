@@ -143,6 +143,8 @@ final class InboxTools
                     'title' => ['type' => ['string', 'object'], 'description' => 'One language as a string, or every language as { "en": "…" }.'],
                     'is_enabled' => ['type' => 'boolean', 'description' => 'A form that is off is a 404 to the site and keeps everything it has received.'],
                     'options' => ['type' => 'object', 'description' => 'The settings, as inbox_form_get returns them: recipients, the thank-you, the antispam. Unknown keys are dropped. '
+                        .'Merged by key over what the form has: a key left out keeps its value, a key sent as null is taken away, '
+                        .'a key sent takes the place of its value whole — a value in languages too, as the title does: send every language it keeps. '
                         .'`description` — a line under the title of the form on the site and in its dialog, in one language or as { "en": "…" }; plain text, shortcodes as in any text of the site; absent — nothing is shown. '
                         .'`thank-you.heading` and `thank-you.text` may say {{field.<name>}}: the visitor\'s answer to that field, escaped; empty, unknown or a file — nothing. '
                         .'`notify_channels` — ids of channels of the notifications module (notifications_channels_list with event inbox.submission) '
@@ -178,7 +180,8 @@ final class InboxTools
                             'is_enabled' => ['type' => 'boolean', 'description' => 'False takes the field off the site; a step switched off takes its fields with it.'],
                             'is_required' => ['type' => 'boolean'],
                             'in_table' => ['type' => 'boolean', 'description' => 'Show this answer as a column of the submission list.'],
-                            'options' => ['type' => 'object', 'description' => 'What this type takes. select · radio · checkbox: choices, required and at least one — '
+                            'options' => ['type' => 'object', 'description' => 'What this type takes, merged by key over what the field has as the form\'s options are (null takes a key away; '
+                                .'a field whose type changes starts from what is sent). select · radio · checkbox: choices, required and at least one — '
                                 .'[{ "value": "pro", "label": { "en": "Pro plan" } }], or plain strings ["Pro", "Basic"] where the value is the label; '
                                 .'checkbox also min and max. text · email · textarea: maxlength (textarea also rows). tel: pattern. '
                                 .'date: min and max, YYYY-MM-DD. file: extensions, max_size in KB, multiple. consent: text, the sentence beside the tick. '
@@ -391,6 +394,12 @@ final class InboxTools
         // that named only `is_enabled` would otherwise arrive at the rules with no title and
         // be refused for something nobody was changing.
         $input = FormInput::bring([...$this->formAsInput($form), ...array_intersect_key($arguments, array_flip(['slug', 'title', 'is_enabled', 'options']))]);
+        // The settings by key, over what the form has (#214): a spread of the whole call put the
+        // `options` sent in place of every stored one, and a save that translated the thank-you
+        // button took the dialog's scroll and the held «Next» away with it.
+        if (array_key_exists('options', $arguments)) {
+            $input['options'] = self::mergeOptions($form === null ? [] : ($form->options ?? []), $arguments['options']);
+        }
 
         // The questions first: the Reply-To field the settings name has to be an e-mail field
         // of the form as it will be after this call, which may be adding it right now.
@@ -550,6 +559,11 @@ final class InboxTools
         }
 
         $input = FieldInput::bring([...$this->fieldAsInput($field), ...array_diff_key($sent, array_flip(['id', 'remove']))], $field);
+        // The same for a field's options — unless its type changes: what a select took means
+        // nothing to a date, and the new type starts from what was sent.
+        if ($field !== null && array_key_exists('options', $sent) && ($sent['type'] ?? $field->type->value) === $field->type->value) {
+            $input['options'] = self::mergeOptions($field->options ?? [], $sent['options']);
+        }
 
         // The name is checked against `$names` below rather than against the table: the table
         // does not know what the entries before this one freed or took.
@@ -1240,6 +1254,32 @@ final class InboxTools
             'is_enabled' => $form->is_enabled,
             'options' => $form->options ?? [],
         ];
+    }
+
+    /**
+     * Options sent over options stored, key by key: a key left out keeps its value, a key sent
+     * with null is taken away, any other value takes the key's place whole — a value in
+     * languages included, as the title's map does: a language left out of it is gone.
+     *
+     * Anything but an object is handed on as it came, for the rules to refuse.
+     *
+     * @param  array<mixed>  $stored
+     */
+    private static function mergeOptions(array $stored, mixed $sent): mixed
+    {
+        if (! is_array($sent) || (array_is_list($sent) && $sent !== [])) {
+            return $sent;
+        }
+
+        foreach ($sent as $key => $value) {
+            if ($value === null) {
+                unset($stored[$key]);
+            } else {
+                $stored[$key] = $value;
+            }
+        }
+
+        return $stored;
     }
 
     /**

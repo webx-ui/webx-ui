@@ -130,6 +130,24 @@ final class PanelFormsTest extends TestCase
     }
 
     #[Test]
+    public function the_panel_saves_the_settings_whole(): void
+    {
+        // The editor sends every setting it shows, so one it left out is one switched off —
+        // unlike `inbox_form_save`, which merges by key (#214).
+        $form = $this->form('contact', options: ['steps.hold-next' => true, 'dialog.scroll' => 'page']);
+
+        $this->actingAs($this->editor(), 'cms')
+            ->putJson($this->api("forms/{$form->getKey()}"), [
+                'slug' => 'contact',
+                'title' => ['en' => 'Contact'],
+                'options' => ['dialog.scroll' => 'page'],
+            ])
+            ->assertOk();
+
+        $this->assertSame(['dialog.scroll' => 'page'], $form->refresh()->options);
+    }
+
+    #[Test]
     public function it_keeps_only_the_settings_it_knows_about(): void
     {
         $form = $this->form('contact');

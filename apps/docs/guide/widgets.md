@@ -595,7 +595,7 @@ Inertial scrolling is this widget only: a theme does not bring Lenis or another 
 ## The photos of a card
 
 ```blade
-<x-webx-photos :images="$flat->photos" ratio="3/2" :label="$flat->title" />
+<x-webx-photos :images="$flat->photos" ratio="3/2" :label="$flat->title" sizes="(min-width: 832px) 34vw, 100vw" />
 <x-webx-photos :images="$pictures" :autoplay="8000" />
 <x-webx-photos :images="$pictures" :autoplay="false" />
 ```
@@ -612,6 +612,9 @@ Inertial scrolling is this widget only: a theme does not bring Lenis or another 
 - `images` takes what a template has: values of a media field, objects with `url()`, addresses —
   the empty ones are left out. **One photo is a plain `<img>`** with the attributes you gave and no
   script; none prints nothing. The frame has the shape of `ratio`, else of the first photo.
+- `sizes` is how wide a photo stands — the card's share of the row, `100vw` by default: every photo
+  is offered as the library's copies by width and in the formats the site cuts, the ones past the
+  first without an address until they are shown.
 - Without JavaScript the first photo stands alone.
 - A card whose link is stretched over it says so with `data-webx-photos-surface` on the card: a
   swipe over the photos turns them, a tap still follows the link, and a slider of such cards moves

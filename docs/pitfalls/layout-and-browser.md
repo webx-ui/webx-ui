@@ -249,6 +249,12 @@ dispatchEvent(e); e.defaultPrevented`, а в тесте так же.
 
 ## Размеры и флекс
 
+- **Картинка в ячейке grid стала шире ячейки, как только получила `srcset` и `sizes`** (фото карточки
+  `x-webx-photos`: кадр обрезан иначе, `img` 450 px в карточке 360 px). У grid без шаблона неявная
+  колонка `auto` берёт внутреннюю ширину `<img>`, а с `sizes` это ширина из `sizes` (34vw, 100vw), а не
+  1800 px файла — раньше `width: 100%` её прятал. Обёртка `<picture style="display: contents">` ни при
+  чём. Лечится явной ячейкой: `grid-template: minmax(0, 1fr) / minmax(0, 1fr)`. Проверка —
+  `getComputedStyle(frame).gridTemplateColumns` равен ширине кадра, `img` — тех же размеров, что кадр.
 - **Переменная в `@container` блока не действует: на телефоне те же 4 кадра в ряд, что на широком.**
   Секция блока сама — контейнер (`container: b-gallery / inline-size`), а запрос контейнера
   стилизует только потомков, не сам контейнер: `@container b-gallery (max-width: …) { .b-gallery--ribbon

@@ -1,12 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { defineComponent, h, nextTick, ref } from 'vue'
+import { WxScreenRenderer, type ScreenNode } from '@webx-ui/schema'
 import { adminKey, type AdminContext } from './admin'
 import { createI18n, i18nKey } from './i18n'
 import { adminMessages } from './messages'
 import LinkField from './LinkField.vue'
 import LinkPicker from './LinkPicker.vue'
 import { emptyLink, type LinkValue, type ResolvedLink } from './links'
+import { adminTypes } from './screenTypes'
 
 // The panel is teleported into `<body>` and the picker in it debounces a search: neither may
 // outlive its test.
@@ -271,5 +273,50 @@ describe('WxLinkField', () => {
     await flushPromises()
 
     expect(panel()).toBeNull()
+  })
+})
+
+/*
+ * The field is one row, like `wx-media`: it stops at `--wx-field-max-width` with the fields beside
+ * it. It used to be wide from the days the picker stood in the form, and spread across the whole
+ * card while the inputs above it stopped at 640px. The picker opens in a popover as wide as the row.
+ */
+describe('WxLinkField in a form', () => {
+  it('is as wide as the fields beside it', async () => {
+    const i18n = createI18n({ locale: 'en' })
+    i18n.defaults('webx-admin', adminMessages)
+    const admin = {
+      apiPath: '/api/cms',
+      http: {
+        get: vi.fn(async () => ({ data: SOURCES })),
+        post: vi.fn(async () => ({ data: [] })),
+      },
+    } as unknown as AdminContext
+    const nodes: ScreenNode[] = [
+      { id: 'title', type: 'wx-input', name: 'title', label: 'Title' },
+      { id: 'button', type: 'wx-link', name: 'button', label: 'Button' },
+    ]
+
+    const wrapper = mount(WxScreenRenderer, {
+      attachTo: document.body,
+      props: { root: nodes, modelValue: {}, types: adminTypes },
+      global: { provide: { [adminKey as symbol]: admin, [i18nKey as symbol]: i18n } },
+    })
+    await flushPromises()
+
+    expect(adminTypes['wx-link']).not.toHaveProperty('wide')
+    const items = wrapper.findAll('.wx-form-item')
+    expect(items).toHaveLength(2)
+    expect(items[1]!.find('.wx-link-field').exists()).toBe(true)
+    for (const item of items) expect(item.classes()).not.toContain('wx-form-item--wide')
+  })
+
+  it('opens a picker as wide as its row', async () => {
+    const { wrapper } = field(null)
+
+    await row(wrapper).trigger('click')
+    await flushPromises()
+
+    expect(panel()?.style.width).toBe('var(--reka-popover-trigger-width)')
   })
 })
