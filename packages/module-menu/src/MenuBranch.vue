@@ -51,6 +51,7 @@ function name(item: MenuItemRow): string {
 function where(item: MenuItemRow): string {
   if (item.target === 'none') return t('menu.goes-nowhere')
   if (item.target === 'entity' && item.resolved === null) return t('menu.missing-target')
+  if (item.target === 'file' && !item.available) return t('menu.missing-target')
 
   return item.href ?? t('menu.goes-nowhere')
 }

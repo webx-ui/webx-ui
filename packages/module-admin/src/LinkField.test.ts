@@ -45,7 +45,14 @@ function field(
     ],
   }))
 
-  const admin = { apiPath: '/api/cms', http: { get, post } } as unknown as AdminContext
+  const admin = {
+    apiPath: '/api/cms',
+    http: { get, post },
+    describeFile: async (path: string) =>
+      path === 'media/ab/price-list.pdf'
+        ? { path, url: '/storage/price-list.pdf', name: 'price-list.pdf', size: 62_464 }
+        : null,
+  } as unknown as AdminContext
   const model = ref<LinkValue | null>(value)
 
   const Host = defineComponent({
@@ -69,8 +76,8 @@ function field(
 
 const row = (wrapper: ReturnType<typeof field>['wrapper']) => wrapper.get('button.wx-link-field')
 const text = (wrapper: ReturnType<typeof field>['wrapper'], part: string) =>
-  wrapper.find(`.wx-link-field__${part}`).exists()
-    ? wrapper.get(`.wx-link-field__${part}`).text()
+  wrapper.find(`.wx-field-row__${part}`).exists()
+    ? wrapper.get(`.wx-field-row__${part}`).text()
     : null
 const panel = () => document.body.querySelector<HTMLElement>('.wx-link-field__panel')
 
@@ -135,6 +142,29 @@ describe('WxLinkField', () => {
 
     expect(text(wrapper, 'title')).toBe('/account')
     expect(text(wrapper, 'detail')).toBe('/account')
+  })
+
+  it('names a file by the name it was uploaded under, with its kind and size', async () => {
+    const { wrapper } = field({
+      ...emptyLink(),
+      target: 'file',
+      path: 'media/ab/price-list.pdf',
+      download: true,
+    })
+    await flushPromises()
+
+    expect(row(wrapper).classes()).toContain('is-file')
+    expect(text(wrapper, 'title')).toBe('price-list.pdf')
+    expect(text(wrapper, 'detail')).toBe('PDF · 61 kB')
+  })
+
+  it('says so when the library no longer has the file', async () => {
+    const { wrapper } = field({ ...emptyLink(), target: 'file', path: 'media/zz/gone.pdf' })
+    await flushPromises()
+
+    expect(row(wrapper).classes()).toContain('is-accent-danger')
+    expect(text(wrapper, 'title')).toBe('gone.pdf')
+    expect(text(wrapper, 'detail')).toBe('This file is no longer in the library')
   })
 
   it('says plainly that a link goes nowhere, flags and all', async () => {

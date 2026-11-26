@@ -122,10 +122,15 @@ Compact changes heights and the body scale; control text is left alone, because 
 | z-index  | `--wx-z-index-sticky` … `--wx-z-index-tooltip`                                                   |
 | Motion   | `--wx-duration-fast`, `--wx-duration-normal`, `--wx-duration-slow`, `--wx-easing-standard`       |
 
-Every floating panel — a dropdown, a select's list, a popover, a colour picker — is drawn on
-`--wx-z-index-popover`, one shared layer. They are added to the document as they open, so the one
-opened last is the one on top, and a select opened inside a popover covers it instead of vanishing
-behind it. Keep your own transient panels on that layer too; `--wx-z-index-dialog` and above are
-for surfaces that take over the page.
+Everything that opens over the page — a dropdown, a select's list, a popover, a colour picker, and a
+dialog, a drawer or a lightbox with its dimming — is drawn on `--wx-z-index-popover`, one shared
+layer. What ranks them is the order they come into the document: a select opened inside a popover
+covers it instead of vanishing behind it, and a dialog opened from a popover — a link's file picker
+— covers the popover, its dimming included. A dialog opened from code (`openModal`) is added at the
+end of `<body>` when it opens; a declared one, when the component holding it mounts. Keep your own
+transient panels on that layer too. Only toasts and tooltips stand above it, and
+`--wx-z-index-overlay` under it is for a layer over the page that is part of the page — a panel
+expanded to the whole window. `--wx-z-index-dialog` and `--wx-z-index-lightbox` are no longer used
+by the components and stay for themes that read them.
 
 See [Theming](/guide/theming) for how to override them.

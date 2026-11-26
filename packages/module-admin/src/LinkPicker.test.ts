@@ -250,12 +250,16 @@ describe('WxLinkPicker', () => {
       )
     }
 
-    it('is a target only where the field asks for files and a library can pick one', async () => {
+    it('is a target wherever a library can pick one, unless the field says `files: false`', async () => {
       const pickFile = vi.fn(async () => PRICES)
 
       const plain = picker(emptyLink(), {}, { pickFile })
       await flushPromises()
-      expect(targets(plain.wrapper)).toEqual(['entity', 'url', 'none'])
+      expect(targets(plain.wrapper)).toEqual(['entity', 'url', 'file', 'none'])
+
+      const page = picker(emptyLink(), { files: false }, { pickFile })
+      await flushPromises()
+      expect(targets(page.wrapper)).toEqual(['entity', 'url', 'none'])
 
       const noLibrary = picker(emptyLink(), { files: true })
       await flushPromises()

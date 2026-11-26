@@ -81,6 +81,10 @@ function toLink(item: MenuItemRow): LinkValue {
     hash: item.hash,
     new_tab: item.new_tab,
     rel: item.rel,
+    // Only a file carries these two, as everywhere else a link is kept.
+    ...(item.target === 'file'
+      ? { path: item.path ?? null, download: item.download ?? false }
+      : {}),
   }
 }
 

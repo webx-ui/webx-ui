@@ -25,9 +25,10 @@ use WebxUi\Admin\Screens\FieldType;
  * the prefix of the one being read — so a language map here would be four copies of one decision,
  * three of them forgotten.
  *
- * A file of the library is a target only where the node asks for one with `props.files`: the
- * menu, a redirect after a form and the other places that call these rules with no node at all
- * keep the three targets they were written for.
+ * A file of the library is a target wherever a link is — a button, a menu item, a redirect after a
+ * form — because "download the price list" is a thing any of them may be asked to do. A node that
+ * means a page and nothing else (where a widget stands, which page to preview) says so with
+ * `props.files: false`.
  */
 final class LinkType implements ChecksNewValues, FieldType
 {
@@ -54,7 +55,7 @@ final class LinkType implements ChecksNewValues, FieldType
             }];
         }
 
-        $files = ($node['props']['files'] ?? false) === true;
+        $files = ($node['props']['files'] ?? true) !== false;
 
         return ['nullable', Link::SHAPE, function (string $attribute, mixed $value, Closure $fail) use ($files): void {
             $problem = $this->problem($value, $files);

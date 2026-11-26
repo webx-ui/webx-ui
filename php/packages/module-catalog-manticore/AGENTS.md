@@ -22,7 +22,7 @@ those.
 - **View** `webx-catalog-manticore::unavailable`: the 503 page with `Retry-After`, shown when the
   server is down and the catalogue is larger than `webx-catalog.sql_engine_limit`.
 - **Doctor check**: it reports a missing prefix, a prefix that starts somebody else's tables, a
-  server that does not answer, and a table that is out of date.
+  server that does not answer or refuses the login, and a table that is out of date.
 - **MCP** tool `catalog_index_status` (read only). It reports the server, the tables and the
   queue, and with `product` it explains why one product is not found.
 
@@ -39,16 +39,17 @@ not these. A route or screen node the site adds next to the module asks the same
 
 ## Change it without forking
 
-| You want                             | Do this                                                                                     |
-| ------------------------------------ | ------------------------------------------------------------------------------------------- |
-| Connect the server                   | `MANTICORE_HOST`, `MANTICORE_PORT`, and the required `MANTICORE_TABLE_PREFIX` (`[a-z0-9_]`) |
-| Rebuild jobs on a queue of their own | `MANTICORE_REBUILD_QUEUE`                                                                   |
-| Morphology for another language      | `morphology` in `config/webx-catalog-manticore.php` (`--tag=webx-catalog-manticore-config`) |
-| Another keyboard layout corrected    | `layouts` in the same file                                                                  |
-| Shorter word beginnings / parts      | `min_prefix_len`, `min_infix_len`; ranking of own vs other languages: `weights`             |
-| Timeouts and how long «down» is kept | `connect_timeout`, `timeout`, `down_for`                                                    |
-| A different 503 page                 | `php artisan vendor:publish --tag=webx-catalog-manticore-views`                             |
-| Other words in the panel             | `php artisan vendor:publish --tag=webx-catalog-manticore-lang`                              |
+| You want                             | Do this                                                                                        |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| Connect the server                   | `MANTICORE_HOST`, `MANTICORE_PORT`, and the required `MANTICORE_TABLE_PREFIX` (`[a-z0-9_]`)    |
+| Log in to a server with `auth = 1`   | `MANTICORE_USERNAME`, `MANTICORE_PASSWORD`; rights `read`, `write`, `schema` on `'{prefix}_*'` |
+| Rebuild jobs on a queue of their own | `MANTICORE_REBUILD_QUEUE`                                                                      |
+| Morphology for another language      | `morphology` in `config/webx-catalog-manticore.php` (`--tag=webx-catalog-manticore-config`)    |
+| Another keyboard layout corrected    | `layouts` in the same file                                                                     |
+| Shorter word beginnings / parts      | `min_prefix_len`, `min_infix_len`; ranking of own vs other languages: `weights`                |
+| Timeouts and how long «down» is kept | `connect_timeout`, `timeout`, `down_for`                                                       |
+| A different 503 page                 | `php artisan vendor:publish --tag=webx-catalog-manticore-views`                                |
+| Other words in the panel             | `php artisan vendor:publish --tag=webx-catalog-manticore-lang`                                 |
 
 The «Showing results for …» line and its view belong to the core: `webx-catalog::search-corrected`.
 

@@ -96,6 +96,35 @@ final class FieldTypeTest extends TestCase
         $this->assertNull($resolved['thumb']);
     }
 
+    /** «Download instead of opening» on a file field: kept only where the node offers it (webx-ui#210). */
+    #[Test]
+    public function a_file_field_keeps_the_download_switch_only_where_the_node_offers_it(): void
+    {
+        $file = $this->file(['path' => 'media/ab/cd/plan.pdf', 'mime' => 'application/pdf', 'extension' => 'pdf', 'file_name' => 'Floor plan.pdf']);
+        $type = $this->type('wx-file');
+        $offers = ['type' => 'wx-file', 'props' => ['download' => true]];
+        $plain = ['type' => 'wx-file'];
+
+        $this->assertSame(['path' => $file->path, 'download' => true], $type->store(['path' => $file->path, 'download' => true], $offers));
+        $this->assertSame(['path' => $file->path], $type->store(['path' => $file->path, 'download' => false], $offers));
+        $this->assertSame(['path' => $file->path], $type->store(['path' => $file->path, 'download' => true], $plain));
+
+        // The name the file was uploaded under, for `download=""`; null where the switch is off.
+        $resolved = $type->resolve(['path' => $file->path, 'download' => true], $offers);
+        $this->assertIsArray($resolved);
+        $this->assertSame('Floor plan.pdf', $resolved['download']);
+
+        $resolved = $type->resolve(['path' => $file->path, 'download' => true], $plain);
+        $this->assertIsArray($resolved);
+        $this->assertNull($resolved['download']);
+
+        // A value saved by the old card — no switch at all — reads as it always did.
+        $resolved = $type->resolve(['path' => $file->path, 'title' => ['en' => 'Plan']], $offers);
+        $this->assertIsArray($resolved);
+        $this->assertNull($resolved['download']);
+        $this->assertSame('Plan', $resolved['title']);
+    }
+
     #[Test]
     public function a_key_the_library_no_longer_has_resolves_to_no_address(): void
     {

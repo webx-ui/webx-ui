@@ -30,8 +30,8 @@ for those.
   saved data. `video_mobile` plays below `breakpoint`; `poster` stands for the picture where a
   video plays.
 - **Button variants** `config('webx-banners.variants')` — `primary`, `secondary`, `link`.
-- **Button links** — a page, an address or a file of the media library (`props.files` on
-  `button-link` and in the button layer). A card's button carries `label`, `url`, `new_tab`, `rel`,
+- **Button links** — a page, an address or a file of the media library (as every
+  `wx-link`, the button layer too). A card's button carries `label`, `url`, `new_tab`, `rel`,
   `download` (the file's own name, or null) and `variant`; print the `<a>` with
   `{{ \WebxUi\Admin\Links\LinkAttributes::of($button) }}`. A file gone from the library drops the button.
 - **Cache group** `banners` (WEBX_UI_CACHE.md): moved by every `Banner` and `Place` save; a mass write says `CacheGroups::bump('banners')` itself.

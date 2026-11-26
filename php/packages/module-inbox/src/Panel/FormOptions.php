@@ -172,7 +172,7 @@ final class FormOptions
 
     /**
      * Where the visitor goes once the form is sent, as a link of the panel (`wx-link`): a record of
-     * the site, or an address — and nothing for the thank-you in place of the form.
+     * the site, an address or a file of the library — and nothing for the thank-you in place of the form.
      *
      * A plain string is what a form saved before there was a choice holds, and it is the address
      * it always was. Opening in a new tab and `rel` are not kept: this is a redirect, not a link
@@ -194,7 +194,8 @@ final class FormOptions
             return null;
         }
 
-        return new Link($link->target, $link->entityType, $link->entityId, $link->url, $link->hash);
+        // The file's key goes with it: a thank-you button may hand over the price list.
+        return new Link($link->target, $link->entityType, $link->entityId, $link->url, $link->hash, path: $link->path, download: $link->download);
     }
 
     /**

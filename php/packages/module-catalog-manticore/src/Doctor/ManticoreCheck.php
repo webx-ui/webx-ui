@@ -11,13 +11,14 @@ use Throwable;
 use WebxUi\Admin\Doctor\Check;
 use WebxUi\Admin\Doctor\Diagnosis;
 use WebxUi\Catalog\Manticore\Manticore;
+use WebxUi\Catalog\Manticore\ManticoreDenied;
 use WebxUi\Catalog\Manticore\ManticoreEngine;
 
 /**
  * What the Manticore engine needs and nothing else announces (decisions 3 and 9 of the Manticore
- * spec): a prefix that is set and is nobody else's, a server that answers, and tables of the
- * schema the contributors write now. A table out of date is only reported — on a large catalogue
- * the rebuild is minutes of load, and its time is a person's to choose.
+ * spec): a prefix that is set and is nobody else's, a server that answers and lets the login in,
+ * and tables of the schema the contributors write now. A table out of date is only reported — on a
+ * large catalogue the rebuild is minutes of load, and its time is a person's to choose.
  *
  * Silent unless the site runs on `manticore`: a site on the database engine has nothing to fix here.
  */
@@ -49,11 +50,16 @@ final class ManticoreCheck implements Check
             /** @var ManticoreEngine $engine */
             $engine = $this->container->make(ManticoreEngine::class);
             $status = $engine->status();
+        } catch (ManticoreDenied $denied) {
+            return [Diagnosis::fail(self::SUBJECT, $denied->getMessage().' Meanwhile lists, filters and the search fall back on the database or answer 503.')];
         } catch (Throwable $failure) {
             return [Diagnosis::fail(self::SUBJECT, "{$this->server->address()} does not answer ({$failure->getMessage()}): lists, filters and the search fall back on the database or answer 503.")];
         }
 
-        $diagnoses = [Diagnosis::ok(self::SUBJECT, "{$this->server->address()}, version {$version}, tables [{$prefix}_*].")];
+        $login = $this->server->username();
+        $diagnoses = [Diagnosis::ok(self::SUBJECT, "{$this->server->address()}, version {$version}, tables [{$prefix}_*]".($login === null ? ', no login.' : ", login [{$login}]."))];
+        // Manticore hides from a login the tables it has no right to: «missing» may be that.
+        $hidden = $login === null ? '' : " If it was built, the login [{$login}] may have no right to [{$prefix}_*]: Manticore does not show such tables.";
 
         if ($foreign !== []) {
             $diagnoses[] = Diagnosis::warn(self::SUBJECT, "the prefix [{$prefix}] begins tables that are not this catalogue's: ".implode(', ', array_slice($foreign, 0, 5)).' — choose a prefix nobody else on the server starts with.');
@@ -61,7 +67,7 @@ final class ManticoreCheck implements Check
 
         foreach ($status as $locale => $table) {
             $diagnoses[] = match ($table['state']) {
-                'missing' => Diagnosis::warn(self::SUBJECT, "there is no table for [{$locale}] — run `php artisan webx:catalog:index --rebuild`."),
+                'missing' => Diagnosis::warn(self::SUBJECT, "there is no table for [{$locale}] — run `php artisan webx:catalog:index --rebuild`.{$hidden}"),
                 'stale' => Diagnosis::warn(self::SUBJECT, "the table of [{$locale}] is out of date: {$table['reason']} — run `php artisan webx:catalog:index --rebuild` when the load allows; the storefront works on the old one meanwhile."),
                 default => Diagnosis::ok(self::SUBJECT, "[{$table['table']}]: {$table['documents']} products."),
             };

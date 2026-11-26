@@ -20,6 +20,8 @@ final class MenuLink
      * @param  string|null  $path  This item's path on our own site, or null when it is somebody
      *                             else's. Highlighting compares this and nothing else.
      * @param  string  $current  Where the visitor is standing, in the same spelling.
+     * @param  string|null  $download  For an item that is a file the browser saves: the name to
+     *                                 save it under, which is what `download=""` takes.
      */
     public function __construct(
         public string $label,
@@ -31,6 +33,7 @@ final class MenuLink
         public ?string $rel = null,
         private readonly ?string $path = null,
         private readonly string $current = '',
+        public ?string $download = null,
     ) {}
 
     /** The visitor is on this exact page. */
@@ -65,7 +68,7 @@ final class MenuLink
     }
 
     /**
-     * `href`, `target` and `rel` in one array, for a template that would rather write
+     * `href`, `target`, `rel` and `download` in one array, for a template that would rather write
      * `@foreach ($item->attrs() as $name => $value)` than three conditionals.
      *
      * @return array<string, string>
@@ -76,6 +79,7 @@ final class MenuLink
             'href' => $this->url,
             'target' => $this->newTab ? '_blank' : null,
             'rel' => $this->rel,
+            'download' => $this->download,
         ];
 
         return array_filter($attrs, static fn (?string $value): bool => $value !== null && $value !== '');

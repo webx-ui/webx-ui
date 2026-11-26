@@ -109,16 +109,20 @@ single field has. **Add** opens the library with multiple selection on, so twelv
 trip rather than twelve.
 
 `WxFilesField` is the same list laid out as rows of file cards — the glyph of the extension, the
-name, the size — for the downloads hanging off a page. `WxFileField` is one of those cards on its
-own: the same `MediaValue | null` as `WxMediaField`, for a document that has no `alt` worth asking
-for and no preview worth framing.
+name, the size — for the downloads hanging off a page. `WxFileField` is one file drawn the way the
+link field is: a row that says what is chosen — the glyph of the extension (a thumbnail for a
+picture), the name it was uploaded under, «PDF · 61 kB» — and a panel under it to choose from the
+library, upload straight into it, write the caption and clear the field. It holds the same
+`MediaValue | null` as `WxMediaField`, so a value saved by the old card opens as it is. `alt` is
+asked for only with `accept: "image"`; `download: true` on the node adds «Download instead of
+opening», and the site then reads `download` as the file's upload name.
 
-| Export           | Screen type  | Value                | What it draws                    |
-| ---------------- | ------------ | -------------------- | -------------------------------- |
-| `WxMediaField`   | `wx-media`   | `MediaValue \| null` | one picture in a frame           |
-| `WxGalleryField` | `wx-gallery` | `MediaValue[]`       | a grid of thumbnails             |
-| `WxFileField`    | `wx-file`    | `MediaValue \| null` | one file card: glyph, name, size |
-| `WxFilesField`   | `wx-files`   | `MediaValue[]`       | those cards a line each          |
+| Export           | Screen type  | Value                | What it draws                |
+| ---------------- | ------------ | -------------------- | ---------------------------- |
+| `WxMediaField`   | `wx-media`   | `MediaValue \| null` | one picture in a frame       |
+| `WxGalleryField` | `wx-gallery` | `MediaValue[]`       | a grid of thumbnails         |
+| `WxFileField`    | `wx-file`    | `MediaValue \| null` | a row and a panel, as a link |
+| `WxFilesField`   | `wx-files`   | `MediaValue[]`       | those cards a line each      |
 
 The type names are what `media()` registers on [a described screen](/guide/screens), and what the
 server half registers for storing the values — so a screen that writes `"type": "wx-gallery"` gets

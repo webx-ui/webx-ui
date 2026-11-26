@@ -106,6 +106,7 @@ function home(): void {
         :model-value="link"
         :allow-none="false"
         :attributes="false"
+        :files="false"
         @update:model-value="change"
       />
       <wx-button size="sm" variant="text" :disabled="place.path === '/'" @click="home">

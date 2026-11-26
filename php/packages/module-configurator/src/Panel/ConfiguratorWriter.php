@@ -204,13 +204,15 @@ final class ConfiguratorWriter
         }
 
         $type = app(LinkType::class);
-        $checks = Checks::make(['page' => $page], ['page' => $type->rules([])]);
+        // The page the configurator stands on: a file is not a place a widget can be.
+        $node = ['props' => ['files' => false]];
+        $checks = Checks::make(['page' => $page], ['page' => $type->rules($node)]);
 
         if ($checks->fails()) {
             throw new Refused((string) $checks->errors()->first('page'), reason: 'page.invalid');
         }
 
-        $stored = $type->store($page, []);
+        $stored = $type->store($page, $node);
 
         return is_array($stored) ? $stored : null;
     }

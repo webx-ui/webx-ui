@@ -13,7 +13,8 @@ guides when the question is about one of those. An entity's own attachments are 
   migration creates the root folder «Library») and `media_files` (`WebxUi\Media\Models\MediaFile`).
   A file row remembers its own `disk` and `path`, plus `original_path` once it has been edited.
 - **Field types** `wx-media`, `wx-gallery`, `wx-file`, `wx-files` for described screens. They
-  store only `{ path, alt, title }`; the address, `thumb`, size and dimensions are resolved on
+  store only `{ path, alt, title }` (`wx-file` with `props.download` also `download: true`, read
+  back as the upload name or null); the address, `thumb`, size and dimensions are resolved on
   read. `alt` and `title` live in the value, not in the library. A value may arrive as an id,
   `{ id }`, `{ path }`, a key string or the object `media_get_file` / `*_get` returns
   (`MediaValues::normalize()`; extra keys dropped); an unknown id is refused by name.

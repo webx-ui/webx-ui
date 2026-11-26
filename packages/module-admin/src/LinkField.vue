@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { WxButton, WxIcon, WxPopover, WxText, type IconName } from '@webx-ui/core'
+import { WxButton, WxIcon, WxPopover, WxText, fileIconName, type IconName } from '@webx-ui/core'
 import { useAdmin } from './admin'
+import FieldRow from './FieldRow.vue'
+import { readableSize } from './fileSize'
+import type { PickedFile } from './types'
 import { useI18n, useTranslate } from './i18n'
 import LinkPicker from './LinkPicker.vue'
 import { linkSources } from './linkSources'
@@ -36,8 +39,9 @@ const props = withDefaults(
     /** Off where the two attributes belong to whatever holds the link rather than to the field. */
     attributes?: boolean
     /**
-     * A file of the library as a target — what a button that downloads a brochure needs. On only
-     * where the node asks (`props.files`), as on the server, which refuses a file link otherwise.
+     * A file of the library as a target — what a button that downloads a brochure needs. On
+     * everywhere, as on the server; off (`props.files: false`) only where the link has to be a
+     * page — where a widget stands, which page to preview.
      */
     files?: boolean
     disabled?: boolean
@@ -49,7 +53,7 @@ const props = withDefaults(
   {
     allowNone: true,
     attributes: true,
-    files: false,
+    files: true,
     disabled: false,
     placeholder: undefined,
     label: undefined,
@@ -127,7 +131,36 @@ interface Summary {
   icon: IconName
   title: string
   detail: string | null
+  /** The second line is an address or a key, said in the monospace face; a size is words. */
+  mono?: boolean
+  accent?: 'primary' | 'danger' | null
 }
+
+/** The file behind a `file` link, as the library describes it now; `null` — it has no such key. */
+const described = ref<PickedFile | null | undefined>(undefined)
+
+watch(
+  () => (value.value?.target === 'file' ? (value.value.path ?? null) : null),
+  async (path) => {
+    described.value = undefined
+
+    const describe = admin.describeFile
+
+    if (path === null || !describe) return
+
+    let found: PickedFile | null
+
+    try {
+      found = await describe(path)
+    } catch {
+      // The row says what it can from the key; the picker in the panel asks again on its own.
+      return
+    }
+
+    if (path === (value.value?.path ?? null)) described.value = found
+  },
+  { immediate: true },
+)
 
 /** The fragment as the site writes it, or nothing. */
 function anchor(link: LinkValue): string {
@@ -191,8 +224,29 @@ const summary = computed<Summary>(() => {
     if (!link.path) return empty
 
     const name = link.path.split('/').pop() ?? link.path
+    const file = described.value
 
-    return { kind: 'file', icon: 'file', title: name, detail: link.path }
+    if (file === null) {
+      return {
+        kind: 'file',
+        icon: 'warning',
+        title: name,
+        detail: t('links.file-gone'),
+        mono: false,
+        accent: 'danger',
+      }
+    }
+
+    const size = file?.size ? readableSize(file.size, i18n.state.locale) : null
+    const extension = (file?.name ?? name).split('.').pop()?.toUpperCase() ?? null
+
+    return {
+      kind: 'file',
+      icon: fileIconName(file?.name ?? name),
+      title: file?.name ?? name,
+      detail: size ? [extension, size].filter(Boolean).join(' · ') : link.path,
+      mono: !size,
+    }
   }
 
   if (pair.value === null) return empty
@@ -205,6 +259,7 @@ const summary = computed<Summary>(() => {
   return {
     kind: 'entity',
     icon: 'file-text',
+    accent: 'primary',
     // Until the server answers there is no name to show, and "gone" would be a lie for a moment.
     title: found?.title ?? (sectionTitles.value[pair.value.type] ? t('links.missing') : '…'),
     detail: `${section} · ${where}`,
@@ -265,37 +320,33 @@ function onClose(): void {
     @close="onClose"
   >
     <template #trigger>
-      <button
-        type="button"
+      <field-row
         class="wx-link-field"
-        :class="[`is-${summary.kind}`, { 'is-open': open }]"
+        :kind="summary.kind"
+        :icon="summary.icon"
+        :title="summary.title"
+        :detail="summary.detail"
+        :mono="summary.mono"
+        :accent="summary.accent"
+        :open="open"
         :disabled="props.disabled"
       >
-        <span class="wx-link-field__icon" aria-hidden="true">
-          <wx-icon :name="summary.icon" />
-        </span>
-
-        <span class="wx-link-field__text">
-          <span class="wx-link-field__title">{{ summary.title }}</span>
-          <span v-if="summary.detail" class="wx-link-field__detail">{{ summary.detail }}</span>
-        </span>
-
-        <span v-if="flags.length" class="wx-link-field__flags">
-          <span
-            v-for="flag in flags"
-            :key="flag.key"
-            class="wx-link-field__flag"
-            :class="`is-${flag.key}`"
-            :title="flag.title"
-          >
-            <wx-icon v-if="flag.icon" :name="flag.icon" size="sm" />
-            <template v-else>{{ flag.text }}</template>
-            <span class="wx-link-field__flag-name">{{ flag.title }}</span>
+        <template #flags>
+          <span v-if="flags.length" class="wx-link-field__flags">
+            <span
+              v-for="flag in flags"
+              :key="flag.key"
+              class="wx-link-field__flag"
+              :class="`is-${flag.key}`"
+              :title="flag.title"
+            >
+              <wx-icon v-if="flag.icon" :name="flag.icon" size="sm" />
+              <template v-else>{{ flag.text }}</template>
+              <span class="wx-link-field__flag-name">{{ flag.title }}</span>
+            </span>
           </span>
-        </span>
-
-        <wx-icon class="wx-link-field__chevron" name="chevron-down" aria-hidden="true" />
-      </button>
+        </template>
+      </field-row>
     </template>
 
     <link-picker
@@ -317,114 +368,6 @@ function onClose(): void {
 </template>
 
 <style scoped>
-.wx-link-field {
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  gap: var(--wx-space-12);
-  width: 100%;
-  min-width: 0;
-  min-height: 56px;
-  margin: 0;
-  padding: var(--wx-space-8) var(--wx-space-12) var(--wx-space-8) var(--wx-space-10);
-  background: var(--wx-bg-surface);
-  border: 1px solid var(--wx-border-default);
-  border-radius: var(--wx-radius-control);
-  color: var(--wx-text-default);
-  font: inherit;
-  text-align: start;
-  cursor: pointer;
-  transition:
-    border-color 0.15s ease,
-    box-shadow 0.15s ease;
-}
-
-.wx-link-field:hover:not(:disabled) {
-  border-color: var(--wx-border-strong);
-}
-
-.wx-link-field:focus-visible {
-  outline: none;
-  border-color: var(--wx-border-focus);
-  box-shadow: var(--wx-ring-focus);
-}
-
-/* Open, the row is the field being edited — it stays marked while focus is in the panel. */
-.wx-link-field.is-open {
-  border-color: var(--wx-border-focus);
-  box-shadow: var(--wx-ring-focus);
-}
-
-.wx-link-field:disabled {
-  background: var(--wx-bg-disabled);
-  color: var(--wx-text-disabled);
-  cursor: not-allowed;
-}
-
-.wx-link-field.is-empty {
-  border-style: dashed;
-}
-
-.wx-link-field.is-none {
-  background: var(--wx-bg-subtle);
-}
-
-.wx-link-field__icon {
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  background: var(--wx-bg-fill);
-  border-radius: var(--wx-radius-sm);
-  color: var(--wx-text-muted);
-  font-size: var(--wx-font-size-md);
-}
-
-.wx-link-field.is-entity .wx-link-field__icon {
-  background: var(--wx-color-primary-soft);
-  color: var(--wx-color-primary);
-}
-
-.wx-link-field__text {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  gap: var(--wx-space-2);
-  min-width: 0;
-}
-
-.wx-link-field__title,
-.wx-link-field__detail {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.wx-link-field__title {
-  color: var(--wx-text-strong);
-  font-size: var(--wx-font-size-sm);
-  font-weight: var(--wx-font-weight-medium);
-  line-height: var(--wx-font-line-height-tight);
-}
-
-.wx-link-field.is-empty .wx-link-field__title {
-  color: var(--wx-text-placeholder);
-  font-weight: var(--wx-font-weight-regular);
-}
-
-.wx-link-field.is-none .wx-link-field__title {
-  color: var(--wx-text-muted);
-}
-
-.wx-link-field__detail {
-  color: var(--wx-text-muted);
-  font-family: var(--wx-font-family-mono);
-  font-size: var(--wx-font-size-xs);
-  line-height: var(--wx-font-line-height-tight);
-}
-
 .wx-link-field__flags {
   display: inline-flex;
   flex: 0 1 auto;
@@ -455,16 +398,6 @@ function onClose(): void {
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
-}
-
-.wx-link-field__chevron {
-  flex: 0 0 auto;
-  color: var(--wx-text-muted);
-  transition: transform 0.15s ease;
-}
-
-.wx-link-field.is-open .wx-link-field__chevron {
-  transform: rotate(180deg);
 }
 </style>
 

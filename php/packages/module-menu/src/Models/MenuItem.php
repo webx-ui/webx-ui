@@ -17,7 +17,7 @@ use WebxUi\NestedSet\HasNestedSet;
  * The columns spell out the link value of `module-admin` one to one, which is deliberate: a menu
  * item and a link field of a block are the same choice made in two places, so they go through
  * one parse, one validation and one normalisation. The two methods below are that seam, and
- * nothing else in this package reads the six columns directly.
+ * nothing else in this package reads the link's columns directly.
  *
  * @property int $id
  * @property int $menu_id
@@ -26,6 +26,8 @@ use WebxUi\NestedSet\HasNestedSet;
  * @property string|null $entity_type
  * @property int|null $entity_id
  * @property string|null $url
+ * @property string|null $path
+ * @property bool $download
  * @property string|null $hash
  * @property string $variant
  * @property bool $is_heading
@@ -55,6 +57,8 @@ class MenuItem extends Model
         'entity_type',
         'entity_id',
         'url',
+        'path',
+        'download',
         'hash',
         'variant',
         'is_heading',
@@ -101,13 +105,21 @@ class MenuItem extends Model
             'hash' => $this->hash,
             'new_tab' => $this->new_tab,
             'rel' => $this->rel ?? [],
+            'path' => $this->path,
+            'download' => $this->download,
         ]);
     }
 
-    /** The other direction: a chosen link written into the columns, normalised on the way. */
+    /**
+     * The other direction: a chosen link written into the columns, normalised on the way.
+     *
+     * The file's two columns are written whatever the target: a link that is not a file has no
+     * `path` in its array, and an item moved from a brochure to a page would otherwise keep the
+     * brochure's key — which the library would go on counting as a place the file is used.
+     */
     public function fillLink(Link $link): static
     {
-        return $this->forceFill($link->toArray());
+        return $this->forceFill(['path' => null, 'download' => false, ...$link->toArray()]);
     }
 
     /**
@@ -132,6 +144,7 @@ class MenuItem extends Model
             'entity_id' => 'integer',
             'is_heading' => 'boolean',
             'new_tab' => 'boolean',
+            'download' => 'boolean',
             'visible' => 'boolean',
             'rel' => 'array',
             'locales' => 'array',

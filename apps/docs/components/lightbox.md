@@ -155,8 +155,8 @@ cover the picture. `loop` makes the last item lead to the first.
 The dimming is its own token, `--wx-bg-lightbox`: nearly opaque, and dark in both themes,
 because a photograph judged on a page that shows through it is judged on the wrong colours.
 Everything with words or buttons on it — the counter, the tools, the caption, the arrows — sits on
-`--wx-bg-surface`. The layer is `--wx-z-index-overlay` and the gallery `--wx-z-index-dialog`,
-like a [Dialog](/components/dialog).
+`--wx-bg-surface`. Both the dimming and the gallery are on `--wx-z-index-popover`,
+like a [Dialog](/components/dialog): opened from a dialog, the lightbox comes after it and covers it.
 
 ## Props
 

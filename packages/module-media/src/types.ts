@@ -101,6 +101,11 @@ export interface MediaValue {
    */
   alt?: LocalizedValue | string
   title?: LocalizedValue | string
+  /**
+   * `wx-file` with `download` offered: the browser saves the file rather than opens it. Kept only
+   * where the node offers it; absent means open.
+   */
+  download?: boolean
   /** Filled in when the value was picked in this session, so a field can draw a preview. */
   url?: string
 }

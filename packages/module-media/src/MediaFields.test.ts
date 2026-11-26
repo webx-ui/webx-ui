@@ -1,7 +1,6 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { adminKey } from '@webx-ui/module-admin'
-import FileField from './FileField.vue'
 import FilesField from './FilesField.vue'
 import GalleryField from './GalleryField.vue'
 import { openMediaFiles } from './openMediaPicker'
@@ -188,22 +187,5 @@ describe('a list of files', () => {
     await wrapper.find('.wx-media-list__footer button').trigger('click')
 
     expect(vi.mocked(openMediaFiles)).toHaveBeenCalledWith({ accept: 'document', max: null })
-  })
-})
-
-describe('a single file', () => {
-  it('stores one value rather than a list of one, and replaces it', async () => {
-    const wrapper = mount(FileField, { props: { modelValue: null }, ...panel })
-
-    picks(library['a.jpg']!)
-    await wrapper.find('.wx-media-list__footer button').trigger('click')
-    await flushPromises()
-
-    expect(wrapper.emitted('update:modelValue')?.at(-1)?.[0]).toEqual({ path: 'a.jpg' })
-
-    await wrapper.setProps({ modelValue: { path: 'a.jpg' } })
-    await flushPromises()
-
-    expect(wrapper.find('.wx-media-list__footer button').attributes('disabled')).toBeDefined()
   })
 })

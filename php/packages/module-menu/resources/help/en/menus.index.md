@@ -14,7 +14,8 @@ template of the site prints it, so a new menu stays invisible until that is done
 ## How to add an item to a menu
 
 1. Choose the menu on the left and press «New item».
-2. In «Where it goes», choose something on this site, type an address, or choose «Nowhere».
+2. In «Where it goes», choose something on this site, type an address, choose «A file» from the
+   media library, or choose «Nowhere».
 3. Fill in «Label» if the item should be called differently.
 4. Press «Save». The item is on the site at once.
 
@@ -67,7 +68,9 @@ refreshes it by itself; the button is for the rare case when it did not. «Reset
 
 Pick a page or anything else on this site rather than typing its address: the item then follows it
 through renaming and moving. «An address» is for what the list does not have, such as another site;
-write a path of this site without the language part. «Nowhere» makes a label with no link.
+write a path of this site without the language part. «A file» links to a file of the media library,
+such as a price list; tick «Download instead of opening» to have the browser save it. An item with
+no label of its own is then called by the file's name. «Nowhere» makes a label with no link.
 
 ## Label
 
@@ -112,5 +115,5 @@ what stands under it, until that is published: the menu can be built in advance.
 
 ## What this pointed at is gone
 
-The page or material was deleted, and the item no longer shows on the site. Point the item somewhere
+The page, material or file was deleted, and the item no longer shows on the site. Point the item somewhere
 else or delete it.

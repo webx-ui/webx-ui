@@ -393,17 +393,25 @@ defineExpose({ close, reset })
 
 <style>
 /* The panel is teleported, so its styles cannot be scoped to the component. */
+
+/*
+ * The dimming and the panel are on the one layer every floating panel is on, not on layers of
+ * their own: what ranks them is the order they came into the document. A dialog opened from a
+ * popover — the file picker of a link — is added after it and covers it, dimming included, and a
+ * select opened inside the dialog covers the dialog. Separate layers ranked by kind put the
+ * popover over the dialog it opened.
+ */
 .wx-dialog__overlay {
   position: fixed;
   inset: 0;
-  z-index: var(--wx-z-index-overlay);
+  z-index: var(--wx-z-index-popover);
   background: var(--wx-bg-overlay);
 }
 
 .wx-dialog__viewport {
   position: fixed;
   inset: 0;
-  z-index: var(--wx-z-index-dialog);
+  z-index: var(--wx-z-index-popover);
   display: flex;
   align-items: center;
   justify-content: center;

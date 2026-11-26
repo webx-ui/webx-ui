@@ -46,12 +46,16 @@ so they belong to the entity that uses it, beside the reference.
 Four field types are registered for [described screens](https://webx-ui.github.io/webx-ui/guide/screens),
 matching the four the front end draws:
 
-| Type         | Stored                    | Read back as                   |
-| ------------ | ------------------------- | ------------------------------ |
-| `wx-media`   | `{ path, alt, title }`    | the same, plus the file's keys |
-| `wx-gallery` | a list of those, in order | a list, each resolved          |
-| `wx-file`    | `{ path, alt, title }`    | the same, plus the file's keys |
-| `wx-files`   | a list of those, in order | a list, each resolved          |
+| Type         | Stored                    | Read back as                                  |
+| ------------ | ------------------------- | --------------------------------------------- |
+| `wx-media`   | `{ path, alt, title }`    | the same, plus the file's keys                |
+| `wx-gallery` | a list of those, in order | a list, each resolved                         |
+| `wx-file`    | `{ path, alt, title }`    | the same, plus the file's keys and `download` |
+| `wx-files`   | a list of those, in order | a list, each resolved                         |
+
+`wx-file` with `props.download: true` also keeps `download: true` when the editor ticks
+«Download instead of opening», and the site then reads `download` as the name the file was uploaded
+under — what `<a download="…">` takes; elsewhere `download` reads `null`.
 
 **Only the key and the captions are stored.** The address never is — a library that moves to
 another disk would otherwise mean rewriting everything already saved. On read each value is
