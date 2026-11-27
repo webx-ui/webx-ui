@@ -266,6 +266,13 @@ dispatchEvent(e); e.defaultPrevented`, а в тесте так же.
   1800 px файла — раньше `width: 100%` её прятал. Обёртка `<picture style="display: contents">` ни при
   чём. Лечится явной ячейкой: `grid-template: minmax(0, 1fr) / minmax(0, 1fr)`. Проверка —
   `getComputedStyle(frame).gridTemplateColumns` равен ширине кадра, `img` — тех же размеров, что кадр.
+- **Во флексе или гриде с `gap` у картинки лишний отступ, а в сетке — пустые ячейки.** У
+  `<picture style="display: contents">` своего бокса нет, и его `<source>` становятся детьми
+  родителя: в Chromium у `<source>` `display: block` (не `none`), каждый — пустой флекс-элемент
+  или ячейка грида, и `gap` ставится и рядом с ним. `@webxPicture` печатает каждый `<source>` с
+  `style="display: none"` (инлайном — стиль runtime на сайте с критическим CSS приходит позже);
+  свою `<picture>` с `display: contents` во флексе или гриде — так же. Проверка — `x` первой
+  `<img>` во флексе равен левому краю контейнера, `getComputedStyle(source).display` — `none`.
 - **Переменная в `@container` блока не действует: на телефоне те же 4 кадра в ряд, что на широком.**
   Секция блока сама — контейнер (`container: b-gallery / inline-size`), а запрос контейнера
   стилизует только потомков, не сам контейнер: `@container b-gallery (max-width: …) { .b-gallery--ribbon
