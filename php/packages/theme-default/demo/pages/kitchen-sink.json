@@ -9596,6 +9596,187 @@
           ]
         }
       ]
+    },
+    {
+      "title": {
+        "en": "First screen",
+        "ru": "Первый экран",
+        "pl": "Pierwszy ekran"
+      },
+      "slug": {
+        "en": "first-screen",
+        "ru": "pervyj-ekran",
+        "pl": "pierwszy-ekran"
+      },
+      "seo": {
+        "title": {
+          "en": "First screen",
+          "ru": "Первый экран",
+          "pl": "Pierwszy ekran"
+        },
+        "description": {
+          "en": "A hero, tabs sliding over it with a fog edge, a gallery and a form: the page to measure the first screen on.",
+          "ru": "Первый экран, вкладки с наездом и краем-туманом, галерея и форма: страница, на которой меряют первый экран.",
+          "pl": "Baner, zakładki nasuwające się na niego z krawędzią mgły, galeria i formularz: strona do pomiaru pierwszego ekranu."
+        }
+      },
+      "blocks": [
+        {
+          "key": "showcase-first-hero",
+          "type": "hero",
+          "values": {
+            "title": {
+              "en": "The words come ==first==",
+              "ru": "Слова — ==первыми==",
+              "pl": "Słowa ==najpierw=="
+            },
+            "subtitle": {
+              "en": "The section under this one slides over it, its top a picture of fog. The fog is decoration: it must not hold the largest paint of the screen. The scripts of the slider, the lightbox and the form load when their blocks come near.",
+              "ru": "Секция под этой наезжает на неё, её верх — картинка тумана. Туман — украшение: он не должен задерживать самую крупную отрисовку экрана. Скрипты слайдера, лайтбокса и формы загружаются, когда их блоки подходят к экрану.",
+              "pl": "Sekcja pod tą nasuwa się na nią, jej góra to obraz mgły. Mgła jest ozdobą: nie może wstrzymywać największego malowania ekranu. Skrypty slidera, lightboksa i formularza ładują się, gdy ich bloki się zbliżają."
+            },
+            "button_label": {
+              "en": "To the form",
+              "ru": "К форме",
+              "pl": "Do formularza"
+            },
+            "button_url": "/kitchen-sink/forms/sending"
+          }
+        },
+        {
+          "key": "showcase-first-tabs",
+          "type": "tabs",
+          "values": {
+            "heading": {
+              "en": "About the place",
+              "ru": "О месте",
+              "pl": "O miejscu"
+            },
+            "tabs": [
+              {
+                "title": {
+                  "en": "Overview",
+                  "ru": "Обзор",
+                  "pl": "Przegląd"
+                },
+                "picture": {
+                  "path": "demo:showcase-photo-2",
+                  "alt": {
+                    "en": "Photo 2",
+                    "ru": "Фото 2",
+                    "pl": "Zdjęcie 2"
+                  }
+                },
+                "text": {
+                  "en": "<p>A short word about what this is and who it is for.</p>",
+                  "ru": "<p>Коротко о том, что это и для кого.</p>",
+                  "pl": "<p>Krótko o tym, czym to jest i dla kogo.</p>"
+                },
+                "focus": 50
+              },
+              {
+                "title": {
+                  "en": "Details",
+                  "ru": "Подробности",
+                  "pl": "Szczegóły"
+                },
+                "picture": {
+                  "path": "demo:showcase-photo-3",
+                  "alt": {
+                    "en": "Photo 3",
+                    "ru": "Фото 3",
+                    "pl": "Zdjęcie 3"
+                  }
+                },
+                "text": {
+                  "en": "<ul><li>What is included</li><li>What it is made of</li><li>How big it is</li></ul>",
+                  "ru": "<ul><li>Что входит</li><li>Из чего сделано</li><li>Какого размера</li></ul>",
+                  "pl": "<ul><li>Co jest w zestawie</li><li>Z czego jest zrobione</li><li>Jak duże jest</li></ul>"
+                },
+                "focus": 50
+              }
+            ],
+            "picture_side": "start",
+            "overlap": true,
+            "overlap_edge": {
+              "path": "demo:showcase-edge"
+            },
+            "overlap_edge_narrow": {
+              "path": "demo:showcase-edge-narrow"
+            }
+          }
+        },
+        {
+          "key": "showcase-first-gallery",
+          "type": "gallery",
+          "values": {
+            "heading": {
+              "en": "Gallery",
+              "ru": "Галерея",
+              "pl": "Galeria"
+            },
+            "pictures": [
+              {
+                "path": "demo:showcase-photo-1",
+                "alt": {
+                  "en": "Photo 1",
+                  "ru": "Фото 1",
+                  "pl": "Zdjęcie 1"
+                }
+              },
+              {
+                "path": "demo:showcase-photo-4",
+                "alt": {
+                  "en": "Photo 4",
+                  "ru": "Фото 4",
+                  "pl": "Zdjęcie 4"
+                }
+              },
+              {
+                "path": "demo:showcase-photo-5",
+                "alt": {
+                  "en": "Photo 5",
+                  "ru": "Фото 5",
+                  "pl": "Zdjęcie 5"
+                }
+              },
+              {
+                "path": "demo:showcase-photo-6",
+                "alt": {
+                  "en": "Photo 6",
+                  "ru": "Фото 6",
+                  "pl": "Zdjęcie 6"
+                }
+              },
+              {
+                "path": "demo:showcase-photo-7",
+                "alt": {
+                  "en": "Photo 7",
+                  "ru": "Фото 7",
+                  "pl": "Zdjęcie 7"
+                }
+              }
+            ],
+            "view": "slider",
+            "arrows": true,
+            "dots": true,
+            "zoom": true
+          }
+        },
+        {
+          "key": "showcase-first-form",
+          "type": "contact",
+          "values": {
+            "heading": {
+              "en": "Ask a question",
+              "ru": "Задать вопрос",
+              "pl": "Zadaj pytanie"
+            },
+            "show_contacts": false,
+            "form": "showcase"
+          }
+        }
+      ]
     }
   ]
 }

@@ -77,7 +77,7 @@ final class OverlapTest extends TestCase
             $html = $this->render($slug, ['overlap' => true, 'overlap_edge' => self::EDGE, 'overlap_edge_narrow' => self::PHONE]);
 
             $this->assertMatchesRegularExpression(
-                '~<section [^>]*data-wx-block="'.$slug.'" data-webx-overlap>\s*<picture class="webx-overlap__edge" aria-hidden="true"><source media="\(max-width: 40rem\)" srcset="/media/fog-phone\.png"~',
+                '~<section [^>]*data-wx-block="'.$slug.'" data-webx-overlap>\s*(?:<style data-webx-overlap-edge>[^<]+</style>)?<picture class="webx-overlap__edge" aria-hidden="true"><source media="\(max-width: 40rem\)" srcset="/media/fog-phone\.png"~',
                 $html,
                 $slug,
             );

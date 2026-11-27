@@ -1499,11 +1499,21 @@ test.describe('lightbox', () => {
     expect(file.status()).toBe(200)
     expect(file.headers()['content-type']).toContain('image/webp')
 
-    // Neither the script nor the words of a page that has no lightbox.
-    expect(await page.locator('script[src*="lightbox.js"]').count()).toBe(1)
+    // Neither the script nor the words of a page that has no lightbox. The script is a tag, or an
+    // entry of the list the runtime fetches when a link comes near (WIDGETS §4.1).
+    const lightbox = (on) =>
+      on
+        .locator('script[src*="lightbox.js"], script[data-webx-on-demand]')
+        .evaluateAll(
+          (scripts) =>
+            scripts.filter((s) => s.src.includes('lightbox.js') || s.text.includes('/lightbox.js'))
+              .length,
+        )
+    expect(await lightbox(page)).toBe(1)
     const plain = await context.newPage()
     await plain.goto('/kitchen-sink/slider')
-    expect(await plain.locator('script[src*="lightbox.js"], #webx-lightbox').count()).toBe(0)
+    expect(await lightbox(plain)).toBe(0)
+    expect(await plain.locator('#webx-lightbox').count()).toBe(0)
     await context.close()
   })
 })
